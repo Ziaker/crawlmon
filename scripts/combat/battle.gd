@@ -8,6 +8,13 @@ extends Node
 signal log_message(text: String)
 signal battle_ended(player_won: bool)
 signal state_changed
+## Visual events (consumed by BattleFx). `inc` is an Incoming.
+signal attack_telegraphed(inc)
+signal attack_resolved(inc)
+signal attack_cancelled(inc)
+signal manual_evaded(actor: Combatant, inc)
+signal hit_resolved(attacker: Combatant, target: Combatant, element: Element.Type, info: Dictionary)
+signal healed(actor: Combatant, target: Combatant, amount: int)
 
 class Incoming:
 	var attacker: Combatant
@@ -72,7 +79,9 @@ func use_item(actor: Combatant, item: Item, target: Combatant) -> bool:
 		return false
 	actor.pay(ITEM_BLOCKS)
 	GameState.remove_item(item.id)
+	var before := target.hp
 	target.heal(item.heal)
+	healed.emit(actor, target, target.hp - before)
 	log_message.emit("%s usa %s em %s" % [actor.name, item.display_name, target.name])
 	return true
 
@@ -95,6 +104,7 @@ func try_evade(actor: Combatant, inc: Incoming) -> bool:
 	inc.dodged = true
 	actor.burst = mini(actor.burst + 1, Combatant.BURST_MAX)
 	log_message.emit("%s desvia do ataque de %s! BURST!" % [actor.name, inc.attacker.name])
+	manual_evaded.emit(actor, inc)
 	return true
 
 
@@ -114,6 +124,7 @@ func _enemy_ai() -> void:
 		inc.time_left = WINDUP
 		incoming.append(inc)
 		log_message.emit("%s prepara um ataque em %s..." % [e.name, target.name])
+		attack_telegraphed.emit(inc)
 
 
 func _ally_ai() -> void:
@@ -142,16 +153,18 @@ func _pick_skill(a: Combatant) -> Skill:
 func _resolve_incoming(delta: float) -> void:
 	for inc in incoming.duplicate():
 		if not inc.attacker.is_alive() or not inc.target.is_alive():
+			attack_cancelled.emit(inc)
 			incoming.erase(inc)
 			continue
 		inc.time_left -= delta
 		if inc.time_left > 0.0:
 			continue
 		incoming.erase(inc)
+		attack_resolved.emit(inc)
 		if inc.dodged:
 			log_message.emit("%s errou o ataque!" % inc.attacker.name)
 		else:
-			_hit(inc.attacker, inc.target, inc.power, Element.Type.FISICO, "Ataque")
+			_hit(inc.attacker, inc.target, inc.power, Element.Type.FISICO, "Ataque", true)
 	_check_end()
 
 
@@ -164,22 +177,29 @@ func _is_winding_up(e: Combatant) -> bool:
 	return false
 
 
-func _hit(attacker: Combatant, target: Combatant, power: float, element: Element.Type, label: String) -> void:
+func _hit(attacker: Combatant, target: Combatant, power: float, element: Element.Type, label: String, from_incoming := false) -> void:
+	var info := {"from_incoming": from_incoming, "evaded": false, "dmg": 0, "weak": false, "crit": false, "gain": 0}
 	# Automatic evade: chance equals the target's speed; success gives +1 ATB block.
 	if randf() < target.speed:
 		target.add_atb(1.0)
+		info["evaded"] = true
 		log_message.emit("%s esquiva de %s automaticamente! +1 bloco" % [target.name, label])
+		hit_resolved.emit(attacker, target, element, info)
 		return
 	var weak := element in target.weaknesses
 	var crit := randf() < CRIT_CHANCE
 	var dmg := maxi(1, roundi(attacker.attack * power * (WEAKNESS_MULT if weak else 1.0) * (CRIT_MULT if crit else 1.0)))
 	target.take_damage(dmg)
-	if weak:
-		attacker.add_atb(2.0)
-	if crit:
-		attacker.add_atb(1.0)
+	var gain := (2 if weak else 0) + (1 if crit else 0)
+	attacker.add_atb(float(gain))
+	info["dmg"] = dmg
+	info["weak"] = weak
+	info["crit"] = crit
+	info["gain"] = gain
 	log_message.emit("%s usa %s (%s) em %s (%d dano)%s" % [
-		attacker.name, label, Element.name_of(element), target.name, dmg, (" FRAQUEZA! +2 bloco(s)" if weak else "") + (" CRÍTICO! +1 bloco" if crit else "")])
+		attacker.name, label, Element.name_of(element), target.name, dmg,
+		(" FRAQUEZA! +2 bloco(s)" if weak else "") + (" CRÍTICO! +1 bloco" if crit else "")])
+	hit_resolved.emit(attacker, target, element, info)
 
 
 func _first_alive(list: Array[Combatant]) -> Combatant:
@@ -197,6 +217,8 @@ func _check_end() -> void:
 	if not enemies_dead and not party_dead:
 		return
 	running = false
+	for inc in incoming:
+		attack_cancelled.emit(inc)
 	incoming.clear()
 	log_message.emit("Vitória!" if enemies_dead else "Derrota...")
 	battle_ended.emit(enemies_dead)

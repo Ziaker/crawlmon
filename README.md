@@ -17,6 +17,7 @@ Dungeon crawler em Godot 4.7 com mapa 2D top-down e combate em 3D com **ATB** em
 - **Evade** (3 blocos): desvia de um ataque inimigo em andamento (inimigos têm um tempo de preparo). Ganha um bloco **Burst**: uma ação extra imediata e gratuita.
 - **Esquiva automática**: todo golpe tem chance de ser esquivado igual à velocidade (SPD) do alvo; se esquivar, o alvo ganha +1 bloco de ATB (diferente do Evade manual, que dá Burst).
 - **Elementos**: Físico, Fogo, Água/Gelo, Raio, Psíquico, Veneno, Som, Terra, Vento, Luz, Trevas. Golpe no elemento fraco do alvo causa dano x1,5 e dá +2 blocos de ATB ao atacante.
+- **Efeitos visuais** (placeholders em `scripts/combat/battle_fx.gd`): ataque inimigo é sinalizado (inimigo recua, anel vermelho encolhe no alvo), investida/projétil por elemento, impacto por elemento, esquiva com afterimage, números flutuantes e tremor de câmera. Anel dourado no personagem = Burst.
 - **Crítico**: 10% de chance por golpe, dano x2, e o atacante ganha +1 bloco de ATB.
 - **Tactics**: define como os aliados agem (Atacar / Habilidades / Segurar) e reagem (Nada / Esquivar). O jogador controla o líder; aliados seguem as Tactics.
 - Configurações (C): ainda vazio.
@@ -24,8 +25,9 @@ Dungeon crawler em Godot 4.7 com mapa 2D top-down e combate em 3D com **ATB** em
 ## Estrutura
 - `scenes/exploration.tscn` — mapa 2D (cena principal).
 - `scenes/battle.tscn` — palco 3D (modelos placeholder; trocar em `_make_model()`).
-- `personagens/` — biblioteca de 11.185 imagens com nomes (ícones, retratos de combate Conquest e sprites de caminhada 2D overworld).
-- `documentos/` — documentação do projeto (`personagens.md`) e catálogo `pokedex_manifest.json`.
+- `personagens/` — biblioteca de sprites dos **303 Pokémon utilizáveis** no jogo (com modelo 3D disponível).
+- `personagens_sem_modelo/` — pasta separada (com `.gdignore`) contendo os **418 Pokémon arquivados** que não possuem modelo 3D.
+- `documentos/` — documentação técnica do projeto (`personagens.md`, `modelos_za_comparativo.md`) e catálogo `pokedex_manifest.json`.
 - `scripts/combat/` — regras do ATB (`battle.gd`, `combatant.gd`) e UI do combate.
 - `scripts/data/` — itens e habilidades.
 - `scripts/ui/` — menus (X/C), lista de menu, barra de ATB.

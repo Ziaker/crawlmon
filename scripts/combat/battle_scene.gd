@@ -12,6 +12,7 @@ const REACT_NAMES := ["Nada", "Esquivar"]
 @onready var ui: CanvasLayer = $UI
 
 var models: Dictionary = {}  ## Combatant -> Node3D
+var fx: BattleFx
 var state := S.MAIN
 var leader: Combatant
 
@@ -28,6 +29,9 @@ var _back: Callable
 
 
 func _ready() -> void:
+	fx = BattleFx.new()
+	add_child(fx)
+	fx.setup($Camera3D)
 	_add_floor()
 	var party := GameState.party
 	var enemies: Array[Combatant] = [
@@ -44,6 +48,12 @@ func _ready() -> void:
 	battle.log_message.connect(func(t: String) -> void: _log.append_text(t + "\n"))
 	battle.state_changed.connect(_refresh)
 	battle.battle_ended.connect(_on_battle_ended)
+	battle.attack_telegraphed.connect(fx.telegraph)
+	battle.attack_resolved.connect(fx.resolve_attack)
+	battle.attack_cancelled.connect(fx.clear_telegraph)
+	battle.manual_evaded.connect(fx.manual_evade)
+	battle.hit_resolved.connect(fx.play_hit)
+	battle.healed.connect(fx.heal_fx)
 	battle.start(party, enemies)
 	_show_main()
 
@@ -83,7 +93,7 @@ func _spawn(list: Array[Combatant], x: float, color: Color) -> void:
 		model.rotation.y = PI / 2.0 if x < 0 else -PI / 2.0
 		add_child(model)
 		models[c] = model
-		c.damaged.connect(_on_damaged)
+		fx.register(c, model)
 		c.died.connect(_on_died)
 
 
@@ -96,6 +106,21 @@ func _make_model(c: Combatant, color: Color) -> Node3D:
 	mat.albedo_color = color
 	mesh.material_override = mat
 	root.add_child(mesh)
+	root.set_meta("mesh", mesh)
+	root.set_meta("color", color)
+	var ring := MeshInstance3D.new()
+	ring.name = "BurstRing"
+	var torus := TorusMesh.new()
+	torus.inner_radius = 1.0
+	torus.outer_radius = 1.2
+	ring.mesh = torus
+	var ring_mat := StandardMaterial3D.new()
+	ring_mat.albedo_color = Color(1.0, 0.8, 0.1)
+	ring_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	ring.material_override = ring_mat
+	ring.position.y = 0.05
+	ring.visible = false
+	root.add_child(ring)
 	var label := Label3D.new()
 	label.text = c.name
 	label.position.y = 2.6
@@ -104,16 +129,9 @@ func _make_model(c: Combatant, color: Color) -> Node3D:
 	return root
 
 
-func _on_damaged(c: Combatant, _amount: int) -> void:
-	var model: Node3D = models[c]
-	var base := model.position
-	var tween := create_tween()
-	tween.tween_property(model, "position", base + Vector3(0, 0, 0.3), 0.05)
-	tween.tween_property(model, "position", base, 0.1)
-
-
 func _on_died(c: Combatant) -> void:
 	var tween := create_tween()
+	tween.tween_interval(0.5)
 	tween.tween_property(models[c], "scale", Vector3.ZERO, 0.4)
 
 
@@ -165,6 +183,7 @@ func _build_ui(everyone: Array[Combatant]) -> void:
 func _refresh() -> void:
 	for r in _rows:
 		var c: Combatant = r[0]
+		(models[c].get_node("BurstRing") as Node3D).visible = c.burst > 0
 		(r[1] as Label).text = "%s  HP %d/%d%s" % [c.name, c.hp, c.max_hp, "  BURST" if c.burst > 0 else ""]
 	var lines := PackedStringArray()
 	for inc in battle.incoming:
