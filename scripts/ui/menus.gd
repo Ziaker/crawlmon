@@ -9,6 +9,8 @@ const TABS := ["Itens", "Status", "Segurar"]
 var mode := Mode.NONE
 var tab := 0
 
+var _was_paused := false
+
 var _root: Control
 var _title: Label
 var _list: MenuList
@@ -66,6 +68,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _open(new_mode: Mode) -> void:
 	mode = new_mode
+	_was_paused = get_tree().paused
 	get_tree().paused = true
 	_root.visible = true
 
@@ -73,7 +76,7 @@ func _open(new_mode: Mode) -> void:
 func _close() -> void:
 	mode = Mode.NONE
 	_root.visible = false
-	get_tree().paused = false
+	get_tree().paused = _was_paused
 
 
 # --- Tabs: Itens / Status / Segurar ----------------------------------------

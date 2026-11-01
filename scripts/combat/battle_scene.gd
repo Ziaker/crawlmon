@@ -4,11 +4,12 @@ extends Node3D
 ## The player controls party[0]; the others follow Tactics. All on-screen UI
 ## lives in BattleHud; BattleCamera frames the action.
 
-enum S { MAIN, FIGHT, ITEMS, TARGET, TACTICS }
+enum S { MAIN, FIGHT, ITEMS, TARGET, TACTICS, STATUS }
 
 const MODEL_SCALE := 2.5
 const TEAM_DISTANCE := 30.0  ## Units between the two lines.
-const PARTY_SLOTS := [Vector3(-0.2, 0, 0), Vector3(5.6, 0, 1.5), Vector3(-4.0, 0, -2.0)]
+# The player's character is front-left, close to the camera; the ally stands back on the right.
+const PARTY_SLOTS := [Vector3(0.6, 0, 1.5), Vector3(7.5, 0, -3.0), Vector3(-5.0, 0, -2.0)]
 const SLOWMO_SCALE := 0.3  ## Game speed after a perfect Evade.
 const SLOWMO_SECONDS := 2.0  ## Real seconds, or until the player's counter-action.
 const ENEMY_SCALE := 1.8  ## Extra scale on enemy models so they read at 30 units.
@@ -70,6 +71,7 @@ func _ready() -> void:
 	ui.add_child(hud)
 	hud.setup(battle, party, enemies, $Camera3D, models, director)
 	_menu = hud.menu
+	hud.status_closed.connect(_show_main)
 	_menu.chosen.connect(_on_chosen)
 	_menu.cancelled.connect(_on_cancel)
 	_menu.moved.connect(_on_moved)
@@ -228,6 +230,8 @@ func _end_slowmo() -> void:
 
 func _exit_tree() -> void:
 	Engine.time_scale = 1.0
+	if is_inside_tree():
+		get_tree().paused = false
 
 
 func _on_battle_ended(player_won: bool) -> void:
@@ -251,6 +255,8 @@ func _refresh() -> void:
 func _set_state(s: S) -> void:
 	var was_target := state == S.TARGET
 	state = s
+	# Tactics and Status pause the whole game while they are open.
+	get_tree().paused = s == S.TACTICS or s == S.STATUS
 	if was_target and s != S.TARGET:
 		hud.set_target(null)
 		director.cinema()
@@ -267,7 +273,8 @@ func _show_main() -> void:
 		{"text": "Fight", "detail": "%d ATB" % int(Battle.SKILL_BLOCKS)},
 		{"text": "Itens", "detail": "%d ATB" % int(Battle.ITEM_BLOCKS)},
 		{"text": "Evade", "detail": "%d ATB" % int(Battle.EVADE_BLOCKS)},
-		{"text": "Tactics", "detail": "IA"},
+		{"text": "Tactics", "detail": "PAUSA"},
+		{"text": "Status", "detail": "PAUSA"},
 	])
 	_refresh()
 
@@ -303,6 +310,11 @@ func _show_items() -> void:
 	if entries.is_empty():
 		entries.append({"text": "(vazio)", "enabled": false})
 	_menu.set_entries(entries)
+
+
+func _show_status() -> void:
+	_set_state(S.STATUS)
+	hud.open_status(battle.party, battle.enemies)
 
 
 func _show_tactics() -> void:
@@ -343,6 +355,7 @@ func _on_chosen(i: int) -> void:
 				1: _show_items()
 				2: battle.try_evade(leader, battle.find_evadable(leader))
 				3: _show_tactics()
+				4: _show_status()
 		S.FIGHT:
 			var skill := _fight_skills[i]
 			_pick_target(battle.enemies,

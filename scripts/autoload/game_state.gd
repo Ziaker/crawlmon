@@ -71,16 +71,8 @@ func _register_key(action: String, keycode: Key) -> void:
 
 
 func _build_party() -> void:
-	var pancham := Combatant.new("Pancham", 45, 10, 0.45, true)
-	pancham.inventory = inventory  # The leader uses the shared party inventory.
-	pancham.weaknesses.assign([Element.Type.PSIQUICO, Element.Type.VENTO])
-	pancham.skills.assign([
-		Skill.new("Soco Rápido", 1.2),
-		Skill.new("Golpe de Caratê", 1.5, 2, Element.Type.FISICO),
-		Skill.new("Quebra de Telha", 1.8, 3, Element.Type.FISICO),
-		Skill.new("Provocação", 1.1, 1, Element.Type.TREVAS),
-	])
 	var abra := Combatant.new("Abra", 32, 12, 0.50, true)
+	abra.inventory = inventory  # The leader uses the shared party inventory.
 	abra.weaknesses.assign([Element.Type.TREVAS, Element.Type.SOM])
 	abra.skills.assign([
 		Skill.new("Confusão", 1.4, 2, Element.Type.PSIQUICO),
@@ -88,4 +80,12 @@ func _build_party() -> void:
 		Skill.new("Onda de Choque", 1.3, 2, Element.Type.RAIO),
 		Skill.new("Teleporte Rápido", 1.1, 1, Element.Type.PSIQUICO),
 	])
-	party.assign([pancham, abra])
+	var pancham := Combatant.new("Pancham", 45, 10, 0.45, true)
+	pancham.weaknesses.assign([Element.Type.PSIQUICO, Element.Type.VENTO])
+	pancham.skills.assign([
+		Skill.new("Soco Rápido", 1.2),
+		Skill.new("Golpe de Caratê", 1.5, 2, Element.Type.FISICO),
+		Skill.new("Quebra de Telha", 1.8, 3, Element.Type.FISICO),
+		Skill.new("Provocação", 1.1, 1, Element.Type.TREVAS),
+	])
+	party.assign([abra, pancham])

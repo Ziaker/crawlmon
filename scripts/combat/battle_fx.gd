@@ -96,10 +96,10 @@ func resolve_attack(inc) -> void:
 		# The target already vanished (manual Evade); the attacker whiffs.
 		var to := t_home + Vector3(0, 1, 0)
 		if _has_projectile(element):
-			await get_tree().create_timer(CAST_AT).timeout
+			await get_tree().create_timer(CAST_AT, false).timeout
 			_projectile(a_home + Vector3(0, 1, 0), to + _flat_dir(a_home, t_home) * 7.0, COLORS[element], element)
 			total -= CAST_AT
-		await get_tree().create_timer(maxf(total, 0.3)).timeout
+		await get_tree().create_timer(maxf(total, 0.3), false).timeout
 		settle(t)
 
 
@@ -122,7 +122,7 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 	_hit_at.erase(attacker)
 	var evaded: bool = info["evaded"]
 	if _has_projectile(element):
-		await get_tree().create_timer(delay).timeout
+		await get_tree().create_timer(delay, false).timeout
 		if evaded:
 			_dodge_later(target, "ESQUIVOU! +1 ATB", 0.0, 0.7)
 		var end := to + _flat_dir(from, to) * 7.0 if evaded else to
@@ -130,7 +130,7 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 	else:
 		if evaded:
 			_dodge_later(target, "ESQUIVOU! +1 ATB", maxf(delay - 0.12, 0.0), 0.9)
-		await get_tree().create_timer(delay).timeout
+		await get_tree().create_timer(delay, false).timeout
 	if evaded:
 		return
 	var weak: bool = info["weak"]
@@ -240,13 +240,13 @@ func _hit_react(c: Combatant) -> void:
 	var token: int = _react_token.get(c, 0) + 1
 	_react_token[c] = token
 	ap.play("down", 0.05)
-	await get_tree().create_timer(0.7).timeout
+	await get_tree().create_timer(0.7, false).timeout
 	if token != _react_token[c] or not c.is_alive():
 		return
 	var pos := ap.current_animation_position
 	ap.play_backwards("down", 0.0)
 	ap.seek(pos, true)
-	await get_tree().create_timer(pos).timeout
+	await get_tree().create_timer(pos, false).timeout
 	if token == _react_token[c] and c.is_alive():
 		_reset_idle(c)
 
@@ -331,7 +331,7 @@ func _shock(ground: Vector3, color: Color, size: float, duration := 0.55) -> voi
 ## Vertical ring facing the camera.
 func _ring_cam(pos: Vector3, color: Color, size: float, duration := 0.5, delay := 0.0) -> void:
 	if delay > 0.0:
-		await get_tree().create_timer(delay).timeout
+		await get_tree().create_timer(delay, false).timeout
 	var q := VfxLib.animated_quad(self, Vector2(size, size), "ring", {"color": color, "energy": 2.2}, duration)
 	q.position = pos
 	_face_camera(q)
@@ -339,7 +339,7 @@ func _ring_cam(pos: Vector3, color: Color, size: float, duration := 0.5, delay :
 
 func _slash(pos: Vector3, color: Color, size: float, roll_deg: float, duration := 0.28, delay := 0.0) -> void:
 	if delay > 0.0:
-		await get_tree().create_timer(delay).timeout
+		await get_tree().create_timer(delay, false).timeout
 	var q := VfxLib.animated_quad(self, Vector2(size, size), "slash", {"color": color, "energy": 2.4}, duration)
 	q.position = pos
 	_face_camera(q)
@@ -571,7 +571,7 @@ func _dust_trail(m: Node3D, duration: float) -> void:
 	var t := 0.0
 	while t < duration:
 		_smoke(m.global_position + Vector3(0, 0.15, 0), Color(0.75, 0.82, 0.85), 3, Vector2(0.8, 1.5), 0.6, 0.4)
-		await get_tree().create_timer(0.07).timeout
+		await get_tree().create_timer(0.07, false).timeout
 		t += 0.07
 
 
@@ -601,9 +601,9 @@ func _has_projectile(element: Element.Type) -> bool:
 
 
 func _dodge_later(target: Combatant, text: String, delay: float, return_after: float) -> void:
-	await get_tree().create_timer(delay).timeout
+	await get_tree().create_timer(delay, false).timeout
 	dodge(target, text, true)
-	await get_tree().create_timer(return_after).timeout
+	await get_tree().create_timer(return_after, false).timeout
 	settle(target)
 
 

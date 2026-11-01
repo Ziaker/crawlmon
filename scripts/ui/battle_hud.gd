@@ -18,6 +18,8 @@ const ROMAN := ["I", "II", "III", "IV"]
 const FOOTER_H := 36.0
 const MARGIN := 28.0
 
+signal status_closed
+
 var menu: FanMenu
 
 var _battle: Battle
@@ -31,6 +33,7 @@ var _log: Label
 var _log_lines: Array[String] = []
 var _tabs: CameraTabs
 var _target: Combatant
+var _status: StatusPanel
 var _shown_hp: Dictionary = {}  ## Combatant -> float
 var _last_hp: Dictionary = {}
 var _hp_hold: Dictionary = {}  ## Combatant -> ticks (msec) before the bar starts moving
@@ -52,6 +55,7 @@ func setup(battle: Battle, party: Array[Combatant], enemies: Array[Combatant], c
 	_camera = camera
 	_models = models
 	_director = director
+	process_mode = Node.PROCESS_MODE_ALWAYS  # Keeps working while Tactics/Status pause the game.
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_add_vignette()
@@ -80,6 +84,12 @@ func setup(battle: Battle, party: Array[Combatant], enemies: Array[Combatant], c
 	_log.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_tabs = CameraTabs.new()
 	add_child(_tabs)
+	_status = StatusPanel.new()
+	add_child(_status)
+	_status.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_status.closed.connect(func() -> void:
+		menu.show()
+		status_closed.emit())
 	director.mode_changed.connect(func(m: BattleCamera.Mode) -> void: _tabs.mode = m; _tabs.queue_redraw())
 	battle.log_message.connect(_on_log)
 
@@ -141,6 +151,12 @@ func _track_hp() -> void:
 		if now >= _hp_hold.get(c, 0):
 			shown = move_toward(shown, float(c.hp), maxf(absf(shown - c.hp) * 0.12, 0.35))
 		_shown_hp[c] = shown
+
+
+## Pause-screen with everyone's status; closing it emits status_closed.
+func open_status(party: Array[Combatant], enemies: Array[Combatant]) -> void:
+	menu.hide()
+	_status.open(party, enemies)
 
 
 func set_target(c: Combatant) -> void:

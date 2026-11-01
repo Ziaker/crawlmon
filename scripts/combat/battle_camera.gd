@@ -58,7 +58,7 @@ func action(look_pos: Vector3, hold := 1.2) -> void:
 		return
 	_go(Mode.IMPACTO, CINEMA_POS, look_pos + Vector3(0, 1.4, 0), 0.8)
 	var token := _token
-	await get_tree().create_timer(hold + 0.8).timeout
+	await get_tree().create_timer(hold + 0.8, false).timeout
 	if token == _token:
 		cinema()
 

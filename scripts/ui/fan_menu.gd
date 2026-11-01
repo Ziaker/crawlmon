@@ -19,8 +19,8 @@ const CREAM := Color("f0eedf")
 const NAVY := Color("0a1929")
 
 const FAN_W := 232.0
-const FAN_H := 42.0
-const FAN_STEP := 46.0
+const FAN_H := 38.0
+const FAN_STEP := 42.0
 const DRAWER_W := 262.0
 const ROW_H := 36.0
 const MAX_ROWS := 5
@@ -162,7 +162,8 @@ func _draw_drawer() -> void:
 		else:
 			draw_line(Vector2(10, y + ROW_H - 2), Vector2(DRAWER_W - 10, y + ROW_H - 2), Color("354758"), 1.0)
 		var fg := INK if active else CREAM
-		draw_string(small, Vector2(16, y + 23), _texts[i], HORIZONTAL_ALIGNMENT_LEFT, 150, 15, Color(fg, alpha))
+		var detail_w := small.get_string_size(_details[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x
+		draw_string(small, Vector2(16, y + 23), _texts[i], HORIZONTAL_ALIGNMENT_LEFT, DRAWER_W - 40.0 - detail_w, 15, Color(fg, alpha))
 		if _details[i] != "":
 			BattleHud.text_right(self, small, DRAWER_W - 14, y + 22, _details[i], 10, Color(INK if active else GOLD, alpha))
 	if _texts.size() > rows:
