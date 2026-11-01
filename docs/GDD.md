@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.15 — Rodada 24 de gameplay consolidada, 2026-11-01.  
+> **Revisão:** 1.16 — Rodada 25 de gameplay consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -63,6 +63,8 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
 **APROVADO (R24-Q1 = A):** **avançar de andar ao encontrar escada ou saída no mapa**, sem precisar derrotar todos os inimigos. Permanece obrigatório chegar ao último andar e vencer o chefe para concluir a dungeon. Detalhes das passagens pendentes.
 
+**APROVADO (R25-Q1 = A):** a progressão geral do jogo segue uma **campanha que desbloqueia novas dungeons conforme conquistas e objetivos**. **PENDENTE:** roteiro, requisitos concretos de desbloqueio, ordenação e possibilidade de revisitar dungeons. Cada dungeon ainda exige chegar ao último andar e derrotar seu chefe para ser concluída.
+
 **APROVADO (R23-Q3 = A):** **derrota definitiva em batalha encerra a exploração atual**. Consequências sobre Pokémon, inventário e progresso seguem pendentes; não presumir perda permanente.
 
 **APROVADO (R23-Q4 = B):** **Pokémon podem ser recrutados durante a exploração 2D por interações ou aproximação**. O contato com Pokémon **inimigos visíveis** continua iniciando combate 3D (R8-Q5). **PENDENTE:** diferenciar interações de recrutamento e encontros hostis, condições e reservas; não presumir recrutamento automático de inimigos por aproximação.
@@ -71,12 +73,18 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
 **APROVADO (R24-Q3 = A):** **é possível recrutar mesmo com três Pokémon ativos, enviando o novo Pokémon para uma reserva**. Capacidade, gestão e trocas permanecem pendentes.
 
+**APROVADO (R25-Q2 = C, resposta provisória “A po ora, vou criar um hub pra isso depois masmais tarde”):** o criador indicou **A por ora**: **permitir provisoriamente alternar Pokémon entre a equipe ativa e a reserva durante a exploração**, preservando o máximo de três ativos. **O hub é uma intenção de projeto para momento posterior**, não funcionalidade já implementada nem regra definida sobre o local definitivo das trocas. **PENDENTE:** design do hub, regras definitivas de acesso à reserva, limites e momentos de troca. Não presumir que o hub será obrigatório para trocar de equipe.
+
 **APROVADO (R24-Q5 = A):** **Pokémon recrutados na expedição continuam pertencendo ao jogador após derrota definitiva**. Destino na equipe/reserva e perdas de itens/progresso pendentes.
 
+**APROVADO (R25-Q4 = C, “apenas itens que estao sendo segurados nao sao perdidos”):** na **derrota definitiva de uma expedição**, entre os **itens obtidos durante aquela expedição**, **somente os itens que estiverem sendo segurados não são perdidos; os demais itens obtidos na expedição são perdidos**. **PENDENTE:** definição operacional de “segurando” e quais Pokémon/personagens podem segurar itens, regras para itens trazidos de antes da expedição e outras consequências. Não confundir essa regra de itens com o pertencimento preservado dos Pokémon recrutados (R24-Q5).
+
 **APROVADO (R23-Q5 = C):** resposta literal **“combinacao com mestres e possiveis personagens que dao hms”**. O sistema de aprendizado de Moves admite **fontes combinadas, incluindo mestres e possíveis personagens que concedem HMs**. **APROVADO posteriormente (R24-Q4 = C):** HMs e TMs são **somente para combate por enquanto**, sem funções de exploração. **PENDENTE:** demais fontes, obtenção, requisitos, relação de HMs/TMs com os quatro Moves equipados e seus slots. Não presumir custos.
+
+**APROVADO (R25-Q3 = A):** quando um Pokémon **satisfizer os requisitos para sua evolução de espécie**, **o jogador poderá escolher quando efetuar a evolução**, em vez de ela ocorrer obrigatoriamente de forma automática assim que o requisito for atingido. **PENDENTE:** requisitos por espécie, interface, possíveis restrições e efeitos de evolução; não confundir com subida de nível ou distribuição de atributos.
  **APROVADO posteriormente (R23-Q1 = A):** movimento contínuo e livre nas quatro direções cardeais, sem movimento diagonal direto. **PENDENTE:** controles, colisão e animação.
 
-**PENDENTE:** sprites 2D, algoritmo de salas/corredores, seeds, colocação das **escadas/saídas entre andares** (R24-Q1), patrulha/detecção, estado de inimigos/itens ao revisitar, protagonistas iniciais, elegibilidade e resultados da **interação voluntária de recrutamento** (R24-Q2), gestão/trocas da **reserva** (R24-Q3), evolução, inventário, **consequências da derrota definitiva não ligadas à perda de Pokémon recrutados** (R24-Q5), arenas, transições e narrativa. Não presumir resolvidas essas pendências.
+**PENDENTE:** sprites 2D, algoritmo de salas/corredores, seeds, localização de escadas/saídas, patrulha/detecção, estado de inimigos e itens em revisitas, protagonistas iniciais, elegibilidade e resultados das interações de recrutamento, **regras definitivas de trocas e design do hub futuro** (R25-Q2), requisitos/efeitos da **evolução escolhida pelo jogador** (R25-Q3), inventário e definição de itens **segurados** versus demais itens da expedição (R25-Q4), outras consequências de derrota, arenas, transições, narrativa e critérios específicos de **desbloqueio de dungeons da campanha** (R25-Q1). Não presumir resolvidas essas pendências.
 
 ### Fluxo de experiência (somente encadeamento conceitual)
 
@@ -461,6 +469,21 @@ Sem decisão adicional, não fixar:
 
 **Preservação:** nenhuma regra nova sobre custos de Moves, número de slots, PP ou fórmula. Esta é uma consolidação documental de cinco decisões de gameplay, não uma implementação.
 
+
+### 7.16. Campanha, troca de equipe, evolução, itens e descobertas — Rodada 25
+
+**APROVADO (R25-Q1 = A) — campanha:** a progressão geral segue **campanha com novas dungeons desbloqueadas por conquistas e objetivos**. **PENDENTE:** objetivos concretos, sequência, estrutura narrativa, desbloqueios e repetição de dungeons. Permanecem os requisitos de último andar e chefe por dungeon.
+
+**APROVADO (R25-Q2 = C) — trocas provisórias e hub posterior:** resposta literal do criador **“A po ora, vou criar um hub pra isso depois masmais tarde”**. A referência expressa à alternativa **A por ora** permite **trocar Pokémon entre a equipe ativa e a reserva durante a exploração como comportamento provisório**, ainda com restrições não especificadas, mantendo **três ativos no máximo**. O criador pretende criar **um hub posteriormente**, mas **não aprovou agora a estrutura, funções ou a substituição futura das trocas pelo hub**. **PENDENTE:** mecânica definitiva de trocas, interface, disponibilidade da reserva e definição posterior do hub. Nenhum hub foi implementado por esta revisão.
+
+**APROVADO (R25-Q3 = A) — evolução de espécie escolhida:** **a evolução de espécie fica disponível ao Pokémon depois que os requisitos forem atendidos, e o jogador escolhe quando realizá-la**. Não transformar a evolução em evento automático obrigatório. **PENDENTE:** requisitos por espécie, local/interface e demais efeitos. A distribuição manual de pontos do protagonista e o crescimento automático dos aliados seguem intactos.
+
+**APROVADO (R25-Q4 = C) — derrota e itens segurados:** resposta literal **“apenas itens que estao sendo segurados nao sao perdidos”**. Em derrota definitiva, **dos itens obtidos na expedição, os que estiverem sendo segurados são preservados e os demais são perdidos**. **PENDENTE:** definição de segurar (sem presumir equivalência exata a equipado), regras para itens de posse anterior à expedição, disponibilidade de itens segurados e outras condições. Os Pokémon recrutados continuam pertencendo ao jogador após derrota (R24-Q5); não inferir perda de Pokémon.
+
+**APROVADO (R25-Q5 = A) — prioridade do conteúdo procedural:** **priorizar eventos, salas secretas, recompensas especiais e NPCs** nas dungeons procedurais, além de inimigos e passagens já aprovados. **PENDENTE:** catálogo de eventos, papel dos NPCs, critérios de salas secretas, recompensas e distribuição por dungeon. Essa prioridade **não proíbe** armadilhas, desafios ambientais ou salas especiais de combate; esses elementos continuam sem prioridade específica aprovada nesta decisão.
+
+**Preservação:** as decisões de R25 não definem fórmulas, valores de progressão, perdas de recursos não relacionados, PP, novos custos ATB/Burst, nem regras de TM/HM. Nenhum código ou hub foi implementado.
+
 ## 8. Estado real do repositório (inspeção de código, não de execução)
 
 Referência: `main` em `1171b5f3c427edc34c486c82d42569f41fd0ea62`. Projeto **Godot 4.7**, configurado em `project.godot`, com cena inicial 2D.
@@ -623,6 +646,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-138 | R24-Q3 = A: **recrutar com três Pokémon ativos e enviar o novo recrutado à reserva**, limites e gestão pendentes. |
 | D-139 | R24-Q4 = C — “hms e tms so para combate por ora”: **HMs e TMs exclusivamente para combate por enquanto**, sem exploração. |
 | D-140 | R24-Q5 = A: **Pokémon recrutados permanecem pertencendo ao jogador após derrota definitiva da expedição**, demais consequências pendentes. |
+| D-141 | R25-Q1 = A: **campanha com novas dungeons desbloqueadas por conquistas e objetivos**, detalhes de progressão pendentes. |
+| D-142 | R25-Q2 = C — “A po ora, vou criar um hub pra isso depois masmais tarde”: **A provisoriamente**, permitir troca equipe ativa/reserva durante exploração; hub planejado para depois, sem regra definitiva ou implementação. |
+| D-143 | R25-Q3 = A: **evolução de espécie disponível após requisitos e realizada quando o jogador escolher**, requisitos e demais efeitos pendentes. |
+| D-144 | R25-Q4 = C — “apenas itens que estao sendo segurados nao sao perdidos”: **itens obtidos na expedição só são preservados após derrota se estiverem sendo segurados; demais itens obtidos nela são perdidos**, outros casos pendentes. |
+| D-145 | R25-Q5 = A: **priorizar eventos, salas secretas, recompensas especiais e NPCs em dungeons procedurais**, sem excluir outros conteúdos. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -960,39 +988,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Preservação:** as decisões D-001 a D-135 e a regra de contato hostil permanecem. A resposta personalizada C para HMs/TMs não estabelece custos, slots, lista de Moves nem exploração.
 
-## 10.24. Rodada 25 — campanha, equipe e evolução (cinco perguntas abertas)
+## 10.24. Rodada 25 — campanha, equipe e evolução (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas; nenhuma alternativa foi aprovada. Perguntas de gameplay, sem microdecisões técnicas.
+**Status:** FECHADA — 5/5 decisões aprovadas em 2026-11-01, registradas nas decisões D-141 a D-145.
 
-**R25-Q1 — Qual estrutura organiza as dungeons disponíveis para jogar?**  
-A. **Campanha com desbloqueio progressivo de novas dungeons**, seguindo conquistas e objetivos da aventura.  
-B. **Seleção mais aberta de dungeons para expedições**, com desbloqueios específicos pendentes.  
-C. Outra estrutura, descrita pelo criador.  
-*Cada dungeon exige último andar e chefe para conclusão.*
+| ID | Resposta literal do criador | Regra aprovada / pendências |
+| --- | --- | --- |
+| **R25-Q1** | **A** — “A progressão geral segue uma campanha que desbloqueia novas dungeons conforme conquistas e objetivos.” | **Campanha com desbloqueio progressivo de dungeons**, condições concretas pendentes. |
+| **R25-Q2** | **C** — “A po ora, vou criar um hub pra isso depois masmais tarde” | **Usar provisoriamente a alternativa A:** trocas entre equipe ativa e reserva durante a exploração; **hub futuro** apenas como intenção, sem estrutura ou implementação aprovada. |
+| **R25-Q3** | **A** — “A evolução de espécie fica disponível após satisfazer requisitos, e o jogador escolhe quando realizá-la.” | **Evolução escolhida pelo jogador depois dos requisitos**, não automática obrigatória. |
+| **R25-Q4** | **C** — “apenas itens que estao sendo segurados nao sao perdidos” | **Na derrota definitiva, preservar somente itens segurados entre os itens obtidos na expedição**; os demais obtidos nela se perdem. Tratamento de itens anteriores pendente. |
+| **R25-Q5** | **A** — “Priorizar eventos, salas secretas, recompensas especiais e NPCs nas dungeons procedurais.” | **Priorizar descobertas, eventos, NPCs e recompensas especiais**, sem excluir conteúdo ambiental. |
 
-**R25-Q2 — O jogador pode alternar Pokémon da equipe ativa e da reserva durante a exploração?**  
-A. **Sim**, reorganizar os três ativos usando a reserva durante a expedição, com restrições futuras.  
-B. **Não**, trocas de equipe/reserva só fora da exploração, salvo exceções futuras.  
+**Preservação:** R25-Q2 e R25-Q4 são respostas C personalizadas, não aprovações irrestritas das antigas A/B; as decisões D-001 a D-140, as regras de equipe ativa, recrutamento, ATB/Burst, ausência de PP e histórico são preservadas.
+
+## 10.25. Rodada 26 — protagonista, exploração e progressão (cinco perguntas abertas)
+
+**Status:** ABERTA — 0/5 respostas. Todas as questões tratam de sistemas fundamentais ainda sem decisão, não de detalhes numéricos ou técnicos.
+
+**R26-Q1 — Como o jogador escolhe seu Pokémon protagonista no início da aventura?**  
+A. **Escolher entre um conjunto de espécies iniciais disponíveis**, com catálogo e apresentação a definir.  
+B. **Receber um Pokémon protagonista sorteado dentre espécies elegíveis**, com catálogo e probabilidades a definir.  
+C. Outro método de início, descrito pelo criador.  
+*O protagonista é controlado diretamente; Nature é sorteada conforme regras anteriores, sem se confundir com espécie.*
+
+**R26-Q2 — Como funcionam os Pokémon disponíveis para recrutamento dentro das dungeons?**  
+A. **Pokémon não hostis encontrados no mapa podem oferecer oportunidades de recrutamento por interação voluntária**, com condições a definir; inimigos hostis seguem iniciando combate por contato.  
+B. **Pokémon que normalmente são hostis podem aparecer em situações especiais como candidatos a recrutamento**, sinalizadas no mapa, com requisitos/eventos pendentes; contato hostil normal segue iniciando combate.  
+C. Outra forma de apresentar candidatos, especificada pelo criador.  
+*Uma interação voluntária continua obrigatória; não decidir chance, taxa ou confirmação automática.*
+
+**R26-Q3 — Como distribuir experiência de combate entre os Pokémon da equipe?**  
+A. **Todos os Pokémon ativos que participarem do combate recebem experiência da vitória**, mesmo que não finalizem o inimigo; divisão exata pendente.  
+B. **Experiência de combate é recebida principalmente pelos Pokémon que executarem ações relevantes**, com elegibilidade e divisão ainda a definir.  
 C. Outra regra, descrita pelo criador.  
-*Reservas já estão aprovadas; limite de três ativos permanece.*
+*Os níveis existem; isso não define quantidade numérica de XP, experiência dos reservados ou curvas.*
 
-**R25-Q3 — Como acontece a evolução de espécie dos Pokémon?**  
-A. **O jogador escolhe quando evoluir após satisfazer requisitos**, que serão definidos posteriormente.  
-B. **Evolução ocorre automaticamente ao satisfazer os requisitos**, ainda a definir.  
-C. Outro sistema, descrito pelo criador.  
-*Não confundir evolução de espécie com ganho de níveis e pontos.*
+**R26-Q4 — O que acontece imediatamente depois de vencer o chefe e concluir uma dungeon?**  
+A. **Encerrar a expedição e retornar à seleção/progressão da campanha**, com acesso às novas dungeons desbloqueadas e recompensas ainda a definir.  
+B. **Oferecer continuidade opcional na mesma expedição para conteúdo adicional**, além da conclusão normal da dungeon, com detalhes pendentes.  
+C. Outro desfecho, descrito pelo criador.  
+*O hub mencionado na Rodada 25 permanece para planejamento posterior; não criar ou exigir hub agora.*
 
-**R25-Q4 — O que acontece com os itens obtidos na expedição se ela terminar por derrota definitiva?**  
-A. **Itens obtidos nessa expedição são mantidos pelo jogador.**  
-B. **Itens obtidos nessa expedição são perdidos**, preservando itens anteriores, salvo regras futuras.  
-C. Outra consequência, descrita pelo criador.  
-*Pokémon recrutados continuam pertencendo ao jogador após derrota.*
-
-**R25-Q5 — Que conteúdo especial deve ter prioridade além de inimigos e escadas nas dungeons?**  
-A. **Eventos, salas secretas, recompensas e NPCs**, com condições concretas pendentes.  
-B. **Armadilhas, desafios ambientais e salas especiais de combate**, com condições concretas pendentes.  
-C. Uma combinação ou outro conjunto, descrito pelo criador.  
-*Não fixar quantidades, probabilidades nem detalhes técnicos.*
+**R26-Q5 — Que papel as salas secretas terão na exploração?**  
+A. **Descobertas opcionais com recompensas, eventos e NPCs especiais**, não obrigatórias para chegar ao chefe.  
+B. **Desafios opcionais de alto risco e recompensa**, podendo incluir combate ou encontros especiais, sem impedir a progressão principal.  
+C. Outra proposta ou combinação, descrita pelo criador.  
+*Salas secretas já têm prioridade no conteúdo procedural; esta questão decide seu papel na experiência.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -1033,5 +1075,7 @@ C. Uma combinação ou outro conjunto, descrito pelo criador.
 | 1.14 | 2026-11-01 | Rodada 23 reformulada (D-131 a D-135): exploração 2D cardinal contínua; último andar e chefe para conclusão; derrota definitiva encerra exploração; recrutamento por interação/aproximação em mapa 2D sem revogar encontros hostis; aprendizado combinado com mestres e possíveis NPCs que concedem HMs. Perguntas antigas não aprovadas da R23 substituídas; R24 aberta com foco em gameplay. | Rodada 23 fechada / Rodada 24 aberta |
 
 | 1.15 | 2026-11-01 | Rodada 24 (D-136 a D-140): escadas/saídas para avançar sem limpar todos inimigos; recrutamento voluntário no mapa; reserva com equipe ativa completa; HMs e TMs exclusivamente de combate (C); Pokémon recrutados mantidos após derrota definitiva. Abre Rodada 25 com perguntas centrais de campanha, equipe, evolução e exploração. | Rodada 24 fechada / Rodada 25 aberta |
+
+| 1.16 | 2026-11-01 | Rodada 25 (D-141 a D-145): campanha com desbloqueio progressivo de dungeons; trocas equipe/reserva provisoriamente durante exploração, hub futuro ainda não definido (R25-Q2 C); evolução de espécie mediante requisitos sob escolha do jogador; derrota preserva somente itens segurados dentre os obtidos na expedição (R25-Q4 C), perdendo os demais obtidos; priorizar eventos, salas secretas, recompensas especiais e NPCs. Abre Rodada 26 com foco em protagonista, recrutamento, XP e conclusão. | Rodada 25 fechada / Rodada 26 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
