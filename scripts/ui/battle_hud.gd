@@ -36,6 +36,8 @@ var _tabs: CameraTabs
 var _target: Combatant
 var _status: StatusPanel
 var _status_open := false
+var _inc_tags: Dictionary = {}  ## Battle.Incoming -> AttackTag
+var _hint: EvadeHint
 var _shown_hp: Dictionary = {}  ## Combatant -> float
 var _last_hp: Dictionary = {}
 var _hp_hold: Dictionary = {}  ## Combatant -> ticks (msec) before the bar starts moving
@@ -82,10 +84,14 @@ func setup(battle: Battle, party: Array[Combatant], enemies: Array[Combatant], c
 	_alert.size = Vector2(1280, 60)
 	_alert.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_log = _make_label(Vector2(866, 108), 13, Color(CREAM, 0.85))
-	_log.size = Vector2(386, 56)
+	_log.size = Vector2(386, 64)
 	_log.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_log.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_log.clip_text = true
 	_tabs = CameraTabs.new()
 	add_child(_tabs)
+	_hint = EvadeHint.new()
+	add_child(_hint)
 	_status = StatusPanel.new()
 	add_child(_status)
 	_status.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -199,10 +205,11 @@ func _process(_delta: float) -> void:
 	for inc in _battle.incoming:
 		if not inc.dodged:
 			lines.append("! %s  >  %s   %.1fs" % [inc.attacker.name, inc.target.name, inc.time_left])
-	_alert.text = "\n".join(lines)
+	_alert.text = ""  # The floating attack tags replace this text.
 	_track_hp()
 	_layout_cards()
 	_layout_tags()
+	_sync_incoming()
 	queue_redraw()
 
 
@@ -214,6 +221,42 @@ func _screen_pos(c: Combatant, height: float) -> Variant:
 	if _camera.is_position_behind(world):
 		return null
 	return _camera.unproject_position(world)
+
+
+func _sync_incoming() -> void:
+	var live := {}
+	if not _status_open:
+		for inc in _battle.incoming:
+			if inc.dodged:
+				continue
+			live[inc] = true
+			var tag: AttackTag = _inc_tags.get(inc)
+			if tag == null:
+				tag = AttackTag.new()
+				tag.inc = inc
+				add_child(tag)
+				_inc_tags[inc] = tag
+			var p: Variant = _screen_pos(inc.attacker, _head_of(inc.attacker) + (0.4 if not inc.attacker.is_player else 0.2))
+			tag.visible = p != null
+			if p != null:
+				var lift := 72.0 if not inc.attacker.is_player else 10.0
+				tag.position = (p as Vector2) - Vector2(tag.size.x * 0.5, tag.size.y + lift)
+			tag.queue_redraw()
+	for inc in _inc_tags.keys():
+		if not live.has(inc):
+			(_inc_tags[inc] as Control).queue_free()
+			_inc_tags.erase(inc)
+	# Evade prompt on the player's character.
+	var leader: Combatant = _battle.party[0]
+	var evadable = _battle.find_evadable(leader) if not _status_open else null
+	_hint.visible = evadable != null
+	if evadable != null:
+		var hp: Variant = _screen_pos(leader, _head_of(leader) + 0.3)
+		_hint.visible = hp != null
+		if hp != null:
+			_hint.position = (hp as Vector2) - Vector2(_hint.size.x * 0.5, _hint.size.y + 14.0)
+		_hint.time_left = evadable.time_left
+		_hint.queue_redraw()
 
 
 func _layout_cards() -> void:
@@ -414,3 +457,49 @@ class CameraTabs extends Control:
 			BattleHud.slant(self, r, 7.0, LIME if on else Color(0.05, 0.1, 0.16, 0.88))
 			draw_string(FanMenu.title_font(), Vector2(r.position.x, r.position.y + 21), "%02d" % (i + 1), HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 18, INK if on else Color("9cb4bb"))
 			draw_string(font, Vector2(r.position.x, r.position.y + 36), NAMES[i], HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 9, INK if on else Color("9cb4bb"))
+
+
+# --- Incoming attack tag -----------------------------------------------------------
+
+## Floating label over an attacker: move name, who it targets and a countdown bar.
+class AttackTag extends Control:
+	var inc
+
+	func _init() -> void:
+		size = Vector2(160, 48)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		if inc == null:
+			return
+		var font := FanMenu.body_font()
+		var col: Color = BattleFx.COLORS[inc.element]
+		var enemy: bool = not inc.attacker.is_player
+		BattleHud.slant(self, Rect2(Vector2(3, 4), size - Vector2(3, 4)), 7.0, Color(0, 0, 0, 0.5))
+		BattleHud.slant(self, Rect2(Vector2.ZERO, size - Vector2(3, 4)), 7.0, Color(0.04, 0.08, 0.14, 0.94))
+		draw_rect(Rect2(0, 0, 6, size.y - 4), col)
+		draw_string(font, Vector2(14, 17), String(inc.label).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, size.x - 24, 13, Color.WHITE)
+		draw_string(font, Vector2(14, 31), "%s  >  %s" % [inc.attacker.name, inc.target.name], HORIZONTAL_ALIGNMENT_LEFT, size.x - 24, 10, CORAL if enemy else AQUA)
+		var k := clampf(1.0 - inc.time_left / Battle.WINDUP, 0.0, 1.0)
+		draw_rect(Rect2(14, 36, size.x - 30, 4), Color(1, 1, 1, 0.15))
+		draw_rect(Rect2(14, 36, (size.x - 30) * k, 4), col)
+
+
+## Pulsing prompt over the player's character while an attack aimed at it can
+## still be evaded.
+class EvadeHint extends Control:
+	var time_left := 0.0
+
+	func _init() -> void:
+		size = Vector2(190, 50)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		visible = false
+
+	func _draw() -> void:
+		var font := FanMenu.body_font()
+		var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.012)
+		BattleHud.slant(self, Rect2(Vector2(4, 5), size - Vector2(4, 5)), 8.0, Color(0, 0, 0, 0.5))
+		BattleHud.slant(self, Rect2(Vector2.ZERO, size - Vector2(4, 5)), 8.0, LIME.lerp(Color.WHITE, pulse * 0.5))
+		draw_string(FanMenu.title_font(), Vector2(16, 30), "ESPAÇO", HORIZONTAL_ALIGNMENT_LEFT, -1, 26, INK)
+		draw_string(font, Vector2(104, 21), "DESVIAR!", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, INK)
+		draw_string(font, Vector2(104, 36), "%.1fs" % time_left, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(INK, 0.7))

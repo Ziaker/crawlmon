@@ -27,9 +27,11 @@ const STAND_GAP := 2.6  ## Where a melee attacker stops, in front of its target.
 const HIT_AT := 0.45  ## Seconds into the attack clip when the strike lands.
 const ATTACK_HOLD := 0.6  ## Time spent finishing the attack clip after the strike.
 const CAST_AT := 0.5  ## Seconds into a cast when the effect leaves the caster.
+const WALK_SPEED := 2.4  ## Units per second while wandering.
 
 
 var cam: BattleCamera  ## Set by the battle scene; frames each attack.
+var leader: Combatant  ## The player's character: the camera only follows actions involving it.
 
 var _models: Dictionary = {}  ## Combatant -> Node3D
 var _home: Dictionary = {}  ## Combatant -> Vector3
@@ -38,12 +40,17 @@ var _tweens: Dictionary = {}  ## Combatant -> Tween (movement)
 var _telegraphs: Dictionary = {}  ## Battle.Incoming -> Array[Node]
 var _hit_at: Dictionary = {}  ## attacker -> seconds until its strike lands
 var _react_token: Dictionary = {}  ## Combatant -> int
+var _slot: Dictionary = {}  ## Combatant -> Vector3 (spawn spot; wandering stays near it)
+var _busy_until: Dictionary = {}  ## Combatant -> msec; no wandering before that
+var _displaced: Dictionary = {}  ## Combatant -> bool (standing off its home after a dodge)
 
 
 func register(c: Combatant, model: Node3D) -> void:
 	_models[c] = model
 	_home[c] = model.position
 	_home_yaw[c] = model.rotation.y
+	_slot[c] = model.position
+	_wander_loop(c)
 
 
 # --- Battle events ---------------------------------------------------------
@@ -51,6 +58,10 @@ func register(c: Combatant, model: Node3D) -> void:
 ## An attack starts winding up: the attacker plays its charge pose and a
 ## shrinking ring + line shows who will be hit and when.
 func telegraph(inc) -> void:
+	_rebase(inc.attacker)
+	_rebase(inc.target)
+	_busy_for(inc.attacker, Battle.WINDUP + 1.0)
+	_busy_for(inc.target, Battle.WINDUP + 1.2)
 	var a_home: Vector3 = _home[inc.attacker]
 	var t_home: Vector3 = _home[inc.target]
 	var warn := TELEGRAPH_COLOR if not inc.attacker.is_player else ALLY_COLOR
@@ -84,14 +95,16 @@ func resolve_attack(inc) -> void:
 		var run_t := clampf(a_home.distance_to(stand) / RUN_SPEED, 0.35, 0.8)
 		_hit_at[a] = run_t + HIT_AT
 		total = _melee(a, stand, dir, run_t)
-		if cam != null:
+		if cam != null and (a == leader or t == leader):
 			cam.action((a_home + t_home) * 0.5)
 	else:
 		_hit_at[a] = CAST_AT
 		total = _cast(a, dir, COLORS[element])
-		if cam != null:
+		if cam != null and (a == leader or t == leader):
 			cam.action(t_home)
 	_hold_hp(t, float(_hit_at[a]) + 0.3)
+	_busy_for(a, total + 0.8)
+	_busy_for(t, total + 1.6)
 	if inc.dodged:
 		# The target already vanished (manual Evade); the attacker whiffs.
 		var to := t_home + Vector3(0, 1, 0)
@@ -135,7 +148,7 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 		return
 	var weak: bool = info["weak"]
 	var crit: bool = info["crit"]
-	if (weak or crit) and cam != null:
+	if (weak or crit) and cam != null and (attacker == leader or target == leader):
 		cam.speed_lines()
 	_impact(element, to, color, weak or crit)
 	flash(target)
@@ -164,6 +177,73 @@ func heal_fx(_actor: Combatant, target: Combatant, amount: int) -> void:
 	_ring(home + Vector3(0, 0.05, 0), green, Vector3.ONE * 2.0, Vector3.ONE * 0.5, 0.6)
 	_burst(home + Vector3(0, 0.3, 0), green, 22, 2.0, Vector3(0, 4, 0), 0.08, 0.9)
 	float_text(home + Vector3(0, 2.4, 0), "+%d" % amount, green, 64)
+
+
+# --- Idle wandering ---------------------------------------------------------------
+
+## Every living character occasionally walks to a nearby spot (turning toward the
+## move, then back to face the opponent). Attacks, dodges and hit reactions mark
+## the character busy and cancel the walk; the resting spot (`_home`) follows
+## the character so every effect keeps using its real position.
+func _wander_loop(c: Combatant) -> void:
+	await get_tree().create_timer(randf_range(0.6, 2.6), false).timeout
+	while is_inside_tree():
+		if _can_wander(c):
+			_wander_step(c)
+		await get_tree().create_timer(randf_range(2.6, 5.2), false).timeout
+
+
+func _can_wander(c: Combatant) -> bool:
+	var m: Node3D = _models[c]
+	return c.is_alive() and m.visible and not _displaced.get(c, false) \
+		and Time.get_ticks_msec() >= _busy_until.get(c, 0)
+
+
+func _wander_step(c: Combatant) -> void:
+	var m: Node3D = _models[c]
+	var slot: Vector3 = _slot[c]
+	var rx := 2.2 if c.is_player else 3.0
+	var rz := 1.2 if c.is_player else 2.0
+	var target := slot + Vector3(randf_range(-rx, rx), 0.0, randf_range(-rz, rz))
+	if c == leader:  # Keep the player's character clear of the left-hand HUD.
+		target.x = clampf(target.x, slot.x - 0.6, slot.x + 2.2)
+	var d := target - m.position
+	d.y = 0.0
+	if d.length() < 1.2:
+		return
+	for other in _models:
+		if other != c and other.is_player == c.is_player and other.is_alive():
+			if (_home[other] as Vector3).distance_to(target) < 3.0:
+				return
+	var yaw_home: float = _home_yaw[c]
+	var yaw_move := atan2(d.x, d.z)
+	var tw := _move(c)
+	tw.tween_callback(func() -> void: _play(c, "walk"))
+	tw.tween_method(func(k: float) -> void: m.rotation.y = lerp_angle(yaw_home, yaw_move, k), 0.0, 1.0, 0.2)
+	tw.tween_property(m, "position", target, d.length() / WALK_SPEED)
+	tw.tween_callback(func() -> void:
+		_home[c] = target
+		_reset_idle(c))
+	tw.tween_method(func(k: float) -> void: m.rotation.y = lerp_angle(yaw_move, yaw_home, k), 0.0, 1.0, 0.3)
+
+
+func _busy_for(c: Combatant, seconds: float) -> void:
+	_busy_until[c] = maxi(_busy_until.get(c, 0), Time.get_ticks_msec() + int(seconds * 1000.0))
+
+
+## Cancel any walk in progress and face the opponent again.
+func _stop_moving(c: Combatant) -> void:
+	if _tweens.has(c) and (_tweens[c] as Tween).is_valid():
+		(_tweens[c] as Tween).kill()
+	var m: Node3D = _models[c]
+	m.rotation.y = _home_yaw[c]
+
+
+## The character's current resting spot becomes its home.
+func _rebase(c: Combatant) -> void:
+	_stop_moving(c)
+	if not _displaced.get(c, false):
+		_home[c] = (_models[c] as Node3D).position
 
 
 # --- Character motion --------------------------------------------------------
@@ -209,6 +289,9 @@ func _cast(a: Combatant, _dir: Vector3, color: Color) -> float:
 ## Vanish in a ground dash and reappear to the side/behind. `hold` keeps the
 ## character displaced until settle() is called.
 func dodge(target: Combatant, text: String, hold := false) -> void:
+	_stop_moving(target)
+	_displaced[target] = true
+	_busy_for(target, 2.4)
 	var m: Node3D = _models[target]
 	var home: Vector3 = _home[target]
 	var side := -1.0 if target.is_player else 1.0
@@ -220,7 +303,7 @@ func dodge(target: Combatant, text: String, hold := false) -> void:
 	if not hold:
 		tw.tween_interval(0.6)
 		tw.tween_callback(func() -> void: settle(target))
-	float_text(home + Vector3(0, 3.0, 0), text, DODGE_COLOR, 56)
+	float_text(home + Vector3(0, 3.0, 0), text, DODGE_COLOR, 40)
 
 
 ## Return to the home spot with another ground dash.
@@ -237,6 +320,8 @@ func _hit_react(c: Combatant) -> void:
 	var ap := _anim_player(c)
 	if ap == null or not ap.has_animation("down"):
 		return
+	_stop_moving(c)
+	_busy_for(c, 1.6)
 	var token: int = _react_token.get(c, 0) + 1
 	_react_token[c] = token
 	ap.play("down", 0.05)
@@ -559,6 +644,7 @@ func _appear(c: Combatant, pos: Vector3) -> void:
 	var m: Node3D = _models[c]
 	m.position = pos
 	m.visible = true
+	_displaced[c] = pos.distance_to(_home[c]) > 0.5
 	VfxLib.flash_star(self, pos + Vector3(0, 1.1, 0), DODGE_COLOR, 2.2, 0.18)
 	_shock(pos, DODGE_COLOR, 3.4, 0.45)
 	_glow(pos + Vector3(0, 0.6, 0), DODGE_COLOR, 16, Vector2(0.3, 0.7), 0.45, Vector2(1.5, 4.0), Vector3(0, 1, 0), 0.0, 0.4)

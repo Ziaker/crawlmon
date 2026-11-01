@@ -61,6 +61,7 @@ func _ready() -> void:
 		e.act_policy = Combatant.Act.SKILL
 		e.react_policy = Combatant.React.EVADE
 	leader = party[0]
+	fx.leader = leader
 	var party_slots: Array[Vector3] = []
 	for i in party.size():
 		party_slots.append(PARTY_SLOTS[mini(i, PARTY_SLOTS.size() - 1)])
