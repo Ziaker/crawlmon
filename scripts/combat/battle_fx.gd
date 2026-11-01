@@ -44,6 +44,7 @@ var _react_token: Dictionary = {}  ## Combatant -> int
 var _slot: Dictionary = {}  ## Combatant -> Vector3 (spawn spot; wandering stays near it)
 var _busy_until: Dictionary = {}  ## Combatant -> msec; no wandering before that
 var _ready_off: Dictionary = {}  ## Combatant -> Vector3 (ready-stance offset from home)
+var _base_speed: Dictionary = {}  ## Combatant -> idle animation speed
 var _phase: Dictionary = {}  ## Combatant -> float (breathing phase)
 var _displaced: Dictionary = {}  ## Combatant -> bool (standing off its home after a dodge)
 
@@ -56,7 +57,8 @@ func register(c: Combatant, model: Node3D) -> void:
 	_phase[c] = randf() * TAU
 	var ap := _anim_player(c)
 	if ap != null:
-		ap.speed_scale = randf_range(0.92, 1.08)  # Keep the idle breathing out of sync.
+		_base_speed[c] = randf_range(0.92, 1.08)  # Keep the idle breathing out of sync.
+		ap.speed_scale = _base_speed[c]
 	_add_ready_ring(model)
 
 
@@ -325,8 +327,23 @@ func intro() -> void:
 			m.visible = true
 			_play(c, "run")
 			_dust_trail(m, dur))
-		tw.tween_property(m, "position", home, dur).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		# Ease out, and slow the run clip down with the character so its feet never
+		# skate; hand over to the idle pose just before it stops.
+		var base_speed: float = _base_speed.get(c, 1.0)
+		var braked := [false]
+		tw.tween_method(func(k: float) -> void:
+			m.position = from.lerp(home, sin(k * PI * 0.5))
+			var ap := _anim_player(c)
+			if ap == null:
+				return
+			ap.speed_scale = lerpf(0.4, 1.1, cos(k * PI * 0.5))
+			if k > 0.9 and not braked[0]:
+				braked[0] = true
+				_reset_idle(c), 0.0, 1.0, dur)
 		tw.tween_callback(func() -> void:
+			var ap := _anim_player(c)
+			if ap != null:
+				ap.speed_scale = base_speed
 			m.rotation.y = yaw_home
 			_shock(home, Color(0.8, 0.95, 1.0), 2.8, 0.4)
 			_smoke(home + Vector3(0, 0.2, 0), Color(0.75, 0.85, 0.9), 8, Vector2(1.0, 1.8), 0.6, 0.4)
