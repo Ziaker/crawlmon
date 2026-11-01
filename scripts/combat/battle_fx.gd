@@ -22,39 +22,39 @@ const TELEGRAPH_COLOR := Color(1.0, 0.2, 0.15)
 const ALLY_COLOR := Color(0.3, 0.7, 1.0)
 const DODGE_COLOR := Color(0.5, 0.9, 1.0)
 const GOLD := Color(1.0, 0.8, 0.1)
+const RUN_SPEED := 55.0  ## Units per second while running at a target.
+const STAND_GAP := 2.6  ## Where a melee attacker stops, in front of its target.
+const HIT_AT := 0.45  ## Seconds into the attack clip when the strike lands.
+const ATTACK_HOLD := 0.6  ## Time spent finishing the attack clip after the strike.
+const CAST_AT := 0.5  ## Seconds into a cast when the effect leaves the caster.
 
 
-var cam: BattleCamera  ## Set by the battle scene; frames the impact of each hit.
+var cam: BattleCamera  ## Set by the battle scene; frames each attack.
 
 var _models: Dictionary = {}  ## Combatant -> Node3D
 var _home: Dictionary = {}  ## Combatant -> Vector3
+var _home_yaw: Dictionary = {}  ## Combatant -> float
 var _tweens: Dictionary = {}  ## Combatant -> Tween (movement)
 var _telegraphs: Dictionary = {}  ## Battle.Incoming -> Array[Node]
+var _hit_at: Dictionary = {}  ## attacker -> seconds until its strike lands
+var _react_token: Dictionary = {}  ## Combatant -> int
 
 
 func register(c: Combatant, model: Node3D) -> void:
 	_models[c] = model
 	_home[c] = model.position
+	_home_yaw[c] = model.rotation.y
 
 
 # --- Battle events ---------------------------------------------------------
 
-## An enemy starts winding up: it rears back and a shrinking red ring + line
-## shows who it will hit and when.
+## An attack starts winding up: the attacker plays its charge pose and a
+## shrinking ring + line shows who will be hit and when.
 func telegraph(inc) -> void:
-	var m: Node3D = _models[inc.attacker]
 	var a_home: Vector3 = _home[inc.attacker]
 	var t_home: Vector3 = _home[inc.target]
-	var dir := _flat_dir(a_home, t_home)
 	var warn := TELEGRAPH_COLOR if not inc.attacker.is_player else ALLY_COLOR
-	var tw := _move(inc.attacker)
-	tw.set_parallel(true)
-	tw.tween_property(m, "position", a_home - dir * 0.6, 0.3)
-	tw.tween_property(m, "scale", Vector3(1.15, 0.8, 1.15), 0.3)
-	if m.has_meta("anim_player"):
-		var ap: AnimationPlayer = m.get_meta("anim_player")
-		if ap.has_animation("charge"):
-			ap.play("charge")
+	_play(inc.attacker, "charge")
 	var ring := _ring(t_home + Vector3(0, 0.05, 0), warn, Vector3(2.6, 1, 2.6), Vector3.ONE, Battle.WINDUP, Vector3.ZERO, 0.0, false)
 	var line := _line(a_home + Vector3(0, 1, 0), t_home + Vector3(0, 1, 0), Color(warn, 0.45), 0.05)
 	_telegraphs[inc] = [ring, line]
@@ -68,24 +68,39 @@ func clear_telegraph(inc) -> void:
 		_telegraphs.erase(inc)
 
 
-## The wind-up ends: the attacker lunges at the target's spot. If the attack
-## was evaded the target stays displaced until the lunge has passed.
+## The wind-up ends. Physical attacks run to the target, strike and run back;
+## the rest are cast on the spot. The impact lands at the strike frame.
 func resolve_attack(inc) -> void:
 	clear_telegraph(inc)
+	var a: Combatant = inc.attacker
+	var t: Combatant = inc.target
 	var element: Element.Type = inc.element
-	var t_home: Vector3 = _home[inc.target]
+	var a_home: Vector3 = _home[a]
+	var t_home: Vector3 = _home[t]
+	var dir := _flat_dir(a_home, t_home)
+	var total := 0.0
 	if element == Element.Type.FISICO:
-		lunge(inc.attacker, t_home)
+		var stand := t_home - dir * STAND_GAP
+		var run_t := clampf(a_home.distance_to(stand) / RUN_SPEED, 0.35, 0.8)
+		_hit_at[a] = run_t + HIT_AT
+		total = _melee(a, stand, dir, run_t)
+		if cam != null:
+			cam.action((a_home + t_home) * 0.5)
 	else:
-		cast(inc.attacker, t_home, COLORS[element])
+		_hit_at[a] = CAST_AT
+		total = _cast(a, dir, COLORS[element])
+		if cam != null:
+			cam.action(t_home)
+	_hold_hp(t, float(_hit_at[a]) + 0.3)
 	if inc.dodged:
-		var from: Vector3 = _home[inc.attacker] + Vector3(0, 1, 0)
+		# The target already vanished (manual Evade); the attacker whiffs.
 		var to := t_home + Vector3(0, 1, 0)
 		if _has_projectile(element):
-			await get_tree().create_timer(0.12).timeout
-			_projectile(from, to + _flat_dir(from, to) * 7.0, COLORS[element], element)
-		await get_tree().create_timer(0.4).timeout
-		settle(inc.target)
+			await get_tree().create_timer(CAST_AT).timeout
+			_projectile(a_home + Vector3(0, 1, 0), to + _flat_dir(a_home, t_home) * 7.0, COLORS[element], element)
+			total -= CAST_AT
+		await get_tree().create_timer(maxf(total, 0.3)).timeout
+		settle(t)
 
 
 func manual_evade(actor: Combatant, inc) -> void:
@@ -103,25 +118,29 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 	var t_home: Vector3 = _home[target]
 	var from := a_home + Vector3(0, 1, 0)
 	var to := t_home + Vector3(0, 1, 0)
-	var physical := element == Element.Type.FISICO
-	await get_tree().create_timer(0.12).timeout
+	var delay: float = _hit_at.get(attacker, 0.12)
+	_hit_at.erase(attacker)
 	var evaded: bool = info["evaded"]
-	if evaded:
-		_dodge_later(target, "ESQUIVOU! +1 ATB", 0.1)
 	if _has_projectile(element):
+		await get_tree().create_timer(delay).timeout
+		if evaded:
+			_dodge_later(target, "ESQUIVOU! +1 ATB", 0.0, 0.7)
 		var end := to + _flat_dir(from, to) * 7.0 if evaded else to
 		await _projectile(from, end, color, element)
-	elif physical:
-		await get_tree().create_timer(0.06).timeout
+	else:
+		if evaded:
+			_dodge_later(target, "ESQUIVOU! +1 ATB", maxf(delay - 0.12, 0.0), 0.9)
+		await get_tree().create_timer(delay).timeout
 	if evaded:
 		return
 	var weak: bool = info["weak"]
 	var crit: bool = info["crit"]
-	if cam != null:
-		cam.impact(t_home, target.is_player)
+	if (weak or crit) and cam != null:
+		cam.speed_lines()
 	_impact(element, to, color, weak or crit)
 	flash(target)
 	knock(target, a_home)
+	_hit_react(target)
 	var text := str(info["dmg"])
 	var text_color := Color.WHITE
 	var size := 56
@@ -136,7 +155,7 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 	float_text(to + Vector3(0, 1.2, 0), text, text_color, size)
 	var gain: int = info["gain"]
 	if gain > 0 and attacker.is_alive():
-		float_text(a_home + Vector3(0, 3.0, 0), "+%d ATB" % gain, DODGE_COLOR, 44)
+		float_text(_models[attacker].position + Vector3(0, 3.0, 0), "+%d ATB" % gain, DODGE_COLOR, 44)
 
 
 func heal_fx(_actor: Combatant, target: Combatant, amount: int) -> void:
@@ -149,77 +168,136 @@ func heal_fx(_actor: Combatant, target: Combatant, amount: int) -> void:
 
 # --- Character motion --------------------------------------------------------
 
-func lunge(attacker: Combatant, toward: Vector3) -> void:
-	var m: Node3D = _models[attacker]
-	var home: Vector3 = _home[attacker]
-	var dir := _flat_dir(home, toward)
-	if m.has_meta("anim_player"):
-		var ap: AnimationPlayer = m.get_meta("anim_player")
-		if ap.has_animation("attack"):
-			ap.play("attack")
-	var tw := _move(attacker)
-	tw.tween_property(m, "scale", Vector3.ONE, 0.04)
-	tw.tween_property(m, "position", home + dir * clampf(home.distance_to(toward) - 2.5, 1.0, 5.0), 0.1)
-	tw.tween_property(m, "position", home, 0.3)
-	tw.tween_callback(func() -> void: _reset_idle(attacker))
+## Run to `stand`, play the attack clip, run back. Returns the total duration.
+func _melee(a: Combatant, stand: Vector3, dir: Vector3, run_t: float) -> float:
+	var m: Node3D = _models[a]
+	var home: Vector3 = _home[a]
+	var yaw_home: float = _home_yaw[a]
+	var yaw_out := atan2(dir.x, dir.z)
+	var yaw_back := atan2(-dir.x, -dir.z)
+	var back_t := run_t * 0.9
+	var tw := _move(a)
+	tw.tween_callback(func() -> void: _play(a, "run"))
+	tw.tween_method(func(k: float) -> void: m.rotation.y = lerp_angle(yaw_home, yaw_out, k), 0.0, 1.0, 0.12)
+	tw.tween_property(m, "position", stand, run_t).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_callback(func() -> void: _play(a, "attack"))
+	tw.tween_interval(HIT_AT + ATTACK_HOLD)
+	tw.tween_callback(func() -> void: _play(a, "run"))
+	tw.tween_method(func(k: float) -> void: m.rotation.y = lerp_angle(yaw_out, yaw_back, k), 0.0, 1.0, 0.12)
+	tw.tween_property(m, "position", home, back_t).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_method(func(k: float) -> void: m.rotation.y = lerp_angle(yaw_back, yaw_home, k), 0.0, 1.0, 0.15)
+	tw.tween_callback(func() -> void: _reset_idle(a))
+	return 0.12 + run_t + HIT_AT + ATTACK_HOLD + 0.12 + back_t + 0.15
 
 
-func cast(attacker: Combatant, toward: Vector3, color: Color) -> void:
-	var m: Node3D = _models[attacker]
-	var home: Vector3 = _home[attacker]
-	var dir := _flat_dir(home, toward)
-	if m.has_meta("anim_player"):
-		var ap: AnimationPlayer = m.get_meta("anim_player")
-		var anim := "attack_special" if ap.has_animation("attack_special") else "attack"
-		if ap.has_animation(anim):
-			ap.play(anim)
-	var tw := _move(attacker)
-	tw.tween_property(m, "position", home - dir * 0.5 + Vector3(0, 0.4, 0), 0.12)
-	tw.tween_property(m, "position", home, 0.25)
-	tw.tween_callback(func() -> void: _reset_idle(attacker))
-	_ring(home + Vector3(0, 1, 0), color, Vector3.ONE * 1.8, Vector3.ONE * 0.3, 0.25, Vector3(90, 0, 0))
+## Cast on the spot with the special-attack clip. Returns the total duration.
+func _cast(a: Combatant, _dir: Vector3, color: Color) -> float:
+	var home: Vector3 = _home[a]
+	var total := CAST_AT + 0.9
+	var tw := _move(a)
+	tw.tween_callback(func() -> void: _play(a, "attack_special"))
+	tw.tween_interval(total)
+	tw.tween_callback(func() -> void: _reset_idle(a))
+	_ring(home + Vector3(0, 1, 0), color, Vector3.ONE * 1.8, Vector3.ONE * 0.3, CAST_AT, Vector3(90, 0, 0))
+	return total
 
 
-## Sidestep toward the camera leaving a cyan afterimage. `hold` keeps the
+## Vanish in a ground dash and reappear to the side/behind. `hold` keeps the
 ## character displaced until settle() is called.
 func dodge(target: Combatant, text: String, hold := false) -> void:
 	var m: Node3D = _models[target]
 	var home: Vector3 = _home[target]
-	var ghost := _node(CapsuleMesh.new(), Color(0.5, 0.9, 1.0, 0.5), home + Vector3(0, 1, 0))
-	_pop(ghost, 0.45, Vector3.ONE, Vector3.ONE * 1.1)
+	var side := -1.0 if target.is_player else 1.0
+	var spot := home + Vector3(side * 3.6, 0.0, 1.4)
+	_vanish(m, home, spot)
 	var tw := _move(target)
-	tw.tween_property(m, "position", home + Vector3(0, 0.3, 2.0), 0.1)
+	tw.tween_interval(0.14)
+	tw.tween_callback(func() -> void: _appear(target, spot))
 	if not hold:
-		tw.tween_interval(0.35)
-		tw.tween_property(m, "position", home, 0.2)
-	_burst(home + Vector3(0, 0.2, 0), DODGE_COLOR, 14, 3.0, Vector3(0, -2, 0), 0.08, 0.4)
+		tw.tween_interval(0.6)
+		tw.tween_callback(func() -> void: settle(target))
 	float_text(home + Vector3(0, 3.0, 0), text, DODGE_COLOR, 56)
 
 
+## Return to the home spot with another ground dash.
 func settle(target: Combatant) -> void:
 	var m: Node3D = _models[target]
+	var home: Vector3 = _home[target]
+	_vanish(m, m.position, home)
 	var tw := _move(target)
-	tw.tween_property(m, "position", _home[target], 0.2)
-	tw.tween_callback(func() -> void: _reset_idle(target))
+	tw.tween_interval(0.14)
+	tw.tween_callback(func() -> void: _appear(target, home))
+
+
+func _vanish(m: Node3D, from: Vector3, to: Vector3) -> void:
+	_dash_streak(from, to)
+	var ghost := _node(CapsuleMesh.new(), Color(0.5, 0.9, 1.0, 0.45), from + Vector3(0, 1, 0))
+	_pop(ghost, 0.4, Vector3.ONE, Vector3.ONE * 1.1)
+	_burst(from + Vector3(0, 0.2, 0), Color(0.8, 0.95, 1.0), 12, 3.0, Vector3(0, -1, 0), 0.07, 0.4)
+	m.visible = false
+
+
+func _appear(c: Combatant, pos: Vector3) -> void:
+	var m: Node3D = _models[c]
+	m.position = pos
+	m.visible = true
+	_burst(pos + Vector3(0, 0.2, 0), Color(0.8, 0.95, 1.0), 12, 3.0, Vector3(0, -1, 0), 0.07, 0.4)
+	if c.is_alive():
+		_reset_idle(c)
+
+
+## Falling reaction for a hit that was not evaded: plays `down`, then rises
+## by playing it backwards (skipped if the character died).
+func _hit_react(c: Combatant) -> void:
+	var ap := _anim_player(c)
+	if ap == null or not ap.has_animation("down"):
+		return
+	var token: int = _react_token.get(c, 0) + 1
+	_react_token[c] = token
+	ap.play("down", 0.05)
+	await get_tree().create_timer(0.7).timeout
+	if token != _react_token[c] or not c.is_alive():
+		return
+	var pos := ap.current_animation_position
+	ap.play_backwards("down", 0.0)
+	ap.seek(pos, true)
+	await get_tree().create_timer(pos).timeout
+	if token == _react_token[c] and c.is_alive():
+		_reset_idle(c)
+
+
+func _play(c: Combatant, anim: String) -> void:
+	var ap := _anim_player(c)
+	if ap != null and ap.has_animation(anim):
+		ap.play(anim, 0.12)
+
+
+func _anim_player(c: Combatant) -> AnimationPlayer:
+	var m: Node3D = _models.get(c)
+	if m != null and m.has_meta("anim_player"):
+		return m.get_meta("anim_player")
+	return null
 
 
 func _reset_idle(c: Combatant) -> void:
-	var m: Node3D = _models.get(c)
-	if m and m.has_meta("anim_player") and c.is_alive():
-		var ap: AnimationPlayer = m.get_meta("anim_player")
-		if ap.has_animation("battle_idle"):
-			ap.play("battle_idle")
-		elif ap.has_animation("idle"):
-			ap.play("idle")
+	if not c.is_alive():
+		return
+	var ap := _anim_player(c)
+	if ap == null:
+		return
+	if ap.has_animation("battle_idle"):
+		ap.play("battle_idle", 0.12)
+	elif ap.has_animation("idle"):
+		ap.play("idle", 0.12)
+
+
+## Tells the HUD to keep the HP bar where it is until the strike lands.
+func _hold_hp(c: Combatant, seconds: float) -> void:
+	c.set_meta("hp_hold_until", Time.get_ticks_msec() + int((seconds + 0.2) * 1000.0))
 
 
 func flash(target: Combatant) -> void:
 	var m: Node3D = _models[target]
-	if m and m.has_meta("anim_player"):
-		var ap: AnimationPlayer = m.get_meta("anim_player")
-		if ap.has_animation("damage"):
-			ap.play("damage")
-			get_tree().create_timer(0.45).timeout.connect(func() -> void: _reset_idle(target))
 	if m and m.has_meta("mesh"):
 		var mesh: MeshInstance3D = m.get_meta("mesh")
 		var base: Color = m.get_meta("color")
@@ -343,9 +421,25 @@ func _has_projectile(element: Element.Type) -> bool:
 	return not (element in [Element.Type.FISICO, Element.Type.RAIO, Element.Type.LUZ, Element.Type.TERRA])
 
 
-func _dodge_later(target: Combatant, text: String, delay: float) -> void:
+func _dodge_later(target: Combatant, text: String, delay: float, return_after: float) -> void:
 	await get_tree().create_timer(delay).timeout
-	dodge(target, text)
+	dodge(target, text, true)
+	await get_tree().create_timer(return_after).timeout
+	settle(target)
+
+
+## Glowing streaks on the floor between two spots.
+func _dash_streak(a: Vector3, b: Vector3) -> void:
+	var d := b - a
+	d.y = 0.0
+	if d.length() < 0.1:
+		return
+	var side := d.normalized().cross(Vector3.UP)
+	for off: float in [-0.35, 0.0, 0.35]:
+		var from := a + side * off + Vector3(0, 0.06, 0)
+		var to := b + side * off + Vector3(0, 0.06, 0)
+		var streak := _line(from, to, Color(DODGE_COLOR, 0.75), 0.07 if off != 0.0 else 0.16)
+		_pop(streak, 0.45, Vector3.ONE, Vector3(1, 1, 0.15))
 
 
 func _flat_dir(from: Vector3, to: Vector3) -> Vector3:

@@ -1,19 +1,20 @@
 class_name BattleCamera
 extends Node
-## Battle camera director with the three approved framings: CINEMA (over the
-## party's shoulder looking at the enemies), TATICA (high overview, used while
-## picking a target) and IMPACTO (close on the target of a hit). Moves are slow
-## eased glides: no sway, shake, roll or flashes.
+## Battle camera director. The base framing (CINEMA) is a diagonal view from
+## the right-rear of the party looking toward the left of the field, with a
+## fixed Dutch tilt. TATICA lifts the view while a target is picked; actions
+## (a run, a cast) pan the aim along the field. There is never any zoom, shake
+## or animated roll. A short burst of speed lines marks strong hits.
 
 enum Mode { CINEMA, TATICA, IMPACTO }
 
 signal mode_changed(mode: Mode)
 
-const CINEMA_POS := Vector3(1.0, 3.0, 6.5)
-const CINEMA_LOOK := Vector3(3.0, 1.8, -20.0)
-const CINEMA_FOV := 60.0
-const TATICA_POS := Vector3(1.0, 6.0, 9.5)
-const TATICA_FOV := 58.0
+const CINEMA_POS := Vector3(3.8, 2.5, 7.0)
+const CINEMA_LOOK := Vector3(0.0, 2.3, -20.0)
+const TATICA_POS := Vector3(3.0, 6.0, 9.5)
+const FOV := 60.0
+const TILT_DEG := 4.0  ## Fixed Dutch angle (counter-clockwise).
 const GLIDE := 1.0
 
 var camera: Camera3D
@@ -21,13 +22,19 @@ var mode := Mode.CINEMA
 
 var _pos := CINEMA_POS
 var _look := CINEMA_LOOK
-var _fov := CINEMA_FOV
 var _tween: Tween
 var _token := 0
+var _lines: SpeedLines
 
 
 func setup(p_camera: Camera3D) -> void:
 	camera = p_camera
+	var layer := CanvasLayer.new()
+	layer.layer = 0  # Above the 3D scene, below the battle UI.
+	add_child(layer)
+	_lines = SpeedLines.new()
+	layer.add_child(_lines)
+	_lines.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_apply()
 
 
@@ -36,30 +43,32 @@ func _process(_delta: float) -> void:
 
 
 func cinema(time := GLIDE) -> void:
-	_go(Mode.CINEMA, CINEMA_POS, CINEMA_LOOK, CINEMA_FOV, time)
+	_go(Mode.CINEMA, CINEMA_POS, CINEMA_LOOK, time)
 
 
-## High overview looking at `focus` (the highlighted target).
+## High view looking toward `focus` (the highlighted target).
 func tactical(focus: Vector3, time := GLIDE) -> void:
-	_go(Mode.TATICA, TATICA_POS, focus.lerp(Vector3(2.0, 0.0, 0.0), 0.35), TATICA_FOV, time)
+	_go(Mode.TATICA, TATICA_POS, focus.lerp(Vector3(2.0, 0.0, 0.0), 0.35), time)
 
 
-## Soft emphasis on a hit: the camera pans toward the target (FOV narrows by a
-## few degrees, no dolly), then settles back to CINEMA. Ignored
-## while the player is picking a target.
-func impact(target_pos: Vector3, target_is_party: bool, hold := 0.6) -> void:
+## An action is happening at `look_pos`: aim there (no dolly, no zoom), then
+## settle back to CINEMA. Ignored while the player is picking a target.
+func action(look_pos: Vector3, hold := 1.2) -> void:
 	if mode == Mode.TATICA:
 		return
-	var pos := CINEMA_POS + Vector3(0.6, 0.0, 0.0)  # Same spot as CINEMA: only the aim and FOV change.
-	var fov := 57.0
-	_go(Mode.IMPACTO, pos, target_pos + Vector3(0, 1.2, 0), fov, 1.1)
+	_go(Mode.IMPACTO, CINEMA_POS, look_pos + Vector3(0, 1.4, 0), 0.8)
 	var token := _token
-	await get_tree().create_timer(hold + 1.1).timeout
+	await get_tree().create_timer(hold + 0.8).timeout
 	if token == _token:
 		cinema()
 
 
-func _go(new_mode: Mode, pos: Vector3, look: Vector3, fov: float, time: float) -> void:
+## Brief static speed lines around the screen (strong hits only).
+func speed_lines() -> void:
+	_lines.burst()
+
+
+func _go(new_mode: Mode, pos: Vector3, look: Vector3, time: float) -> void:
 	_token += 1
 	if new_mode != mode:
 		mode = new_mode
@@ -69,7 +78,6 @@ func _go(new_mode: Mode, pos: Vector3, look: Vector3, fov: float, time: float) -
 	_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_tween.tween_property(self, "_pos", pos, time)
 	_tween.tween_property(self, "_look", look, time)
-	_tween.tween_property(self, "_fov", fov, time)
 
 
 func _apply() -> void:
@@ -77,4 +85,35 @@ func _apply() -> void:
 		return
 	camera.position = _pos
 	camera.look_at(_look)
-	camera.fov = _fov
+	camera.rotate_object_local(Vector3.BACK, deg_to_rad(TILT_DEG))
+	camera.fov = FOV
+
+
+class SpeedLines extends Control:
+	var _alpha := 0.0
+
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func burst() -> void:
+		_alpha = 0.55
+		create_tween().tween_property(self, "_alpha", 0.0, 0.35)
+
+	func _process(_delta: float) -> void:
+		if _alpha > 0.0:
+			queue_redraw()
+
+	func _draw() -> void:
+		if _alpha <= 0.0:
+			return
+		var center := size * 0.5
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 5
+		for i in 40:
+			var ang := rng.randf() * TAU
+			var dir := Vector2(cos(ang), sin(ang))
+			var r_out := size.length() * 0.6
+			var r_in := r_out * rng.randf_range(0.62, 0.8)
+			var width := rng.randf_range(3.0, 9.0)
+			var perp := Vector2(-dir.y, dir.x) * width
+			draw_colored_polygon(PackedVector2Array([center + dir * r_out, center + dir * r_in + perp, center + dir * r_in - perp]), Color(1, 1, 1, _alpha))

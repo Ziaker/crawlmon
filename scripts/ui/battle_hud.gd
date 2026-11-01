@@ -75,8 +75,9 @@ func setup(battle: Battle, party: Array[Combatant], enemies: Array[Combatant], c
 	_alert = _make_label(Vector2(0, 28), 14, CORAL)
 	_alert.size = Vector2(1280, 60)
 	_alert.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_log = _make_label(Vector2(400, 614), 13, Color(CREAM, 0.85))
-	_log.size = Vector2(520, 56)
+	_log = _make_label(Vector2(866, 108), 13, Color(CREAM, 0.85))
+	_log.size = Vector2(386, 56)
+	_log.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_tabs = CameraTabs.new()
 	add_child(_tabs)
 	director.mode_changed.connect(func(m: BattleCamera.Mode) -> void: _tabs.mode = m; _tabs.queue_redraw())
@@ -132,7 +133,7 @@ func _track_hp() -> void:
 	for c in _models:
 		var last: int = _last_hp.get(c, c.hp)
 		if c.hp < last:
-			_hp_hold[c] = now + 450
+			_hp_hold[c] = maxi(now + 450, c.get_meta("hp_hold_until", 0))
 		elif c.hp > last:
 			_hp_hold[c] = now + 250
 		_last_hp[c] = c.hp

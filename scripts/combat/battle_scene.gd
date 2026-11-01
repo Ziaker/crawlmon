@@ -8,7 +8,9 @@ enum S { MAIN, FIGHT, ITEMS, TARGET, TACTICS }
 
 const MODEL_SCALE := 2.5
 const TEAM_DISTANCE := 30.0  ## Units between the two lines.
-const PARTY_SLOTS := [Vector3(-0.2, 0, 0), Vector3(3.2, 0, 1.0), Vector3(-4.0, 0, -2.0)]
+const PARTY_SLOTS := [Vector3(-0.2, 0, 0), Vector3(5.6, 0, 1.5), Vector3(-4.0, 0, -2.0)]
+const SLOWMO_SCALE := 0.3  ## Game speed after a perfect Evade.
+const SLOWMO_SECONDS := 2.0  ## Real seconds, or until the player's counter-action.
 const ENEMY_SCALE := 1.8  ## Extra scale on enemy models so they read at 30 units.
 const ACT_NAMES := ["Atacar", "Habilidades", "Segurar"]
 const REACT_NAMES := ["Nada", "Esquivar"]
@@ -22,6 +24,8 @@ var director: BattleCamera
 var hud: BattleHud
 var state := S.MAIN
 var leader: Combatant
+
+var _slow_token := 0
 
 var _menu: FanMenu
 var _fight_skills: Array[Skill] = []
@@ -77,6 +81,13 @@ func _ready() -> void:
 	battle.manual_evaded.connect(fx.manual_evade)
 	battle.hit_resolved.connect(fx.play_hit)
 	battle.healed.connect(fx.heal_fx)
+	battle.manual_evaded.connect(_on_manual_evaded)
+	battle.attack_telegraphed.connect(func(inc) -> void:
+		if inc.attacker == leader:
+			_end_slowmo())
+	battle.healed.connect(func(actor: Combatant, _t: Combatant, _n: int) -> void:
+		if actor == leader:
+			_end_slowmo())
 	battle.start(party, enemies)
 	_show_main()
 
@@ -196,7 +207,30 @@ func _on_died(c: Combatant) -> void:
 	tween.tween_property(models[c], "scale", Vector3.ZERO, 0.4)
 
 
+## A perfect (manual) Evade by the leader slows the whole game until the
+## player acts again or the time runs out.
+func _on_manual_evaded(actor: Combatant, _inc) -> void:
+	if actor != leader:
+		return
+	_slow_token += 1
+	var token := _slow_token
+	Engine.time_scale = SLOWMO_SCALE
+	await get_tree().create_timer(SLOWMO_SECONDS, true, false, true).timeout
+	if token == _slow_token:
+		_end_slowmo()
+
+
+func _end_slowmo() -> void:
+	_slow_token += 1
+	Engine.time_scale = 1.0
+
+
+func _exit_tree() -> void:
+	Engine.time_scale = 1.0
+
+
 func _on_battle_ended(player_won: bool) -> void:
+	_end_slowmo()
 	_menu.hide()
 	hud.set_target(null)
 	await get_tree().create_timer(3.0, true, false, true).timeout
