@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.1 — Rodada 10 consolidada, 2026-11-01.  
+> **Revisão:** 1.2 — Rodada 11 consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -102,13 +102,13 @@ Explorar uma dungeon em 2D → encontrar um adversário → entrar na cena 3D �
 - **APROVADO (R2-Q5 = A):** a **taxa de preenchimento natural** do ATB é influenciada pelo atributo **Velocidade individual de cada Pokémon**. As recompensas por ações continuam acréscimos instantâneos de blocos, sem alterar por si a taxa temporal.
 - **APROVADO (R7-Q2 = A):** um Pokémon com a **Velocidade de referência** leva **5 segundos para preencher naturalmente a barra de 0/5 até 5/5**. Isso equivale a uma média de **1 bloco por segundo na Velocidade de referência**, sem definir a curva, os marcos de arredondamento, o valor numérico de Velocidade de referência nem a fórmula de escala para outras Velocidades. Continuam válidas a pausa exclusiva da escolha de Tactic e a restrição de que o tempo não gere blocos extras.
 - **APROVADO (R8-Q1 = A):** o **tempo de preenchimento natural é inversamente proporcional à Velocidade**: dobrar a Velocidade reduz o tempo em 50% e reduzir a Velocidade à metade dobra o tempo, a partir da Velocidade de referência. **DERIVADO, somente para Velocidade positiva:** \(T(V) = 5\,\mathrm{s} \times V_{ref}/V\), sendo \(V_{ref}\) o atributo de referência ainda a definir. **PENDENTE:** valor numérico de \(V_{ref}\), limites mínimo/máximo de taxa, tratamento de Velocidade zero/não positiva e arredondamento; nenhuma dessas escolhas é presumida.
-- **REGISTRADO (R9-Q1 = C; R10-Q1/Q2/Q5):** o criador adiou o **valor numérico da Velocidade de referência** até definir os atributos. Na Rodada 10 aprovou **atributos inspirados em SMT III: Nocturne**, **escala-base 1–100** e **referência numérica fixa comum** a determinar posteriormente; **nenhum valor foi escolhido**. A associação do atributo **Agilidade** de SMT3 com a **Velocidade** já prevista para ATB exige uma decisão explícita, não uma renomeação presumida. Permanecem aprovados o preenchimento em 5 segundos na referência e a proporcionalidade inversa à Velocidade.
+- **REGISTRADO (R9-Q1 = C; R10-Q1/Q2/Q5):** o criador adiou o **valor numérico da Velocidade de referência** até definir os atributos. Na Rodada 10 aprovou **atributos inspirados em SMT III: Nocturne**, **escala-base 1–100** e **referência numérica fixa comum** a determinar posteriormente; **nenhum valor foi escolhido**. A associação do atributo **Agilidade** de SMT3 com a **Velocidade** prevista no ATB foi **resolvida em R11-Q1 = A**: trata-se de um único atributo. A **nomenclatura apresentada ao jogador** permanece pendente. Permanecem aprovados o preenchimento em 5 segundos na referência e a proporcionalidade inversa à Velocidade.
 - **APROVADO (Opção A):** um Pokémon pode realizar uma ação **assim que tiver os blocos necessários para pagar seu custo**, sem precisar esperar completar 5/5. A antiga hipótese de só agir ao chegar a 5/5 está **superada** por esta decisão posterior.
 - **APROVADO:** custo usual de muitas ações = 2 blocos; Evade ativo = 3; certos ataques fortes = 5.
 - **DERIVADO:** se não houver autorização especial para dívida ou custo alternativo, um custo de 3 exige saldo de pelo menos 3. Exceções, caso desejadas, exigem aprovação.
 - **APROVADO (R1-Q2 = A):** a execução de uma ação desconta **apenas o custo em blocos**, preservando o saldo restante. Exemplo: 5/5, ação de custo 2, saldo final 3/5 (antes de possíveis recompensas e preenchimento temporal).
 - **APROVADO (R1-Q3 = C):** o combate **só pausa durante a escolha dos comandos de Tactic**. Ao escolher comandos de FIGHT e ITENS, o tempo não pausa e as barras ATB continuam seu preenchimento temporal. A pausa aplica-se apenas à escolha das orientações de IA em Tactic, **que não envia ordens diretas**. **PENDENTE:** detalhes técnicos de interrupção/retomada e ações simultâneas; não inventar pausas extras.
-- **PENDENTE:** valor **numérico fixo** de referência para o ATB (R10-Q5), mapeamento entre **Agilidade (SMT3)** e **Velocidade (ATB)** (R10-Q1), limites/condições de borda da proporcionalidade inversa, arredondamento visual, tratamento de ações simultâneas e layout para muitos blocos extras. A prioridade de consumo (R3-Q2) e quadradinhos adicionais (R4-Q2) já estão aprovados.
+- **PENDENTE:** valor **numérico fixo** de referência para o ATB (R10-Q5), **nomenclatura visual do atributo único Agilidade/Velocidade** (R11-Q1), limites/condições de borda da proporcionalidade inversa, arredondamento visual, tratamento de ações simultâneas e layout para muitos blocos extras. A prioridade de consumo (R3-Q2) e quadradinhos adicionais (R4-Q2) já estão aprovados.
 
 ### 3.2 Recompensas instantâneas
 
@@ -209,7 +209,7 @@ Ataque direcionado a um Pokémon → tentativa de Evade ativo com custo de 3 →
 
 Sem decisão adicional, não fixar:
 
-- **Pokémon e progressão:** espécies elegíveis, protagonista inicial, recrutamento, reservas e trocas (**equipe ativa de até 3 aprovada**), evolução, **implementação detalhada dos atributos de SMT3 em escala-base 1–100 e progressão por níveis**, habilidades e crescimento. A **Velocidade de referência do ATB** será um valor fixo definido posteriormente; **não há número escolhido** (R9-Q1 e R10-Q5).
+- **Pokémon e progressão:** espécies elegíveis, protagonista inicial, recrutamento, reservas e trocas (**equipe ativa de até 3 aprovada**), evolução, **cinco atributos inspirados em SMT3 na escala-base 1–100, Agilidade/Velocidade como atributo único, HP derivado de Vitalidade+nível, MP separado e distribuição manual de pontos ao subir de nível** (R10–R11), habilidades e crescimento. O **valor de referência do ATB** e as fórmulas de HP/MP continuam pendentes; **não há valores escolhidos**.
 - **Moves:** Tackle genérico versus golpe homônimo da franquia (**Tackle genérico custa 2 ATB, sem PP**); lista concreta dos quatro Moves por Pokémon, status, efeitos e **exceções ao custo-base de 2 ATB**, incluindo golpes de custo 5 e requisitos Burst. **Nenhuma ação do Crawlmon utiliza PP** (R8-Q2; complementa R7-Q3).
 - **Combate 3D:** câmera, sequência de animações, timings, hitstop, interface gráfica final, modelos, rigging, VFX e arenas por bioma.
 - **Dungeon 2D:** geração **procedural por exploração/andar, com salas e corredores** já aprovada (R7-Q5); seed reproduzível (R8-Q3), **layout persistente nas revisitas da mesma exploração** (R9-Q2), **inimigos visíveis que patrulham e perseguem após detecção** (R9-Q3), **inimigos derrotados removidos até o fim da exploração** (R9-Q4) e **movimentação cardinal em quatro direções** (R9-Q5). Permanecem pendentes parâmetros do gerador, interface/armazenamento de seeds, escala dos tiles, alcance/IA de detecção, movimentação contínua vs. tiles/turnos, armadilhas, itens, progressão, posicionamento e retorno.
@@ -222,13 +222,28 @@ Sem decisão adicional, não fixar:
 
 **APROVADO (R10-Q2 = A):** escala numérica de **1 a 100 para os atributos-base** adotados no Crawlmon, antes de progressão/modificadores. Esta é uma regra própria do Crawlmon, não afirma que SMT3 usa a mesma escala nem define HP máximo, limites após progressão ou valores individuais de espécies.
 
-**APROVADO (R10-Q3 = A):** cada Pokémon possui **nível** e seus atributos **evoluem conforme o nível**. **PENDENTE:** nível máximo, experiência, curvas de crescimento, distribuição de pontos e diferenças entre espécies.
+**APROVADO (R10-Q3 = A):** cada Pokémon possui **nível** e seus atributos **evoluem conforme o nível**. **PENDENTE:** nível máximo, experiência, curvas de crescimento, **quantidade de pontos disponíveis a cada nível, limites de distribuição e escopo da distribuição manual**, além de diferenças entre espécies. O modo de distribuição pelo jogador foi **aprovado em R11-Q4**.
 
 **APROVADO (R10-Q4 = A):** buffs/debuffs alteram os atributos por **estágios discretos positivos/negativos**, não por percentuais diretos arbitrários como regra primária. **PENDENTE:** estágios permitidos, multiplicadores, acumulação, duração, atributos afetáveis e interação com o sistema ATB. O custo de buff/debuff aplicado via Burst continua sendo **1 bloco Burst e nenhum ATB adicional** (R5-Q4).
 
-**APROVADO (R10-Q5 = A):** a **Velocidade de referência para os 5 segundos de ATB será um valor fixo** na escala de atributos escolhida, **comum a todas as espécies e níveis**; o valor numérico **fica pendente**. Também permanece pendente decidir explicitamente se a Agilidade de SMT3 é a mesma Velocidade funcional que rege o ATB ou se haverá outra adaptação.
+**APROVADO (R10-Q5 = A):** a **Velocidade de referência para os 5 segundos de ATB será um valor fixo** na escala de atributos escolhida, **comum a todas as espécies e níveis**; o valor numérico **fica pendente**. **R11-Q1 resolveu que Agilidade e Velocidade do ATB são um único atributo**; apenas o nome de exibição e os efeitos adicionais dessa estatística continuam em aberto.
 
-**Não aprovado nesta rodada:** valores numéricos específicos, fórmulas de dano/HP/MP, criação de barra de MP, conversão de Magia em outro recurso, escalonamento por espécie, estatísticas de defesa separadas, atribuição de um valor à Velocidade de referência ou alteração das regras de **ausência de PP**. A adaptação detalhada será objeto das próximas perguntas.
+**Nota de rastreabilidade da Rodada 10:** naquela rodada, valores numéricos específicos, fórmulas de dano/HP/MP e a criação de MP não haviam sido aprovados. **R11-Q3 aprovou posteriormente a existência de MP**, sem definir fórmula, custos, recuperação, interface ou funcionamento. R11-Q1 também resolveu a equivalência Agilidade/Velocidade. Permanecem inalteradas as regras de **ausência de PP**, o custo de ATB/Burst, a escala-base 1–100 e as demais decisões históricas.
+
+### 7.2. Adaptação dos atributos de SMT3 — decisões da Rodada 11
+
+**APROVADO (R11-Q1 = A) — Agilidade e Velocidade:** **Agilidade** da referência SMT3 e **Velocidade** do ATB do Crawlmon designam **um único atributo**, não dois atributos separados. O atributo único governa o preenchimento natural do ATB segundo a proporcionalidade inversa já aprovada. **PENDENTE:** nome exibido na interface (“Agilidade” ou “Velocidade”), valor numérico fixo de referência para 5 segundos e demais efeitos da estatística. Não alterar a escala-base de 1–100.
+
+**APROVADO (R11-Q2 = A) — Vitalidade e HP:** **HP máximo é derivado da Vitalidade e do nível do Pokémon**, sem criar um atributo-base independente de HP além dos cinco inspirados em SMT3. HP continua sendo medidor de vida. **PENDENTE:** fórmula, progressão por nível, HP inicial, limites e arredondamento.
+
+**APROVADO (R11-Q3 = B) — Magia e MP:** o atributo **Magia afeta dano e efeitos mágicos** e Crawlmon terá também um **recurso MP separado**. **PENDENTE:** MP máximo, relação com atributos e nível, quais ações consomem MP, custo por ação, recuperação, persistência entre batalhas, interface e interações com ATB/Burst. **MP não é PP**: continua proibido introduzir PP. A aprovação de MP **não substitui** automaticamente nenhum dos custos de ATB ou Burst existentes.
+
+**APROVADO (R11-Q4 = B) — evolução de atributos:** ao subir de nível, o **jogador distribui manualmente pontos de atributo**. **PENDENTE:** quantidade de pontos por nível, atributos elegíveis, limites e restrições, tratamento de pontos não distribuídos e distribuição para Pokémon aliados versus outros Pokémon. Não presumir crescimento automático por espécie como substituto da escolha manual.
+
+**APROVADO (R11-Q5 = A) — Sorte:** **Sorte influencia probabilidades de combate**, como chance de crítico e/ou outros efeitos probabilísticos. **PENDENTE:** quais eventos exatamente são modificados e suas fórmulas/limites. Não atribuir valores de chance, modificadores de ATB nem taxas de recompensa não aprovados. As recompensas instantâneas existentes por crítico normal permanecem inalteradas.
+
+**Separação de estado:** catálogo/escala de atributos, nível, estágio de buff/debuff, ATB, Burst e ausência de PP são regras já aprovadas; MP existe, mas sua economia e fórmulas ainda não estão especificadas. Não tratar a nova existência de MP como implementação técnica.
+
 
 - **Modos de batalha:** pausa **exclusiva** na seleção das orientações de Tactic já aprovada; detalhes de processamento e concorrência de ações/animações sem introduzir outras pausas, prioridade de ações e múltiplos comandos simultâneos ainda exigem especificação técnica.
 - **Balanceamento:** recompensas-base (+1 fraqueza, +2 crítico normal, +2 evasão automática, +1 Evade ativo) e soma crítico normal+fraqueza aprovadas; **blocos ATB excedentes são preservados fora dos cinco normais, sem serem Burst** e são **gastos antes dos blocos normais**. O preenchimento natural não cria extras. Moves Burst não geram ATB por fraqueza nem por crítico garantido. **Extras não têm teto fixo e são exibidos em quadradinhos adicionais**, conforme R4-Q1/Q2. **R5-Q1:** os extras são descartados ao final de cada batalha. **R5-Q2/Q3:** em ataques normais multi-alvo e/ou multi-hit, no máximo +1 por fraqueza e +2 por crítico normal para a ação inteira. Permanecem pendentes duração de buffs/debuffs, dano de crítico, tabela de tipos e interações especiais.
@@ -326,6 +341,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-068 | R10-Q3 = A: **Pokémon têm níveis e atributos evoluem conforme o nível**, sem nível máximo ou curva numérica definidos. |
 | D-069 | R10-Q4 = A: **buffs/debuffs modificam atributos por estágios discretos**; valores, limites, acumulação e duração pendentes. |
 | D-070 | R10-Q5 = A: **Velocidade de referência do ATB será um valor numérico fixo comum**, determinado posteriormente na escala aprovada; não escolher valor nesta rodada. |
+| D-071 | R11-Q1 = A: **Agilidade de SMT3 e Velocidade usada pelo ATB são o mesmo atributo**; nomenclatura visual, valor de referência e demais efeitos ainda pendentes. |
+| D-072 | R11-Q2 = A: **HP máximo deriva de Vitalidade e nível**, sem atributo-base HP independente; fórmula e valores pendentes. |
+| D-073 | R11-Q3 = B: **Magia influencia dano e efeitos mágicos e existe recurso MP separado**; custos, limites e recuperação de MP pendentes; MP não é PP e não altera automaticamente ATB/Burst. |
+| D-074 | R11-Q4 = B: **o jogador distribui manualmente pontos de atributo ao subir de nível**; quantidade, restrições e aplicação aos aliados ainda pendentes. |
+| D-075 | R11-Q5 = A: **Sorte influencia probabilidades de combate**, incluindo crítico e/ou outros efeitos ainda a especificar; sem fórmula numérica aprovada. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -467,39 +487,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Diferença entre referência e requisito:** a presença de MP em SMT3 **não autoriza implementar MP no Crawlmon**. A ausência de PP e os custos ATB/Burst já aprovados permanecem integralmente vigentes. HP e quaisquer outros recursos devem seguir decisões posteriores, sem inventar fórmulas.
 
-## 10.10. Rodada 11 — adaptação dos atributos de SMT3 ao Crawlmon (cinco perguntas abertas)
+## 10.10. Rodada 11 — adaptação dos atributos de SMT3 ao Crawlmon (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa abaixo está aprovada.
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01. Decisões D-071 a D-075 incorporadas à seção 7.2 e às referências técnicas relacionadas.
 
-**R11-Q1 — Como relacionar Agilidade de SMT3 com a Velocidade usada pelo ATB?**  
-A. **São o mesmo atributo**, exibido como “Agilidade” ou “Velocidade” (nome visual a definir); ele determina a taxa do ATB e os demais efeitos aprovados.  
-B. **São atributos separados**: Agilidade mantém efeitos próprios e Velocidade é estatística distinta para ATB, com efeitos detalhados depois.  
-C. Outra relação ou nomenclatura, especificada pelo criador.  
-*O tempo de referência de 5 s e a proporcionalidade inversa são preservados.*
+| ID | Resposta do criador | Regra aprovada e limites |
+| --- | --- | --- |
+| **R11-Q1** | **A** — “Agilidade de SMT3 e Velocidade do ATB serão o mesmo atributo; nomenclatura visual ainda a definir.” | **Agilidade/Velocidade é um atributo único**, que governa o ATB; nome de exibição e número de referência não definidos. |
+| **R11-Q2** | **A** — “HP máximo derivado da Vitalidade e do nível; fórmula pendente, sem atributo-base HP independente.” | HP máximo usa **Vitalidade e nível**; não acrescentar atributo-base HP próprio nem inventar fórmula. |
+| **R11-Q3** | **B** — “Magia afeta dano e efeitos mágicos e haverá recurso MP separado, com regras ainda pendentes.” | Magia afeta efeitos/dano mágicos; **MP existe como recurso separado**, mas seu cálculo, consumo e recuperação continuam pendentes. **Crawlmon permanece sem PP.** |
+| **R11-Q4** | **B** — “O jogador distribui manualmente pontos de atributo ao subir de nível, com quantidade e restrições pendentes.” | Ao subir de nível, o **jogador distribui pontos manualmente**; número de pontos, restrições e escopo de Pokémon ainda a definir. |
+| **R11-Q5** | **A** — “Sorte influencia probabilidades do combate, como crítico e/ou outros efeitos, com fórmula pendente.” | Sorte modifica **probabilidades de combate**, ainda sem eventos exatos e sem fórmulas aprovadas. |
 
-**R11-Q2 — Como definir HP em relação à Vitalidade?**  
-A. **HP máximo derivado da Vitalidade e do nível**, com fórmula ainda por definir; HP é medidor de vida, não necessariamente um sexto atributo-base.  
-B. **HP com atributo-base independente**, além dos cinco atributos inspirados em SMT3; fórmula/limites ainda por definir.  
-C. Outra regra de HP, especificada pelo criador.  
-*Nenhuma fórmula nem quantidade numérica é aprovada por esta escolha.*
+**Limite da aprovação:** a existência de MP em R11-Q3 **não** implica automaticamente que os Moves consumam MP, nem elimina ou altera ATB/Burst, e não autoriza implementar PP. As decisões de catálogo e escala da Rodada 10 permanecem em vigor.
 
-**R11-Q3 — Qual será a função de Magia e a relação com recursos?**  
-A. **Magia influencia os efeitos e dano mágicos/especiais**, mas **não haverá barra de MP**; recursos de ação continuam ATB/Burst.  
-B. **Magia influencia efeitos mágicos e haverá também MP como recurso separado**, com custos/geração ainda a decidir.  
-C. Outra função de Magia/recursos, especificada pelo criador.  
-*PP continua inexistente independentemente da alternativa.*
+## 10.11. Rodada 12 — economia de MP e progressão manual (cinco perguntas abertas)
 
-**R11-Q4 — Como os Pokémon ganham pontos de atributo quando sobem de nível?**  
-A. **Crescimento automático próprio de cada espécie**, conforme curvas e regras que serão especificadas depois.  
-B. **Distribuição manual de pontos pelo jogador** após ganhar nível, com pontos por nível e restrições a definir.  
-C. Outra forma de progressão, especificada pelo criador.  
-*O crescimento por níveis já está aprovado; esta pergunta decide como é aplicado.*
+**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa está aprovada.
 
-**R11-Q5 — Como tratar Sorte no sistema de combate?**  
-A. **Sorte participa de probabilidades de combate**, como crítico e/ou efeitos probabilísticos, com a relação exata a especificar.  
-B. **Sorte atua principalmente fora do cálculo de acerto/crítico**, em eventos e exploração/loot, com funções a definir.  
-C. Outra função de Sorte, especificada pelo criador.  
-*Não se fixa qualquer chance numérica de crítico, evasão ou obtenção de itens.*
+**R12-Q1 — Quais Moves devem consumir MP, além dos custos ATB/Burst já definidos?**  
+A. **Todos os Moves de categoria mágica/especial** consomem MP adicional; valores por Move ficam pendentes.  
+B. **Somente os Moves expressamente marcados como consumidores de MP** nas fichas individuais, independentemente da categoria.  
+C. Outro critério de gasto de MP, especificado pelo criador.  
+*A existência de MP está aprovada; seu uso não substitui ATB/Burst automaticamente.*
+
+**R12-Q2 — De que depende o MP máximo de cada Pokémon?**  
+A. **Magia e nível** determinam o MP máximo, com fórmula e limites a definir.  
+B. **Espécie e nível** determinam o MP máximo sem dependência direta obrigatória do atributo Magia, com fórmula a definir.  
+C. Outra regra de MP máximo, especificada pelo criador.  
+*Não escolher números nem impor que o MP siga a mesma fórmula de HP.*
+
+**R12-Q3 — O MP se recupera integralmente entre batalhas da mesma dungeon?**  
+A. **Sim:** MP é restaurado por completo no começo de cada nova batalha; o valor máximo não muda por isso.  
+B. **Não:** MP restante persiste de um combate para o próximo durante a dungeon; formas de recuperação ainda a definir.  
+C. Outra regra de restauração de MP, especificada pelo criador.  
+*Essa decisão é independente do início de cada batalha com 0/5 ATB.*
+
+**R12-Q4 — Os pontos de atributo recebidos a cada nível têm quantidade fixa ou variável?**  
+A. **Quantidade fixa por nível** para cada Pokémon, igual em todos os níveis; número exato a definir depois.  
+B. **Quantidade variável por nível e/ou espécie**, com regra a definir posteriormente.  
+C. Outra regra, especificada pelo criador.  
+*A distribuição manual pelo jogador já está aprovada; esta pergunta define somente como os pontos são concedidos.*
+
+**R12-Q5 — O jogador distribui manualmente os pontos de atributo de quais Pokémon?**  
+A. **Protagonista e todos os aliados de sua equipe**; cada Pokémon tem seus pontos distribuídos pelo jogador ao subir de nível.  
+B. **Somente o protagonista**; aliados têm crescimento automático, cujas curvas ainda serão especificadas.  
+C. Outro escopo de distribuição, especificado pelo criador.  
+*Isso não altera o controle por IA dos aliados durante o combate nem decide atributos de Pokémon inimigos.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -516,5 +550,6 @@ C. Outra função de Sorte, especificada pelo criador.
 | 0.9 | 2026-11-01 | Rodada 8 (D-056 a D-060): ATB inversamente proporcional à Velocidade; correção geral — não existe PP, inclusive em Tackle; seeds reproduzíveis; salas/corredores algorítmicos; encontros por contato com Pokémon visíveis na exploração 2D. Abre Rodada 9. | Rodada 8 fechada / Rodada 9 aberta |
 | 1.0 | 2026-11-01 | Rodada 9 (D-061 a D-065): Velocidade de referência adiada até definição de atributos; layout procedural preservado ao revisitar andar; inimigos patrulham e perseguem após detecção, são removidos ao serem derrotados na exploração atual; movimento cardinal em quatro direções. Abre Rodada 10 para definir os atributos/status. | Rodada 9 fechada / Rodada 10 aberta |
 | 1.1 | 2026-11-01 | Rodada 10 (D-066 a D-070): modelo de atributos de SMT III como referência; escala-base 1–100, progressão por níveis, buffs/debuffs em estágios e Velocidade de referência fixa ainda sem número. Adaptação de Agilidade/Velocidade, HP, Magia e Sorte pendente; abre Rodada 11. | Rodada 10 fechada / Rodada 11 aberta |
+| 1.2 | 2026-11-01 | Rodada 11 (D-071 a D-075): Agilidade e Velocidade unificadas; HP derivado de Vitalidade+nível; Magia ligada a dano/efeitos mágicos e MP separado aprovado; pontos de atributos distribuídos manualmente por nível; Sorte influencia probabilidades de combate. Regras numéricas de MP, HP, progressão e Sorte pendentes; abre Rodada 12. | Rodada 11 fechada / Rodada 12 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
