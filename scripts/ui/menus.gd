@@ -10,6 +10,7 @@ var mode := Mode.NONE
 var tab := 0
 
 var _was_paused := false
+var _status_screen: StatusScreen
 
 var _root: Control
 var _title: Label
@@ -47,6 +48,10 @@ func _ready() -> void:
 	_list.cancelled.connect(_on_cancelled)
 	_list.moved.connect(_on_moved)
 	_list.side.connect(_on_side)
+	_status_screen = StatusScreen.new()
+	add_child(_status_screen)
+	_status_screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_status_screen.closed.connect(func() -> void: _root.visible = true)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -161,7 +166,10 @@ func _build_settings(_keep_index: bool) -> void:
 func _on_chosen(i: int) -> void:
 	match mode:
 		Mode.TABS:
-			if tab == 0 and not _shown_items.is_empty():
+			if tab == 1:
+				_root.visible = false
+				_status_screen.open(GameState.party, i)
+			elif tab == 0 and not _shown_items.is_empty():
 				var item := _shown_items[i]
 				_pick(func(c: Combatant) -> void: _use_consumable(item, c))
 			elif tab == 2:
@@ -194,7 +202,9 @@ func _on_moved(i: int) -> void:
 			if i < _shown_items.size():
 				_detail.text = _shown_items[i].description
 		1:
-			_detail.text = _status_text(GameState.party[i])
+			_detail.text = _status_text(GameState.party[i]) + "
+
+Z  abre o status completo"
 		2:
 			if i > 0 and i - 1 < _shown_items.size():
 				_detail.text = _shown_items[i - 1].description
