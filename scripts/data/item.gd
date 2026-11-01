@@ -20,6 +20,12 @@ static func get_item(item_id: String) -> Item:
 	return _db.get(item_id)
 
 
+## Icon for an item id, from res://assets/items/<id>.png (null if missing).
+static func icon_of(item_id: String) -> Texture2D:
+	var path := "res://assets/items/%s.png" % item_id
+	return load(path) if ResourceLoader.exists(path) else null
+
+
 static func _build_db() -> void:
 	var potion := _make("potion", "Poção", Kind.CONSUMABLE, "Recupera 30 de HP.")
 	potion.heal = 30
