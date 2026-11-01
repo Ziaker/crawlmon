@@ -19,6 +19,7 @@ const FOOTER_H := 36.0
 const MARGIN := 28.0
 
 signal status_closed
+signal status_unit_selected(unit: Combatant)
 
 var menu: FanMenu
 
@@ -34,6 +35,7 @@ var _log_lines: Array[String] = []
 var _tabs: CameraTabs
 var _target: Combatant
 var _status: StatusPanel
+var _status_open := false
 var _shown_hp: Dictionary = {}  ## Combatant -> float
 var _last_hp: Dictionary = {}
 var _hp_hold: Dictionary = {}  ## Combatant -> ticks (msec) before the bar starts moving
@@ -88,8 +90,9 @@ func setup(battle: Battle, party: Array[Combatant], enemies: Array[Combatant], c
 	add_child(_status)
 	_status.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_status.closed.connect(func() -> void:
-		menu.show()
+		_set_status_mode(false)
 		status_closed.emit())
+	_status.selected.connect(func(u: Combatant) -> void: status_unit_selected.emit(u))
 	director.mode_changed.connect(func(m: BattleCamera.Mode) -> void: _tabs.mode = m; _tabs.queue_redraw())
 	battle.log_message.connect(_on_log)
 
@@ -155,8 +158,20 @@ func _track_hp() -> void:
 
 ## Pause-screen with everyone's status; closing it emits status_closed.
 func open_status(party: Array[Combatant], enemies: Array[Combatant]) -> void:
-	menu.hide()
+	_set_status_mode(true)
 	_status.open(party, enemies)
+
+
+func _set_status_mode(on: bool) -> void:
+	_status_open = on
+	menu.visible = not on
+	_alert.visible = not on
+	_log.visible = not on
+	_tabs.visible = not on
+	for card in _cards:
+		card.visible = not on
+	for e in _tags:
+		(_tags[e] as Control).visible = false
 
 
 func set_target(c: Combatant) -> void:
@@ -202,6 +217,8 @@ func _screen_pos(c: Combatant, height: float) -> Variant:
 
 
 func _layout_cards() -> void:
+	if _status_open:
+		return
 	var hero_stack := Rect2(MARGIN - 6, 300, 350, 400)
 	var placed: Array[Rect2] = []
 	for card in _cards:
@@ -243,6 +260,8 @@ func _head_of(c: Combatant) -> float:
 
 
 func _layout_tags() -> void:
+	if _status_open:
+		return
 	for e in _tags:
 		var tag: EnemyTag = _tags[e]
 		var model: Node3D = _models.get(e)

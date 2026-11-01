@@ -27,6 +27,8 @@ var state := S.MAIN
 var leader: Combatant
 
 var _slow_token := 0
+var _status_unit: Combatant
+var _saved_anim: Dictionary = {}  ## AnimationPlayer -> [name, position]
 
 var _menu: FanMenu
 var _fight_skills: Array[Skill] = []
@@ -71,7 +73,8 @@ func _ready() -> void:
 	ui.add_child(hud)
 	hud.setup(battle, party, enemies, $Camera3D, models, director)
 	_menu = hud.menu
-	hud.status_closed.connect(_show_main)
+	hud.status_closed.connect(_close_status)
+	hud.status_unit_selected.connect(_on_status_unit)
 	_menu.chosen.connect(_on_chosen)
 	_menu.cancelled.connect(_on_cancel)
 	_menu.moved.connect(_on_moved)
@@ -314,7 +317,46 @@ func _show_items() -> void:
 
 func _show_status() -> void:
 	_set_state(S.STATUS)
+	director.process_mode = Node.PROCESS_MODE_ALWAYS  # The camera keeps gliding while paused.
 	hud.open_status(battle.party, battle.enemies)
+
+
+## Frame the selected unit; only its animation keeps playing while paused.
+func _on_status_unit(c: Combatant) -> void:
+	if _status_unit != null:
+		_set_unit_animating(_status_unit, false)
+	_status_unit = c
+	_set_unit_animating(c, true)
+	var model: Node3D = models[c]
+	director.status_shot(model.global_position, c.is_player)
+
+
+func _set_unit_animating(c: Combatant, on: bool) -> void:
+	var model: Node3D = models.get(c)
+	if model == null or not model.has_meta("anim_player"):
+		return
+	var ap: AnimationPlayer = model.get_meta("anim_player")
+	if on:
+		_saved_anim[ap] = [ap.current_animation, ap.current_animation_position]
+		ap.process_mode = Node.PROCESS_MODE_ALWAYS
+		if ap.has_animation("battle_idle"):
+			ap.play("battle_idle", 0.2)
+	else:
+		ap.process_mode = Node.PROCESS_MODE_INHERIT
+		var saved: Array = _saved_anim.get(ap, [])
+		if saved.size() == 2 and saved[0] != "" and ap.has_animation(saved[0]):
+			ap.play(saved[0])
+			ap.seek(saved[1], true)
+		_saved_anim.erase(ap)
+
+
+func _close_status() -> void:
+	if _status_unit != null:
+		_set_unit_animating(_status_unit, false)
+		_status_unit = null
+	director.process_mode = Node.PROCESS_MODE_INHERIT
+	director.cinema()
+	_show_main()
 
 
 func _show_tactics() -> void:

@@ -1,10 +1,12 @@
 class_name StatusPanel
 extends Control
-## Pause screen that shows the status of everyone in the battle: the player's
-## character, the ally and the opponents. Same angular style as the rest of the
-## battle HUD. Z or X closes it. The battle scene pauses the tree while it is open.
+## Pause view of one character at a time: the camera frames the selected unit
+## (animated) while its status card sits on the right. Left/Right (or Up/Down)
+## picks another unit; Z or X closes. The battle scene pauses the tree while
+## it is open.
 
 signal closed
+signal selected(unit: Combatant)
 
 const LIME := Color("d7fd6a")
 const CORAL := Color("ff624f")
@@ -13,18 +15,17 @@ const GOLD := Color("f7cb78")
 const INK := Color("080e18")
 const CREAM := Color("f0eedf")
 const LILAC := Color("b6a3fe")
-const COL_TOP := 104.0
-const COL_H := 560.0
-const GAP := 14.0
 const ACT_NAMES := ["Atacar", "Habilidades", "Segurar"]
 const REACT_NAMES := ["Nada", "Esquivar"]
+const CARD := Rect2(868, 100, 384, 566)
 
 var _party: Array[Combatant] = []
 var _units: Array[Combatant] = []
+var _index := 0
 
 
 func _init() -> void:
-	mouse_filter = Control.MOUSE_FILTER_STOP
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visible = false
 
 
@@ -35,7 +36,9 @@ func open(party: Array[Combatant], enemies: Array[Combatant]) -> void:
 	for e in enemies:
 		if e.is_alive():
 			_units.append(e)
+	_index = 0
 	visible = true
+	selected.emit(_units[0])
 	queue_redraw()
 
 
@@ -50,26 +53,43 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("menu") or event.is_action_pressed("confirm"):
 		visible = false
 		closed.emit()
-		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("ui_right") or event.is_action_pressed("ui_down"):
+		_pick(1)
+	elif event.is_action_pressed("ui_left") or event.is_action_pressed("ui_up"):
+		_pick(-1)
+	else:
+		return
+	get_viewport().set_input_as_handled()
+
+
+func _pick(step: int) -> void:
+	_index = posmod(_index + step, _units.size())
+	selected.emit(_units[_index])
 
 
 func _draw() -> void:
+	if _units.is_empty():
+		return
 	var font := FanMenu.body_font()
 	var title := FanMenu.title_font()
-	draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.05, 0.09, 0.97))
-	draw_string(title, Vector2(28, 62), "STATUS", HORIZONTAL_ALIGNMENT_LEFT, -1, 40, CREAM)
-	draw_string(font, Vector2(190, 62), "//  JOGO PAUSADO", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, LIME)
-	draw_rect(Rect2(28, 74, size.x - 56, 3), LIME)
-	var n := _units.size()
-	if n == 0:
-		return
-	var col_w := clampf((size.x - 56.0 - GAP * (n - 1)) / n, 220.0, 400.0)
-	var x := (size.x - (n * col_w + GAP * (n - 1))) * 0.5
-	for u in _units:
-		_draw_unit(u, Rect2(x, COL_TOP, col_w, COL_H))
-		x += col_w + GAP
+	# Darken the right edge so the card reads over the arena.
+	for i in 10:
+		draw_rect(Rect2(CARD.position.x - 60.0 + i * 8.0, 0, 8.0, size.y), Color(0.02, 0.05, 0.09, 0.05 * (i + 1)))
+	draw_rect(Rect2(CARD.position.x + 20.0, 0, size.x, size.y), Color(0.02, 0.05, 0.09, 0.5))
+	draw_string(title, Vector2(28, 100), "STATUS", HORIZONTAL_ALIGNMENT_LEFT, -1, 30, CREAM)
+	draw_string(font, Vector2(28, 120), "//  JOGO PAUSADO", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, LIME)
+	# Unit tabs above the card.
+	var x := CARD.position.x
+	for i in _units.size():
+		var u := _units[i]
+		var on := i == _index
+		var w := font.get_string_size(u.name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x + 28.0
+		BattleHud.slant(self, Rect2(x, 66, w, 26), 6.0, LIME if on else Color(0.05, 0.1, 0.16, 0.9))
+		draw_string(font, Vector2(x + 14, 84), u.name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, INK if on else Color("9cb4bb"))
+		x += w + 4.0
+	_draw_unit(_units[_index], CARD)
 	draw_rect(Rect2(0, size.y - 36, size.x, 36), Color(0.03, 0.07, 0.11, 0.95))
-	draw_string(font, Vector2(28, size.y - 13), "Z / X  VOLTAR AO COMBATE", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color("b5c3c2"))
+	draw_string(font, Vector2(28, size.y - 13), "SETAS  ESCOLHER PERSONAGEM   ·   Z / X  VOLTAR AO COMBATE", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color("b5c3c2"))
 
 
 func _draw_unit(c: Combatant, r: Rect2) -> void:

@@ -6,7 +6,7 @@ extends Node
 ## (a run, a cast) pan the aim along the field. There is never any zoom, shake
 ## or animated roll. A short burst of speed lines marks strong hits.
 
-enum Mode { CINEMA, TATICA, IMPACTO }
+enum Mode { CINEMA, TATICA, IMPACTO, STATUS }
 
 signal mode_changed(mode: Mode)
 
@@ -22,6 +22,7 @@ var mode := Mode.CINEMA
 
 var _pos := CINEMA_POS
 var _look := CINEMA_LOOK
+var _fov := FOV
 var _tween: Tween
 var _token := 0
 var _lines: SpeedLines
@@ -63,12 +64,22 @@ func action(look_pos: Vector3, hold := 1.2) -> void:
 		cinema()
 
 
+## Close framing of one character for the status view. The character ends up
+## on the left of the frame (the card is on the right).
+func status_shot(unit_pos: Vector3, faces_party_side: bool) -> void:
+	var offset := Vector3(3.0, 1.5, -5.2) if faces_party_side else Vector3(-3.0, 1.8, 6.5)
+	var pos := unit_pos + offset
+	var look := unit_pos + Vector3(0, 1.1, 0)
+	var right := (look - pos).cross(Vector3.UP).normalized()
+	_go(Mode.STATUS, pos, look + right * 1.5, 0.7, 50.0)
+
+
 ## Brief static speed lines around the screen (strong hits only).
 func speed_lines() -> void:
 	_lines.burst()
 
 
-func _go(new_mode: Mode, pos: Vector3, look: Vector3, time: float) -> void:
+func _go(new_mode: Mode, pos: Vector3, look: Vector3, time: float, fov := FOV) -> void:
 	_token += 1
 	if new_mode != mode:
 		mode = new_mode
@@ -78,6 +89,7 @@ func _go(new_mode: Mode, pos: Vector3, look: Vector3, time: float) -> void:
 	_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_tween.tween_property(self, "_pos", pos, time)
 	_tween.tween_property(self, "_look", look, time)
+	_tween.tween_property(self, "_fov", fov, time)
 
 
 func _apply() -> void:
@@ -86,7 +98,7 @@ func _apply() -> void:
 	camera.position = _pos
 	camera.look_at(_look)
 	camera.rotate_object_local(Vector3.BACK, deg_to_rad(TILT_DEG))
-	camera.fov = FOV
+	camera.fov = _fov
 
 
 class SpeedLines extends Control:
