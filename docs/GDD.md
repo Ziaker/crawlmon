@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 0.1 — consolidação inicial, 2026-11-01.  
+> **Revisão:** 0.2 — Rodada 1 consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -67,16 +67,28 @@ Explorar uma dungeon em 2D → encontrar um adversário → entrar na cena 3D �
 - **APROVADO (Opção A):** um Pokémon pode realizar uma ação **assim que tiver os blocos necessários para pagar seu custo**, sem precisar esperar completar 5/5. A antiga hipótese de só agir ao chegar a 5/5 está **superada** por esta decisão posterior.
 - **APROVADO:** custo usual de muitas ações = 2 blocos; Evade ativo = 3; certos ataques fortes = 5.
 - **DERIVADO:** se não houver autorização especial para dívida ou custo alternativo, um custo de 3 exige saldo de pelo menos 3. Exceções, caso desejadas, exigem aprovação.
-- **PENDENTE:** o comportamento exato do saldo após executar ações (desconto com preservação do restante versus outras regras); tempo de preenchimento, influência do atributo Velocidade, arredondamento visual, atualização durante menus/animações, conflitos entre ações simultâneas.
+- **APROVADO (R1-Q2 = A):** a execução de uma ação desconta **apenas o custo em blocos**, preservando o saldo restante. Exemplo: 5/5, ação de custo 2, saldo final 3/5 (antes de possíveis recompensas e preenchimento temporal).
+- **APROVADO (R1-Q3 = C):** o combate **só pausa durante a escolha dos comandos de Tactic**. Ao escolher comandos de FIGHT e ITENS, o tempo não pausa e as barras ATB continuam seu preenchimento temporal. A pausa vale também para as escolhas de Tactic, não para a execução posterior de uma ordem. **PENDENTE:** detalhes técnicos de interrupção/retomada e ações simultâneas; não inventar pausas extras.
+- **PENDENTE:** tempo-base de preenchimento, influência do atributo Velocidade, arredondamento visual, tratamento de ações simultâneas e excedentes do ATB.
 
 ### 3.2 Recompensas instantâneas
 
 - **APROVADO:** acertar **fraqueza**, causar **dano crítico** ou **desviar de um ataque** são eventos que podem conceder **1 ou 2 blocos normais de ATB de imediato**.
 - **APROVADO:** o bônus é **individual**. Apenas o Pokémon responsável pelo acerto ou pela esquiva recebe os blocos. Isso inclui aliados e inimigos.
 - **APROVADO:** recompensas não aumentam a taxa de preenchimento; são **acréscimos instantâneos de blocos**.
-- **PENDENTE:** correspondência exata entre evento e +1/+2; acúmulo de fraqueza+crítico no mesmo golpe; teto e tratamento de excedentes; recompensas de golpes com múltiplos alvos; recompensas de fraqueza durante Burst.
+- **APROVADO (R1-Q4):** valores específicos e individuais:
 
-**Exemplo ilustrativo, NÃO normativo:** um Pokémon com 2/5 pode receber +2 e passar imediatamente para 4/5. O exemplo não define a pontuação definitiva do evento.
+| Evento recompensado | Blocos ATB normais recebidos imediatamente |
+| --- | ---: |
+| Golpe que explora fraqueza | **+1** |
+| Acerto crítico normal (fora do crítico garantido de Burst) | **+2** |
+| Evasão automática bem-sucedida | **+2** |
+| Evade ativo bem-sucedido | **+1** |
+
+- **APROVADO (R1-Q5 = A):** se um **mesmo golpe** for ao mesmo tempo **crítico normal e super efetivo**, as duas recompensas **se somam**: **+2 por crítico +1 por fraqueza = +3 blocos**, sujeitos ao tratamento de capacidade/excedente ainda pendente.
+- **PENDENTE:** teto e tratamento de excedentes; múltiplos alvos; recompensas por fraqueza durante Burst; efeitos de múltiplos acertos ou outros eventos simultâneos. O crítico **garantido** pelo Burst continua sem recompensa de crítico (D-019).
+
+**Exemplo de valores aprovados:** com 2/5, um crítico normal concede +2 e eleva a barra para 4/5. Se o mesmo golpe também explorar fraqueza, o ganho total é +3, e um saldo inicial de 2/5 alcança 5/5.
 
 ### 3.3 Separação de Press Turn
 
@@ -88,8 +100,8 @@ Há dois mecanismos distintos. Um acerto evitado passivamente não se confunde c
 
 | Situação | Custo conhecido | Resultado de acerto/evasão | Recompensa ATB | Burst |
 | --- | --- | --- | --- | --- |
-| **Evasão automática bem-sucedida** | Não foi definido custo de ação; é uma ocorrência passiva. | O golpe é evitado. | +1 ou +2, individual. | **Nunca**. |
-| **Evade ativo bem-sucedido** | **3 blocos normais**. | O golpe é evitado. | +1 ou +2, individual. | **Sim, imediato**. |
+| **Evasão automática bem-sucedida** | Não foi definido custo de ação; é uma ocorrência passiva. | O golpe é evitado. | **+2**, individual. | **Nunca**. |
+| **Evade ativo bem-sucedido** | **3 blocos normais**. | O golpe é evitado. | **+1**, individual. | **Sim, disponibilidade imediata (pode usar ou armazenar)**. |
 | **Evade ativo malsucedido** | **3 blocos** (custo de Evade). | **O golpe acerta obrigatoriamente**, ignorando a precisão natural e impedindo a evasão automática *para esse ataque*. | Nenhum bônus por Evade. | Não. |
 | **Sem evasão bem-sucedida** | Conforme regras da ação aplicável. | Resolução normal da mecânica de ataque. | Nenhum bônus por esquiva. | Não. |
 
@@ -102,24 +114,26 @@ Há dois mecanismos distintos. Um acerto evitado passivamente não se confunde c
 ## 5. Burst — sexto bloco especial (APROVADO)
 
 - O **Burst** é representado por um **bloco extra/sexto**, **independente dos cinco blocos normais de ATB**.
-- Uma **esquiva ativa Evade bem-sucedida** libera **imediatamente** uma ação especial Burst, ainda que a barra normal esteja incompleta.
+- Uma **esquiva ativa Evade bem-sucedida** disponibiliza **imediatamente** uma ação especial Burst, ainda que a barra normal esteja incompleta. **APROVADO (R1-Q1 = B):** o Pokémon pode **executar Burst na hora ou armazenar o bloco** para utilizar posteriormente, inclusive para golpes que exigem Burst. 'Imediato' designa a disponibilidade, **não obriga consumo instantâneo**.
 - Uma **evasão automática** nunca libera Burst, mesmo recebendo recompensa de ATB.
 - Uma ação Burst pode: **aplicar buff a aliados**, **aplicar debuff a inimigos** ou **executar um Move escolhido com dano crítico**.
 - O **crítico garantido por Burst ofensivo NÃO concede bônus adicional de ATB por ser crítico**.
 - **Determinados ataques exigem Burst** como requisito de execução; a lista e o uso exato do bloco especial para esses ataques ainda não estão definidos.
 - Aliados e inimigos podem participar das condições de Burst, conforme suas regras de esquiva ativa.
 
-**PENDENTE, NÃO INFERIR:** se o Burst é sempre consumido imediatamente ou se um ataque que o exige pode guardar o sexto bloco; se um Move de Burst requer também saldo ATB comum; se a fraqueza provocada por esse Move gera recompensa independente; limites de encadeamento de Bursts; como priorizar Burst diante de outras ações prontas.
+**PENDENTE, NÃO INFERIR:** duração de armazenamento do Burst, capacidade/empilhamento, se um Move de Burst requer também saldo ATB comum, se a fraqueza provocada por esse Move gera recompensa independente, limites de encadeamento de Bursts e prioridade diante de outras ações prontas. O armazenamento foi aprovado, mas seus limites não.
 
 ### Exemplo de sequência aprovada, sem números inventados
 
-Ataque direcionado a um Pokémon → tentativa de Evade ativo com custo de 3 → esquiva bem-sucedida → ganho individual de 1 ou 2 blocos normais (quantia ainda por definir) **e** abertura da ação Burst imediata → escolha entre Move crítico, buff ou debuff. O crítico garantido não fornece recompensa de crítico ao ATB.
+Ataque direcionado a um Pokémon → tentativa de Evade ativo com custo de 3 → esquiva bem-sucedida → ganho individual de **+1 bloco normal** **e** disponibilização imediata de Burst → o Pokémon **pode** usá-lo agora (Move crítico, buff ou debuff) **ou armazenar** seu bloco para uso posterior. O crítico garantido não fornece recompensa de crítico ao ATB.
 
 ## 6. Protagonista, IA e comportamento de batalha
 
 **APROVADO:** jogador controla diretamente o Pokémon protagonista; **companheiros são controlados pela IA**. O menu Tactic altera suas ordens e sua conduta. Inimigos decidem suas ações e podem obter recompensas individuais por criticar, explorar fraquezas ou esquivar.
 
-**PENDENTE:** interface de seleção do protagonista, troca/controle de líder, quantidade de aliados ativos, se Tactic é instantâneo ou consome 2 ou outro número de blocos, catálogo de condutas, persistência das táticas e comportamento da IA sob Evade/Burst.
+**APROVADO (R1-Q3):** a **escolha** de ordens ou comportamentos no menu Tactic é a única ocasião aprovada de **pausa do combate**; FIGHT e ITENS não pausam.
+
+**PENDENTE:** interface de seleção do protagonista, troca/controle de líder, quantidade de aliados ativos, custo de ATB para execução de Tactic (a pausa do menu **não define** gratuidade), catálogo de condutas, persistência das táticas e comportamento da IA sob Evade/Burst.
 
 **Exemplos não aprovados:** “priorizar fraquezas”, “defender”, “economizar PP”, “focar alvo” e “suporte” podem ser considerados em perguntas futuras, mas não constituem um conjunto obrigatório.
 
@@ -131,8 +145,8 @@ Sem decisão adicional, não fixar:
 - **Moves:** Tackle genérico versus golpe homônimo da franquia; lista de quatro Moves por Pokémon; PP; status; efeitos; custos ATB; golpes de custo 5 e golpes que requerem Burst.
 - **Combate 3D:** câmera, sequência de animações, timings, hitstop, interface gráfica final, modelos, rigging, VFX e arenas por bioma.
 - **Dungeon 2D:** escala dos tiles, IA na exploração, geração, armadilhas, itens, progressão de andares, encontros e retorno.
-- **Modos de batalha:** pausa na seleção, passagem de tempo durante animações e menus, prioridade de ações e tratamento de múltiplos comandos simultâneos.
-- **Balanceamento:** bônus exatos, limites, acumulação, duração de buffs/debuffs, dano de crítico, tabela de tipos e interações especiais.
+- **Modos de batalha:** pausa **exclusiva** nas escolhas de Tactic já aprovada; detalhes da progressão de ATB durante animações, prioridade de ações e tratamento de múltiplos comandos simultâneos ainda exigem especificação técnica.
+- **Balanceamento:** recompensas-base (+1 fraqueza, +2 crítico normal, +2 evasão automática, +1 Evade ativo) e soma crítico normal+fraqueza aprovadas; permanecem pendentes limites/excedentes, duração de buffs/debuffs, dano de crítico, tabela de tipos e interações especiais.
 - **Distribuição/publicação:** direitos dos personagens, modelos e demais elementos de propriedade intelectual precisam ser considerados se houver distribuição pública.
 
 ## 8. Estado real do repositório (inspeção de código, não de execução)
@@ -177,39 +191,63 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-018 | Burst especial pode buffar aliados, debuffar inimigos ou executar Move escolhido com crítico. |
 | D-019 | Crítico garantido pelo Burst ofensivo não oferece recompensa ATB por crítico. |
 | D-020 | Alguns ataques dependem de Burst para execução; requisitos detalhados pendentes. |
+| D-021 | R1-Q1 = B: Burst fica disponível imediatamente após Evade ativo bem-sucedido, mas pode ser usado na hora **ou armazenado**; prazo, capacidade e custos de uso futuro seguem pendentes. |
+| D-022 | R1-Q2 = A: após uma ação, subtrair apenas os blocos consumidos e preservar o saldo ATB restante. |
+| D-023 | R1-Q3 = C: **somente durante escolhas de Tactic** o combate pausa; escolhas em FIGHT e ITENS não pausam o combate. |
+| D-024 | R1-Q4: fraqueza +1, crítico normal +2, evasão automática +2 e Evade ativo bem-sucedido +1 (ATB individual instantâneo). |
+| D-025 | R1-Q5 = A: um golpe normalmente crítico e super efetivo soma +2 e +1, total +3 ATB, sujeito à regra futura para excedentes. |
 
-## 10. Rodada 1 — cinco perguntas aguardando resposta
+## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas. Registrar respostas aqui somente depois de fornecidas pelo criador e atualizar as seções correspondentes.
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01. Decisões D-021 a D-025 registradas nas seções técnicas acima.
 
-**R1-Q1 — Consumo/armazenamento do Burst para ataques que o exigem.**  
-A. O bloco Burst só pode ser gasto na janela **imediata após o Evade ativo**, e golpes que exigem Burst só podem ser selecionados nessa janela.  
-B. O jogador pode gastar o bloco imediatamente ou **guardá-lo** para executar posteriormente um golpe que o exige; definir duração/limite em rodada futura.  
-C. Outra regra, explicada pelo criador.
+| ID | Resposta do criador | Regra incorporada |
+| --- | --- | --- |
+| **R1-Q1** | **B** | Burst pode ser utilizado imediatamente após Evade ativo bem-sucedido **ou armazenado** para um ataque que o exija posteriormente. A capacidade e a duração do armazenamento permanecem pendentes. |
+| **R1-Q2** | **A** | Toda ação desconta **somente seu custo** e preserva o ATB normal restante. |
+| **R1-Q3** | **C** — “so ocorre pausa no combate durante as escolhas do tactic” | O combate **pausa apenas nas escolhas de Tactic**. Menus FIGHT e ITENS não pausam; não adicionar outras situações de pausa sem aprovação. |
+| **R1-Q4** | Fraqueza **+1**; crítico normal **+2**; evasão automática **+2**; Evade ativo bem-sucedido **+1** | Bônus instantâneos individuais estabelecidos. O crítico garantido de Burst **não** recebe bônus de crítico. |
+| **R1-Q5** | **A** | Crítico normal e fraqueza no **mesmo golpe** somam os respectivos bônus (2+1 = **+3**), respeitando regra futura de capacidade/excedente. |
 
-**R1-Q2 — Destino dos blocos normais após uma ação.**  
-A. Deduz-se **somente o custo**, preservando os blocos restantes.  
-B. A ação zera a barra ATB normal, mesmo quando custa menos do que o saldo disponível.  
-C. Outra regra, explicada pelo criador.
+**Pontos não resolvidos por esta rodada:** limite e duração de Burst armazenado, custo ATB normal de Moves que exigem Burst, excedente de blocos acima de 5 e especificações de execução dos menus/combate além da pausa exclusiva de Tactic.
 
-**R1-Q3 — Relógio ATB durante escolha de comandos.**  
-A. Congela a progressão de todos os ATBs enquanto o jogador escolhe FIGHT/ITENS/Tactic.  
-B. O tempo e os ATBs continuam progredindo normalmente durante os menus.  
-C. Outra regra, explicada pelo criador.  
-*Esta pergunta não resolve a passagem do tempo durante animações de golpes.*
+## 10.1. Rodada 2 — cinco perguntas aguardando resposta
 
-**R1-Q4 — Valor-base da recompensa por evento.**  
-Informar separadamente **fraqueza: +1 ou +2**, **crítico normal: +1 ou +2**, **esquiva automática: +1 ou +2**, **Evade ativo bem-sucedido: +1 ou +2**. São quatro valores para uma única tabela de balanceamento. O crítico garantido de Burst continua sem recompensa por crítico.
+**Status:** ABERTA — 0/5 respostas. Questões propostas; **nenhuma alternativa está aprovada**.
 
-**R1-Q5 — Acúmulo das recompensas por um mesmo golpe.**  
-A. Se um golpe normal for simultaneamente crítico e super efetivo, **soma** as recompensas de ambos.  
-B. Se for simultaneamente crítico e super efetivo, recebe **somente a maior recompensa**.  
-C. Outra regra, explicada pelo criador.
+**R2-Q1 — Duração de um Burst armazenado.**  
+A. Burst armazenado permanece disponível **até ser utilizado**, durante a batalha; não atravessa o fim da batalha.  
+B. Burst armazenado **expira após um prazo**; indicar quantos segundos.  
+C. Outra regra, especificada pelo criador.  
+*Essa pergunta não define se é possível guardar mais de um bloco Burst.*
+
+**R2-Q2 — Recompensas que ultrapassam a capacidade de cinco blocos.**  
+A. Limitar o ATB a **5/5**; excedentes são descartados.  
+B. Manter excedentes **em reserva invisível**; indicar ou definir posteriormente limite e modo de uso.  
+C. Outra regra, especificada pelo criador.
+
+**R2-Q3 — Custo de um Move executado com Burst.**  
+A. Consome **somente o bloco especial Burst**, sem exigir blocos normais adicionais.  
+B. Consome o **bloco Burst e também o custo ATB normal do Move** escolhido.  
+C. Outra regra, especificada pelo criador.
+
+**R2-Q4 — Custo das ordens de Tactic.**  
+A. Cada ordem/comando de Tactic efetivado tem **custo fixo de 2 blocos normais**.  
+B. Custos **variam conforme a ordem**; tabela será especificada futuramente.  
+C. Outra regra, especificada pelo criador.  
+*A pausa durante a escolha de Tactic é mantida em todas as opções.*
+
+**R2-Q5 — Preenchimento temporal dos blocos.**  
+A. A taxa de preenchimento depende do **atributo Velocidade** de cada Pokémon.  
+B. Todos os Pokémon preenchem blocos **à mesma taxa básica**; Velocidade pode ter outra função a ser definida.  
+C. Outra regra, especificada pelo criador.  
+*Os bônus instantâneos de R1 não são multiplicadores de velocidade.*
 
 ## 11. Histórico de alterações do GDD
 
 | Revisão | Data | Mudanças documentais | Rodada |
 | --- | --- | --- | --- |
 | 0.1 | 2026-11-01 | Criação inicial: decisões D-001 a D-020, auditoria documental do protótipo, pendências e perguntas R1-Q1 a R1-Q5. | Rodada 1 aberta |
+| 0.2 | 2026-11-01 | Cinco respostas R1-Q1 a R1-Q5 consolidadas (D-021 a D-025): Burst armazenável, saldo residual de ATB, pausa somente em Tactic, tabela de recompensas, soma de crítico normal+fraqueza; rodada 2 aberta. Commit identificável pelo histórico Git deste arquivo. | Rodada 1 fechada / Rodada 2 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
