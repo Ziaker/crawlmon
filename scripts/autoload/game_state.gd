@@ -71,21 +71,21 @@ func _register_key(action: String, keycode: Key) -> void:
 
 
 func _build_party() -> void:
-	var hero := Combatant.new("Herói", 40, 8, 0.45, true)
-	hero.inventory = inventory  # The leader uses the shared party inventory.
-	hero.weaknesses.assign([Element.Type.FOGO])
-	hero.skills.assign([
-		Skill.new("Golpe Forte", 1.5),
-		Skill.new("Corte Giratório", 1.2),
-		Skill.new("Estocada", 1.3),
-		Skill.new("Investida", 1.8, 3),
+	var pancham := Combatant.new("Pancham", 45, 10, 0.45, true)
+	pancham.inventory = inventory  # The leader uses the shared party inventory.
+	pancham.weaknesses.assign([Element.Type.PSIQUICO, Element.Type.VENTO])
+	pancham.skills.assign([
+		Skill.new("Soco Rápido", 1.2),
+		Skill.new("Golpe de Caratê", 1.5, 2, Element.Type.FISICO),
+		Skill.new("Quebra de Telha", 1.8, 3, Element.Type.FISICO),
+		Skill.new("Provocação", 1.1, 1, Element.Type.TREVAS),
 	])
-	var mage := Combatant.new("Mago", 28, 11, 0.4, true)
-	mage.weaknesses.assign([Element.Type.FISICO])
-	mage.skills.assign([
-		Skill.new("Bola de Fogo", 1.6, 2, Element.Type.FOGO),
-		Skill.new("Raio", 1.4, 2, Element.Type.RAIO),
-		Skill.new("Gelo", 1.2, 2, Element.Type.AGUA_GELO),
-		Skill.new("Meteoro", 2.2, 3, Element.Type.TERRA),
+	var abra := Combatant.new("Abra", 32, 12, 0.50, true)
+	abra.weaknesses.assign([Element.Type.TREVAS, Element.Type.SOM])
+	abra.skills.assign([
+		Skill.new("Confusão", 1.4, 2, Element.Type.PSIQUICO),
+		Skill.new("Raio Psíquico", 1.7, 3, Element.Type.PSIQUICO),
+		Skill.new("Onda de Choque", 1.3, 2, Element.Type.RAIO),
+		Skill.new("Teleporte Rápido", 1.1, 1, Element.Type.PSIQUICO),
 	])
-	party.assign([hero, mage])
+	party.assign([pancham, abra])

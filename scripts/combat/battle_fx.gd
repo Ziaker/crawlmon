@@ -49,6 +49,10 @@ func telegraph(inc) -> void:
 	tw.set_parallel(true)
 	tw.tween_property(m, "position", a_home - dir * 0.6, 0.3)
 	tw.tween_property(m, "scale", Vector3(1.15, 0.8, 1.15), 0.3)
+	if m.has_meta("anim_player"):
+		var ap: AnimationPlayer = m.get_meta("anim_player")
+		if ap.has_animation("charge"):
+			ap.play("charge")
 	var ring := _ring(t_home + Vector3(0, 0.05, 0), warn, Vector3(2.6, 1, 2.6), Vector3.ONE, Battle.WINDUP, Vector3.ZERO, 0.0, false)
 	var line := _line(a_home + Vector3(0, 1, 0), t_home + Vector3(0, 1, 0), Color(warn, 0.45), 0.05)
 	_telegraphs[inc] = [ring, line]
@@ -145,19 +149,30 @@ func lunge(attacker: Combatant, toward: Vector3) -> void:
 	var m: Node3D = _models[attacker]
 	var home: Vector3 = _home[attacker]
 	var dir := _flat_dir(home, toward)
+	if m.has_meta("anim_player"):
+		var ap: AnimationPlayer = m.get_meta("anim_player")
+		if ap.has_animation("attack"):
+			ap.play("attack")
 	var tw := _move(attacker)
 	tw.tween_property(m, "scale", Vector3.ONE, 0.04)
 	tw.tween_property(m, "position", home + dir * maxf(home.distance_to(toward) - 2.5, 1.0), 0.1)
 	tw.tween_property(m, "position", home, 0.3)
+	tw.tween_callback(func() -> void: _reset_idle(attacker))
 
 
 func cast(attacker: Combatant, toward: Vector3, color: Color) -> void:
 	var m: Node3D = _models[attacker]
 	var home: Vector3 = _home[attacker]
 	var dir := _flat_dir(home, toward)
+	if m.has_meta("anim_player"):
+		var ap: AnimationPlayer = m.get_meta("anim_player")
+		var anim := "attack_special" if ap.has_animation("attack_special") else "attack"
+		if ap.has_animation(anim):
+			ap.play(anim)
 	var tw := _move(attacker)
 	tw.tween_property(m, "position", home - dir * 0.5 + Vector3(0, 0.4, 0), 0.12)
 	tw.tween_property(m, "position", home, 0.25)
+	tw.tween_callback(func() -> void: _reset_idle(attacker))
 	_ring(home + Vector3(0, 1, 0), color, Vector3.ONE * 1.8, Vector3.ONE * 0.3, 0.25, Vector3(90, 0, 0))
 
 
@@ -181,15 +196,33 @@ func settle(target: Combatant) -> void:
 	var m: Node3D = _models[target]
 	var tw := _move(target)
 	tw.tween_property(m, "position", _home[target], 0.2)
+	tw.tween_callback(func() -> void: _reset_idle(target))
+
+
+func _reset_idle(c: Combatant) -> void:
+	var m: Node3D = _models.get(c)
+	if m and m.has_meta("anim_player") and c.is_alive():
+		var ap: AnimationPlayer = m.get_meta("anim_player")
+		if ap.has_animation("battle_idle"):
+			ap.play("battle_idle")
+		elif ap.has_animation("idle"):
+			ap.play("idle")
 
 
 func flash(target: Combatant) -> void:
 	var m: Node3D = _models[target]
-	var mesh: MeshInstance3D = m.get_meta("mesh")
-	var base: Color = m.get_meta("color")
-	var mat: StandardMaterial3D = mesh.material_override
-	mat.albedo_color = Color.WHITE
-	create_tween().tween_property(mat, "albedo_color", base, 0.25)
+	if m and m.has_meta("anim_player"):
+		var ap: AnimationPlayer = m.get_meta("anim_player")
+		if ap.has_animation("damage"):
+			ap.play("damage")
+			get_tree().create_timer(0.45).timeout.connect(func() -> void: _reset_idle(target))
+	if m and m.has_meta("mesh"):
+		var mesh: MeshInstance3D = m.get_meta("mesh")
+		var base: Color = m.get_meta("color")
+		var mat: StandardMaterial3D = mesh.material_override
+		if mat:
+			mat.albedo_color = Color.WHITE
+			create_tween().tween_property(mat, "albedo_color", base, 0.25)
 
 
 func knock(target: Combatant, from_pos: Vector3) -> void:

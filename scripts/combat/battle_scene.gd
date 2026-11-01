@@ -5,6 +5,7 @@ extends Node3D
 
 enum S { MAIN, FIGHT, ITEMS, TARGET, TACTICS }
 
+const MODEL_SCALE := 2.5
 const ACT_NAMES := ["Atacar", "Habilidades", "Segurar"]
 const REACT_NAMES := ["Nada", "Esquivar"]
 
@@ -35,14 +36,15 @@ func _ready() -> void:
 	_add_floor()
 	var party := GameState.party
 	var enemies: Array[Combatant] = [
-		Combatant.new("Slime", 25, 5, 0.35, false),
-		Combatant.new("Goblin", 30, 7, 0.45, false),
+		Combatant.new("Gible", 38, 9, 0.42, false),
 	]
-	enemies[0].weaknesses.assign([Element.Type.FOGO])
-	enemies[1].weaknesses.assign([Element.Type.RAIO])
-	enemies[0].skills.assign([Skill.new("Gosma", 1.1, 2, Element.Type.VENENO), Skill.new("Investida Mole", 1.0)])
-	enemies[1].skills.assign([Skill.new("Facada", 1.2), Skill.new("Tocha", 1.3, 2, Element.Type.FOGO)])
-	enemies[1].inventory = {"potion": 1}
+	enemies[0].weaknesses.assign([Element.Type.AGUA_GELO])
+	enemies[0].skills.assign([
+		Skill.new("Mordida", 1.2, 1, Element.Type.TREVAS),
+		Skill.new("Tiro de Areia", 1.3, 2, Element.Type.TERRA),
+		Skill.new("Fúria do Dragão", 1.6, 3, Element.Type.FISICO),
+	])
+	enemies[0].inventory = {"potion": 1}
 	for e in enemies:  # Same Tactics the allies have: cast skills and evade when able.
 		e.act_policy = Combatant.Act.SKILL
 		e.react_policy = Combatant.React.EVADE
@@ -109,7 +111,7 @@ func _spawn(list: Array[Combatant], x: float, color: Color) -> void:
 	for i in list.size():
 		var c := list[i]
 		var model := _make_model(c, color)
-		model.position = Vector3(x, 0.0, (i - (list.size() - 1) / 2.0) * 3.0)
+		model.position = Vector3(x + i * 2.0 * signf(x), 0.0, (i - (list.size() - 1) / 2.0) * 5.0)
 		model.rotation.y = PI / 2.0 if x < 0 else -PI / 2.0
 		add_child(model)
 		models[c] = model
@@ -119,20 +121,50 @@ func _spawn(list: Array[Combatant], x: float, color: Color) -> void:
 
 func _make_model(c: Combatant, color: Color) -> Node3D:
 	var root := Node3D.new()
-	var mesh := MeshInstance3D.new()
-	mesh.mesh = CapsuleMesh.new()
-	mesh.position.y = 1.0
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	mesh.material_override = mat
-	root.add_child(mesh)
-	root.set_meta("mesh", mesh)
+	var lower_name := c.name.to_lower()
+	var glb_path := "res://assets/modelos/%s/%s.glb" % [lower_name, lower_name]
+	
+	var is_3d_pokemon := false
+	if ResourceLoader.exists(glb_path):
+		var glb_scene: PackedScene = load(glb_path)
+		if glb_scene:
+			var pokemon_instance := glb_scene.instantiate()
+			# The GLBs come out of Blender Z-up: tip them upright, and scale up to read
+			# from the wide battle camera.
+			pokemon_instance.rotation_degrees.x = 90.0
+			pokemon_instance.scale = Vector3.ONE * MODEL_SCALE
+			root.add_child(pokemon_instance)
+			is_3d_pokemon = true
+			
+			var anim_player: AnimationPlayer = _find_anim_player(pokemon_instance)
+			if anim_player:
+				root.set_meta("anim_player", anim_player)
+				# Configure linear loops for resting animations
+				for anim_name in ["idle", "battle_idle", "walk", "run", "charge"]:
+					if anim_player.has_animation(anim_name):
+						anim_player.get_animation(anim_name).loop_mode = Animation.LOOP_LINEAR
+				if anim_player.has_animation("battle_idle"):
+					anim_player.play("battle_idle")
+				elif anim_player.has_animation("idle"):
+					anim_player.play("idle")
+	
+	if not is_3d_pokemon:
+		var mesh := MeshInstance3D.new()
+		mesh.mesh = CapsuleMesh.new()
+		mesh.position.y = 1.0
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = color
+		mesh.material_override = mat
+		root.add_child(mesh)
+		root.set_meta("mesh", mesh)
+		
 	root.set_meta("color", color)
+	
 	var ring := MeshInstance3D.new()
 	ring.name = "BurstRing"
 	var torus := TorusMesh.new()
-	torus.inner_radius = 1.0
-	torus.outer_radius = 1.2
+	torus.inner_radius = 0.9
+	torus.outer_radius = 1.1
 	ring.mesh = torus
 	var ring_mat := StandardMaterial3D.new()
 	ring_mat.albedo_color = Color(1.0, 0.8, 0.1)
@@ -141,17 +173,36 @@ func _make_model(c: Combatant, color: Color) -> Node3D:
 	ring.position.y = 0.05
 	ring.visible = false
 	root.add_child(ring)
+	root.set_meta("burst_ring", ring)
+	
 	var label := Label3D.new()
 	label.text = c.name
-	label.position.y = 2.6
+	label.position.y = 3.2
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.font_size = 64
+	label.outline_size = 12
 	root.add_child(label)
 	return root
 
 
+func _find_anim_player(node: Node) -> AnimationPlayer:
+	if node is AnimationPlayer:
+		return node
+	for child in node.get_children():
+		var res := _find_anim_player(child)
+		if res:
+			return res
+	return null
+
+
 func _on_died(c: Combatant) -> void:
+	var model: Node3D = models.get(c)
+	if model and model.has_meta("anim_player"):
+		var ap: AnimationPlayer = model.get_meta("anim_player")
+		if ap.has_animation("down"):
+			ap.play("down")
 	var tween := create_tween()
-	tween.tween_interval(0.5)
+	tween.tween_interval(1.2)
 	tween.tween_property(models[c], "scale", Vector3.ZERO, 0.4)
 
 
