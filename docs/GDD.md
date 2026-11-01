@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 0.7 — Rodada 6 consolidada, 2026-11-01.  
+> **Revisão:** 0.8 — Rodada 7 consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -39,7 +39,11 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
 **APROVADO (R6-Q3 = A):** cada equipe ativa de aliados em combate possui **até 3 Pokémon**, incluindo **um protagonista controlado diretamente pelo jogador** e **até 2 companheiros controlados pela IA**. Isso não define a composição ou a quantidade de equipes inimigas, nem recrutamento e reservas.
 
-**PENDENTE:** estilo dos sprites 2D, natureza procedural ou fixa das dungeons, personagens iniciais, regras de recrutamento e reserva de Pokémon além dos **3 membros máximos da equipe ativa**, evolução, inventário da exploração, derrota da expedição, formato e duração das arenas, transição/câmera e identidade narrativa. Nenhuma dessas escolhas é fixada por este GDD.
+**APROVADO (R7-Q4 = A):** cada batalha pode ter **até 3 Pokémon inimigos ativos simultaneamente**, assim como o limite de três Pokémon ativos na equipe do protagonista. Essa regra não define inimigos de reserva, substituições, reforços ou ondas de inimigos.
+
+**APROVADO (R7-Q5 = A):** os mapas da exploração **2D são gerados proceduralmente por exploração/andar**, com **salas e corredores** como base de organização. Algoritmo, regras de geração, dimensão, seed, diversidade, persistência ao revisitar andares e critérios de progressão seguem pendentes; não presumir mapa fixo e desenhado manualmente como padrão.
+
+**PENDENTE:** estilo dos sprites 2D, detalhes de geração procedural das dungeons (salas, corredores, seed e progressão), personagens iniciais, regras de recrutamento e reserva de Pokémon além dos **3 membros máximos da equipe ativa**, evolução, inventário da exploração, derrota da expedição, formato e duração das arenas, transição/câmera e identidade narrativa. Nenhuma dessas escolhas é fixada por este GDD.
 
 ### Fluxo de experiência (somente encadeamento conceitual)
 
@@ -51,9 +55,9 @@ Explorar uma dungeon em 2D → encontrar um adversário → entrar na cena 3D �
 
 | Comando | Intenção e comportamento aprovado | O que permanece indefinido |
 | --- | --- | --- |
-| **1 — FIGHT** | Apresenta **Tackle como ataque físico genérico** e **quatro Moves** equipados. Tackle não ocupa um dos quatro espaços de Move e **custa 2 blocos ATB** (R4-Q4). Os **quatro Moves têm custo-base 2 ATB**, com exceções por Move, incluindo ataques de custo 5 ou com requisito Burst (R6-Q5). | Potência, precisão, PP, custo das exceções por Move, seleção de alvo e disponibilidade por espécie. |
+| **1 — FIGHT** | Apresenta **Tackle como ataque físico genérico** e **quatro Moves** equipados. Tackle não ocupa um dos quatro espaços de Move e **custa 2 blocos ATB** (R4-Q4). Os **quatro Moves têm custo-base 2 ATB**, com exceções por Move, incluindo ataques de custo 5 ou com requisito Burst (R6-Q5). **Os quatro Moves não usam PP** (R7-Q3). | Potência, precisão, PP específico de Tackle ainda pendente, custo das exceções por Move, seleção de alvo e disponibilidade por espécie. |
 | **2 — ITENS** | Acessa e permite usar consumíveis em batalha; **cada utilização de item custa 1 bloco ATB** (R6-Q2 = C: “1”). A navegação em ITENS **não pausa o combate**. | Catálogo de itens, alvos, efeitos, inventário e instante preciso de cobrança ainda não definidos. |
-| **3 — Tactic** | **Orienta somente a IA dos aliados**, sem ordens diretas (R2-Q4) e **sem custo ATB** (R3-Q3). As orientações persistem entre encontros da dungeon (R5-Q5). **Nas configurações, o jogador escolhe** entre reiniciar as orientações ao encerrar a dungeon ou preservá-las entre dungeons (R6-Q4). | Orientação padrão, valor inicial da opção nas configurações, interface e regras de salvamento da preferência ainda não definidos. |
+| **3 — Tactic** | **Orienta somente a IA dos aliados**, sem ordens diretas (R2-Q4) e **sem custo ATB** (R3-Q3). As orientações persistem entre encontros da dungeon (R5-Q5). **Nas configurações, o jogador escolhe** entre reiniciar as orientações ao encerrar a dungeon ou preservá-las entre dungeons (R6-Q4); a opção **padrão é reiniciar** (R7-Q1). | A orientação de IA padrão, detalhes da interface e salvamento da preferência ainda não definidos. |
 | **4 — Evade** | Ação ativa e reativa de esquiva durante ataques; seus **3 blocos de ATB são descontados na ativação**, tanto em sucesso quanto em falha (R4-Q3). | Janela temporal, interface física/botão de reação, elegibilidade por alvo, animações e interações com golpes múltiplos/em área. |
 
 **APROVADO:** todas as ações consomem blocos; a maioria custa **2**, o Evade custa **3**, determinados golpes fortes custam **todos os 5**, e alguns ataques também **exigem Burst**.
@@ -70,6 +74,8 @@ Explorar uma dungeon em 2D → encontrar um adversário → entrar na cena 3D �
 
 **APROVADO (R6-Q5 = A):** os **quatro Moves equipados usam custo-base de 2 ATB**. Há **exceções específicas por Move**, inclusive ataques fortes com custo de 5 blocos e Moves que requerem Burst, cuja identificação e custos devem ser documentados por Move. Se um Move for executado via Burst, preserva-se a exigência já aprovada de **1 Burst + custo ATB desse Move** (R2-Q3); não determinar silenciosamente o custo de uma exceção.
 
+**APROVADO (R7-Q3 = B):** os **quatro Moves equipados não utilizam PP**. Seus custos de uso são em **ATB** e, quando aplicável, **Burst**. Isso não determina se o **Tackle físico genérico** tem ou não PP — a questão permanece específica e não decidida. Não introduzir uma reserva de PP para os Moves equipados.
+
 **PENDENTE:** custo e propriedades das **exceções individuais de Move**, detalhes do catálogo de itens, momento de cobrança dos consumíveis e efeitos concretos de buffs/debuffs. Os custos-base de Tackle (2), Moves equipados (2, salvo exceções), ITENS (1 por uso), Evade (3), Tactic (0) e Burst já aprovados não estão pendentes.
 
 ## 3. Sistema ATB — especificação aprovada
@@ -80,12 +86,13 @@ Explorar uma dungeon em 2D → encontrar um adversário → entrar na cena 3D �
 - **APROVADO:** os blocos se preenchem **com a passagem do tempo**.
 - **APROVADO (R6-Q1 = A):** **todos os Pokémon começam cada batalha com 0/5 blocos normais de ATB**, sem vantagem inicial baseada em Velocidade; a Velocidade afeta o **preenchimento temporal posterior**, conforme R2-Q5. Essa regra vale para protagonista, aliados e inimigos. Bursts e blocos ATB extras não são transferidos da batalha anterior, conforme R2-Q1 e R5-Q1.
 - **APROVADO (R2-Q5 = A):** a **taxa de preenchimento natural** do ATB é influenciada pelo atributo **Velocidade individual de cada Pokémon**. As recompensas por ações continuam acréscimos instantâneos de blocos, sem alterar por si a taxa temporal.
+- **APROVADO (R7-Q2 = A):** um Pokémon com a **Velocidade de referência** leva **5 segundos para preencher naturalmente a barra de 0/5 até 5/5**. Isso equivale a uma média de **1 bloco por segundo na Velocidade de referência**, sem definir a curva, os marcos de arredondamento, o valor numérico de Velocidade de referência nem a fórmula de escala para outras Velocidades. Continuam válidas a pausa exclusiva da escolha de Tactic e a restrição de que o tempo não gere blocos extras.
 - **APROVADO (Opção A):** um Pokémon pode realizar uma ação **assim que tiver os blocos necessários para pagar seu custo**, sem precisar esperar completar 5/5. A antiga hipótese de só agir ao chegar a 5/5 está **superada** por esta decisão posterior.
 - **APROVADO:** custo usual de muitas ações = 2 blocos; Evade ativo = 3; certos ataques fortes = 5.
 - **DERIVADO:** se não houver autorização especial para dívida ou custo alternativo, um custo de 3 exige saldo de pelo menos 3. Exceções, caso desejadas, exigem aprovação.
 - **APROVADO (R1-Q2 = A):** a execução de uma ação desconta **apenas o custo em blocos**, preservando o saldo restante. Exemplo: 5/5, ação de custo 2, saldo final 3/5 (antes de possíveis recompensas e preenchimento temporal).
 - **APROVADO (R1-Q3 = C):** o combate **só pausa durante a escolha dos comandos de Tactic**. Ao escolher comandos de FIGHT e ITENS, o tempo não pausa e as barras ATB continuam seu preenchimento temporal. A pausa aplica-se apenas à escolha das orientações de IA em Tactic, **que não envia ordens diretas**. **PENDENTE:** detalhes técnicos de interrupção/retomada e ações simultâneas; não inventar pausas extras.
-- **PENDENTE:** tempo-base de preenchimento, fórmula/mapeamento do atributo Velocidade para a taxa temporal, arredondamento visual, tratamento de ações simultâneas e detalhes de layout para grandes quantidades de blocos excedentes. A prioridade de consumo foi aprovada em R3-Q2 e o formato-base de quadradinhos adicionais em R4-Q2.
+- **PENDENTE:** valor numérico da Velocidade de referência e fórmula/mapeamento do atributo Velocidade para tempos diferentes da referência, arredondamento visual, tratamento de ações simultâneas e detalhes de layout para grandes quantidades de blocos excedentes. A prioridade de consumo foi aprovada em R3-Q2 e o formato-base de quadradinhos adicionais em R4-Q2.
 
 ### 3.2 Recompensas instantâneas
 
@@ -174,9 +181,11 @@ Ataque direcionado a um Pokémon → tentativa de Evade ativo com custo de 3 →
 
 **APROVADO (R6-Q3 = A):** **máximo de três Pokémon ativos na equipe do jogador**, sendo um protagonista sob controle direto e no máximo dois aliados sob IA.
 
-**APROVADO (R6-Q4 = C):** existe **uma opção nas configurações** que oferece os dois comportamentos anteriormente propostos para Tactic **ao sair de uma dungeon**: (A) **reiniciar as orientações para o padrão** ao encerrar a exploração ou (B) **preservar as orientações entre dungeons** até alteração do jogador. O comportamento dentro de uma dungeon permanece o de R5-Q5; a nova decisão **substitui a pendência** sobre persistência entre dungeons. **PENDENTE:** definir o valor inicial/padrão dessa configuração e detalhes de sua persistência no arquivo de opções. Não escolher A ou B silenciosamente.
+**APROVADO (R6-Q4 = C):** existe **uma opção nas configurações** que oferece os dois comportamentos anteriormente propostos para Tactic **ao sair de uma dungeon**: (A) **reiniciar as orientações para o padrão** ao encerrar a exploração ou (B) **preservar as orientações entre dungeons** até alteração do jogador. O comportamento dentro de uma dungeon permanece o de R5-Q5; a nova decisão **substitui a pendência** sobre persistência entre dungeons. **O padrão inicial da configuração foi estabelecido posteriormente por R7-Q1 = A (reiniciar)**; continuam pendentes os detalhes de salvamento da escolha e a orientação de IA considerada padrão.
 
-**PENDENTE:** interface de seleção do protagonista, troca/controle de líder, regras de reservas/recrutamento além da equipe ativa de até três, catálogo de comportamentos, **valor inicial e persistência da preferência de Tactic nas configurações** e detalhes da lógica de decisão da IA sob Evade/Burst.
+**APROVADO (R7-Q1 = A):** a **opção padrão de Tactic nas configurações é reiniciar as orientações ao sair da dungeon**. O jogador **continua podendo escolher preservar as orientações entre dungeons**, como aprovado em R6-Q4. A orientação concreta que define o estado padrão da IA ainda não foi selecionada, assim como o formato de salvamento da escolha.
+
+**PENDENTE:** interface de seleção do protagonista, troca/controle de líder, regras de reservas/recrutamento além da equipe ativa de até três, catálogo de comportamentos, **persistência técnica da preferência de Tactic nas configurações e orientação-base da IA** e detalhes da lógica de decisão da IA sob Evade/Burst.
 
 **Exemplos não aprovados:** “priorizar fraquezas”, “defender”, “economizar PP”, “focar alvo” e “suporte” podem ser considerados em perguntas futuras, mas não constituem um conjunto obrigatório.
 
@@ -185,9 +194,9 @@ Ataque direcionado a um Pokémon → tentativa de Evade ativo com custo de 3 →
 Sem decisão adicional, não fixar:
 
 - **Pokémon e progressão:** espécies elegíveis, protagonista inicial, recrutamento, reservas e trocas (**equipe ativa de até 3 aprovada**), evolução, atributos, habilidades e crescimento.
-- **Moves:** Tackle genérico versus golpe homônimo da franquia (**Tackle genérico custa 2 ATB**); lista concreta dos quatro Moves por Pokémon, PP, status, efeitos e **exceções ao custo-base de 2 ATB**, incluindo golpes de custo 5 e requisitos Burst.
+- **Moves:** Tackle genérico versus golpe homônimo da franquia (**Tackle genérico custa 2 ATB; PP de Tackle ainda indefinido**); lista concreta dos quatro Moves por Pokémon, status, efeitos e **exceções ao custo-base de 2 ATB**, incluindo golpes de custo 5 e requisitos Burst. **Os quatro Moves equipados não possuem PP** (R7-Q3).
 - **Combate 3D:** câmera, sequência de animações, timings, hitstop, interface gráfica final, modelos, rigging, VFX e arenas por bioma.
-- **Dungeon 2D:** escala dos tiles, IA na exploração, geração, armadilhas, itens, progressão de andares, encontros e retorno.
+- **Dungeon 2D:** geração **procedural por exploração/andar, com salas e corredores** já aprovada (R7-Q5). Permanecem pendentes algoritmo e regras do gerador, seed/reprodutibilidade, escala dos tiles, IA na exploração, armadilhas, itens, progressão de andares, encontros e retorno.
 - **Modos de batalha:** pausa **exclusiva** na seleção das orientações de Tactic já aprovada; detalhes de processamento e concorrência de ações/animações sem introduzir outras pausas, prioridade de ações e múltiplos comandos simultâneos ainda exigem especificação técnica.
 - **Balanceamento:** recompensas-base (+1 fraqueza, +2 crítico normal, +2 evasão automática, +1 Evade ativo) e soma crítico normal+fraqueza aprovadas; **blocos ATB excedentes são preservados fora dos cinco normais, sem serem Burst** e são **gastos antes dos blocos normais**. O preenchimento natural não cria extras. Moves Burst não geram ATB por fraqueza nem por crítico garantido. **Extras não têm teto fixo e são exibidos em quadradinhos adicionais**, conforme R4-Q1/Q2. **R5-Q1:** os extras são descartados ao final de cada batalha. **R5-Q2/Q3:** em ataques normais multi-alvo e/ou multi-hit, no máximo +1 por fraqueza e +2 por crítico normal para a ação inteira. Permanecem pendentes duração de buffs/debuffs, dano de crítico, tabela de tipos e interações especiais.
 - **Distribuição/publicação:** direitos dos personagens, modelos e demais elementos de propriedade intelectual precisam ser considerados se houver distribuição pública.
@@ -264,6 +273,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-048 | R6-Q3 = A: **equipe ativa de até 3 Pokémon**: protagonista controlado pelo jogador e até dois aliados sob IA. |
 | D-049 | R6-Q4 = C: **configuração de Tactic** oferece reiniciar orientações ao sair da dungeon **ou** preservá-las entre dungeons; **o valor padrão não foi escolhido**. Mantém persistência durante a dungeon. |
 | D-050 | R6-Q5 = A: **custo-base dos quatro Moves equipados é 2 ATB**, com exceções Move a Move, inclusive custo 5 e necessidade de Burst; não inventar lista de exceções. |
+| D-051 | R7-Q1 = A: **opção padrão de persistência de Tactic = reiniciar orientações ao sair da dungeon**; opção de preservar entre dungeons permanece disponível. A orientação de IA padrão ainda é pendente. |
+| D-052 | R7-Q2 = A: **tempo-base de 5 segundos para ATB 0/5 → 5/5 na Velocidade de referência**. Valor da Velocidade de referência e fórmula de escala ainda pendentes. |
+| D-053 | R7-Q3 = B: **os quatro Moves equipados não utilizam PP**, gastando ATB e Burst quando aplicável. PP de Tackle não foi decidido. |
+| D-054 | R7-Q4 = A: **até 3 Pokémon inimigos ativos simultaneamente** em cada batalha; reservas e reforços não definidos. |
+| D-055 | R7-Q5 = A: **exploração 2D em dungeons geradas proceduralmente por exploração/andar**, baseadas em salas e corredores; algoritmo, seeds e demais parâmetros pendentes. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -349,39 +363,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Pendências explícitas preservadas:** valor padrão da configuração de Tactic; tempo-base/fórmula de preenchimento por Velocidade; lista, custos excepcionais e PP dos Moves; regras da equipe inimiga e de recrutamento/reserva.
 
-## 10.6. Rodada 7 — cinco perguntas aguardando resposta
+## 10.6. Rodada 7 — cinco perguntas respondidas (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa a seguir está aprovada.
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01. Decisões D-051 a D-055 incorporadas às seções técnicas correspondentes.
 
-**R7-Q1 — Qual opção de persistência do Tactic deve vir selecionada inicialmente nas configurações?**  
-A. **Reiniciar ao sair da dungeon** como padrão; jogador pode mudar para preservar.  
-B. **Preservar entre dungeons** como padrão; jogador pode mudar para reiniciar.  
-C. Outra regra inicial, especificada pelo criador.  
-*As duas opções continuam disponíveis em todos os casos; a escolha define apenas o padrão.*
+| ID | Resposta do criador | Regra incorporada |
+| --- | --- | --- |
+| **R7-Q1** | **A** — “A opção padrão de Tactic será reiniciar as orientações ao sair da dungeon; preservação entre dungeons continua selecionável.” | O ajuste padrão é **reiniciar orientações de Tactic ao sair da dungeon**. O jogador pode selecionar **preservar** nas configurações. Não define qual orientação de IA é o padrão. |
+| **R7-Q2** | **A** — “Tempo-base de 5 segundos para preencher 0/5 a 5/5 na Velocidade de referência; fórmula e valor da Velocidade de referência pendentes.” | Um Pokémon de Velocidade de referência enche o ATB normal em **5 s, do zero ao total**. Valor de referência e curva de Velocidade ainda não decididos. |
+| **R7-Q3** | **B** — “Os quatro Moves equipados não possuem PP, usando ATB e Burst quando aplicável.” | Os **quatro Moves equipados não gastam PP**; custos são ATB e Burst quando requerido. **PP de Tackle não foi especificado**. |
+| **R7-Q4** | **A** — “Até três Pokémon inimigos ativos simultaneamente em cada batalha.” | Máximo de **3 inimigos ativos** em combate. Não determina reservas, ondas ou substituições. |
+| **R7-Q5** | **A** — “Dungeons 2D geradas proceduralmente por exploração/andar; algoritmos e parâmetros a definir.” | Mapas da exploração 2D são **gerados proceduralmente por exploração/andar**, segundo regras de salas/corredores ainda a definir. |
 
-**R7-Q2 — Qual será o tempo-base de preenchimento ATB para um Pokémon de Velocidade de referência?**  
-A. **5 segundos para completar 0/5 a 5/5**, na Velocidade de referência; a relação numérica exata entre Velocidade e tempo ainda será especificada.  
-B. **10 segundos para completar 0/5 a 5/5**, na Velocidade de referência; a fórmula exata ainda será especificada.  
-C. Outro tempo ou outro critério, especificado pelo criador.  
-*Mais Velocidade continua implicando preenchimento mais rápido. Esta pergunta não define a Velocidade de referência nem a fórmula de escala.*
+**Pendências preservadas:** qual Velocidade é a referência e a fórmula de preenchimento; PP de Tackle; método e persistência dos mapas procedurais; formato dos encontros; orientação-base concreta da IA e detalhes de salvamento da configuração.
 
-**R7-Q3 — Os quatro Moves equipados devem gastar PP além de ATB?**  
-A. **Sim**, cada Move tem PP próprios consumidos por uso, além do custo de ATB/Burst aplicável; quantidades por Move ainda pendentes.  
-B. **Não**: Moves gastam apenas ATB e, quando requerido, Burst; não há PP como recurso de uso.  
+## 10.7. Rodada 8 — cinco perguntas aguardando resposta
+
+**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa desta rodada está aprovada.
+
+**R8-Q1 — Como a Velocidade altera o tempo de preenchimento dos cinco blocos de ATB?**  
+A. **Escala inversamente proporcional:** dobrar a Velocidade reduz o tempo para metade, em relação à Velocidade de referência; exigirá definir limites e valor da referência.  
+B. **Ganho com retornos decrescentes:** mais Velocidade sempre acelera, mas dobrá-la não necessariamente reduz o tempo pela metade; curva e parâmetros a especificar.  
+C. Outra fórmula ou regra, indicada pelo criador.  
+*O preenchimento de 5 s na Velocidade de referência permanece obrigatório.*
+
+**R8-Q2 — O Tackle genérico deve consumir PP?**  
+A. **Não:** Tackle consome seus 2 blocos de ATB e não possui PP.  
+B. **Sim:** Tackle usa PP, além de seus 2 ATB, com quantidade a definir.  
 C. Outra regra, especificada pelo criador.  
-*O comportamento do Tackle genérico quanto a PP permanece separado, salvo resposta que o inclua expressamente.*
+*Os quatro Moves equipados já estão definidos como sem PP; isso não muda.*
 
-**R7-Q4 — Quantos Pokémon podem estar ativos do lado inimigo num combate?**  
-A. **Até 3 inimigos ativos**, espelhando o limite da equipe do jogador.  
-B. **Sem limite fixo igual ao da equipe**: encontros podem ter mais de 3 inimigos, com máximo específico a definir no balanceamento e nas cenas.  
-C. Outra regra de quantidade, especificada pelo criador.  
-*O teto da equipe do protagonista permanece 3.*
+**R8-Q3 — Deve ser possível reproduzir uma dungeon procedural com uma seed registrada?**  
+A. **Sim:** guardar ou disponibilizar a seed permite regenerar o mesmo layout sob as mesmas regras e versão do gerador; formato e UX a definir.  
+B. **Não é necessário oferecer reprodução por seed** como recurso de design; mapas continuam gerados proceduralmente.  
+C. Outra regra, especificada pelo criador.  
+*Esta questão não define se o mapa muda quando um andar já visitado é revisitado.*
 
-**R7-Q5 — Como gerar os mapas das dungeons na exploração 2D?**  
-A. **Procedural por exploração/andar**, com regras de salas e corredores; geração, seed e progressão ainda por detalhar.  
-B. **Mapas desenhados manualmente**, fixos e preparados individualmente para cada dungeon/andar.  
-C. Outro modelo (inclusive misto), especificado pelo criador.  
-*Essa decisão não define ainda quantidade de andares, biomas ou algoritmo.*
+**R8-Q4 — Como o gerador procedural compõe salas da dungeon?**  
+A. **Salas e corredores gerados algoritmicamente**, com formas, posições e conexões construídas pelas regras do gerador.  
+B. **Sala modular a partir de peças autorais** (layouts de sala preparados manualmente) e conexões/ordem geradas proceduralmente.  
+C. Outro modelo, especificado pelo criador.  
+*Ambas as opções preservam a geração procedural aprovada em R7-Q5; não definem ainda arte, escala ou densidade.*
+
+**R8-Q5 — Como os encontros com inimigos são iniciados na exploração 2D?**  
+A. **Contato visível:** o jogador encontra Pokémon inimigos representados no mapa e o combate começa pelo contato/colisão.  
+B. **Encontros aleatórios por movimentação:** ao atravessar áreas da dungeon, o combate pode iniciar por uma verificação probabilística, sem inimigo visível obrigatório.  
+C. Outra regra ou combinação, especificada pelo criador.  
+*Esta decisão define o gatilho do encontro, não IA de patrulha, taxa de spawn ou composição das equipes.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -394,5 +422,6 @@ C. Outro modelo (inclusive misto), especificado pelo criador.
 | 0.5 | 2026-11-01 | Rodada 4 (D-036 a D-040): ATB extra sem teto fixo e com quadradinhos adicionais; Evade custa 3 na ativação; Tackle custa 2; IA decide Evade ativo e Tactic influencia prioridade. Rodada 5 aberta. | Rodada 4 fechada / Rodada 5 aberta |
 | 0.6 | 2026-11-01 | Rodada 5 (D-041 a D-045): extras descartados ao fim de cada batalha; recompensas multi-alvo limitadas por ação e multi-hit por execução/alvo sob teto global; buff/debuff via Burst custa somente Burst; Tactic persiste dentro da dungeon. Rodada 6 aberta. | Rodada 5 fechada / Rodada 6 aberta |
 | 0.7 | 2026-11-01 | Rodada 6 (D-046 a D-050): início de batalha com 0/5 ATB; ITENS custa 1 ATB por uso; equipe de até 3; opção configurável de reinício/persistência de Tactic ao sair da dungeon; quatro Moves com custo-base de 2 ATB e exceções. Abre Rodada 7. | Rodada 6 fechada / Rodada 7 aberta |
+| 0.8 | 2026-11-01 | Rodada 7 (D-051 a D-055): padrão reiniciar Tactic ao sair da dungeon, ATB de referência 0/5 → 5/5 em 5 s, quatro Moves sem PP, até três inimigos ativos e mapas 2D procedurais por exploração/andar. Abre Rodada 8. | Rodada 7 fechada / Rodada 8 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
