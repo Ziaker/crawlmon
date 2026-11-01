@@ -6,3 +6,6 @@ data_*/
 
 # Godot binaries
 Godot_v*.exe
+
+# Extracted 3D models: local only
+assets/modelos/
