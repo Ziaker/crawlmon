@@ -23,18 +23,18 @@ const ALLY_COLOR := Color(0.3, 0.7, 1.0)
 const DODGE_COLOR := Color(0.5, 0.9, 1.0)
 const GOLD := Color(1.0, 0.8, 0.1)
 
-var camera: Camera3D
+var cam: BattleCamera
 
 var _models: Dictionary = {}  ## Combatant -> Node3D
 var _home: Dictionary = {}  ## Combatant -> Vector3
 var _tweens: Dictionary = {}  ## Combatant -> Tween (movement)
 var _telegraphs: Dictionary = {}  ## Battle.Incoming -> Array[Node]
-var _cam_base := Vector3.ZERO
 
 
 func setup(p_camera: Camera3D) -> void:
-	camera = p_camera
-	_cam_base = camera.position
+	cam = BattleCamera.new()
+	add_child(cam)
+	cam.setup(p_camera)
 
 
 func register(c: Combatant, model: Node3D) -> void:
@@ -59,6 +59,14 @@ func telegraph(inc) -> void:
 	var ring := _ring(t_home + Vector3(0, 0.05, 0), warn, Vector3(2.6, 1, 2.6), Vector3.ONE, Battle.WINDUP, Vector3.ZERO, 0.0, false)
 	var line := _line(a_home + Vector3(0, 1, 0), t_home + Vector3(0, 1, 0), Color(warn, 0.45), 0.05)
 	_telegraphs[inc] = [ring, line]
+	# Slow push-in: over the target's shoulder toward an enemy attacker, or
+	# behind a party attacker looking down the line at its target.
+	var perp := _perp(dir)
+	if inc.attacker.is_player:
+		cam.frame(a_home - dir * 3.2 + perp * 1.6 + Vector3(0, 1.0, 0), t_home + Vector3(0, 1.2, 0), 46.0, 0.0, 0.7, 1, 0.9)
+	else:
+		var tilt := 3.0 if perp.z > 0 else -3.0
+		cam.frame(t_home + dir * 3.4 + perp * 1.8 + Vector3(0, 2.0, 0), a_home.lerp(t_home, 0.15) + Vector3(0, 1.2, 0), 48.0, tilt, 0.7, 1, 0.9)
 
 
 func clear_telegraph(inc) -> void:
@@ -75,6 +83,8 @@ func resolve_attack(inc) -> void:
 	clear_telegraph(inc)
 	var element: Element.Type = inc.element
 	var t_home: Vector3 = _home[inc.target]
+	var mid: Vector3 = (_home[inc.attacker] + t_home) * 0.5
+	cam.frame(mid + _perp(_flat_dir(_home[inc.attacker], t_home)) * 6.5 + Vector3(0, 1.8, 0), mid + Vector3(0, 1.2, 0), 50.0, 0.0, 0.12, 2, 0.6)
 	if element == Element.Type.FISICO:
 		lunge(inc.attacker, t_home)
 	else:
@@ -92,6 +102,7 @@ func resolve_attack(inc) -> void:
 func manual_evade(actor: Combatant, inc) -> void:
 	clear_telegraph(inc)
 	dodge(actor, "EVADE! BURST", true)
+	_dodge_shot(actor, 6.0)
 	var home: Vector3 = _home[actor]
 	_ring(home + Vector3(0, 1, 0), GOLD, Vector3.ONE * 0.5, Vector3.ONE * 2.5, 0.5, Vector3(90, 0, 0))
 	_burst(home + Vector3(0, 1, 0), GOLD, 20, 4.0, Vector3(0, 2, 0), 0.08, 0.6)
@@ -109,6 +120,7 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 	var evaded: bool = info["evaded"]
 	if evaded:
 		_dodge_later(target, "ESQUIVOU! +1 ATB", 0.1)
+		_dodge_shot(target, 0.0)
 	if _has_projectile(element):
 		var end := to + _flat_dir(from, to) * 7.0 if evaded else to
 		await _projectile(from, end, color, element)
@@ -118,6 +130,13 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 		return
 	var weak: bool = info["weak"]
 	var crit: bool = info["crit"]
+	var perp := _perp(_flat_dir(a_home, t_home))
+	var strong := weak or crit
+	cam.frame(t_home - _flat_dir(a_home, t_home) * 1.5 + perp * 3.8 + Vector3(0, 1.5, 0), to,
+		34.0 if strong else 40.0, (5.0 if perp.z > 0 else -5.0) if strong else 0.0, 0.1, 3, 0.8)
+	if strong:
+		cam.flash(0.45)
+		cam.hit_stop(0.2, 0.14)
 	_impact(element, to, color, weak or crit)
 	flash(target)
 	knock(target, a_home)
@@ -142,6 +161,7 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 func heal_fx(_actor: Combatant, target: Combatant, amount: int) -> void:
 	var home: Vector3 = _home[target]
 	var green := Color(0.3, 1.0, 0.4)
+	cam.frame(home + _perp(Vector3.RIGHT) * 4.0 + Vector3(0, 1.8, 0), home + Vector3(0, 1.2, 0), 45.0, 0.0, 0.4, 1, 0.8)
 	_ring(home + Vector3(0, 0.05, 0), green, Vector3.ONE * 2.0, Vector3.ONE * 0.5, 0.6)
 	_burst(home + Vector3(0, 0.3, 0), green, 22, 2.0, Vector3(0, 4, 0), 0.08, 0.9)
 	float_text(home + Vector3(0, 2.4, 0), "+%d" % amount, green, 64)
@@ -210,12 +230,7 @@ func knock(target: Combatant, from_pos: Vector3) -> void:
 
 
 func shake(strength: float) -> void:
-	if camera == null:
-		return
-	var tw := create_tween()
-	for i in 5:
-		tw.tween_property(camera, "position", _cam_base + Vector3(randf_range(-1, 1), randf_range(-1, 1), 0) * strength, 0.03)
-	tw.tween_property(camera, "position", _cam_base, 0.04)
+	cam.shake(strength)
 
 
 func float_text(pos: Vector3, text: String, color: Color, size := 48) -> void:
@@ -317,6 +332,35 @@ func _move(c: Combatant) -> Tween:
 	var tw := create_tween()
 	_tweens[c] = tw
 	return tw
+
+
+## Camera helpers used by the battle scene.
+func focus_target(c: Combatant) -> void:
+	var home: Vector3 = _home[c]
+	var side := 5.0 if c.is_player else -5.0
+	cam.frame(home + Vector3(side, 2.2, 4.5), home + Vector3(0, 1.1, 0), 45.0, 0.0, 0.5, 1, 60.0)
+
+
+func release_camera() -> void:
+	cam.release()
+
+
+func finish(player_won: bool) -> void:
+	if player_won:
+		cam.orbit(Vector3(-3, 1.2, 0), 7.0, 1.8, -30.0, 70.0, 2.5, 50.0)
+	else:
+		cam.frame(Vector3(0, 9, 9), Vector3.ZERO, 55.0, 0.0, 1.5, 9, 1000.0)
+
+
+func _dodge_shot(c: Combatant, roll_deg: float) -> void:
+	var home: Vector3 = _home[c]
+	cam.frame(home + Vector3(0, 1.6, 6.0), home + Vector3(0, 1.0, 0), 44.0, roll_deg, 0.15, 3, 0.6)
+
+
+## Flat vector perpendicular to `d`, on the camera's side (+z).
+func _perp(d: Vector3) -> Vector3:
+	var p := Vector3(-d.z, 0, d.x)
+	return p if p.z >= 0.0 else -p
 
 
 func _has_projectile(element: Element.Type) -> bool:
