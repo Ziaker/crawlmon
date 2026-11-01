@@ -26,7 +26,7 @@ Dungeon crawler em Godot 4.7 com mapa 2D top-down e combate em 3D com **ATB** em
 - Configurações (C): ainda vazio.
 
 ## Estrutura
-- `scenes/exploration.tscn` — mapa 2D (cena principal).
+- `scenes/exploration.tscn` — mapa 2D (cena principal). Visual procedural em `scripts/dungeon/map_visuals.gd`: tiles de pedra/tijolo, decoração, tochas com luz e sombra tremulante, luz no jogador, sombras e inimigos animados.
 - `scenes/battle.tscn` — palco 3D (modelos placeholder; trocar em `_make_model()`).
 - `personagens/` — biblioteca de sprites dos **303 Pokémon utilizáveis** no jogo (com modelo 3D disponível).
 - `personagens_sem_modelo/` — pasta separada (com `.gdignore`) contendo os **418 Pokémon arquivados** que não possuem modelo 3D.
