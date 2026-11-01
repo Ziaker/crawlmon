@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 0.9 — Rodada 8 consolidada, 2026-11-01.  
+> **Revisão:** 1.0 — Rodada 9 consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -49,7 +49,15 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
 **APROVADO (R8-Q5 = A):** os **Pokémon inimigos estão visíveis na exploração 2D**, e o **contato/colisão com um inimigo no mapa inicia o combate 3D**. Não presumir encontros aleatórios invisíveis, trajetória de patrulha ou raio de detecção sem aprovação.
 
-**PENDENTE:** estilo dos sprites 2D, detalhes do algoritmo procedural de salas e corredores, interface/armazenamento de seeds e progressão dos andares, personagens iniciais, regras de recrutamento e reserva de Pokémon além dos **3 membros máximos da equipe ativa**, evolução, inventário da exploração, derrota da expedição, formato e duração das arenas, transição/câmera e identidade narrativa. Nenhuma dessas escolhas é fixada por este GDD.
+**APROVADO (R9-Q2 = A):** ao **revisitar um andar na mesma exploração**, o **layout procedural gerado desse andar permanece inalterado**: salas, corredores e conexões não são regenerados só porque o jogador voltou. **PENDENTE:** estado de itens, inimigos e eventos quando o andar é revisitado; esta regra preserva o layout, não restaura automaticamente seu estado.
+
+**APROVADO (R9-Q3 = A):** Pokémon inimigos **visíveis no mapa 2D patrulham** durante a exploração e **perseguem o protagonista após detectá-lo**. Critérios e distância de detecção, velocidades, rotas e desengajamento continuam pendentes. O encontro segue sendo iniciado por contato, não por mera detecção.
+
+**APROVADO (R9-Q4 = A):** o **Pokémon inimigo visível derrotado em combate é removido do andar durante a exploração atual** e **não reaparece nesse andar nessa exploração**, ressalvados eventos especiais ainda não especificados. A remoção deve continuar valendo caso o jogador revisite esse andar na mesma exploração; isso não define outros encontros, spawns ou o comportamento ao iniciar outra exploração.
+
+**APROVADO (R9-Q5 = B):** o protagonista se movimenta na exploração 2D em **quatro direções cardeais** (cima, baixo, esquerda, direita), **sem movimento diagonal direto**. **PENDENTE:** se o deslocamento é contínuo ou por tiles/turnos, esquema de comandos, colisão e animação.
+
+**PENDENTE:** estilo dos sprites 2D, detalhes do algoritmo procedural de salas e corredores, interface/armazenamento de seeds e progressão dos andares, regras de IA de patrulha/detecção, estado dos inimigos/itens ao revisitar andares, personagens iniciais, regras de recrutamento e reserva de Pokémon além dos **3 membros máximos da equipe ativa**, evolução, inventário da exploração, derrota da expedição, formato e duração das arenas, transição/câmera e identidade narrativa. Nenhuma dessas escolhas é fixada por este GDD.
 
 ### Fluxo de experiência (somente encadeamento conceitual)
 
@@ -94,12 +102,13 @@ Explorar uma dungeon em 2D → encontrar um adversário → entrar na cena 3D �
 - **APROVADO (R2-Q5 = A):** a **taxa de preenchimento natural** do ATB é influenciada pelo atributo **Velocidade individual de cada Pokémon**. As recompensas por ações continuam acréscimos instantâneos de blocos, sem alterar por si a taxa temporal.
 - **APROVADO (R7-Q2 = A):** um Pokémon com a **Velocidade de referência** leva **5 segundos para preencher naturalmente a barra de 0/5 até 5/5**. Isso equivale a uma média de **1 bloco por segundo na Velocidade de referência**, sem definir a curva, os marcos de arredondamento, o valor numérico de Velocidade de referência nem a fórmula de escala para outras Velocidades. Continuam válidas a pausa exclusiva da escolha de Tactic e a restrição de que o tempo não gere blocos extras.
 - **APROVADO (R8-Q1 = A):** o **tempo de preenchimento natural é inversamente proporcional à Velocidade**: dobrar a Velocidade reduz o tempo em 50% e reduzir a Velocidade à metade dobra o tempo, a partir da Velocidade de referência. **DERIVADO, somente para Velocidade positiva:** \(T(V) = 5\,\mathrm{s} \times V_{ref}/V\), sendo \(V_{ref}\) o atributo de referência ainda a definir. **PENDENTE:** valor numérico de \(V_{ref}\), limites mínimo/máximo de taxa, tratamento de Velocidade zero/não positiva e arredondamento; nenhuma dessas escolhas é presumida.
+- **REGISTRADO (R9-Q1 = C):** a escolha do **valor numérico da Velocidade de referência foi adiada expressamente** pelo criador: “vamos definir os status”. **Não foi aprovado 50, 100 ou qualquer outro valor**. Definir primeiro os atributos (*status*), sua escala e seus valores de referência, antes de retomar o valor de \(V_{ref}\). O tempo-base de 5 segundos e a proporcionalidade inversa anteriormente aprovados continuam válidos.
 - **APROVADO (Opção A):** um Pokémon pode realizar uma ação **assim que tiver os blocos necessários para pagar seu custo**, sem precisar esperar completar 5/5. A antiga hipótese de só agir ao chegar a 5/5 está **superada** por esta decisão posterior.
 - **APROVADO:** custo usual de muitas ações = 2 blocos; Evade ativo = 3; certos ataques fortes = 5.
 - **DERIVADO:** se não houver autorização especial para dívida ou custo alternativo, um custo de 3 exige saldo de pelo menos 3. Exceções, caso desejadas, exigem aprovação.
 - **APROVADO (R1-Q2 = A):** a execução de uma ação desconta **apenas o custo em blocos**, preservando o saldo restante. Exemplo: 5/5, ação de custo 2, saldo final 3/5 (antes de possíveis recompensas e preenchimento temporal).
 - **APROVADO (R1-Q3 = C):** o combate **só pausa durante a escolha dos comandos de Tactic**. Ao escolher comandos de FIGHT e ITENS, o tempo não pausa e as barras ATB continuam seu preenchimento temporal. A pausa aplica-se apenas à escolha das orientações de IA em Tactic, **que não envia ordens diretas**. **PENDENTE:** detalhes técnicos de interrupção/retomada e ações simultâneas; não inventar pausas extras.
-- **PENDENTE:** valor numérico da Velocidade de referência e limites/condições de borda da proporcionalidade inversa já aprovada, arredondamento visual, tratamento de ações simultâneas e detalhes de layout para grandes quantidades de blocos excedentes. A prioridade de consumo foi aprovada em R3-Q2 e o formato-base de quadradinhos adicionais em R4-Q2.
+- **PENDENTE:** valor numérico da Velocidade de referência **adiado até a definição dos atributos (R9-Q1)** e limites/condições de borda da proporcionalidade inversa já aprovada, arredondamento visual, tratamento de ações simultâneas e detalhes de layout para grandes quantidades de blocos excedentes. A prioridade de consumo foi aprovada em R3-Q2 e o formato-base de quadradinhos adicionais em R4-Q2.
 
 ### 3.2 Recompensas instantâneas
 
@@ -200,10 +209,10 @@ Ataque direcionado a um Pokémon → tentativa de Evade ativo com custo de 3 →
 
 Sem decisão adicional, não fixar:
 
-- **Pokémon e progressão:** espécies elegíveis, protagonista inicial, recrutamento, reservas e trocas (**equipe ativa de até 3 aprovada**), evolução, atributos, habilidades e crescimento.
+- **Pokémon e progressão:** espécies elegíveis, protagonista inicial, recrutamento, reservas e trocas (**equipe ativa de até 3 aprovada**), evolução, **catálogo e escala dos atributos/status**, habilidades e crescimento. **R9-Q1 adia a Velocidade de referência até a definição desses status**, sem fixar valor numérico.
 - **Moves:** Tackle genérico versus golpe homônimo da franquia (**Tackle genérico custa 2 ATB, sem PP**); lista concreta dos quatro Moves por Pokémon, status, efeitos e **exceções ao custo-base de 2 ATB**, incluindo golpes de custo 5 e requisitos Burst. **Nenhuma ação do Crawlmon utiliza PP** (R8-Q2; complementa R7-Q3).
 - **Combate 3D:** câmera, sequência de animações, timings, hitstop, interface gráfica final, modelos, rigging, VFX e arenas por bioma.
-- **Dungeon 2D:** geração **procedural por exploração/andar, com salas e corredores** já aprovada (R7-Q5). Permanecem pendentes parâmetros do gerador algorítmico de salas/corredores, interface/armazenamento da seed reproduzível, revisita de andares, escala dos tiles, IA de inimigos visíveis na exploração, armadilhas, itens, progressão de andares, posicionamento e retorno. **Encontros são por contato com inimigos visíveis** (R8-Q5).
+- **Dungeon 2D:** geração **procedural por exploração/andar, com salas e corredores** já aprovada (R7-Q5); seed reproduzível (R8-Q3), **layout persistente nas revisitas da mesma exploração** (R9-Q2), **inimigos visíveis que patrulham e perseguem após detecção** (R9-Q3), **inimigos derrotados removidos até o fim da exploração** (R9-Q4) e **movimentação cardinal em quatro direções** (R9-Q5). Permanecem pendentes parâmetros do gerador, interface/armazenamento de seeds, escala dos tiles, alcance/IA de detecção, movimentação contínua vs. tiles/turnos, armadilhas, itens, progressão, posicionamento e retorno.
 - **Modos de batalha:** pausa **exclusiva** na seleção das orientações de Tactic já aprovada; detalhes de processamento e concorrência de ações/animações sem introduzir outras pausas, prioridade de ações e múltiplos comandos simultâneos ainda exigem especificação técnica.
 - **Balanceamento:** recompensas-base (+1 fraqueza, +2 crítico normal, +2 evasão automática, +1 Evade ativo) e soma crítico normal+fraqueza aprovadas; **blocos ATB excedentes são preservados fora dos cinco normais, sem serem Burst** e são **gastos antes dos blocos normais**. O preenchimento natural não cria extras. Moves Burst não geram ATB por fraqueza nem por crítico garantido. **Extras não têm teto fixo e são exibidos em quadradinhos adicionais**, conforme R4-Q1/Q2. **R5-Q1:** os extras são descartados ao final de cada batalha. **R5-Q2/Q3:** em ataques normais multi-alvo e/ou multi-hit, no máximo +1 por fraqueza e +2 por crítico normal para a ação inteira. Permanecem pendentes duração de buffs/debuffs, dano de crítico, tabela de tipos e interações especiais.
 - **Distribuição/publicação:** direitos dos personagens, modelos e demais elementos de propriedade intelectual precisam ser considerados se houver distribuição pública.
@@ -290,6 +299,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-058 | R8-Q3 = A: **seed registrável e reutilizável reproduz o mesmo layout procedural**, sob as mesmas regras e versão do gerador. UX e persistência de eventos pendentes. |
 | D-059 | R8-Q4 = A: **salas e corredores procedurais construídos algoritmicamente**, com formas, posições e conexões geradas; parâmetros específicos pendentes. |
 | D-060 | R8-Q5 = A: **inimigos Pokémon visíveis no mapa 2D**; contato/colisão inicia a batalha 3D. Comportamento dos inimigos no mapa pendente. |
+| D-061 | R9-Q1 = C: **não definir ainda o valor numérico da Velocidade de referência**; primeiro especificar os atributos (*status*) do jogo. Nenhuma das opções 50/100 foi aprovada. |
+| D-062 | R9-Q2 = A: **preservar o layout de um andar procedural já visitado nas revisitas durante a mesma exploração**; estado de itens e eventos segue pendente. |
+| D-063 | R9-Q3 = A: inimigos **visíveis patrulham e perseguem após detectar o protagonista**, sem regras numéricas de detecção já aprovadas. Combate continua por contato. |
+| D-064 | R9-Q4 = A: ao vencer, **remover o inimigo visível derrotado do andar durante a exploração atual**, inclusive em revisitas; exceções para eventos especiais não especificados. |
+| D-065 | R9-Q5 = B: protagonista se move na exploração 2D em **quatro direções cardeais, sem movimento diagonal direto**; deslocamento contínuo vs. tile/turno pendente. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -403,39 +417,52 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Correção de rastreabilidade de PP:** seções históricas de R6/R7 conservam seus textos originais, inclusive antigas afirmações de pendência. Elas **não são regras vigentes** sobre PP: **D-057 / R8-Q2 prevalece**, e a especificação atual não deve voltar a apresentar PP como indecisão. Esta correção não altera outras decisões aprovadas.
 
-## 10.8. Rodada 9 — cinco perguntas aguardando resposta
+## 10.8. Rodada 9 — cinco perguntas respondidas (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa abaixo está aprovada. O tema PP não volta a ser questionado.
+**Status:** FECHADA — 5/5 respostas registradas em 2026-11-01; decisões D-061 a D-065. **Observação:** R9-Q1 não fixa número; fixa explicitamente o adiamento para depois da definição dos atributos.
 
-**R9-Q1 — Qual valor numérico da Velocidade será a referência para os 5 segundos de ATB?**  
-A. **Velocidade 100** como referência de preenchimento em 5 segundos; demais Velocidades usam a proporção inversa já aprovada.  
-B. **Velocidade 50** como referência de preenchimento em 5 segundos; demais Velocidades usam a proporção inversa já aprovada.  
-C. Outro valor/critério, especificado pelo criador.  
-*Essa decisão não escolhe limites de velocidade mínima/máxima.*
+| ID | Resposta do criador | Estado e regra |
+| --- | --- | --- |
+| **R9-Q1** | **C** — “vamos definir os status” | **ADIADA, por decisão expressa:** definir primeiramente os atributos e suas escalas. **Nenhum valor numérico de Velocidade de referência foi aprovado**. Permanecem válidos o tempo-base 5 s e a relação inversa com Velocidade. |
+| **R9-Q2** | **A** — “Ao revisitar um andar na mesma exploração, preservar seu layout procedural.” | O layout de um andar previamente gerado permanece **idêntico durante a exploração atual** quando revisitado. Não presumir restauração de itens/inimigos. |
+| **R9-Q3** | **A** — “Inimigos visíveis patrulham e perseguem o protagonista após detectá-lo; condições de detecção ainda pendentes.” | Inimigos patrulham, detectam e perseguem; distância, condições, velocidade e perda de alvo ainda exigem aprovação. |
+| **R9-Q4** | **A** — “Ao vencer o encontro, remover aquele inimigo visível do andar durante a exploração atual.” | Inimigo derrotado deixa de existir no andar **até terminar a exploração**, inclusive em revisitas; não definir regras de outros spawns. |
+| **R9-Q5** | **B** — “O protagonista se movimenta nas quatro direções cardeais.” | Movimento cardinal, sem diagonais diretas. Forma contínua ou em tiles/turnos ainda indefinida. |
 
-**R9-Q2 — Ao voltar para um andar já visitado na mesma exploração, o mapa deve permanecer igual?**  
-A. **Sim:** layout previamente gerado permanece o mesmo na revisita durante a exploração atual, sem necessariamente restaurar inimigos e itens às posições iniciais.  
-B. **Não:** a revisita gera novamente o layout procedural, podendo mudar a configuração das salas e corredores.  
-C. Outra regra de revisita.  
-*A reprodução por seed em novas explorações continua aprovada.*
+**Não inferir:** a resposta R9-Q1 é um pedido para decidir os atributos primeiro, **não** uma escolha de Velocidade 50 ou 100 nem autorização para fixar números de atributos sem respostas adicionais.
 
-**R9-Q3 — Como os Pokémon inimigos visíveis se comportam enquanto o jogador explora?**  
-A. **Patrulham e perseguem o protagonista quando o detectam**; critérios de detecção e velocidade ainda pendentes.  
-B. **Permanecem em posição até o contato com o protagonista**, sem patrulha/perseguição autônoma.  
-C. Outro comportamento, especificado pelo criador.  
-*O combate ainda começa por contato com um inimigo visível.*
+## 10.9. Rodada 10 — definição dos atributos/status do Pokémon (cinco perguntas abertas)
 
-**R9-Q4 — O que acontece com um inimigo visível após o jogador vencer seu encontro?**  
-A. **É removido da exploração atual** e não reaparece no mesmo andar durante essa exploração, salvo eventos ainda não definidos.  
-B. **Pode reaparecer no andar** segundo sistema de respawn; intervalo e condições ainda pendentes.  
-C. Outra regra.  
-*Isso não define o comportamento na derrota do jogador.*
+**Status:** ABERTA — 0/5 respostas. Opções apresentadas para aprovação; nenhum catálogo, escala ou progressão de atributos está aprovado aqui.
 
-**R9-Q5 — Como o protagonista se move na exploração 2D?**  
-A. **Oito direções** (cardeais e diagonais) diretamente, mantendo o mapa 2D.  
-B. **Quatro direções** (cima, baixo, esquerda, direita), sem movimento diagonal direto.  
-C. Outro sistema de movimentação, especificado pelo criador.  
-*Esta pergunta não fixa se o deslocamento é livre/contínuo ou baseado em turnos/tiles.*
+**R10-Q1 — Qual catálogo de atributos de combate os Pokémon devem possuir?**  
+A. **Seis atributos tradicionais:** HP, Ataque, Defesa, Ataque Especial, Defesa Especial e Velocidade.  
+B. **Quatro atributos simplificados:** HP, Ataque, Defesa e Velocidade, sem estatísticas especiais separadas.  
+C. **Catálogo personalizado**, listado pelo criador.  
+*A seleção de catálogo não define valores, fórmulas de dano ou categorias de Moves automaticamente.*
+
+**R10-Q2 — Qual intervalo numérico deve ser utilizado para valores-base de atributos?**  
+A. **Escala de 1 a 100** para os atributos-base, antes de qualquer progressão ou modificadores.  
+B. **Escala de 1 a 255** para os atributos-base, antes de progressão ou modificadores.  
+C. Outra escala/regra especificada pelo criador.  
+*Esta escala não fixa, por si só, a Velocidade de referência e não define HP final.*
+
+**R10-Q3 — A progressão de atributos é baseada em níveis?**  
+A. **Sim:** Pokémon possuem nível e os atributos evoluem conforme a progressão de nível; nível máximo e curvas ainda a definir.  
+B. **Não:** não há níveis numéricos; atributos evoluem por outros mecanismos que ainda deverão ser escolhidos.  
+C. Outra regra de evolução de atributos, especificada pelo criador.
+
+**R10-Q4 — Como modificadores temporários de atributos de combate (buffs/debuffs) são representados?**  
+A. **Estágios discretos** de aumento/redução; limites, duração e multiplicadores ainda a definir.  
+B. **Modificações percentuais diretas** sobre os atributos; limites, acúmulo e duração ainda a definir.  
+C. Outra regra, especificada pelo criador.  
+*Esta decisão não muda o custo já definido de buff/debuff via Burst: um Burst.*
+
+**R10-Q5 — Como escolher futuramente o valor de Velocidade de referência do ATB, após definir os atributos?**  
+A. **Valor de referência fixo na escala aprovada**, definido em rodada posterior, para todos os Pokémon (independentemente de espécie ou nível).  
+B. **Referência derivada de Pokémon/nível de referência**, definidos posteriormente; o valor numérico acompanhará essa escolha de perfil de balanceamento.  
+C. Outra regra, especificada pelo criador.  
+*Não atribuir agora um número de referência. O tempo em 5 s e a proporcionalidade inversa seguem aprovados.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -450,5 +477,6 @@ C. Outro sistema de movimentação, especificado pelo criador.
 | 0.7 | 2026-11-01 | Rodada 6 (D-046 a D-050): início de batalha com 0/5 ATB; ITENS custa 1 ATB por uso; equipe de até 3; opção configurável de reinício/persistência de Tactic ao sair da dungeon; quatro Moves com custo-base de 2 ATB e exceções. Abre Rodada 7. | Rodada 6 fechada / Rodada 7 aberta |
 | 0.8 | 2026-11-01 | Rodada 7 (D-051 a D-055): padrão reiniciar Tactic ao sair da dungeon, ATB de referência 0/5 → 5/5 em 5 s, quatro Moves sem PP, até três inimigos ativos e mapas 2D procedurais por exploração/andar. Abre Rodada 8. | Rodada 7 fechada / Rodada 8 aberta |
 | 0.9 | 2026-11-01 | Rodada 8 (D-056 a D-060): ATB inversamente proporcional à Velocidade; correção geral — não existe PP, inclusive em Tackle; seeds reproduzíveis; salas/corredores algorítmicos; encontros por contato com Pokémon visíveis na exploração 2D. Abre Rodada 9. | Rodada 8 fechada / Rodada 9 aberta |
+| 1.0 | 2026-11-01 | Rodada 9 (D-061 a D-065): Velocidade de referência adiada até definição de atributos; layout procedural preservado ao revisitar andar; inimigos patrulham e perseguem após detecção, são removidos ao serem derrotados na exploração atual; movimento cardinal em quatro direções. Abre Rodada 10 para definir os atributos/status. | Rodada 9 fechada / Rodada 10 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
