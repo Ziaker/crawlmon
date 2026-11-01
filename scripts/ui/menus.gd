@@ -5,7 +5,6 @@ extends CanvasLayer
 enum Mode { NONE, TABS, PICK, SETTINGS }
 
 const TABS := ["Itens", "Status", "Segurar"]
-const ATB_SPEEDS := [0.5, 1.0, 1.5, 2.0]
 
 var mode := Mode.NONE
 var tab := 0
@@ -147,13 +146,10 @@ func _status_text(c: Combatant) -> String:
 
 # --- Settings --------------------------------------------------------------
 
-func _build_settings(keep_index: bool) -> void:
+func _build_settings(_keep_index: bool) -> void:
 	mode = Mode.SETTINGS
-	_title.text = "Configurações  (Z altera, X ou C fecha)"
-	_list.set_entries([
-		"ATB pausa nos submenus: %s" % ("Sim" if GameState.settings["pause_in_menus"] else "Não"),
-		"Velocidade do ATB: %.1fx" % GameState.settings["atb_speed"],
-	], keep_index)
+	_title.text = "Configurações  (X ou C fecha)"
+	_list.set_entries([{"text": "(vazio)", "enabled": false}])
 
 
 # --- Signals ---------------------------------------------------------------
@@ -170,13 +166,6 @@ func _on_chosen(i: int) -> void:
 		Mode.PICK:
 			_pick_action.call(GameState.party[i])
 			_build_tab()
-		Mode.SETTINGS:
-			if i == 0:
-				GameState.settings["pause_in_menus"] = not GameState.settings["pause_in_menus"]
-			else:
-				var next := (ATB_SPEEDS.find(GameState.settings["atb_speed"]) + 1) % ATB_SPEEDS.size()
-				GameState.settings["atb_speed"] = ATB_SPEEDS[next]
-			_build_settings(true)
 
 
 func _on_cancelled() -> void:

@@ -27,13 +27,11 @@ var burst := 0
 
 var attack: int:
 	get:
-		var held := get_held_item()
-		return base_attack + (held.attack_bonus if held else 0)
+		return base_attack
 
 var speed: float:
 	get:
-		var held := get_held_item()
-		return base_speed + (held.speed_bonus if held else 0.0)
+		return base_speed
 
 
 func _init(p_name: String, p_hp: int, p_attack: int, p_speed: float, p_is_player: bool) -> void:

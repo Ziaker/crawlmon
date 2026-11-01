@@ -11,8 +11,7 @@ var encounter_id := ""
 var defeated: Array[String] = []
 var in_battle := false
 var party: Array[Combatant] = []
-var inventory: Dictionary = {"potion": 3, "amulet_str": 1, "boots": 1}
-var settings := {"atb_speed": 1.0, "pause_in_menus": true}
+var inventory: Dictionary = {"potion": 3, "amulet": 1, "charm": 1}
 
 
 func _ready() -> void:
@@ -32,9 +31,6 @@ func start_battle(id: String, pos: Vector2) -> void:
 func end_battle(player_won: bool) -> void:
 	if player_won:
 		defeated.append(encounter_id)
-	else:
-		for c in party:  # Placeholder: no game over yet, just patch everyone up.
-			c.hp = c.max_hp
 	encounter_id = ""
 	in_battle = false
 	get_tree().change_scene_to_file.call_deferred(EXPLORATION)

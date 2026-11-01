@@ -1,9 +1,8 @@
 class_name Battle
 extends Node
 ## ATB battle rules. Every combatant has a 5-block gauge that fills over time.
-## Normal actions cost 2 blocks. Enemies telegraph attacks (a wind-up) which an
-## ally can try to Evade for 3 blocks; a successful evade grants a free burst
-## action. party[0] is the player-controlled leader, the rest follow Tactics.
+## Skills cost 2 blocks, items 1. Enemy attacks take a moment to land; Evade
+## (3 blocks) dodges one and grants a burst (free extra action). party[0] is the player-controlled leader, the rest follow Tactics.
 
 signal log_message(text: String)
 signal battle_ended(player_won: bool)
@@ -17,34 +16,32 @@ class Incoming:
 	var dodged := false
 	var evade_tried := false
 
-const ACTION_BLOCKS := 2.0
+const SKILL_BLOCKS := 2.0
+const ITEM_BLOCKS := 1.0
 const EVADE_BLOCKS := 3.0
 const WINDUP := 1.6  ## Seconds an enemy attack takes to land.
-const EVADE_CHANCE := 0.6
 
 var party: Array[Combatant] = []
 var enemies: Array[Combatant] = []
 var incoming: Array[Incoming] = []
 var running := false
-var menu_paused := false  ## Set by the UI while a submenu is open (if enabled).
 
 
 func start(p_party: Array[Combatant], p_enemies: Array[Combatant]) -> void:
 	party = p_party
 	enemies = p_enemies
 	for c in party:
-		c.atb = 1.0
+		c.atb = 0.0
 		c.burst = 0
 	for e in enemies:
-		e.atb = randf_range(0.5, 1.5)
+		e.atb = 0.0
 	running = true
 	log_message.emit("Batalha iniciada!")
 
 
 func _process(delta: float) -> void:
-	if not running or menu_paused:
+	if not running:
 		return
-	delta *= GameState.settings["atb_speed"]
 	for c in party + enemies:
 		c.tick(delta)
 	_enemy_ai()
@@ -65,11 +62,11 @@ func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
 
 
 func use_item(actor: Combatant, item: Item, target: Combatant) -> bool:
-	if item.kind != Item.Kind.CONSUMABLE or not actor.can_pay(ACTION_BLOCKS):
+	if item.kind != Item.Kind.CONSUMABLE or not actor.can_pay(ITEM_BLOCKS):
 		return false
 	if not actor.is_alive() or GameState.item_count(item.id) <= 0:
 		return false
-	actor.pay(ACTION_BLOCKS)
+	actor.pay(ITEM_BLOCKS)
 	GameState.remove_item(item.id)
 	target.heal(item.heal)
 	log_message.emit("%s usa %s em %s" % [actor.name, item.display_name, target.name])
@@ -91,12 +88,9 @@ func try_evade(actor: Combatant, inc: Incoming) -> bool:
 		return false
 	actor.atb -= EVADE_BLOCKS
 	inc.evade_tried = true
-	if randf() < EVADE_CHANCE:
-		inc.dodged = true
-		actor.burst = mini(actor.burst + 1, Combatant.BURST_MAX)
-		log_message.emit("%s desvia do ataque de %s! BURST!" % [actor.name, inc.attacker.name])
-	else:
-		log_message.emit("%s tenta desviar, mas falha." % actor.name)
+	inc.dodged = true
+	actor.burst = mini(actor.burst + 1, Combatant.BURST_MAX)
+	log_message.emit("%s desvia do ataque de %s! BURST!" % [actor.name, inc.attacker.name])
 	return true
 
 
@@ -104,12 +98,12 @@ func try_evade(actor: Combatant, inc: Incoming) -> bool:
 
 func _enemy_ai() -> void:
 	for e in enemies:
-		if not e.is_alive() or e.atb < ACTION_BLOCKS or _is_winding_up(e):
+		if not e.is_alive() or e.atb < SKILL_BLOCKS or _is_winding_up(e):
 			continue
-		var target := _random_alive(party)
+		var target := _first_alive(party)
 		if target == null:
 			return
-		e.pay(ACTION_BLOCKS)
+		e.pay(SKILL_BLOCKS)
 		var inc := Incoming.new()
 		inc.attacker = e
 		inc.target = target
@@ -125,11 +119,9 @@ func _ally_ai() -> void:
 			continue
 		if a.react_policy == Combatant.React.EVADE:
 			try_evade(a, find_evadable(a))
-		# Allies that react by evading keep a reserve: they only act on a full gauge.
-		var threshold := Combatant.BLOCKS if a.react_policy == Combatant.React.EVADE else ACTION_BLOCKS
-		if a.act_policy == Combatant.Act.HOLD or a.atb < threshold:
+		if a.act_policy == Combatant.Act.HOLD or a.atb < SKILL_BLOCKS:
 			continue
-		var target := _random_alive(enemies)
+		var target := _first_alive(enemies)
 		if target == null:
 			return
 		use_skill(a, _pick_skill(a), target)
@@ -137,9 +129,9 @@ func _ally_ai() -> void:
 
 func _pick_skill(a: Combatant) -> Skill:
 	if a.act_policy == Combatant.Act.SKILL and not a.skills.is_empty():
-		var skill: Skill = a.skills.pick_random()
-		if a.can_pay(skill.cost):
-			return skill
+		for skill in a.skills:
+			if a.can_pay(skill.cost):
+				return skill
 	return Skill.basic()
 
 
@@ -169,21 +161,23 @@ func _is_winding_up(e: Combatant) -> bool:
 
 
 func _hit(attacker: Combatant, target: Combatant, power: float, label: String) -> void:
-	var dmg := maxi(1, roundi(attacker.attack * power) + randi_range(-2, 2))
+	var dmg := maxi(1, roundi(attacker.attack * power))
 	target.take_damage(dmg)
 	log_message.emit("%s usa %s em %s (%d dano)" % [attacker.name, label, target.name, dmg])
 
 
-func _random_alive(list: Array[Combatant]) -> Combatant:
-	var alive := list.filter(func(c: Combatant) -> bool: return c.is_alive())
-	return alive.pick_random() if not alive.is_empty() else null
+func _first_alive(list: Array[Combatant]) -> Combatant:
+	for c in list:
+		if c.is_alive():
+			return c
+	return null
 
 
 func _check_end() -> void:
 	if not running:
 		return
-	var enemies_dead := _random_alive(enemies) == null
-	var party_dead := _random_alive(party) == null
+	var enemies_dead := _first_alive(enemies) == null
+	var party_dead := _first_alive(party) == null
 	if not enemies_dead and not party_dead:
 		return
 	running = false

@@ -12,8 +12,6 @@ var display_name: String
 var kind: Kind
 var description: String
 var heal := 0
-var attack_bonus := 0
-var speed_bonus := 0.0
 
 
 static func get_item(item_id: String) -> Item:
@@ -25,10 +23,8 @@ static func get_item(item_id: String) -> Item:
 static func _build_db() -> void:
 	var potion := _make("potion", "Poção", Kind.CONSUMABLE, "Recupera 30 de HP.")
 	potion.heal = 30
-	var amulet := _make("amulet_str", "Amuleto de Força", Kind.HELD, "Segurando: +2 de ataque.")
-	amulet.attack_bonus = 2
-	var boots := _make("boots", "Botas Leves", Kind.HELD, "Segurando: ATB 0.1 bloco/s mais rápido.")
-	boots.speed_bonus = 0.1
+	_make("amulet", "Amuleto", Kind.HELD, "Item para segurar (sem efeito ainda).")
+	_make("charm", "Talismã", Kind.HELD, "Item para segurar (sem efeito ainda).")
 
 
 static func _make(p_id: String, p_name: String, p_kind: Kind, p_desc: String) -> Item:

@@ -176,7 +176,6 @@ func _refresh() -> void:
 
 func _set_state(s: S) -> void:
 	state = s
-	battle.menu_paused = s != S.MAIN and GameState.settings["pause_in_menus"]
 	_marker.visible = s == S.TARGET
 
 
@@ -191,8 +190,8 @@ func _show_main() -> void:
 
 
 func _update_main_enabled() -> void:
-	_menu.set_enabled(0, leader.can_pay(Battle.ACTION_BLOCKS))
-	_menu.set_enabled(1, leader.can_pay(Battle.ACTION_BLOCKS) and not _consumables().is_empty())
+	_menu.set_enabled(0, leader.can_pay(Battle.SKILL_BLOCKS))
+	_menu.set_enabled(1, leader.can_pay(Battle.ITEM_BLOCKS) and not _consumables().is_empty())
 	_menu.set_enabled(2, battle.find_evadable(leader) != null)
 
 
