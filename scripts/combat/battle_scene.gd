@@ -95,7 +95,11 @@ func _ready() -> void:
 	battle.healed.connect(func(actor: Combatant, _t: Combatant, _n: int) -> void:
 		if actor == leader:
 			_end_slowmo())
-	fx.intro()
+	# The fight only starts once everybody has finished running in, so no attack
+	# can interrupt the entrance.
+	battle.party = party
+	battle.enemies = enemies
+	await fx.intro()
 	battle.start(party, enemies)
 	_show_main()
 

@@ -301,6 +301,7 @@ func _unbrace_later(c: Combatant, delay: float) -> void:
 ## Battle start: everyone runs in from off-screen and brakes at its spot.
 func intro() -> void:
 	var order := 0
+	var total := 0.0
 	for c in _models:
 		var m: Node3D = _models[c]
 		var home: Vector3 = _home[c]
@@ -314,6 +315,7 @@ func intro() -> void:
 		var yaw_home: float = _home_yaw[c]
 		var dur := clampf(from.distance_to(home) / 13.0, 0.9, 1.6)
 		_busy_for(c, delay + dur + 0.6)
+		total = maxf(total, delay + dur + 0.5)
 		m.visible = false
 		m.position = from
 		m.rotation.y = yaw_in
@@ -329,6 +331,7 @@ func intro() -> void:
 			_shock(home, Color(0.8, 0.95, 1.0), 2.8, 0.4)
 			_smoke(home + Vector3(0, 0.2, 0), Color(0.75, 0.85, 0.9), 8, Vector2(1.0, 1.8), 0.6, 0.4)
 			_reset_idle(c))
+	await get_tree().create_timer(total, false).timeout
 
 
 ## Battle over: the winners strike their victory pose.
