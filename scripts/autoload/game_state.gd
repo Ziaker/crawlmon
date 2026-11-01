@@ -1,7 +1,7 @@
 extends Node
 ## Shared state between the 2D exploration and the 3D battle scenes:
 ## party, inventory, settings, and which encounters are already defeated.
-## Also registers the game's input actions (Z confirm, X menu, C settings).
+## Also registers the game's input actions (Z confirm, X menu, C settings, Space evade).
 
 const EXPLORATION := "res://scenes/exploration.tscn"
 const BATTLE := "res://scenes/battle.tscn"
@@ -18,6 +18,7 @@ func _ready() -> void:
 	_register_key("confirm", KEY_Z)
 	_register_key("menu", KEY_X)
 	_register_key("settings", KEY_C)
+	_register_key("evade", KEY_SPACE)
 	_build_party()
 
 

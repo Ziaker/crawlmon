@@ -64,6 +64,12 @@ func _ready() -> void:
 	_show_main()
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("evade") and battle.running and leader.is_alive():
+		if battle.try_evade(leader, battle.find_evadable(leader)):
+			get_viewport().set_input_as_handled()
+
+
 # --- Stage -----------------------------------------------------------------
 
 ## Static wide shot so both sides stay in frame; no automatic camera motion.
@@ -188,7 +194,7 @@ func _build_ui(everyone: Array[Combatant]) -> void:
 	_menu.cancelled.connect(_on_cancel)
 	_menu.moved.connect(_on_moved)
 	var hint := Label.new()
-	hint.text = "Setas: mover   Z: confirmar   X: voltar   C: configurações"
+	hint.text = "Setas: mover   Z: confirmar   X: voltar   Espaço: desviar   C: configurações"
 	hint.position = Vector2(24, 690)
 	hint.modulate = Color(1, 1, 1, 0.6)
 	ui.add_child(hint)

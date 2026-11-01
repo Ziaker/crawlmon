@@ -8,6 +8,7 @@ Dungeon crawler em Godot 4.7 com mapa 2D top-down e combate em 3D com **ATB** em
 | Setas | Mover / navegar menus |
 | Z | Confirmar / realizar ação |
 | X | Abrir menu (Itens, Status, Segurar) no mapa; voltar nos submenus |
+| Espaço | Evade (atalho, em combate) |
 | C | Configurações |
 
 ## Combate
