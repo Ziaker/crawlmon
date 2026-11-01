@@ -35,6 +35,7 @@ const WINDUP := 1.6  ## Seconds an attack takes to land.
 const WEAKNESS_MULT := 1.5
 const CRIT_CHANCE := 0.1
 const CRIT_MULT := 2.0
+const START_ATB := 3.0  ## Every combatant starts a battle with this many blocks.
 const AI_HEAL_BELOW := 0.5  ## AI combatants drink a potion at or below this HP fraction.
 
 var party: Array[Combatant] = []
@@ -47,7 +48,7 @@ func start(p_party: Array[Combatant], p_enemies: Array[Combatant]) -> void:
 	party = p_party
 	enemies = p_enemies
 	for c in party + enemies:
-		c.atb = 0.0
+		c.atb = START_ATB
 		c.burst = 0
 	running = true
 	log_message.emit("Batalha iniciada!")
