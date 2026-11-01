@@ -27,7 +27,6 @@ const STAND_GAP := 2.6  ## Where a melee attacker stops, in front of its target.
 const HIT_AT := 0.45  ## Seconds into the attack clip when the strike lands.
 const ATTACK_HOLD := 0.6  ## Time spent finishing the attack clip after the strike.
 const CAST_AT := 0.5  ## Seconds into a cast when the effect leaves the caster.
-const WALK_SPEED := 2.8  ## Units per second while wandering.
 
 
 var cam: BattleCamera  ## Set by the battle scene; frames each attack.
@@ -42,7 +41,6 @@ var _hit_at: Dictionary = {}  ## attacker -> seconds until its strike lands
 var _react_token: Dictionary = {}  ## Combatant -> int
 var _slot: Dictionary = {}  ## Combatant -> Vector3 (spawn spot; wandering stays near it)
 var _busy_until: Dictionary = {}  ## Combatant -> msec; no wandering before that
-var _wandering: Dictionary = {}  ## Combatant -> bool (its movement tween is only a walk)
 var _displaced: Dictionary = {}  ## Combatant -> bool (standing off its home after a dodge)
 
 
@@ -51,7 +49,6 @@ func register(c: Combatant, model: Node3D) -> void:
 	_home[c] = model.position
 	_home_yaw[c] = model.rotation.y
 	_slot[c] = model.position
-	_wander_loop(c)
 
 
 # --- Battle events ---------------------------------------------------------
@@ -180,89 +177,6 @@ func heal_fx(_actor: Combatant, target: Combatant, amount: int) -> void:
 	float_text(home + Vector3(0, 2.4, 0), "+%d" % amount, green, 64)
 
 
-# --- Idle wandering ---------------------------------------------------------------
-
-## Like Wild ARMs, every living character keeps walking around its spot for the
-## whole battle: as soon as one walk ends the next starts, turning toward each
-## heading. Attacks, dodges and hit reactions mark the character busy, cancel the
-## walk and snap it back to facing the opponent; the resting spot (`_home`)
-## follows the character so every effect keeps using its real position.
-func _wander_loop(c: Combatant) -> void:
-	await get_tree().create_timer(randf_range(0.1, 0.7), false).timeout
-	while is_inside_tree():
-		if _can_wander(c):
-			var pos: Vector3 = (_models[c] as Node3D).position
-			if pos.distance_to(_slot[c]) > 6.0:
-				_home[c] = _slot[c]  # Far from its zone (interrupted sequence): run back.
-				_return_home(c)
-			elif pos.distance_to(_home[c]) > 1.0:
-				_return_home(c)
-			else:
-				_wander_step(c)
-		await get_tree().create_timer(0.1, false).timeout
-
-
-func _can_wander(c: Combatant) -> bool:
-	var m: Node3D = _models[c]
-	if not c.is_alive() or not m.visible or _displaced.get(c, false):
-		return false
-	if Time.get_ticks_msec() < _busy_until.get(c, 0):
-		return false
-	var tw: Tween = _tweens.get(c)
-	return tw == null or not tw.is_valid()  # Nothing else is moving it.
-
-
-func _wander_step(c: Combatant) -> void:
-	var m: Node3D = _models[c]
-	var slot: Vector3 = _slot[c]
-	var rx := 3.0 if c.is_player else 3.6
-	var rz := 1.8 if c.is_player else 2.4
-	for attempt in 6:
-		var target := slot + Vector3(randf_range(-rx, rx), 0.0, randf_range(-rz, rz))
-		if c == leader:  # Keep the player's character clear of the left-hand HUD.
-			target.x = clampf(target.x, slot.x - 1.0, slot.x + 2.6)
-		var d := target - m.position
-		d.y = 0.0
-		if d.length() < 2.5 or _too_close(c, target):
-			continue
-		var yaw_from := m.rotation.y
-		var yaw_move := atan2(d.x, d.z)
-		var tw := _move(c)
-		_wandering[c] = true
-		tw.tween_callback(func() -> void: _play(c, "walk"))
-		tw.tween_method(func(k: float) -> void: m.rotation.y = lerp_angle(yaw_from, yaw_move, k), 0.0, 1.0, 0.25)
-		tw.parallel().tween_property(m, "position", target, d.length() / WALK_SPEED)
-		tw.tween_callback(func() -> void:
-			_home[c] = target
-			_wandering[c] = false)
-		return
-
-
-## Run back to the resting spot (safety net after an interrupted sequence).
-func _return_home(c: Combatant) -> void:
-	var m: Node3D = _models[c]
-	var home: Vector3 = _home[c]
-	var d := home - m.position
-	d.y = 0.0
-	var yaw_from := m.rotation.y
-	var yaw_move := atan2(d.x, d.z)
-	var tw := _move(c)
-	tw.tween_callback(func() -> void: _play(c, "run"))
-	tw.tween_method(func(k: float) -> void: m.rotation.y = lerp_angle(yaw_from, yaw_move, k), 0.0, 1.0, 0.12)
-	tw.tween_property(m, "position", home, clampf(d.length() / RUN_SPEED, 0.3, 0.8))
-	tw.tween_callback(func() -> void:
-		m.rotation.y = _home_yaw[c]
-		_reset_idle(c))
-
-
-func _too_close(c: Combatant, spot: Vector3) -> bool:
-	for other in _models:
-		if other != c and other.is_player == c.is_player and other.is_alive():
-			if (_home[other] as Vector3).distance_to(spot) < 3.0:
-				return true
-	return false
-
-
 func _busy_for(c: Combatant, seconds: float) -> void:
 	_busy_until[c] = maxi(_busy_until.get(c, 0), Time.get_ticks_msec() + int(seconds * 1000.0))
 
@@ -270,10 +184,8 @@ func _busy_for(c: Combatant, seconds: float) -> void:
 ## Cancel any walk in progress and face the opponent again.
 func _stop_moving(c: Combatant) -> void:
 	var tw_now: Tween = _tweens.get(c)
-	if tw_now != null and tw_now.is_valid() and not _wandering.get(c, false):
+	if tw_now != null and tw_now.is_valid():
 		return  # A scripted sequence (run, dodge...) owns it; let it finish.
-	if _tweens.has(c) and (_tweens[c] as Tween).is_valid():
-		(_tweens[c] as Tween).kill()
 	var m: Node3D = _models[c]
 	m.rotation.y = _home_yaw[c]
 
@@ -293,8 +205,9 @@ func _melee(a: Combatant, stand: Vector3, dir: Vector3, run_t: float) -> float:
 	var home: Vector3 = _home[a]
 	var yaw_home: float = _home_yaw[a]
 	var yaw_out := atan2(dir.x, dir.z)
-	var yaw_back := atan2(-dir.x, -dir.z)
-	var back_t := run_t * 0.9
+	var hop_dist := stand.distance_to(home)
+	var hop_t := clampf(hop_dist / 45.0, 0.3, 0.6)
+	var hop_h := clampf(hop_dist * 0.12, 1.2, 3.0)
 	var tw := _move(a)
 	tw.tween_callback(func() -> void:
 		_play(a, "run")
@@ -304,13 +217,17 @@ func _melee(a: Combatant, stand: Vector3, dir: Vector3, run_t: float) -> float:
 	tw.tween_callback(func() -> void: _play(a, "attack"))
 	tw.tween_interval(HIT_AT + ATTACK_HOLD)
 	tw.tween_callback(func() -> void:
-		_play(a, "run")
-		_dust_trail(m, back_t + 0.12))
-	tw.tween_method(func(k: float) -> void: m.rotation.y = lerp_angle(yaw_out, yaw_back, k), 0.0, 1.0, 0.12)
-	tw.tween_property(m, "position", home, back_t).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tw.tween_method(func(k: float) -> void: m.rotation.y = lerp_angle(yaw_back, yaw_home, k), 0.0, 1.0, 0.15)
-	tw.tween_callback(func() -> void: _reset_idle(a))
-	return 0.12 + run_t + HIT_AT + ATTACK_HOLD + 0.12 + back_t + 0.15
+		_play(a, "battle_idle")
+		_smoke(stand + Vector3(0, 0.2, 0), Color(0.75, 0.85, 0.9), 6, Vector2(0.9, 1.6), 0.6, 0.4))
+	tw.tween_method(func(k: float) -> void:
+		m.position = stand.lerp(home, k) + Vector3(0, sin(k * PI) * hop_h, 0), 0.0, 1.0, hop_t)
+	tw.tween_callback(func() -> void:
+		m.position = home
+		m.rotation.y = yaw_home
+		_shock(home, Color(0.8, 0.95, 1.0), 2.6, 0.35)
+		_smoke(home + Vector3(0, 0.2, 0), Color(0.75, 0.85, 0.9), 8, Vector2(1.0, 1.8), 0.6, 0.4)
+		_reset_idle(a))
+	return 0.12 + run_t + HIT_AT + ATTACK_HOLD + hop_t + 0.05
 
 
 ## Cast on the spot with the special-attack clip. Returns the total duration.
@@ -714,7 +631,6 @@ func _burst(pos: Vector3, color: Color, amount: int, speed: float, gravity: Vect
 # --- Primitives --------------------------------------------------------------
 
 func _move(c: Combatant) -> Tween:
-	_wandering[c] = false
 	if _tweens.has(c) and (_tweens[c] as Tween).is_valid():
 		(_tweens[c] as Tween).kill()
 	var tw := create_tween()
