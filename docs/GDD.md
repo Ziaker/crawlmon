@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.5 — Rodada 14 consolidada, 2026-11-01.  
+> **Revisão:** 1.6 — Rodada 15 consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -131,15 +131,7 @@ Explorar uma dungeon em 2D → encontrar um adversário → entrar na cena 3D �
 - **Exemplo derivado, não regra de interface:** um Pokémon com 4/5 que ganha +3 (crítico normal e fraqueza) passa a contar com cinco blocos normais e **dois extras**. O modelo de quadradinhos adicionais foi aprovado em R4-Q2; seus detalhes gráficos continuam pendentes.
 - **APROVADO (R3-Q2 = A):** ao pagar o custo de uma ação, são **consumidos primeiro os blocos ATB extras**; se os extras não forem suficientes, desconta-se o restante dos cinco blocos normais. Exemplo: 4 normais +2 extras, ação de custo 2 → **4 normais +0 extras**. Os extras não são Burst.
 - **APROVADO (R3-Q4 = A):** o preenchimento natural baseado no tempo e na Velocidade **para ao atingir cinco blocos normais**; **somente recompensas por ações** (fraqueza, crítico normal, esquivas elegíveis) podem gerar blocos ATB extras. A regeneração temporal não gera extras, mesmo quando a barra normal está completa.
-- **APROVADO (R14-Q2 = C):** cada personagem recupera **“1/4 do MP a cada 3 segundos enquanto tiver com as 5 barras cheias”**. Condição: **cinco blocos ATB normais completos (5/5)**. **PENDENTE:** a base do quarto (MP máximo, MP faltante ou outra), arredondamento, contagem interrompida ao gastar ATB, pausa Tactic, efeitos fora de combate. A recuperação de MP não gera ATB extra. **R14-Q2 também aprovou A:** pontos de descanso restauram MP ao máximo, com condições a detalhar.
-- **APROVADO (R4-Q1 = A):** os **blocos ATB extras gerados por recompensas não têm limite fixo de armazenamento durante a batalha**. São distintos dos cinco normais e dos blocos Burst; sua persistência entre batalhas segue pendente.
-- **APROVADO (R4-Q2 = A):** exibir os extras como **quadradinhos adicionais contíguos aos cinco blocos normais**, visualmente distintos dos blocos normais e do Burst. **PENDENTE:** detalhes gráficos e visualização quando houver um grande número de extras.
-- **APROVADO (R5-Q1 = A):** **o estoque de blocos ATB extras é descartado no término de cada batalha**. Nenhum extra é carregado ao próximo encontro, inclusive dentro da mesma dungeon. O estado inicial dos **cinco blocos normais** da batalha seguinte permanece pendente.
-- **APROVADO (R3-Q5 = B):** um **Move executado com Burst** não concede recompensa de ATB por atingir uma fraqueza, **nem pelo crítico garantido** do Burst. Essa é uma exceção às recompensas comuns de fraqueza e crítico; não altera os respectivos bônus de golpes normais.
-- **APROVADO (R5-Q2 = B):** em um ataque **normal multi-alvo**, a **ação inteira** concede no máximo **uma recompensa de fraqueza (+1)** e **uma de crítico normal (+2)**, mesmo que múltiplos alvos satisfaçam os critérios. Se ocorrerem ambos, a ação gera no máximo **+3 ATB**. Não multiplicar o benefício pela quantidade de alvos.
-- **APROVADO (R5-Q3 = B):** em um Move **normal com múltiplos hits contra o mesmo alvo**, a **execução** concede no máximo **uma recompensa por fraqueza e uma por crítico normal referentes àquele alvo**, independentemente do número de hits. **Interação com R5-Q2:** a limitação por alvo não autoriza a somar recompensas por vários alvos; para Moves multi-alvo, prevalece o **teto global por ação** definido em R5-Q2.
-- **Exemplo derivado:** um Move normal com três hits contra dois alvos fracos, com pelo menos um crítico normal, gera no máximo **+1 fraqueza +2 crítico = +3 ATB** no total da ação, não +3 por alvo/hit. Moves via Burst continuam excluídos dessas recompensas.
-- **PENDENTE:** apresentação visual de grande quantidade de extras; detalhes de eventos simultâneos, acertos anulados e interrupções. **Já definidos:** todos começam cada batalha com 0/5 ATB normal (R6-Q1), extras são descartados ao terminar a batalha (R5-Q1) e recompensas multi-alvo/multi-hit têm teto global por ação (R5-Q2/Q3).
+- **APROVADO (R14-Q2 = C; detalhado em R15-Q1 = A e R15-Q2 = A):** **cada Pokémon recupera um quarto (25%) do seu MP máximo a cada 3 segundos consecutivos enquanto estiver com os cinco blocos normais de ATB completos (5/5)**. **Ao deixar 5/5 ATB, o contador zera**; quando o ATB voltar a 5/5, um novo intervalo completo de 3 s será exigido. Não recuperar acima do MP máximo. **PENDENTE:** arredondamento da parcela, efeitos da pausa Tactic, funcionamento fora de combate e condições excepcionais. A recuperação não gera ATB extras e não altera o custo/preenchimento do ATB nem custos ATB/Burst. **R14-Q2 também aprovou A:** pontos de descanso restauram MP completamente ao máximo; condições de uso ainda pendentes.
 
 **Exemplo de valores aprovados:** com 2/5, um crítico normal concede +2 e eleva a barra para 4/5. Se o mesmo golpe também explorar fraqueza, o ganho total é +3, e um saldo inicial de 2/5 alcança 5/5.
 
@@ -279,15 +271,30 @@ Sem decisão adicional, não fixar:
 
 **APROVADO (R14-Q1 = A):** **MP de Moves mágicos/especiais é descontado na ativação**. Cancelamento, reembolso e interrupções pendentes. Não alterar custos ATB/Burst.
 
-**APROVADO (R14-Q2 = C + A):** coexistem **recuperação de “1/4 do MP a cada 3 segundos enquanto tiver com as 5 barras cheias” (ATB normal 5/5)** e **restauração completa de MP em pontos de descanso da dungeon**. Continuam disponíveis os consumíveis de MP já aprovados. **PENDENTE:** o que constitui a base do 1/4 (MP máximo, faltante ou outra); arredondamento; reiniciar ou preservar contador após sair de 5/5; efeito da pausa Tactic; funcionamento fora de combate; condições dos pontos de descanso. **Não presumir cura de HP no descanso nem gerar ATB extra com a recuperação.**
+**APROVADO (R14-Q2 = C + A; especificado em R15-Q1/Q2 = A):** coexistem **recuperação de 25% do MP máximo após cada período de 3 segundos consecutivos em ATB normal 5/5**, com **reinício do cronômetro ao deixar 5/5**, e **restauração completa de MP nos pontos de descanso**. Mantêm-se os consumíveis de MP. **PENDENTE:** arredondamento, pausa Tactic, atuação fora de combate e condições dos pontos de descanso. Não presumir cura de HP no descanso ou gerar ATB extra. A mecânica não altera os custos ATB/Burst.
 
 **APROVADO (R14-Q3 = A):** **HP restante de cada Pokémon persiste entre combates da mesma dungeon até ser recuperado**. Recuperação de HP, HP de nova exploração e derrota pendentes.
 
 **APROVADO (R14-Q4 = B):** o protagonista, que recebe **1 ponto distribuível por nível**, **deve distribuí-lo ao subir de nível antes de concluir a progressão**. Não guardar pontos voluntariamente. Limites, interface e elegibilidade pendentes.
 
-**APROVADO (R14-Q5 = C):** Pokémon têm **atributos-base**, e **os atributos ganhos pelos aliados a cada nível dependem de como lutam, em função de suas táticas**. Para Pokémon aleatórios que podem ingressar na equipe, a definição inicial desse comportamento é **aleatória**, sem distribuição ou algoritmo aprovados. **Haverá um sistema de Natures**; seus efeitos não foram especificados. As **curvas automáticas por espécie** aprovadas em R13-Q5 permanecem como referência, mas não devem ser usadas como única fonte de ganho, ignorando as táticas/ações. **PENDENTE:** efeito de Nature, lógica da orientação aleatória, relação entre ações, táticas, atributos-base/curvas, fórmulas e limites.
+**APROVADO (R14-Q5 = C; especificado em R15-Q3 = A, R15-Q4 = B e R15-Q5 = B):** Pokémon têm **atributos-base**, e os ganhos por nível dos aliados são influenciados **conjuntamente pela tática selecionada e pelas ações efetivamente executadas em combate**; pesos e período de observação ficam pendentes. **Natures influenciam atributos, crescimento e tendências comportamentais/táticas**, ainda sem catálogo ou modificadores definidos. Para Pokémon aleatórios recrutáveis, a **tática inicial é sorteada entre opções associadas à Nature** do Pokémon, sem lista de compatibilidades ou probabilidades aprovadas. As curvas automáticas por espécie de R13-Q5 continuam sendo referência, mas não excluem tática, ações ou Nature. **PENDENTE:** ponderações e fórmulas de crescimento, ações contabilizadas, lista de Natures, vínculos entre táticas e Natures e regras concretas de sorteio.
 
 **Prioridade documental:** regras específicas de R14 complementam R12/R13; preservar o histórico. Crawlmon permanece sem PP, com custos ATB/Burst inalterados.
+
+### 7.6. Recuperação por ATB cheio, Natures e aprendizado — decisões da Rodada 15
+
+**APROVADO (R15-Q1 = A):** ao manter **5/5 blocos ATB normais**, o Pokémon recupera **1/4 (25%) do seu MP máximo** ao concluir cada intervalo elegível de **3 segundos**. O MP recuperado não ultrapassa o máximo. **PENDENTE:** arredondamento da parcela fracionária; não definir uma fórmula nova para MP máximo.
+
+**APROVADO (R15-Q2 = A):** para recuperar cada parcela, são necessários **3 segundos consecutivos em 5/5 ATB**. Se o Pokémon deixar de estar em 5/5, **o contador é zerado**, não pausado; ao encher novamente, inicia-se novo período inteiro. **PENDENTE:** o tratamento da pausa de Tactic e dos cenários fora de combate. O ATB natural continua limitado a cinco blocos e o MP não produz blocos extras.
+
+**APROVADO (R15-Q3 = A):** o crescimento automático dos aliados considera **tanto a tática selecionada quanto as ações realmente executadas em combate**. **PENDENTE:** período de registro, critérios/ponderações das duas influências, atributos afetados, combinação com curvas específicas da espécie e fórmulas. A distribuição manual de atributos permanece exclusiva do protagonista.
+
+**APROVADO (R15-Q4 = B):** **Natures influenciam os atributos, seu crescimento e tendências comportamentais/táticas** dos Pokémon. **PENDENTE:** catálogo de Natures, seus efeitos, modificadores, limites e interações com Tactic e IA. Não atribuir valores ou comportamentos específicos sem aprovação.
+
+**APROVADO (R15-Q5 = B):** a **tática inicial dos Pokémon aleatórios recrutáveis é sorteada dentre opções associadas à Nature**. **PENDENTE:** catálogo de táticas por Nature, probabilidades, momento de sorteio da Nature e persistência das atribuições. O jogador continua podendo alterar orientações usando Tactic conforme regras anteriores; esta decisão não cria ordens diretas para a IA.
+
+**Preservação:** MP nos pontos de descanso continua restaurado completamente; HP/MP persistem entre batalhas na mesma dungeon, conforme suas regras. O projeto continua **sem PP**, e os custos ATB/Burst aprovados não mudam.
+
 
 
 
@@ -409,6 +416,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-088 | R14-Q3 = A: **HP restante persiste entre batalhas da mesma dungeon** até recuperação. |
 | D-089 | R14-Q4 = B: **ponto de atributo do protagonista distribuído obrigatoriamente na subida de nível** antes de concluir progressão. |
 | D-090 | R14-Q5 = C: **crescimento dos aliados conforme forma de lutar/táticas, com atributos-base; comportamento aleatório de recrutáveis e Natures**; complementa curvas por espécie (D-085), fórmulas pendentes. |
+| D-091 | R15-Q1 = A: **recuperação por ATB 5/5 de 1/4 (25%) do MP máximo por intervalo de 3 s**; arredondamento pendente. |
+| D-092 | R15-Q2 = A: **exigir 3 s consecutivos em ATB 5/5; ao sair de 5/5, zerar cronômetro**; pausa Tactic ainda pendente. |
+| D-093 | R15-Q3 = A: **crescimento dos aliados depende conjuntamente de tática selecionada e ações efetivamente executadas**; ponderações/fórmulas pendentes. |
+| D-094 | R15-Q4 = B: **Natures afetam atributos, crescimento e tendências de comportamento/tática**; detalhes pendentes. |
+| D-095 | R15-Q5 = B: **tática inicial de recrutáveis aleatórios sorteada entre opções associadas à Nature**; lista e probabilidades pendentes. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -606,36 +618,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Rastreabilidade:** R14-Q2 soma duas recuperações; R14-Q5 complementa D-085, de crescimento por espécie. Sem PP, sem alterar ATB/Burst.
 
-## 10.14. Rodada 15 — detalhes de MP e crescimento tático (cinco perguntas abertas)
+## 10.14. Rodada 15 — detalhes de MP e crescimento tático (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas; nenhuma alternativa aprovada.
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01, registradas como D-091 a D-095.
 
-**R15-Q1 — O “1/4 do MP” recuperado a cada 3 s sob 5/5 ATB é calculado sobre:**  
-A. **Um quarto do MP máximo**; arredondamento pendente.  
-B. **Um quarto do MP faltante**; arredondamento pendente.  
-C. Outra base/regra, especificada pelo criador.  
-*O requisito de 5/5 e a recuperação completa no descanso estão aprovados.*
+| ID | Resposta do criador | Regra incorporada |
+| --- | --- | --- |
+| **R15-Q1** | **A** — “A cada 3 segundos elegíveis com ATB 5/5, recupera 1/4 do MP máximo, arredondamento pendente.” | Recuperar **25% do MP máximo** por intervalo elegível de três segundos em ATB cheio. Arredondamento pendente. |
+| **R15-Q2** | **A** — “Ao sair de ATB 5/5, o contador de recuperação de MP zera; exige 3 segundos consecutivos em 5/5.” | **Zerar a contagem** ao deixar 5/5 e exigir **3 s consecutivos** por recuperação. |
+| **R15-Q3** | **A** — “Crescimento dos aliados considera tanto tática selecionada quanto ações realmente executadas, com ponderação a definir.” | **Tática e ações executadas** influenciam juntas o crescimento; pesos e fórmulas pendentes. |
+| **R15-Q4** | **B** — “Natures influenciam atributos, crescimento e tendências comportamentais/táticas, com regras a definir.” | **Nature afeta atributos, crescimento e tendências comportamentais/táticas**; efeitos concretos pendentes. |
+| **R15-Q5** | **B** — “Tática inicial de recrutáveis aleatórios é sorteada entre opções associadas à Nature, se esta afetar comportamento.” | **Sortear tática inicial entre opções associadas à Nature**, que já foi aprovada como influenciando comportamentos; probabilidades pendentes. |
 
-**R15-Q2 — Ao consumir ATB e sair de 5/5, a contagem de três segundos:**  
-A. **Reinicia do zero** quando voltar a 5/5 ATB.  
-B. **Pausa e retoma** de onde parou ao voltar a 5/5 ATB.  
-C. Outra regra, especificada pelo criador.
+**Limites e rastreabilidade:** R15-Q1/Q2 especificam a recuperação de MP de R14-Q2 sem alterar o ATB; R15-Q3/Q4/Q5 detalham o crescimento tático, Nature e recrutamento de R14-Q5. Não foram definidos arredondamentos, pesos de ações/táticas, modificadores de Nature ou taxas de sorteio. Nenhum PP ou novo custo ATB/Burst foi introduzido.
 
-**R15-Q3 — O crescimento dos aliados segue:**  
-A. **Tática selecionada e ações executadas**, ambas influenciando os atributos ganhos, pesos pendentes.  
-B. **Principalmente a tática configurada**, sem necessariamente contabilizar ações uma a uma.  
+## 10.15. Rodada 16 — MP e integração de Nature/táticas (cinco perguntas abertas)
+
+**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa está aprovada.
+
+**R16-Q1 — Como arredondar a recuperação de 25% do MP máximo a cada intervalo elegível?**  
+A. **Arredondar para cima**, garantindo o inteiro superior de cada parcela positiva.  
+B. **Arredondar para baixo**, descartando a parte fracionária de cada parcela.  
 C. Outra regra, especificada pelo criador.  
-*Continuam os atributos-base e a referência a curvas por espécie.*
+*O valor proporcional de 25%, os três segundos e a exigência de ATB 5/5 já estão aprovados.*
 
-**R15-Q4 — Natures influenciarão:**  
-A. **Crescimento e atributos**, com modificadores pendentes.  
-B. **Crescimento/atributos e tendências táticas/comportamentais**, com regras pendentes.  
-C. Outra função, especificada pelo criador.
+**R16-Q2 — Como funciona o contador de recuperação se o Pokémon já tem MP máximo e continua em ATB 5/5?**  
+A. **Zerar/aguardar sem contar** enquanto o MP estiver máximo; um novo intervalo inteiro começa quando houver MP faltante.  
+B. **Manter ciclos de três segundos** mesmo com MP máximo, sem ultrapassar o limite; quando gastar MP, prosseguir no ciclo vigente.  
+C. Outra regra, especificada pelo criador.  
+*Em qualquer alternativa, sair de ATB 5/5 zera o contador, conforme R15-Q2.*
 
-**R15-Q5 — A tática inicial de recrutáveis aleatórios é sorteada:**  
-A. **Independentemente da Nature**, com opção de alterar depois.  
-B. **Dentre táticas associadas à Nature**, caso a Nature afete comportamento.  
-C. Por outro critério, especificado pelo criador.
+**R16-Q3 — Qual período de combate entra no cálculo do crescimento por ações dos aliados?**  
+A. **Desde o nível anterior:** considerar ações e táticas utilizadas no período entre duas subidas de nível.  
+B. **Histórico acumulado do Pokémon:** considerar ações e táticas ao longo dos combates, com peso e recência a decidir.  
+C. Outro intervalo, especificado pelo criador.  
+*As ações efetivas e a tática selecionada já devem influenciar conjuntamente o crescimento.*
+
+**R16-Q4 — Quando uma Nature é atribuída aos Pokémon recrutáveis aleatórios?**  
+A. **Na geração do Pokémon**, antes de eventual recrutamento, mantendo-a posteriormente; probabilidades pendentes.  
+B. **No momento do recrutamento**, sorteada quando ele entra na equipe; probabilidades pendentes.  
+C. Outra regra, especificada pelo criador.  
+*A tática inicial é sorteada entre opções associadas à Nature, conforme R15-Q5.*
+
+**R16-Q5 — Qual é a prioridade entre Tactic escolhida pelo jogador e tendências de Nature?**  
+A. **Tactic define a orientação principal; Nature mantém tendências comportamentais secundárias**, com efeitos ainda pendentes.  
+B. **Tactic escolhida prevalece integralmente no comportamento enquanto estiver ativa**; Nature ainda afeta atributos/crescimento, mas não interfere nas decisões sob essa Tactic.  
+C. Outra regra de prioridade, especificada pelo criador.  
+*Tactic continua orientando a IA, sem enviar ordens diretas.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -656,5 +685,7 @@ C. Por outro critério, especificado pelo criador.
 | 1.3 | 2026-11-01 | Rodada 12 (D-076 a D-080): Moves mágicos/especiais consomem MP além de ATB/Burst, MP máximo derivado de Magia+nível, MP restante preservado entre batalhas na dungeon, pontos fixos por nível ainda sem valor, distribuição manual só do protagonista e crescimento automático dos aliados; abre Rodada 13. | Rodada 12 fechada / Rodada 13 aberta |
 | 1.4 | 2026-11-01 | Rodada 13 (D-081 a D-085): custo-base comum de MP com exceções individuais (valores pendentes); recuperação de MP por itens e pontos de descanso; MP máximo ao iniciar nova exploração; protagonista recebe 1 ponto distribuível por nível; aliados crescem por curvas de espécie. Abre Rodada 14. | Rodada 13 fechada / Rodada 14 aberta |
 | 1.5 | 2026-11-01 | Rodada 14 (D-086 a D-090): MP descontado na ativação; recuperação de 1/4 do MP a cada 3 s sob ATB 5/5 e descanso com MP completo; HP persiste entre batalhas; ponto do protagonista obrigatório na subida de nível; ganho de atributos de aliados depende de forma de lutar/táticas, aleatoriedade de recrutáveis e Natures. Rodada 15 aberta. | Rodada 14 fechada / Rodada 15 aberta |
+
+| 1.6 | 2026-11-01 | Rodada 15 (D-091 a D-095): recuperação de 25% do MP máximo a cada 3 s consecutivos sob ATB 5/5, zerando contador ao sair de 5/5; crescimento de aliados considera tática e ações executadas; Natures influenciam atributos/crescimento/comportamento; recrutáveis aleatórios recebem tática inicial sorteada conforme Nature. Abre Rodada 16. | Rodada 15 fechada / Rodada 16 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
