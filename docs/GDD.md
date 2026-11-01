@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.10 — Rodada 19 consolidada, 2026-11-01.  
+> **Revisão:** 1.11 — Rodada 20 consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -354,6 +354,21 @@ Sem decisão adicional, não fixar:
 
 **Rastreabilidade:** R19-Q2 é uma resposta **C personalizada**, não aprovação irrestrita da alternativa B anterior. O teto de **duas categorias** não substitui o teto de **uma execução** e não interfere nas recompensas ATB multi-hit/multi-alvo. R19-Q4 preserva os pontos distribuídos e esclarece a mudança de Nature; R19-Q5 deixa a estrutura de bônus/penalidades flexível sem adicionar números. **Estas são regras documentais, não implementação em código.** Permanecem inexistentes os PP, e os custos ATB/Burst não foram modificados.
 
+### 7.11. Categorias de telemetria e efeitos de Nature — decisões da Rodada 20
+
+**APROVADO (R20-Q1 = A) — seleção de categorias:** se uma ação/Move puder pertencer a mais de duas categorias de telemetria, registrar **as categorias principais previamente definidas na ficha da ação/Move**, respeitando o teto de **duas categorias por ação** aprovado em R19-Q2. **PENDENTE:** critérios de escolha/priorização das categorias na ficha, formato dos dados e tratamento de ações sem ficha própria. Não inferir seleção dinâmica por efeitos nem classificação obrigatória em duas categorias.
+
+**APROVADO (R20-Q2 = A) — frequência com dupla classificação:** uma ação classificada em **duas categorias contribui com uma ocorrência de frequência em cada uma dessas categorias**. O registro continua sendo **uma única ação executada**, inclusive quando o Move possui vários hits ou alvos (R18-Q3); não contar dois Moves, duas execuções ou impactos/alvos adicionais. **PENDENTE:** como resolver empates entre categorias de frequência predominante e como as frequências se traduzem em ajustes de atributos. Não estabelecer pesos ou fórmulas de crescimento.
+
+**APROVADO (R20-Q3 = A) — fora da equipe:** quando o Pokémon **não está na equipe**, seu **histórico individual de telemetria permanece preservado, sem acumular novas ações até seu retorno**. Ao retornar, a contagem poderá continuar a partir do histórico preservado (R19-Q1), observadas as regras de execução e categorização já aprovadas. Não inferir que o Pokémon pode ou não participar de combates fora da equipe por outros sistemas; **para a telemetria, não se acumulam eventos durante sua ausência**.
+
+**APROVADO (R20-Q4 = A) — preservação proporcional de HP/MP:** **se a mudança de Nature do protagonista alterar o HP máximo e/ou MP máximo, o valor atual do recurso afetado deve preservar sua proporção em relação ao máximo anterior**, aplicando essa mesma proporção ao novo máximo. A regra é **condicional**: não presume que toda Nature altere HP/MP, nem substitui a regra aprovada de preservar pontos de atributo já distribuídos (R19-Q4). **PENDENTE:** arredondamento, tratamento de máximos anteriores inválidos/zero, regras numéricas de recomposição, implementação do recálculo e demais casos-limite. **Não interpretar como recuperação integral automática de HP/MP**, nem alterar sua persistência entre combates.
+
+**APROVADO (R20-Q5 = A) — Natures neutras:** o catálogo **pode incluir Natures neutras, sem modificadores diretos nos atributos-base**. Elas **ainda podem influenciar crescimento e/ou tendências comportamentais**, conforme regras a especificar; a neutralidade nos atributos-base não define automaticamente neutralidade nos demais efeitos. **PENDENTE:** catálogo de Natures, quais são neutras, efeitos concretos, intensidades, limites e probabilidades. A Tactic escolhida continua prevalecendo integralmente sobre tendências comportamentais de Nature enquanto ativa.
+
+**Preservação:** R20 detalha as decisões R18 e R19 sem modificá-las retroativamente: uma execução continua sendo uma ação, com até duas classificações de telemetria; pontos distribuídos não são perdidos com a troca de Nature. **Nenhum valor, fórmula de atributos, probabilidade, PP ou custo ATB/Burst foi criado nesta revisão.** As regras são documentais, não implementação do jogo.
+
+
 
 
 
@@ -504,6 +519,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-113 | R19-Q3 = A: **registrar na telemetria ao começar efetivamente a execução**, ainda que falhe ou seja interrompida; comando que não iniciou a execução não conta; cobranças ATB/MP/Burst inalteradas. |
 | D-114 | R19-Q4 = A: **ao sortear nova Nature do protagonista, preservar pontos de atributos já distribuídos e substituir apenas os efeitos de Nature**, recomposição numérica pendente. |
 | D-115 | R19-Q5 = B: **Natures admitem bônus e penalidades flexíveis em atributos-base, sem exigir um par positivo/negativo**; catálogo, atributos e valores pendentes. |
+| D-116 | R20-Q1 = A: quando houver mais de duas categorias possíveis, **selecionar até duas categorias principais previamente definidas na ficha da ação/Move**; critérios de prioridade pendentes. |
+| D-117 | R20-Q2 = A: **uma ação classificada em duas categorias soma uma ocorrência de frequência em cada categoria**, mantendo uma única ação/execução; sem novos pesos ou fórmulas. |
+| D-118 | R20-Q3 = A: **fora da equipe, preservar a telemetria do Pokémon sem acumular novas ações até seu retorno**; histórico anterior mantido. |
+| D-119 | R20-Q4 = A: **quando a nova Nature mudar o HP/MP máximo do protagonista, preservar a proporção do valor atual em relação ao máximo anterior**; arredondamento/casos-limite pendentes. |
+| D-120 | R20-Q5 = A: **permitir Natures neutras, sem modificadores diretos nos atributos-base**, mantendo possíveis efeitos em crescimento/comportamento; catálogo pendente. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -771,39 +791,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Rastreabilidade:** R19-Q2 responde C com teto específico de duas categorias; não aprova classificar uma ação em um número ilimitado de categorias. R19-Q4 mantém a distribuição manual histórica. Regras de ATB/Burst e a inexistência de PP permanecem inalteradas.
 
-## 10.19. Rodada 20 — categorias da telemetria e efeitos de Nature (cinco perguntas abertas)
+## 10.19. Rodada 20 — categorias da telemetria e efeitos de Nature (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa abaixo foi aprovada.
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01, registradas como D-116 a D-120.
 
-**R20-Q1 — Quando uma ação for compatível com mais de duas categorias, como selecionar as duas registradas?**  
-A. **Categorias principais previamente definidas na ficha da ação/Move**, com regras de prioridade e classificação futura.  
-B. **Categorias identificadas pelos efeitos efetivamente executados**, aplicando prioridade de classificação a definir, sem exigir sucesso.  
-C. Outro critério, especificado pelo criador.  
-*A telemetria continua limitada a duas categorias e uma ação por execução; não há pesos nem prioridade aprovada.*
+| ID | Resposta do criador | Regra aprovada e limites |
+| --- | --- | --- |
+| **R20-Q1** | **A** — “Se uma ação puder pertencer a mais de duas categorias, selecionar as categorias principais previamente definidas na ficha da ação/Move; critérios de prioridade pendentes.” | **Usar até duas categorias principais da ficha da ação/Move**; critérios de seleção/prioridade ainda pendentes. |
+| **R20-Q2** | **A** — “Uma ação com duas categorias contribui com uma ocorrência de frequência em cada categoria, permanecendo uma única ação executada.” | **Uma ocorrência em cada categoria** quando houver dupla classificação, mas **uma única ação executada** na telemetria. |
+| **R20-Q3** | **A** — “Quando o Pokémon estiver fora da equipe, preservar o histórico sem acumular novas ações até seu retorno.” | **Histórico congelado/preservado durante a ausência da equipe**, retomando a contabilização quando retornar. |
+| **R20-Q4** | **A** — “Se o HP/MP máximo mudar devido à nova Nature, conservar a proporção dos valores atuais relativamente aos máximos anteriores; regras numéricas pendentes.” | **Preservar a proporção do HP/MP atual quando o respectivo máximo mudar por Nature**; arredondamento e casos-limite pendentes. |
+| **R20-Q5** | **A** — “O catálogo de Natures pode incluir Natures neutras, sem modificadores diretos nos atributos-base, mantendo possíveis efeitos no crescimento/comportamento.” | **Permitir Natures neutras nos atributos-base**, com possíveis efeitos sobre crescimento/comportamento ainda a definir. |
 
-**R20-Q2 — Uma ação classificada em duas categorias deve contribuir para a frequência de ambas?**  
-A. **Sim:** registra-se uma única ação, que contribui com uma ocorrência de categoria para cada uma das duas categorias marcadas.  
-B. **Não:** só a categoria principal recebe incremento de frequência; a secundária fica registrada apenas como classificação descritiva.  
-C. Outra regra de frequência, especificada pelo criador.  
-*Não multiplicar a quantidade de execuções nem hits/alvos. Essa escolha não define fórmulas de crescimento.*
+**Rastreabilidade:** a Rodada 20 detalha categorias, frequências, persistência e efeitos de Nature sem revogar as decisões aprovadas. Nenhuma regra numérica nova de crescimento, PP ou custo ATB/Burst foi acrescentada.
 
-**R20-Q3 — Quando o mesmo Pokémon não está na equipe, seu histórico de telemetria deve mudar?**  
-A. **Fica preservado sem acumular novas ações enquanto estiver fora da equipe**; ao retornar, segue com o histórico anterior.  
-B. **Pode continuar acumulando ações realizadas fora da equipe**, se participar de combates por algum mecanismo futuro; como isso ocorre permanece pendente.  
-C. Outra regra, especificada pelo criador.  
-*A permanência do histórico entre saída e retorno já está aprovada; esta questão não determina se há combates fora da equipe.*
+## 10.20. Rodada 21 — classificação da telemetria e efeitos de Natures (cinco perguntas abertas)
 
-**R20-Q4 — Se a nova Nature do protagonista alterar seu HP ou MP máximo, como ajustar o valor atual desses recursos?**  
-A. **Preservar a proporção de HP/MP atual em relação ao máximo anterior**, com arredondamento e fórmulas a definir.  
-B. **Preservar os valores absolutos atuais**, limitando-os ao novo máximo quando necessário, com demais casos a definir.  
-C. Outra regra, especificada pelo criador.  
-*O novo sorteio de Nature substitui apenas efeitos de Nature e preserva pontos distribuídos. Não define valores nem recuperação automática.*
+**Status:** ABERTA — 0/5 respostas. Nenhuma das opções abaixo está aprovada.
 
-**R20-Q5 — O catálogo de Natures poderá incluir Natures sem modificadores diretos de atributos-base?**  
-A. **Sim:** permitir Natures neutras nos atributos-base, mantendo possíveis efeitos de crescimento e tendência de comportamento.  
-B. **Não:** cada Nature deve modificar diretamente pelo menos um atributo-base, sem exigir par bônus/penalidade.  
-C. Outra regra, especificada pelo criador.  
-*Nenhum atributo, bônus, penalidade ou Nature específica foi definido numericamente.*
+**R21-Q1 — Quando houver mais de duas categorias possíveis, como definir a prioridade entre as categorias da ficha da ação/Move?**  
+A. **Ordem de prioridade específica registrada na própria ficha da ação/Move**, respeitando o limite de duas categorias.  
+B. **Ordem de prioridade global entre categorias**, aplicada a todas as fichas de ações/Moves; a ordem ainda será definida.  
+C. Outro critério de prioridade, especificado pelo criador.  
+*As categorias principais já são predefinidas na ficha, mas a regra de prioridade ainda não foi escolhida.*
+
+**R21-Q2 — Como classificar na telemetria o uso de um item que também realiza um efeito de suporte?**  
+A. **Somente como uso de item**, sem acrescentar outra categoria por seu efeito.  
+B. **Como uso de item e suporte**, desde que ambos constem das categorias principais da ficha, sem ultrapassar o limite de duas por ação.  
+C. Outra regra de classificação de itens, especificada pelo criador.  
+*Não altera a cobrança de ITENS, a regra de uma ação por execução nem os efeitos de itens.*
+
+**R21-Q3 — Se duas categorias empatarem na frequência predominante da telemetria, como tratar o empate?**  
+A. **Manter ambas como predominantes**, sem escolher vencedora automaticamente; consequências no crescimento ainda pendentes.  
+B. **Usar a tática selecionada para desempatar**, segundo critérios que ainda deverão ser definidos.  
+C. Outro desempate, especificado pelo criador.  
+*A tática selecionada já exerce a influência principal no crescimento e a telemetria ajusta os ganhos; não fixar pesos.*
+
+**R21-Q4 — Como arredondar HP/MP atuais após preservar a proporção quando uma nova Nature alterar os máximos?**  
+A. **Arredondar para baixo** cada valor atual proporcional resultante, respeitando os novos máximos.  
+B. **Arredondar para o inteiro mais próximo**, com critérios para empate e casos-limite ainda pendentes.  
+C. Outra regra de arredondamento, especificada pelo criador.  
+*A decisão trata apenas do recálculo proporcional de HP/MP por mudança de Nature; não altera o arredondamento aprovado para recuperação periódica de MP.*
+
+**R21-Q5 — Natures neutras nos atributos-base podem ter modificadores de crescimento ou comportamento?**  
+A. **Sim, a neutralidade se refere somente aos atributos-base**; uma Nature assim pode ter efeitos próprios no crescimento e/ou tendências de comportamento, ainda a definir.  
+B. **Permitir também Natures integralmente neutras**, sem efeito direto nos atributos-base, no crescimento ou nas tendências comportamentais.  
+C. Outra definição de neutralidade, especificada pelo criador.  
+*Ambas as opções mantêm a possibilidade de Natures neutras nos atributos-base aprovada em R20-Q5 e a precedência da Tactic escolhida sobre tendências comportamentais.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -834,5 +868,7 @@ C. Outra regra, especificada pelo criador.
 | 1.9 | 2026-11-01 | Rodada 18 (D-106 a D-110): histórico de telemetria acompanha o mesmo Pokémon entre dungeons/explorações; categorias amplas de ataques físicos/mágicos, defesa/esquiva, suporte e itens; cada Move multi-hit/multi-alvo conta uma ação por execução na telemetria; Nature do protagonista é sorteada novamente no início de cada exploração; Natures alteram atributos-base. Abre Rodada 19 para detalhes ainda pendentes. | Rodada 18 fechada / Rodada 19 aberta |
 
 | 1.10 | 2026-11-01 | Rodada 19 (D-111 a D-115): telemetria preservada após saída e retorno do mesmo aliado; até duas categorias por ação (R19-Q2 C), mantendo uma execução como uma ação; registro no início efetivo da execução; pontos manuais do protagonista preservados ao sortear nova Nature, substituindo apenas seus efeitos; modificadores de Nature flexíveis sem pares positivos/negativos obrigatórios. Abre Rodada 20. | Rodada 19 fechada / Rodada 20 aberta |
+
+| 1.11 | 2026-11-01 | Rodada 20 (D-116 a D-120): categorias principais da ficha de ação/Move selecionadas quando mais de duas são possíveis (prioridade pendente); ação com duas categorias conta uma ocorrência em cada sem multiplicar execuções; telemetria preservada sem acumular ações fora da equipe; proporção de HP/MP atual preservada se novos máximos forem alterados por Nature (arredondamento pendente); Natures neutras nos atributos-base permitidas, com efeitos futuros de crescimento/comportamento possíveis. Abre Rodada 21. | Rodada 20 fechada / Rodada 21 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
