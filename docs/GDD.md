@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.14 — Rodada 23 de gameplay consolidada, 2026-11-01.  
+> **Revisão:** 1.15 — Rodada 24 de gameplay consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -61,14 +61,22 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
 **APROVADO (R23-Q2 = A):** uma dungeon é **concluída após chegar ao último andar e vencer um chefe**. Quantidade de andares, passagens e recompensas pendentes.
 
+**APROVADO (R24-Q1 = A):** **avançar de andar ao encontrar escada ou saída no mapa**, sem precisar derrotar todos os inimigos. Permanece obrigatório chegar ao último andar e vencer o chefe para concluir a dungeon. Detalhes das passagens pendentes.
+
 **APROVADO (R23-Q3 = A):** **derrota definitiva em batalha encerra a exploração atual**. Consequências sobre Pokémon, inventário e progresso seguem pendentes; não presumir perda permanente.
 
 **APROVADO (R23-Q4 = B):** **Pokémon podem ser recrutados durante a exploração 2D por interações ou aproximação**. O contato com Pokémon **inimigos visíveis** continua iniciando combate 3D (R8-Q5). **PENDENTE:** diferenciar interações de recrutamento e encontros hostis, condições e reservas; não presumir recrutamento automático de inimigos por aproximação.
 
-**APROVADO (R23-Q5 = C):** resposta literal **“combinacao com mestres e possiveis personagens que dao hms”**. O sistema de aprendizado de Moves admite **fontes combinadas, incluindo mestres e possíveis personagens que concedem HMs**. **PENDENTE:** demais fontes exatas, obtenção, requisitos, e se HMs funcionam em combate, exploração ou ambos. Não presumir slots de HM nem custos.
+**APROVADO (R24-Q2 = A):** o **recrutamento de Pokémon elegível exige interação voluntária explícita do jogador**, não acontecendo automaticamente por simples aproximação. Contato com inimigo hostil continua iniciando combate 3D. Elegibilidade e condições permanecem pendentes.
+
+**APROVADO (R24-Q3 = A):** **é possível recrutar mesmo com três Pokémon ativos, enviando o novo Pokémon para uma reserva**. Capacidade, gestão e trocas permanecem pendentes.
+
+**APROVADO (R24-Q5 = A):** **Pokémon recrutados na expedição continuam pertencendo ao jogador após derrota definitiva**. Destino na equipe/reserva e perdas de itens/progresso pendentes.
+
+**APROVADO (R23-Q5 = C):** resposta literal **“combinacao com mestres e possiveis personagens que dao hms”**. O sistema de aprendizado de Moves admite **fontes combinadas, incluindo mestres e possíveis personagens que concedem HMs**. **APROVADO posteriormente (R24-Q4 = C):** HMs e TMs são **somente para combate por enquanto**, sem funções de exploração. **PENDENTE:** demais fontes, obtenção, requisitos, relação de HMs/TMs com os quatro Moves equipados e seus slots. Não presumir custos.
  **APROVADO posteriormente (R23-Q1 = A):** movimento contínuo e livre nas quatro direções cardeais, sem movimento diagonal direto. **PENDENTE:** controles, colisão e animação.
 
-**PENDENTE:** sprites 2D, algoritmo de salas/corredores, seeds, **progressão entre andares até chefe final** (R23-Q2), patrulha/detecção, estado de inimigos e itens em revisitas, protagonistas iniciais, condições do **recrutamento em 2D** e reservas além dos **3 Pokémon ativos** (R23-Q4), evolução, inventário, **consequências da derrota definitiva** (R23-Q3), arenas, transições e narrativa. Essas pendências não devem ser presumidas resolvidas.
+**PENDENTE:** sprites 2D, algoritmo de salas/corredores, seeds, colocação das **escadas/saídas entre andares** (R24-Q1), patrulha/detecção, estado de inimigos/itens ao revisitar, protagonistas iniciais, elegibilidade e resultados da **interação voluntária de recrutamento** (R24-Q2), gestão/trocas da **reserva** (R24-Q3), evolução, inventário, **consequências da derrota definitiva não ligadas à perda de Pokémon recrutados** (R24-Q5), arenas, transições e narrativa. Não presumir resolvidas essas pendências.
 
 ### Fluxo de experiência (somente encadeamento conceitual)
 
@@ -219,7 +227,7 @@ Ataque direcionado a um Pokémon → tentativa de Evade ativo com custo de 3 →
 Sem decisão adicional, não fixar:
 
 - **Pokémon e progressão:** espécies elegíveis, protagonista inicial, recrutamento, reservas e trocas (**equipe ativa de até 3 aprovada**), evolução, **cinco atributos inspirados em SMT3 em escala-base 1–100, Agilidade/Velocidade como atributo único, HP derivado de Vitalidade+nível e MP máximo de Magia+nível**. Ao subir de nível, **o jogador distribui manualmente os pontos apenas do protagonista**, com **1 ponto distribuível por nível (R13-Q4)**; **aliados crescem automaticamente por curvas próprias de cada espécie**, ainda sem valores/fórmulas (R13-Q5). **MP persiste entre batalhas da mesma dungeon** (R12-Q3), é recuperável por **consumíveis e pontos de descanso** (R13-Q2) e **restaurado ao máximo no início de cada nova exploração** (R13-Q3). Valor de referência do ATB e fórmulas de HP/MP seguem pendentes.
-- **Moves:** Tackle genérico versus golpe homônimo da franquia (**Tackle genérico custa 2 ATB, sem PP**); lista concreta dos quatro Moves por Pokémon, status, efeitos e **exceções ao custo-base de 2 ATB**, incluindo golpes de custo 5 e requisitos Burst. **Nenhuma ação do Crawlmon utiliza PP** (R8-Q2; complementa R7-Q3). **R23-Q5 = C** aprovou aprendizado combinado com mestres e possíveis personagens que concedam HMs, sem definir as funções das HMs ou todas as fontes exatas.
+- **Moves:** Tackle genérico versus golpe homônimo da franquia (**Tackle genérico custa 2 ATB, sem PP**); lista concreta dos quatro Moves por Pokémon, status, efeitos e **exceções ao custo-base de 2 ATB**, incluindo golpes de custo 5 e requisitos Burst. **Nenhuma ação do Crawlmon utiliza PP** (R8-Q2; complementa R7-Q3). **R23-Q5 = C** aprovou aprendizado combinado com mestres e possíveis personagens que concedam HMs; **R24-Q4 = C** fixou **HMs e TMs apenas para combate por enquanto**. Outras fontes, ensino e slots continuam pendentes.
 - **Combate 3D:** câmera, sequência de animações, timings, hitstop, interface gráfica final, modelos, rigging, VFX e arenas por bioma.
 - **Dungeon 2D:** geração **procedural por exploração/andar, com salas e corredores** já aprovada (R7-Q5); seed reproduzível (R8-Q3), **layout persistente nas revisitas da mesma exploração** (R9-Q2), **inimigos visíveis que patrulham e perseguem após detecção** (R9-Q3), **inimigos derrotados removidos até o fim da exploração** (R9-Q4) e **movimentação cardinal em quatro direções** (R9-Q5). Permanecem pendentes parâmetros do gerador, interface/armazenamento de seeds, escala dos tiles, alcance/IA de detecção, movimentação contínua cardinal aprovada em R23-Q1, detalhes de controles/colisão, armadilhas, itens, progressão entre andares até o chefe, posicionamento e retorno.
 
@@ -434,9 +442,24 @@ Sem decisão adicional, não fixar:
 
 **APROVADO (R23-Q4 = B):** **recrutamento durante exploração 2D por interação ou aproximação**. **Coexistência obrigatória com R8-Q5:** contato com Pokémon inimigo visível continua iniciando combate 3D. Critérios que diferenciam recrutáveis de inimigos e como funciona a interação ainda pendentes. Equipe ativa mantém máximo de protagonista + dois aliados IA.
 
-**APROVADO (R23-Q5 = C):** resposta literal **“combinacao com mestres e possiveis personagens que dao hms”**. **Aprendizado combinado de Moves com mestres e possíveis personagens que concedem HMs**. Sem aprovar quais métodos adicionais (nível, exploração, recompensa) são obrigatórios ou a função concreta das HMs. Não decidir se HM usa slot dos quatro Moves, se atua na exploração ou em combate. Preservar Tackle genérico, ATB/Burst e ausência de PP.
+**APROVADO (R23-Q5 = C):** resposta literal **“combinacao com mestres e possiveis personagens que dao hms”**. **Aprendizado combinado de Moves com mestres e possíveis personagens que concedem HMs**. **R24-Q4 = C aprovou posteriormente HMs e TMs somente para combate por enquanto**, sem uso em exploração. Permanecem pendentes fontes adicionais (nível, exploração, recompensas), função de cada HM/TM dentro do combate, formas de obtenção e ocupação de slots. Preservar Tackle genérico, ATB/Burst e ausência de PP.
 
 **Foco:** priorizar perguntas futuras sobre experiência central do jogador, sem novas rodadas de microcasos técnicos.
+
+
+### 7.15. Passagens, recrutamento, reservas e HMs/TMs — Rodada 24
+
+**APROVADO (R24-Q1 = A):** **avançar ao próximo andar encontrando uma escada ou saída no mapa**, sem obrigação de derrotar todos os inimigos. O último andar e a vitória contra o chefe seguem necessários à conclusão (R23-Q2). Não fixar forma de geração ou localização dessas passagens.
+
+**APROVADO (R24-Q2 = A):** **recrutamento de Pokémon elegível na exploração 2D exige interação voluntária explícita**. Simples aproximação não basta para recrutar. **Preservar R8-Q5:** contato hostil com inimigo visível inicia combate 3D. **PENDENTE:** elegibilidade e efeitos da interação.
+
+**APROVADO (R24-Q3 = A):** **com a equipe ativa completa (três Pokémon), ainda é possível recrutar, enviando o novo Pokémon à reserva**. **PENDENTE:** limite, acesso, gestão e trocas. O máximo de três Pokémon ativos permanece intacto.
+
+**APROVADO (R24-Q4 = C):** resposta literal **“hms e tms so para combate por ora”**. **HMs e TMs são exclusivamente para combate por enquanto**, não para superar obstáculos ou cumprir tarefas de exploração. Complementa mestres e possíveis personagens que concedem HMs (R23-Q5). **PENDENTE:** aquisição/ensino e função específica das HMs/TMs em combate, ocupação de slots, requisitos e exemplos. Não inventar PP, ATB/Burst ou papel de HMs/TMs na exploração.
+
+**APROVADO (R24-Q5 = A):** **Pokémon recrutados na expedição continuam pertencendo ao jogador mesmo após derrota definitiva**; a derrota ainda encerra a exploração (R23-Q3). **PENDENTE:** destino na equipe/reserva e consequências para itens, níveis, experiência e outros recursos. Não generalizar a preservação dos Pokémon a todos os itens/progressos.
+
+**Preservação:** nenhuma regra nova sobre custos de Moves, número de slots, PP ou fórmula. Esta é uma consolidação documental de cinco decisões de gameplay, não uma implementação.
 
 ## 8. Estado real do repositório (inspeção de código, não de execução)
 
@@ -595,6 +618,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-133 | R23-Q3 = A: **derrota definitiva em batalha encerra exploração atual**; consequências sobre itens/progresso pendentes. |
 | D-134 | R23-Q4 = B: **recrutamento durante exploração 2D por interação/aproximação**; preservar R8-Q5 para encontros hostis; condições pendentes. |
 | D-135 | R23-Q5 = C — “combinacao com mestres e possiveis personagens que dao hms”: **aprendizado combinado de Moves com mestres e possíveis personagens de HMs**; função/fonte detalhada pendentes. |
+| D-136 | R24-Q1 = A: **avançar de andar por escada/saída encontrada no mapa**, sem derrotar todos os inimigos. |
+| D-137 | R24-Q2 = A: **recrutamento de Pokémon elegível exige interação voluntária explícita**, sem revogar combate por contato com inimigo hostil. |
+| D-138 | R24-Q3 = A: **recrutar com três Pokémon ativos e enviar o novo recrutado à reserva**, limites e gestão pendentes. |
+| D-139 | R24-Q4 = C — “hms e tms so para combate por ora”: **HMs e TMs exclusivamente para combate por enquanto**, sem exploração. |
+| D-140 | R24-Q5 = A: **Pokémon recrutados permanecem pertencendo ao jogador após derrota definitiva da expedição**, demais consequências pendentes. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -918,39 +946,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Rastreabilidade:** R23-Q4 não revoga contato hostil de R8-Q5. R23-Q5 não determina funcionalidade de HMs nem altera PP, slots ou custos ATB/Burst.
 
-## 10.23. Rodada 24 — progressão da dungeon, recrutamento e HMs (cinco perguntas abertas)
+## 10.23. Rodada 24 — progressão da dungeon, recrutamento e HMs (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas. São decisões fundamentais de gameplay; nenhuma alternativa aprovada.
+**Status:** FECHADA — 5/5 decisões aprovadas em 2026-11-01, D-136 a D-140.
 
-**R24-Q1 — Como avançar de um andar da dungeon para o próximo?**  
-A. **Encontrar escada/saída no mapa**, sem exigir eliminar todos os inimigos.  
-B. **Cumprir um objetivo do andar para liberar a passagem**, com objetivos ainda pendentes.  
-C. Outro meio, especificado pelo criador.  
-*Conclusão final já exige último andar e chefe.*
+| ID | Resposta literal do criador | Regra aprovada e pendências |
+| --- | --- | --- |
+| **R24-Q1** | **A** — “O jogador avança de andar ao encontrar uma escada ou saída no mapa, sem precisar derrotar todos os inimigos.” | **Escada/saída sem eliminar todos os inimigos.** |
+| **R24-Q2** | **A** — “O recrutamento de Pokémon elegível na exploração 2D exige uma interação voluntária explícita.” | **Interação voluntária de recrutamento.** Encontro hostil continua em combate. |
+| **R24-Q3** | **A** — “Quando a equipe ativa de três estiver completa, novos Pokémon podem ser recrutados e enviados para reserva.” | **Recrutamento com equipe completa por reserva.** Limites/trocas pendentes. |
+| **R24-Q4** | **C** — “hms e tms so para combate por ora” | **HMs e TMs apenas para combate por enquanto.** Nenhuma função de exploração aprovada. |
+| **R24-Q5** | **A** — “Pokémon recrutados na expedição permanecem pertencendo ao jogador mesmo após derrota definitiva.” | **Recrutados preservados após derrota**, demais recursos pendentes. |
 
-**R24-Q2 — Como iniciar o recrutamento com Pokémon elegíveis no mapa 2D?**  
-A. **Interação voluntária explícita** com o Pokémon para abrir oportunidade de recrutamento.  
-B. **Aproximação inicia oportunidade que exige confirmação**, sem recrutar automaticamente.  
-C. Outro meio, especificado pelo criador.  
-*Contato hostil com inimigo ainda inicia combate 3D.*
+**Preservação:** as decisões D-001 a D-135 e a regra de contato hostil permanecem. A resposta personalizada C para HMs/TMs não estabelece custos, slots, lista de Moves nem exploração.
 
-**R24-Q3 — Se a equipe ativa tiver três Pokémon, o que acontece com novo recrutável?**  
-A. **Permitir recrutamento e enviar para reserva**, com limites/acesso a definir.  
-B. **Recrutamento bloqueado até liberar vaga na equipe ativa**, sem estabelecer reserva nesta decisão.  
-C. Outra regra, especificada pelo criador.  
-*Limite de três ativos permanece.*
+## 10.24. Rodada 25 — campanha, equipe e evolução (cinco perguntas abertas)
 
-**R24-Q4 — Para que servirão principalmente as HMs fornecidas por personagens?**  
-A. **Habilidades de exploração**, como superar obstáculos e acessar áreas.  
-B. **Moves especiais de combate** que personagens ensinam, com regras de slots a definir.  
-C. Outra função/combinação, especificada pelo criador.  
-*Não atribuir custo ou HM específica.*
+**Status:** ABERTA — 0/5 respostas; nenhuma alternativa foi aprovada. Perguntas de gameplay, sem microdecisões técnicas.
 
-**R24-Q5 — Pokémon recrutados durante uma exploração encerrada por derrota definitiva são mantidos?**  
-A. **Sim**, permanecem pertencendo ao jogador; destino da equipe/reserva pendente.  
-B. **Não**, recrutados naquela exploração perdida não são mantidos; membros anteriores permanecem, salvo futura decisão.  
-C. Outra regra, especificada pelo criador.  
-*Itens, experiência e demais perdas ainda pendentes.*
+**R25-Q1 — Qual estrutura organiza as dungeons disponíveis para jogar?**  
+A. **Campanha com desbloqueio progressivo de novas dungeons**, seguindo conquistas e objetivos da aventura.  
+B. **Seleção mais aberta de dungeons para expedições**, com desbloqueios específicos pendentes.  
+C. Outra estrutura, descrita pelo criador.  
+*Cada dungeon exige último andar e chefe para conclusão.*
+
+**R25-Q2 — O jogador pode alternar Pokémon da equipe ativa e da reserva durante a exploração?**  
+A. **Sim**, reorganizar os três ativos usando a reserva durante a expedição, com restrições futuras.  
+B. **Não**, trocas de equipe/reserva só fora da exploração, salvo exceções futuras.  
+C. Outra regra, descrita pelo criador.  
+*Reservas já estão aprovadas; limite de três ativos permanece.*
+
+**R25-Q3 — Como acontece a evolução de espécie dos Pokémon?**  
+A. **O jogador escolhe quando evoluir após satisfazer requisitos**, que serão definidos posteriormente.  
+B. **Evolução ocorre automaticamente ao satisfazer os requisitos**, ainda a definir.  
+C. Outro sistema, descrito pelo criador.  
+*Não confundir evolução de espécie com ganho de níveis e pontos.*
+
+**R25-Q4 — O que acontece com os itens obtidos na expedição se ela terminar por derrota definitiva?**  
+A. **Itens obtidos nessa expedição são mantidos pelo jogador.**  
+B. **Itens obtidos nessa expedição são perdidos**, preservando itens anteriores, salvo regras futuras.  
+C. Outra consequência, descrita pelo criador.  
+*Pokémon recrutados continuam pertencendo ao jogador após derrota.*
+
+**R25-Q5 — Que conteúdo especial deve ter prioridade além de inimigos e escadas nas dungeons?**  
+A. **Eventos, salas secretas, recompensas e NPCs**, com condições concretas pendentes.  
+B. **Armadilhas, desafios ambientais e salas especiais de combate**, com condições concretas pendentes.  
+C. Uma combinação ou outro conjunto, descrito pelo criador.  
+*Não fixar quantidades, probabilidades nem detalhes técnicos.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -989,5 +1031,7 @@ C. Outra regra, especificada pelo criador.
 | 1.13 | 2026-11-01 | Rodada 22 (D-126 a D-130): registrar as categorias da ficha do Move desde o início da execução mesmo quando um componente não ocorre; classificação e prioridade por tipo de ação para não-Moves; tática selecionada na subida de nível desempata categorias; preservar HP mínimo positivo quando arredondamento proporcional por Nature produzir zero em Pokémon antes vivo; atributos-base após Nature limitados a 1–100. Abre Rodada 23. | Rodada 22 fechada / Rodada 23 aberta |
 
 | 1.14 | 2026-11-01 | Rodada 23 reformulada (D-131 a D-135): exploração 2D cardinal contínua; último andar e chefe para conclusão; derrota definitiva encerra exploração; recrutamento por interação/aproximação em mapa 2D sem revogar encontros hostis; aprendizado combinado com mestres e possíveis NPCs que concedem HMs. Perguntas antigas não aprovadas da R23 substituídas; R24 aberta com foco em gameplay. | Rodada 23 fechada / Rodada 24 aberta |
+
+| 1.15 | 2026-11-01 | Rodada 24 (D-136 a D-140): escadas/saídas para avançar sem limpar todos inimigos; recrutamento voluntário no mapa; reserva com equipe ativa completa; HMs e TMs exclusivamente de combate (C); Pokémon recrutados mantidos após derrota definitiva. Abre Rodada 25 com perguntas centrais de campanha, equipe, evolução e exploração. | Rodada 24 fechada / Rodada 25 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
