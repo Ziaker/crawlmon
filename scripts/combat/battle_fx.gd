@@ -812,7 +812,7 @@ func _blink(target: Combatant, text: String, hold_time: float) -> void:
 	tw.tween_callback(func() -> void: _appear(target, pos))
 
 
-## Vertical streaks standing around a spot, facing the camera.
+## Streaks leaning to the left around a spot, facing the camera.
 func _speed_lines_at(pos: Vector3) -> void:
 	var cam_p := _cam_pos()
 	var yaw := atan2(cam_p.x - pos.x, cam_p.z - pos.z)
@@ -823,6 +823,7 @@ func _speed_lines_at(pos: Vector3) -> void:
 		var q := VfxLib.animated_quad(self, Vector2(randf_range(0.14, 0.32), h), "streak", {"color": DODGE_COLOR, "energy": 2.8}, randf_range(0.4, 0.65))
 		q.position = pos + Vector3(cos(ang) * r, h * 0.5, sin(ang) * r)
 		q.rotation.y = yaw
+		q.rotate_object_local(Vector3.BACK, deg_to_rad(randf_range(28.0, 38.0)))  # Leaning to the left.
 	_shock(pos, DODGE_COLOR, 3.0, 0.4)
 
 
