@@ -42,6 +42,7 @@ var _hit_at: Dictionary = {}  ## attacker -> seconds until its strike lands
 var _react_token: Dictionary = {}  ## Combatant -> int
 var _slot: Dictionary = {}  ## Combatant -> Vector3 (spawn spot; wandering stays near it)
 var _busy_until: Dictionary = {}  ## Combatant -> msec; no wandering before that
+var _wandering: Dictionary = {}  ## Combatant -> bool (its movement tween is only a walk)
 var _displaced: Dictionary = {}  ## Combatant -> bool (standing off its home after a dodge)
 
 
@@ -190,7 +191,14 @@ func _wander_loop(c: Combatant) -> void:
 	await get_tree().create_timer(randf_range(0.1, 0.7), false).timeout
 	while is_inside_tree():
 		if _can_wander(c):
-			_wander_step(c)
+			var pos: Vector3 = (_models[c] as Node3D).position
+			if pos.distance_to(_slot[c]) > 6.0:
+				_home[c] = _slot[c]  # Far from its zone (interrupted sequence): run back.
+				_return_home(c)
+			elif pos.distance_to(_home[c]) > 1.0:
+				_return_home(c)
+			else:
+				_wander_step(c)
 		await get_tree().create_timer(0.1, false).timeout
 
 
@@ -220,11 +228,31 @@ func _wander_step(c: Combatant) -> void:
 		var yaw_from := m.rotation.y
 		var yaw_move := atan2(d.x, d.z)
 		var tw := _move(c)
+		_wandering[c] = true
 		tw.tween_callback(func() -> void: _play(c, "walk"))
 		tw.tween_method(func(k: float) -> void: m.rotation.y = lerp_angle(yaw_from, yaw_move, k), 0.0, 1.0, 0.25)
 		tw.parallel().tween_property(m, "position", target, d.length() / WALK_SPEED)
-		tw.tween_callback(func() -> void: _home[c] = target)
+		tw.tween_callback(func() -> void:
+			_home[c] = target
+			_wandering[c] = false)
 		return
+
+
+## Run back to the resting spot (safety net after an interrupted sequence).
+func _return_home(c: Combatant) -> void:
+	var m: Node3D = _models[c]
+	var home: Vector3 = _home[c]
+	var d := home - m.position
+	d.y = 0.0
+	var yaw_from := m.rotation.y
+	var yaw_move := atan2(d.x, d.z)
+	var tw := _move(c)
+	tw.tween_callback(func() -> void: _play(c, "run"))
+	tw.tween_method(func(k: float) -> void: m.rotation.y = lerp_angle(yaw_from, yaw_move, k), 0.0, 1.0, 0.12)
+	tw.tween_property(m, "position", home, clampf(d.length() / RUN_SPEED, 0.3, 0.8))
+	tw.tween_callback(func() -> void:
+		m.rotation.y = _home_yaw[c]
+		_reset_idle(c))
 
 
 func _too_close(c: Combatant, spot: Vector3) -> bool:
@@ -241,6 +269,9 @@ func _busy_for(c: Combatant, seconds: float) -> void:
 
 ## Cancel any walk in progress and face the opponent again.
 func _stop_moving(c: Combatant) -> void:
+	var tw_now: Tween = _tweens.get(c)
+	if tw_now != null and tw_now.is_valid() and not _wandering.get(c, false):
+		return  # A scripted sequence (run, dodge...) owns it; let it finish.
 	if _tweens.has(c) and (_tweens[c] as Tween).is_valid():
 		(_tweens[c] as Tween).kill()
 	var m: Node3D = _models[c]
@@ -683,6 +714,7 @@ func _burst(pos: Vector3, color: Color, amount: int, speed: float, gravity: Vect
 # --- Primitives --------------------------------------------------------------
 
 func _move(c: Combatant) -> Tween:
+	_wandering[c] = false
 	if _tweens.has(c) and (_tweens[c] as Tween).is_valid():
 		(_tweens[c] as Tween).kill()
 	var tw := create_tween()
