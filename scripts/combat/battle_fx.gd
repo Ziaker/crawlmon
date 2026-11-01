@@ -304,10 +304,13 @@ func intro() -> void:
 	for c in _models:
 		var m: Node3D = _models[c]
 		var home: Vector3 = _home[c]
-		var from := home + (Vector3(-10.0, 0.0, 9.0) if c.is_player else Vector3(18.0, 0.0, -4.0))
+		# Straight line from behind the character to its spot, facing forward all the way.
+		var yaw_dir: float = _home_yaw[c]
+		var forward := Vector3(sin(yaw_dir), 0.0, cos(yaw_dir))
+		var from := home - forward * (8.0 if c.is_player else 14.0)
 		var delay := order * 0.15
 		order += 1
-		var yaw_in := atan2(home.x - from.x, home.z - from.z)
+		var yaw_in := yaw_dir
 		var yaw_home: float = _home_yaw[c]
 		var dur := clampf(from.distance_to(home) / 13.0, 0.9, 1.6)
 		_busy_for(c, delay + dur + 0.6)
