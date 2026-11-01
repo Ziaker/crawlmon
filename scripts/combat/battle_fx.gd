@@ -24,6 +24,8 @@ const DODGE_COLOR := Color(0.5, 0.9, 1.0)
 const GOLD := Color(1.0, 0.8, 0.1)
 
 
+var cam: BattleCamera  ## Set by the battle scene; frames the impact of each hit.
+
 var _models: Dictionary = {}  ## Combatant -> Node3D
 var _home: Dictionary = {}  ## Combatant -> Vector3
 var _tweens: Dictionary = {}  ## Combatant -> Tween (movement)
@@ -115,6 +117,8 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 		return
 	var weak: bool = info["weak"]
 	var crit: bool = info["crit"]
+	if cam != null:
+		cam.impact(t_home, target.is_player)
 	_impact(element, to, color, weak or crit)
 	flash(target)
 	knock(target, a_home)
@@ -155,7 +159,7 @@ func lunge(attacker: Combatant, toward: Vector3) -> void:
 			ap.play("attack")
 	var tw := _move(attacker)
 	tw.tween_property(m, "scale", Vector3.ONE, 0.04)
-	tw.tween_property(m, "position", home + dir * maxf(home.distance_to(toward) - 2.5, 1.0), 0.1)
+	tw.tween_property(m, "position", home + dir * clampf(home.distance_to(toward) - 2.5, 1.0, 5.0), 0.1)
 	tw.tween_property(m, "position", home, 0.3)
 	tw.tween_callback(func() -> void: _reset_idle(attacker))
 
@@ -320,7 +324,7 @@ func _projectile(from: Vector3, to: Vector3, color: Color, element: Element.Type
 	trail.mesh.material = _mat(color)
 	node.add_child(trail)
 	var tw := create_tween()
-	tw.tween_property(node, "position", to, FLY_TIME)
+	tw.tween_property(node, "position", to, clampf(from.distance_to(to) / 50.0, FLY_TIME, 0.7))
 	await tw.finished
 	node.queue_free()
 

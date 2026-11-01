@@ -17,4 +17,4 @@ func _init(p_name: String, p_power: float, p_cost := 2, p_element := Element.Typ
 
 ## The generic physical attack always shown first in the Fight menu.
 static func basic() -> Skill:
-	return Skill.new("Ataque", 1.0, 2)
+	return Skill.new("Tackle", 1.0, 2)

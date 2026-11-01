@@ -1,11 +1,15 @@
 extends Node3D
-## 3D battle stage + command UI. Combatants are placeholder capsules; replace
-## _make_model() with an instantiated glTF scene once real models exist.
-## The player controls party[0]; the others follow Tactics.
+## 3D battle stage + command flow. The player's team stands near the camera
+## facing away; the enemies are far ahead, offset diagonally to the right.
+## The player controls party[0]; the others follow Tactics. All on-screen UI
+## lives in BattleHud; BattleCamera frames the action.
 
 enum S { MAIN, FIGHT, ITEMS, TARGET, TACTICS }
 
 const MODEL_SCALE := 2.5
+const TEAM_DISTANCE := 30.0  ## Units between the two lines.
+const PARTY_SLOTS := [Vector3(-0.2, 0, 0), Vector3(3.2, 0, 1.0), Vector3(-4.0, 0, -2.0)]
+const ENEMY_SCALE := 1.8  ## Extra scale on enemy models so they read at 30 units.
 const ACT_NAMES := ["Atacar", "Habilidades", "Segurar"]
 const REACT_NAMES := ["Nada", "Esquivar"]
 
@@ -14,14 +18,12 @@ const REACT_NAMES := ["Nada", "Esquivar"]
 
 var models: Dictionary = {}  ## Combatant -> Node3D
 var fx: BattleFx
+var director: BattleCamera
+var hud: BattleHud
 var state := S.MAIN
 var leader: Combatant
 
-var _rows: Array = []  ## [Combatant, Label]
-var _menu: MenuList
-var _log: RichTextLabel
-var _alert: Label
-var _marker: MeshInstance3D
+var _menu: FanMenu
 var _fight_skills: Array[Skill] = []
 var _item_list: Array[Item] = []
 var _targets: Array[Combatant] = []
@@ -30,10 +32,13 @@ var _back: Callable
 
 
 func _ready() -> void:
+	add_child(BattleArena.new())
 	fx = BattleFx.new()
 	add_child(fx)
-	_place_camera()
-	_add_floor()
+	director = BattleCamera.new()
+	add_child(director)
+	director.setup($Camera3D)
+	fx.cam = director
 	var party := GameState.party
 	var enemies: Array[Combatant] = [
 		Combatant.new("Gible", 38, 9, 0.42, false),
@@ -49,11 +54,21 @@ func _ready() -> void:
 		e.act_policy = Combatant.Act.SKILL
 		e.react_policy = Combatant.React.EVADE
 	leader = party[0]
-	_spawn(party, -6.5, Color(0.3, 0.6, 0.9))
-	_spawn(enemies, 6.5, Color(0.85, 0.3, 0.3))
-	_add_marker()
-	_build_ui(party + enemies)
-	battle.log_message.connect(func(t: String) -> void: _log.append_text(t + "\n"))
+	var party_slots: Array[Vector3] = []
+	for i in party.size():
+		party_slots.append(PARTY_SLOTS[mini(i, PARTY_SLOTS.size() - 1)])
+	var enemy_slots: Array[Vector3] = []
+	for i in enemies.size():
+		enemy_slots.append(Vector3(8.0 + i * 5.0, 0.0, -TEAM_DISTANCE - i * 2.0))
+	_spawn(party, party_slots, PI, Color(0.3, 0.6, 0.9))
+	_spawn(enemies, enemy_slots, 0.0, Color(0.85, 0.3, 0.3))
+	hud = BattleHud.new()
+	ui.add_child(hud)
+	hud.setup(battle, party, enemies, $Camera3D, models, director)
+	_menu = hud.menu
+	_menu.chosen.connect(_on_chosen)
+	_menu.cancelled.connect(_on_cancel)
+	_menu.moved.connect(_on_moved)
 	battle.state_changed.connect(_refresh)
 	battle.battle_ended.connect(_on_battle_ended)
 	battle.attack_telegraphed.connect(fx.telegraph)
@@ -74,46 +89,16 @@ func _unhandled_input(event: InputEvent) -> void:
 
 # --- Stage -----------------------------------------------------------------
 
-## Static wide shot so both sides stay in frame; no automatic camera motion.
-func _place_camera() -> void:
-	var cam: Camera3D = $Camera3D
-	cam.position = Vector3(-4.0, 5.5, 17.0)
-	cam.look_at(Vector3(0, 1.0, 0))
-	cam.fov = 55.0
-
-
-func _add_floor() -> void:
-	var floor_mesh := MeshInstance3D.new()
-	var plane := PlaneMesh.new()
-	plane.size = Vector2(32, 14)
-	floor_mesh.mesh = plane
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.2, 0.2, 0.25)
-	floor_mesh.material_override = mat
-	add_child(floor_mesh)
-
-
-func _add_marker() -> void:
-	_marker = MeshInstance3D.new()
-	var sphere := SphereMesh.new()
-	sphere.radius = 0.2
-	sphere.height = 0.4
-	_marker.mesh = sphere
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(1, 0.9, 0.2)
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_marker.material_override = mat
-	_marker.visible = false
-	add_child(_marker)
-
-
-func _spawn(list: Array[Combatant], x: float, color: Color) -> void:
+func _spawn(list: Array[Combatant], slots: Array[Vector3], yaw: float, color: Color) -> void:
 	for i in list.size():
 		var c := list[i]
 		var model := _make_model(c, color)
-		model.position = Vector3(x + i * 2.0 * signf(x), 0.0, (i - (list.size() - 1) / 2.0) * 5.0)
-		model.rotation.y = PI / 2.0 if x < 0 else -PI / 2.0
+		if not c.is_player:
+			model.scale = Vector3.ONE * ENEMY_SCALE
+		model.position = slots[i]
+		model.rotation.y = yaw
 		add_child(model)
+		model.set_meta("head_y", _measure_head(model))
 		models[c] = model
 		fx.register(c, model)
 		c.died.connect(_on_died)
@@ -123,7 +108,7 @@ func _make_model(c: Combatant, color: Color) -> Node3D:
 	var root := Node3D.new()
 	var lower_name := c.name.to_lower()
 	var glb_path := "res://assets/modelos/%s/%s.glb" % [lower_name, lower_name]
-	
+
 	var is_3d_pokemon := false
 	if ResourceLoader.exists(glb_path):
 		var glb_scene: PackedScene = load(glb_path)
@@ -135,7 +120,7 @@ func _make_model(c: Combatant, color: Color) -> Node3D:
 			pokemon_instance.scale = Vector3.ONE * MODEL_SCALE
 			root.add_child(pokemon_instance)
 			is_3d_pokemon = true
-			
+
 			var anim_player: AnimationPlayer = _find_anim_player(pokemon_instance)
 			if anim_player:
 				root.set_meta("anim_player", anim_player)
@@ -147,7 +132,7 @@ func _make_model(c: Combatant, color: Color) -> Node3D:
 					anim_player.play("battle_idle")
 				elif anim_player.has_animation("idle"):
 					anim_player.play("idle")
-	
+
 	if not is_3d_pokemon:
 		var mesh := MeshInstance3D.new()
 		mesh.mesh = CapsuleMesh.new()
@@ -157,9 +142,9 @@ func _make_model(c: Combatant, color: Color) -> Node3D:
 		mesh.material_override = mat
 		root.add_child(mesh)
 		root.set_meta("mesh", mesh)
-		
+
 	root.set_meta("color", color)
-	
+
 	var ring := MeshInstance3D.new()
 	ring.name = "BurstRing"
 	var torus := TorusMesh.new()
@@ -174,15 +159,20 @@ func _make_model(c: Combatant, color: Color) -> Node3D:
 	ring.visible = false
 	root.add_child(ring)
 	root.set_meta("burst_ring", ring)
-	
-	var label := Label3D.new()
-	label.text = c.name
-	label.position.y = 3.2
-	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	label.font_size = 64
-	label.outline_size = 12
-	root.add_child(label)
 	return root
+
+
+## Top of the visible meshes in the model's own space (for floating tags).
+func _measure_head(model: Node3D) -> float:
+	var top := 0.0
+	var inv := model.global_transform.affine_inverse()
+	for node in model.find_children("*", "MeshInstance3D", true, false):
+		var mi := node as MeshInstance3D
+		if mi.name == "BurstRing":
+			continue
+		var box: AABB = (inv * mi.global_transform) * mi.get_aabb()
+		top = maxf(top, box.end.y)
+	return top if top > 0.1 else 2.0
 
 
 func _find_anim_player(node: Node) -> AnimationPlayer:
@@ -208,67 +198,27 @@ func _on_died(c: Combatant) -> void:
 
 func _on_battle_ended(player_won: bool) -> void:
 	_menu.hide()
-	_marker.hide()
+	hud.set_target(null)
 	await get_tree().create_timer(3.0, true, false, true).timeout
 	GameState.end_battle(player_won)
 
 
-# --- UI --------------------------------------------------------------------
-
-func _build_ui(everyone: Array[Combatant]) -> void:
-	var box := VBoxContainer.new()
-	box.position = Vector2(24, 24)
-	ui.add_child(box)
-	for c in everyone:
-		var row := HBoxContainer.new()
-		var label := Label.new()
-		label.custom_minimum_size = Vector2(250, 0)
-		var bar := AtbBar.new()
-		bar.combatant = c
-		row.add_child(label)
-		row.add_child(bar)
-		box.add_child(row)
-		_rows.append([c, label])
-	_alert = Label.new()
-	_alert.position = Vector2(480, 24)
-	_alert.modulate = Color(1, 0.4, 0.3)
-	ui.add_child(_alert)
-	_log = RichTextLabel.new()
-	_log.position = Vector2(340, 520)
-	_log.size = Vector2(600, 150)
-	_log.scroll_following = true
-	ui.add_child(_log)
-	_menu = MenuList.new()
-	_menu.position = Vector2(24, 520)
-	ui.add_child(_menu)
-	_menu.chosen.connect(_on_chosen)
-	_menu.cancelled.connect(_on_cancel)
-	_menu.moved.connect(_on_moved)
-	var hint := Label.new()
-	hint.text = "Setas: mover   Z: confirmar   X: voltar   Espaço: desviar   C: configurações"
-	hint.position = Vector2(24, 690)
-	hint.modulate = Color(1, 1, 1, 0.6)
-	ui.add_child(hint)
-
+# --- Command flow ----------------------------------------------------------
 
 func _refresh() -> void:
-	for r in _rows:
-		var c: Combatant = r[0]
+	for c in models:
 		(models[c].get_node("BurstRing") as Node3D).visible = c.burst > 0
-		(r[1] as Label).text = "%s  HP %d/%d%s" % [c.name, c.hp, c.max_hp, "  BURST" if c.burst > 0 else ""]
-	var lines := PackedStringArray()
-	for inc in battle.incoming:
-		if not inc.dodged:
-			lines.append("! %s -> %s  %.1fs" % [inc.attacker.name, inc.target.name, inc.time_left])
-	_alert.text = "\n".join(lines)
 	_menu.visible = leader.is_alive() and battle.running
 	if state == S.MAIN:
 		_update_main_enabled()
 
 
 func _set_state(s: S) -> void:
+	var was_target := state == S.TARGET
 	state = s
-	_marker.visible = s == S.TARGET
+	if was_target and s != S.TARGET:
+		hud.set_target(null)
+		director.cinema()
 
 
 func _consumables() -> Array[Item]:
@@ -277,7 +227,13 @@ func _consumables() -> Array[Item]:
 
 func _show_main() -> void:
 	_set_state(S.MAIN)
-	_menu.set_entries(["Fight", "Itens", "Evade (3)", "Tactics"])
+	hud.set_menu_style(FanMenu.Style.FAN, "01 / ESCOLHA SUA AÇÃO")
+	_menu.set_entries([
+		{"text": "Fight", "detail": "%d ATB" % int(Battle.SKILL_BLOCKS)},
+		{"text": "Itens", "detail": "%d ATB" % int(Battle.ITEM_BLOCKS)},
+		{"text": "Evade", "detail": "%d ATB" % int(Battle.EVADE_BLOCKS)},
+		{"text": "Tactics", "detail": "IA"},
+	])
 	_refresh()
 
 
@@ -289,21 +245,26 @@ func _update_main_enabled() -> void:
 
 func _show_fight() -> void:
 	_set_state(S.FIGHT)
+	hud.set_menu_style(FanMenu.Style.DRAWER, "FIGHT // COMANDOS")
 	_fight_skills.clear()
 	_fight_skills.append(Skill.basic())
 	_fight_skills.append_array(leader.skills)
 	var entries: Array = []
 	for s in _fight_skills:
-		entries.append({"text": "%s (%d) - %s" % [s.display_name, s.cost, Element.name_of(s.element)], "enabled": leader.can_pay(s.cost)})
+		entries.append({
+			"text": s.display_name,
+			"detail": "%d ATB · %s" % [s.cost, Element.name_of(s.element)],
+			"enabled": leader.can_pay(s.cost) and not battle.is_winding_up(leader)})
 	_menu.set_entries(entries)
 
 
 func _show_items() -> void:
 	_set_state(S.ITEMS)
+	hud.set_menu_style(FanMenu.Style.DRAWER, "ITENS // 1 ATB")
 	_item_list = _consumables()
 	var entries: Array = []
 	for item in _item_list:
-		entries.append("%s x%d" % [item.display_name, leader.item_count(item.id)])
+		entries.append({"text": item.display_name, "detail": "x%d" % leader.item_count(item.id)})
 	if entries.is_empty():
 		entries.append({"text": "(vazio)", "enabled": false})
 	_menu.set_entries(entries)
@@ -311,6 +272,7 @@ func _show_items() -> void:
 
 func _show_tactics() -> void:
 	_set_state(S.TACTICS)
+	hud.set_menu_style(FanMenu.Style.DRAWER, "TACTICS // IA DOS ALIADOS")
 	_fill_tactics(false)
 
 
@@ -318,8 +280,8 @@ func _fill_tactics(keep_index: bool) -> void:
 	var entries: Array = []
 	for i in range(1, battle.party.size()):
 		var a := battle.party[i]
-		entries.append("%s - Ação: %s" % [a.name, ACT_NAMES[a.act_policy]])
-		entries.append("%s - Reação: %s" % [a.name, REACT_NAMES[a.react_policy]])
+		entries.append({"text": "%s · Ação" % a.name, "detail": ACT_NAMES[a.act_policy]})
+		entries.append({"text": "%s · Reação" % a.name, "detail": REACT_NAMES[a.react_policy]})
 	if entries.is_empty():
 		entries.append({"text": "(sem aliados)", "enabled": false})
 	_menu.set_entries(entries, keep_index)
@@ -327,13 +289,14 @@ func _fill_tactics(keep_index: bool) -> void:
 
 func _pick_target(candidates: Array[Combatant], on_target: Callable, back: Callable) -> void:
 	_set_state(S.TARGET)
+	hud.set_menu_style(FanMenu.Style.DRAWER, "ESCOLHA O ALVO")
 	_targets.assign(candidates.filter(func(c: Combatant) -> bool: return c.is_alive()))
 	_on_target = on_target
 	_back = back
 	var entries: Array = []
 	for t in _targets:
 		var weak := t.weakness_text()
-		entries.append("%s  HP %d/%d%s" % [t.name, t.hp, t.max_hp, "   Fraqueza: " + weak if weak != "" else ""])
+		entries.append({"text": t.name, "detail": ("Fraq: " + weak) if weak != "" else "HP %d/%d" % [t.hp, t.max_hp]})
 	_menu.set_entries(entries)
 
 
@@ -376,5 +339,6 @@ func _on_cancel() -> void:
 
 func _on_moved(i: int) -> void:
 	if state == S.TARGET and i < _targets.size():
-		var model: Node3D = models[_targets[i]]
-		_marker.global_position = model.global_position + Vector3(0, 3.2, 0)
+		var target := _targets[i]
+		hud.set_target(target)
+		director.tactical((models[target] as Node3D).global_position)
