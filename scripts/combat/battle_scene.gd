@@ -62,6 +62,7 @@ func _ready() -> void:
 		e.react_policy = Combatant.React.EVADE
 	leader = party[0]
 	fx.leader = leader
+	fx.battle = battle
 	var party_slots: Array[Vector3] = []
 	for i in party.size():
 		party_slots.append(PARTY_SLOTS[mini(i, PARTY_SLOTS.size() - 1)])
@@ -94,6 +95,7 @@ func _ready() -> void:
 	battle.healed.connect(func(actor: Combatant, _t: Combatant, _n: int) -> void:
 		if actor == leader:
 			_end_slowmo())
+	fx.intro()
 	battle.start(party, enemies)
 	_show_main()
 
@@ -240,6 +242,7 @@ func _exit_tree() -> void:
 
 func _on_battle_ended(player_won: bool) -> void:
 	_end_slowmo()
+	fx.finish(player_won)
 	_menu.hide()
 	hud.set_target(null)
 	await get_tree().create_timer(3.0, true, false, true).timeout

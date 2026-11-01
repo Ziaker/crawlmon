@@ -250,7 +250,7 @@ static func ensure_flash(model: Node) -> ShaderMaterial:
 		return model.get_meta("flash_mat")
 	var mat := shader_mat("flash", {"amount": 0.0})
 	for mi in meshes_of(model):
-		if mi.name != "BurstRing":
+		if not (mi.name in ["BurstRing", "ReadyRing"]):
 			mi.material_overlay = mat
 	model.set_meta("flash_mat", mat)
 	return mat
@@ -267,7 +267,7 @@ static func ghost(parent: Node, model: Node3D, color: Color, life: float) -> Nod
 	copy.global_transform = model.global_transform
 	var mat := shader_mat("ghost", {"color": color, "alpha": 0.9})
 	for mi in meshes_of(copy):
-		if mi.name == "BurstRing":
+		if mi.name in ["BurstRing", "ReadyRing"]:
 			mi.visible = false
 			continue
 		mi.material_override = mat

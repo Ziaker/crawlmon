@@ -26,11 +26,13 @@ const RUN_SPEED := 55.0  ## Units per second while running at a target.
 const STAND_GAP := 2.6  ## Where a melee attacker stops, in front of its target.
 const HIT_AT := 0.45  ## Seconds into the attack clip when the strike lands.
 const ATTACK_HOLD := 0.6  ## Time spent finishing the attack clip after the strike.
+const READY_STEP := 0.9  ## How far a character steps forward while it can act.
 const CAST_AT := 0.5  ## Seconds into a cast when the effect leaves the caster.
 
 
 var cam: BattleCamera  ## Set by the battle scene; frames each attack.
 var leader: Combatant  ## The player's character: the camera only follows actions involving it.
+var battle: Battle  ## Set by the battle scene; drives the ready stance.
 
 var _models: Dictionary = {}  ## Combatant -> Node3D
 var _home: Dictionary = {}  ## Combatant -> Vector3
@@ -41,6 +43,8 @@ var _hit_at: Dictionary = {}  ## attacker -> seconds until its strike lands
 var _react_token: Dictionary = {}  ## Combatant -> int
 var _slot: Dictionary = {}  ## Combatant -> Vector3 (spawn spot; wandering stays near it)
 var _busy_until: Dictionary = {}  ## Combatant -> msec; no wandering before that
+var _ready_off: Dictionary = {}  ## Combatant -> Vector3 (ready-stance offset from home)
+var _phase: Dictionary = {}  ## Combatant -> float (breathing phase)
 var _displaced: Dictionary = {}  ## Combatant -> bool (standing off its home after a dodge)
 
 
@@ -49,6 +53,11 @@ func register(c: Combatant, model: Node3D) -> void:
 	_home[c] = model.position
 	_home_yaw[c] = model.rotation.y
 	_slot[c] = model.position
+	_phase[c] = randf() * TAU
+	var ap := _anim_player(c)
+	if ap != null:
+		ap.speed_scale = randf_range(0.92, 1.08)  # Keep the idle breathing out of sync.
+	_add_ready_ring(model)
 
 
 # --- Battle events ---------------------------------------------------------
@@ -64,6 +73,7 @@ func telegraph(inc) -> void:
 	var t_home: Vector3 = _home[inc.target]
 	var warn := TELEGRAPH_COLOR if not inc.attacker.is_player else ALLY_COLOR
 	_play(inc.attacker, "charge")
+	_brace(inc)
 	var ring := _ring(t_home + Vector3(0, 0.05, 0), warn, Vector3(2.6, 1, 2.6), Vector3.ONE, Battle.WINDUP, Vector3.ZERO, 0.0, false)
 	var line := _line(a_home + Vector3(0, 1, 0), t_home + Vector3(0, 1, 0), Color(warn, 0.45), 0.05)
 	_telegraphs[inc] = [ring, line]
@@ -103,6 +113,8 @@ func resolve_attack(inc) -> void:
 	_hold_hp(t, float(_hit_at[a]) + 0.3)
 	_busy_for(a, total + 0.8)
 	_busy_for(t, total + 1.6)
+	_unbrace_later(a, total + 0.1)
+	_unbrace_later(t, total + 0.1)
 	if inc.dodged:
 		# The target already vanished (manual Evade); the attacker whiffs.
 		var to := t_home + Vector3(0, 1, 0)
@@ -182,6 +194,26 @@ func _busy_for(c: Combatant, seconds: float) -> void:
 
 
 ## Cancel any walk in progress and face the opponent again.
+func _add_ready_ring(model: Node3D) -> void:
+	var ring := MeshInstance3D.new()
+	ring.name = "ReadyRing"
+	var torus := TorusMesh.new()
+	torus.inner_radius = 0.95
+	torus.outer_radius = 1.08
+	ring.mesh = torus
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color(0.45, 0.92, 1.0)
+	mat.emission_enabled = true
+	mat.emission = Color(0.45, 0.92, 1.0)
+	mat.emission_energy_multiplier = 1.5
+	ring.material_override = mat
+	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	ring.position.y = 0.05
+	ring.visible = false
+	model.add_child(ring)
+
+
 func _stop_moving(c: Combatant) -> void:
 	var tw_now: Tween = _tweens.get(c)
 	if tw_now != null and tw_now.is_valid():
@@ -193,8 +225,119 @@ func _stop_moving(c: Combatant) -> void:
 ## The character's current resting spot becomes its home.
 func _rebase(c: Combatant) -> void:
 	_stop_moving(c)
-	if not _displaced.get(c, false):
-		_home[c] = (_models[c] as Node3D).position
+
+
+# --- Life: ready stance, breathing, reactions, intro and victory --------------------
+
+## Idle characters breathe (a slight sway) and step forward with a pulsing floor
+## ring while they can act. Movement therefore always means something.
+func _process(delta: float) -> void:
+	var t := Time.get_ticks_msec() / 1000.0
+	for c in _models:
+		var m: Node3D = _models[c]
+		if not _is_idle(c):
+			_ready_off[c] = m.position - (_home[c] as Vector3)
+			continue
+		var yaw: float = _home_yaw[c]
+		var ready: bool = battle != null and battle.running and c.can_pay(Battle.SKILL_BLOCKS) and not battle.is_winding_up(c)
+		var want := Vector3(sin(yaw), 0.0, cos(yaw)) * READY_STEP if ready else Vector3.ZERO
+		var off: Vector3 = (_ready_off.get(c, Vector3.ZERO) as Vector3).lerp(want, 1.0 - exp(-6.0 * delta))
+		_ready_off[c] = off
+		m.position = (_home[c] as Vector3) + off
+		m.rotation.y = yaw + sin(t * 0.9 + float(_phase.get(c, 0.0))) * 0.04
+		var ring: Node3D = m.get_node_or_null("ReadyRing")
+		if ring != null:
+			ring.visible = ready
+			var pulse := 1.0 + 0.12 * sin(t * 6.0)
+			ring.scale = Vector3(pulse, 1.0, pulse)
+
+
+func _is_idle(c: Combatant) -> bool:
+	var m: Node3D = _models[c]
+	if not c.is_alive() or not m.visible or _displaced.get(c, false):
+		return false
+	if Time.get_ticks_msec() < _busy_until.get(c, 0):
+		return false
+	var tw: Tween = _tweens.get(c)
+	return tw == null or not tw.is_valid()
+
+
+## Marked characters turn to face the attacker and flinch back; the attacker
+## rears back. Both settle again once the attack is over.
+func _brace(inc) -> void:
+	var a: Combatant = inc.attacker
+	var t: Combatant = inc.target
+	var a_home: Vector3 = _home[a]
+	var t_home: Vector3 = _home[t]
+	var dir := _flat_dir(a_home, t_home)
+	var ma: Node3D = _models[a]
+	var tw := _move(a)
+	tw.tween_property(ma, "position", a_home - dir * 0.7, 0.3).set_trans(Tween.TRANS_SINE)
+	if t == a:
+		return
+	var mt: Node3D = _models[t]
+	var yaw_from := mt.rotation.y
+	var yaw_att := atan2(-dir.x, -dir.z)
+	var tw2 := _move(t)
+	tw2.tween_property(mt, "position", t_home + dir * 0.5, 0.3).set_trans(Tween.TRANS_SINE)
+	tw2.parallel().tween_method(func(k: float) -> void: mt.rotation.y = lerp_angle(yaw_from, yaw_att, k), 0.0, 1.0, 0.3)
+
+
+func _unbrace_later(c: Combatant, delay: float) -> void:
+	await get_tree().create_timer(delay, false).timeout
+	if not c.is_alive() or _displaced.get(c, false):
+		return
+	var running: Tween = _tweens.get(c)
+	if running != null and running.is_valid():
+		return  # Another sequence owns it.
+	var m: Node3D = _models[c]
+	var yaw_from := m.rotation.y
+	var yaw_home: float = _home_yaw[c]
+	var tw := _move(c)
+	tw.tween_property(m, "position", _home[c], 0.25)
+	tw.parallel().tween_method(func(k: float) -> void: m.rotation.y = lerp_angle(yaw_from, yaw_home, k), 0.0, 1.0, 0.25)
+
+
+## Battle start: everyone runs in from off-screen and brakes at its spot.
+func intro() -> void:
+	var order := 0
+	for c in _models:
+		var m: Node3D = _models[c]
+		var home: Vector3 = _home[c]
+		var from := home + (Vector3(-10.0, 0.0, 9.0) if c.is_player else Vector3(18.0, 0.0, -4.0))
+		var delay := order * 0.15
+		order += 1
+		var yaw_in := atan2(home.x - from.x, home.z - from.z)
+		var yaw_home: float = _home_yaw[c]
+		var dur := clampf(from.distance_to(home) / 13.0, 0.9, 1.6)
+		_busy_for(c, delay + dur + 0.6)
+		m.visible = false
+		m.position = from
+		m.rotation.y = yaw_in
+		var tw := _move(c)
+		tw.tween_interval(delay)
+		tw.tween_callback(func() -> void:
+			m.visible = true
+			_play(c, "run")
+			_dust_trail(m, dur))
+		tw.tween_property(m, "position", home, dur).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tw.tween_callback(func() -> void:
+			m.rotation.y = yaw_home
+			_shock(home, Color(0.8, 0.95, 1.0), 2.8, 0.4)
+			_smoke(home + Vector3(0, 0.2, 0), Color(0.75, 0.85, 0.9), 8, Vector2(1.0, 1.8), 0.6, 0.4)
+			_reset_idle(c))
+
+
+## Battle over: the winners strike their victory pose.
+func finish(player_won: bool) -> void:
+	if not player_won:
+		return
+	for c in _models:
+		if c.is_player and c.is_alive():
+			_busy_for(c, 60.0)
+			_stop_moving(c)
+			(_models[c] as Node3D).position = _home[c]
+			_play(c, "victory")
 
 
 # --- Character motion --------------------------------------------------------
