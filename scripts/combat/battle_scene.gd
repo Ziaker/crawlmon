@@ -99,6 +99,7 @@ func _ready() -> void:
 	# can interrupt the entrance.
 	battle.party = party
 	battle.enemies = enemies
+	_menu.hide()  # No commands while the characters are still running in.
 	await fx.intro()
 	battle.start(party, enemies)
 	_show_main()
