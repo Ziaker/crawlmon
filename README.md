@@ -19,6 +19,7 @@ Dungeon crawler em Godot 4.7 com mapa 2D top-down e combate em 3D com **ATB** em
 - **Elementos**: Físico, Fogo, Água/Gelo, Raio, Psíquico, Veneno, Som, Terra, Vento, Luz, Trevas. Golpe no elemento fraco do alvo causa dano x1,5 e dá +2 blocos de ATB ao atacante.
 - **Efeitos visuais** (placeholders em `scripts/combat/battle_fx.gd`): ataque inimigo é sinalizado (inimigo recua, anel vermelho encolhe no alvo), investida/projétil por elemento, impacto por elemento, esquiva com afterimage, números flutuantes e tremor de câmera. Anel dourado no personagem = Burst.
 - **Crítico**: 10% de chance por golpe, dano x2, e o atacante ganha +1 bloco de ATB.
+- **Simetria**: toda mecânica do jogador vale para o oponente. Inimigos têm habilidades com elementos, inventário (poção), fraquezas, Evade manual (e ganham Burst), esquiva automática, crítico e ganho de ATB; e todo ataque, de qualquer lado, tem tempo de preparo e pode ser desviado. Inimigos seguem as mesmas Tactics dos aliados (Habilidades + Esquivar).
 - **Tactics**: define como os aliados agem (Atacar / Habilidades / Segurar) e reagem (Nada / Esquivar). O jogador controla o líder; aliados seguem as Tactics.
 - Configurações (C): ainda vazio.
 

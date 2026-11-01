@@ -19,6 +19,7 @@ const COLORS := {
 }
 const FLY_TIME := 0.25
 const TELEGRAPH_COLOR := Color(1.0, 0.2, 0.15)
+const ALLY_COLOR := Color(0.3, 0.7, 1.0)
 const DODGE_COLOR := Color(0.5, 0.9, 1.0)
 const GOLD := Color(1.0, 0.8, 0.1)
 
@@ -50,12 +51,13 @@ func telegraph(inc) -> void:
 	var a_home: Vector3 = _home[inc.attacker]
 	var t_home: Vector3 = _home[inc.target]
 	var dir := _flat_dir(a_home, t_home)
+	var warn := TELEGRAPH_COLOR if not inc.attacker.is_player else ALLY_COLOR
 	var tw := _move(inc.attacker)
 	tw.set_parallel(true)
 	tw.tween_property(m, "position", a_home - dir * 0.6, 0.3)
 	tw.tween_property(m, "scale", Vector3(1.15, 0.8, 1.15), 0.3)
-	var ring := _ring(t_home + Vector3(0, 0.05, 0), TELEGRAPH_COLOR, Vector3(2.6, 1, 2.6), Vector3.ONE, Battle.WINDUP, Vector3.ZERO, 0.0, false)
-	var line := _line(a_home + Vector3(0, 1, 0), t_home + Vector3(0, 1, 0), Color(1.0, 0.2, 0.15, 0.45), 0.05)
+	var ring := _ring(t_home + Vector3(0, 0.05, 0), warn, Vector3(2.6, 1, 2.6), Vector3.ONE, Battle.WINDUP, Vector3.ZERO, 0.0, false)
+	var line := _line(a_home + Vector3(0, 1, 0), t_home + Vector3(0, 1, 0), Color(warn, 0.45), 0.05)
 	_telegraphs[inc] = [ring, line]
 
 
@@ -71,8 +73,18 @@ func clear_telegraph(inc) -> void:
 ## was evaded the target stays displaced until the lunge has passed.
 func resolve_attack(inc) -> void:
 	clear_telegraph(inc)
-	lunge(inc.attacker, _home[inc.target])
+	var element: Element.Type = inc.element
+	var t_home: Vector3 = _home[inc.target]
+	if element == Element.Type.FISICO:
+		lunge(inc.attacker, t_home)
+	else:
+		cast(inc.attacker, t_home, COLORS[element])
 	if inc.dodged:
+		var from: Vector3 = _home[inc.attacker] + Vector3(0, 1, 0)
+		var to := t_home + Vector3(0, 1, 0)
+		if _has_projectile(element):
+			await get_tree().create_timer(0.12).timeout
+			_projectile(from, to + _flat_dir(from, to) * 7.0, COLORS[element], element)
 		await get_tree().create_timer(0.4).timeout
 		settle(inc.target)
 
@@ -85,7 +97,7 @@ func manual_evade(actor: Combatant, inc) -> void:
 	_burst(home + Vector3(0, 1, 0), GOLD, 20, 4.0, Vector3(0, 2, 0), 0.08, 0.6)
 
 
-## info keys: from_incoming, evaded, auto, dmg, weak, crit, gain.
+## info keys: evaded, dmg, weak, crit, gain.
 func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, info: Dictionary) -> void:
 	var color: Color = COLORS[element]
 	var a_home: Vector3 = _home[attacker]
@@ -93,17 +105,11 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 	var from := a_home + Vector3(0, 1, 0)
 	var to := t_home + Vector3(0, 1, 0)
 	var physical := element == Element.Type.FISICO
-	if not info["from_incoming"]:
-		if physical:
-			lunge(attacker, t_home)
-		else:
-			cast(attacker, t_home, color)
 	await get_tree().create_timer(0.12).timeout
 	var evaded: bool = info["evaded"]
 	if evaded:
 		_dodge_later(target, "ESQUIVOU! +1 ATB", 0.1)
-	var skips_projectile := physical or element in [Element.Type.RAIO, Element.Type.LUZ, Element.Type.TERRA]
-	if not skips_projectile:
+	if _has_projectile(element):
 		var end := to + _flat_dir(from, to) * 7.0 if evaded else to
 		await _projectile(from, end, color, element)
 	elif physical:
@@ -311,6 +317,10 @@ func _move(c: Combatant) -> Tween:
 	var tw := create_tween()
 	_tweens[c] = tw
 	return tw
+
+
+func _has_projectile(element: Element.Type) -> bool:
+	return not (element in [Element.Type.FISICO, Element.Type.RAIO, Element.Type.LUZ, Element.Type.TERRA])
 
 
 func _dodge_later(target: Combatant, text: String, delay: float) -> void:

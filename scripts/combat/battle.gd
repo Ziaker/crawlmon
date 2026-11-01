@@ -1,9 +1,11 @@
 class_name Battle
 extends Node
 ## ATB battle rules. Every combatant has a 5-block gauge that fills over time.
-## Skills cost 2 blocks, items 1. Enemy attacks take a moment to land; Evade
-## (3 blocks) dodges one and grants a burst (free extra action). Every hit also
-## has an automatic evade chance based on the target's speed (grants +1 ATB block). party[0] is the player-controlled leader, the rest follow Tactics.
+## Skills cost 2 blocks, items 1. Every attack, from either side, takes a moment
+## to land; Evade (3 blocks) dodges one and grants a burst (free extra action).
+## Every hit also has an automatic evade chance based on the target's speed
+## (grants +1 ATB block). party[0] is the player-controlled leader; every other
+## combatant, allies and enemies alike, follows its Tactics (act/react policy).
 
 signal log_message(text: String)
 signal battle_ended(player_won: bool)
@@ -20,6 +22,8 @@ class Incoming:
 	var attacker: Combatant
 	var target: Combatant
 	var power := 1.0
+	var element := Element.Type.FISICO
+	var label := ""
 	var time_left := 0.0
 	var dodged := false
 	var evade_tried := false
@@ -27,10 +31,11 @@ class Incoming:
 const SKILL_BLOCKS := 2.0
 const ITEM_BLOCKS := 1.0
 const EVADE_BLOCKS := 3.0
-const WINDUP := 1.6  ## Seconds an enemy attack takes to land.
+const WINDUP := 1.6  ## Seconds an attack takes to land.
 const WEAKNESS_MULT := 1.5
 const CRIT_CHANCE := 0.1
 const CRIT_MULT := 2.0
+const AI_HEAL_BELOW := 0.5  ## AI combatants drink a potion at or below this HP fraction.
 
 var party: Array[Combatant] = []
 var enemies: Array[Combatant] = []
@@ -41,11 +46,9 @@ var running := false
 func start(p_party: Array[Combatant], p_enemies: Array[Combatant]) -> void:
 	party = p_party
 	enemies = p_enemies
-	for c in party:
+	for c in party + enemies:
 		c.atb = 0.0
 		c.burst = 0
-	for e in enemies:
-		e.atb = 0.0
 	running = true
 	log_message.emit("Batalha iniciada!")
 
@@ -55,30 +58,37 @@ func _process(delta: float) -> void:
 		return
 	for c in party + enemies:
 		c.tick(delta)
-	_enemy_ai()
-	_ally_ai()
+	_run_ai()
 	_resolve_incoming(delta)
 	state_changed.emit()
 
 
-# --- Player / ally actions -------------------------------------------------
+# --- Actions (same for the player, allies and enemies) -----------------------
 
 func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
-	if not actor.is_alive() or not target.is_alive() or not actor.can_pay(skill.cost):
+	if not actor.is_alive() or not target.is_alive() or is_winding_up(actor) or not actor.can_pay(skill.cost):
 		return false
 	actor.pay(skill.cost)
-	_hit(actor, target, skill.power, skill.element, skill.display_name)
-	_check_end()
+	var inc := Incoming.new()
+	inc.attacker = actor
+	inc.target = target
+	inc.power = skill.power
+	inc.element = skill.element
+	inc.label = skill.display_name
+	inc.time_left = WINDUP
+	incoming.append(inc)
+	log_message.emit("%s prepara %s em %s..." % [actor.name, skill.display_name, target.name])
+	attack_telegraphed.emit(inc)
 	return true
 
 
 func use_item(actor: Combatant, item: Item, target: Combatant) -> bool:
 	if item.kind != Item.Kind.CONSUMABLE or not actor.can_pay(ITEM_BLOCKS):
 		return false
-	if not actor.is_alive() or GameState.item_count(item.id) <= 0:
+	if not actor.is_alive() or actor.item_count(item.id) <= 0:
 		return false
 	actor.pay(ITEM_BLOCKS)
-	GameState.remove_item(item.id)
+	actor.remove_item(item.id)
 	var before := target.hp
 	target.heal(item.heal)
 	healed.emit(actor, target, target.hp - before)
@@ -86,7 +96,7 @@ func use_item(actor: Combatant, item: Item, target: Combatant) -> bool:
 	return true
 
 
-## The enemy attack `actor` could still try to evade, or null.
+## The attack `actor` could still try to evade, or null.
 func find_evadable(actor: Combatant) -> Incoming:
 	if not actor.is_alive() or actor.atb < EVADE_BLOCKS:
 		return null
@@ -108,44 +118,51 @@ func try_evade(actor: Combatant, inc: Incoming) -> bool:
 	return true
 
 
-# --- AI --------------------------------------------------------------------
+func is_winding_up(c: Combatant) -> bool:
+	for inc in incoming:
+		if inc.attacker == c:
+			return true
+	return false
 
-func _enemy_ai() -> void:
-	for e in enemies:
-		if not e.is_alive() or e.atb < SKILL_BLOCKS or _is_winding_up(e):
+
+# --- AI (everyone except the player-controlled leader) -----------------------
+
+func _run_ai() -> void:
+	for c in party + enemies:
+		if c == party[0] or not c.is_alive():
 			continue
-		var target := _first_alive(party)
+		var foes := enemies if c.is_player else party
+		if c.react_policy == Combatant.React.EVADE:
+			try_evade(c, find_evadable(c))
+		if c.hp <= c.max_hp * AI_HEAL_BELOW and c.can_pay(ITEM_BLOCKS):
+			var potion := _first_consumable(c)
+			if potion != null and use_item(c, potion, c):
+				continue
+		if is_winding_up(c):
+			continue
+		if c.act_policy == Combatant.Act.HOLD or not c.can_pay(SKILL_BLOCKS):
+			continue
+		var target := _first_alive(foes)
 		if target == null:
 			return
-		e.pay(SKILL_BLOCKS)
-		var inc := Incoming.new()
-		inc.attacker = e
-		inc.target = target
-		inc.time_left = WINDUP
-		incoming.append(inc)
-		log_message.emit("%s prepara um ataque em %s..." % [e.name, target.name])
-		attack_telegraphed.emit(inc)
+		use_skill(c, _pick_skill(c), target)
 
 
-func _ally_ai() -> void:
-	for i in range(1, party.size()):
-		var a := party[i]
-		if not a.is_alive():
-			continue
-		if a.react_policy == Combatant.React.EVADE:
-			try_evade(a, find_evadable(a))
-		if a.act_policy == Combatant.Act.HOLD or a.atb < SKILL_BLOCKS:
-			continue
-		var target := _first_alive(enemies)
-		if target == null:
-			return
-		use_skill(a, _pick_skill(a), target)
+func _first_consumable(c: Combatant) -> Item:
+	for id in c.inventory:
+		var item := Item.get_item(id)
+		if item != null and item.kind == Item.Kind.CONSUMABLE and c.item_count(id) > 0:
+			return item
+	return null
 
 
-func _pick_skill(a: Combatant) -> Skill:
-	if a.act_policy == Combatant.Act.SKILL and not a.skills.is_empty():
-		for skill in a.skills:
-			if a.can_pay(skill.cost):
+## SKILL policy cycles through the combatant's skills; ATTACK uses the basic attack.
+func _pick_skill(c: Combatant) -> Skill:
+	if c.act_policy == Combatant.Act.SKILL and not c.skills.is_empty():
+		for i in c.skills.size():
+			var skill := c.skills[(c.skill_cursor + i) % c.skills.size()]
+			if c.can_pay(skill.cost):
+				c.skill_cursor = (c.skill_cursor + i + 1) % c.skills.size()
 				return skill
 	return Skill.basic()
 
@@ -162,23 +179,16 @@ func _resolve_incoming(delta: float) -> void:
 		incoming.erase(inc)
 		attack_resolved.emit(inc)
 		if inc.dodged:
-			log_message.emit("%s errou o ataque!" % inc.attacker.name)
+			log_message.emit("%s errou %s!" % [inc.attacker.name, inc.label])
 		else:
-			_hit(inc.attacker, inc.target, inc.power, Element.Type.FISICO, "Ataque", true)
+			_hit(inc.attacker, inc.target, inc.power, inc.element, inc.label)
 	_check_end()
 
 
 # --- Helpers ---------------------------------------------------------------
 
-func _is_winding_up(e: Combatant) -> bool:
-	for inc in incoming:
-		if inc.attacker == e:
-			return true
-	return false
-
-
-func _hit(attacker: Combatant, target: Combatant, power: float, element: Element.Type, label: String, from_incoming := false) -> void:
-	var info := {"from_incoming": from_incoming, "evaded": false, "dmg": 0, "weak": false, "crit": false, "gain": 0}
+func _hit(attacker: Combatant, target: Combatant, power: float, element: Element.Type, label: String) -> void:
+	var info := {"evaded": false, "dmg": 0, "weak": false, "crit": false, "gain": 0}
 	# Automatic evade: chance equals the target's speed; success gives +1 ATB block.
 	if randf() < target.speed:
 		target.add_atb(1.0)

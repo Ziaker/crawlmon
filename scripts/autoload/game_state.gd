@@ -71,6 +71,8 @@ func _register_key(action: String, keycode: Key) -> void:
 
 func _build_party() -> void:
 	var hero := Combatant.new("Herói", 40, 8, 0.45, true)
+	hero.inventory = inventory  # The leader uses the shared party inventory.
+	hero.weaknesses.assign([Element.Type.FOGO])
 	hero.skills.assign([
 		Skill.new("Golpe Forte", 1.5),
 		Skill.new("Corte Giratório", 1.2),
@@ -78,6 +80,7 @@ func _build_party() -> void:
 		Skill.new("Investida", 1.8, 3),
 	])
 	var mage := Combatant.new("Mago", 28, 11, 0.4, true)
+	mage.weaknesses.assign([Element.Type.FISICO])
 	mage.skills.assign([
 		Skill.new("Bola de Fogo", 1.6, 2, Element.Type.FOGO),
 		Skill.new("Raio", 1.4, 2, Element.Type.RAIO),

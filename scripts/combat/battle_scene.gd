@@ -40,6 +40,12 @@ func _ready() -> void:
 	]
 	enemies[0].weaknesses.assign([Element.Type.FOGO])
 	enemies[1].weaknesses.assign([Element.Type.RAIO])
+	enemies[0].skills.assign([Skill.new("Gosma", 1.1, 2, Element.Type.VENENO), Skill.new("Investida Mole", 1.0)])
+	enemies[1].skills.assign([Skill.new("Facada", 1.2), Skill.new("Tocha", 1.3, 2, Element.Type.FOGO)])
+	enemies[1].inventory = {"potion": 1}
+	for e in enemies:  # Same Tactics the allies have: cast skills and evade when able.
+		e.act_policy = Combatant.Act.SKILL
+		e.react_policy = Combatant.React.EVADE
 	leader = party[0]
 	_spawn(party, -3.0, Color(0.3, 0.6, 0.9))
 	_spawn(enemies, 3.0, Color(0.85, 0.3, 0.3))
@@ -211,7 +217,7 @@ func _show_main() -> void:
 
 
 func _update_main_enabled() -> void:
-	_menu.set_enabled(0, leader.can_pay(Battle.SKILL_BLOCKS))
+	_menu.set_enabled(0, leader.can_pay(Battle.SKILL_BLOCKS) and not battle.is_winding_up(leader))
 	_menu.set_enabled(1, leader.can_pay(Battle.ITEM_BLOCKS) and not _consumables().is_empty())
 	_menu.set_enabled(2, battle.find_evadable(leader) != null)
 
@@ -232,7 +238,7 @@ func _show_items() -> void:
 	_item_list = _consumables()
 	var entries: Array = []
 	for item in _item_list:
-		entries.append("%s x%d" % [item.display_name, GameState.item_count(item.id)])
+		entries.append("%s x%d" % [item.display_name, leader.item_count(item.id)])
 	if entries.is_empty():
 		entries.append({"text": "(vazio)", "enabled": false})
 	_menu.set_entries(entries)

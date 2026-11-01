@@ -21,6 +21,8 @@ var is_player: bool
 var skills: Array[Skill] = []
 var weaknesses: Array[Element.Type] = []
 var held_item_id := ""
+var inventory: Dictionary = {}  ## item id -> count (the leader shares GameState.inventory).
+var skill_cursor := 0  ## Next skill an AI on the SKILL policy tries.
 var act_policy := Act.ATTACK
 var react_policy := React.NONE
 var atb := 0.0
@@ -78,6 +80,17 @@ func take_damage(amount: int) -> void:
 
 func heal(amount: int) -> void:
 	hp = mini(hp + amount, max_hp)
+
+
+func item_count(id: String) -> int:
+	return inventory.get(id, 0)
+
+
+func remove_item(id: String) -> void:
+	if item_count(id) <= 1:
+		inventory.erase(id)
+	else:
+		inventory[id] -= 1
 
 
 func add_atb(blocks: float) -> void:

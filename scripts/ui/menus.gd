@@ -139,9 +139,10 @@ func _status_text(c: Combatant) -> String:
 	var skill_names := PackedStringArray()
 	for s in c.skills:
 		skill_names.append(s.display_name)
-	return "%s\nHP %d/%d    Ataque %d    ATB %.2f blocos/s\nItem: %s\nHabilidades: %s" % [
+	return "%s\nHP %d/%d    Ataque %d    ATB %.2f blocos/s\nItem: %s\nHabilidades: %s
+Fraquezas: %s" % [
 		c.name, c.hp, c.max_hp, c.attack, c.speed,
-		held.display_name if held else "-", ", ".join(skill_names)]
+		held.display_name if held else "-", ", ".join(skill_names), c.weakness_text()]
 
 
 # --- Settings --------------------------------------------------------------
