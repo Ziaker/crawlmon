@@ -5,12 +5,14 @@ extends RefCounted
 var display_name: String
 var power: float
 var cost: int
+var element: Element.Type
 
 
-func _init(p_name: String, p_power: float, p_cost := 2) -> void:
+func _init(p_name: String, p_power: float, p_cost := 2, p_element := Element.Type.FISICO) -> void:
 	display_name = p_name
 	power = p_power
 	cost = p_cost
+	element = p_element
 
 
 ## The generic physical attack always shown first in the Fight menu.

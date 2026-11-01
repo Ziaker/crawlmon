@@ -19,6 +19,7 @@ var base_attack: int
 var base_speed: float  ## Blocks per second.
 var is_player: bool
 var skills: Array[Skill] = []
+var weaknesses: Array[Element.Type] = []
 var held_item_id := ""
 var act_policy := Act.ATTACK
 var react_policy := React.NONE
@@ -77,3 +78,14 @@ func take_damage(amount: int) -> void:
 
 func heal(amount: int) -> void:
 	hp = mini(hp + amount, max_hp)
+
+
+func add_atb(blocks: float) -> void:
+	atb = minf(atb + blocks, BLOCKS)
+
+
+func weakness_text() -> String:
+	var names := PackedStringArray()
+	for w in weaknesses:
+		names.append(Element.name_of(w))
+	return ", ".join(names)

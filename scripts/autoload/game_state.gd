@@ -79,9 +79,9 @@ func _build_party() -> void:
 	])
 	var mage := Combatant.new("Mago", 28, 11, 0.4, true)
 	mage.skills.assign([
-		Skill.new("Bola de Fogo", 1.6),
-		Skill.new("Raio", 1.4),
-		Skill.new("Gelo", 1.2),
-		Skill.new("Meteoro", 2.2, 3),
+		Skill.new("Bola de Fogo", 1.6, 2, Element.Type.FOGO),
+		Skill.new("Raio", 1.4, 2, Element.Type.RAIO),
+		Skill.new("Gelo", 1.2, 2, Element.Type.AGUA_GELO),
+		Skill.new("Meteoro", 2.2, 3, Element.Type.TERRA),
 	])
 	party.assign([hero, mage])

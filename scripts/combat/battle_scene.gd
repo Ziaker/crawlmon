@@ -34,6 +34,8 @@ func _ready() -> void:
 		Combatant.new("Slime", 25, 5, 0.35, false),
 		Combatant.new("Goblin", 30, 7, 0.45, false),
 	]
+	enemies[0].weaknesses.assign([Element.Type.FOGO])
+	enemies[1].weaknesses.assign([Element.Type.RAIO])
 	leader = party[0]
 	_spawn(party, -3.0, Color(0.3, 0.6, 0.9))
 	_spawn(enemies, 3.0, Color(0.85, 0.3, 0.3))
@@ -202,7 +204,7 @@ func _show_fight() -> void:
 	_fight_skills.append_array(leader.skills)
 	var entries: Array = []
 	for s in _fight_skills:
-		entries.append({"text": "%s (%d)" % [s.display_name, s.cost], "enabled": leader.can_pay(s.cost)})
+		entries.append({"text": "%s (%d) - %s" % [s.display_name, s.cost, Element.name_of(s.element)], "enabled": leader.can_pay(s.cost)})
 	_menu.set_entries(entries)
 
 
@@ -240,7 +242,8 @@ func _pick_target(candidates: Array[Combatant], on_target: Callable, back: Calla
 	_back = back
 	var entries: Array = []
 	for t in _targets:
-		entries.append("%s  HP %d/%d" % [t.name, t.hp, t.max_hp])
+		var weak := t.weakness_text()
+		entries.append("%s  HP %d/%d%s" % [t.name, t.hp, t.max_hp, "   Fraqueza: " + weak if weak != "" else ""])
 	_menu.set_entries(entries)
 
 

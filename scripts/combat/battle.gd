@@ -2,7 +2,8 @@ class_name Battle
 extends Node
 ## ATB battle rules. Every combatant has a 5-block gauge that fills over time.
 ## Skills cost 2 blocks, items 1. Enemy attacks take a moment to land; Evade
-## (3 blocks) dodges one and grants a burst (free extra action). party[0] is the player-controlled leader, the rest follow Tactics.
+## (3 blocks) dodges one and grants a burst (free extra action). Every hit also
+## has an automatic evade chance based on the target's speed (grants +1 ATB block). party[0] is the player-controlled leader, the rest follow Tactics.
 
 signal log_message(text: String)
 signal battle_ended(player_won: bool)
@@ -20,6 +21,7 @@ const SKILL_BLOCKS := 2.0
 const ITEM_BLOCKS := 1.0
 const EVADE_BLOCKS := 3.0
 const WINDUP := 1.6  ## Seconds an enemy attack takes to land.
+const WEAKNESS_MULT := 1.5
 
 var party: Array[Combatant] = []
 var enemies: Array[Combatant] = []
@@ -56,7 +58,7 @@ func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
 	if not actor.is_alive() or not target.is_alive() or not actor.can_pay(skill.cost):
 		return false
 	actor.pay(skill.cost)
-	_hit(actor, target, skill.power, skill.display_name)
+	_hit(actor, target, skill.power, skill.element, skill.display_name)
 	_check_end()
 	return true
 
@@ -147,7 +149,7 @@ func _resolve_incoming(delta: float) -> void:
 		if inc.dodged:
 			log_message.emit("%s errou o ataque!" % inc.attacker.name)
 		else:
-			_hit(inc.attacker, inc.target, inc.power, "Ataque")
+			_hit(inc.attacker, inc.target, inc.power, Element.Type.FISICO, "Ataque")
 	_check_end()
 
 
@@ -160,10 +162,17 @@ func _is_winding_up(e: Combatant) -> bool:
 	return false
 
 
-func _hit(attacker: Combatant, target: Combatant, power: float, label: String) -> void:
-	var dmg := maxi(1, roundi(attacker.attack * power))
+func _hit(attacker: Combatant, target: Combatant, power: float, element: Element.Type, label: String) -> void:
+	# Automatic evade: chance equals the target's speed; success gives +1 ATB block.
+	if randf() < target.speed:
+		target.add_atb(1.0)
+		log_message.emit("%s esquiva de %s automaticamente! +1 bloco" % [target.name, label])
+		return
+	var weak := element in target.weaknesses
+	var dmg := maxi(1, roundi(attacker.attack * power * (WEAKNESS_MULT if weak else 1.0)))
 	target.take_damage(dmg)
-	log_message.emit("%s usa %s em %s (%d dano)" % [attacker.name, label, target.name, dmg])
+	log_message.emit("%s usa %s (%s) em %s (%d dano)%s" % [
+		attacker.name, label, Element.name_of(element), target.name, dmg, " FRAQUEZA!" if weak else ""])
 
 
 func _first_alive(list: Array[Combatant]) -> Combatant:
