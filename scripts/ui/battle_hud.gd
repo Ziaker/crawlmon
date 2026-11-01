@@ -51,6 +51,7 @@ func setup(battle: Battle, party: Array[Combatant], enemies: Array[Combatant], c
 	_director = director
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_add_vignette()
 	for i in party.size():
 		var card := UnitCard.new()
 		card.combatant = party[i]
@@ -75,6 +76,32 @@ func setup(battle: Battle, party: Array[Combatant], enemies: Array[Combatant], c
 	add_child(_tabs)
 	director.mode_changed.connect(func(m: BattleCamera.Mode) -> void: _tabs.mode = m; _tabs.queue_redraw())
 	battle.log_message.connect(_on_log)
+
+
+## Dark edges and a faint cyan glow in the middle, as in the V9 prototype.
+func _add_vignette() -> void:
+	var edge := Gradient.new()
+	edge.set_color(0, Color(0, 0, 0, 0))
+	edge.set_color(1, Color(0.02, 0.04, 0.08, 0.7))
+	edge.add_point(0.55, Color(0, 0, 0, 0))
+	var glow := Gradient.new()
+	glow.set_color(0, Color(0.47, 0.78, 0.8, 0.14))
+	glow.set_color(1, Color(0.47, 0.78, 0.8, 0))
+	for g in [glow, edge]:
+		var tex := GradientTexture2D.new()
+		tex.gradient = g
+		tex.fill = GradientTexture2D.FILL_RADIAL
+		tex.fill_from = Vector2(0.5, 0.5)
+		tex.fill_to = Vector2(1.0, 0.5)
+		tex.width = 512
+		tex.height = 288
+		var rect := TextureRect.new()
+		rect.texture = tex
+		rect.stretch_mode = TextureRect.STRETCH_SCALE
+		rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		rect.show_behind_parent = true
+		add_child(rect)
+		rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 
 func _make_label(pos: Vector2, size: int, color: Color) -> Label:
