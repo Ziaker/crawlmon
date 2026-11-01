@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.16 — Rodada 25 de gameplay consolidada, 2026-11-01.  
+> **Revisão:** 1.17 — Rodada 26 de gameplay consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -82,9 +82,20 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 **APROVADO (R23-Q5 = C):** resposta literal **“combinacao com mestres e possiveis personagens que dao hms”**. O sistema de aprendizado de Moves admite **fontes combinadas, incluindo mestres e possíveis personagens que concedem HMs**. **APROVADO posteriormente (R24-Q4 = C):** HMs e TMs são **somente para combate por enquanto**, sem funções de exploração. **PENDENTE:** demais fontes, obtenção, requisitos, relação de HMs/TMs com os quatro Moves equipados e seus slots. Não presumir custos.
 
 **APROVADO (R25-Q3 = A):** quando um Pokémon **satisfizer os requisitos para sua evolução de espécie**, **o jogador poderá escolher quando efetuar a evolução**, em vez de ela ocorrer obrigatoriamente de forma automática assim que o requisito for atingido. **PENDENTE:** requisitos por espécie, interface, possíveis restrições e efeitos de evolução; não confundir com subida de nível ou distribuição de atributos.
+
+**APROVADO (R26-Q1 = A) — protagonista inicial:** o jogador **escolhe seu Pokémon protagonista entre espécies iniciais disponíveis**. **PENDENTE:** quais espécies compõem o catálogo, interface de escolha e demais aspectos da apresentação. A escolha da espécie **não substitui nem altera** as regras já aprovadas de sorteio da Nature do protagonista.
+
+**APROVADO (R26-Q2 = B) — candidatos especiais ao recrutamento:** **Pokémon normalmente hostis podem aparecer em situações especiais como candidatos a recrutamento, identificados no mapa da exploração 2D**. O candidato elegível ainda exige **interação voluntária explícita** (R24-Q2). **Encontros hostis normais continuam iniciando combate 3D por contato** (R8-Q5). **PENDENTE:** natureza da identificação visual, eventos/requisitos para aparecer como candidato e condições concretas para recrutamento. Não inferir recrutamento automático nem que todo inimigo possa ser recrutado em qualquer encontro.
+
+**APROVADO (R26-Q3 = A) — experiência de batalha:** **todos os Pokémon ativos que participarem de uma batalha vencida recebem experiência, independentemente de aplicar o golpe final**. **PENDENTE:** quantidades, divisão de experiência, tratamento de Pokémon que ficaram na reserva, situações com membros incapacitados e demais condições especiais. A evolução por nível, a distribuição manual de pontos do protagonista e o crescimento automático de aliados permanecem inalterados.
+
+**APROVADO (R26-Q4 = A) — depois do chefe:** **ao vencer o chefe do último andar, a dungeon é concluída, a expedição se encerra e o jogador retorna à seleção/progressão da campanha**. **PENDENTE:** recompensas, apresentação de resultados e critérios dos novos desbloqueios. Esse retorno não cria nem exige um hub implementado; a intenção de hub futuro de R25-Q2 permanece pendente.
+
+**APROVADO (R26-Q5 = A) — salas secretas:** as **salas secretas das dungeons são descobertas opcionais voltadas a recompensas, eventos e NPCs especiais**, **sem obrigatoriedade de encontrá-las para alcançar o chefe**. **PENDENTE:** conteúdo concreto, como descobrir/acessar as salas e distribuição procedural. A prioridade dada a salas secretas em R25-Q5 permanece válida.
+
  **APROVADO posteriormente (R23-Q1 = A):** movimento contínuo e livre nas quatro direções cardeais, sem movimento diagonal direto. **PENDENTE:** controles, colisão e animação.
 
-**PENDENTE:** sprites 2D, algoritmo de salas/corredores, seeds, localização de escadas/saídas, patrulha/detecção, estado de inimigos e itens em revisitas, protagonistas iniciais, elegibilidade e resultados das interações de recrutamento, **regras definitivas de trocas e design do hub futuro** (R25-Q2), requisitos/efeitos da **evolução escolhida pelo jogador** (R25-Q3), inventário e definição de itens **segurados** versus demais itens da expedição (R25-Q4), outras consequências de derrota, arenas, transições, narrativa e critérios específicos de **desbloqueio de dungeons da campanha** (R25-Q1). Não presumir resolvidas essas pendências.
+**PENDENTE:** sprites 2D, algoritmo de salas/corredores, seeds, localização de escadas/saídas, patrulha/detecção, estado de inimigos e itens em revisitas, catálogo/apresentação das **espécies iniciais escolhidas pelo jogador** (R26-Q1), requisitos e identificação de **candidatos especiais a recrutamento** (R26-Q2), condições de recrutamento, **regras definitivas de trocas e design do hub futuro** (R25-Q2), requisitos/efeitos da evolução escolhida (R25-Q3), **quantidades e situações especiais de experiência** (R26-Q3), inventário/itens segurados (R25-Q4), demais consequências de derrota, arenas, transições, narrativa, critérios de desbloqueio da campanha (R25-Q1), **recompensas após o chefe** (R26-Q4) e acesso/conteúdo das **salas secretas opcionais** (R26-Q5). Não presumir resolvidas essas pendências.
 
 ### Fluxo de experiência (somente encadeamento conceitual)
 
@@ -484,6 +495,21 @@ Sem decisão adicional, não fixar:
 
 **Preservação:** as decisões de R25 não definem fórmulas, valores de progressão, perdas de recursos não relacionados, PP, novos custos ATB/Burst, nem regras de TM/HM. Nenhum código ou hub foi implementado.
 
+
+### 7.17. Escolha do protagonista, recrutamento especial e resultados da dungeon — Rodada 26
+
+**APROVADO (R26-Q1 = A) — protagonista inicial:** o jogador **escolhe um Pokémon protagonista dentre espécies iniciais disponíveis**. **PENDENTE:** catálogo, apresentação da escolha e espécies elegíveis. A Nature do protagonista continua obedecendo suas próprias regras de sorteio (R17/R18), sem confundir Nature e espécie.
+
+**APROVADO (R26-Q2 = B) — candidatos especiais:** **Pokémon normalmente hostis podem surgir em situações especiais como candidatos a recrutamento identificados no mapa 2D**, com requisitos/eventos ainda pendentes. Continua obrigatória a **interação voluntária explícita** para recrutamento (R24-Q2), e **contatos hostis normais iniciam combate 3D** (R8-Q5). Não permitir recrutamento automático por contato ou presumir que qualquer inimigo é candidato.
+
+**APROVADO (R26-Q3 = A) — experiência:** **todos os Pokémon ativos participantes de batalha vencida recebem experiência**, **sem exigir participação no golpe final**. **PENDENTE:** valores e divisão de XP, elegibilidade de Pokémon incapacitados, Pokémon reservados, derrotas e demais exceções. Não estabelecer valores/fórmulas, não mudar o crescimento dos aliados nem os pontos manuais do protagonista.
+
+**APROVADO (R26-Q4 = A) — conclusão de expedição:** ao **derrotar o chefe do último andar**, o jogador **encerra a expedição e retorna à seleção/progressão da campanha**, podendo prosseguir conforme os desbloqueios de campanha. **PENDENTE:** recompensas específicas, telas de resultado e regras concretas de desbloqueio; não criar hub automaticamente.
+
+**APROVADO (R26-Q5 = A) — salas secretas:** salas secretas são **descobertas opcionais com recompensas, eventos e NPCs especiais**, **não necessárias para chegar ao chefe**. **PENDENTE:** catálogo, aparecimento, entrada, descoberta e recompensas. Não tornar sua exploração requisito de conclusão.
+
+**Preservação:** todas as regras anteriores sobre ATB, Burst, MP, ausência de PP, limites de equipe, progressão manual/automática, Nature e condições de vitória/derrota permanecem aprovadas. Somente design documental foi acrescentado.
+
 ## 8. Estado real do repositório (inspeção de código, não de execução)
 
 Referência: `main` em `1171b5f3c427edc34c486c82d42569f41fd0ea62`. Projeto **Godot 4.7**, configurado em `project.godot`, com cena inicial 2D.
@@ -651,6 +677,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-143 | R25-Q3 = A: **evolução de espécie disponível após requisitos e realizada quando o jogador escolher**, requisitos e demais efeitos pendentes. |
 | D-144 | R25-Q4 = C — “apenas itens que estao sendo segurados nao sao perdidos”: **itens obtidos na expedição só são preservados após derrota se estiverem sendo segurados; demais itens obtidos nela são perdidos**, outros casos pendentes. |
 | D-145 | R25-Q5 = A: **priorizar eventos, salas secretas, recompensas especiais e NPCs em dungeons procedurais**, sem excluir outros conteúdos. |
+| D-146 | R26-Q1 = A: **escolher espécie do protagonista entre Pokémon iniciais disponíveis**, catálogo e apresentação pendentes; Nature separada. |
+| D-147 | R26-Q2 = B: **Pokémon normalmente hostis podem aparecer em eventos especiais como candidatos marcados no mapa 2D para recrutamento**, exigindo interação voluntária; encontros hostis normais continuam iniciando combate. |
+| D-148 | R26-Q3 = A: **todos os Pokémon ativos participantes de batalha vencida recebem XP, sem exigir golpe final**, valores e casos especiais pendentes. |
+| D-149 | R26-Q4 = A: **vencer chefe encerra expedição e retorna à seleção/progressão da campanha**, recompensas/desbloqueios pendentes, sem exigir hub. |
+| D-150 | R26-Q5 = A: **salas secretas opcionais para recompensas, eventos e NPCs especiais**, não obrigatórias para alcançar o chefe. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -1002,39 +1033,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Preservação:** R25-Q2 e R25-Q4 são respostas C personalizadas, não aprovações irrestritas das antigas A/B; as decisões D-001 a D-140, as regras de equipe ativa, recrutamento, ATB/Burst, ausência de PP e histórico são preservadas.
 
-## 10.25. Rodada 26 — protagonista, exploração e progressão (cinco perguntas abertas)
+## 10.25. Rodada 26 — protagonista, exploração e progressão (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas. Todas as questões tratam de sistemas fundamentais ainda sem decisão, não de detalhes numéricos ou técnicos.
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01, registradas como D-146 a D-150.
 
-**R26-Q1 — Como o jogador escolhe seu Pokémon protagonista no início da aventura?**  
-A. **Escolher entre um conjunto de espécies iniciais disponíveis**, com catálogo e apresentação a definir.  
-B. **Receber um Pokémon protagonista sorteado dentre espécies elegíveis**, com catálogo e probabilidades a definir.  
-C. Outro método de início, descrito pelo criador.  
-*O protagonista é controlado diretamente; Nature é sorteada conforme regras anteriores, sem se confundir com espécie.*
+| ID | Resposta literal do criador | Regra aprovada / pendências |
+| --- | --- | --- |
+| **R26-Q1** | **A** — “O jogador escolhe seu Pokémon protagonista entre espécies iniciais disponíveis; catálogo e apresentação pendentes.” | **Escolha de protagonista entre espécies iniciais**; catálogo/interface pendentes, Nature independente. |
+| **R26-Q2** | **B** — “Pokémon normalmente hostis podem aparecer em situações especiais como candidatos a recrutamento, identificados no mapa; encontros hostis normais continuam iniciando combate.” | **Recrutáveis especiais identificados no mapa, inclusive espécies normalmente hostis**; interação voluntária continua obrigatória. |
+| **R26-Q3** | **A** — “Todos os Pokémon ativos que participam de uma batalha vencida recebem experiência, sem exigir que deem o golpe final; quantidades pendentes.” | **XP de vitória para todos os participantes ativos**, sem depender do golpe final; valores pendentes. |
+| **R26-Q4** | **A** — “Após derrotar o chefe, a expedição termina e o jogador retorna à seleção/progressão da campanha; recompensas e desbloqueios pendentes.” | **Expedição encerra e retorna à seleção/progressão da campanha**, sem introduzir hub. |
+| **R26-Q5** | **A** — “Salas secretas são descobertas opcionais voltadas a recompensas, eventos e NPCs especiais, sem serem exigidas para chegar ao chefe.” | **Salas secretas opcionais para descobertas/recompensas**, não bloqueiam caminho ao chefe. |
 
-**R26-Q2 — Como funcionam os Pokémon disponíveis para recrutamento dentro das dungeons?**  
-A. **Pokémon não hostis encontrados no mapa podem oferecer oportunidades de recrutamento por interação voluntária**, com condições a definir; inimigos hostis seguem iniciando combate por contato.  
-B. **Pokémon que normalmente são hostis podem aparecer em situações especiais como candidatos a recrutamento**, sinalizadas no mapa, com requisitos/eventos pendentes; contato hostil normal segue iniciando combate.  
-C. Outra forma de apresentar candidatos, especificada pelo criador.  
-*Uma interação voluntária continua obrigatória; não decidir chance, taxa ou confirmação automática.*
+**Preservação:** as 145 decisões anteriores são mantidas. A distinção entre recrutamento especial e encontro hostil preserva R8-Q5/R24-Q2. Não acrescentar fórmulas, valores, PP, novos custos ATB/Burst ou funcionalidades não aprovadas.
 
-**R26-Q3 — Como distribuir experiência de combate entre os Pokémon da equipe?**  
-A. **Todos os Pokémon ativos que participarem do combate recebem experiência da vitória**, mesmo que não finalizem o inimigo; divisão exata pendente.  
-B. **Experiência de combate é recebida principalmente pelos Pokémon que executarem ações relevantes**, com elegibilidade e divisão ainda a definir.  
-C. Outra regra, descrita pelo criador.  
-*Os níveis existem; isso não define quantidade numérica de XP, experiência dos reservados ou curvas.*
+## 10.26. Rodada 27 — combates, companhia e variedade de dungeons (cinco perguntas abertas)
 
-**R26-Q4 — O que acontece imediatamente depois de vencer o chefe e concluir uma dungeon?**  
-A. **Encerrar a expedição e retornar à seleção/progressão da campanha**, com acesso às novas dungeons desbloqueadas e recompensas ainda a definir.  
-B. **Oferecer continuidade opcional na mesma expedição para conteúdo adicional**, além da conclusão normal da dungeon, com detalhes pendentes.  
-C. Outro desfecho, descrito pelo criador.  
-*O hub mencionado na Rodada 25 permanece para planejamento posterior; não criar ou exigir hub agora.*
+**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa aprovada. As cinco decisões são de gameplay e permanecem sem definição concreta no GDD.
 
-**R26-Q5 — Que papel as salas secretas terão na exploração?**  
-A. **Descobertas opcionais com recompensas, eventos e NPCs especiais**, não obrigatórias para chegar ao chefe.  
-B. **Desafios opcionais de alto risco e recompensa**, podendo incluir combate ou encontros especiais, sem impedir a progressão principal.  
-C. Outra proposta ou combinação, descrita pelo criador.  
-*Salas secretas já têm prioridade no conteúdo procedural; esta questão decide seu papel na experiência.*
+**R27-Q1 — O jogador poderá fugir de uma batalha 3D durante uma expedição?**  
+A. **Sim, permitir tentar fugir de combates comuns**, com elegibilidade, consequências e restrições (inclusive chefes) pendentes.  
+B. **Não oferecer fuga como comando disponível em combates comuns**; encontros iniciados devem ter outro desfecho para terminar, com casos especiais pendentes.  
+C. Outra regra sobre fuga, descrita pelo criador.  
+*O GDD cita fuga apenas como possibilidade pendente; não alterar FIGHT/ITENS/Tactic/Evade ou seus custos.*
+
+**R27-Q2 — Como o jogador inicia a primeira exploração em relação aos companheiros Pokémon?**  
+A. **Começa com o protagonista sozinho e forma a equipe por recrutamento**, respeitando a capacidade de três ativos.  
+B. **Começa com protagonista e um ou mais aliados iniciais**, com espécies, obtenção e composição pendentes.  
+C. Outro arranjo inicial, descrito pelo criador.  
+*A escolha da espécie do protagonista está aprovada; a composição da equipe inicial não.*
+
+**R27-Q3 — Qual será a principal identidade visual e ambiental das dungeons da campanha?**  
+A. **Dungeons com biomas/temas próprios** (por exemplo, floresta, ruínas ou cavernas), refletidos nos ambientes e conteúdos; catálogo pendente.  
+B. **Dungeons de ambientes mistos com mudanças de tema dentro de uma mesma expedição**, com transições e conteúdos pendentes.  
+C. Outra organização de ambientes, descrita pelo criador.  
+*Geração procedural de salas/corredores já está aprovada; esta pergunta define variedade de cenários, não algoritmo.*
+
+**R27-Q4 — Qual será a principal forma de obter novos Moves comuns além de mestres e HMs/TMs de combate?**  
+A. **Desbloqueio por nível e progressão do Pokémon**, com catálogo e requisitos pendentes.  
+B. **Encontrar recompensas e oportunidades de aprendizado nas dungeons**, com catálogo/requisitos pendentes.  
+C. Outra combinação de meios de aprendizado, descrita pelo criador.  
+*Aprendizado combinado já foi aprovado em R23-Q5; não excluir mestres, HMs/TMs ou introduzir PP.*
+
+**R27-Q5 — Como as batalhas comuns recompensarão o jogador além de experiência?**  
+A. **Oferecer possibilidades de obtenção de itens e recompensas após vitória**, com conteúdo e condições pendentes.  
+B. **Concentrar recompensas materiais em eventos, tesouros e salas das dungeons**, mantendo batalhas comuns sobretudo como fontes de experiência.  
+C. Outra distribuição de recompensas, descrita pelo criador.  
+*XP para todos os participantes ativos na vitória já está aprovado; valores ou chances de itens não serão definidos agora.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -1077,5 +1122,7 @@ C. Outra proposta ou combinação, descrita pelo criador.
 | 1.15 | 2026-11-01 | Rodada 24 (D-136 a D-140): escadas/saídas para avançar sem limpar todos inimigos; recrutamento voluntário no mapa; reserva com equipe ativa completa; HMs e TMs exclusivamente de combate (C); Pokémon recrutados mantidos após derrota definitiva. Abre Rodada 25 com perguntas centrais de campanha, equipe, evolução e exploração. | Rodada 24 fechada / Rodada 25 aberta |
 
 | 1.16 | 2026-11-01 | Rodada 25 (D-141 a D-145): campanha com desbloqueio progressivo de dungeons; trocas equipe/reserva provisoriamente durante exploração, hub futuro ainda não definido (R25-Q2 C); evolução de espécie mediante requisitos sob escolha do jogador; derrota preserva somente itens segurados dentre os obtidos na expedição (R25-Q4 C), perdendo os demais obtidos; priorizar eventos, salas secretas, recompensas especiais e NPCs. Abre Rodada 26 com foco em protagonista, recrutamento, XP e conclusão. | Rodada 25 fechada / Rodada 26 aberta |
+
+| 1.17 | 2026-11-01 | Rodada 26 (D-146 a D-150): jogador escolhe espécie inicial do protagonista; Pokémon normalmente hostis podem aparecer como recrutáveis especiais identificados em mapa, preservando interação voluntária/contatos hostis; XP de vitória para todos os Pokémon ativos participantes sem exigência de golpe final; chefe do último andar encerra expedição e devolve seleção/progressão da campanha; salas secretas opcionais para recompensas/eventos/NPCs. Abre Rodada 27 sobre combates, companheiros, variedade ambiental, Moves e recompensas. | Rodada 26 fechada / Rodada 27 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
