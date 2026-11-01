@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.13 — Rodada 22 consolidada, 2026-11-01.  
+> **Revisão:** 1.14 — Rodada 23 de gameplay consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -55,13 +55,24 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
 **APROVADO (R9-Q4 = A):** o **Pokémon inimigo visível derrotado em combate é removido do andar durante a exploração atual** e **não reaparece nesse andar nessa exploração**, ressalvados eventos especiais ainda não especificados. A remoção deve continuar valendo caso o jogador revisite esse andar na mesma exploração; isso não define outros encontros, spawns ou o comportamento ao iniciar outra exploração.
 
-**APROVADO (R9-Q5 = B):** o protagonista se movimenta na exploração 2D em **quatro direções cardeais** (cima, baixo, esquerda, direita), **sem movimento diagonal direto**. **PENDENTE:** se o deslocamento é contínuo ou por tiles/turnos, esquema de comandos, colisão e animação.
+**APROVADO (R9-Q5 = B):** o protagonista se movimenta na exploração 2D em **quatro direções cardeais** (cima, baixo, esquerda, direita), **sem movimento diagonal direto**.
 
-**PENDENTE:** estilo dos sprites 2D, detalhes do algoritmo procedural de salas e corredores, interface/armazenamento de seeds e progressão dos andares, regras de IA de patrulha/detecção, estado dos inimigos/itens ao revisitar andares, personagens iniciais, regras de recrutamento e reserva de Pokémon além dos **3 membros máximos da equipe ativa**, evolução, inventário da exploração, derrota da expedição, formato e duração das arenas, transição/câmera e identidade narrativa. Nenhuma dessas escolhas é fixada por este GDD.
+**APROVADO (R23-Q1 = A):** movimentação **contínua e livre nas quatro direções cardeais** da exploração 2D, sem diagonais diretas e sem deslocamento obrigatório por tiles/turnos.
+
+**APROVADO (R23-Q2 = A):** uma dungeon é **concluída após chegar ao último andar e vencer um chefe**. Quantidade de andares, passagens e recompensas pendentes.
+
+**APROVADO (R23-Q3 = A):** **derrota definitiva em batalha encerra a exploração atual**. Consequências sobre Pokémon, inventário e progresso seguem pendentes; não presumir perda permanente.
+
+**APROVADO (R23-Q4 = B):** **Pokémon podem ser recrutados durante a exploração 2D por interações ou aproximação**. O contato com Pokémon **inimigos visíveis** continua iniciando combate 3D (R8-Q5). **PENDENTE:** diferenciar interações de recrutamento e encontros hostis, condições e reservas; não presumir recrutamento automático de inimigos por aproximação.
+
+**APROVADO (R23-Q5 = C):** resposta literal **“combinacao com mestres e possiveis personagens que dao hms”**. O sistema de aprendizado de Moves admite **fontes combinadas, incluindo mestres e possíveis personagens que concedem HMs**. **PENDENTE:** demais fontes exatas, obtenção, requisitos, e se HMs funcionam em combate, exploração ou ambos. Não presumir slots de HM nem custos.
+ **APROVADO posteriormente (R23-Q1 = A):** movimento contínuo e livre nas quatro direções cardeais, sem movimento diagonal direto. **PENDENTE:** controles, colisão e animação.
+
+**PENDENTE:** sprites 2D, algoritmo de salas/corredores, seeds, **progressão entre andares até chefe final** (R23-Q2), patrulha/detecção, estado de inimigos e itens em revisitas, protagonistas iniciais, condições do **recrutamento em 2D** e reservas além dos **3 Pokémon ativos** (R23-Q4), evolução, inventário, **consequências da derrota definitiva** (R23-Q3), arenas, transições e narrativa. Essas pendências não devem ser presumidas resolvidas.
 
 ### Fluxo de experiência (somente encadeamento conceitual)
 
-Explorar uma dungeon em 2D → encontrar um adversário → entrar na cena 3D → administrar ATB e escolhas reativas → resolver vitória/derrota/fuga, quando definidas → retornar ao contexto da dungeon.
+Explorar uma dungeon 2D em movimentação cardinal contínua → encontrar adversário → combater em 3D com ATB → retornar à exploração quando permitido ou encerrar em derrota definitiva → alcançar último andar e derrotar chefe para concluir a dungeon. Fuga e demais consequências pendentes.
 
 **IMPLEMENTADO/OBSERVADO:** já existe uma transição básica 2D/3D no protótipo. Isso não confirma que o fluxo completo acima, inclusive fuga, recursos e consequências, esteja implementado.
 
@@ -208,9 +219,9 @@ Ataque direcionado a um Pokémon → tentativa de Evade ativo com custo de 3 →
 Sem decisão adicional, não fixar:
 
 - **Pokémon e progressão:** espécies elegíveis, protagonista inicial, recrutamento, reservas e trocas (**equipe ativa de até 3 aprovada**), evolução, **cinco atributos inspirados em SMT3 em escala-base 1–100, Agilidade/Velocidade como atributo único, HP derivado de Vitalidade+nível e MP máximo de Magia+nível**. Ao subir de nível, **o jogador distribui manualmente os pontos apenas do protagonista**, com **1 ponto distribuível por nível (R13-Q4)**; **aliados crescem automaticamente por curvas próprias de cada espécie**, ainda sem valores/fórmulas (R13-Q5). **MP persiste entre batalhas da mesma dungeon** (R12-Q3), é recuperável por **consumíveis e pontos de descanso** (R13-Q2) e **restaurado ao máximo no início de cada nova exploração** (R13-Q3). Valor de referência do ATB e fórmulas de HP/MP seguem pendentes.
-- **Moves:** Tackle genérico versus golpe homônimo da franquia (**Tackle genérico custa 2 ATB, sem PP**); lista concreta dos quatro Moves por Pokémon, status, efeitos e **exceções ao custo-base de 2 ATB**, incluindo golpes de custo 5 e requisitos Burst. **Nenhuma ação do Crawlmon utiliza PP** (R8-Q2; complementa R7-Q3).
+- **Moves:** Tackle genérico versus golpe homônimo da franquia (**Tackle genérico custa 2 ATB, sem PP**); lista concreta dos quatro Moves por Pokémon, status, efeitos e **exceções ao custo-base de 2 ATB**, incluindo golpes de custo 5 e requisitos Burst. **Nenhuma ação do Crawlmon utiliza PP** (R8-Q2; complementa R7-Q3). **R23-Q5 = C** aprovou aprendizado combinado com mestres e possíveis personagens que concedam HMs, sem definir as funções das HMs ou todas as fontes exatas.
 - **Combate 3D:** câmera, sequência de animações, timings, hitstop, interface gráfica final, modelos, rigging, VFX e arenas por bioma.
-- **Dungeon 2D:** geração **procedural por exploração/andar, com salas e corredores** já aprovada (R7-Q5); seed reproduzível (R8-Q3), **layout persistente nas revisitas da mesma exploração** (R9-Q2), **inimigos visíveis que patrulham e perseguem após detecção** (R9-Q3), **inimigos derrotados removidos até o fim da exploração** (R9-Q4) e **movimentação cardinal em quatro direções** (R9-Q5). Permanecem pendentes parâmetros do gerador, interface/armazenamento de seeds, escala dos tiles, alcance/IA de detecção, movimentação contínua vs. tiles/turnos, armadilhas, itens, progressão, posicionamento e retorno.
+- **Dungeon 2D:** geração **procedural por exploração/andar, com salas e corredores** já aprovada (R7-Q5); seed reproduzível (R8-Q3), **layout persistente nas revisitas da mesma exploração** (R9-Q2), **inimigos visíveis que patrulham e perseguem após detecção** (R9-Q3), **inimigos derrotados removidos até o fim da exploração** (R9-Q4) e **movimentação cardinal em quatro direções** (R9-Q5). Permanecem pendentes parâmetros do gerador, interface/armazenamento de seeds, escala dos tiles, alcance/IA de detecção, movimentação contínua cardinal aprovada em R23-Q1, detalhes de controles/colisão, armadilhas, itens, progressão entre andares até o chefe, posicionamento e retorno.
 
 ### 7.1. Atributos e progressão dos Pokémon — decisões da Rodada 10
 
@@ -412,6 +423,21 @@ Sem decisão adicional, não fixar:
 - **Balanceamento:** recompensas-base (+1 fraqueza, +2 crítico normal, +2 evasão automática, +1 Evade ativo) e soma crítico normal+fraqueza aprovadas; **blocos ATB excedentes são preservados fora dos cinco normais, sem serem Burst** e são **gastos antes dos blocos normais**. O preenchimento natural não cria extras. Moves Burst não geram ATB por fraqueza nem por crítico garantido. **Extras não têm teto fixo e são exibidos em quadradinhos adicionais**, conforme R4-Q1/Q2. **R5-Q1:** os extras são descartados ao final de cada batalha. **R5-Q2/Q3:** em ataques normais multi-alvo e/ou multi-hit, no máximo +1 por fraqueza e +2 por crítico normal para a ação inteira. Permanecem pendentes duração de buffs/debuffs, dano de crítico, tabela de tipos e interações especiais.
 - **Distribuição/publicação:** direitos dos personagens, modelos e demais elementos de propriedade intelectual precisam ser considerados se houver distribuição pública.
 
+
+### 7.14. Exploração e progressão fundamentais — decisões da Rodada 23
+
+**APROVADO (R23-Q1 = A):** explorar dungeons 2D com **movimentação contínua cardinal**, sem diagonal direta, preservando R9-Q5. Controles, velocidade, colisão e animações pendentes.
+
+**APROVADO (R23-Q2 = A):** **conclusão da dungeon exige chegar ao último andar e vencer um chefe**. Transições, andares, recompensas e chefes concretos pendentes.
+
+**APROVADO (R23-Q3 = A):** **derrota definitiva termina a exploração atual**. Consequências sobre Pokémon, itens, progresso e recursos não escolhidas.
+
+**APROVADO (R23-Q4 = B):** **recrutamento durante exploração 2D por interação ou aproximação**. **Coexistência obrigatória com R8-Q5:** contato com Pokémon inimigo visível continua iniciando combate 3D. Critérios que diferenciam recrutáveis de inimigos e como funciona a interação ainda pendentes. Equipe ativa mantém máximo de protagonista + dois aliados IA.
+
+**APROVADO (R23-Q5 = C):** resposta literal **“combinacao com mestres e possiveis personagens que dao hms”**. **Aprendizado combinado de Moves com mestres e possíveis personagens que concedem HMs**. Sem aprovar quais métodos adicionais (nível, exploração, recompensa) são obrigatórios ou a função concreta das HMs. Não decidir se HM usa slot dos quatro Moves, se atua na exploração ou em combate. Preservar Tackle genérico, ATB/Burst e ausência de PP.
+
+**Foco:** priorizar perguntas futuras sobre experiência central do jogador, sem novas rodadas de microcasos técnicos.
+
 ## 8. Estado real do repositório (inspeção de código, não de execução)
 
 Referência: `main` em `1171b5f3c427edc34c486c82d42569f41fd0ea62`. Projeto **Godot 4.7**, configurado em `project.godot`, com cena inicial 2D.
@@ -564,6 +590,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-128 | R22-Q3 = A: **usar a tática selecionada no momento da subida de nível para desempatar categorias de telemetria**, com associações de categorias por tática pendentes. |
 | D-129 | R22-Q4 = A: **se HP era positivo e arredondamento proporcional por Nature resultaria em zero, preservar HP mínimo positivo**; valor e casos-limite pendentes. |
 | D-130 | R22-Q5 = A: **atributo-base após modificadores de Nature permanece na escala 1–100**; procedimento de aplicação dos limites pendente. |
+| D-131 | R23-Q1 = A: **movimento contínuo livre em quatro direções cardeais na exploração 2D**, sem diagonal direta. |
+| D-132 | R23-Q2 = A: **concluir dungeon exige alcançar último andar e vencer chefe**. |
+| D-133 | R23-Q3 = A: **derrota definitiva em batalha encerra exploração atual**; consequências sobre itens/progresso pendentes. |
+| D-134 | R23-Q4 = B: **recrutamento durante exploração 2D por interação/aproximação**; preservar R8-Q5 para encontros hostis; condições pendentes. |
+| D-135 | R23-Q5 = C — “combinacao com mestres e possiveis personagens que dao hms”: **aprendizado combinado de Moves com mestres e possíveis personagens de HMs**; função/fonte detalhada pendentes. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -873,39 +904,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Preservação:** sem definir valores mínimos de HP, valores de Nature, fórmulas, novas pausas, PP ou custos ATB/Burst. As Rodadas 1–21 e suas decisões permanecem preservadas.
 
-## 10.22. Rodada 23 — ações automáticas, desempate e preservação de Nature (cinco perguntas abertas)
+## 10.22. Rodada 23 — gameplay fundamental (FECHADA; substitui perguntas não respondidas)
 
-**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa aprovada.
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01, decisões D-131 a D-135. As antigas perguntas técnicas desta rodada eram não respondidas e não aprovadas. Foram substituídas sem remover as decisões D-001 a D-130.
 
-**R23-Q1 — Ações defensivas automáticas, como esquiva automática, devem ser registradas na telemetria de crescimento?**  
-A. **Sim**, se a ação automática for efetivamente executada, registrá-la em categoria própria de defesa/esquiva, com prioridades ainda a definir.  
-B. **Não**, registrar apenas as ações defensivas iniciadas por comando/decisão ativa do participante; as automáticas ficam fora da telemetria.  
+| ID | Resposta literal do criador | Regra aprovada |
+| --- | --- | --- |
+| **R23-Q1** | **A** — “Exploração 2D com movimentação contínua e livre nas quatro direções cardeais.” | Movimento contínuo cardinal. |
+| **R23-Q2** | **A** — “Concluir uma dungeon exige alcançar o último andar e vencer um chefe.” | Último andar e chefe obrigatório para conclusão. |
+| **R23-Q3** | **A** — “Ao perder a batalha de forma definitiva, encerrar a exploração atual; consequências sobre itens e progresso pendentes.” | Derrota definitiva encerra exploração, consequências pendentes. |
+| **R23-Q4** | **B** — “Novos Pokémon podem ser recrutados durante exploração 2D, por interações ou aproximação, com regras pendentes.” | Recrutamento em exploração 2D; contato com inimigo ainda inicia batalha (R8-Q5). |
+| **R23-Q5** | **C** — “combinacao com mestres e possiveis personagens que dao hms” | Aprendizado combinado com mestres e possíveis NPCs de HM; formas de HM e outras fontes pendentes. |
+
+**Rastreabilidade:** R23-Q4 não revoga contato hostil de R8-Q5. R23-Q5 não determina funcionalidade de HMs nem altera PP, slots ou custos ATB/Burst.
+
+## 10.23. Rodada 24 — progressão da dungeon, recrutamento e HMs (cinco perguntas abertas)
+
+**Status:** ABERTA — 0/5 respostas. São decisões fundamentais de gameplay; nenhuma alternativa aprovada.
+
+**R24-Q1 — Como avançar de um andar da dungeon para o próximo?**  
+A. **Encontrar escada/saída no mapa**, sem exigir eliminar todos os inimigos.  
+B. **Cumprir um objetivo do andar para liberar a passagem**, com objetivos ainda pendentes.  
+C. Outro meio, especificado pelo criador.  
+*Conclusão final já exige último andar e chefe.*
+
+**R24-Q2 — Como iniciar o recrutamento com Pokémon elegíveis no mapa 2D?**  
+A. **Interação voluntária explícita** com o Pokémon para abrir oportunidade de recrutamento.  
+B. **Aproximação inicia oportunidade que exige confirmação**, sem recrutar automaticamente.  
+C. Outro meio, especificado pelo criador.  
+*Contato hostil com inimigo ainda inicia combate 3D.*
+
+**R24-Q3 — Se a equipe ativa tiver três Pokémon, o que acontece com novo recrutável?**  
+A. **Permitir recrutamento e enviar para reserva**, com limites/acesso a definir.  
+B. **Recrutamento bloqueado até liberar vaga na equipe ativa**, sem estabelecer reserva nesta decisão.  
 C. Outra regra, especificada pelo criador.  
-*Não altera a recompensa ATB da esquiva automática, e as categorias/prioridades para ações não-Moves continuarão definidas por tipo.*
+*Limite de três ativos permanece.*
 
-**R23-Q2 — Se a tática selecionada na subida de nível não priorizar nenhuma das categorias empatadas, o que acontece?**  
-A. **Manter o empate sem escolher uma categoria vencedora**, com efeito sobre o crescimento ainda pendente.  
-B. **Aplicar critério secundário de desempate predeterminado**, ainda a definir, sem atribuir pesos agora.  
+**R24-Q4 — Para que servirão principalmente as HMs fornecidas por personagens?**  
+A. **Habilidades de exploração**, como superar obstáculos e acessar áreas.  
+B. **Moves especiais de combate** que personagens ensinam, com regras de slots a definir.  
+C. Outra função/combinação, especificada pelo criador.  
+*Não atribuir custo ou HM específica.*
+
+**R24-Q5 — Pokémon recrutados durante uma exploração encerrada por derrota definitiva são mantidos?**  
+A. **Sim**, permanecem pertencendo ao jogador; destino da equipe/reserva pendente.  
+B. **Não**, recrutados naquela exploração perdida não são mantidos; membros anteriores permanecem, salvo futura decisão.  
 C. Outra regra, especificada pelo criador.  
-*R22-Q3 exige usar primeiro a tática selecionada na subida de nível para desempatar.*
-
-**R23-Q3 — Quando um aliado sobe de nível sem uma Tactic explicitamente escolhida pelo jogador, qual orientação será usada para desempatar a telemetria?**  
-A. **Usar a orientação efetiva padrão/inicial da IA** no momento do nível, se definida; associações e ausência de orientação pendentes.  
-B. **Não presumir uma tática escolhida:** manter o empate e deixar sua consequência no crescimento a definir, até que exista uma orientação explicitamente selecionada.  
-C. Outro critério, especificado pelo criador.  
-*Não altera a orientação automática de aliados nem cria comandos diretos; o estado padrão da IA ainda não está decidido.*
-
-**R23-Q4 — Um Pokémon que já tinha HP zero antes do recálculo proporcional por Nature poderá ganhar HP por esse recálculo?**  
-A. **Não**, conservar HP zero; a proteção de HP mínimo positivo aplica-se somente a quem estava com HP positivo.  
-B. **Sim, poderá recuperar um mínimo positivo**, com condições e efeito sobre o estado de derrota a especificar futuramente.  
-C. Outra regra, especificada pelo criador.  
-*A proteção de HP positivo aprovada em R22-Q4 permanece, assim como o arredondamento proporcional para baixo.*
-
-**R23-Q5 — Ao trocar Nature, como preservar a composição dos atributos-base para que os limites 1–100 sejam respeitados?**  
-A. **Preservar separadamente os valores de base/progressão sem Nature**, reaplicar somente os efeitos da Nature atual e então respeitar o limite 1–100.  
-B. **Usar o atributo-base já modificado e limitado como ponto de partida da nova Nature**, com regras de recomposição e controle de acumulação ainda pendentes.  
-C. Outro método de recomposição, especificado pelo criador.  
-*Os pontos de nível distribuídos continuam preservados (R19-Q4); não são definidos modificadores, valores ou fórmulas de Nature.*
+*Itens, experiência e demais perdas ainda pendentes.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -942,5 +987,7 @@ C. Outro método de recomposição, especificado pelo criador.
 | 1.12 | 2026-11-01 | Rodada 21 (D-121 a D-125): prioridade de categorias definida na ficha de cada ação/Move; item com suporte classificado somente como item; tática selecionada desempata frequência igual; HP/MP proporcional após alteração do máximo por Nature arredondado para baixo; Nature neutra nos atributos-base pode afetar crescimento/comportamento. Abre Rodada 22. | Rodada 21 fechada / Rodada 22 aberta |
 
 | 1.13 | 2026-11-01 | Rodada 22 (D-126 a D-130): registrar as categorias da ficha do Move desde o início da execução mesmo quando um componente não ocorre; classificação e prioridade por tipo de ação para não-Moves; tática selecionada na subida de nível desempata categorias; preservar HP mínimo positivo quando arredondamento proporcional por Nature produzir zero em Pokémon antes vivo; atributos-base após Nature limitados a 1–100. Abre Rodada 23. | Rodada 22 fechada / Rodada 23 aberta |
+
+| 1.14 | 2026-11-01 | Rodada 23 reformulada (D-131 a D-135): exploração 2D cardinal contínua; último andar e chefe para conclusão; derrota definitiva encerra exploração; recrutamento por interação/aproximação em mapa 2D sem revogar encontros hostis; aprendizado combinado com mestres e possíveis NPCs que concedem HMs. Perguntas antigas não aprovadas da R23 substituídas; R24 aberta com foco em gameplay. | Rodada 23 fechada / Rodada 24 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
