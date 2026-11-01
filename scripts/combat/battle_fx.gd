@@ -791,11 +791,39 @@ func _has_projectile(element: Element.Type) -> bool:
 	return not (element in [Element.Type.FISICO, Element.Type.RAIO, Element.Type.LUZ, Element.Type.TERRA])
 
 
-func _dodge_later(target: Combatant, text: String, delay: float, return_after: float) -> void:
+## Automatic evade: the character does not move. It disappears behind a burst of
+## vertical speed lines at its own spot and comes back in place.
+func _dodge_later(target: Combatant, text: String, delay: float, hold_time: float) -> void:
 	await get_tree().create_timer(delay, false).timeout
-	dodge(target, text, true)
-	await get_tree().create_timer(return_after, false).timeout
-	settle(target)
+	_blink(target, text, hold_time)
+
+
+func _blink(target: Combatant, text: String, hold_time: float) -> void:
+	_stop_moving(target)
+	_busy_for(target, hold_time + 1.0)
+	var m: Node3D = _models[target]
+	var pos := m.position
+	_speed_lines_at(pos)
+	VfxLib.flash_star(self, pos + Vector3(0, 1.1, 0), DODGE_COLOR, 2.4, 0.18)
+	m.visible = false
+	float_text(pos + Vector3(0, 3.0, 0), text, DODGE_COLOR, 40)
+	var tw := _move(target)
+	tw.tween_interval(hold_time)
+	tw.tween_callback(func() -> void: _appear(target, pos))
+
+
+## Vertical streaks standing around a spot, facing the camera.
+func _speed_lines_at(pos: Vector3) -> void:
+	var cam_p := _cam_pos()
+	var yaw := atan2(cam_p.x - pos.x, cam_p.z - pos.z)
+	for i in 9:
+		var ang := i * TAU / 9.0 + randf_range(-0.2, 0.2)
+		var r := randf_range(0.2, 1.1)
+		var h := randf_range(2.0, 3.4)
+		var q := VfxLib.animated_quad(self, Vector2(randf_range(0.14, 0.32), h), "streak", {"color": DODGE_COLOR, "energy": 2.8}, randf_range(0.4, 0.65))
+		q.position = pos + Vector3(cos(ang) * r, h * 0.5, sin(ang) * r)
+		q.rotation.y = yaw
+	_shock(pos, DODGE_COLOR, 3.0, 0.4)
 
 
 func _flat_dir(from: Vector3, to: Vector3) -> Vector3:
