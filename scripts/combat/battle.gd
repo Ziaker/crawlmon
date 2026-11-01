@@ -22,6 +22,8 @@ const ITEM_BLOCKS := 1.0
 const EVADE_BLOCKS := 3.0
 const WINDUP := 1.6  ## Seconds an enemy attack takes to land.
 const WEAKNESS_MULT := 1.5
+const CRIT_CHANCE := 0.1
+const CRIT_MULT := 2.0
 
 var party: Array[Combatant] = []
 var enemies: Array[Combatant] = []
@@ -169,12 +171,15 @@ func _hit(attacker: Combatant, target: Combatant, power: float, element: Element
 		log_message.emit("%s esquiva de %s automaticamente! +1 bloco" % [target.name, label])
 		return
 	var weak := element in target.weaknesses
-	var dmg := maxi(1, roundi(attacker.attack * power * (WEAKNESS_MULT if weak else 1.0)))
+	var crit := randf() < CRIT_CHANCE
+	var dmg := maxi(1, roundi(attacker.attack * power * (WEAKNESS_MULT if weak else 1.0) * (CRIT_MULT if crit else 1.0)))
 	target.take_damage(dmg)
 	if weak:
 		attacker.add_atb(2.0)
+	if crit:
+		attacker.add_atb(1.0)
 	log_message.emit("%s usa %s (%s) em %s (%d dano)%s" % [
-		attacker.name, label, Element.name_of(element), target.name, dmg, " FRAQUEZA! +2 bloco(s)" if weak else ""])
+		attacker.name, label, Element.name_of(element), target.name, dmg, (" FRAQUEZA! +2 bloco(s)" if weak else "") + (" CRÍTICO! +1 bloco" if crit else "")])
 
 
 func _first_alive(list: Array[Combatant]) -> Combatant:

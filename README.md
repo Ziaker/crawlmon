@@ -17,6 +17,7 @@ Dungeon crawler em Godot 4.7 com mapa 2D top-down e combate em 3D com **ATB** em
 - **Evade** (3 blocos): desvia de um ataque inimigo em andamento (inimigos têm um tempo de preparo). Ganha um bloco **Burst**: uma ação extra imediata e gratuita.
 - **Esquiva automática**: todo golpe tem chance de ser esquivado igual à velocidade (SPD) do alvo; se esquivar, o alvo ganha +1 bloco de ATB (diferente do Evade manual, que dá Burst).
 - **Elementos**: Físico, Fogo, Água/Gelo, Raio, Psíquico, Veneno, Som, Terra, Vento, Luz, Trevas. Golpe no elemento fraco do alvo causa dano x1,5 e dá +2 blocos de ATB ao atacante.
+- **Crítico**: 10% de chance por golpe, dano x2, e o atacante ganha +1 bloco de ATB.
 - **Tactics**: define como os aliados agem (Atacar / Habilidades / Segurar) e reagem (Nada / Esquivar). O jogador controla o líder; aliados seguem as Tactics.
 - Configurações (C): ainda vazio.
 
