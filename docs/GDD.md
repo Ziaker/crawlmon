@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 0.8 — Rodada 7 consolidada, 2026-11-01.  
+> **Revisão:** 0.9 — Rodada 8 consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -43,7 +43,13 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
 **APROVADO (R7-Q5 = A):** os mapas da exploração **2D são gerados proceduralmente por exploração/andar**, com **salas e corredores** como base de organização. Algoritmo, regras de geração, dimensão, seed, diversidade, persistência ao revisitar andares e critérios de progressão seguem pendentes; não presumir mapa fixo e desenhado manualmente como padrão.
 
-**PENDENTE:** estilo dos sprites 2D, detalhes de geração procedural das dungeons (salas, corredores, seed e progressão), personagens iniciais, regras de recrutamento e reserva de Pokémon além dos **3 membros máximos da equipe ativa**, evolução, inventário da exploração, derrota da expedição, formato e duração das arenas, transição/câmera e identidade narrativa. Nenhuma dessas escolhas é fixada por este GDD.
+**APROVADO (R8-Q3 = A):** a geração procedural utiliza **seed registrável/reutilizável** que permita reproduzir o **mesmo layout de dungeon** quando a seed, as regras e a versão do gerador forem as mesmas. Isso não define ainda a interface para consultar/inserir seeds nem a persistência de eventos ou inimigos.
+
+**APROVADO (R8-Q4 = A):** **salas, corredores, suas formas, posições e conexões são construídos algoritmicamente**, em vez de exigir salas pré-desenhadas como módulos autorais. Os algoritmos e parâmetros exatos ainda não foram escolhidos.
+
+**APROVADO (R8-Q5 = A):** os **Pokémon inimigos estão visíveis na exploração 2D**, e o **contato/colisão com um inimigo no mapa inicia o combate 3D**. Não presumir encontros aleatórios invisíveis, trajetória de patrulha ou raio de detecção sem aprovação.
+
+**PENDENTE:** estilo dos sprites 2D, detalhes do algoritmo procedural de salas e corredores, interface/armazenamento de seeds e progressão dos andares, personagens iniciais, regras de recrutamento e reserva de Pokémon além dos **3 membros máximos da equipe ativa**, evolução, inventário da exploração, derrota da expedição, formato e duração das arenas, transição/câmera e identidade narrativa. Nenhuma dessas escolhas é fixada por este GDD.
 
 ### Fluxo de experiência (somente encadeamento conceitual)
 
@@ -55,7 +61,7 @@ Explorar uma dungeon em 2D → encontrar um adversário → entrar na cena 3D �
 
 | Comando | Intenção e comportamento aprovado | O que permanece indefinido |
 | --- | --- | --- |
-| **1 — FIGHT** | Apresenta **Tackle como ataque físico genérico** e **quatro Moves** equipados. Tackle não ocupa um dos quatro espaços de Move e **custa 2 blocos ATB** (R4-Q4). Os **quatro Moves têm custo-base 2 ATB**, com exceções por Move, incluindo ataques de custo 5 ou com requisito Burst (R6-Q5). **Os quatro Moves não usam PP** (R7-Q3). | Potência, precisão, PP específico de Tackle ainda pendente, custo das exceções por Move, seleção de alvo e disponibilidade por espécie. |
+| **1 — FIGHT** | Apresenta **Tackle como ataque físico genérico** e **quatro Moves** equipados. Tackle não ocupa um dos quatro espaços de Move e **custa 2 blocos ATB** (R4-Q4). Os **quatro Moves têm custo-base 2 ATB**, com exceções por Move, incluindo ataques de custo 5 ou com requisito Burst (R6-Q5). **Os quatro Moves não usam PP** (R7-Q3). | Potência, precisão, custo das exceções por Move, seleção de alvo e disponibilidade por espécie. **Não há PP no Crawlmon** (R8-Q2). |
 | **2 — ITENS** | Acessa e permite usar consumíveis em batalha; **cada utilização de item custa 1 bloco ATB** (R6-Q2 = C: “1”). A navegação em ITENS **não pausa o combate**. | Catálogo de itens, alvos, efeitos, inventário e instante preciso de cobrança ainda não definidos. |
 | **3 — Tactic** | **Orienta somente a IA dos aliados**, sem ordens diretas (R2-Q4) e **sem custo ATB** (R3-Q3). As orientações persistem entre encontros da dungeon (R5-Q5). **Nas configurações, o jogador escolhe** entre reiniciar as orientações ao encerrar a dungeon ou preservá-las entre dungeons (R6-Q4); a opção **padrão é reiniciar** (R7-Q1). | A orientação de IA padrão, detalhes da interface e salvamento da preferência ainda não definidos. |
 | **4 — Evade** | Ação ativa e reativa de esquiva durante ataques; seus **3 blocos de ATB são descontados na ativação**, tanto em sucesso quanto em falha (R4-Q3). | Janela temporal, interface física/botão de reação, elegibilidade por alvo, animações e interações com golpes múltiplos/em área. |
@@ -66,7 +72,7 @@ Explorar uma dungeon em 2D → encontrar um adversário → entrar na cena 3D �
 
 **APROVADO (R3-Q3 = A):** **Tactic não consome ATB**. Ajustar a orientação da IA é uma configuração de interface, **não** uma ação de combate cobrada; essa é uma exceção explícita à regra geral de consumo de blocos por ações.
 
-**APROVADO (R4-Q4 = A):** **Tackle físico genérico custa 2 blocos ATB**, permanecendo fora dos quatro espaços de Move. Potência, precisão e PP ainda não definidos.
+**APROVADO (R4-Q4 = A + R8-Q2 = C):** **Tackle físico genérico custa 2 blocos ATB, sem PP**, permanecendo fora dos quatro espaços de Move. Potência e precisão ainda não definidas.
 
 **APROVADO (R5-Q4 = B):** **buff/debuff via Burst consome apenas um bloco Burst, sem custo de ATB normal ou extra**. Em contraste, **Moves ofensivos via Burst continuam custando 1 Burst + o custo ATB próprio do Move** (R2-Q3).
 
@@ -74,7 +80,7 @@ Explorar uma dungeon em 2D → encontrar um adversário → entrar na cena 3D �
 
 **APROVADO (R6-Q5 = A):** os **quatro Moves equipados usam custo-base de 2 ATB**. Há **exceções específicas por Move**, inclusive ataques fortes com custo de 5 blocos e Moves que requerem Burst, cuja identificação e custos devem ser documentados por Move. Se um Move for executado via Burst, preserva-se a exigência já aprovada de **1 Burst + custo ATB desse Move** (R2-Q3); não determinar silenciosamente o custo de uma exceção.
 
-**APROVADO (R7-Q3 = B):** os **quatro Moves equipados não utilizam PP**. Seus custos de uso são em **ATB** e, quando aplicável, **Burst**. Isso não determina se o **Tackle físico genérico** tem ou não PP — a questão permanece específica e não decidida. Não introduzir uma reserva de PP para os Moves equipados.
+**APROVADO (R7-Q3 = B; esclarecido por R8-Q2 = C):** **Crawlmon não utiliza PP como recurso de combate**: os **quatro Moves equipados e o Tackle genérico não têm PP**, e tampouco se deve acrescentar um medidor ou custo de PP às ações do sistema. Os custos dos Moves e de Tackle são em **ATB** e, quando cabível, **Burst**. A antiga dúvida sobre PP de Tackle está **encerrada** por R8-Q2. Não propor PP novamente como pendência.
 
 **PENDENTE:** custo e propriedades das **exceções individuais de Move**, detalhes do catálogo de itens, momento de cobrança dos consumíveis e efeitos concretos de buffs/debuffs. Os custos-base de Tackle (2), Moves equipados (2, salvo exceções), ITENS (1 por uso), Evade (3), Tactic (0) e Burst já aprovados não estão pendentes.
 
@@ -87,12 +93,13 @@ Explorar uma dungeon em 2D → encontrar um adversário → entrar na cena 3D �
 - **APROVADO (R6-Q1 = A):** **todos os Pokémon começam cada batalha com 0/5 blocos normais de ATB**, sem vantagem inicial baseada em Velocidade; a Velocidade afeta o **preenchimento temporal posterior**, conforme R2-Q5. Essa regra vale para protagonista, aliados e inimigos. Bursts e blocos ATB extras não são transferidos da batalha anterior, conforme R2-Q1 e R5-Q1.
 - **APROVADO (R2-Q5 = A):** a **taxa de preenchimento natural** do ATB é influenciada pelo atributo **Velocidade individual de cada Pokémon**. As recompensas por ações continuam acréscimos instantâneos de blocos, sem alterar por si a taxa temporal.
 - **APROVADO (R7-Q2 = A):** um Pokémon com a **Velocidade de referência** leva **5 segundos para preencher naturalmente a barra de 0/5 até 5/5**. Isso equivale a uma média de **1 bloco por segundo na Velocidade de referência**, sem definir a curva, os marcos de arredondamento, o valor numérico de Velocidade de referência nem a fórmula de escala para outras Velocidades. Continuam válidas a pausa exclusiva da escolha de Tactic e a restrição de que o tempo não gere blocos extras.
+- **APROVADO (R8-Q1 = A):** o **tempo de preenchimento natural é inversamente proporcional à Velocidade**: dobrar a Velocidade reduz o tempo em 50% e reduzir a Velocidade à metade dobra o tempo, a partir da Velocidade de referência. **DERIVADO, somente para Velocidade positiva:** \(T(V) = 5\,\mathrm{s} \times V_{ref}/V\), sendo \(V_{ref}\) o atributo de referência ainda a definir. **PENDENTE:** valor numérico de \(V_{ref}\), limites mínimo/máximo de taxa, tratamento de Velocidade zero/não positiva e arredondamento; nenhuma dessas escolhas é presumida.
 - **APROVADO (Opção A):** um Pokémon pode realizar uma ação **assim que tiver os blocos necessários para pagar seu custo**, sem precisar esperar completar 5/5. A antiga hipótese de só agir ao chegar a 5/5 está **superada** por esta decisão posterior.
 - **APROVADO:** custo usual de muitas ações = 2 blocos; Evade ativo = 3; certos ataques fortes = 5.
 - **DERIVADO:** se não houver autorização especial para dívida ou custo alternativo, um custo de 3 exige saldo de pelo menos 3. Exceções, caso desejadas, exigem aprovação.
 - **APROVADO (R1-Q2 = A):** a execução de uma ação desconta **apenas o custo em blocos**, preservando o saldo restante. Exemplo: 5/5, ação de custo 2, saldo final 3/5 (antes de possíveis recompensas e preenchimento temporal).
 - **APROVADO (R1-Q3 = C):** o combate **só pausa durante a escolha dos comandos de Tactic**. Ao escolher comandos de FIGHT e ITENS, o tempo não pausa e as barras ATB continuam seu preenchimento temporal. A pausa aplica-se apenas à escolha das orientações de IA em Tactic, **que não envia ordens diretas**. **PENDENTE:** detalhes técnicos de interrupção/retomada e ações simultâneas; não inventar pausas extras.
-- **PENDENTE:** valor numérico da Velocidade de referência e fórmula/mapeamento do atributo Velocidade para tempos diferentes da referência, arredondamento visual, tratamento de ações simultâneas e detalhes de layout para grandes quantidades de blocos excedentes. A prioridade de consumo foi aprovada em R3-Q2 e o formato-base de quadradinhos adicionais em R4-Q2.
+- **PENDENTE:** valor numérico da Velocidade de referência e limites/condições de borda da proporcionalidade inversa já aprovada, arredondamento visual, tratamento de ações simultâneas e detalhes de layout para grandes quantidades de blocos excedentes. A prioridade de consumo foi aprovada em R3-Q2 e o formato-base de quadradinhos adicionais em R4-Q2.
 
 ### 3.2 Recompensas instantâneas
 
@@ -187,16 +194,16 @@ Ataque direcionado a um Pokémon → tentativa de Evade ativo com custo de 3 →
 
 **PENDENTE:** interface de seleção do protagonista, troca/controle de líder, regras de reservas/recrutamento além da equipe ativa de até três, catálogo de comportamentos, **persistência técnica da preferência de Tactic nas configurações e orientação-base da IA** e detalhes da lógica de decisão da IA sob Evade/Burst.
 
-**Exemplos não aprovados:** “priorizar fraquezas”, “defender”, “economizar PP”, “focar alvo” e “suporte” podem ser considerados em perguntas futuras, mas não constituem um conjunto obrigatório.
+**Exemplos não aprovados:** “priorizar fraquezas”, “defender”, “focar alvo” e “suporte” podem ser considerados em perguntas futuras, mas não constituem um conjunto obrigatório.
 
 ## 7. Especificação de conteúdo ainda não definida
 
 Sem decisão adicional, não fixar:
 
 - **Pokémon e progressão:** espécies elegíveis, protagonista inicial, recrutamento, reservas e trocas (**equipe ativa de até 3 aprovada**), evolução, atributos, habilidades e crescimento.
-- **Moves:** Tackle genérico versus golpe homônimo da franquia (**Tackle genérico custa 2 ATB; PP de Tackle ainda indefinido**); lista concreta dos quatro Moves por Pokémon, status, efeitos e **exceções ao custo-base de 2 ATB**, incluindo golpes de custo 5 e requisitos Burst. **Os quatro Moves equipados não possuem PP** (R7-Q3).
+- **Moves:** Tackle genérico versus golpe homônimo da franquia (**Tackle genérico custa 2 ATB, sem PP**); lista concreta dos quatro Moves por Pokémon, status, efeitos e **exceções ao custo-base de 2 ATB**, incluindo golpes de custo 5 e requisitos Burst. **Nenhuma ação do Crawlmon utiliza PP** (R8-Q2; complementa R7-Q3).
 - **Combate 3D:** câmera, sequência de animações, timings, hitstop, interface gráfica final, modelos, rigging, VFX e arenas por bioma.
-- **Dungeon 2D:** geração **procedural por exploração/andar, com salas e corredores** já aprovada (R7-Q5). Permanecem pendentes algoritmo e regras do gerador, seed/reprodutibilidade, escala dos tiles, IA na exploração, armadilhas, itens, progressão de andares, encontros e retorno.
+- **Dungeon 2D:** geração **procedural por exploração/andar, com salas e corredores** já aprovada (R7-Q5). Permanecem pendentes parâmetros do gerador algorítmico de salas/corredores, interface/armazenamento da seed reproduzível, revisita de andares, escala dos tiles, IA de inimigos visíveis na exploração, armadilhas, itens, progressão de andares, posicionamento e retorno. **Encontros são por contato com inimigos visíveis** (R8-Q5).
 - **Modos de batalha:** pausa **exclusiva** na seleção das orientações de Tactic já aprovada; detalhes de processamento e concorrência de ações/animações sem introduzir outras pausas, prioridade de ações e múltiplos comandos simultâneos ainda exigem especificação técnica.
 - **Balanceamento:** recompensas-base (+1 fraqueza, +2 crítico normal, +2 evasão automática, +1 Evade ativo) e soma crítico normal+fraqueza aprovadas; **blocos ATB excedentes são preservados fora dos cinco normais, sem serem Burst** e são **gastos antes dos blocos normais**. O preenchimento natural não cria extras. Moves Burst não geram ATB por fraqueza nem por crítico garantido. **Extras não têm teto fixo e são exibidos em quadradinhos adicionais**, conforme R4-Q1/Q2. **R5-Q1:** os extras são descartados ao final de cada batalha. **R5-Q2/Q3:** em ataques normais multi-alvo e/ou multi-hit, no máximo +1 por fraqueza e +2 por crítico normal para a ação inteira. Permanecem pendentes duração de buffs/debuffs, dano de crítico, tabela de tipos e interações especiais.
 - **Distribuição/publicação:** direitos dos personagens, modelos e demais elementos de propriedade intelectual precisam ser considerados se houver distribuição pública.
@@ -278,6 +285,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-053 | R7-Q3 = B: **os quatro Moves equipados não utilizam PP**, gastando ATB e Burst quando aplicável. PP de Tackle não foi decidido. |
 | D-054 | R7-Q4 = A: **até 3 Pokémon inimigos ativos simultaneamente** em cada batalha; reservas e reforços não definidos. |
 | D-055 | R7-Q5 = A: **exploração 2D em dungeons geradas proceduralmente por exploração/andar**, baseadas em salas e corredores; algoritmo, seeds e demais parâmetros pendentes. |
+| D-056 | R8-Q1 = A: **tempo de ATB inversamente proporcional à Velocidade**; dobrar Velocidade reduz o tempo pela metade. Valor de referência e limites permanecem pendentes. |
+| D-057 | R8-Q2 = C: **não existe PP no Crawlmon, inclusive para Tackle**. Encerra as pendências históricas sobre PP de Tackle surgidas após D-053. Consumo de recursos se dá por ATB e, quando aplicável, Burst. |
+| D-058 | R8-Q3 = A: **seed registrável e reutilizável reproduz o mesmo layout procedural**, sob as mesmas regras e versão do gerador. UX e persistência de eventos pendentes. |
+| D-059 | R8-Q4 = A: **salas e corredores procedurais construídos algoritmicamente**, com formas, posições e conexões geradas; parâmetros específicos pendentes. |
+| D-060 | R8-Q5 = A: **inimigos Pokémon visíveis no mapa 2D**; contato/colisão inicia a batalha 3D. Comportamento dos inimigos no mapa pendente. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -377,39 +389,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Pendências preservadas:** qual Velocidade é a referência e a fórmula de preenchimento; PP de Tackle; método e persistência dos mapas procedurais; formato dos encontros; orientação-base concreta da IA e detalhes de salvamento da configuração.
 
-## 10.7. Rodada 8 — cinco perguntas aguardando resposta
+## 10.7. Rodada 8 — cinco perguntas respondidas (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa desta rodada está aprovada.
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01. Decisões D-056 a D-060 incorporadas às seções técnicas acima.
 
-**R8-Q1 — Como a Velocidade altera o tempo de preenchimento dos cinco blocos de ATB?**  
-A. **Escala inversamente proporcional:** dobrar a Velocidade reduz o tempo para metade, em relação à Velocidade de referência; exigirá definir limites e valor da referência.  
-B. **Ganho com retornos decrescentes:** mais Velocidade sempre acelera, mas dobrá-la não necessariamente reduz o tempo pela metade; curva e parâmetros a especificar.  
-C. Outra fórmula ou regra, indicada pelo criador.  
-*O preenchimento de 5 s na Velocidade de referência permanece obrigatório.*
+| ID | Resposta do criador | Regra incorporada |
+| --- | --- | --- |
+| **R8-Q1** | **A** — “O tempo de preenchimento ATB é inversamente proporcional à Velocidade; dobrar Velocidade reduz o tempo pela metade, com referência e limites ainda pendentes.” | Aplicar **escala temporal inversamente proporcional à Velocidade**, preservando os **5 s** de referência. Velocidade de referência, limites e bordas pendentes. |
+| **R8-Q2** | **C** — “MASS NEM TEM PP, VC AO MENOS TA LENDO AS RESPOSTAS?” | **Não existe PP em Crawlmon**, inclusive no Tackle genérico. Esta resposta **encerra a dúvida histórica sobre PP de Tackle** que permaneceu indevidamente aberta após R7-Q3. Não voltar a perguntar PP sem uma solicitação explícita de mudança. |
+| **R8-Q3** | **A** — “É possível reproduzir uma dungeon procedural a partir de uma seed registrada, sob as mesmas regras e versão do gerador.” | A seed pode ser registrada/reutilizada para **reproduzir o layout** na mesma versão e com as mesmas regras; UX e persistência de encontros e eventos ainda em aberto. |
+| **R8-Q4** | **A** — “Salas e corredores de dungeons são construídos algoritmicamente pelo gerador.” | Salas/corredores, posições, formas e conexões são criados pelo gerador, não exigem biblioteca de salas pré-desenhadas. |
+| **R8-Q5** | **A** — “Encontros começam pelo contato com inimigos Pokémon visíveis no mapa 2D.” | Encontros ocorrem por contato com inimigos visíveis, levando ao combate 3D. Patrulha, detecção e movimentação dos inimigos ainda não definidas. |
 
-**R8-Q2 — O Tackle genérico deve consumir PP?**  
-A. **Não:** Tackle consome seus 2 blocos de ATB e não possui PP.  
-B. **Sim:** Tackle usa PP, além de seus 2 ATB, com quantidade a definir.  
-C. Outra regra, especificada pelo criador.  
-*Os quatro Moves equipados já estão definidos como sem PP; isso não muda.*
+**Correção de rastreabilidade de PP:** seções históricas de R6/R7 conservam seus textos originais, inclusive antigas afirmações de pendência. Elas **não são regras vigentes** sobre PP: **D-057 / R8-Q2 prevalece**, e a especificação atual não deve voltar a apresentar PP como indecisão. Esta correção não altera outras decisões aprovadas.
 
-**R8-Q3 — Deve ser possível reproduzir uma dungeon procedural com uma seed registrada?**  
-A. **Sim:** guardar ou disponibilizar a seed permite regenerar o mesmo layout sob as mesmas regras e versão do gerador; formato e UX a definir.  
-B. **Não é necessário oferecer reprodução por seed** como recurso de design; mapas continuam gerados proceduralmente.  
-C. Outra regra, especificada pelo criador.  
-*Esta questão não define se o mapa muda quando um andar já visitado é revisitado.*
+## 10.8. Rodada 9 — cinco perguntas aguardando resposta
 
-**R8-Q4 — Como o gerador procedural compõe salas da dungeon?**  
-A. **Salas e corredores gerados algoritmicamente**, com formas, posições e conexões construídas pelas regras do gerador.  
-B. **Sala modular a partir de peças autorais** (layouts de sala preparados manualmente) e conexões/ordem geradas proceduralmente.  
-C. Outro modelo, especificado pelo criador.  
-*Ambas as opções preservam a geração procedural aprovada em R7-Q5; não definem ainda arte, escala ou densidade.*
+**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa abaixo está aprovada. O tema PP não volta a ser questionado.
 
-**R8-Q5 — Como os encontros com inimigos são iniciados na exploração 2D?**  
-A. **Contato visível:** o jogador encontra Pokémon inimigos representados no mapa e o combate começa pelo contato/colisão.  
-B. **Encontros aleatórios por movimentação:** ao atravessar áreas da dungeon, o combate pode iniciar por uma verificação probabilística, sem inimigo visível obrigatório.  
-C. Outra regra ou combinação, especificada pelo criador.  
-*Esta decisão define o gatilho do encontro, não IA de patrulha, taxa de spawn ou composição das equipes.*
+**R9-Q1 — Qual valor numérico da Velocidade será a referência para os 5 segundos de ATB?**  
+A. **Velocidade 100** como referência de preenchimento em 5 segundos; demais Velocidades usam a proporção inversa já aprovada.  
+B. **Velocidade 50** como referência de preenchimento em 5 segundos; demais Velocidades usam a proporção inversa já aprovada.  
+C. Outro valor/critério, especificado pelo criador.  
+*Essa decisão não escolhe limites de velocidade mínima/máxima.*
+
+**R9-Q2 — Ao voltar para um andar já visitado na mesma exploração, o mapa deve permanecer igual?**  
+A. **Sim:** layout previamente gerado permanece o mesmo na revisita durante a exploração atual, sem necessariamente restaurar inimigos e itens às posições iniciais.  
+B. **Não:** a revisita gera novamente o layout procedural, podendo mudar a configuração das salas e corredores.  
+C. Outra regra de revisita.  
+*A reprodução por seed em novas explorações continua aprovada.*
+
+**R9-Q3 — Como os Pokémon inimigos visíveis se comportam enquanto o jogador explora?**  
+A. **Patrulham e perseguem o protagonista quando o detectam**; critérios de detecção e velocidade ainda pendentes.  
+B. **Permanecem em posição até o contato com o protagonista**, sem patrulha/perseguição autônoma.  
+C. Outro comportamento, especificado pelo criador.  
+*O combate ainda começa por contato com um inimigo visível.*
+
+**R9-Q4 — O que acontece com um inimigo visível após o jogador vencer seu encontro?**  
+A. **É removido da exploração atual** e não reaparece no mesmo andar durante essa exploração, salvo eventos ainda não definidos.  
+B. **Pode reaparecer no andar** segundo sistema de respawn; intervalo e condições ainda pendentes.  
+C. Outra regra.  
+*Isso não define o comportamento na derrota do jogador.*
+
+**R9-Q5 — Como o protagonista se move na exploração 2D?**  
+A. **Oito direções** (cardeais e diagonais) diretamente, mantendo o mapa 2D.  
+B. **Quatro direções** (cima, baixo, esquerda, direita), sem movimento diagonal direto.  
+C. Outro sistema de movimentação, especificado pelo criador.  
+*Esta pergunta não fixa se o deslocamento é livre/contínuo ou baseado em turnos/tiles.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -423,5 +449,6 @@ C. Outra regra ou combinação, especificada pelo criador.
 | 0.6 | 2026-11-01 | Rodada 5 (D-041 a D-045): extras descartados ao fim de cada batalha; recompensas multi-alvo limitadas por ação e multi-hit por execução/alvo sob teto global; buff/debuff via Burst custa somente Burst; Tactic persiste dentro da dungeon. Rodada 6 aberta. | Rodada 5 fechada / Rodada 6 aberta |
 | 0.7 | 2026-11-01 | Rodada 6 (D-046 a D-050): início de batalha com 0/5 ATB; ITENS custa 1 ATB por uso; equipe de até 3; opção configurável de reinício/persistência de Tactic ao sair da dungeon; quatro Moves com custo-base de 2 ATB e exceções. Abre Rodada 7. | Rodada 6 fechada / Rodada 7 aberta |
 | 0.8 | 2026-11-01 | Rodada 7 (D-051 a D-055): padrão reiniciar Tactic ao sair da dungeon, ATB de referência 0/5 → 5/5 em 5 s, quatro Moves sem PP, até três inimigos ativos e mapas 2D procedurais por exploração/andar. Abre Rodada 8. | Rodada 7 fechada / Rodada 8 aberta |
+| 0.9 | 2026-11-01 | Rodada 8 (D-056 a D-060): ATB inversamente proporcional à Velocidade; correção geral — não existe PP, inclusive em Tackle; seeds reproduzíveis; salas/corredores algorítmicos; encontros por contato com Pokémon visíveis na exploração 2D. Abre Rodada 9. | Rodada 8 fechada / Rodada 9 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
