@@ -1,0 +1,8 @@
+.godot/
+*.translation
+export_presets.cfg
+.mono/
+data_*/
+
+# Godot binaries
+Godot_v*.exe
