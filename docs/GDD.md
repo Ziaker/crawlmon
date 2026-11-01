@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.11 — Rodada 20 consolidada, 2026-11-01.  
+> **Revisão:** 1.12 — Rodada 21 consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -368,6 +368,21 @@ Sem decisão adicional, não fixar:
 
 **Preservação:** R20 detalha as decisões R18 e R19 sem modificá-las retroativamente: uma execução continua sendo uma ação, com até duas classificações de telemetria; pontos distribuídos não são perdidos com a troca de Nature. **Nenhum valor, fórmula de atributos, probabilidade, PP ou custo ATB/Burst foi criado nesta revisão.** As regras são documentais, não implementação do jogo.
 
+### 7.12. Regras de categorias, desempate e Nature — decisões da Rodada 21
+
+**APROVADO (R21-Q1 = A) — prioridade por ficha:** **a ordem de prioridade de categorias da telemetria é específica e registrada na própria ficha de cada ação/Move**. Se houver mais de duas categorias possíveis, selecionar as categorias principais conforme essa ordem da ficha, respeitando o limite anterior de **no máximo duas categorias por ação**. **PENDENTE:** ordem concreta de cada ficha, critérios de classificação e tratamento de ações que não são Moves. Não presumir prioridade global.
+
+**APROVADO (R21-Q2 = A) — itens que também oferecem suporte:** o **uso de item que também realiza suporte é classificado somente como uso de item na telemetria**, sem marcar categoria de suporte adicional. Esta regra específica prevalece sobre a possibilidade geral de até duas categorias, sem mudar o efeito do item, seu custo ATB ou a regra de uma ação por execução.
+
+**APROVADO (R21-Q3 = B) — empate na frequência:** a **tática selecionada é usada para desempatar categorias com frequência predominante igual**. **PENDENTE:** prioridades de categorias por tática, qual tática considerar quando houve mudanças no histórico, ausência de Tactic escolhida e eventuais empates não solucionados. A tática continua sendo a influência principal nos ganhos por nível dos aliados (R17-Q3); não se definem pesos numéricos.
+
+**APROVADO (R21-Q4 = A) — HP/MP proporcional por Nature:** após a mudança de Nature do protagonista, se HP ou MP máximo mudar, **arredondar para baixo o valor proporcional resultante de HP/MP atual**, mantendo a proporção em relação ao máximo anterior e respeitando o **novo máximo**. Esta decisão resolve apenas o arredondamento da mudança proporcional de Nature; **não altera** o arredondamento da recuperação periódica de MP, nem presume nova fórmula dos máximos, recarga de recursos ou redistribuição de pontos manuais. **PENDENTE:** máximo anterior igual a zero/inválido, caso do HP positivo que resulte em zero e demais casos-limite.
+
+**APROVADO (R21-Q5 = A) — Nature neutra nos atributos-base:** **Natures sem modificadores diretos nos atributos-base podem afetar crescimento e/ou tendências de comportamento**, com efeitos futuros a especificar. Neutralidade dos atributos-base não significa obrigatoriamente ausência de qualquer outro efeito. O verbo **“podem” não obriga toda Nature neutra a ter um efeito específico**. A Tactic selecionada continua prevalecendo sobre tendências de Nature no comportamento da IA enquanto ativa (R16-Q5). **PENDENTE:** catálogo, efeitos e intensidades.
+
+**Preservação:** uma execução continua uma ação; múltiplos hits/alvos não multiplicam registros de telemetria. Itens com efeito de suporte recebem somente a categoria item. As decisões anteriores e o histórico permanecem válidos; **sem fórmulas, valores numéricos, PP ou novos custos ATB/Burst**. Esta revisão é documental, não implementação.
+
+
 
 
 
@@ -524,6 +539,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-118 | R20-Q3 = A: **fora da equipe, preservar a telemetria do Pokémon sem acumular novas ações até seu retorno**; histórico anterior mantido. |
 | D-119 | R20-Q4 = A: **quando a nova Nature mudar o HP/MP máximo do protagonista, preservar a proporção do valor atual em relação ao máximo anterior**; arredondamento/casos-limite pendentes. |
 | D-120 | R20-Q5 = A: **permitir Natures neutras, sem modificadores diretos nos atributos-base**, mantendo possíveis efeitos em crescimento/comportamento; catálogo pendente. |
+| D-121 | R21-Q1 = A: **prioridade das categorias definida em ordem específica na ficha de cada ação/Move**, classificação concreta pendente; teto de duas categorias mantido. |
+| D-122 | R21-Q2 = A: **item com efeito de suporte classificado somente na categoria uso de itens**, sem categoria de suporte na telemetria; efeitos e custos inalterados. |
+| D-123 | R21-Q3 = B: **tática selecionada desempata categorias de igual frequência predominante**, segundo critérios futuros. |
+| D-124 | R21-Q4 = A: **arredondar para baixo HP/MP atual proporcional** depois de mudança dos máximos por Nature, respeitando os novos máximos; casos-limite pendentes. |
+| D-125 | R21-Q5 = A: **Natures neutras nos atributos-base podem afetar crescimento e/ou tendências comportamentais**, regras pendentes. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -805,39 +825,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Rastreabilidade:** a Rodada 20 detalha categorias, frequências, persistência e efeitos de Nature sem revogar as decisões aprovadas. Nenhuma regra numérica nova de crescimento, PP ou custo ATB/Burst foi acrescentada.
 
-## 10.20. Rodada 21 — classificação da telemetria e efeitos de Natures (cinco perguntas abertas)
+## 10.20. Rodada 21 — classificação da telemetria e efeitos de Natures (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas. Nenhuma das opções abaixo está aprovada.
+**Status:** FECHADA — 5/5 decisões aprovadas em 2026-11-01, registradas como D-121 a D-125.
 
-**R21-Q1 — Quando houver mais de duas categorias possíveis, como definir a prioridade entre as categorias da ficha da ação/Move?**  
-A. **Ordem de prioridade específica registrada na própria ficha da ação/Move**, respeitando o limite de duas categorias.  
-B. **Ordem de prioridade global entre categorias**, aplicada a todas as fichas de ações/Moves; a ordem ainda será definida.  
-C. Outro critério de prioridade, especificado pelo criador.  
-*As categorias principais já são predefinidas na ficha, mas a regra de prioridade ainda não foi escolhida.*
+| ID | Resposta literal do criador | Regra aprovada |
+| --- | --- | --- |
+| **R21-Q1** | **A** — “A prioridade entre categorias é definida por uma ordem específica na própria ficha de cada ação/Move; regras de classificação ainda pendentes.” | **Prioridade específica na ficha de cada ação/Move**; critérios ainda pendentes. |
+| **R21-Q2** | **A** — “O uso de item que também realiza suporte é classificado somente na categoria uso de itens.” | **Somente categoria uso de itens**, sem alterar o efeito do item. |
+| **R21-Q3** | **B** — “A tática selecionada é utilizada para desempatar categorias de mesma frequência, seguindo critérios futuros.” | **Desempate de categorias com tática selecionada**, detalhes pendentes. |
+| **R21-Q4** | **A** — “O HP/MP atual proporcional após mudança do máximo por Nature é arredondado para baixo, respeitando os novos máximos.” | **Arredondamento para baixo** no recálculo proporcional, com novos máximos respeitados. |
+| **R21-Q5** | **A** — “Natures neutras nos atributos-base podem ter efeitos de crescimento e/ou tendências de comportamento, com regras pendentes.” | **Neutralidade nos atributos-base** com possíveis efeitos em crescimento e comportamento; sem efeitos concretos aprovados. |
 
-**R21-Q2 — Como classificar na telemetria o uso de um item que também realiza um efeito de suporte?**  
-A. **Somente como uso de item**, sem acrescentar outra categoria por seu efeito.  
-B. **Como uso de item e suporte**, desde que ambos constem das categorias principais da ficha, sem ultrapassar o limite de duas por ação.  
-C. Outra regra de classificação de itens, especificada pelo criador.  
-*Não altera a cobrança de ITENS, a regra de uma ação por execução nem os efeitos de itens.*
+**Preservação:** nenhuma fórmula de HP/MP máximo, quantidade de pontos, custo ATB/Burst, probabilidade ou PP foi acrescentada.
 
-**R21-Q3 — Se duas categorias empatarem na frequência predominante da telemetria, como tratar o empate?**  
-A. **Manter ambas como predominantes**, sem escolher vencedora automaticamente; consequências no crescimento ainda pendentes.  
-B. **Usar a tática selecionada para desempatar**, segundo critérios que ainda deverão ser definidos.  
-C. Outro desempate, especificado pelo criador.  
-*A tática selecionada já exerce a influência principal no crescimento e a telemetria ajusta os ganhos; não fixar pesos.*
+## 10.21. Rodada 22 — classificação, telemetria e casos-limite de Nature (cinco perguntas abertas)
 
-**R21-Q4 — Como arredondar HP/MP atuais após preservar a proporção quando uma nova Nature alterar os máximos?**  
-A. **Arredondar para baixo** cada valor atual proporcional resultante, respeitando os novos máximos.  
-B. **Arredondar para o inteiro mais próximo**, com critérios para empate e casos-limite ainda pendentes.  
-C. Outra regra de arredondamento, especificada pelo criador.  
-*A decisão trata apenas do recálculo proporcional de HP/MP por mudança de Nature; não altera o arredondamento aprovado para recuperação periódica de MP.*
+**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa aprovada.
 
-**R21-Q5 — Natures neutras nos atributos-base podem ter modificadores de crescimento ou comportamento?**  
-A. **Sim, a neutralidade se refere somente aos atributos-base**; uma Nature assim pode ter efeitos próprios no crescimento e/ou tendências de comportamento, ainda a definir.  
-B. **Permitir também Natures integralmente neutras**, sem efeito direto nos atributos-base, no crescimento ou nas tendências comportamentais.  
-C. Outra definição de neutralidade, especificada pelo criador.  
-*Ambas as opções mantêm a possibilidade de Natures neutras nos atributos-base aprovada em R20-Q5 e a precedência da Tactic escolhida sobre tendências comportamentais.*
+**R22-Q1 — Como a telemetria classifica um Move que tem duas categorias na ficha, mas somente um componente previsto chega a ocorrer?**  
+A. **Usar as categorias previstas na ficha desde o início efetivo da execução**, mesmo quando um componente não se concretize; sucesso não é obrigatório.  
+B. **Registrar só categorias correspondentes aos componentes que chegaram a iniciar execução**, ainda que falhem depois; prioridade permanece na ficha.  
+C. Outra regra, especificada pelo criador.  
+*Uma execução segue sendo uma ação, com até duas categorias e sem exigir acerto.*
+
+**R22-Q2 — Como definir categorias e prioridades de telemetria para ações que não são Moves?**  
+A. **Definir a classificação e prioridade por tipo de ação**, incluindo defesa/esquiva, itens e demais tipos.  
+B. **Definir regras gerais por categoria**, permitindo exceções explícitas por tipo de ação.  
+C. Outra regra, especificada pelo criador.  
+*O uso de item com efeito de suporte continua classificado somente como item.*
+
+**R22-Q3 — Se o aliado tiver mudado de tática ao longo do histórico, qual tática desempata as categorias mais frequentes?**  
+A. **A tática selecionada no momento da subida de nível**, com associações de categoria ainda pendentes.  
+B. **A tática predominante ao longo do histórico acumulado**, com cálculo de predominância pendente.  
+C. Outra regra, especificada pelo criador.  
+*O histórico de telemetria é acumulado e a tática exerce influência principal no crescimento.*
+
+**R22-Q4 — Se uma alteração proporcional por Nature gerar HP zero após arredondamento para um Pokémon que antes tinha HP positivo, como proceder?**  
+A. **Preservar um mínimo de HP positivo para o Pokémon anteriormente vivo**, com casos-limite e detalhes a decidir.  
+B. **Aplicar o resultado zero**, deixando as consequências de estado/derrota a definir.  
+C. Outra regra, especificada pelo criador.  
+*Preservação proporcional e arredondamento para baixo continuam aprovados.*
+
+**R22-Q5 — Como aplicar a escala-base 1–100 aos atributos-base modificados por Nature?**  
+A. **Restringir os valores-base modificados à escala 1–100**, detalhando depois a aplicação dos limites.  
+B. **Aplicar a escala 1–100 antes dos modificadores**, permitindo valores após a Nature fora da faixa, com limites futuros pendentes.  
+C. Outra regra, especificada pelo criador.  
+*Não serão definidos modificadores numéricos ou fórmulas de Nature nesta escolha.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -870,5 +904,7 @@ C. Outra definição de neutralidade, especificada pelo criador.
 | 1.10 | 2026-11-01 | Rodada 19 (D-111 a D-115): telemetria preservada após saída e retorno do mesmo aliado; até duas categorias por ação (R19-Q2 C), mantendo uma execução como uma ação; registro no início efetivo da execução; pontos manuais do protagonista preservados ao sortear nova Nature, substituindo apenas seus efeitos; modificadores de Nature flexíveis sem pares positivos/negativos obrigatórios. Abre Rodada 20. | Rodada 19 fechada / Rodada 20 aberta |
 
 | 1.11 | 2026-11-01 | Rodada 20 (D-116 a D-120): categorias principais da ficha de ação/Move selecionadas quando mais de duas são possíveis (prioridade pendente); ação com duas categorias conta uma ocorrência em cada sem multiplicar execuções; telemetria preservada sem acumular ações fora da equipe; proporção de HP/MP atual preservada se novos máximos forem alterados por Nature (arredondamento pendente); Natures neutras nos atributos-base permitidas, com efeitos futuros de crescimento/comportamento possíveis. Abre Rodada 21. | Rodada 20 fechada / Rodada 21 aberta |
+
+| 1.12 | 2026-11-01 | Rodada 21 (D-121 a D-125): prioridade de categorias definida na ficha de cada ação/Move; item com suporte classificado somente como item; tática selecionada desempata frequência igual; HP/MP proporcional após alteração do máximo por Nature arredondado para baixo; Nature neutra nos atributos-base pode afetar crescimento/comportamento. Abre Rodada 22. | Rodada 21 fechada / Rodada 22 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
