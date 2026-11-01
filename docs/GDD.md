@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.6 — Rodada 15 consolidada, 2026-11-01.  
+> **Revisão:** 1.7 — Rodada 16 consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -131,7 +131,7 @@ Explorar uma dungeon em 2D → encontrar um adversário → entrar na cena 3D �
 - **Exemplo derivado, não regra de interface:** um Pokémon com 4/5 que ganha +3 (crítico normal e fraqueza) passa a contar com cinco blocos normais e **dois extras**. O modelo de quadradinhos adicionais foi aprovado em R4-Q2; seus detalhes gráficos continuam pendentes.
 - **APROVADO (R3-Q2 = A):** ao pagar o custo de uma ação, são **consumidos primeiro os blocos ATB extras**; se os extras não forem suficientes, desconta-se o restante dos cinco blocos normais. Exemplo: 4 normais +2 extras, ação de custo 2 → **4 normais +0 extras**. Os extras não são Burst.
 - **APROVADO (R3-Q4 = A):** o preenchimento natural baseado no tempo e na Velocidade **para ao atingir cinco blocos normais**; **somente recompensas por ações** (fraqueza, crítico normal, esquivas elegíveis) podem gerar blocos ATB extras. A regeneração temporal não gera extras, mesmo quando a barra normal está completa.
-- **APROVADO (R14-Q2 = C; detalhado em R15-Q1 = A e R15-Q2 = A):** **cada Pokémon recupera um quarto (25%) do seu MP máximo a cada 3 segundos consecutivos enquanto estiver com os cinco blocos normais de ATB completos (5/5)**. **Ao deixar 5/5 ATB, o contador zera**; quando o ATB voltar a 5/5, um novo intervalo completo de 3 s será exigido. Não recuperar acima do MP máximo. **PENDENTE:** arredondamento da parcela, efeitos da pausa Tactic, funcionamento fora de combate e condições excepcionais. A recuperação não gera ATB extras e não altera o custo/preenchimento do ATB nem custos ATB/Burst. **R14-Q2 também aprovou A:** pontos de descanso restauram MP completamente ao máximo; condições de uso ainda pendentes.
+- **APROVADO (R14-Q2 = C; R15-Q1/Q2 = A; R16-Q1 = B e R16-Q2 = A):** cada Pokémon com **ATB normal 5/5** recupera **25% do MP máximo a cada 3 segundos consecutivos, arredondado para baixo**, sem exceder MP máximo. Ao sair de 5/5, o contador zera. **Enquanto MP estiver no máximo, o contador permanece zerado**; com MP faltante e ATB ainda em 5/5, inicia-se novo intervalo integral de três segundos. **PENDENTE:** efeito da pausa Tactic e aplicação fora de combate. Não gerar ATB extra ou alterar custos ATB/Burst. Pontos de descanso continuam restaurando MP completamente.
 
 **Exemplo de valores aprovados:** com 2/5, um crítico normal concede +2 e eleva a barra para 4/5. Se o mesmo golpe também explorar fraqueza, o ganho total é +3, e um saldo inicial de 2/5 alcança 5/5.
 
@@ -195,6 +195,8 @@ Ataque direcionado a um Pokémon → tentativa de Evade ativo com custo de 3 →
 **APROVADO (R6-Q4 = C):** existe **uma opção nas configurações** que oferece os dois comportamentos anteriormente propostos para Tactic **ao sair de uma dungeon**: (A) **reiniciar as orientações para o padrão** ao encerrar a exploração ou (B) **preservar as orientações entre dungeons** até alteração do jogador. O comportamento dentro de uma dungeon permanece o de R5-Q5; a nova decisão **substitui a pendência** sobre persistência entre dungeons. **O padrão inicial da configuração foi estabelecido posteriormente por R7-Q1 = A (reiniciar)**; continuam pendentes os detalhes de salvamento da escolha e a orientação de IA considerada padrão.
 
 **APROVADO (R7-Q1 = A):** a **opção padrão de Tactic nas configurações é reiniciar as orientações ao sair da dungeon**. O jogador **continua podendo escolher preservar as orientações entre dungeons**, como aprovado em R6-Q4. A orientação concreta que define o estado padrão da IA ainda não foi selecionada, assim como o formato de salvamento da escolha.
+
+**APROVADO (R16-Q5 = B):** **Tactic escolhida pelo jogador prevalece integralmente no comportamento da IA enquanto ativa**, sem interferência direta das tendências de Nature sobre essas escolhas. Nature **continua influenciando atributos e crescimento**. Não criar ordens diretas. **PENDENTE:** comportamento sem Tactic escolhida.
 
 **PENDENTE:** interface de seleção do protagonista, troca/controle de líder, regras de reservas/recrutamento além da equipe ativa de até três, catálogo de comportamentos, **persistência técnica da preferência de Tactic nas configurações e orientação-base da IA** e detalhes da lógica de decisão da IA sob Evade/Burst.
 
@@ -294,6 +296,21 @@ Sem decisão adicional, não fixar:
 **APROVADO (R15-Q5 = B):** a **tática inicial dos Pokémon aleatórios recrutáveis é sorteada dentre opções associadas à Nature**. **PENDENTE:** catálogo de táticas por Nature, probabilidades, momento de sorteio da Nature e persistência das atribuições. O jogador continua podendo alterar orientações usando Tactic conforme regras anteriores; esta decisão não cria ordens diretas para a IA.
 
 **Preservação:** MP nos pontos de descanso continua restaurado completamente; HP/MP persistem entre batalhas na mesma dungeon, conforme suas regras. O projeto continua **sem PP**, e os custos ATB/Burst aprovados não mudam.
+
+### 7.7. Recuperação de MP, telemetria e Nature — decisões da Rodada 16
+
+**APROVADO (R16-Q1 = B):** na recuperação periódica com ATB 5/5, cada parcela equivalente a **25% do MP máximo é arredondada para baixo**. Preservar intervalo de três segundos e limite do MP máximo. Nenhuma fórmula ou custo numérico adicional foi definido.
+
+**APROVADO (R16-Q2 = A):** **contador de recuperação fica zerado enquanto MP estiver no máximo**, mesmo com ATB 5/5. Ao surgir MP faltante enquanto ATB continua 5/5, é necessário **novo período completo de 3 s**. Sair de 5/5 zera também o contador (R15-Q2). **PENDENTE:** pausa Tactic e funcionamento fora do combate.
+
+**APROVADO (R16-Q3 = C):** haverá **telemetria de desempenho em combate que considera a maioria das ações efetuadas pelo Pokémon**, para informar o crescimento de atributos dos aliados. **Não foram escolhidas as alternativas anteriores de janela “desde o último nível” ou “histórico acumulado”**. **PENDENTE:** período, tipos de ações monitorados, critérios para identificar predominância, medidas de eficácia, ponderações, armazenamento e fórmulas. **Tática selecionada e ações efetivamente executadas continuam influenciando juntas o crescimento** (R15-Q3), com curvas específicas por espécie como referência. A distribuição manual continua exclusiva do protagonista.
+
+**APROVADO (R16-Q4 = A):** **Nature de Pokémon recrutável aleatório é sorteada quando ele é gerado, antes do recrutamento, e permanece atribuída**. Tática inicial ainda é sorteada dentre opções associadas à Nature (R15-Q5). **PENDENTE:** probabilidades, catálogo e atribuição de Nature a outros tipos de Pokémon.
+
+**APROVADO (R16-Q5 = B):** **a Tactic escolhida prevalece integralmente nas decisões comportamentais da IA enquanto está ativa**. Nature ainda influencia atributos e crescimento, mas não interfere diretamente no comportamento orientado pela Tactic ativa. **PENDENTE:** influência comportamental da Nature quando não houver Tactic escolhida pelo jogador.
+
+**Preservação:** estas são decisões de design documentadas, não implementação no Godot. Sem PP, sem novos valores ou fórmulas de atributos e sem alteração dos custos ATB/Burst.
+
 
 
 
@@ -421,6 +438,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-093 | R15-Q3 = A: **crescimento dos aliados depende conjuntamente de tática selecionada e ações efetivamente executadas**; ponderações/fórmulas pendentes. |
 | D-094 | R15-Q4 = B: **Natures afetam atributos, crescimento e tendências de comportamento/tática**; detalhes pendentes. |
 | D-095 | R15-Q5 = B: **tática inicial de recrutáveis aleatórios sorteada entre opções associadas à Nature**; lista e probabilidades pendentes. |
+| D-096 | R16-Q1 = B: **recuperação periódica de 25% do MP máximo arredondada para baixo** por intervalo elegível. |
+| D-097 | R16-Q2 = A: **contador zerado com MP máximo**; quando MP faltar com ATB 5/5, novo ciclo de 3 s. |
+| D-098 | R16-Q3 = C: **telemetria de desempenho considera maioria das ações de combate** para crescimento; janela, métricas e fórmulas pendentes, mantendo tática e ações como influências conjuntas. |
+| D-099 | R16-Q4 = A: **Nature sorteada na geração do recrutável aleatório e mantida** antes/depois do recrutamento. |
+| D-100 | R16-Q5 = B: **Tactic escolhida prevalece integralmente sobre o comportamento enquanto ativa**; Nature permanece influenciando atributos/crescimento. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -632,39 +654,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Limites e rastreabilidade:** R15-Q1/Q2 especificam a recuperação de MP de R14-Q2 sem alterar o ATB; R15-Q3/Q4/Q5 detalham o crescimento tático, Nature e recrutamento de R14-Q5. Não foram definidos arredondamentos, pesos de ações/táticas, modificadores de Nature ou taxas de sorteio. Nenhum PP ou novo custo ATB/Burst foi introduzido.
 
-## 10.15. Rodada 16 — MP e integração de Nature/táticas (cinco perguntas abertas)
+## 10.15. Rodada 16 — MP e integração de Nature/táticas (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa está aprovada.
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01. Decisões D-096 a D-100 registradas.
 
-**R16-Q1 — Como arredondar a recuperação de 25% do MP máximo a cada intervalo elegível?**  
-A. **Arredondar para cima**, garantindo o inteiro superior de cada parcela positiva.  
-B. **Arredondar para baixo**, descartando a parte fracionária de cada parcela.  
+| ID | Resposta do criador | Regra e limites |
+| --- | --- | --- |
+| **R16-Q1** | **B** — “A recuperação de 25% do MP máximo por intervalo elegível é arredondada para baixo.” | Parcela **arredondada para baixo**. |
+| **R16-Q2** | **A** — “Enquanto o MP estiver no máximo, o contador de recuperação aguarda zerado; quando surgir MP faltante com ATB 5/5, inicia novo intervalo de três segundos.” | Contador **zerado com MP máximo**; novo período completo quando houver MP faltante com ATB 5/5. |
+| **R16-Q3** | **C** — “vai ter um sistema de telemetria de desempenho em combate que leva em conta a maioria de suas ações efetuadas” | **Telemetria de combate considerando maioria das ações executadas**, sem janela, critérios ou fórmulas aprovados. |
+| **R16-Q4** | **A** — “Nature é sorteada ao gerar o Pokémon recrutável aleatório, antes do recrutamento, e permanece atribuída.” | **Nature sorteada na geração e mantida** para recrutáveis aleatórios. |
+| **R16-Q5** | **B** — “A Tactic escolhida prevalece integralmente sobre as tendências comportamentais de Nature enquanto estiver ativa; Nature continua afetando atributos e crescimento.” | **Tactic tem precedência integral no comportamento enquanto ativa**, mantendo efeito de Nature em atributos/crescimento. |
+
+**Preservação:** telemetria não escolhe janela nem fórmula; mantém influência conjunta de táticas e ações. MP, ATB/Burst, inexistência de PP e decisões anteriores preservados.
+
+## 10.16. Rodada 17 — telemetria, Nature e recuperação (cinco perguntas abertas)
+
+**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa aprovada.
+
+**R17-Q1 — Qual período de ações a telemetria deve observar para o crescimento dos aliados?**  
+A. **Ações desde o último nível**, reiniciando a janela a cada nível.  
+B. **Histórico acumulado do Pokémon**, preservando ações dos combates anteriores; ponderação futura.  
+C. Outro critério, especificado pelo criador.  
+*R16-Q3 aprovou telemetria, mas não selecionou uma janela.*
+
+**R17-Q2 — Como identificar as ações predominantes na telemetria?**  
+A. **Frequência das categorias de ações executadas**, independentemente do sucesso.  
+B. **Frequência e desempenho/eficácia das ações**, incluindo seus resultados.  
+C. Outro método, especificado pelo criador.  
+*Sem categorias, métricas nem pesos predefinidos.*
+
+**R17-Q3 — Como combinar telemetria e tática selecionada no crescimento?**  
+A. **Telemetria tem influência principal** e tática ajusta prioridades, sem pesos definidos.  
+B. **Tática tem influência principal** e telemetria ajusta conforme o desempenho real, sem pesos definidos.  
+C. Outra combinação, especificada pelo criador.  
+*Ambas continuam influenciando crescimento, conforme R15-Q3.*
+
+**R17-Q4 — Como definir Nature para protagonista e Pokémon de eventos?**  
+A. **Nature predefinida no conteúdo** de cada Pokémon de origem definida.  
+B. **Nature sorteada também ao gerar esses Pokémon**, sem probabilidades definidas.  
 C. Outra regra, especificada pelo criador.  
-*O valor proporcional de 25%, os três segundos e a exigência de ATB 5/5 já estão aprovados.*
+*Recrutáveis aleatórios continuam recebendo Nature na geração.*
 
-**R16-Q2 — Como funciona o contador de recuperação se o Pokémon já tem MP máximo e continua em ATB 5/5?**  
-A. **Zerar/aguardar sem contar** enquanto o MP estiver máximo; um novo intervalo inteiro começa quando houver MP faltante.  
-B. **Manter ciclos de três segundos** mesmo com MP máximo, sem ultrapassar o limite; quando gastar MP, prosseguir no ciclo vigente.  
+**R17-Q5 — O contador de MP deve avançar durante a pausa do menu Tactic?**  
+A. **Não**: o contador pausa junto ao combate e retoma depois se os requisitos continuarem válidos.  
+B. **Sim**: o contador avança mesmo durante a pausa do menu Tactic, como exceção explícita.  
 C. Outra regra, especificada pelo criador.  
-*Em qualquer alternativa, sair de ATB 5/5 zera o contador, conforme R15-Q2.*
-
-**R16-Q3 — Qual período de combate entra no cálculo do crescimento por ações dos aliados?**  
-A. **Desde o nível anterior:** considerar ações e táticas utilizadas no período entre duas subidas de nível.  
-B. **Histórico acumulado do Pokémon:** considerar ações e táticas ao longo dos combates, com peso e recência a decidir.  
-C. Outro intervalo, especificado pelo criador.  
-*As ações efetivas e a tática selecionada já devem influenciar conjuntamente o crescimento.*
-
-**R16-Q4 — Quando uma Nature é atribuída aos Pokémon recrutáveis aleatórios?**  
-A. **Na geração do Pokémon**, antes de eventual recrutamento, mantendo-a posteriormente; probabilidades pendentes.  
-B. **No momento do recrutamento**, sorteada quando ele entra na equipe; probabilidades pendentes.  
-C. Outra regra, especificada pelo criador.  
-*A tática inicial é sorteada entre opções associadas à Nature, conforme R15-Q5.*
-
-**R16-Q5 — Qual é a prioridade entre Tactic escolhida pelo jogador e tendências de Nature?**  
-A. **Tactic define a orientação principal; Nature mantém tendências comportamentais secundárias**, com efeitos ainda pendentes.  
-B. **Tactic escolhida prevalece integralmente no comportamento enquanto estiver ativa**; Nature ainda afeta atributos/crescimento, mas não interfere nas decisões sob essa Tactic.  
-C. Outra regra de prioridade, especificada pelo criador.  
-*Tactic continua orientando a IA, sem enviar ordens diretas.*
+*MP máximo e saída de ATB 5/5 continuam zerando o contador.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -687,5 +723,7 @@ C. Outra regra de prioridade, especificada pelo criador.
 | 1.5 | 2026-11-01 | Rodada 14 (D-086 a D-090): MP descontado na ativação; recuperação de 1/4 do MP a cada 3 s sob ATB 5/5 e descanso com MP completo; HP persiste entre batalhas; ponto do protagonista obrigatório na subida de nível; ganho de atributos de aliados depende de forma de lutar/táticas, aleatoriedade de recrutáveis e Natures. Rodada 15 aberta. | Rodada 14 fechada / Rodada 15 aberta |
 
 | 1.6 | 2026-11-01 | Rodada 15 (D-091 a D-095): recuperação de 25% do MP máximo a cada 3 s consecutivos sob ATB 5/5, zerando contador ao sair de 5/5; crescimento de aliados considera tática e ações executadas; Natures influenciam atributos/crescimento/comportamento; recrutáveis aleatórios recebem tática inicial sorteada conforme Nature. Abre Rodada 16. | Rodada 15 fechada / Rodada 16 aberta |
+
+| 1.7 | 2026-11-01 | Rodada 16 (D-096 a D-100): recuperação periódica de MP arredondada para baixo; contador zerado em MP máximo; telemetria considerando a maioria das ações, ainda sem janela/fórmula; Nature de recrutáveis aleatórios sorteada na geração; Tactic escolhida prevalece no comportamento enquanto ativa, mantendo Nature para atributos/crescimento. Abre Rodada 17. | Rodada 16 fechada / Rodada 17 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
