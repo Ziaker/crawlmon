@@ -12,10 +12,9 @@ signal mode_changed(mode: Mode)
 const CINEMA_POS := Vector3(1.0, 3.0, 6.5)
 const CINEMA_LOOK := Vector3(3.0, 1.8, -20.0)
 const CINEMA_FOV := 60.0
-const TATICA_POS := Vector3(2.0, 15.0, 15.0)
-const TATICA_FOV := 55.0
-const IMPACT_FOV := 42.0
-const GLIDE := 0.9
+const TATICA_POS := Vector3(1.0, 6.0, 9.5)
+const TATICA_FOV := 58.0
+const GLIDE := 1.0
 
 var camera: Camera3D
 var mode := Mode.CINEMA
@@ -45,12 +44,17 @@ func tactical(focus: Vector3, time := GLIDE) -> void:
 	_go(Mode.TATICA, TATICA_POS, focus.lerp(Vector3(2.0, 0.0, 0.0), 0.35), TATICA_FOV, time)
 
 
-## Close-up of a hit on `target_pos`, held for `hold` seconds, then back to CINEMA.
-func impact(target_pos: Vector3, target_is_party: bool, hold := 1.1) -> void:
-	var offset := Vector3(4.0, 2.8, 8.0) if target_is_party else Vector3(-3.5, 2.0, 7.0)
-	_go(Mode.IMPACTO, target_pos + offset, target_pos + Vector3(0, 1.2, 0), IMPACT_FOV, 0.6)
+## Soft emphasis on a hit: the camera pans toward the target (FOV narrows by a
+## few degrees, no dolly), then settles back to CINEMA. Ignored
+## while the player is picking a target.
+func impact(target_pos: Vector3, target_is_party: bool, hold := 0.6) -> void:
+	if mode == Mode.TATICA:
+		return
+	var pos := CINEMA_POS + Vector3(0.6, 0.0, 0.0)  # Same spot as CINEMA: only the aim and FOV change.
+	var fov := 57.0
+	_go(Mode.IMPACTO, pos, target_pos + Vector3(0, 1.2, 0), fov, 1.1)
 	var token := _token
-	await get_tree().create_timer(hold + 0.6).timeout
+	await get_tree().create_timer(hold + 1.1).timeout
 	if token == _token:
 		cinema()
 

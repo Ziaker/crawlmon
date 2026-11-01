@@ -31,6 +31,9 @@ var _log: Label
 var _log_lines: Array[String] = []
 var _tabs: CameraTabs
 var _target: Combatant
+var _shown_hp: Dictionary = {}  ## Combatant -> float
+var _last_hp: Dictionary = {}
+var _hp_hold: Dictionary = {}  ## Combatant -> ticks (msec) before the bar starts moving
 
 
 static func slant(c: CanvasItem, r: Rect2, skew: float, color: Color) -> void:
@@ -55,6 +58,7 @@ func setup(battle: Battle, party: Array[Combatant], enemies: Array[Combatant], c
 	for i in party.size():
 		var card := UnitCard.new()
 		card.combatant = party[i]
+		card.hud = self
 		card.hero = i == 0
 		card.order = i
 		add_child(card)
@@ -62,6 +66,7 @@ func setup(battle: Battle, party: Array[Combatant], enemies: Array[Combatant], c
 	for e in enemies:
 		var tag := EnemyTag.new()
 		tag.combatant = e
+		tag.hud = self
 		add_child(tag)
 		_tags[e] = tag
 	menu = FanMenu.new()
@@ -117,6 +122,26 @@ func _make_label(pos: Vector2, size: int, color: Color) -> Label:
 	return l
 
 
+## HP as displayed: waits for the hit effect to land, then drains smoothly.
+func shown_hp(c: Combatant) -> float:
+	return _shown_hp.get(c, float(c.hp))
+
+
+func _track_hp() -> void:
+	var now := Time.get_ticks_msec()
+	for c in _models:
+		var last: int = _last_hp.get(c, c.hp)
+		if c.hp < last:
+			_hp_hold[c] = now + 450
+		elif c.hp > last:
+			_hp_hold[c] = now + 250
+		_last_hp[c] = c.hp
+		var shown: float = _shown_hp.get(c, float(c.hp))
+		if now >= _hp_hold.get(c, 0):
+			shown = move_toward(shown, float(c.hp), maxf(absf(shown - c.hp) * 0.12, 0.35))
+		_shown_hp[c] = shown
+
+
 func set_target(c: Combatant) -> void:
 	_target = c
 
@@ -143,6 +168,7 @@ func _process(_delta: float) -> void:
 		if not inc.dodged:
 			lines.append("! %s  >  %s   %.1fs" % [inc.attacker.name, inc.target.name, inc.time_left])
 	_alert.text = "\n".join(lines)
+	_track_hp()
 	_layout_cards()
 	_layout_tags()
 	queue_redraw()
@@ -232,6 +258,7 @@ func _draw() -> void:
 
 class UnitCard extends Control:
 	var combatant: Combatant
+	var hud: BattleHud
 	var hero := true
 	var order := 0
 	var _portrait: Texture2D
@@ -275,8 +302,9 @@ class UnitCard extends Control:
 		var bar_x := 84.0
 		var bar_w := 120.0
 		draw_rect(Rect2(bar_x, 52, bar_w, 7), track)
-		draw_rect(Rect2(bar_x, 52, bar_w * clampf(float(c.hp) / c.max_hp, 0.0, 1.0), 7), hp_col)
-		draw_string(font, Vector2(bar_x + bar_w + 8, 59), "HP %d/%d" % [c.hp, c.max_hp], HORIZONTAL_ALIGNMENT_LEFT, -1, 10, fg)
+		var shown := hud.shown_hp(c)
+		draw_rect(Rect2(bar_x, 52, bar_w * clampf(shown / c.max_hp, 0.0, 1.0), 7), hp_col)
+		draw_string(font, Vector2(bar_x + bar_w + 8, 59), "HP %d/%d" % [ceili(shown), c.max_hp], HORIZONTAL_ALIGNMENT_LEFT, -1, 10, fg)
 		# MP (not in the runtime yet).
 		draw_rect(Rect2(bar_x, 66, bar_w, 7), Color(track, 0.35))
 		draw_string(font, Vector2(bar_x + bar_w + 8, 73), "MP N/D", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(fg, 0.45))
@@ -301,6 +329,7 @@ class UnitCard extends Control:
 
 class EnemyTag extends Control:
 	var combatant: Combatant
+	var hud: BattleHud
 	var active := false
 
 	func _init() -> void:
@@ -316,8 +345,9 @@ class EnemyTag extends Control:
 		var name_col := Color("b74134") if active else CORAL
 		draw_string(font, Vector2(0, 17), c.name.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, size.x, 12, name_col)
 		draw_rect(Rect2(14, 23, size.x - 28, 5), Color("7b8c90") if active else Color("3a4756"))
-		draw_rect(Rect2(14, 23, (size.x - 28) * clampf(float(c.hp) / c.max_hp, 0.0, 1.0), 5), CORAL)
-		draw_string(font, Vector2(0, 40), "HP %d / %d" % [c.hp, c.max_hp], HORIZONTAL_ALIGNMENT_CENTER, size.x, 10, Color("111d2a") if active else CREAM)
+		var shown := hud.shown_hp(c)
+		draw_rect(Rect2(14, 23, (size.x - 28) * clampf(shown / c.max_hp, 0.0, 1.0), 5), CORAL)
+		draw_string(font, Vector2(0, 40), "HP %d / %d" % [ceili(shown), c.max_hp], HORIZONTAL_ALIGNMENT_CENTER, size.x, 10, Color("111d2a") if active else CREAM)
 		var cx := size.x * 0.5
 		var cy := 54.0
 		var diamond := PackedVector2Array([Vector2(cx, cy - 8), Vector2(cx + 8, cy), Vector2(cx, cy + 8), Vector2(cx - 8, cy)])
