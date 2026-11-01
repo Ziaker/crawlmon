@@ -10,6 +10,7 @@ var player_pos := Vector2.INF  ## INF = use the map's spawn point.
 var encounter_id := ""
 var defeated: Array[String] = []
 var in_battle := false
+var transition: EncounterTransition
 var party: Array[Combatant] = []
 var inventory: Dictionary = {"potion": 3, "amulet": 1, "charm": 1}
 
@@ -26,7 +27,15 @@ func start_battle(id: String, pos: Vector2) -> void:
 	encounter_id = id
 	player_pos = pos
 	in_battle = true
-	get_tree().change_scene_to_file.call_deferred(BATTLE)
+	_transition().play_to(BATTLE)
+
+
+## Encounter transition overlay, created on first use and kept under the root.
+func _transition() -> EncounterTransition:
+	if transition == null:
+		transition = EncounterTransition.new()
+		get_tree().root.add_child(transition)
+	return transition
 
 
 func end_battle(player_won: bool) -> void:

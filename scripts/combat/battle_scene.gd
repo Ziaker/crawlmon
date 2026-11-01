@@ -86,6 +86,7 @@ func _ready() -> void:
 	battle.attack_resolved.connect(fx.resolve_attack)
 	battle.attack_cancelled.connect(fx.clear_telegraph)
 	battle.manual_evaded.connect(fx.manual_evade)
+	battle.evade_whiffed.connect(fx.evade_whiff)
 	battle.hit_resolved.connect(fx.play_hit)
 	battle.healed.connect(fx.heal_fx)
 	battle.manual_evaded.connect(_on_manual_evaded)
@@ -100,6 +101,9 @@ func _ready() -> void:
 	battle.party = party
 	battle.enemies = enemies
 	_menu.hide()  # No commands while the characters are still running in.
+	var tr := GameState.transition
+	if tr != null and tr.active and not tr.has_revealed:
+		await tr.revealed  # The run-in plays while the panels open.
 	await fx.intro()
 	battle.start(party, enemies)
 	_show_main()
@@ -221,10 +225,12 @@ func _on_died(c: Combatant) -> void:
 	tween.tween_property(models[c], "scale", Vector3.ZERO, 0.4)
 
 
-## A perfect (manual) Evade by the leader slows the whole game until the
-## player acts again or the time runs out.
-func _on_manual_evaded(actor: Combatant, _inc) -> void:
+## A Perfect Evade (last 0.22s window) by the leader slows the whole game (Witch Time)
+## until the player executes their instant counter-action or the timer expires.
+func _on_manual_evaded(actor: Combatant, inc) -> void:
 	if actor != leader:
+		return
+	if inc != null and not inc.perfect_evaded:
 		return
 	_slow_token += 1
 	var token := _slow_token
