@@ -1,30 +1,52 @@
 class_name Combatant
 extends RefCounted
-## A participant in an ATB battle. The gauge fills with time, scaled by speed.
+## A participant in an ATB battle. The ATB gauge is measured in blocks (0..5)
+## and fills continuously; actions spend whole blocks from it.
 
-signal gauge_full(combatant: Combatant)
 signal damaged(combatant: Combatant, amount: int)
 signal died(combatant: Combatant)
 
-const GAUGE_MAX := 100.0
+enum Act { ATTACK, SKILL, HOLD }  ## Tactics: what an AI ally does with its blocks.
+enum React { NONE, EVADE }  ## Tactics: how an AI ally reacts to incoming attacks.
+
+const BLOCKS := 5.0
+const BURST_MAX := 1
 
 var name: String
 var max_hp: int
 var hp: int
-var attack: int
-var speed: float
+var base_attack: int
+var base_speed: float  ## Blocks per second.
 var is_player: bool
-var gauge := 0.0
-var ready_to_act := false
+var skills: Array[Skill] = []
+var held_item_id := ""
+var act_policy := Act.ATTACK
+var react_policy := React.NONE
+var atb := 0.0
+var burst := 0
+
+var attack: int:
+	get:
+		var held := get_held_item()
+		return base_attack + (held.attack_bonus if held else 0)
+
+var speed: float:
+	get:
+		var held := get_held_item()
+		return base_speed + (held.speed_bonus if held else 0.0)
 
 
 func _init(p_name: String, p_hp: int, p_attack: int, p_speed: float, p_is_player: bool) -> void:
 	name = p_name
 	max_hp = p_hp
 	hp = p_hp
-	attack = p_attack
-	speed = p_speed
+	base_attack = p_attack
+	base_speed = p_speed
 	is_player = p_is_player
+
+
+func get_held_item() -> Item:
+	return Item.get_item(held_item_id) if held_item_id != "" else null
 
 
 func is_alive() -> bool:
@@ -32,17 +54,20 @@ func is_alive() -> bool:
 
 
 func tick(delta: float) -> void:
-	if not is_alive() or ready_to_act:
-		return
-	gauge = minf(gauge + speed * delta, GAUGE_MAX)
-	if gauge >= GAUGE_MAX:
-		ready_to_act = true
-		gauge_full.emit(self)
+	if is_alive():
+		atb = minf(atb + speed * delta, BLOCKS)
 
 
-func end_turn() -> void:
-	gauge = 0.0
-	ready_to_act = false
+## A burst charge pays for any one action for free.
+func can_pay(cost: float) -> bool:
+	return burst > 0 or atb >= cost
+
+
+func pay(cost: float) -> void:
+	if burst > 0:
+		burst -= 1
+	else:
+		atb -= cost
 
 
 func take_damage(amount: int) -> void:
@@ -50,3 +75,7 @@ func take_damage(amount: int) -> void:
 	damaged.emit(self, amount)
 	if hp == 0:
 		died.emit(self)
+
+
+func heal(amount: int) -> void:
+	hp = mini(hp + amount, max_hp)

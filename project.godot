@@ -21,3 +21,4 @@ renderer/rendering_method.mobile="gl_compatibility"
 [autoload]
 
 GameState="*res://scripts/autoload/game_state.gd"
+Menus="*res://scripts/ui/menus.gd"
