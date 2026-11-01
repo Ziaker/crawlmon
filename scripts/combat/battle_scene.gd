@@ -31,8 +31,7 @@ var _back: Callable
 func _ready() -> void:
 	fx = BattleFx.new()
 	add_child(fx)
-	fx.setup($Camera3D)
-	fx.cam.base_pos = BattleCamera.IDLE_POS
+	_place_camera()
 	_add_floor()
 	var party := GameState.party
 	var enemies: Array[Combatant] = [
@@ -48,8 +47,8 @@ func _ready() -> void:
 		e.act_policy = Combatant.Act.SKILL
 		e.react_policy = Combatant.React.EVADE
 	leader = party[0]
-	_spawn(party, -3.0, Color(0.3, 0.6, 0.9))
-	_spawn(enemies, 3.0, Color(0.85, 0.3, 0.3))
+	_spawn(party, -6.5, Color(0.3, 0.6, 0.9))
+	_spawn(enemies, 6.5, Color(0.85, 0.3, 0.3))
 	_add_marker()
 	_build_ui(party + enemies)
 	battle.log_message.connect(func(t: String) -> void: _log.append_text(t + "\n"))
@@ -67,10 +66,18 @@ func _ready() -> void:
 
 # --- Stage -----------------------------------------------------------------
 
+## Static wide shot so both sides stay in frame; no automatic camera motion.
+func _place_camera() -> void:
+	var cam: Camera3D = $Camera3D
+	cam.position = Vector3(-4.0, 5.5, 17.0)
+	cam.look_at(Vector3(0, 1.0, 0))
+	cam.fov = 55.0
+
+
 func _add_floor() -> void:
 	var floor_mesh := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(20, 12)
+	plane.size = Vector2(32, 14)
 	floor_mesh.mesh = plane
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Color(0.2, 0.2, 0.25)
@@ -145,7 +152,6 @@ func _on_died(c: Combatant) -> void:
 func _on_battle_ended(player_won: bool) -> void:
 	_menu.hide()
 	_marker.hide()
-	fx.finish(player_won)
 	await get_tree().create_timer(3.0, true, false, true).timeout
 	GameState.end_battle(player_won)
 
@@ -291,7 +297,6 @@ func _on_chosen(i: int) -> void:
 			_pick_target(battle.party,
 				func(t: Combatant) -> void: battle.use_item(leader, item, t), _show_items)
 		S.TARGET:
-			fx.release_camera()
 			_on_target.call(_targets[i])
 			if battle.running:
 				_show_main()
@@ -309,7 +314,6 @@ func _on_cancel() -> void:
 		S.FIGHT, S.ITEMS, S.TACTICS:
 			_show_main()
 		S.TARGET:
-			fx.release_camera()
 			_back.call()
 
 
@@ -317,4 +321,3 @@ func _on_moved(i: int) -> void:
 	if state == S.TARGET and i < _targets.size():
 		var model: Node3D = models[_targets[i]]
 		_marker.global_position = model.global_position + Vector3(0, 3.2, 0)
-		fx.focus_target(_targets[i])
