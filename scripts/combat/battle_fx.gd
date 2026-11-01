@@ -177,12 +177,16 @@ func _melee(a: Combatant, stand: Vector3, dir: Vector3, run_t: float) -> float:
 	var yaw_back := atan2(-dir.x, -dir.z)
 	var back_t := run_t * 0.9
 	var tw := _move(a)
-	tw.tween_callback(func() -> void: _play(a, "run"))
+	tw.tween_callback(func() -> void:
+		_play(a, "run")
+		_dust_trail(m, run_t + 0.12))
 	tw.tween_method(func(k: float) -> void: m.rotation.y = lerp_angle(yaw_home, yaw_out, k), 0.0, 1.0, 0.12)
 	tw.tween_property(m, "position", stand, run_t).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tw.tween_callback(func() -> void: _play(a, "attack"))
 	tw.tween_interval(HIT_AT + ATTACK_HOLD)
-	tw.tween_callback(func() -> void: _play(a, "run"))
+	tw.tween_callback(func() -> void:
+		_play(a, "run")
+		_dust_trail(m, back_t + 0.12))
 	tw.tween_method(func(k: float) -> void: m.rotation.y = lerp_angle(yaw_out, yaw_back, k), 0.0, 1.0, 0.12)
 	tw.tween_property(m, "position", home, back_t).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tw.tween_method(func(k: float) -> void: m.rotation.y = lerp_angle(yaw_back, yaw_home, k), 0.0, 1.0, 0.15)
@@ -209,7 +213,7 @@ func dodge(target: Combatant, text: String, hold := false) -> void:
 	var home: Vector3 = _home[target]
 	var side := -1.0 if target.is_player else 1.0
 	var spot := home + Vector3(side * 3.6, 0.0, 1.4)
-	_vanish(m, home, spot)
+	_vanish(target, m, home, spot)
 	var tw := _move(target)
 	tw.tween_interval(0.14)
 	tw.tween_callback(func() -> void: _appear(target, spot))
@@ -223,31 +227,12 @@ func dodge(target: Combatant, text: String, hold := false) -> void:
 func settle(target: Combatant) -> void:
 	var m: Node3D = _models[target]
 	var home: Vector3 = _home[target]
-	_vanish(m, m.position, home)
+	_vanish(target, m, m.position, home)
 	var tw := _move(target)
 	tw.tween_interval(0.14)
 	tw.tween_callback(func() -> void: _appear(target, home))
 
 
-func _vanish(m: Node3D, from: Vector3, to: Vector3) -> void:
-	_dash_streak(from, to)
-	var ghost := _node(CapsuleMesh.new(), Color(0.5, 0.9, 1.0, 0.45), from + Vector3(0, 1, 0))
-	_pop(ghost, 0.4, Vector3.ONE, Vector3.ONE * 1.1)
-	_burst(from + Vector3(0, 0.2, 0), Color(0.8, 0.95, 1.0), 12, 3.0, Vector3(0, -1, 0), 0.07, 0.4)
-	m.visible = false
-
-
-func _appear(c: Combatant, pos: Vector3) -> void:
-	var m: Node3D = _models[c]
-	m.position = pos
-	m.visible = true
-	_burst(pos + Vector3(0, 0.2, 0), Color(0.8, 0.95, 1.0), 12, 3.0, Vector3(0, -1, 0), 0.07, 0.4)
-	if c.is_alive():
-		_reset_idle(c)
-
-
-## Falling reaction for a hit that was not evaded: plays `down`, then rises
-## by playing it backwards (skipped if the character died).
 func _hit_react(c: Combatant) -> void:
 	var ap := _anim_player(c)
 	if ap == null or not ap.has_animation("down"):
@@ -296,17 +281,6 @@ func _hold_hp(c: Combatant, seconds: float) -> void:
 	c.set_meta("hp_hold_until", Time.get_ticks_msec() + int((seconds + 0.2) * 1000.0))
 
 
-func flash(target: Combatant) -> void:
-	var m: Node3D = _models[target]
-	if m and m.has_meta("mesh"):
-		var mesh: MeshInstance3D = m.get_meta("mesh")
-		var base: Color = m.get_meta("color")
-		var mat: StandardMaterial3D = mesh.material_override
-		if mat:
-			mat.albedo_color = Color.WHITE
-			create_tween().tween_property(mat, "albedo_color", base, 0.25)
-
-
 func knock(target: Combatant, from_pos: Vector3) -> void:
 	var m: Node3D = _models[target]
 	var home: Vector3 = _home[target]
@@ -335,76 +309,281 @@ func float_text(pos: Vector3, text: String, color: Color, size := 48) -> void:
 
 # --- Element impacts ---------------------------------------------------------
 
+# --- Impacts ---------------------------------------------------------------------
+
+func _cam_pos() -> Vector3:
+	if cam != null and cam.camera != null:
+		return cam.camera.global_position
+	return Vector3(0, 3, 8)
+
+
+func _face_camera(node: Node3D) -> void:
+	node.look_at(_cam_pos())
+
+
+## Flat shockwave ring on the floor.
+func _shock(ground: Vector3, color: Color, size: float, duration := 0.55) -> void:
+	var q := VfxLib.animated_quad(self, Vector2(size, size), "ring", {"color": color, "energy": 2.2}, duration)
+	q.position = ground + Vector3(0, 0.06, 0)
+	q.rotation_degrees = Vector3(-90, 0, 0)
+
+
+## Vertical ring facing the camera.
+func _ring_cam(pos: Vector3, color: Color, size: float, duration := 0.5, delay := 0.0) -> void:
+	if delay > 0.0:
+		await get_tree().create_timer(delay).timeout
+	var q := VfxLib.animated_quad(self, Vector2(size, size), "ring", {"color": color, "energy": 2.2}, duration)
+	q.position = pos
+	_face_camera(q)
+
+
+func _slash(pos: Vector3, color: Color, size: float, roll_deg: float, duration := 0.28, delay := 0.0) -> void:
+	if delay > 0.0:
+		await get_tree().create_timer(delay).timeout
+	var q := VfxLib.animated_quad(self, Vector2(size, size), "slash", {"color": color, "energy": 2.4}, duration)
+	q.position = pos
+	_face_camera(q)
+	q.rotate_object_local(Vector3.BACK, deg_to_rad(roll_deg))
+
+
+func _sparks(pos: Vector3, color: Color, amount: int, speed := Vector2(5.0, 12.0), gravity := Vector3(0, -10, 0)) -> void:
+	VfxLib.burst(self, pos, {
+		"amount": amount, "life": 0.55, "speed": speed, "gravity": gravity,
+		"size": Vector2(0.14, 0.3), "end_scale": 0.2,
+		"ramp": VfxLib.ramp([Color(1, 1, 1, 1), color, Color(color, 0)], [0.0, 0.3, 1.0])})
+
+
+func _glow(pos: Vector3, color: Color, amount: int, size: Vector2, life: float, speed: Vector2, gravity := Vector3.ZERO, end_scale := 0.0, radius := 0.0) -> void:
+	VfxLib.burst(self, pos, {
+		"amount": amount, "life": life, "speed": speed, "gravity": gravity, "size": size,
+		"end_scale": end_scale, "radius": radius,
+		"ramp": VfxLib.ramp([Color(1, 1, 1, 1), color, Color(color, 0)], [0.0, 0.25, 1.0])})
+
+
+func _smoke(pos: Vector3, color: Color, amount: int, size: Vector2, life: float, rise := 1.5, additive := false) -> void:
+	VfxLib.burst(self, pos, {
+		"tex": VfxLib.smoke_tex(), "additive": additive, "amount": amount, "life": life,
+		"speed": Vector2(0.5, 3.0), "gravity": Vector3(0, rise, 0), "size": size, "end_scale": 1.8,
+		"damping": 1.5, "radius": 0.4,
+		"ramp": VfxLib.ramp([Color(color, 0.0), Color(color, 0.75), Color(color, 0.0)], [0.0, 0.2, 1.0])})
+
+
 func _impact(element: Element.Type, pos: Vector3, color: Color, big: bool) -> void:
-	var ground := Vector3(pos.x, 0.0, pos.z)
 	var k := 1.5 if big else 1.0
+	var ground := Vector3(pos.x, 0.0, pos.z)
+	VfxLib.flash_star(self, pos, color.lightened(0.45), 3.4 * k)
+	_shock(ground, color, 5.0 * k)
 	match element:
 		Element.Type.FISICO:
-			for ang in [45.0, -45.0]:
-				var slash := _node(_box(Vector3(0.1, 2.4 * k, 0.1)), color, pos)
-				slash.rotation_degrees = Vector3(0, 0, ang)
-				_pop(slash, 0.2, Vector3(1, 0.2, 1), Vector3.ONE)
-			_burst(pos, color, 14, 5.0, Vector3(0, -8, 0), 0.06, 0.4)
+			_slash(pos, Color(1, 0.97, 0.88), 5.5 * k, 35.0)
+			_slash(pos, Color(0.9, 0.95, 1.0), 5.0 * k, -42.0, 0.26, 0.06)
+			_sparks(pos, Color(1.0, 0.85, 0.5), int(46 * k))
+			_smoke(ground + Vector3(0, 0.3, 0), Color(0.75, 0.78, 0.8), 10, Vector2(1.2, 2.2), 0.8, 0.8)
 		Element.Type.FOGO:
-			_pop(_node(_sphere(0.6), color, pos), 0.35, Vector3.ONE * 0.4, Vector3.ONE * 2.2 * k)
-			_burst(pos, Color(1.0, 0.6, 0.1), int(28 * k), 4.0, Vector3(0, 5, 0), 0.14, 0.7)
+			_glow(pos, Color(1.0, 0.45, 0.1), int(26 * k), Vector2(1.0, 2.0), 0.75, Vector2(1.0, 4.5), Vector3(0, 4, 0), 1.2, 0.5)
+			VfxLib.burst(self, pos, {"tex": VfxLib.smoke_tex(), "amount": int(24 * k), "life": 0.9, "speed": Vector2(1.0, 4.0),
+				"gravity": Vector3(0, 3, 0), "size": Vector2(1.1, 2.0), "end_scale": 1.4, "radius": 0.5,
+				"ramp": VfxLib.ramp([Color(1, 0.95, 0.6, 0.0), Color(1, 0.6, 0.15, 0.9), Color(0.7, 0.15, 0.05, 0.6), Color(0.1, 0.05, 0.05, 0.0)], [0.0, 0.2, 0.6, 1.0])})
+			_sparks(pos, Color(1.0, 0.55, 0.15), int(30 * k), Vector2(3.0, 9.0), Vector3(0, 2, 0))
+			_smoke(pos + Vector3(0, 0.5, 0), Color(0.12, 0.1, 0.1), 10, Vector2(1.6, 2.8), 1.4, 2.0)
 		Element.Type.AGUA_GELO:
-			for i in 6:
-				var ang := i * TAU / 6.0
-				var spike := _node(_cone(0.2, 1.6 * k), color, ground + Vector3(cos(ang), 0.8, sin(ang)) * Vector3(0.7, 1, 0.7))
-				_pop(spike, 0.5, Vector3(1, 0.1, 1), Vector3.ONE)
-			_burst(pos, color, int(20 * k), 4.0, Vector3(0, -4, 0), 0.08, 0.6)
+			for i in 7:
+				var ang := i * TAU / 7.0 + 0.3
+				var spike := _node(_cone(0.28, 2.0 * k), Color(0.65, 0.92, 1.0, 0.95), ground + Vector3(cos(ang) * 0.9, 1.0, sin(ang) * 0.9))
+				spike.rotation = Vector3(sin(ang) * 0.35, 0, -cos(ang) * 0.35)
+				spike.material_override.emission_enabled = true
+				spike.material_override.emission = Color(0.4, 0.8, 1.0)
+				spike.material_override.emission_energy_multiplier = 1.6
+				_pop(spike, 0.7, Vector3(1, 0.05, 1), Vector3.ONE)
+			_sparks(pos, Color(0.6, 0.9, 1.0), int(40 * k), Vector2(3.0, 9.0))
+			_smoke(ground + Vector3(0, 0.4, 0), Color(0.75, 0.92, 1.0), 14, Vector2(1.4, 2.6), 1.1, 0.6, true)
 		Element.Type.RAIO:
-			_bolt(pos + Vector3(0, 7, 0), pos, color)
-			_burst(pos, color, int(20 * k), 6.0, Vector3(0, -3, 0), 0.06, 0.4)
+			_bolt(pos + Vector3(0, 9, 0), pos, color)
+			_bolt(pos + Vector3(2.5, 8, 0.5), pos + Vector3(0.3, 0.2, 0), color, 0.6)
+			_sparks(pos, Color(1.0, 0.95, 0.4), int(50 * k), Vector2(6.0, 14.0), Vector3(0, -6, 0))
+			_ring_cam(pos, color, 4.0 * k, 0.4)
 		Element.Type.PSIQUICO:
 			for i in 3:
-				_ring(pos, color, Vector3.ONE * 0.3, Vector3.ONE * 2.2 * k, 0.5, Vector3(randf_range(0, 180), randf_range(0, 180), 0), i * 0.1)
-			_pop(_node(_sphere(0.4), color, pos), 0.5, Vector3.ONE, Vector3.ONE * 1.8)
+				_ring_cam(pos, color, (3.5 + i) * k, 0.55, i * 0.1)
+			_glow(pos + Vector3(0, 0.2, 0), color, int(30 * k), Vector2(0.5, 1.0), 0.8, Vector2(0.5, 1.5), Vector3.ZERO, 0.0, 2.6)
+			VfxLib.burst(self, pos, {"amount": int(30 * k), "life": 0.7, "speed": Vector2(0.0, 1.0), "radial_accel": -14.0,
+				"size": Vector2(0.5, 0.9), "radius": 2.8, "ramp": VfxLib.ramp([Color(1, 1, 1, 0), color, Color(1, 1, 1, 0)], [0.0, 0.5, 1.0])})
 		Element.Type.VENENO:
-			_pop(_node(_sphere(0.5), Color(0.35, 0.1, 0.45, 0.8), pos), 0.5, Vector3.ONE * 0.5, Vector3.ONE * 2.0 * k)
-			_burst(pos, color, int(26 * k), 1.8, Vector3(0, 2, 0), 0.1, 1.0)
+			_smoke(ground + Vector3(0, 0.6, 0), Color(0.45, 0.2, 0.55), 22, Vector2(1.8, 3.2), 1.4, 1.2)
+			_smoke(ground + Vector3(0, 0.5, 0), Color(0.5, 0.85, 0.2), 12, Vector2(1.2, 2.2), 1.2, 1.4, true)
+			_glow(pos, Color(0.6, 0.95, 0.25), int(20 * k), Vector2(0.25, 0.55), 1.1, Vector2(0.5, 2.5), Vector3(0, 2.5, 0), 0.4, 0.6)
 		Element.Type.SOM:
 			for i in 3:
-				_ring(pos, color, Vector3.ONE * 0.4, Vector3.ONE * 2.6 * k, 0.5, Vector3(90, 0, 0), i * 0.12)
+				_shock(ground, color, (4.0 + i * 2.0) * k, 0.5 + i * 0.12)
+				_ring_cam(pos, color, (3.0 + i * 1.6) * k, 0.45, i * 0.1)
+			_sparks(pos, color, int(26 * k), Vector2(4.0, 10.0), Vector3.ZERO)
 		Element.Type.TERRA:
-			for i in 3:
-				var off := Vector3((i - 1) * 0.8, 1.0, randf_range(-0.4, 0.4))
-				_pop(_node(_cyl(0.35, 2.0 * k), color, ground + off), 0.6, Vector3(1, 0.1, 1), Vector3.ONE)
-			_burst(ground + Vector3(0, 0.3, 0), color, int(24 * k), 4.0, Vector3(0, -9, 0), 0.12, 0.7)
+			for i in 6:
+				var ang := i * TAU / 6.0 + 0.2
+				var rock_h := (3.0 if i % 2 == 0 else 2.0) * k
+				var rock := _node(_cone(0.55, rock_h), Color(0.52, 0.38, 0.26, 1.0), ground + Vector3(cos(ang) * 1.3, rock_h * 0.5, sin(ang) * 1.3))
+				rock.mesh.radial_segments = 5
+				rock.rotation = Vector3(sin(ang) * 0.3, 0, -cos(ang) * 0.3)
+				_pop(rock, 0.9, Vector3(1, 0.05, 1), Vector3.ONE)
+			_smoke(ground + Vector3(0, 0.3, 0), Color(0.55, 0.42, 0.3), 18, Vector2(1.6, 3.0), 1.1, 0.8)
+			VfxLib.burst(self, ground + Vector3(0, 0.5, 0), {"tex": VfxLib.glow_tex(), "additive": false, "amount": int(18 * k), "life": 0.8,
+				"speed": Vector2(3.0, 8.0), "gravity": Vector3(0, -16, 0), "size": Vector2(0.18, 0.35), "end_scale": 0.6, "dir": Vector3(0, 1, 0), "spread": 60.0,
+				"ramp": VfxLib.ramp([Color(0.55, 0.4, 0.28, 1), Color(0.35, 0.25, 0.18, 0.0)])})
 		Element.Type.VENTO:
 			for i in 3:
-				_ring(ground + Vector3(0, 0.3 + i * 0.5, 0), color, Vector3.ONE * 0.5, Vector3.ONE * 2.4 * k, 0.5, Vector3.ZERO, i * 0.08)
-			_burst(pos, color, 16, 5.0, Vector3(0, 1, 0), 0.06, 0.6)
+				_slash(pos, Color(0.75, 1.0, 0.85), 5.0 * k, i * 120.0 + 20.0, 0.34, i * 0.06)
+			_sparks(pos, Color(0.8, 1.0, 0.85), int(30 * k), Vector2(4.0, 10.0), Vector3(0, 1, 0))
+			_smoke(ground + Vector3(0, 0.4, 0), Color(0.8, 0.95, 0.88), 12, Vector2(1.2, 2.4), 0.9, 0.5, true)
 		Element.Type.LUZ:
-			var beam := _node(_cyl(0.45, 9.0), Color(1.0, 1.0, 0.7, 0.85), Vector3(pos.x, 4.5, pos.z))
-			_pop(beam, 0.4, Vector3.ONE, Vector3(0.1, 1, 0.1))
-			_burst(pos, color, int(22 * k), 3.0, Vector3(0, 3, 0), 0.08, 0.8)
+			var beam := _node(_cyl(1.0, 14.0), Color(1.0, 0.95, 0.6, 0.35), Vector3(pos.x, 7.0, pos.z))
+			beam.material_override.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+			_pop(beam, 0.55, Vector3.ONE, Vector3(0.15, 1, 0.15))
+			var core := _node(_cyl(0.4, 14.0), Color(1.0, 1.0, 0.9, 0.9), Vector3(pos.x, 7.0, pos.z))
+			core.material_override.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+			_pop(core, 0.4, Vector3.ONE, Vector3(0.1, 1, 0.1))
+			_glow(pos, Color(1.0, 0.95, 0.6), int(30 * k), Vector2(0.5, 1.2), 0.9, Vector2(1.0, 4.0), Vector3(0, 3, 0), 0.0, 0.8)
+			_ring_cam(pos, color, 5.0 * k, 0.5)
 		Element.Type.TREVAS:
-			_pop(_node(_sphere(0.9), color, pos), 0.5, Vector3.ONE * 0.2, Vector3.ONE * 1.8 * k)
-			_burst(pos, Color(0.6, 0.3, 0.8), int(22 * k), 2.5, Vector3(0, -1, 0), 0.1, 0.8)
+			var orb := _node(_sphere(1.1), Color(0.05, 0.02, 0.1, 1.0), pos)
+			_pop(orb, 0.6, Vector3.ONE * 0.2, Vector3.ONE * 1.7 * k)
+			VfxLib.burst(self, pos, {"amount": int(36 * k), "life": 0.7, "speed": Vector2(0.0, 1.0), "radial_accel": -16.0, "radius": 3.2,
+				"size": Vector2(0.4, 0.8), "ramp": VfxLib.ramp([Color(0.7, 0.35, 1.0, 0), Color(0.7, 0.35, 1.0, 1), Color(0.3, 0.1, 0.5, 0)], [0.0, 0.4, 1.0])})
+			_glow(pos, Color(0.65, 0.3, 0.95), int(24 * k), Vector2(0.5, 1.0), 0.8, Vector2(3.0, 8.0))
+			_shock(ground, Color(0.6, 0.25, 0.9), 6.0 * k, 0.65)
 
 
-func _projectile(from: Vector3, to: Vector3, color: Color, element: Element.Type) -> void:
-	var mesh: Mesh = _box(Vector3(0.25, 0.25, 0.7)) if element == Element.Type.AGUA_GELO else _sphere(0.25)
-	var node := _node(mesh, color, from)
-	if element == Element.Type.AGUA_GELO:
-		node.look_at(to, Vector3.UP)
-	var trail := CPUParticles3D.new()
-	trail.local_coords = false
-	trail.amount = 24
-	trail.lifetime = 0.3
-	trail.initial_velocity_min = 0.2
-	trail.initial_velocity_max = 0.8
-	trail.gravity = Vector3.ZERO
-	trail.spread = 180.0
-	trail.mesh = _sphere(0.1)
-	trail.mesh.material = _mat(color)
-	node.add_child(trail)
+func _bolt(top: Vector3, bottom: Vector3, color: Color, scale_k := 1.0) -> void:
+	var points: Array[Vector3] = [top]
+	for i in range(1, 8):
+		var p := top.lerp(bottom, i / 7.0)
+		if i < 7:
+			p += Vector3(randf_range(-0.9, 0.9), 0, randf_range(-0.9, 0.9))
+		points.append(p)
+	var nodes: Array[MeshInstance3D] = []
+	for i in range(1, points.size()):
+		var glow_seg := _line(points[i - 1], points[i], Color(color, 0.35), 0.55 * scale_k)
+		glow_seg.material_override.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		var core_seg := _line(points[i - 1], points[i], Color(1, 1, 1, 1), 0.12 * scale_k)
+		core_seg.material_override.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		nodes += [glow_seg, core_seg]
 	var tw := create_tween()
-	tw.tween_property(node, "position", to, clampf(from.distance_to(to) / 50.0, FLY_TIME, 0.7))
+	tw.tween_interval(0.08)
+	tw.tween_callback(func() -> void:
+		for n in nodes:
+			n.visible = false
+	)
+	tw.tween_interval(0.05)
+	tw.tween_callback(func() -> void:
+		for n in nodes:
+			n.visible = true
+	)
+	tw.tween_interval(0.12)
+	tw.tween_callback(func() -> void:
+		for n in nodes:
+			n.queue_free()
+	)
+
+
+## A glowing orb (or an ice shard) flying from `from` to `to`, with a trail.
+func _projectile(from: Vector3, to: Vector3, color: Color, element: Element.Type) -> void:
+	var node := Node3D.new()
+	node.position = from
+	add_child(node)
+	var fly := clampf(from.distance_to(to) / 50.0, FLY_TIME, 0.7)
+	if element == Element.Type.AGUA_GELO:
+		var shard := _node(_box(Vector3(0.28, 0.28, 1.3)), Color(0.7, 0.95, 1.0, 0.95), Vector3.ZERO)
+		shard.material_override.emission_enabled = true
+		shard.material_override.emission = Color(0.4, 0.85, 1.0)
+		shard.material_override.emission_energy_multiplier = 2.5
+		remove_child(shard)
+		node.add_child(shard)
+		node.look_at_from_position(from, to)
+	else:
+		for layer in [[2.2, color, 0.9], [1.0, Color(1, 1, 1), 1.0]]:
+			var quad := QuadMesh.new()
+			quad.size = Vector2.ONE * layer[0]
+			var mat := VfxLib.particle_mat(VfxLib.glow_tex(), true)
+			mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+			mat.vertex_color_use_as_albedo = false
+			mat.albedo_color = Color(layer[1].r * 1.5, layer[1].g * 1.5, layer[1].b * 1.5, layer[2])
+			quad.material = mat
+			var mi := MeshInstance3D.new()
+			mi.mesh = quad
+			node.add_child(mi)
+	var trail_ramp := VfxLib.ramp([Color(1, 1, 1, 0.9), color, Color(color, 0)], [0.0, 0.3, 1.0])
+	if element == Element.Type.FOGO:
+		trail_ramp = VfxLib.ramp([Color(1, 0.9, 0.5, 0.9), Color(1, 0.45, 0.1, 0.8), Color(0.2, 0.08, 0.05, 0)], [0.0, 0.35, 1.0])
+	VfxLib.trail(node, {"tex": VfxLib.smoke_tex() if element == Element.Type.FOGO else VfxLib.glow_tex(), "amount": 40, "life": 0.45,
+		"speed": Vector2(0.2, 1.2), "size": Vector2(0.8, 1.4), "end_scale": 0.0, "radius": 0.15, "ramp": trail_ramp})
+	var tw := create_tween()
+	tw.tween_property(node, "position", to, fly)
 	await tw.finished
 	node.queue_free()
+
+
+# --- Dodge visuals -------------------------------------------------------------------
+
+## Glowing speed streaks on the floor between two spots.
+func _dash_streak(a: Vector3, b: Vector3) -> void:
+	var d := b - a
+	d.y = 0.0
+	if d.length() < 0.1:
+		return
+	var forward := d.normalized()
+	var side := forward.cross(Vector3.UP)
+	for off: float in [-0.7, 0.0, 0.7]:
+		var width := 1.5 if off == 0.0 else 0.8
+		var from := a + side * off
+		var to := b + side * off
+		var q := VfxLib.animated_quad(self, Vector2(width, from.distance_to(to)), "streak", {"color": DODGE_COLOR, "energy": 2.6}, 0.55)
+		q.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var y_axis := (to - from).normalized()
+		var z_axis := Vector3.UP
+		var x_axis := y_axis.cross(z_axis)
+		q.transform = Transform3D(Basis(x_axis, y_axis, z_axis), (from + to) * 0.5 + Vector3(0, 0.07, 0))
+
+
+func _vanish(c: Combatant, m: Node3D, from: Vector3, to: Vector3) -> void:
+	_dash_streak(from, to)
+	# Holographic afterimages: one where it stood, one halfway along the dash.
+	VfxLib.ghost(self, m, DODGE_COLOR, 0.55)
+	var mid := VfxLib.ghost(self, m, Color(0.6, 0.8, 1.0), 0.4)
+	mid.global_position = (from + to) * 0.5
+	VfxLib.flash_star(self, from + Vector3(0, 1.1, 0), DODGE_COLOR, 2.6, 0.2)
+	_glow(from + Vector3(0, 1.0, 0), DODGE_COLOR, 22, Vector2(0.4, 0.9), 0.5, Vector2(2.0, 6.0), Vector3(0, 1, 0), 0.0, 0.5)
+	_smoke(from + Vector3(0, 0.3, 0), Color(0.75, 0.85, 0.9), 8, Vector2(1.0, 1.8), 0.7, 0.5)
+	m.visible = false
+
+
+func _appear(c: Combatant, pos: Vector3) -> void:
+	var m: Node3D = _models[c]
+	m.position = pos
+	m.visible = true
+	VfxLib.flash_star(self, pos + Vector3(0, 1.1, 0), DODGE_COLOR, 2.2, 0.18)
+	_shock(pos, DODGE_COLOR, 3.4, 0.45)
+	_glow(pos + Vector3(0, 0.6, 0), DODGE_COLOR, 16, Vector2(0.3, 0.7), 0.45, Vector2(1.5, 4.0), Vector3(0, 1, 0), 0.0, 0.4)
+	if c.is_alive():
+		_reset_idle(c)
+
+
+## Short dust puffs along the floor while a character runs.
+func _dust_trail(m: Node3D, duration: float) -> void:
+	var t := 0.0
+	while t < duration:
+		_smoke(m.global_position + Vector3(0, 0.15, 0), Color(0.75, 0.82, 0.85), 3, Vector2(0.8, 1.5), 0.6, 0.4)
+		await get_tree().create_timer(0.07).timeout
+		t += 0.07
+
+
+func flash(target: Combatant) -> void:
+	var m: Node3D = _models[target]
+	var mat := VfxLib.ensure_flash(m)
+	mat.set_shader_parameter("amount", 1.0)
+	create_tween().tween_method(func(v: float) -> void: mat.set_shader_parameter("amount", v), 1.0, 0.0, 0.3)
+
+
+func _burst(pos: Vector3, color: Color, amount: int, speed: float, gravity: Vector3, size: float, lifetime: float) -> void:
+	_glow(pos, color, amount, Vector2(size * 4.0, size * 8.0), lifetime, Vector2(speed * 0.4, speed), gravity)
 
 
 # --- Primitives --------------------------------------------------------------
@@ -426,20 +605,6 @@ func _dodge_later(target: Combatant, text: String, delay: float, return_after: f
 	dodge(target, text, true)
 	await get_tree().create_timer(return_after).timeout
 	settle(target)
-
-
-## Glowing streaks on the floor between two spots.
-func _dash_streak(a: Vector3, b: Vector3) -> void:
-	var d := b - a
-	d.y = 0.0
-	if d.length() < 0.1:
-		return
-	var side := d.normalized().cross(Vector3.UP)
-	for off: float in [-0.35, 0.0, 0.35]:
-		var from := a + side * off + Vector3(0, 0.06, 0)
-		var to := b + side * off + Vector3(0, 0.06, 0)
-		var streak := _line(from, to, Color(DODGE_COLOR, 0.75), 0.07 if off != 0.0 else 0.16)
-		_pop(streak, 0.45, Vector3.ONE, Vector3(1, 1, 0.15))
 
 
 func _flat_dir(from: Vector3, to: Vector3) -> Vector3:
@@ -531,40 +696,3 @@ func _line(a: Vector3, b: Vector3, color: Color, thick: float) -> MeshInstance3D
 	return node
 
 
-func _bolt(top: Vector3, bottom: Vector3, color: Color) -> void:
-	var nodes: Array[MeshInstance3D] = []
-	var prev := top
-	for i in range(1, 7):
-		var p := top.lerp(bottom, i / 6.0)
-		if i < 6:
-			p += Vector3(randf_range(-0.6, 0.6), 0, randf_range(-0.6, 0.6))
-		nodes.append(_line(prev, p, color, 0.14))
-		prev = p
-	var tw := create_tween()
-	tw.tween_interval(0.2)
-	tw.tween_callback(func() -> void:
-		for n in nodes:
-			n.queue_free()
-	)
-
-
-func _burst(pos: Vector3, color: Color, amount: int, speed: float, gravity: Vector3, size: float, lifetime: float) -> void:
-	var p := CPUParticles3D.new()
-	p.position = pos
-	p.one_shot = true
-	p.explosiveness = 1.0
-	p.amount = amount
-	p.lifetime = lifetime
-	p.direction = Vector3.UP
-	p.spread = 180.0
-	p.initial_velocity_min = speed * 0.5
-	p.initial_velocity_max = speed
-	p.gravity = gravity
-	var m := _sphere(size)
-	m.radial_segments = 6
-	m.rings = 3
-	m.material = _mat(color)
-	p.mesh = m
-	add_child(p)
-	p.emitting = true
-	get_tree().create_timer(lifetime + 0.5).timeout.connect(p.queue_free)

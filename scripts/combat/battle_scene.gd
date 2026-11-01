@@ -130,6 +130,7 @@ func _make_model(c: Combatant, color: Color) -> Node3D:
 			pokemon_instance.rotation_degrees.x = 90.0
 			pokemon_instance.scale = Vector3.ONE * MODEL_SCALE
 			root.add_child(pokemon_instance)
+			VfxLib.outline_model(pokemon_instance, 0.0035)
 			is_3d_pokemon = true
 
 			var anim_player: AnimationPlayer = _find_anim_player(pokemon_instance)
