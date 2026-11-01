@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.3 — Rodada 12 consolidada, 2026-11-01.  
+> **Revisão:** 1.4 — Rodada 13 consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -90,9 +90,9 @@ Explorar uma dungeon em 2D → encontrar um adversário → entrar na cena 3D �
 
 **APROVADO (R7-Q3 = B; esclarecido por R8-Q2 = C):** **Crawlmon não utiliza PP como recurso de combate**: os **quatro Moves equipados e o Tackle genérico não têm PP**, e tampouco se deve acrescentar um medidor ou custo de PP às ações do sistema. Os custos dos Moves e de Tackle são em **ATB** e, quando cabível, **Burst**. A antiga dúvida sobre PP de Tackle está **encerrada** por R8-Q2. Não propor PP novamente como pendência.
 
-**APROVADO (R12-Q1 = A):** **todos os Moves de categoria mágica/especial consomem MP**, além de seus custos de **ATB e Burst, quando aplicáveis**. O custo de MP individual por Move permanece pendente. Esta decisão **não** dispensa os custos já aprovados, **não** cria PP e não determina o consumo de MP por Moves de outras categorias.
+**APROVADO (R12-Q1 = A):** **todos os Moves de categoria mágica/especial consomem MP**, além de seus custos de **ATB e Burst, quando aplicáveis**. **R13-Q1 = A aprovou posteriormente custo-base comum de MP, com exceções por Move**. Os números do custo-base e das exceções permanecem pendentes. Esta decisão **não** dispensa os custos já aprovados, **não** cria PP e não determina o consumo de MP por Moves de outras categorias.
 
-**PENDENTE:** custo e propriedades das **exceções individuais de Move**, **quantidades de MP gastas por cada Move mágico/especial**, detalhes do catálogo de itens, momento de cobrança dos consumíveis e efeitos concretos de buffs/debuffs. **Já aprovados:** Tackle (2 ATB), Moves equipados (2 ATB salvo exceções), ITENS (1 ATB por uso), Evade (3 ATB), Tactic (0), custos de Burst e **MP adicional nos Moves mágicos/especiais**. Não criar PP nem alterar ATB/Burst.
+**PENDENTE:** custo e propriedades das **exceções individuais de Move**, **valor do custo-base comum de MP e exceções individuais por Move**, detalhes do catálogo de itens, momento de cobrança dos consumíveis e efeitos concretos de buffs/debuffs. **Já aprovados:** Tackle (2 ATB), Moves equipados (2 ATB salvo exceções), ITENS (1 ATB por uso), Evade (3 ATB), Tactic (0), custos de Burst e **MP adicional nos Moves mágicos/especiais**. Não criar PP nem alterar ATB/Burst.
 
 ## 3. Sistema ATB — especificação aprovada
 
@@ -211,7 +211,7 @@ Ataque direcionado a um Pokémon → tentativa de Evade ativo com custo de 3 →
 
 Sem decisão adicional, não fixar:
 
-- **Pokémon e progressão:** espécies elegíveis, protagonista inicial, recrutamento, reservas e trocas (**equipe ativa de até 3 aprovada**), evolução, **cinco atributos inspirados em SMT3 em escala-base 1–100, Agilidade/Velocidade como atributo único, HP derivado de Vitalidade+nível e MP máximo de Magia+nível**. Ao subir de nível, **o jogador distribui manualmente os pontos apenas do protagonista**, com quantidade fixa por nível ainda sem valor; **aliados crescem automaticamente** por regras futuras (R12-Q4/Q5). **MP persiste entre batalhas da mesma dungeon** (R12-Q3). Valor de referência do ATB e fórmulas de HP/MP seguem pendentes.
+- **Pokémon e progressão:** espécies elegíveis, protagonista inicial, recrutamento, reservas e trocas (**equipe ativa de até 3 aprovada**), evolução, **cinco atributos inspirados em SMT3 em escala-base 1–100, Agilidade/Velocidade como atributo único, HP derivado de Vitalidade+nível e MP máximo de Magia+nível**. Ao subir de nível, **o jogador distribui manualmente os pontos apenas do protagonista**, com **1 ponto distribuível por nível (R13-Q4)**; **aliados crescem automaticamente por curvas próprias de cada espécie**, ainda sem valores/fórmulas (R13-Q5). **MP persiste entre batalhas da mesma dungeon** (R12-Q3), é recuperável por **consumíveis e pontos de descanso** (R13-Q2) e **restaurado ao máximo no início de cada nova exploração** (R13-Q3). Valor de referência do ATB e fórmulas de HP/MP seguem pendentes.
 - **Moves:** Tackle genérico versus golpe homônimo da franquia (**Tackle genérico custa 2 ATB, sem PP**); lista concreta dos quatro Moves por Pokémon, status, efeitos e **exceções ao custo-base de 2 ATB**, incluindo golpes de custo 5 e requisitos Burst. **Nenhuma ação do Crawlmon utiliza PP** (R8-Q2; complementa R7-Q3).
 - **Combate 3D:** câmera, sequência de animações, timings, hitstop, interface gráfica final, modelos, rigging, VFX e arenas por bioma.
 - **Dungeon 2D:** geração **procedural por exploração/andar, com salas e corredores** já aprovada (R7-Q5); seed reproduzível (R8-Q3), **layout persistente nas revisitas da mesma exploração** (R9-Q2), **inimigos visíveis que patrulham e perseguem após detecção** (R9-Q3), **inimigos derrotados removidos até o fim da exploração** (R9-Q4) e **movimentação cardinal em quatro direções** (R9-Q5). Permanecem pendentes parâmetros do gerador, interface/armazenamento de seeds, escala dos tiles, alcance/IA de detecção, movimentação contínua vs. tiles/turnos, armadilhas, itens, progressão, posicionamento e retorno.
@@ -224,7 +224,7 @@ Sem decisão adicional, não fixar:
 
 **APROVADO (R10-Q2 = A):** escala numérica de **1 a 100 para os atributos-base** adotados no Crawlmon, antes de progressão/modificadores. Esta é uma regra própria do Crawlmon, não afirma que SMT3 usa a mesma escala nem define HP máximo, limites após progressão ou valores individuais de espécies.
 
-**APROVADO (R10-Q3 = A):** cada Pokémon possui **nível** e seus atributos **evoluem conforme o nível**. **PENDENTE:** nível máximo, experiência, curvas de crescimento, **quantidade numérica fixa de pontos concedidos por nível**, limites de distribuição e diferenças entre espécies. **R12-Q4 confirmou quantidade fixa por nível, sem aprovar o número; R12-Q5 restringiu a distribuição manual ao protagonista e estabeleceu crescimento automático dos aliados**, cujas regras continuam pendentes.
+**APROVADO (R10-Q3 = A):** cada Pokémon possui **nível** e seus atributos **evoluem conforme o nível**. **PENDENTE:** nível máximo, experiência, curvas/fórmulas de crescimento, limites de distribuição e diferenças entre espécies. **R13-Q4 fixou 1 ponto distribuível por nível para o protagonista** após R12-Q4. **R12-Q5 mantém a distribuição manual restrita ao protagonista e R13-Q5 estabelece curvas automáticas por espécie para os aliados**, sem valores/fórmulas aprovados.
 
 **APROVADO (R10-Q4 = A):** buffs/debuffs alteram os atributos por **estágios discretos positivos/negativos**, não por percentuais diretos arbitrários como regra primária. **PENDENTE:** estágios permitidos, multiplicadores, acumulação, duração, atributos afetáveis e interação com o sistema ATB. O custo de buff/debuff aplicado via Burst continua sendo **1 bloco Burst e nenhum ATB adicional** (R5-Q4).
 
@@ -238,27 +238,42 @@ Sem decisão adicional, não fixar:
 
 **APROVADO (R11-Q2 = A) — Vitalidade e HP:** **HP máximo é derivado da Vitalidade e do nível do Pokémon**, sem criar um atributo-base independente de HP além dos cinco inspirados em SMT3. HP continua sendo medidor de vida. **PENDENTE:** fórmula, progressão por nível, HP inicial, limites e arredondamento.
 
-**APROVADO (R11-Q3 = B) — Magia e MP:** o atributo **Magia afeta dano e efeitos mágicos** e Crawlmon terá também um **recurso MP separado**. **APROVADO posteriormente (R12-Q1/Q2/Q3):** **todos os Moves mágicos/especiais consomem MP adicional aos custos ATB/Burst**, o **MP máximo depende de Magia e nível**, e o **MP restante persiste entre batalhas da mesma dungeon**. **PENDENTE:** fórmula/limites de MP máximo, quantidade de MP por Move, recuperação, comportamento fora da dungeon, interface e demais interações. **MP não é PP**: continua proibido introduzir PP; o MP não substitui os custos aprovados de ATB/Burst.
+**APROVADO (R11-Q3 = B) — Magia e MP:** o atributo **Magia afeta dano e efeitos mágicos** e Crawlmon terá também um **recurso MP separado**. **APROVADO posteriormente (R12-Q1/Q2/Q3):** **todos os Moves mágicos/especiais consomem MP adicional aos custos ATB/Burst**, o **MP máximo depende de Magia e nível**, e o **MP restante persiste entre batalhas da mesma dungeon**. **APROVADO posteriormente em R13-Q1/Q2/Q3:** custo-base comum de MP com exceções individuais por Move; recuperação por consumíveis e pontos de descanso na dungeon; restauração de MP ao máximo no início de nova exploração. **PENDENTE:** fórmulas/limites de MP máximo, valores de MP e das exceções, detalhes de itens/descanso, interface e demais interações. **MP não é PP**: continua proibido introduzir PP; o MP não substitui os custos aprovados de ATB/Burst.
 
-**APROVADO (R11-Q4 = B) — evolução de atributos:** ao subir de nível, o **jogador distribui manualmente pontos de atributo**. **APROVADO posteriormente (R12-Q4/Q5):** cada nível concede uma **quantidade fixa de pontos, ainda sem número escolhido**, e a **distribuição manual pelo jogador aplica-se somente ao protagonista**. Os aliados **aumentam atributos automaticamente** por regras futuras, sem intervenção manual do jogador. **PENDENTE:** número fixo de pontos, atributos elegíveis, limites, restrições, pontos não distribuídos, critérios de crescimento automático dos aliados e regras dos inimigos. A distribuição manual aprovada em R11-Q4 permanece válida **para o protagonista**.
+**APROVADO (R11-Q4 = B) — evolução de atributos:** ao subir de nível, o **jogador distribui manualmente pontos de atributo**. **APROVADO posteriormente (R12-Q4/Q5):** cada nível concede uma **quantidade fixa de pontos** e a **distribuição manual pelo jogador aplica-se somente ao protagonista**. **R13-Q4 fixou 1 ponto distribuível por nível para o protagonista; R13-Q5 definiu curvas automáticas por espécie para os aliados**, sem valores/fórmulas. **PENDENTE:** atributos elegíveis, limites, restrições, pontos não distribuídos, fórmulas das curvas e regras dos inimigos. A distribuição manual aprovada em R11-Q4 permanece válida **para o protagonista**.
 
 **APROVADO (R11-Q5 = A) — Sorte:** **Sorte influencia probabilidades de combate**, como chance de crítico e/ou outros efeitos probabilísticos. **PENDENTE:** quais eventos exatamente são modificados e suas fórmulas/limites. Não atribuir valores de chance, modificadores de ATB nem taxas de recompensa não aprovados. As recompensas instantâneas existentes por crítico normal permanecem inalteradas.
 
-**Separação de estado:** catálogo/escala de atributos, nível, estágio de buff/debuff, ATB, Burst e ausência de PP são regras já aprovadas. A economia de MP está **parcialmente definida por R12** (uso por Moves mágicos/especiais, máximo ligado a Magia+nível e persistência entre batalhas na dungeon), mas **fórmulas, valores e recuperação não estão especificados**. Não tratar a documentação como implementação técnica.
+**Separação de estado:** catálogo/escala de atributos, nível, estágio de buff/debuff, ATB, Burst e ausência de PP são regras já aprovadas. A economia de MP está **parcialmente definida por R12–R13** (consumo por Moves mágicos/especiais, MP máximo ligado a Magia+nível, custo-base comum com exceções, persistência entre batalhas, recuperação por consumíveis/descanso e restauração ao iniciar nova exploração), mas **fórmulas, valores e detalhes de recuperação ainda não estão definidos**. Não tratar a documentação como implementação técnica.
 
 ### 7.3. Economia de MP e crescimento dos atributos — decisões da Rodada 12
 
-**APROVADO (R12-Q1 = A) — consumo de MP:** **todos os Moves mágicos/especiais gastam MP adicional**, além dos custos de **ATB e Burst já aprovados, quando aplicáveis**. Não definir aqui quais Moves concretos pertencem à categoria nem quanto MP cada um consome. Esta regra não autoriza substituir ATB/Burst por MP nem introduzir PP.
+**APROVADO (R12-Q1 = A) — consumo de MP:** **todos os Moves mágicos/especiais gastam MP adicional**, além dos custos de **ATB e Burst já aprovados, quando aplicáveis**. Não definir aqui quais Moves concretos pertencem à categoria. **R13-Q1 aprovou posteriormente custo-base comum de MP com exceções individuais por Move, ainda sem valores**. Esta regra não autoriza substituir ATB/Burst por MP nem introduzir PP.
 
 **APROVADO (R12-Q2 = A) — capacidade de MP:** **o MP máximo é derivado do atributo Magia e do nível do Pokémon**. **PENDENTE:** fórmula, valor inicial, multiplicadores, limites, arredondamento e comportamento se Magia ou nível mudar. Não presumir fórmula igual à de HP.
 
-**APROVADO (R12-Q3 = B) — persistência de MP:** **o MP atual/restante é conservado entre os encontros da mesma dungeon**, em vez de ser restaurado integralmente no início de cada combate. **PENDENTE:** métodos de recuperação, MP ao sair/retornar à dungeon, eventual regeneração durante a exploração e condições extraordinárias. A regra de **início de batalha com 0/5 ATB normal** permanece independente e inalterada.
+**APROVADO (R12-Q3 = B) — persistência de MP:** **o MP atual/restante é conservado entre os encontros da mesma dungeon**, em vez de ser restaurado integralmente no início de cada combate. **APROVADO depois (R13-Q2/Q3):** recuperação por consumíveis e pontos de descanso na dungeon; MP restaurado ao máximo ao iniciar nova exploração. **PENDENTE:** efeitos/limites de recuperação, regeneração espontânea (não aprovada), revisitas e circunstâncias extraordinárias. A regra de **início de batalha com 0/5 ATB normal** permanece independente e inalterada.
 
-**APROVADO (R12-Q4 = A) — pontos por nível:** **cada nível concede uma quantidade fixa de pontos de atributo**; a **quantidade exata ainda não foi decidida**. A regra de quantidade fixa não determina limite de atributos, banco de pontos, curva de experiência ou a regra de atribuição automática dos aliados.
+**APROVADO (R12-Q4 = A) — pontos por nível:** **cada nível concede uma quantidade fixa de pontos de atributo**; **R13-Q4 fixou posteriormente 1 ponto distribuível por nível para o protagonista**. A regra de quantidade fixa não determina limite de atributos, banco de pontos, curva de experiência ou a regra de atribuição automática dos aliados.
 
-**APROVADO (R12-Q5 = B) — controle da distribuição:** **somente os pontos do protagonista são distribuídos manualmente pelo jogador**. Pokémon **aliados crescem automaticamente ao subir de nível**, com regras específicas a definir posteriormente. Esta decisão esclarece o escopo de R11-Q4 e **não altera a IA de combate dos aliados**, o tamanho máximo da equipe nem define crescimento dos inimigos.
+**APROVADO (R12-Q5 = B) — controle da distribuição:** **somente os pontos do protagonista são distribuídos manualmente pelo jogador**. Pokémon **aliados crescem automaticamente ao subir de nível**, seguindo **curvas específicas de cada espécie** (R13-Q5), com valores e fórmulas pendentes. Esta decisão esclarece o escopo de R11-Q4 e **não altera a IA de combate dos aliados**, o tamanho máximo da equipe nem define crescimento dos inimigos.
 
-**Pendências preservadas:** custos MP por Move, regeneração e recuperação, persistência de MP fora da dungeon, fórmula de MP máximo, quantidade fixa de pontos por nível, tratamento de pontos não distribuídos e sistema de crescimento automático dos aliados. O GDD **não institui PP** e preserva os custos ATB/Burst.
+**Pendências preservadas:** números do custo-base de MP e exceções, detalhes de consumíveis e descanso, fórmula de MP máximo, tratamento de pontos não distribuídos e curvas numéricas dos aliados. **R13 resolveu restauração de MP ao iniciar nova exploração e fixou 1 ponto por nível do protagonista**. O GDD **não institui PP** e preserva os custos ATB/Burst.
+
+### 7.4. MP e progressão por espécie — decisões da Rodada 13
+
+**APROVADO (R13-Q1 = A):** Moves mágicos/especiais têm **custo-base comum de MP com exceções individuais por Move**. **PENDENTE:** valor do custo-base, lista de exceções e valores individuais. **ATB/Burst continuam sendo cobrados conforme as regras aprovadas**; não introduzir PP.
+
+**APROVADO (R13-Q2 = B):** MP pode ser recuperado por **consumíveis e pontos de descanso/recuperação dentro das dungeons**. **PENDENTE:** efeitos, quantidade restaurada, condições, localização e limites dos pontos e itens. Não presumir regeneração espontânea.
+
+**APROVADO (R13-Q3 = A):** **MP é restaurado ao máximo no início de cada nova exploração**. O **MP restante continua persistindo entre combates da mesma dungeon** (R12-Q3). Esta regra não define recuperação de HP ou outras condições de início da exploração.
+
+**APROVADO (R13-Q4 = A):** o **protagonista recebe 1 ponto de atributo distribuível por nível**, alocado manualmente pelo jogador. **PENDENTE:** restrições de distribuição, limites e tratamento de pontos não utilizados. Não extrapolar esse 1 ponto ao crescimento dos aliados.
+
+**APROVADO (R13-Q5 = A):** atributos dos aliados **crescem automaticamente por curvas específicas de espécie**. **PENDENTE:** valores, fórmulas, arredondamentos, limites e variação entre indivíduos. A distribuição manual segue exclusiva do protagonista.
+
+**Preservação:** as regras ATB/Burst, a ausência de PP, a escala de atributos-base 1–100 e as decisões sobre IA permanecem inalteradas.
+
 
 
 
@@ -368,6 +383,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-078 | R12-Q3 = B: **MP restante persiste entre batalhas da mesma dungeon**; recuperação e comportamento fora da dungeon pendentes. |
 | D-079 | R12-Q4 = A: **cada nível concede quantidade fixa de pontos de atributo**, cujo número ainda não foi escolhido. |
 | D-080 | R12-Q5 = B: **somente o protagonista tem pontos de atributos distribuídos manualmente pelo jogador**; aliados crescem automaticamente conforme regras futuras. Esclarece o escopo de D-074. |
+| D-081 | R13-Q1 = A: **MP tem custo-base comum para Moves mágicos/especiais com exceções individuais**, sem valores definidos; preservar ATB/Burst e ausência de PP. |
+| D-082 | R13-Q2 = B: **MP recuperável por consumíveis e pontos de descanso/recuperação na dungeon**, detalhes pendentes. |
+| D-083 | R13-Q3 = A: **MP restaurado ao máximo no início de nova exploração**; persiste entre combates da mesma dungeon (D-078). |
+| D-084 | R13-Q4 = A: **protagonista recebe 1 ponto de atributo distribuível por nível**; distribuição manual exclusiva do protagonista. |
+| D-085 | R13-Q5 = A: **crescimento automático de aliados por curvas específicas de espécie**, valores e fórmulas pendentes. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -537,39 +557,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Preservação das regras anteriores:** MP é independente de PP (que não existe); o custo MP dos Moves mágicos/especiais **não substitui** ATB/Burst. Os níveis, a escala de atributos-base 1–100, o valor numérico de referência do ATB ainda pendente e as demais regras aprovadas permanecem inalterados.
 
-## 10.12. Rodada 13 — MP e evolução dos atributos (cinco perguntas abertas)
+## 10.12. Rodada 13 — MP e evolução dos atributos (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa está aprovada.
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01. Decisões D-081 a D-085 registradas nas seções técnicas.
 
-**R13-Q1 — Como determinar o custo de MP de cada Move mágico/especial?**  
-A. **Custo-base comum de MP**, com exceções por Move a especificar; o valor-base permanece pendente.  
-B. **Custo de MP individual por Move**, sem custo-base presumido; cada ficha de Move recebe posteriormente seu valor.  
-C. Outra regra, especificada pelo criador.  
-*Os custos ATB/Burst continuam obrigatórios quando aplicáveis. Esta pergunta não define valores numéricos.*
+| ID | Resposta do criador | Regra incorporada |
+| --- | --- | --- |
+| **R13-Q1** | **A** — “Moves mágicos/especiais têm custo-base comum de MP, com exceções individuais; valor-base ainda pendente.” | **Custo-base comum de MP com exceções por Move**, sem valores definidos. |
+| **R13-Q2** | **B** — “MP pode ser recuperado por consumíveis e por pontos de descanso/recuperação na dungeon; detalhes pendentes.” | **Itens e pontos de descanso/recuperação na dungeon** restauram MP, com condições e efeitos pendentes. |
+| **R13-Q3** | **A** — “MP é restaurado ao máximo no início de uma nova exploração; continua persistindo entre combates da mesma dungeon.” | MP **restaurado ao máximo ao iniciar nova exploração**; persiste entre batalhas na mesma dungeon. |
+| **R13-Q4** | **A** — “O protagonista recebe 1 ponto distribuível de atributo por nível.” | **1 ponto distribuível ao protagonista por nível**, sem assumir quantidades numéricas para aliados. |
+| **R13-Q5** | **A** — “Atributos dos aliados crescem automaticamente por curvas específicas de espécie; valores e fórmulas pendentes.” | **Curvas automáticas por espécie para aliados**, ainda sem fórmulas nem valores. |
 
-**R13-Q2 — Que fontes de recuperação de MP estarão disponíveis dentro das dungeons?**  
-A. **Somente consumíveis específicos de recuperação de MP**, com itens, efeitos e limites a definir.  
-B. **Consumíveis e pontos de descanso/recuperação dentro da dungeon**, com regras e frequência a definir.  
-C. Outra fonte ou combinação, especificada pelo criador.  
-*MP continua persistindo entre batalhas na dungeon; recuperação automática não foi aprovada.*
+**PENDENTE:** valor-base e exceções de MP, funcionamento dos pontos de descanso/itens, fórmula de MP máximo, pontos não distribuídos e curvas dos aliados. **ATB/Burst preservados e PP inexistente.**
 
-**R13-Q3 — O que acontece com o MP atual ao terminar uma dungeon e iniciar uma nova exploração?**  
-A. **Restaurar ao máximo no início de uma nova exploração**, sem mudar a persistência entre batalhas dentro da dungeon.  
-B. **Conservar o MP restante até recuperação por um mecanismo próprio**, inclusive entre explorações.  
-C. Outra regra de persistência, especificada pelo criador.  
-*Essa decisão não define HP, ATB, Burst ou consequências de derrota.*
+## 10.13. Rodada 14 — recuperação e evolução (cinco perguntas abertas)
 
-**R13-Q4 — Qual será a quantidade fixa de pontos distribuíveis ao protagonista por nível?**  
-A. **1 ponto por nível**.  
-B. **3 pontos por nível**.  
-C. **Outro número ou adiamento explícito**, especificado pelo criador.  
-*Os números são apenas propostas; nenhuma quantidade está aprovada. Pontos de aliados não passam a ser distribuídos manualmente.*
+**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa aprovada.
 
-**R13-Q5 — Como os aliados recebem seu crescimento automático de atributos ao subir de nível?**  
-A. **Curvas automáticas específicas por espécie**, cujos valores e fórmulas ficam pendentes.  
-B. **Distribuição automática de pontos segundo prioridades configuradas para cada aliado**, com interface e regras ainda a definir.  
-C. Outra regra automática, especificada pelo criador.  
-*Os aliados continuam sob IA no combate. O protagonista mantém distribuição manual de pontos.*
+**R14-Q1 — Quando descontar MP de um Move mágico/especial?**  
+A. **Na ativação do Move**, com regras de cancelamento/reembolso pendentes.  
+B. **Na conclusão do Move**, mesmo que erre, com interrupções pendentes.  
+C. Outro momento, descrito pelo criador.  
+*O custo ATB/Burst continua vigente, e valores numéricos de MP permanecem pendentes.*
+
+**R14-Q2 — Quanto MP recuperam os pontos de descanso da dungeon?**  
+A. **MP completo**, restaurando até o máximo quando o ponto é usado; condições de uso pendentes.  
+B. **MP parcial**, com quantidade ou percentual futuro a definir.  
+C. Outra regra de recuperação.  
+*Itens de recuperação de MP continuam aprovados; não presumir cura de HP.*
+
+**R14-Q3 — O HP restante persiste entre batalhas na mesma dungeon?**  
+A. **Sim**, HP atual permanece até ser recuperado por mecanismos ainda a definir.  
+B. **Não**, HP volta ao máximo no início de cada combate.  
+C. Outra regra de HP.  
+*MP continua persistindo entre batalhas, independentemente desta escolha.*
+
+**R14-Q4 — Pontos de atributo do protagonista ainda não distribuídos podem ser guardados?**  
+A. **Sim**, acumulam até o jogador distribuí-los, inclusive após subir mais níveis.  
+B. **Não**, cada novo ponto precisa ser distribuído na subida de nível; detalhes da interface pendentes.  
+C. Outra regra.  
+*O protagonista recebe 1 ponto por nível conforme R13-Q4.*
+
+**R14-Q5 — Aliados da mesma espécie e nível podem ter atributos-base diferentes?**  
+A. **Não**, a curva automática é determinística por espécie e nível, em condições equivalentes.  
+B. **Sim**, existe variação individual dentro da curva por espécie, com limites pendentes.  
+C. Outra regra.  
+*Não define as fórmulas nem os valores do crescimento.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -588,5 +622,6 @@ C. Outra regra automática, especificada pelo criador.
 | 1.1 | 2026-11-01 | Rodada 10 (D-066 a D-070): modelo de atributos de SMT III como referência; escala-base 1–100, progressão por níveis, buffs/debuffs em estágios e Velocidade de referência fixa ainda sem número. Adaptação de Agilidade/Velocidade, HP, Magia e Sorte pendente; abre Rodada 11. | Rodada 10 fechada / Rodada 11 aberta |
 | 1.2 | 2026-11-01 | Rodada 11 (D-071 a D-075): Agilidade e Velocidade unificadas; HP derivado de Vitalidade+nível; Magia ligada a dano/efeitos mágicos e MP separado aprovado; pontos de atributos distribuídos manualmente por nível; Sorte influencia probabilidades de combate. Regras numéricas de MP, HP, progressão e Sorte pendentes; abre Rodada 12. | Rodada 11 fechada / Rodada 12 aberta |
 | 1.3 | 2026-11-01 | Rodada 12 (D-076 a D-080): Moves mágicos/especiais consomem MP além de ATB/Burst, MP máximo derivado de Magia+nível, MP restante preservado entre batalhas na dungeon, pontos fixos por nível ainda sem valor, distribuição manual só do protagonista e crescimento automático dos aliados; abre Rodada 13. | Rodada 12 fechada / Rodada 13 aberta |
+| 1.4 | 2026-11-01 | Rodada 13 (D-081 a D-085): custo-base comum de MP com exceções individuais (valores pendentes); recuperação de MP por itens e pontos de descanso; MP máximo ao iniciar nova exploração; protagonista recebe 1 ponto distribuível por nível; aliados crescem por curvas de espécie. Abre Rodada 14. | Rodada 13 fechada / Rodada 14 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
