@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.9 — Rodada 18 consolidada, 2026-11-01.  
+> **Revisão:** 1.10 — Rodada 19 consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -340,6 +340,21 @@ Sem decisão adicional, não fixar:
 
 **Preservação:** não criar fórmulas ou probabilidades, nem presumir que o protagonista perde níveis/progressão entre explorações. Não introduzir PP nem alterar custos ATB/Burst, medidores de HP/MP, teto de recompensas multi-hit ou regras de pausa de Tactic. Todas as regras acima são **decisões documentadas, não implementação**.
 
+### 7.10. Telemetria em mudanças de equipe, duas categorias e Natures — decisões da Rodada 19
+
+**APROVADO (R19-Q1 = A) — retorno de aliados:** **quando um Pokémon aliado sai da equipe e posteriormente retorna, ele preserva seu histórico individual de telemetria**, incluindo registros anteriores à saída. Essa regra é compatível com a persistência do histórico do mesmo indivíduo entre explorações (R18-Q1); não atribuir esse histórico a outro Pokémon da mesma espécie. **PENDENTE:** comportamento se o Pokémon deixar de existir, condições técnicas de armazenamento e eventuais ações executadas fora da equipe.
+
+**APROVADO (R19-Q2 = C) — até duas categorias:** cada ação/execução na telemetria pode ser classificada em **no máximo duas categorias**, conforme a resposta literal do criador: **“no maxim duas categorias”**. A classificação pode admitir uma ou duas categorias, **sem obrigatoriedade de usar duas**. Esta decisão **não transforma uma execução em duas ações**: uma execução de Move continua sendo uma ação para a contagem de execuções (R18-Q3), independente de hits e alvos. **PENDENTE:** como selecionar as categorias em uma ação candidata a mais de duas; se ambas têm a mesma prioridade; como uma ação associada a duas categorias participa da frequência em cada categoria; e classificação de ações que não são Moves. Não pressupor a seleção automática de categorias ou pesos.
+
+**APROVADO (R19-Q3 = A) — início efetivo da execução:** uma ação é registrada pela telemetria **quando sua execução efetivamente começa**, ainda que depois falhe, erre, seja interrompida ou cancelada. Uma intenção/comando confirmado **que não chegou a iniciar sua execução** não é registrada por esta regra. O sucesso continua não sendo condição de registro (R17-Q2). **PENDENTE:** evento técnico que distingue confirmação de comando e início efetivo para cada tipo de ação. Esta decisão **não altera** as regras de cobrança ou reembolso de MP, ATB e Burst.
+
+**APROVADO (R19-Q4 = A) — distribuição preservada quando Nature mudar:** ao sortear novamente a Nature do protagonista no início de uma exploração (R18-Q4), **preservar integralmente os pontos de atributo anteriormente distribuídos pelo jogador**. **Substituir apenas os efeitos associados à Nature anterior pelos efeitos da nova Nature**, não reabrindo automaticamente a distribuição dos pontos já alocados. **PENDENTE:** recomposição numérica dos atributos-base, limites 1–100, efeitos sobre HP/MP derivados e o estado atual desses recursos; nenhuma fórmula ou reset de níveis foi escolhido.
+
+**APROVADO (R19-Q5 = B) — modificadores flexíveis de Nature:** **Natures podem conceder bônus e penalidades aos atributos-base sem a exigência de um par fixo de atributo favorecido e atributo prejudicado**. Não exigir que toda Nature aumente necessariamente um atributo e reduza outro. **PENDENTE:** catálogo, se existem Natures neutras, atributos afetados, intensidades, combinações permitidas, limites e relação com crescimento. Os efeitos de Nature sobre crescimento e tendências comportamentais continuam aprovados (R15-Q4), e a Tactic escolhida continua prevalecendo integralmente sobre tendências de Nature durante sua vigência (R16-Q5).
+
+**Rastreabilidade:** R19-Q2 é uma resposta **C personalizada**, não aprovação irrestrita da alternativa B anterior. O teto de **duas categorias** não substitui o teto de **uma execução** e não interfere nas recompensas ATB multi-hit/multi-alvo. R19-Q4 preserva os pontos distribuídos e esclarece a mudança de Nature; R19-Q5 deixa a estrutura de bônus/penalidades flexível sem adicionar números. **Estas são regras documentais, não implementação em código.** Permanecem inexistentes os PP, e os custos ATB/Burst não foram modificados.
+
+
 
 
 
@@ -484,6 +499,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-108 | R18-Q3 = A: **uma execução de Move conta uma única ação na telemetria**, independentemente de hits/alvos; não altera recompensas ATB multi-hit/multi-alvo. |
 | D-109 | R18-Q4 = A: **Nature do protagonista sorteada novamente no início de cada nova exploração**, probabilidades pendentes; não estender reroll a aliados/eventos ou presumir reset de progressão. |
 | D-110 | R18-Q5 = A: **Natures modificam atributos-base**, além do crescimento/comportamento já aprovados; atributos, limites e valores ainda pendentes. |
+| D-111 | R19-Q1 = A: **Pokémon aliado que sai e retorna à equipe preserva seu histórico individual de telemetria**, inclusive os registros anteriores à saída. |
+| D-112 | R19-Q2 = C — “no maxim duas categorias”: **no máximo duas categorias de telemetria por ação**, preservando uma execução como uma ação, mesmo em multi-hit/multi-alvo; escolha e frequência de categorias pendentes. |
+| D-113 | R19-Q3 = A: **registrar na telemetria ao começar efetivamente a execução**, ainda que falhe ou seja interrompida; comando que não iniciou a execução não conta; cobranças ATB/MP/Burst inalteradas. |
+| D-114 | R19-Q4 = A: **ao sortear nova Nature do protagonista, preservar pontos de atributos já distribuídos e substituir apenas os efeitos de Nature**, recomposição numérica pendente. |
+| D-115 | R19-Q5 = B: **Natures admitem bônus e penalidades flexíveis em atributos-base, sem exigir um par positivo/negativo**; catálogo, atributos e valores pendentes. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -737,39 +757,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Preservação:** histórico e decisões anteriores continuam vigentes. Não foram aprovados números, fórmulas, PP ou custos ATB/Burst novos.
 
-## 10.18. Rodada 19 — telemetria, Natures e progressão entre explorações (cinco perguntas abertas)
+## 10.18. Rodada 19 — telemetria, Natures e progressão entre explorações (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa abaixo está aprovada.
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01. Decisões D-111 a D-115 incorporadas às seções técnicas.
 
-**R19-Q1 — Quando um Pokémon aliado sai da equipe e depois retorna, o que acontece com seu histórico de telemetria?**  
-A. **Manter o histórico individual**, incluindo os dados anteriores à saída da equipe; a telemetria volta a acompanhar o Pokémon quando ele participar de novos combates.  
-B. **Reiniciar o histórico ao retornar à equipe**, embora a persistência entre explorações continue valendo para integrantes que permanecem na equipe.  
+| ID | Resposta literal do criador | Regra aprovada e limites |
+| --- | --- | --- |
+| **R19-Q1** | **A** — “Ao sair da equipe e retornar, o Pokémon preserva seu histórico individual de telemetria.” | **Preservar o histórico pessoal de telemetria** quando o mesmo Pokémon sair da equipe e retornar. |
+| **R19-Q2** | **C** — “no maxim duas categorias” | **No máximo duas categorias por ação registrada na telemetria**. Uma execução de Move continua contando uma ação, mesmo multi-hit/multi-alvo. **PENDENTE:** quais categorias selecionar em caso de mais de duas elegíveis e como contabilizar frequência com dupla classificação. |
+| **R19-Q3** | **A** — “Uma ação é registrada quando sua execução começa efetivamente, ainda que posteriormente falhe ou seja interrompida.” | **Registrar no início efetivo da execução**, independentemente de sucesso ou interrupção posterior, sem alterar custos e regras de recursos. |
+| **R19-Q4** | **A** — “Após o novo sorteio de Nature do protagonista, preservar os pontos de atributos já distribuídos e substituir somente os efeitos da Nature anterior pelos da nova, com regras de recomposição ainda pendentes.” | **Manter pontos distribuídos** e **substituir somente os efeitos de Nature**; fórmulas de recomposição pendentes. |
+| **R19-Q5** | **B** — “Natures podem conceder bônus e penalidades sem exigir sempre um par de atributo favorecido e atributo prejudicado, com catálogo e valores pendentes.” | **Modificadores flexíveis nos atributos-base**, sem obrigatoriedade de combinação positiva/negativa; catálogo e números pendentes. |
+
+**Rastreabilidade:** R19-Q2 responde C com teto específico de duas categorias; não aprova classificar uma ação em um número ilimitado de categorias. R19-Q4 mantém a distribuição manual histórica. Regras de ATB/Burst e a inexistência de PP permanecem inalteradas.
+
+## 10.19. Rodada 20 — categorias da telemetria e efeitos de Nature (cinco perguntas abertas)
+
+**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa abaixo foi aprovada.
+
+**R20-Q1 — Quando uma ação for compatível com mais de duas categorias, como selecionar as duas registradas?**  
+A. **Categorias principais previamente definidas na ficha da ação/Move**, com regras de prioridade e classificação futura.  
+B. **Categorias identificadas pelos efeitos efetivamente executados**, aplicando prioridade de classificação a definir, sem exigir sucesso.  
+C. Outro critério, especificado pelo criador.  
+*A telemetria continua limitada a duas categorias e uma ação por execução; não há pesos nem prioridade aprovada.*
+
+**R20-Q2 — Uma ação classificada em duas categorias deve contribuir para a frequência de ambas?**  
+A. **Sim:** registra-se uma única ação, que contribui com uma ocorrência de categoria para cada uma das duas categorias marcadas.  
+B. **Não:** só a categoria principal recebe incremento de frequência; a secundária fica registrada apenas como classificação descritiva.  
+C. Outra regra de frequência, especificada pelo criador.  
+*Não multiplicar a quantidade de execuções nem hits/alvos. Essa escolha não define fórmulas de crescimento.*
+
+**R20-Q3 — Quando o mesmo Pokémon não está na equipe, seu histórico de telemetria deve mudar?**  
+A. **Fica preservado sem acumular novas ações enquanto estiver fora da equipe**; ao retornar, segue com o histórico anterior.  
+B. **Pode continuar acumulando ações realizadas fora da equipe**, se participar de combates por algum mecanismo futuro; como isso ocorre permanece pendente.  
 C. Outra regra, especificada pelo criador.  
-*O histórico já acompanha o mesmo Pokémon entre explorações; esta questão trata especificamente de saída e retorno à equipe.*
+*A permanência do histórico entre saída e retorno já está aprovada; esta questão não determina se há combates fora da equipe.*
 
-**R19-Q2 — Como classificar Moves que combinem mais de uma categoria de telemetria?**  
-A. **Uma categoria principal por execução**, definida na ficha do Move; critérios e classificação individual pendentes.  
-B. **Permitir registro em várias categorias pertinentes por execução**, mas sem transformar hits/alvos adicionais em mais execuções; regras de classificação pendentes.  
-C. Outra classificação, especificada pelo criador.  
-*Cada execução continua contando uma ação, conforme R18-Q3, independentemente de impactos ou alvos.*
-
-**R19-Q3 — Quando uma ação cancelada deve entrar na telemetria?**  
-A. **Somente se sua execução tiver começado efetivamente**, mesmo que depois seja interrompida ou não acerte.  
-B. **Desde a confirmação do comando**, incluindo tentativas canceladas antes do início efetivo; critérios de confirmação a detalhar.  
+**R20-Q4 — Se a nova Nature do protagonista alterar seu HP ou MP máximo, como ajustar o valor atual desses recursos?**  
+A. **Preservar a proporção de HP/MP atual em relação ao máximo anterior**, com arredondamento e fórmulas a definir.  
+B. **Preservar os valores absolutos atuais**, limitando-os ao novo máximo quando necessário, com demais casos a definir.  
 C. Outra regra, especificada pelo criador.  
-*O sucesso não é condição para a telemetria, mas o momento de contabilização ainda não está aprovado. Esta decisão não altera cobranças de MP/ATB/Burst.*
+*O novo sorteio de Nature substitui apenas efeitos de Nature e preserva pontos distribuídos. Não define valores nem recuperação automática.*
 
-**R19-Q4 — Quando a Nature do protagonista for sorteada novamente, como tratar a distribuição manual de atributos já realizada?**  
-A. **Preservar os pontos de nível distribuídos**, alterando apenas os efeitos atribuídos à Nature anterior para os da nova, com recomposição numérica futura a especificar.  
-B. **Reabrir uma oportunidade de redistribuição dos pontos anteriores** na nova exploração, conforme regras futuras, sem definir custo ou quantidade.  
-C. Outro tratamento, especificado pelo criador.  
-*O novo sorteio a cada exploração e o ponto obrigatório por nível já estão aprovados; a escolha não determina reinício de nível.*
-
-**R19-Q5 — Qual estrutura de modificadores as Natures aplicarão aos atributos-base?**  
-A. **Cada Nature favorece pelo menos um atributo e prejudica outro**, com atributos, combinações e intensidades ainda pendentes.  
-B. **Natures podem ter bônus e penalidades sem obrigatoriedade de pares positivos/negativos**, com catálogo e valores a definir.  
-C. Outra estrutura, especificada pelo criador.  
-*Não se aprova qualquer valor numérico; Nature continua influenciando crescimento e tendências de IA conforme decisões anteriores.*
+**R20-Q5 — O catálogo de Natures poderá incluir Natures sem modificadores diretos de atributos-base?**  
+A. **Sim:** permitir Natures neutras nos atributos-base, mantendo possíveis efeitos de crescimento e tendência de comportamento.  
+B. **Não:** cada Nature deve modificar diretamente pelo menos um atributo-base, sem exigir par bônus/penalidade.  
+C. Outra regra, especificada pelo criador.  
+*Nenhum atributo, bônus, penalidade ou Nature específica foi definido numericamente.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -798,5 +832,7 @@ C. Outra estrutura, especificada pelo criador.
 | 1.8 | 2026-11-01 | Rodada 17 (D-101 a D-105): histórico acumulado da telemetria, frequência de ações independentemente de sucesso, tática como influência principal no crescimento; Nature sorteada na geração do protagonista/eventos (R17-Q4 C indicando B); contador de MP pausa durante Tactic. Abre Rodada 18. | Rodada 17 fechada / Rodada 18 aberta |
 
 | 1.9 | 2026-11-01 | Rodada 18 (D-106 a D-110): histórico de telemetria acompanha o mesmo Pokémon entre dungeons/explorações; categorias amplas de ataques físicos/mágicos, defesa/esquiva, suporte e itens; cada Move multi-hit/multi-alvo conta uma ação por execução na telemetria; Nature do protagonista é sorteada novamente no início de cada exploração; Natures alteram atributos-base. Abre Rodada 19 para detalhes ainda pendentes. | Rodada 18 fechada / Rodada 19 aberta |
+
+| 1.10 | 2026-11-01 | Rodada 19 (D-111 a D-115): telemetria preservada após saída e retorno do mesmo aliado; até duas categorias por ação (R19-Q2 C), mantendo uma execução como uma ação; registro no início efetivo da execução; pontos manuais do protagonista preservados ao sortear nova Nature, substituindo apenas seus efeitos; modificadores de Nature flexíveis sem pares positivos/negativos obrigatórios. Abre Rodada 20. | Rodada 19 fechada / Rodada 20 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
