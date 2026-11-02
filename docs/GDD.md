@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.22 — Rodada 31 de gameplay consolidada, 2026-11-01.  
+> **Revisão:** 1.23 — Rodada 32 de gameplay consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -135,13 +135,24 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
 **APROVADO (R31-Q1 = B) — itens na retirada voluntária:** **ao abandonar voluntariamente a dungeon, os itens coletados nessa expedição que não estiverem sendo segurados são perdidos; os itens segurados são mantidos**, assim como a regra já aprovada para itens adquiridos na expedição encerrada por derrota definitiva (R25-Q4). Essa equivalência se refere **somente ao tratamento desses itens**, não a outras consequências de retirada/derrota. **PENDENTE:** tratamento de itens trazidos antes da expedição, definição exata de “segurado” e destino de outros recursos.
 
-**APROVADO (R31-Q2 = A) — protagonista incapacitado em combate:** **se o protagonista cair durante uma batalha 3D, os aliados ainda capazes de combater continuam a batalha sob controle da IA**. **PENDENTE:** condições completas de derrota/vitória da equipe, o que ocorre com o protagonista se os aliados vencerem e como ele se recupera. Não equiparar automaticamente a queda do protagonista à derrota definitiva (R23-Q3), nem conceder controle manual dos aliados.
+**APROVADO (R31-Q2 = A) — protagonista incapacitado em combate:** **se o protagonista cair durante uma batalha 3D, os aliados ainda capazes de combater continuam a batalha sob controle da IA**. **R32-Q1 = A aprovou posteriormente:** se os aliados vencerem, o protagonista **pode retornar à exploração mediante recuperação mínima**, com condições e quantidade pendentes. A queda do protagonista não equivale automaticamente à derrota definitiva (R23-Q3); não atribuir controle manual dos aliados nem recuperação completa automática.
 
 **APROVADO (R31-Q3 = B) — experiência de vitória e reserva:** **a experiência das vitórias de combate é restrita aos Pokémon ativos participantes** (R26-Q3). **Pokémon na reserva não recebem essa experiência por estarem reservados**; sua progressão por outros meios fica a definir. Não fixar XP, curvas ou meios específicos de treinamento.
 
 **APROVADO (R31-Q4 = A) — apresentação dos objetivos da campanha:** **objetivos e missões que orientam o desbloqueio de novas dungeons são apresentados principalmente por personagens, NPCs e acontecimentos narrativos**. **PENDENTE:** missões, personagens e requisitos concretos de desbloqueio. Não proibir que a interface também mostre o progresso; não presumir um hub implementado.
 
-**APROVADO (R31-Q5 = A) — pontos de descanso seguros:** **pontos de descanso dentro das dungeons são locais seguros de pausa e preparação da equipe**, com serviços adicionais pendentes. A **restauração completa de MP nesses pontos permanece aprovada** (R14-Q2/R15). **PENDENTE:** acesso, localização, proteção concreta contra ameaças, outros serviços e possibilidade de recuperar HP. **Não inferir cura automática de HP**, troca de equipe ou outras funções sem aprovação.
+**APROVADO (R31-Q5 = A) — pontos de descanso seguros:** **pontos de descanso dentro das dungeons são locais seguros de pausa e preparação da equipe**, com serviços adicionais pendentes. A **restauração completa de MP nesses pontos permanece aprovada** (R14-Q2/R15). **R32-Q2 = A aprovou posteriormente a recuperação de HP nesses pontos**, com quantidade e regras específicas pendentes. **PENDENTE:** acesso, localização, proteção concreta contra ameaças e serviços adicionais. Não inferir restauração completa de HP, trocas de equipe nem outras funções.
+
+**APROVADO (R32-Q1 = A) — protagonista após vitória dos aliados:** **se os aliados vencerem o combate após a queda do protagonista, ele poderá voltar à exploração mediante recuperação mínima**. **PENDENTE:** qual recuperação, quando acontece e condições de retorno. Não presumir valor de HP ou cura completa nem encerrar uma batalha automaticamente quando o protagonista cai.
+
+**APROVADO (R32-Q2 = A) — HP no descanso:** **pontos seguros de descanso recuperam HP além de restaurar MP**. A restauração de MP continua **completa** pelas regras anteriores; a quantidade e os critérios de recuperação de **HP ficam pendentes**. Não equiparar automaticamente a cura de HP à restauração integral de MP.
+
+**APROVADO (R32-Q3 = A) — persistência de progressão:** **XP e níveis conquistados durante a expedição são preservados após derrota definitiva ou retirada voluntária**, mesmo sem vitória contra o chefe. Mantêm-se independentemente as perdas dos **itens coletados não segurados** nesses dois desfechos (R25-Q4/R31-Q1). Não generalizar preservação para todas as moedas, materiais e demais recursos sem decisão.
+
+**APROVADO (R32-Q4 = A) — descoberta do mapa:** **o mapa de cada andar é revelado progressivamente conforme o jogador explora**, com áreas ainda não percorridas permanecendo desconhecidas na apresentação do mapa. **PENDENTE:** meio de consulta/visualização, grau exato de revelação e persistência das áreas descobertas após nova expedição. A seed reproduzível e o layout estável ao revisitar um andar da mesma exploração permanecem válidos.
+
+**APROVADO (R32-Q5 = B) — recrutamento especial por evento:** **interagir voluntariamente com um Pokémon especial elegível inicia uma tarefa ou evento que deve ser resolvido antes de efetivar seu recrutamento**. **PENDENTE:** natureza das tarefas, requisitos, desfechos e condições de elegibilidade. Isso não transforma encontros hostis comuns em recrutamentos nem elimina as regras de composição da equipe/reserva; não estender obrigatoriamente essa tarefa a toda forma de recrutamento.
+
 
 
 
@@ -150,7 +161,7 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
  **APROVADO posteriormente (R23-Q1 = A):** movimento contínuo e livre nas quatro direções cardeais, sem movimento diagonal direto. **PENDENTE:** controles, colisão e animação.
 
-**PENDENTE:** sprites 2D, geração procedural, seeds, passagens entre andares, detecção/patrulha, revisitas; espécies iniciais e elegibilidade de recrutamento, reserva/hub futuro, evolução e XP numérico, **progressão dos Pokémon reservados por meios diferentes da XP de vitória** (R31-Q3), inventário/itens segurados, **demais consequências da retirada voluntária além da perda de itens não segurados** (R31-Q1), derrota definitiva, **recuperação do protagonista após continuar combate com os aliados IA** (R31-Q2), arenas e transições, narrativa e **objetivos concretos apresentados por NPCs/acontecimentos** (R31-Q4), fuga, biomas, Moves, lojas, eventos, recompensas, composição/dificuldade de chefes, **localização, segurança e serviços adicionais de pontos de descanso** (R31-Q5) e interface de recrutamento. Não presumir resolvidas essas pendências.
+**PENDENTE:** sprites 2D, geração procedural, seeds, passagens, detecção/patrulha e estados em revisitas; espécies iniciais, **tarefas/eventos concretos de recrutamento especial** (R32-Q5), reservas/hub futuro, evolução e XP numérico, treinamento dos reservados, inventário/itens segurados, outras perdas de derrota/retirada sem revogar **preservação de XP e níveis** (R32-Q3), **regras da recuperação mínima do protagonista após vitória dos aliados** (R32-Q1), arenas, transições, objetivos e narrativa, fuga, biomas, Moves, lojas e recompensas, chefes, **quantidade/condições de cura de HP nos pontos seguros de descanso** (R32-Q2), apresentação e persistência de áreas descobertas no **mapa revelado progressivamente** (R32-Q4), serviços adicionais de descanso e interface de recrutamento. Não presumir resolvidas essas pendências.
 
 ### Fluxo de experiência (somente encadeamento conceitual)
 
@@ -630,15 +641,30 @@ Sem decisão adicional, não fixar:
 
 **APROVADO (R31-Q1 = B) — itens após retirada voluntária:** **quando o jogador abandona voluntariamente uma dungeon, os itens coletados durante a expedição e que não estejam sendo segurados são perdidos; itens segurados são preservados**. Neste aspecto, a regra coincide com a perda de itens coletados na derrota definitiva (R25-Q4). **PENDENTE:** tratamento de itens anteriores à expedição, outros recursos e demais consequências da retirada. **Não converter retirada em derrota** nem mudar a preservação de Pokémon recrutados após derrota (R24-Q5).
 
-**APROVADO (R31-Q2 = A) — continuidade do combate após queda do protagonista:** se o **protagonista cair em batalha 3D enquanto houver aliados capazes de lutar, a batalha continua com os aliados controlados pela IA**. **PENDENTE:** condição geral de derrota, resultado de vitória dos aliados com protagonista incapacitado e modo de recuperação. Não atribuir controle direto dos aliados ao jogador nem restaurar automaticamente o protagonista.
+**APROVADO (R31-Q2 = A) — continuidade do combate após queda do protagonista:** se o **protagonista cair em batalha 3D enquanto houver aliados capazes de lutar, a batalha continua com os aliados controlados pela IA**. **Complemento R32-Q1 = A:** com vitória dos aliados, o protagonista pode voltar à exploração mediante **recuperação mínima**, ainda sem condições ou quantidade aprovadas. **PENDENTE:** condição geral de derrota e procedimento de recuperação. Não atribuir controle direto dos aliados nem recuperação completa automática.
 
 **APROVADO (R31-Q3 = B) — experiência dos Pokémon reservados:** **experiência de vitórias em combate somente para Pokémon ativos participantes**, conforme R26-Q3. Pokémon na reserva **não recebem experiência dessas vitórias enquanto reservados**; evolução/treinamento dos reservados por outros meios **ainda será definido**. Não fixar XP, método de treinamento ou curva.
 
 **APROVADO (R31-Q4 = A) — objetivos da campanha:** **NPCs, personagens e acontecimentos narrativos são o principal meio de apresentar missões e objetivos de desbloqueio de novas dungeons**. **PENDENTE:** conteúdo, objetivos concretos, requisitos de desbloqueio e como acompanhar o progresso. O comércio fora da dungeon (R29-Q1) e o hub futuro (R25-Q2) não são transformados em dependências obrigatórias.
 
-**APROVADO (R31-Q5 = A) — locais de descanso seguros:** **os pontos de descanso são lugares seguros para pausa e preparação dentro das dungeons**, e a restauração completa de MP nesses pontos permanece válida. **PENDENTE:** demais serviços, acesso, regras concretas de segurança e se HP também é recuperado. **Não presumir recuperação de HP**, novos consumos/custos, lojas ou trocas de equipe nos pontos de descanso.
+**APROVADO (R31-Q5 = A) — locais de descanso seguros:** **os pontos de descanso são lugares seguros para pausa e preparação dentro das dungeons**, e a restauração completa de MP nesses pontos permanece válida. **R32-Q2 = A aprovou também recuperação de HP**, com quantidade e regras ainda não definidas. **PENDENTE:** demais serviços, acesso, segurança concreta. Não presumir cura integral de HP, novos custos, lojas ou trocas de equipe no descanso.
 
 **Preservação:** as cinco decisões refinam sistemas existentes sem alterar os 170 registros anteriores, a economia ATB/Burst/MP, os limites de equipe ou a ausência de PP. Nenhuma funcionalidade foi implementada no código por esta atualização.
+
+
+### 7.23. Recuperação, progressão preservada, mapa e recrutamento — Rodada 32
+
+**APROVADO (R32-Q1 = A) — retorno do protagonista:** **após os aliados IA vencerem a batalha em que o protagonista caiu, ele pode voltar à exploração mediante recuperação mínima**. **PENDENTE:** forma, momento, condição, valor e demais efeitos da recuperação. Não inferir HP total, controle dos aliados ou derrota definitiva pela queda do protagonista; R31-Q2 continua válido.
+
+**APROVADO (R32-Q2 = A) — descanso cura HP:** **pontos seguros de descanso recuperam HP e restauram MP**. A recuperação de **MP é integral por regras anteriores**; a de **HP tem quantidade e condições ainda pendentes**. Não presumir que HP seja restaurado completamente nem aplicar esse benefício a locais que não sejam pontos de descanso.
+
+**APROVADO (R32-Q3 = A) — manter progresso em derrotas e retiradas:** **experiência e níveis adquiridos ao longo de uma expedição permanecem com os Pokémon após derrota definitiva ou retirada voluntária**, mesmo que não vençam o chefe. **As perdas já aprovadas de itens coletados e não segurados continuam valendo** para esses desfechos; nenhuma nova política de moedas/recursos é decidida. XP de combate continua restrita aos Pokémon ativos participantes (R31-Q3).
+
+**APROVADO (R32-Q4 = A) — revelação de exploração:** **o mapa do andar é revelado gradualmente à medida que o jogador percorre a dungeon**. **PENDENTE:** interface, grau de revelação, visibilidade de áreas não visitadas e persistência do mapa descoberto entre expedições. Permanecem geração por seed e layout persistente ao revisitar andares na mesma exploração.
+
+**APROVADO (R32-Q5 = B) — recrutamento especial por tarefa:** **ao interagir voluntariamente com um Pokémon especial elegível, inicia-se uma tarefa/evento que deve ser resolvido antes de recrutá-lo**. **PENDENTE:** tipos de tarefas, objetivos, condições de sucesso, consequências e apresentação. Essa regra aplica-se aos **candidatos especiais** e não torna obrigatória uma missão para todo recrutamento nem substitui o início de combate ao tocar inimigos hostis normais.
+
+**Preservação:** permanecem integralmente válidas as decisões D-001 a D-175, o máximo de três Pokémon ativos, a reserva, o sistema de combate, custos de ATB/Burst, a inexistência de PP, a geração procedural e as regras previamente aprovadas de perda de itens.
 
 ## 8. Estado real do repositório (inspeção de código, não de execução)
 
@@ -837,6 +863,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-173 | R31-Q3 = B: **XP de vitórias restrita aos participantes ativos; Pokémon reservados não a recebem por estarem na reserva**, outros meios de progressão pendentes. |
 | D-174 | R31-Q4 = A: **objetivos e missões da campanha apresentados principalmente por personagens, NPCs e acontecimentos narrativos**, catálogo e sequência pendentes. |
 | D-175 | R31-Q5 = A: **pontos de descanso são locais seguros de pausa e preparação nas dungeons**, mantendo restauração de MP já aprovada; serviços e cura de HP pendentes. |
+| D-176 | R32-Q1 = A: **após vitória dos aliados com protagonista caído, ele pode voltar à exploração mediante recuperação mínima**, condições e valor pendentes. |
+| D-177 | R32-Q2 = A: **pontos seguros de descanso também recuperam HP além de restaurar MP**, critérios/quantidade de HP pendentes. |
+| D-178 | R32-Q3 = A: **XP e níveis adquiridos na expedição são mantidos após derrota definitiva ou retirada voluntária**, sem revogar perda de itens não segurados. |
+| D-179 | R32-Q4 = A: **mapa do andar revelado progressivamente conforme exploração**, apresentação/persistência entre expedições pendentes. |
+| D-180 | R32-Q5 = B: **Pokémon especial elegível inicia tarefa/evento de recrutamento por interação voluntária, a resolver antes de recrutar**, conteúdos pendentes. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -1272,39 +1303,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Preservação:** as 170 decisões anteriores e todo o histórico continuam válidos. Não presumir cura de HP em descanso, XP de combate para a reserva, derrota automática quando protagonista cai ou penalidades adicionais na retirada. Não inventar fórmulas, PP ou custos ATB/Burst.
 
-## 10.31. Rodada 32 — sobrevivência da equipe, descanso e descobertas (cinco perguntas abertas)
+## 10.31. Rodada 32 — sobrevivência da equipe, descanso e descobertas (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa aprovada. Questões de gameplay ainda pendentes, com impacto no ciclo roguelike e no combate.
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01, decisões D-176 a D-180.
 
-**R32-Q1 — Se os aliados vencerem a batalha depois de o protagonista cair, qual será o estado dele ao voltar à exploração?**  
-A. **O protagonista volta a poder participar da exploração após a vitória dos aliados**, mediante recuperação mínima cujas condições permanecem pendentes.  
-B. **O protagonista continua incapacitado após a vitória**, exigindo recuperação por um meio próprio antes de retomar a exploração, com meios/condições pendentes.  
-C. Outro desfecho, especificado pelo criador.  
-*R31-Q2 garante que aliados IA podem continuar a batalha; não define o estado posterior do protagonista.*
+| ID | Resposta literal do criador | Regra aprovada e pendências |
+| --- | --- | --- |
+| **R32-Q1** | **A** — “Se os aliados vencerem após a queda do protagonista, ele poderá voltar à exploração mediante uma recuperação mínima, com condições pendentes.” | **Protagonista pode voltar após recuperação mínima**, condições não especificadas, vitória dos aliados sob IA preservada. |
+| **R32-Q2** | **A** — “Pontos seguros de descanso também recuperam HP, além de restaurarem MP; quantidade e regras de cura de HP pendentes.” | **Descanso também recupera HP**; restauração integral de MP preservada, quantidade de HP pendente. |
+| **R32-Q3** | **A** — “XP e níveis conquistados durante uma expedição são preservados após derrota definitiva ou retirada voluntária.” | **Manter XP e níveis ganhos em ambos os desfechos** sem revogar perda de itens coletados não segurados. |
+| **R32-Q4** | **A** — “O mapa do andar é revelado progressivamente conforme o jogador explora.” | **Revelação gradual do mapa**, interface e persistência entre expedições pendentes. |
+| **R32-Q5** | **B** — “Interagir com um Pokémon especial elegível inicia uma tarefa ou evento que precisa ser resolvido antes do recrutamento.” | **Recrutamento especial exige resolver tarefa/evento após interação**, sem estender o requisito a todo recrutamento. |
 
-**R32-Q2 — Os pontos seguros de descanso também recuperam HP, além do MP?**  
-A. **Sim, pontos de descanso recuperam HP e restauram MP**, com quantidade/regras de cura de HP pendentes.  
-B. **Não, o descanso restaura MP, mas HP deve ser recuperado por outros meios**, ainda a definir.  
-C. Outra função, especificada pelo criador.  
-*MP completo em pontos de descanso já está aprovado; R31-Q5 os definiu como locais seguros.*
+**Preservação:** 175 decisões anteriores inalteradas. Não definir valores de recuperação, fórmulas, novos PP, custos ATB/Burst, consequências adicionais de derrota ou obrigação de missões para Pokémon não especiais.
 
-**R32-Q3 — Ao encerrar uma expedição por derrota definitiva ou retirada voluntária, o que acontece com XP e níveis conquistados nela?**  
-A. **XP e níveis conquistados são preservados**, apesar do encerramento da expedição; outras perdas continuam conforme regras anteriores.  
-B. **O XP e a progressão em níveis obtidos durante a expedição encerrada sem vitória são perdidos**, com casos especiais pendentes.  
-C. Outro modelo, inclusive distinção entre derrota e retirada, especificado pelo criador.  
-*A perda de itens não segurados está aprovada para derrota e retirada; persistência de XP e níveis ganhos ainda não.*
+## 10.32. Rodada 33 — sobrevivência, reservas e exploração procedural (cinco perguntas abertas)
 
-**R32-Q4 — Como o jogador descobrirá os caminhos e salas de cada andar procedural?**  
-A. **O mapa do andar é revelado progressivamente conforme o jogador explora**, incluindo áreas ainda desconhecidas.  
-B. **O mapa completo do andar pode ser consultado desde o início**, mesmo antes de percorrer suas salas e corredores.  
-C. Outro sistema de orientação, especificado pelo criador.  
-*Os layouts são procedurais e persistentes dentro da exploração; sua revelação ao jogador ainda não foi definida.*
+**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa aprovada. Cinco questões de gameplay relevantes e ainda pendentes no GDD.
 
-**R32-Q5 — O que precisa acontecer durante a interação com um Pokémon especial elegível para recrutamento?**  
-A. **A interação oferece uma oportunidade direta de recrutamento**, sujeita a condições ainda pendentes.  
-B. **A interação inicia uma tarefa ou evento de recrutamento**, que deverá ser resolvido antes da obtenção do Pokémon, com conteúdos pendentes.  
-C. Outro processo ou combinação, especificado pelo criador.  
-*Recrutamento voluntário e candidatos especiais sinalizados no mapa já foram aprovados; o processo concreto de recrutamento ainda não.*
+**R33-Q1 — Se todos os Pokémon ativos forem incapacitados durante uma batalha, qual será o desfecho da expedição?**  
+A. **Considerar derrota definitiva e encerrar a exploração**, aplicando as perdas e preservações já aprovadas.  
+B. **Oferecer uma possibilidade de resgate/continuação antes de declarar derrota definitiva**, com condições pendentes.  
+C. Outro desfecho, descrito pelo criador.  
+*A queda isolada do protagonista não encerra a batalha, e os aliados podem vencer; a derrota de toda a equipe ainda não tem desfecho explicitamente definido.*
+
+**R33-Q2 — Como os Pokémon da reserva poderão evoluir e treinar sem receber XP das vitórias da equipe ativa?**  
+A. **Por treinamento ou serviços específicos disponíveis fora das expedições**, com locais e regras pendentes.  
+B. **Por atividades próprias ou missões de treinamento atribuídas aos reservados**, com condições e resultados pendentes.  
+C. Outra forma ou combinação, descrita pelo criador.  
+*O GDD exclui XP de vitória para os reservados, mas prevê progressão por outros meios ainda indefinidos.*
+
+**R33-Q3 — Como será determinada a extensão de cada dungeon da campanha?**  
+A. **Cada dungeon possui uma quantidade de andares definida pelo design**, ainda sem números aprovados; os layouts dos andares continuam procedurais.  
+B. **A quantidade de andares pode variar entre expedições de uma mesma dungeon**, segundo regras de geração ainda a definir.  
+C. Outro sistema, descrito pelo criador.  
+*Concluir exige chegar ao último andar e derrotar um chefe, mas a quantidade de andares ainda não está definida.*
+
+**R33-Q4 — Como o jogador descobrirá principalmente as salas secretas das dungeons?**  
+A. **Pela observação do cenário e investigação de passagens escondidas**, com pistas e meios de acesso pendentes.  
+B. **Por pistas, mapas especiais, NPCs ou eventos que indiquem ou liberem salas secretas**, com regras pendentes.  
+C. Uma combinação ou outro mecanismo, descrito pelo criador.  
+*Salas secretas já são opcionais e priorizam descobertas, NPCs e recompensas; ainda falta decidir sua descoberta.*
+
+**R33-Q5 — Qual será a principal função dos recursos materiais recebidos em combates, além das moedas?**  
+A. **Servir à fabricação ou preparação de itens e equipamentos**, com receitas, estações e catálogo pendentes.  
+B. **Servir a trocas ou melhorias de Pokémon, itens e equipamentos por meio de serviços**, com regras e catálogo pendentes.  
+C. Uma combinação ou outra função, descrita pelo criador.  
+*Moedas já servem principalmente para compras; a utilização dos demais recursos materiais continua sem definição.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -1359,5 +1404,7 @@ C. Outro processo ou combinação, especificado pelo criador.
 | 1.21 | 2026-11-01 | Rodada 30 (D-166 a D-170): permitir retirada voluntária antes do chefe retornando à campanha, sem consequências ainda definidas; escolhas narrativas com efeitos principalmente locais à expedição; chefes principalmente dentro do combate comum sem fases exclusivas obrigatórias; revisitas a dungeons concluídas ainda oferecem oportunidades de Pokémon, itens e recursos; Pokémon recrutados podem entrar diretamente na equipe quando há vaga. Abre Rodada 31 sobre retirada, derrota em equipe, reserva, campanha e descanso. | Rodada 30 fechada / Rodada 31 aberta |
 
 | 1.22 | 2026-11-01 | Rodada 31 (D-171 a D-175): retirada voluntária perde itens coletados não segurados como na derrota, sem equiparar outros efeitos; aliados sob IA continuam combate após queda do protagonista; XP de vitórias restrita a participantes ativos, excluindo reserva; objetivos de campanha apresentados principalmente por NPCs/personagens/narrativa; descanso em locais seguros com pausa/preparação, mantendo restauração de MP já aprovada. Abre Rodada 32 sobre continuidade após queda, cura no descanso, persistência de XP, descoberta de mapas e recrutamento. | Rodada 31 fechada / Rodada 32 aberta |
+
+| 1.23 | 2026-11-01 | Rodada 32 (D-176 a D-180): protagonista pode voltar à exploração mediante recuperação mínima após vitória dos aliados; descanso seguro cura HP além de restaurar integralmente MP; XP e níveis da expedição persistem após derrota definitiva ou retirada voluntária; mapa do andar revelado progressivamente; recrutamento especial exige resolver tarefa/evento iniciado por interação. Abre Rodada 33 sobre derrota de equipe, treino de reservas, quantidade de andares, salas secretas e uso de recursos. | Rodada 32 fechada / Rodada 33 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
