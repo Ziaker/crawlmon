@@ -101,9 +101,9 @@ func spawn_brick_barrier(target: Combatant, pos: Vector3, strike_dir: Vector3) -
 
 
 func clear_brick_barrier(target: Combatant) -> void:
-	var barrier: Node3D = _brick_barriers.get(target)
+	var barrier: Variant = _brick_barriers.get(target)  # May already be freed: keep it untyped.
 	if is_instance_valid(barrier):
-		barrier.queue_free()
+		(barrier as Node3D).queue_free()
 	_brick_barriers.erase(target)
 
 

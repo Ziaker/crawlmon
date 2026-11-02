@@ -31,6 +31,22 @@ var impacted := false
 var interrupted := false  ## Stopped on its way by a manual Evade: it never hits.
 var ghost := false  ## Not an attack: only the return of an engaged character.
 var ai_evade_at := -1.0  ## Seconds into TRAVEL when an AI target will try to evade (-1: never).
+## Kinematics, planned by AttackPlanner when the wind-up ends (flat x/z, seconds):
+var move_id := ""
+var motion := "cast"  ## "melee" (runs at the target), "engaged" (already next to it) or "cast"
+var from := Vector3.ZERO  ## Where the attacker starts its run
+var stand := Vector3.ZERO  ## Where it stops in front of the target (follows the target while it runs/strikes)
+var dir := Vector3.RIGHT
+var run_t := 0.0
+var antic := 0.0
+var hit := 0.0  ## Seconds into the strike phase after the anticipation when the clip makes contact
+var hold := 0.0
+var hop_t := 0.3
+var hop_h := 1.2
+var fly := 0.0
+var lunged := Vector3.ZERO  ## Where the body was when the return started
+var push := Vector3.ZERO  ## Knockback it takes before hopping home (an attacker hit on its way)
+var arrived := false  ## An engaged evader's first attack: the rules just moved it next to its opponent.
 var data := {}  ## Drawing data owned by BattleFx (positions, clip times); logic never reads it.
 
 

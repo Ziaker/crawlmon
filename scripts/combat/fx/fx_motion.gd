@@ -309,6 +309,7 @@ func on_phase(inc, phase: int) -> void:
 				fx._displaced[a] = false  # A counter-attack starts from wherever the evade left it.
 				m.position.y = 0.0
 				d["from"] = Vector3(m.position.x, 0.0, m.position.z)
+				d["vis_off"] = (d["from"] as Vector3) - inc.from
 				_play(a, "run")
 				if not move_owns_travel:
 					_dust_trail(m, d["run_t"] + 0.12)
@@ -330,7 +331,6 @@ func on_phase(inc, phase: int) -> void:
 		P.RETURN:
 			if melee:
 				m.position.y = 0.0
-				d["lunged"] = Vector3(m.position.x, 0.0, m.position.z)  # Leave from wherever the body really is (never from the target).
 			if d.get("move_id", "") not in ["teleporte_rapido", "raio_psiquico"]:
 				fx.fx_projectiles.finish(inc)
 		P.STAGGER:
@@ -338,7 +338,6 @@ func on_phase(inc, phase: int) -> void:
 			m.position.y = 0.0
 			var grounded := Vector3(m.position.x, 0.0, m.position.z)
 			d["lunged"] = grounded
-			fx._rest[a] = grounded
 			if not melee:
 				fx.fx_projectiles.finish(inc)
 			_play(a, "damage")
@@ -355,7 +354,7 @@ func on_phase(inc, phase: int) -> void:
 					m.position = Vector3(h_int.x, 0.0, h_int.z)
 					m.rotation.y = fx._home_yaw[a]
 					m.scale = d["base_scale"]
-					fx._rest.erase(a)
+					a.clear_rest()
 					fx._displaced[a] = false
 					_reset_idle(a)
 				fx.fx_projectiles.finish(inc)
@@ -369,13 +368,13 @@ func on_phase(inc, phase: int) -> void:
 				m.position = Vector3(h.x, 0.0, h.z)
 				m.rotation.y = fx._home_yaw[a]
 				m.scale = d["base_scale"]
-				fx._rest.erase(a)
+				a.clear_rest()
 				fx._displaced[a] = false
 				fx._shock(fx._home[a], Color(0.8, 0.95, 1.0), 2.2, 0.25)
 				fx._smoke((fx._home[a] as Vector3) + Vector3(0, 0.2, 0), Color(0.75, 0.85, 0.9), 6, Vector2(0.9, 1.5), 0.45, 0.3)
 			else:
 				m.position.y = 0.0
-				fx._rest.erase(a)
+				a.clear_rest()
 			_reset_idle(a)
 			fx.fx_projectiles.finish(inc)
 
@@ -383,9 +382,12 @@ func on_phase(inc, phase: int) -> void:
 ## The engaged state ended: the evader hops home and the stunned attacker recovers
 ## (BattleFx only fills the plans; Battle runs them).
 func on_engage_ended(_actor: Combatant, _opponent: Combatant, ghost, staggered) -> void:
-	_plan_return(ghost)
-	if staggered != null:
-		_plan_return(staggered)
+	for inc in [ghost, staggered]:
+		if inc == null:
+			continue
+		var m: Node3D = fx._models[inc.attacker]
+		m.position.y = 0.0
+		inc.data = _return_data(inc, m.rotation.y if inc.hop_h > 0.0 else fx._home_yaw[inc.attacker])
 
 
 ## Interrupted by taking a hit while in trajectory: stop driving the attack so _hit_stop
@@ -400,35 +402,19 @@ func on_attack_interrupted(inc) -> void:
 	if inc.data.get("move_id", "") == "quebra_telha":
 		fx.fx_impacts.clear_brick_barrier(inc.target)
 	fx.fx_projectiles.finish(inc)
-	var home: Vector3 = fx._home[a]
-	if Vector3(m.position.x, 0.0, m.position.z).distance_to(Vector3(home.x, 0.0, home.z)) > 1.0:
-		_interrupted_traj[a] = true
-	inc.data = {"kind": "hit_interrupted", "base_scale": fx._base_scale.get(a, m.scale)}
-	inc.plan = [[Battle.Phase.RETURN, 0.55]]
+	if inc.motion == "cast":
+		inc.data = {"kind": "hit_interrupted", "base_scale": fx._base_scale.get(a, m.scale)}
+	else:
+		inc.data = _return_data(inc, m.rotation.y)
 
 
-func _plan_return(inc) -> void:
+## Drawing data of a hop home the rules planned (an evader leaving its opponent, a stunned
+## attacker recovering, an attacker knocked back on its way).
+func _return_data(inc, yaw: float) -> Dictionary:
 	var a: Combatant = inc.attacker
-	var m: Node3D = fx._models[a]
-	var home: Vector3 = fx._home[a]
-	home.y = 0.0
-	var pos := Vector3(m.position.x, 0.0, m.position.z)
-	m.position.y = 0.0
-	if not inc.ghost and inc.data.get("kind", "") == "cast":
-		inc.plan = [[Battle.Phase.RETURN, 0.15]]  # A caster only recovers; it never left home.
-		return
-	var dist := pos.distance_to(home)
-	if dist < 0.35:
-		inc.data = {"kind": "melee", "dir": fx._flat_dir(pos, home), "stand": home, "lunged": home, "hold": 0.0,
-			"hop_t": 0.05, "hop_h": 0.0, "yaw_out": fx._home_yaw[a],
-			"base_scale": fx._base_scale.get(a, m.scale)}
-		inc.plan = [[Battle.Phase.RETURN, 0.05]]
-		return
-	var hop_t := clampf(dist / 70.0, 0.22, 0.4)
-	inc.data = {"kind": "melee", "dir": fx._flat_dir(pos, home), "stand": pos, "lunged": pos, "hold": 0.0,
-		"hop_t": hop_t, "hop_h": clampf(dist * 0.12, 1.2, 3.0), "yaw_out": m.rotation.y,
-		"base_scale": fx._base_scale.get(a, m.scale)}
-	inc.plan = [[Battle.Phase.RETURN, hop_t]]
+	return {"kind": "melee", "dir": inc.dir, "stand": a.pos, "hold": inc.hold,
+		"hop_t": inc.hop_t, "hop_h": inc.hop_h, "yaw_out": yaw,
+		"base_scale": fx._base_scale.get(a, (fx._models[a] as Node3D).scale)}
 
 
 func _ease_quad_out(k: float) -> float:
@@ -460,50 +446,37 @@ func drive() -> void:
 			continue
 		if d["kind"] != "melee":
 			continue
-		# (An attack timeline always owns its body: a stale "displaced" flag must never freeze it.)
-		var home: Vector3 = fx._home[a]
-		# A runner follows its target's body for the whole approach and the strike, even if
-		# the target itself is running or hopping somewhere. One that is going to miss
-		# (dodged, or the target left) keeps aiming at the spot it started for.
-		if d["kind"] == "melee" and not d.get("engaged", false) and d.has("from") and inc.phase == Battle.Phase.TRAVEL 				and not (inc.dodged or inc.auto_dodged or inc.interrupted or inc.ghost):
-			var tpos: Vector3 = (fx._models[inc.target] as Node3D).position
-			tpos.y = 0.0
-			var live_dir: Vector3 = fx._flat_dir(d["from"], tpos)
-			d["dir"] = live_dir
-			d["stand"] = tpos - live_dir * fx.STAND_GAP
-			d["stand"].y = 0.0
-			d["yaw_out"] = atan2(live_dir.x, live_dir.z)
-		var stand: Vector3 = d["stand"]
-		var dir: Vector3 = d["dir"]
+		# The rules carry the body (AttackMotion); this only turns that position into a pose.
+		var carried_stand: Vector3 = inc.stand
+		var dir: Vector3 = inc.dir
+		d["stand"] = carried_stand
+		d["dir"] = dir
+		if inc.phase != Battle.Phase.RETURN and inc.motion != "return":
+			d["yaw_out"] = atan2(dir.x, dir.z)
 		var base_scale: Vector3 = d["base_scale"]
 		var e: float = inc.phase_time
+		var body: Vector3 = a.pos
 		match inc.phase:
 			Battle.Phase.TRAVEL:
 				var yaw_home: float = fx._home_yaw[a]
 				m.rotation.y = lerp_angle(yaw_home, d["yaw_out"], clampf(e / 0.12, 0.0, 1.0))
-				if e > 0.12:
-					var k := clampf((e - 0.12) / d["run_t"], 0.0, 1.0)
-					m.position = (d["from"] as Vector3).lerp(stand, 0.5 - 0.5 * cos(k * PI))  # Sine in/out
+				# The body was drawn a little off its rules position (ready stance): ease it in.
+				var off: Vector3 = d.get("vis_off", Vector3.ZERO) * (1.0 - clampf(e / (0.12 + inc.run_t), 0.0, 1.0))
+				m.position = Vector3(body.x + off.x, 0.0, body.z + off.z)
 				_drive_travel_move(inc, d, m, e)
 			Battle.Phase.STRIKE:
 				m.rotation.y = d["yaw_out"]
-				var antic: float = d["antic"]
-				var coil := stand if antic <= 0.0 else stand - dir * 0.38
-				var pos := stand
-				if e < antic:
-					pos = stand.lerp(coil, _ease_quad_out(e / antic))
-				else:
+				var antic: float = inc.antic
+				m.position = Vector3(body.x, 0.0, body.z)
+				if e >= antic:
 					if not d.get("swung", false):
 						d["swung"] = true
 						_play(a, "attack")
 					_on_strike_move(inc, d, m)
-					var lunge_t: float = minf(d["hit"], 0.18)
-					pos = coil.lerp(stand + dir * 0.22, _ease_expo_out(clampf((e - antic) / lunge_t, 0.0, 1.0)))
 					# Blade/claw trail slightly before the contact frame.
-					if not d.get("move_strike_started", false) and not d.get("slashed", false) and e - antic >= maxf(d["hit"] - 0.06, 0.02):
+					if not d.get("move_strike_started", false) and not d.get("slashed", false) and e - antic >= maxf(inc.hit - 0.06, 0.02):
 						d["slashed"] = true
-						VfxLib.mesh_slash(fx, stand + dir * 1.35 + Vector3(0, 1.0, 0), dir, Color(1.0, 0.96, 0.86), 24.0, 1.15, 0.25, "slash_arc")
-				m.position = pos
+						VfxLib.mesh_slash(fx, carried_stand + dir * 1.35 + Vector3(0, 1.0, 0), dir, Color(1.0, 0.96, 0.86), 24.0, 1.15, 0.25, "slash_arc")
 				# Squash on the coil, then spring back.
 				var sq := antic * 0.7
 				if antic > 0.0 and e < sq + 0.09:
@@ -516,18 +489,16 @@ func drive() -> void:
 				_drive_strike_move(inc, d, m, e)
 			Battle.Phase.RETURN:
 				m.rotation.y = d["yaw_out"]
-				var hold: float = d["hold"]
-				var lunged: Vector3 = d.get("lunged", stand + dir * 0.22)
-				if e < hold:
-					m.position = lunged
-				else:
+				var hold: float = inc.hold
+				m.position = Vector3(body.x, 0.0, body.z)
+				if e >= hold:
 					if not d.get("hopped", false):
 						d["hopped"] = true
 						m.scale = base_scale
 						_play(a, "battle_idle")
-						fx._smoke(stand + Vector3(0, 0.2, 0), Color(0.75, 0.85, 0.9), 5, Vector2(0.8, 1.4), 0.4, 0.3)
-					var k := clampf((e - hold) / d["hop_t"], 0.0, 1.0)
-					m.position = lunged.lerp(home, k) + Vector3(0, sin(k * PI) * d["hop_h"], 0)
+						fx._smoke(body + Vector3(0, 0.2, 0), Color(0.75, 0.85, 0.9), 5, Vector2(0.8, 1.4), 0.4, 0.3)
+					var k := clampf((e - hold) / maxf(inc.hop_t, 0.001), 0.0, 1.0)
+					m.position.y = sin(k * PI) * inc.hop_h
 
 
 ## Micro-freeze (Hit Stop) on the exact frame of contact.
@@ -661,7 +632,7 @@ func knock(target: Combatant, from_pos: Vector3, mult := 1.0) -> void:
 	var origin_pos := home_spot if in_traj else rest_spot
 	origin_pos.y = 0.0
 	if in_traj:
-		fx._rest.erase(target)
+		target.clear_rest()
 		fx._displaced[target] = false
 	var yaw_home: float = fx._home_yaw[target]
 	var own_back := -Vector3(sin(yaw_home), 0.0, cos(yaw_home))

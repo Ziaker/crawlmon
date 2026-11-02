@@ -43,6 +43,14 @@ var step_t := 1.0
 var tactic_pos := 0  ## Where an AI-controlled ally wants to stand (set in Tactics).
 var engaged_with: Combatant = null  ## Standing next to the opponent it interrupted (Evade).
 var engage_left := 0.0  ## Real seconds left of the engaged state (the Burst slow-motion).
+## Where it stands (flat x/z, authoritative: models only follow it). `home` is the step-0 spot.
+var home := Vector3.ZERO
+var yaw := 0.0
+var pos := Vector3.ZERO
+var rest := Vector3.ZERO  ## Where it stands while it is not at its step spot (engaged / stunned).
+var has_rest := false
+var body_scale := 1.0  ## Model scale, used as its radius when something passes in front of it.
+var clips: Dictionary = {}  ## Animation name -> seconds; registered by whoever loads the model.
 
 var attack: int:
 	get:
@@ -66,6 +74,37 @@ func _init(p_name: String, p_hp: int, p_attack: int, p_speed: float, p_is_player
 func visual_step() -> float:
 	var k := clampf(step_t, 0.0, 1.0)
 	return lerpf(step_from, float(pos_step), k * k * (3.0 - 2.0 * k))
+
+
+## Puts the combatant on the floor at `p_home`, facing `p_yaw`.
+func place(p_home: Vector3, p_yaw: float) -> void:
+	home = BattleSpace.flat(p_home)
+	yaw = p_yaw
+	pos = home
+	has_rest = false
+
+
+## The spot of its current position step (what the old "home" meant).
+func stand_pos() -> Vector3:
+	return home + Vector3(sin(yaw), 0.0, cos(yaw)) * (BattleSpace.STEP_DIST * visual_step())
+
+
+## Where it waits when no attack moves it: the rest spot if it has one, else its step spot.
+func rest_pos() -> Vector3:
+	return rest if has_rest else stand_pos()
+
+
+func set_rest(p: Vector3) -> void:
+	rest = BattleSpace.flat(p)
+	has_rest = true
+
+
+func clear_rest() -> void:
+	has_rest = false
+
+
+func clip_len(anim: String) -> float:
+	return float(clips.get(anim, 0.0))
 
 
 func get_held_item() -> Item:

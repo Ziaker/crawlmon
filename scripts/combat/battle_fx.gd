@@ -17,19 +17,19 @@ const COLORS := {
 	Element.Type.LUZ: Color(1.0, 1.0, 0.7),
 	Element.Type.TREVAS: Color(0.4, 0.15, 0.55),
 }
-const STEP_DIST := 1.5  ## World units per position step (kept short: the party stands near the camera).
-const FLY_TIME := 0.25
+const STEP_DIST := BattleSpace.STEP_DIST
+const FLY_TIME := BattleSpace.FLY_TIME
 const TELEGRAPH_COLOR := Color(1.0, 0.22, 0.18)
 const ALLY_COLOR := Color(0.3, 0.78, 1.0)
 const DODGE_COLOR := Color(0.5, 0.9, 1.0)
 const GOLD := Color(1.0, 0.82, 0.15)
-const RUN_SPEED := 30.0  ## Units per second while running at a target (slow enough to read as a run, not a teleport).
-const STAND_GAP := 2.6  ## Where a melee attacker stops, in front of its target.
-const ANTICIP_T := 0.08  ## Brief crouch/pull-back anticipation before melee swing.
-const HIT_AT := 0.45  ## Seconds into the attack clip when the strike lands.
+const RUN_SPEED := BattleSpace.RUN_SPEED
+const STAND_GAP := BattleSpace.STAND_GAP
+const ANTICIP_T := BattleSpace.ANTICIP_T
+const HIT_AT := BattleSpace.HIT_AT
 const ATTACK_HOLD := 0.6  ## Time spent finishing the attack clip after the strike.
 const READY_STEP := 0.9  ## How far a character steps forward while it can act.
-const CAST_AT := 0.5  ## Seconds into a cast when the effect leaves the caster.
+const CAST_AT := BattleSpace.CAST_AT
 
 
 var cam: BattleCamera  ## Set by the battle scene; frames each attack.
@@ -47,9 +47,7 @@ var _busy_until: Dictionary = {}  ## Combatant -> clock; no wandering before tha
 var _ready_off: Dictionary = {}  ## Combatant -> Vector3 (ready-stance offset from home)
 var _base_speed: Dictionary = {}  ## Combatant -> idle animation speed
 var _phase: Dictionary = {}  ## Combatant -> float (breathing phase)
-var _origin: Dictionary = {}  ## Combatant -> Vector3: its spot at position step 0
 var _stepping: Dictionary = {}  ## Combatant -> bool: walking a step
-var _rest: Dictionary = {}  ## Combatant -> Vector3: where it stands while it is not at home (engaged / stunned)
 var _base_scale: Dictionary = {}  ## Combatant -> Vector3 (as registered; enemies are scaled up)
 var _displaced: Dictionary = {}  ## Combatant -> bool (standing off its home after a dodge)
 var _vanish_until: Dictionary = {}  ## Combatant -> clock safety deadline to restore m.visible = true
@@ -76,31 +74,7 @@ func _init() -> void:
 
 ## Stable routing key shared by motion, telegraph, projectiles and impacts.
 static func normalize_move_id(skill_name: String) -> String:
-	var move_id := skill_name.strip_edges().to_lower()
-	var accented := ["á", "à", "â", "ã", "ä", "é", "è", "ê", "ë", "í", "ì", "î", "ï", "ó", "ò", "ô", "õ", "ö", "ú", "ù", "û", "ü", "ç", "ñ"]
-	var plain :=    ["a", "a", "a", "a", "a", "e", "e", "e", "e", "i", "i", "i", "i", "o", "o", "o", "o", "o", "u", "u", "u", "u", "c", "n"]
-	for i in accented.size():
-		move_id = move_id.replace(accented[i], plain[i])
-	var out := ""
-	var last_was_separator := false
-	for ch in move_id:
-		var keep := (ch >= "a" and ch <= "z") or (ch >= "0" and ch <= "9")
-		if keep:
-			out += ch
-			last_was_separator = false
-		elif not out.is_empty() and not last_was_separator:
-			out += "_"
-			last_was_separator = true
-	move_id = out.trim_suffix("_")
-	var aliases := {
-		"golpe_de_carate": "golpe_carate",
-		"quebra_de_telha": "quebra_telha",
-		"onda_de_choque": "onda_choque",
-		"tiro_de_areia": "tiro_areia",
-		"garra_do_dragao": "garra_dragao",
-		"furia_do_dragao": "furia_dragao",
-	}
-	return aliases.get(move_id, move_id)
+	return BattleSpace.move_id(skill_name)
 
 
 static func move_hit_stop_duration(move_id: String) -> float:
@@ -127,11 +101,16 @@ static func move_uses_bw_pulse(move_id: String) -> bool:
 func register(c: Combatant, model: Node3D) -> void:
 	_models[c] = model
 	_home[c] = model.position
-	_origin[c] = model.position
+	c.place(model.position, model.rotation.y)
 	_home_yaw[c] = model.rotation.y
 	_base_scale[c] = model.scale
 	_slot[c] = model.position
 	_phase[c] = randf() * TAU
+	c.body_scale = model.scale.x
+	var ap0: AnimationPlayer = model.get_meta("anim_player") if model.has_meta("anim_player") else null
+	if ap0 != null:
+		for anim_name in ap0.get_animation_list():
+			c.clips[String(anim_name)] = ap0.get_animation(anim_name).length
 	var ap := _anim_player(c)
 	if ap != null:
 		_base_speed[c] = randf_range(0.92, 1.08)  # Keep the idle breathing out of sync.
@@ -153,7 +132,11 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 	var evaded: bool = info["evaded"]
 	var move_id := normalize_move_id(String(info.get("skill_name", "")))
 	if info.get("status", false):
-		if fx_impacts._status_impact_move(move_id, to):
+		var before_status := get_child_count()
+		var handled := fx_impacts._status_impact_move(move_id, to)
+		if handled:
+			_scale_with_distance(before_status, to)
+		if handled:
 			flash(target)
 			if cam != null:
 				cam.impact_post(to, Color("ff4d6d"), false, false)
@@ -196,8 +179,7 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 ## Where the character stands now when it is not moving: its home, or the spot an
 ## Evade left it at (the evader next to its opponent, the stunned attacker where it stopped).
 func rest_pos(c: Combatant) -> Vector3:
-	var p: Vector3 = _rest.get(c, _home[c])
-	return Vector3(p.x, 0.0, p.z)
+	return c.rest_pos()
 
 
 func _busy_for(c: Combatant, seconds: float) -> void:
@@ -213,7 +195,7 @@ func _process(delta: float) -> void:
 	# the logic's own (animated) step value; the run clip plays while it walks.
 	for c in _models:
 		var yaw0: float = _home_yaw[c]
-		_home[c] = (_origin[c] as Vector3) + Vector3(sin(yaw0), 0.0, cos(yaw0)) * (STEP_DIST * c.visual_step())
+		_home[c] = c.stand_pos()
 		var walking: bool = c.step_t < 1.0
 		if walking and not _stepping.get(c, false):
 			_stepping[c] = true
@@ -235,7 +217,7 @@ func _process(delta: float) -> void:
 			var tw_chk: Tween = _tweens.get(c)
 			var vtw_chk: Tween = fx_dodge._vis_tweens.get(c)
 			if (tw_chk == null or not tw_chk.is_valid()) and (vtw_chk == null or not vtw_chk.is_valid()):
-				_rest.erase(c)
+				c.clear_rest()
 				settle(c)
 		if not _is_idle(c):
 			var diff := m.position - (_home[c] as Vector3)
@@ -499,7 +481,44 @@ func _smoke(pos: Vector3, color: Color, amount: int, size: Vector2, life: float,
 
 
 func _impact(element: Element.Type, pos: Vector3, color: Color, big: bool, dir := Vector3.FORWARD, move_id := "") -> Array[Node3D]:
-	return fx_impacts._impact(element, pos, color, big, dir, move_id)
+	var before := get_child_count()
+	var nodes := fx_impacts._impact(element, pos, color, big, dir, move_id)
+	_scale_with_distance(before, pos)
+	return nodes
+
+
+## The move effects are authored for a camera about VFX_REF_DISTANCE away; the enemy line
+## is ~35 units from the camera, so everything spawned since child `from_index` is
+## scaled about `pos` to read the same size on screen (no camera zoom involved).
+const VFX_REF_DISTANCE := 12.0
+const VFX_MAX_SCALE := 3.2
+
+
+func vfx_scale_at(pos: Vector3) -> float:
+	return clampf(_cam_pos().distance_to(pos) / VFX_REF_DISTANCE, 1.0, VFX_MAX_SCALE)
+
+
+func _scale_with_distance(from_index: int, pos: Vector3) -> void:
+	var k := vfx_scale_at(pos)
+	if k <= 1.01:
+		return
+	var fresh: Array[Node3D] = []
+	for i in range(from_index, get_child_count()):
+		var n := get_child(i) as Node3D
+		if n != null:
+			fresh.append(n)
+	if fresh.is_empty():
+		return
+	var root := Node3D.new()
+	root.name = "ScaledFx"
+	root.position = pos
+	add_child(root)
+	for n in fresh:
+		n.reparent(root, true)
+	root.scale = Vector3.ONE * k
+	get_tree().create_timer(2.5, false).timeout.connect(func() -> void:
+		if is_instance_valid(root):
+			root.queue_free())
 
 
 func _burst(pos: Vector3, color: Color, amount: int, speed: float, gravity: Vector3, size: float, lifetime: float) -> void:

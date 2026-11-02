@@ -28,6 +28,7 @@ var _frame := 0
 var _prev: Dictionary = {}  ## Combatant -> {pos, vis, scale, who}
 var _vis_changes: Dictionary = {}
 var anomaly_count := 0
+var _drive := false  ## --drive: the leader plays by itself (attacks, evades) so every path is exercised.
 
 
 static func wanted() -> bool:
@@ -41,6 +42,11 @@ func setup(p_battle: Battle, p_fx: BattleFx, p_models: Dictionary, p_party: Arra
 	party = p_party
 	enemies = p_enemies
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--seed="):
+			seed(int(arg.get_slice("=", 1)))  # Same seed + --fixed-fps = the same battle, run after run.
+		elif arg == "--drive":
+			_drive = true
 	_file = FileAccess.open("user://battle_trace.jsonl", FileAccess.WRITE)
 	_anoms = FileAccess.open("user://battle_anomalies.txt", FileAccess.WRITE)
 	_connect_events()
@@ -124,6 +130,8 @@ func _process(delta: float) -> void:
 	if battle == null or fx == null:
 		return
 	_frame += 1
+	if _drive:
+		_drive_leader()
 	if _frame % 30 == 0 and _file != null:
 		_file.flush()  # --quit-after never reaches _exit_tree: keep the tail on disk.
 		_anoms.flush()
@@ -191,6 +199,28 @@ func _check_sync(att: Combatant, tgt: Combatant, info: Dictionary) -> void:
 			if drift > 0.08:
 				_anomaly("ANIM_DRIFT", att, "attack clip at %.3fs when damage landed (expected %.3fs, off by %.3fs)" % [d["anim_pos"], d["expected_hit"], drift])
 	_event("sync", d)
+
+
+func _drive_leader() -> void:
+	if not battle.running or party.is_empty():
+		return
+	var leader := party[0]
+	if not leader.is_alive():
+		return
+	leader.hp = maxi(leader.hp, leader.max_hp / 2)  # Test driver only: keep the fight going.
+	var evadable := battle.find_evadable(leader)
+	if evadable != null and evadable.can_evade_now() and evadable.progress() > 0.35:
+		battle.try_evade(leader, evadable)
+		return
+	if battle.is_winding_up(leader) or leader.blocks() < Battle.SKILL_BLOCKS + Battle.EVADE_BLOCKS:
+		return
+	var foe: Combatant = null
+	for e in enemies:
+		if e.is_alive():
+			foe = e
+			break
+	if foe != null and not leader.skills.is_empty():
+		battle.use_skill(leader, leader.skills[randi() % leader.skills.size()], foe)
 
 
 func _v(v: Vector3) -> Array:

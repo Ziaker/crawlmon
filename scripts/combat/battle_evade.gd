@@ -62,6 +62,7 @@ func try_evade(actor: Combatant, inc: Incoming) -> bool:
 ## The attack stops where it is and never hits.
 func _interrupt(inc: Incoming) -> void:
 	b._landing.erase(inc)
+	inc.attacker.set_rest(inc.attacker.pos)  # It stops right where it is.
 	inc.interrupted = true
 	inc.plan = [[Phase.STAGGER, 9999.0]]
 	inc.plan_i = 0
@@ -108,6 +109,10 @@ func _end_engage(actor: Combatant) -> void:
 	ghost.ghost = true
 	ghost.resolved = true
 	ghost.impacted = true
+	# The rules plan both hops home; the drawing only fills in how they look.
+	AttackMotion.begin_plain_return(ghost, actor.pos)
+	if staggered != null:
+		AttackMotion.begin_plain_return(staggered, staggered.attacker.pos)
 	b.engage_ended.emit(actor, opponent, ghost, staggered)
 	for inc in [ghost, staggered]:
 		if inc == null or inc.plan.is_empty() or (inc == staggered and inc.phase != Phase.STAGGER):

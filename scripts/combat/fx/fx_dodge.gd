@@ -32,7 +32,7 @@ func engage_arrive(actor: Combatant, opponent: Combatant) -> void:
 	# The evader dodges as always: it vanishes, shows up to the side and comes back. It only
 	# teleports up to the interrupted attacker if and when it attacks (see arrive_to_attack).
 	var op := (fx._models[opponent] as Node3D).position
-	fx._rest[opponent] = Vector3(op.x, 0.0, op.z)
+	opponent.set_rest(op)
 	dodge(actor, "", false)
 
 
@@ -40,13 +40,8 @@ func engage_arrive(actor: Combatant, opponent: Combatant) -> void:
 func arrive_to_attack(actor: Combatant, opponent: Combatant) -> void:
 	var m: Node3D = fx._models[actor]
 	var from := Vector3(m.position.x, 0.0, m.position.z)
-	var opp_pos := (fx._models[opponent] as Node3D).position
-	opp_pos.y = 0.0
-	var away: Vector3 = fx._flat_dir(opp_pos, fx._home[actor])
-	var spot := opp_pos + away * fx.STAND_GAP
-	spot.y = 0.0
-	fx._rest[opponent] = opp_pos
-	fx._rest[actor] = spot
+	var spot := actor.rest  # The rules already put it next to the opponent.
+	var away: Vector3 = BattleSpace.flat_dir(opponent.rest, spot)
 	fx._stop_moving(actor)
 	fx._displaced[actor] = true
 	_vanish(actor, m, from, spot)

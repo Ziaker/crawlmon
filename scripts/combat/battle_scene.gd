@@ -446,7 +446,7 @@ func _update_fight_header(i: int) -> void:
 	var sk := _fight_skills[i]
 	var text := Skill.kind_name(sk.kind).to_upper()
 	if _fight_target != null and (sk.kind == Skill.Kind.MELEE or sk.kind == Skill.Kind.PROJECTILE):
-		text += " %.2fs" % fx.fx_attack_plan.preview_travel(leader, _fight_target, sk.kind)
+		text += " %.2fs" % AttackPlanner.preview_travel(leader, _fight_target, sk.kind)
 	hud.set_menu_style(FanMenu.Style.DRAWER, text)
 
 

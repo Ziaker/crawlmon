@@ -64,6 +64,7 @@ var _reward_id := 0
 var _landing: Array[Incoming] = []  ## Resolved attacks whose strike has not landed yet.
 var _returning: Array[Incoming] = []  ## Struck already: only the return is left to play.
 var _evade := BattleEvade.new(self)
+var _planner := AttackPlanner.new(self)
 var _hop_back := 0.3  ## Placeholder; BattleFx decides how long a return takes.
 
 
@@ -85,6 +86,17 @@ func start(p_party: Array[Combatant], p_enemies: Array[Combatant]) -> void:
 	log_message.emit("Batalha iniciada!")
 
 
+## Everyone not carried by an attack's motion stands at its rest spot.
+func _update_positions() -> void:
+	var carried := {}
+	for inc in _landing + _returning:
+		if AttackMotion.carries(inc):
+			carried[inc.attacker] = true
+	for c in party + enemies:
+		if not carried.has(c):
+			c.pos = c.rest_pos()
+
+
 func _process(delta: float) -> void:
 	if not running:
 		if not _returning.is_empty():
@@ -96,6 +108,7 @@ func _process(delta: float) -> void:
 	for c in party + enemies:
 		if c.step_t < 1.0:
 			c.step_t = minf(c.step_t + delta / STEP_TIME, 1.0)
+	_update_positions()
 	_run_ai()
 	_resolve_incoming(delta)
 	_step_attacks(delta)
@@ -316,7 +329,8 @@ func _resolve_incoming(delta: float) -> void:
 		incoming.erase(inc)
 		inc.auto_dodged = inc.kind != Skill.Kind.STATUS and not inc.dodged and not inc.whiffed and randf() < AUTO_DODGE_CHANCE
 		inc.resolved = true
-		attack_resolved.emit(inc)  # BattleFx fills inc.plan here.
+		_planner.plan(inc)
+		attack_resolved.emit(inc)  # BattleFx prepares the drawing of the planned attack.
 		if inc.plan.is_empty():
 			inc.plan = [[Phase.STRIKE, 0.0]]
 			inc.impact_phase = Phase.STRIKE
@@ -345,8 +359,10 @@ func _step_attacks(delta: float) -> void:
 			inc.plan_i += 1
 			if inc.plan_i < inc.plan.size():
 				inc.phase = inc.plan[inc.plan_i][0]
+				AttackMotion.on_phase(inc)
 				attack_phase.emit(inc, inc.phase)
 				_roll_ai_evade(inc)
+		AttackMotion.update(inc)
 		if inc.can_evade_now() and inc.ai_evade_at >= 0.0 and inc.phase_time >= inc.ai_evade_at:
 			inc.ai_evade_at = -1.0
 			if inc.target.is_alive() and inc.target.blocks() >= EVADE_BLOCKS and not inc.evade_tried:
@@ -356,6 +372,8 @@ func _step_attacks(delta: float) -> void:
 				_strike(inc)
 			inc.phase = Phase.DONE
 			_returning.erase(inc)
+			if inc.motion != "engaged":
+				inc.attacker.clear_rest()  # Back at its step spot.
 			attack_phase.emit(inc, Phase.DONE)
 	_check_end()
 
@@ -483,7 +501,7 @@ func _hit(attacker: Combatant, target: Combatant, power: float, element: Element
 	log_message.emit("%s usa %s (%s) em %s (%d dano)%s" % [
 		attacker.name, label, Element.name_of(element), target.name, dmg,
 		(" FRAQUEZA! +2 bloco(s)" if weak else "") + (" CRÍTICO! +1 bloco" if crit else "")])
-	_interrupt_attacks_of(target)
+	_interrupt_attacks_of(target, attacker, (1.55 if (weak or crit) else 1.0) * clampf(power, 0.85, 1.6))
 	hit_resolved.emit(attacker, target, element, info)
 
 
@@ -497,13 +515,18 @@ func _drop_returns_of(c: Combatant) -> void:
 
 ## Being hit before its own strike lands stops whatever `c` was doing: still winding up
 ## (cancelled) or already on its way (it stops where it is, never hits, then recovers).
-func _interrupt_attacks_of(c: Combatant) -> void:
+func _interrupt_attacks_of(c: Combatant, hitter: Combatant, force: float) -> void:
 	for inc in incoming.duplicate():
 		if inc.attacker == c and not inc.ghost:
 			incoming.erase(inc)
 			inc.interrupted = true
 			log_message.emit("%s é interrompido!" % c.name)
 			attack_cancelled.emit(inc)
+	# The knockback it takes: away from the hit, or straight back from its own facing.
+	var own_back := -Vector3(sin(c.yaw), 0.0, cos(c.yaw))
+	var hit_push := BattleSpace.flat_dir(hitter.pos, c.pos)
+	var back := hit_push if (c.pos.distance_to(hitter.pos) > 0.25 and hit_push.dot(own_back) > 0.15) else own_back
+	var push := back.normalized() * clampf(1.5 * force, 1.1, 2.4)
 	for inc in _landing.duplicate():
 		if inc.attacker != c or inc.impacted or inc.interrupted or inc.ghost:
 			continue
@@ -511,12 +534,14 @@ func _interrupt_attacks_of(c: Combatant) -> void:
 			continue  # Projectile already fired and in flight: hitting the caster no longer destroys it.
 		_landing.erase(inc)
 		inc.interrupted = true
-		attack_interrupted.emit(inc)
-		if inc.plan.is_empty() or inc.phase == Phase.STAGGER:
+		if inc.motion == "cast":
 			inc.plan = [[Phase.RETURN, 0.55]]
-		inc.plan_i = 0
-		inc.phase = inc.plan[0][0]
-		inc.phase_time = 0.0
+			inc.plan_i = 0
+			inc.phase = Phase.RETURN
+			inc.phase_time = 0.0
+		else:
+			AttackMotion.begin_hit_return(inc, push)
+		attack_interrupted.emit(inc)
 		if not _returning.has(inc):
 			_returning.append(inc)
 		log_message.emit("%s é interrompido!" % c.name)
@@ -524,10 +549,13 @@ func _interrupt_attacks_of(c: Combatant) -> void:
 	for inc in _returning.duplicate():
 		if inc.attacker == c and inc.phase == Phase.RETURN and not inc.interrupted and not inc.ghost and inc.kind == Skill.Kind.MELEE:
 			inc.interrupted = true
+			if inc.motion == "cast":
+				inc.plan = [[Phase.RETURN, 0.55]]
+				inc.plan_i = 0
+				inc.phase_time = 0.0
+			else:
+				AttackMotion.begin_hit_return(inc, push)
 			attack_interrupted.emit(inc)
-			inc.plan_i = 0
-			inc.phase = inc.plan[0][0]
-			inc.phase_time = 0.0
 
 
 func _first_alive(list: Array[Combatant]) -> Combatant:
