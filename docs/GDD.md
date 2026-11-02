@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.24 — Rodada 33 encerrada com quatro decisões aprovadas e uma questão rejeitada, 2026-11-01.  
+> **Revisão:** 1.25 — Rodada 34 consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -163,6 +163,17 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
 **R33-Q5 — QUESTÃO REJEITADA, NÃO APROVADA:** resposta literal do criador: **“que recursos obtidos? já começou as perguntas idiotas redundates dnv??”**. Esta é uma **objeção à pergunta**, não a aprovação da alternativa C nem autorização para definir fabricação, materiais, sistemas de crafting ou melhorias. O histórico R27-Q5 registra literalmente “moedas recursos itens” como categorias gerais de recompensas, mas **não há catálogo, identidade nem função dos recursos definida**. Não repetir essa pergunta genérica sem esclarecer primeiro o objeto de jogo; **nenhuma decisão D-185 foi criada**.
 
+**APROVADO (R34-Q1 = B) — narrativa por dungeon:** **a campanha é organizada em histórias e missões relativamente independentes por dungeon**, com progressão geral mais aberta. **Mantém-se o desbloqueio progressivo de dungeons por conquistas e objetivos** (R25-Q1), sem inferir disponibilidade de todas as dungeons desde o início. **PENDENTE:** conteúdos e personagens das histórias e missões, vínculos entre elas e critérios de desbloqueio.
+
+**APROVADO (R34-Q2 = B) — prioridades da exploração:** **a exploração prioriza encontros, salas e eventos narrativos, sem tornar enigmas ou armadilhas um sistema central**. Essa prioridade não proíbe desafios ambientais opcionais; tipos e ocorrências permanecem pendentes. Mantêm-se NPCs e salas secretas já aprovados.
+
+**APROVADO (R34-Q3 = B) — sequência entre andares:** **a progressão principal entre andares da dungeon é sequencial**, com salas, corredores e opções de caminho variadas dentro de cada andar. **Mantêm-se as escadas/saídas para avançar sem eliminar todos os inimigos** (R24-Q1) e a quantidade de andares variável entre expedições (R33-Q3). Não aprovar ramificações entre andares como percurso principal.
+
+**APROVADO (R34-Q4 = B) — chefes variáveis:** **o chefe final pode variar entre expedições da mesma dungeon**, com catálogo e condições de escolha ainda pendentes. Mantêm-se o chefe no último andar, o combate principalmente pelas regras usuais e o máximo de três inimigos ativos, incluindo eventuais aliados do chefe. Não fixar aleatoriedade específica ou exigir chefe diferente em toda repetição.
+
+**APROVADO (R34-Q5 = C) — capacidade do inventário:** resposta literal **“10 itens não contando segurados”**. **A capacidade geral de itens carregados no inventário da exploração é de 10 itens, sem contar os itens segurados pelos Pokémon**. **PENDENTE:** quais itens ocupam cada posição, empilhamento, capacidade de itens segurados, tratamento de inventário cheio, transferência/equipamento e interface. Não estabelecer limites adicionais de itens segurados nem alterar suas regras de uso e preservação após derrota/retirada.
+
+
 
 
 
@@ -172,7 +183,7 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
  **APROVADO posteriormente (R23-Q1 = A):** movimento contínuo e livre nas quatro direções cardeais, sem movimento diagonal direto. **PENDENTE:** controles, colisão e animação.
 
-**PENDENTE:** sprites 2D, geração procedural, seeds, passagens, detecção/patrulha e estados em revisitas; espécies iniciais, tarefas/eventos de recrutamento especial, reservas/hub futuro, evolução e XP numérico, **acesso/regras de treinamento ou serviços de progressão dos reservados fora das expedições** (R33-Q2), inventário/itens segurados, demais efeitos de derrota/retirada sem revogar os desfechos aprovados, recuperação mínima do protagonista, arenas, transições, objetivos e narrativa, fuga, biomas, Moves, lojas e recompensas, chefes, **regras de variação do número de andares entre expedições da mesma dungeon** (R33-Q3), **pistas/mapas/NPCs/eventos para descobrir salas secretas** (R33-Q4), cura de HP e serviços de descanso, apresentação do mapa e interface de recrutamento. O termo genérico “recursos” (R27-Q5) continua sem catálogo ou significado operacional definido; a pergunta R33-Q5 sobre sua função foi rejeitada. Não presumir resolvidas essas pendências.
+**PENDENTE:** sprites 2D, geração procedural, seeds, passagens, detecção/patrulha e revisitas; espécies iniciais, tarefas/eventos de recrutamento, reserva/hub futuro, evolução, XP numérico e treinamento de reservados; **funcionamento do inventário limitado a 10 itens não segurados, inclusive empilhamento e inventário cheio** (R34-Q5), características e limite dos itens segurados, efeitos adicionais de derrota/retirada, recuperação mínima do protagonista, arenas, transições, **missões e histórias concretas de cada dungeon** (R34-Q1), fuga, biomas, Moves, lojas e recompensas; **catálogo e condições dos chefes variáveis por expedição** (R34-Q4), variação da quantidade de andares, pistas de salas secretas, cura no descanso e interface de recrutamento. **A progressão entre andares é sequencial** (R34-Q3), e enigmas/armadilhas não são foco central (R34-Q2). O termo genérico “recursos” (R27-Q5) continua sem catálogo ou significado operacional definido; a pergunta R33-Q5 foi rejeitada. Não presumir resolvidas essas pendências.
 
 ### Fluxo de experiência (somente encadeamento conceitual)
 
@@ -692,6 +703,21 @@ Sem decisão adicional, não fixar:
 
 **Estado da rodada:** **4 decisões aprovadas (D-181 a D-184), 1 pergunta rejeitada sem aprovação**. A Rodada 33 é encerrada por instrução do criador sem inventar quinta decisão. Mantêm-se todas as decisões D-001 a D-180, as regras de combate, ATB/Burst, ausência de PP, evolução e progressão já aprovadas.
 
+
+### 7.25. Narrativa por dungeon, exploração, progressão, chefes e inventário — Rodada 34
+
+**APROVADO (R34-Q1 = B) — estrutura narrativa:** **dungeons têm histórias e missões relativamente independentes entre si, em uma campanha de progressão geral mais aberta**. A campanha continua a **desbloquear dungeons conforme conquistas e objetivos** (R25-Q1); não interpretar “mais aberta” como todas as dungeons liberadas desde o começo. **PENDENTE:** histórias, NPCs, missões concretas, ligações entre arcos e desbloqueios.
+
+**APROVADO (R34-Q2 = B) — prioridade na exploração:** **encontros, salas e eventos narrativos têm prioridade na experiência das dungeons**, **sem exigir enigmas ou armadilhas como sistemas centrais**. Desafios ambientais pontuais não ficam proibidos; sua inclusão, objetivos e efeitos seguem pendentes. Preservar salas secretas e NPCs aprovados anteriormente.
+
+**APROVADO (R34-Q3 = B) — andares sequenciais:** **a progressão principal vai sequencialmente de um andar ao seguinte**, embora cada andar possua salas, corredores e caminhos variados. Escadas/saídas permitem avançar sem eliminar todos os inimigos (R24-Q1). O número de andares pode variar entre expedições da mesma dungeon (R33-Q3); a sequência principal permanece ordenada, sem definir ramificações entre andares.
+
+**APROVADO (R34-Q4 = B) — chefe variável:** **o chefe final de uma mesma dungeon pode variar entre expedições**, com catálogo e condições ainda pendentes. O chefe permanece no último andar e segue principalmente o sistema comum de combate (R30-Q3), podendo contar com inimigos de apoio até o limite de três inimigos ativos (R29-Q4). Não exigir chefe diferente em toda nova expedição nem inventar regras de sorteio.
+
+**APROVADO (R34-Q5 = C) — inventário de 10 itens:** resposta literal **“10 itens não contando segurados”**. **O inventário da exploração comporta 10 itens transportados, sem contabilizar os itens que estejam sendo segurados pelos Pokémon**. **PENDENTE:** contagem de pilhas, tipos de itens que ocupam espaço, organização, inventário cheio, quantidade de itens segurados por Pokémon e operações de colocar/retirar. Não deduzir capacidade dos itens segurados nem alterar a preservação deles após derrota/retirada, o consumo automático de berries ou os efeitos passivos já aprovados.
+
+**Preservação:** decisões D-001 a D-184 integralmente válidas. A rejeição de R33-Q5 permanece registrada. R34-Q5 é resposta personalizada C, não autorização para acrescentar sistemas de materiais, fórmulas, PP ou novos custos ATB/Burst. Apenas requisitos de documentação foram atualizados.
+
 ## 8. Estado real do repositório (inspeção de código, não de execução)
 
 Referência: `main` em `1171b5f3c427edc34c486c82d42569f41fd0ea62`. Projeto **Godot 4.7**, configurado em `project.godot`, com cena inicial 2D.
@@ -898,6 +924,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-182 | R33-Q2 = A: **reservados podem progredir por treinamento ou serviços específicos fora das expedições**, sem receber XP das vitórias dos ativos; condições pendentes. |
 | D-183 | R33-Q3 = B: **quantidade de andares de uma mesma dungeon pode variar entre expedições**, geração e seed reproduzíveis preservadas; critérios pendentes. |
 | D-184 | R33-Q4 = B: **salas secretas descobertas principalmente por pistas, mapas especiais, NPCs ou eventos**, acesso e regras pendentes. |
+| D-185 | R34-Q1 = B: **campanha com histórias e missões relativamente independentes por dungeon, em progressão geral mais aberta**, preservando desbloqueios por conquistas/objetivos. |
+| D-186 | R34-Q2 = B: **exploração prioriza encontros, salas e eventos narrativos, sem enigmas/armadilhas como sistema central**, não os proibindo. |
+| D-187 | R34-Q3 = B: **progressão principal sequencial entre andares**, com salas e caminhos variados dentro de cada andar; escadas/saídas e extensão variável mantidas. |
+| D-188 | R34-Q4 = B: **chefe final pode variar entre expedições da mesma dungeon**, catálogo/condições pendentes, limites de combate preservados. |
+| D-189 | R34-Q5 = C — “10 itens não contando segurados”: **limite de 10 itens no inventário da exploração, excluindo os itens segurados pelos Pokémon**, regras de empilhamento e inventário cheio pendentes. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -1361,39 +1392,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Preservação:** D-001 a D-180 intactas. Não criar D-185 fictícia; não fixar fórmulas, quantidades, PP ou novos custos ATB/Burst. Evitar novas perguntas sobre “recursos” genéricos enquanto os objetos concretos não estiverem definidos.
 
-## 10.33. Rodada 34 — narrativa, estrutura dos andares e desafios das dungeons (cinco perguntas abertas)
+## 10.33. Rodada 34 — narrativa, estrutura dos andares e desafios das dungeons (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas, nenhuma alternativa aprovada. Questões de gameplay de alto impacto, distintas das decisões já fechadas e sem novos sistemas de “recursos” imaginados.
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01, decisões D-185 a D-189. A rejeição de R33-Q5 permanece no histórico e não foi transformada em decisão.
 
-**R34-Q1 — Qual será a estrutura narrativa principal da campanha de Crawlmon?**  
-A. **Uma história principal contínua com personagens recorrentes e um objetivo narrativo central**, que motiva a progressão entre dungeons.  
-B. **Uma aventura organizada em histórias/missões relativamente independentes por dungeon**, ligadas por uma progressão geral mais aberta.  
-C. Outra estrutura narrativa, descrita pelo criador.  
-*Missões e objetivos apresentados por NPCs/narrativa (R31-Q4) já foram aprovados; o arco da campanha não foi.*
+| ID | Resposta literal do criador | Regra aprovada e pendências |
+| --- | --- | --- |
+| **R34-Q1** | **B** — “A campanha é organizada em histórias e missões relativamente independentes por dungeon, com progressão geral mais aberta.” | **Histórias/missões por dungeon, com campanha mais aberta**, mantendo os desbloqueios por conquistas/objetivos. |
+| **R34-Q2** | **B** — “A exploração prioriza encontros, salas e eventos narrativos, sem tornar enigmas ou armadilhas um sistema central.” | **Priorizar encontros/salas/eventos**, sem tornar enigmas e armadilhas centrais nem proibi-los. |
+| **R34-Q3** | **B** — “Manter progressão principal sequencial entre andares, embora cada andar tenha salas e caminhos variados.” | **Sequência entre andares, variedade de caminhos dentro de cada andar**, com extensão variável por expedição. |
+| **R34-Q4** | **B** — “O chefe final pode variar entre expedições da mesma dungeon, com catálogo e condições pendentes.” | **Chefes podem variar entre expedições**, sem exigir variação em toda repetição. |
+| **R34-Q5** | **C** — “10 itens não contando segurados” | **Inventário limitado a dez itens, sem contar itens segurados**; empilhamento, interface e demais regras pendentes. |
 
-**R34-Q2 — As dungeons terão desafios ambientais além de encontros com Pokémon e eventos narrativos?**  
-A. **Sim, incluir obstáculos, enigmas ou armadilhas como conteúdo de exploração**, com tipos e consequências pendentes, sem torná-los todos obrigatórios.  
-B. **Priorizar encontros, exploração de salas e eventos narrativos**, sem exigir enigmas/armadilhas como sistema central.  
-C. Outro papel para desafios ambientais, descrito pelo criador.  
-*Eventos, NPCs e salas secretas são prioridades (R25-Q5); desafios ambientais ainda não foram detalhados.*
+**Preservação:** D-001 a D-184 permanecem intactas, inclusive a rejeição expressa de R33-Q5. Nenhuma regra de PP, ATB/Burst, crafting, quantidades de itens segurados ou recursos materiais foi acrescentada.
 
-**R34-Q3 — Como os caminhos entre andares serão organizados quando uma dungeon tiver múltiplas rotas possíveis?**  
-A. **Permitir passagens alternativas e ramificações entre andares**, com rotas e consequências pendentes.  
-B. **Manter uma progressão principal sequencial de andar para andar**, embora cada andar possua seus corredores, salas e escolhas de caminho.  
-C. Outra estrutura entre andares, descrita pelo criador.  
-*A transição por escadas/saídas (R24-Q1) e a quantidade variável de andares (R33-Q3) não determinam se há ramificações entre andares.*
+## 10.34. Rodada 35 — companheiros, recrutamento, inventário e narrativa procedural (cinco perguntas abertas)
 
-**R34-Q4 — Quando uma dungeon concluída for explorada novamente, como será definido seu chefe final?**  
-A. **A dungeon mantém um chefe principal reconhecível entre expedições**, com outras variações de encontro ainda pendentes.  
-B. **O chefe pode variar entre expedições da mesma dungeon**, com catálogo e condições pendentes.  
-C. Outro sistema de chefes, descrito pelo criador.  
-*O combate final exige vencer um chefe, que usa principalmente as regras comuns e pode ter aliados; a identidade do chefe em novas expedições não foi escolhida.*
+**Status:** ABERTA — 0/5 respostas, nenhuma alternativa aprovada. Selecionadas decisões centrais ainda pendentes, distintas do conteúdo aprovado até R34.
 
-**R34-Q5 — O inventário de itens levados na exploração terá capacidade limitada?**  
-A. **Sim, haverá limite de itens transportados na expedição**, com organização e capacidade exatas pendentes.  
-B. **Não impor um limite geral de capacidade ao inventário de exploração**, mantendo outras restrições específicas de itens para decisões futuras.  
-C. Outro modelo de inventário, descrito pelo criador.  
-*Itens carregados/segurados e regras de perda foram aprovados; capacidade de transporte ainda não foi definida.*
+**R35-Q1 — Como os Pokémon aliados ativos serão representados durante a exploração 2D?**  
+A. **Os aliados ativos acompanham visualmente o protagonista pelo mapa**, preservando controle direto do protagonista e IA para os aliados.  
+B. **Somente o protagonista aparece como personagem controlável/visível na exploração**, com aliados ativos presentes principalmente nas batalhas 3D.  
+C. Outro sistema de representação dos aliados, descrito pelo criador.  
+*O GDD define protagonista controlado e aliados por IA nas batalhas, mas não estabelece se os aliados acompanham visualmente a exploração 2D.*
+
+**R35-Q2 — Como os Pokémon elegíveis comuns, fora dos encontros especiais, podem ser recrutados?**  
+A. **Oferecer oportunidades de recrutamento por interação direta voluntária no mapa**, com requisitos e elegibilidade pendentes.  
+B. **Exigir condições ou eventos próprios também para recrutamentos comuns**, com tarefas e conteúdo pendentes.  
+C. Outro procedimento ou combinação, descrito pelo criador.  
+*R32-Q5 exige tarefa/evento para candidatos especiais, não para todos os Pokémon elegíveis; contatos hostis normais seguem iniciando combate.*
+
+**R35-Q3 — Quando o inventário de dez itens estiver cheio e o jogador encontrar outro item, qual será a regra principal?**  
+A. **Permitir escolher um item carregado para deixar/trocar antes de recolher o novo**, com interface e destino do item antigo pendentes.  
+B. **Manter o item encontrado no cenário até que exista espaço**, com persistência e condições de recolhimento pendentes.  
+C. Outra regra, descrita pelo criador.  
+*Dez itens não segurados é o limite aprovado em R34-Q5; coleta com capacidade esgotada ainda não foi definida.*
+
+**R35-Q4 — O jogador pode tentar fugir durante uma batalha contra chefe?**  
+A. **Não permitir fuga de confrontos contra chefes**, que devem ser resolvidos por combate, com exceções futuras pendentes.  
+B. **Permitir tentativas de fuga também contra chefes**, com restrições e consequências próprias ainda pendentes.  
+C. Outra regra, descrita pelo criador.  
+*A fuga de combate comum está aprovada em R27-Q1; o tratamento dos chefes permanece explicitamente pendente.*
+
+**R35-Q5 — Como as histórias e missões de cada dungeon se relacionam com a geração procedural?**  
+A. **Histórias, personagens e objetivos principais escritos especificamente para cada dungeon**, enquanto mapas e encontros variam proceduralmente.  
+B. **Parte relevante das histórias e missões também pode variar entre expedições**, por eventos e situações procedurais, com catálogo e regras pendentes.  
+C. Outro modelo narrativo, descrito pelo criador.  
+*R34-Q1 estabeleceu histórias e missões relativamente independentes por dungeon; ainda não definiu se essas missões são fixas ou variáveis a cada expedição.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -1452,5 +1497,7 @@ C. Outro modelo de inventário, descrito pelo criador.
 | 1.23 | 2026-11-01 | Rodada 32 (D-176 a D-180): protagonista pode voltar à exploração mediante recuperação mínima após vitória dos aliados; descanso seguro cura HP além de restaurar integralmente MP; XP e níveis da expedição persistem após derrota definitiva ou retirada voluntária; mapa do andar revelado progressivamente; recrutamento especial exige resolver tarefa/evento iniciado por interação. Abre Rodada 33 sobre derrota de equipe, treino de reservas, quantidade de andares, salas secretas e uso de recursos. | Rodada 32 fechada / Rodada 33 aberta |
 
 | 1.24 | 2026-11-01 | Rodada 33 encerrada: 4 decisões aprovadas (D-181 a D-184) e R33-Q5 rejeitada sem aprovação por pergunta imprecisa/redundante. Todos os ativos incapacitados causam derrota definitiva; treino/serviços para reservas fora das expedições; quantidade de andares pode variar por expedição; salas secretas descobertas por pistas, mapas, NPCs e eventos. Não definir função para “recursos” genéricos. Abre Rodada 34 sobre narrativa, desafios ambientais, rotas, chefes e inventário. | Rodada 33 encerrada (4 aprovadas / 1 rejeitada) / Rodada 34 aberta |
+
+| 1.25 | 2026-11-01 | Rodada 34 (D-185 a D-189): narrativas/missões relativamente independentes por dungeon com progressão de campanha mais aberta, mas desbloqueios mantidos; priorizar encontros/salas/eventos sem enigmas/armadilhas centrais; sequência principal entre andares com caminhos internos variados; chefe final variável entre expedições; inventário de 10 itens sem contabilizar segurados (R34-Q5 C). Rejeição de R33-Q5 mantida. Abre Rodada 35 sobre representação dos aliados, recrutamento comum, inventário cheio, fuga de chefes e histórias procedurais. | Rodada 34 fechada / Rodada 35 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
