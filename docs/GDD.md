@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.25 — Rodada 34 consolidada, 2026-11-01.  
+> **Revisão:** 1.26 — Rodada 35 consolidada, 2026-11-02.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -171,7 +171,18 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
 **APROVADO (R34-Q4 = B) — chefes variáveis:** **o chefe final pode variar entre expedições da mesma dungeon**, com catálogo e condições de escolha ainda pendentes. Mantêm-se o chefe no último andar, o combate principalmente pelas regras usuais e o máximo de três inimigos ativos, incluindo eventuais aliados do chefe. Não fixar aleatoriedade específica ou exigir chefe diferente em toda repetição.
 
-**APROVADO (R34-Q5 = C) — capacidade do inventário:** resposta literal **“10 itens não contando segurados”**. **A capacidade geral de itens carregados no inventário da exploração é de 10 itens, sem contar os itens segurados pelos Pokémon**. **PENDENTE:** quais itens ocupam cada posição, empilhamento, capacidade de itens segurados, tratamento de inventário cheio, transferência/equipamento e interface. Não estabelecer limites adicionais de itens segurados nem alterar suas regras de uso e preservação após derrota/retirada.
+**APROVADO (R34-Q5 = C) — capacidade do inventário (regra histórica, refinada em R35-Q3):** resposta literal **“10 itens não contando segurados”**. A decisão originalmente fixou **10 itens transportados, sem contar os itens segurados**. **COMPLEMENTO E ATUALIZAÇÃO EXPRESSA (R35-Q3 = C):** o limite de 10 é **por Pokémon integrante da equipe ativa**, totalizando **até 30 itens não segurados com três integrantes ativos**, sem permitir que um único integrante carregue mais de 10. **R35-Q3 também aprovou a alternativa A para inventário cheio:** escolher um item carregado para deixar/trocar antes de recolher outro. **PENDENTE:** itens empilhados, operações entre integrantes, vagas ao mudar equipe, limite/quantidade de itens segurados, detalhes de descarte e interface. Não modificar a decisão histórica D-189, preservada no ledger.
+
+**APROVADO (R35-Q1 = A) — aliados visíveis em 2D:** **os Pokémon aliados ativos acompanham visualmente o protagonista no mapa 2D durante a exploração**. O controle direto permanece exclusivo do protagonista; aliados continuam orientados pela IA. **PENDENTE:** formação, deslocamento, colisões, reações e comportamento visual da equipe no mapa. Não tornar reservados seguidores nem transferir controle direto a eles.
+
+**APROVADO (R35-Q2 = A) — recrutamento comum:** **Pokémon elegíveis comuns oferecem oportunidade de recrutamento por interação voluntária direta no mapa 2D**, sujeitos a requisitos de elegibilidade ainda pendentes. **Pokémon especiais seguem exigindo tarefa/evento prévio à efetivação do recrutamento** (R32-Q5), e contatos hostis normais continuam iniciando combate 3D (R8-Q5). Não inferir recrutamento automático por aproximação nem chance de sucesso específica.
+
+**APROVADO (R35-Q3 = C) — limite individual e inventário cheio:** resposta literal **“cada aliado tem 10 itens de limte, entao no geral tem 30 items mas cada aliado tem até 10, alias opção A”**. **Cada um dos três integrantes possíveis da equipe ativa, incluindo o protagonista, pode transportar até 10 itens não segurados**, totalizando **até 30 itens quando a equipe ativa tem três integrantes**. Nenhum integrante pode concentrar os 30 itens. **Ao encontrar novo item com o inventário correspondente cheio, é possível escolher um item carregado para deixar/trocar antes de recolher o novo** (alternativa A expressamente indicada). Mantêm-se os **itens segurados fora dessa contagem** (R34-Q5). **PENDENTE:** capacidade quando integrantes saem/entram, distribuição e transferência de itens, empilhamento, quantidade de itens segurados, consequências de descartar, interface e coleta concreta.
+
+**APROVADO (R35-Q4 = A) — chefes sem fuga:** **não é permitida tentativa de fuga durante combates contra chefes**, ressalvadas eventuais exceções futuras a decidir. **A tentativa de fuga em combates comuns permanece permitida** (R27-Q1), com regras de êxito e fuga bem-sucedida aprovadas em R28-Q3. Não criar custos ou chances novos.
+
+**APROVADO (R35-Q5 = B) — narrativa variável por expedição:** **histórias e missões também podem variar entre expedições da mesma dungeon por eventos e situações procedurais**, com conteúdo e regras pendentes. **Mantêm-se histórias/missões relativamente independentes por dungeon** (R34-Q1) e campanha que desbloqueia dungeons mediante conquistas/objetivos (R25-Q1). Não afirmar que todas as missões variam ou que NPCs/conteúdo sejam inteiramente aleatórios.
+
 
 
 
@@ -183,7 +194,7 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
  **APROVADO posteriormente (R23-Q1 = A):** movimento contínuo e livre nas quatro direções cardeais, sem movimento diagonal direto. **PENDENTE:** controles, colisão e animação.
 
-**PENDENTE:** sprites 2D, geração procedural, seeds, passagens, detecção/patrulha e revisitas; espécies iniciais, tarefas/eventos de recrutamento, reserva/hub futuro, evolução, XP numérico e treinamento de reservados; **funcionamento do inventário limitado a 10 itens não segurados, inclusive empilhamento e inventário cheio** (R34-Q5), características e limite dos itens segurados, efeitos adicionais de derrota/retirada, recuperação mínima do protagonista, arenas, transições, **missões e histórias concretas de cada dungeon** (R34-Q1), fuga, biomas, Moves, lojas e recompensas; **catálogo e condições dos chefes variáveis por expedição** (R34-Q4), variação da quantidade de andares, pistas de salas secretas, cura no descanso e interface de recrutamento. **A progressão entre andares é sequencial** (R34-Q3), e enigmas/armadilhas não são foco central (R34-Q2). O termo genérico “recursos” (R27-Q5) continua sem catálogo ou significado operacional definido; a pergunta R33-Q5 foi rejeitada. Não presumir resolvidas essas pendências.
+**PENDENTE:** sprites 2D, geração procedural, seeds, passagens, detecção/patrulha e revisitas; espécies iniciais, **elegibilidade do recrutamento comum por interação direta e tarefas do recrutamento especial** (R35-Q2/R32-Q5), reservas/hub futuro, evolução, XP numérico/treinamento dos reservados; **inventário de até 10 itens não segurados por integrante ativo (até 30 com três), distribuição, empilhamento, mudanças na equipe e descarte/troca quando cheio** (R35-Q3), características dos itens segurados, efeitos adicionais de derrota/retirada, recuperação do protagonista, arenas/transições, **movimentação e comportamento dos aliados visíveis em 2D** (R35-Q1), **histórias e missões que podem variar proceduralmente entre expedições** (R35-Q5), condições concretas de fuga de combates comuns com **chefes sem fuga** (R35-Q4), biomas, Moves, lojas e recompensas; chefes variáveis por expedição, quantidades variáveis de andares, pistas de salas secretas, cura no descanso e interface de recrutamento. Progressão entre andares sequencial (R34-Q3); enigmas/armadilhas não centrais (R34-Q2). “Recursos” em R27-Q5 permanece sem catálogo/uso definido; R33-Q5 foi rejeitada. Não presumir outras regras resolvidas.
 
 ### Fluxo de experiência (somente encadeamento conceitual)
 
@@ -714,9 +725,24 @@ Sem decisão adicional, não fixar:
 
 **APROVADO (R34-Q4 = B) — chefe variável:** **o chefe final de uma mesma dungeon pode variar entre expedições**, com catálogo e condições ainda pendentes. O chefe permanece no último andar e segue principalmente o sistema comum de combate (R30-Q3), podendo contar com inimigos de apoio até o limite de três inimigos ativos (R29-Q4). Não exigir chefe diferente em toda nova expedição nem inventar regras de sorteio.
 
-**APROVADO (R34-Q5 = C) — inventário de 10 itens:** resposta literal **“10 itens não contando segurados”**. **O inventário da exploração comporta 10 itens transportados, sem contabilizar os itens que estejam sendo segurados pelos Pokémon**. **PENDENTE:** contagem de pilhas, tipos de itens que ocupam espaço, organização, inventário cheio, quantidade de itens segurados por Pokémon e operações de colocar/retirar. Não deduzir capacidade dos itens segurados nem alterar a preservação deles após derrota/retirada, o consumo automático de berries ou os efeitos passivos já aprovados.
+**APROVADO (R34-Q5 = C) — inventário de 10 itens (histórico):** resposta literal **“10 itens não contando segurados”**. A decisão fixou 10 itens transportados e excluiu os itens segurados da contagem. **Atualização expressa aprovada em R35-Q3 = C:** **10 itens não segurados por cada Pokémon ativo (até 30 itens com os três integrantes ativos)**; não é inventário global de apenas 10 nem uma capacidade de 30 para um único Pokémon. **Inventário cheio:** R35-Q3 também aprova a alternativa A, permitindo escolher item anterior para deixar/trocar antes da coleta. **PENDENTE:** distribuição entre membros, mudanças de composição, empilhamento, capacidade de itens segurados, destinos dos itens deixados e UI. Preservar perda/preservação já aprovada e funcionamento passivo/automático dos itens segurados.
 
 **Preservação:** decisões D-001 a D-184 integralmente válidas. A rejeição de R33-Q5 permanece registrada. R34-Q5 é resposta personalizada C, não autorização para acrescentar sistemas de materiais, fórmulas, PP ou novos custos ATB/Burst. Apenas requisitos de documentação foram atualizados.
+
+
+### 7.26. Aliados em 2D, recrutamento comum, inventário individual, fuga e histórias — Rodada 35
+
+**APROVADO (R35-Q1 = A) — aliados acompanham visualmente:** **Pokémon aliados da equipe ativa aparecem no mapa de exploração 2D e acompanham o protagonista**. O **protagonista permanece o único controlado diretamente**; aliados usam IA. **PENDENTE:** formação, movimentação, colisões e interações durante a exploração; não definir reservados como acompanhantes.
+
+**APROVADO (R35-Q2 = A) — recrutamento comum:** **Pokémon comuns elegíveis podem oferecer recrutamento por interação voluntária direta no 2D**, com requisitos específicos pendentes. Recrutamento especial ainda exige tarefa/evento (R32-Q5). **Inimigos hostis comuns** continuam iniciando batalha por contato (R8-Q5), sem recrutamento automático por proximidade.
+
+**APROVADO (R35-Q3 = C) — inventário por Pokémon e coleta com espaço esgotado:** resposta literal **“cada aliado tem 10 itens de limte, entao no geral tem 30 items mas cada aliado tem até 10, alias opção A”**. **Cada integrante da equipe ativa — protagonista incluído para corresponder ao total de três — carrega até dez itens não segurados**; **com três integrantes, a capacidade agregada é até 30, distribuída em dez por Pokémon**, não trinta em um único inventário individual. **Itens segurados não entram na contagem**, conforme R34-Q5. A expressão **“alias opção A”** também aprova **permitir escolher um item carregado para deixar/trocar antes de recolher outro quando estiver cheio**. **PENDENTE:** coleta por Pokémon, redistribuição, capacidade ao mudar a equipe, pilhas, itens segurados, destino do item deixado e interface. Esta decisão **atualiza e especifica** o antigo limite geral de 10 da R34-Q5; o registro D-189 original permanece no histórico sem ser adulterado.
+
+**APROVADO (R35-Q4 = A) — fuga de chefes:** **combates contra chefes não permitem fuga**, salvo eventuais exceções futuras explicitamente aprovadas. Em combates comuns, a fuga segue permitida conforme R27-Q1 e o retorno/stun de três segundos após êxito conforme R28-Q3. Não determinar novas chances, comandos ou custos.
+
+**APROVADO (R35-Q5 = B) — narrativa procedural:** **as histórias e missões podem variar entre expedições de uma mesma dungeon em decorrência de eventos/situações procedurais**, com catálogo, relevância e critérios de geração pendentes. Mantêm-se a identidade narrativa relativamente independente de cada dungeon (R34-Q1) e o desbloqueio de dungeons na campanha (R25-Q1). Não presumir que todas as narrativas ou seus NPCs sejam gerados aleatoriamente.
+
+**Preservação:** decisões D-001 a D-189 intactas, inclusive rejeição de R33-Q5; R35-Q3 complementa o requisito de inventário sem alterar decisões históricas. Não implementar nem inventar recursos materiais, PP, fórmulas, custos ATB/Burst, capacidade de pilhas ou limite de itens segurados.
 
 ## 8. Estado real do repositório (inspeção de código, não de execução)
 
@@ -929,6 +955,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-187 | R34-Q3 = B: **progressão principal sequencial entre andares**, com salas e caminhos variados dentro de cada andar; escadas/saídas e extensão variável mantidas. |
 | D-188 | R34-Q4 = B: **chefe final pode variar entre expedições da mesma dungeon**, catálogo/condições pendentes, limites de combate preservados. |
 | D-189 | R34-Q5 = C — “10 itens não contando segurados”: **limite de 10 itens no inventário da exploração, excluindo os itens segurados pelos Pokémon**, regras de empilhamento e inventário cheio pendentes. |
+| D-190 | R35-Q1 = A: **aliados ativos acompanham visualmente o protagonista no mapa 2D**, com controle direto exclusivo do protagonista e aliados por IA. |
+| D-191 | R35-Q2 = A: **Pokémon comuns elegíveis oferecem recrutamento por interação voluntária direta**, requisitos pendentes; especiais continuam por tarefa/evento. |
+| D-192 | R35-Q3 = C — “cada aliado tem 10 itens de limte, entao no geral tem 30 items mas cada aliado tem até 10, alias opção A”: **10 itens não segurados por Pokémon ativo, até 30 com três ativos**, atualizando o total da R34-Q5; **com inventário cheio, escolher item para deixar/trocar antes de recolher outro** (alternativa A). |
+| D-193 | R35-Q4 = A: **não permitir fuga em combates contra chefes**, sem alterar fuga de combates comuns; possíveis exceções futuras não definidas. |
+| D-194 | R35-Q5 = B: **histórias e missões de uma dungeon podem variar entre expedições mediante eventos e situações procedurais**, regras e conteúdo pendentes. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -1406,39 +1437,55 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Preservação:** D-001 a D-184 permanecem intactas, inclusive a rejeição expressa de R33-Q5. Nenhuma regra de PP, ATB/Burst, crafting, quantidades de itens segurados ou recursos materiais foi acrescentada.
 
-## 10.34. Rodada 35 — companheiros, recrutamento, inventário e narrativa procedural (cinco perguntas abertas)
+## 10.34. Rodada 35 — companheiros, recrutamento, inventário e narrativa procedural (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas, nenhuma alternativa aprovada. Selecionadas decisões centrais ainda pendentes, distintas do conteúdo aprovado até R34.
+**Status:** FECHADA — 5/5 decisões aprovadas em 2026-11-02, D-190 a D-194, com atualização expressa do limite de inventário anterior. A rejeição de R33-Q5 permanece intacta.
 
-**R35-Q1 — Como os Pokémon aliados ativos serão representados durante a exploração 2D?**  
-A. **Os aliados ativos acompanham visualmente o protagonista pelo mapa**, preservando controle direto do protagonista e IA para os aliados.  
-B. **Somente o protagonista aparece como personagem controlável/visível na exploração**, com aliados ativos presentes principalmente nas batalhas 3D.  
-C. Outro sistema de representação dos aliados, descrito pelo criador.  
-*O GDD define protagonista controlado e aliados por IA nas batalhas, mas não estabelece se os aliados acompanham visualmente a exploração 2D.*
+| ID | Resposta literal do criador | Regra aprovada / pendências |
+| --- | --- | --- |
+| **R35-Q1** | **A** — “Os aliados ativos acompanham visualmente o protagonista no mapa 2D, sem mudar o controle direto do protagonista.” | **Aliados ativos acompanham visualmente no 2D**, controle do protagonista mantido. |
+| **R35-Q2** | **A** — “Pokémon elegíveis comuns oferecem oportunidades de recrutamento por interação voluntária direta, sujeitas a requisitos pendentes.” | **Recrutamento comum por interação voluntária direta**, distinto das tarefas dos especiais. |
+| **R35-Q3** | **C** — “cada aliado tem 10 itens de limte, entao no geral tem 30 items mas cada aliado tem até 10, alias opção A” | **Cada Pokémon ativo pode transportar até 10 itens não segurados, total até 30 com três ativos**; item segurado não conta (R34-Q5). **Alternativa A também aprovada:** escolher item anterior para deixar/trocar antes de recolher quando cheio. |
+| **R35-Q4** | **A** — “Não permitir fuga dos combates contra chefes, com exceções futuras pendentes.” | **Sem fuga de chefes**, fuga comum preservada. |
+| **R35-Q5** | **B** — “Histórias e missões também podem variar entre expedições da mesma dungeon por meio de eventos e situações procedurais.” | **Histórias/missões podem variar por expedição**, sem definir geração ou conteúdo. |
 
-**R35-Q2 — Como os Pokémon elegíveis comuns, fora dos encontros especiais, podem ser recrutados?**  
-A. **Oferecer oportunidades de recrutamento por interação direta voluntária no mapa**, com requisitos e elegibilidade pendentes.  
-B. **Exigir condições ou eventos próprios também para recrutamentos comuns**, com tarefas e conteúdo pendentes.  
-C. Outro procedimento ou combinação, descrito pelo criador.  
-*R32-Q5 exige tarefa/evento para candidatos especiais, não para todos os Pokémon elegíveis; contatos hostis normais seguem iniciando combate.*
+**Rastreabilidade do inventário:** D-189, aprovado na R34, permanece transcrito exatamente como decisão histórica de 10 itens não segurados. **D-192 supera a interpretação anterior de limite global de 10** ao dividir a capacidade em até 10 por integrante ativo (até 30 com equipe completa). Não inferir 30 em um único Pokémon, transferência irrestrita ou limite/capacidade de itens segurados.
 
-**R35-Q3 — Quando o inventário de dez itens estiver cheio e o jogador encontrar outro item, qual será a regra principal?**  
-A. **Permitir escolher um item carregado para deixar/trocar antes de recolher o novo**, com interface e destino do item antigo pendentes.  
-B. **Manter o item encontrado no cenário até que exista espaço**, com persistência e condições de recolhimento pendentes.  
-C. Outra regra, descrita pelo criador.  
-*Dez itens não segurados é o limite aprovado em R34-Q5; coleta com capacidade esgotada ainda não foi definida.*
+**Preservação:** D-001 a D-189 intactas, inclusive rejeição expressa de R33-Q5. Não criar PP, fórmula, crafting ou custos ATB/Burst novos.
 
-**R35-Q4 — O jogador pode tentar fugir durante uma batalha contra chefe?**  
-A. **Não permitir fuga de confrontos contra chefes**, que devem ser resolvidos por combate, com exceções futuras pendentes.  
-B. **Permitir tentativas de fuga também contra chefes**, com restrições e consequências próprias ainda pendentes.  
-C. Outra regra, descrita pelo criador.  
-*A fuga de combate comum está aprovada em R27-Q1; o tratamento dos chefes permanece explicitamente pendente.*
+## 10.35. Rodada 36 — exploração, missões e consequências da expedição (cinco perguntas abertas)
 
-**R35-Q5 — Como as histórias e missões de cada dungeon se relacionam com a geração procedural?**  
-A. **Histórias, personagens e objetivos principais escritos especificamente para cada dungeon**, enquanto mapas e encontros variam proceduralmente.  
-B. **Parte relevante das histórias e missões também pode variar entre expedições**, por eventos e situações procedurais, com catálogo e regras pendentes.  
-C. Outro modelo narrativo, descrito pelo criador.  
-*R34-Q1 estabeleceu histórias e missões relativamente independentes por dungeon; ainda não definiu se essas missões são fixas ou variáveis a cada expedição.*
+**Status:** ABERTA — 0/5 respostas. Cinco decisões de gameplay que ainda não foram fechadas. Nenhuma alternativa aprovada.
+
+**R36-Q1 — Como os aliados ativos devem se comportar no mapa 2D enquanto acompanham o protagonista?**  
+A. **Acompanhar o protagonista como grupo**, permanecendo próximos durante a exploração, com formação e movimentação a definir.  
+B. **Acompanhar o protagonista, mas também poder se afastar para explorar ou investigar pontos de interesse pela IA**, com limites e regras pendentes.  
+C. Outra dinâmica, descrita pelo criador.  
+*R35-Q1 definiu a presença visual dos aliados, mas não sua liberdade ou função na exploração.*
+
+**R36-Q2 — As missões e eventos variáveis de uma dungeon poderão impedir acesso ao chefe até serem concluídos?**  
+A. **Missões e eventos secundários permanecem opcionais**, sem impedir acesso ao chefe se o jogador alcançar o último andar.  
+B. **Algumas missões ou eventos podem ser requisitos de acesso ao chefe**, apesar da progressão sequencial de andares; condições pendentes.  
+C. Outra estrutura, descrita pelo criador.  
+*R23-Q2 exige vencer o chefe e R34/R35 estabeleceram histórias e missões variáveis, mas não decidiram se elas bloqueiam o confronto final.*
+
+**R36-Q3 — O que ocorre com itens já coletados e eventos já resolvidos ao revisitar um andar na mesma expedição?**  
+A. **Coletas e eventos concluídos permanecem registrados**, sem reiniciar automaticamente quando o jogador volta ao andar.  
+B. **Alguns eventos ou oportunidades de obtenção de itens podem reaparecer em revisitas**, sem regenerar o layout; regras pendentes.  
+C. Outro sistema de persistência, descrito pelo criador.  
+*O layout é persistente e inimigos derrotados não reaparecem na mesma expedição (R9); o estado de itens e eventos ao revisitar permanece explicitamente pendente.*
+
+**R36-Q4 — Pokémon recrutados durante a expedição continuam pertencendo ao jogador se ele sair voluntariamente antes do chefe?**  
+A. **Sim, Pokémon recrutados são preservados também na retirada voluntária**, assim como na derrota definitiva; outros efeitos mantêm regras anteriores.  
+B. **Não preservar automaticamente os Pokémon recém-recrutados após retirada voluntária**, exigindo concluir a dungeon para mantê-los; detalhes pendentes.  
+C. Outra consequência da retirada, descrita pelo criador.  
+*R24-Q5 preserva recrutados após derrota definitiva, mas não há regra equivalente explícita para abandono voluntário.*
+
+**R36-Q5 — Quais encontros definem a variedade de Pokémon encontrados em diferentes dungeons?**  
+A. **Cada dungeon possui um conjunto próprio de espécies mais características**, com catálogos e variações internas por bioma pendentes.  
+B. **O conjunto de espécies varia principalmente conforme biomas e progressão de dificuldade**, podendo atravessar dungeons diferentes; listas pendentes.  
+C. Outra organização de espécies e encontros, descrita pelo criador.  
+*Biomas podem afetar inimigos/encontros (R28-Q4) e dungeons possuem identidade narrativa (R34-Q1), mas não há uma regra aprovada sobre os conjuntos de espécies por dungeon.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -1499,5 +1546,7 @@ C. Outro modelo narrativo, descrito pelo criador.
 | 1.24 | 2026-11-01 | Rodada 33 encerrada: 4 decisões aprovadas (D-181 a D-184) e R33-Q5 rejeitada sem aprovação por pergunta imprecisa/redundante. Todos os ativos incapacitados causam derrota definitiva; treino/serviços para reservas fora das expedições; quantidade de andares pode variar por expedição; salas secretas descobertas por pistas, mapas, NPCs e eventos. Não definir função para “recursos” genéricos. Abre Rodada 34 sobre narrativa, desafios ambientais, rotas, chefes e inventário. | Rodada 33 encerrada (4 aprovadas / 1 rejeitada) / Rodada 34 aberta |
 
 | 1.25 | 2026-11-01 | Rodada 34 (D-185 a D-189): narrativas/missões relativamente independentes por dungeon com progressão de campanha mais aberta, mas desbloqueios mantidos; priorizar encontros/salas/eventos sem enigmas/armadilhas centrais; sequência principal entre andares com caminhos internos variados; chefe final variável entre expedições; inventário de 10 itens sem contabilizar segurados (R34-Q5 C). Rejeição de R33-Q5 mantida. Abre Rodada 35 sobre representação dos aliados, recrutamento comum, inventário cheio, fuga de chefes e histórias procedurais. | Rodada 34 fechada / Rodada 35 aberta |
+
+| 1.26 | 2026-11-02 | Rodada 35 (D-190 a D-194): aliados ativos visíveis acompanhando protagonista no 2D; recrutamento comum por interação voluntária direta; inventário 10 itens não segurados por Pokémon ativo, até 30 com três ativos, e alternativa A de deixar/trocar item quando cheio (R35-Q3 C), atualizando regra global da R34 sem reescrever D-189; proibição de fuga contra chefes; missões e histórias também variáveis entre expedições. Rejeição de R33-Q5 mantida. Abre Rodada 36 sobre comportamento de aliados, requisitos de missões, estados em revisitas, recrutamento em retirada e espécies por dungeon. | Rodada 35 fechada / Rodada 36 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
