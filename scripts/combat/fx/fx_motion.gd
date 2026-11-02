@@ -116,9 +116,20 @@ func finish(player_won: bool) -> void:
 	for c in fx._models:
 		if c.is_player and c.is_alive():
 			fx._busy_for(c, 60.0)
-			_stop_moving(c)
-			(fx._models[c] as Node3D).position = fx._home[c]
-			_play(c, "victory")
+			_victory_pose(c)
+
+
+## Waits for a winner that is still hopping home from its last attack, then strikes the pose.
+func _victory_pose(c: Combatant) -> void:
+	var waited := 0.0
+	while is_driven(c) and waited < 2.0:
+		await fx.get_tree().create_timer(0.05, false).timeout
+		waited += 0.05
+		if fx == null:
+			return
+	_stop_moving(c)
+	(fx._models[c] as Node3D).position = fx._home[c]
+	_play(c, "victory")
 
 
 # --- Character motion --------------------------------------------------------
@@ -507,11 +518,15 @@ func drive() -> void:
 ## Vibrates strictly the target model and the impact effect (never the camera).
 func _hit_stop(attacker: Combatant, target: Combatant, heavy: bool, strike_dir := Vector3.FORWARD, impact_fx: Array[Node3D] = [], duration_override := -1.0) -> void:
 	var stop_dur: float = duration_override if duration_override > 0.0 else (0.115 if heavy else 0.07)
-	var ap_a := _anim_player(attacker)
-	var ap_t := _anim_player(target)
-	_freeze(ap_a)
-	if ap_t != ap_a:
-		_freeze(ap_t)
+	if fx.battle != null:
+		fx.battle.freeze(stop_dur)  # The rules' clock stops with the animations: no drift.
+	# The whole battle clock holds still, so every animation holds with it.
+	var frozen_aps: Array[AnimationPlayer] = []
+	for c in fx._models:
+		var ap_c := _anim_player(c)
+		if ap_c != null and not frozen_aps.has(ap_c):
+			frozen_aps.append(ap_c)
+			_freeze(ap_c)
 	var mt: Node3D = fx._models.get(target)
 	var base_pos := Vector3(mt.position.x, 0.0, mt.position.z) if mt != null else Vector3.ZERO
 	var perp := Vector3(strike_dir.z, 0.0, -strike_dir.x)
@@ -533,9 +548,8 @@ func _hit_stop(attacker: Combatant, target: Combatant, heavy: bool, strike_dir :
 		elapsed += step
 	if mt != null and is_instance_valid(mt) and not is_driven(target):
 		mt.position = base_pos
-	_unfreeze(ap_a)
-	if ap_t != ap_a:
-		_unfreeze(ap_t)
+	for ap_c in frozen_aps:
+		_unfreeze(ap_c)
 
 
 func _freeze(ap: AnimationPlayer) -> void:

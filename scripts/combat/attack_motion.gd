@@ -46,11 +46,15 @@ static func update(inc: Incoming) -> void:
 		Phase.STRIKE:
 			_track(inc)
 			var coil := inc.stand if inc.antic <= 0.0 else inc.stand - inc.dir * COIL
+			# The lunge is timed to END at the contact frame (antic + hit), when the damage lands.
+			var lunge_t := maxf(minf(inc.hit, LUNGE_MAX), 0.001)
+			var lunge_start := inc.antic + maxf(inc.hit - lunge_t, 0.0)
 			if e < inc.antic:
 				a.pos = inc.stand.lerp(coil, BattleSpace.ease_quad_out(e / inc.antic))
+			elif e < lunge_start:
+				a.pos = coil
 			else:
-				var lunge_t := maxf(minf(inc.hit, LUNGE_MAX), 0.001)
-				a.pos = coil.lerp(inc.stand + inc.dir * LUNGE_OVERSHOOT, BattleSpace.ease_expo_out(clampf((e - inc.antic) / lunge_t, 0.0, 1.0)))
+				a.pos = coil.lerp(inc.stand + inc.dir * LUNGE_OVERSHOOT, BattleSpace.ease_expo_out(clampf((e - lunge_start) / lunge_t, 0.0, 1.0)))
 		Phase.RETURN:
 			var start := inc.lunged + inc.push
 			if e < inc.hold:

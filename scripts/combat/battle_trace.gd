@@ -123,6 +123,8 @@ func _mover(c: Combatant) -> String:
 		who.append("displaced")
 	if c.engaged_with != null:
 		who.append("engaged")
+	if not fx.fx_motion._frozen.is_empty():
+		who.append("hitstop")  # The contact shake moves the target on purpose.
 	return "+".join(who) if not who.is_empty() else "NOBODY"
 
 
@@ -223,6 +225,14 @@ func _drive_leader() -> void:
 		battle.use_skill(leader, leader.skills[randi() % leader.skills.size()], foe)
 
 
+## Teleporte Rapido moves its caster across the floor by design.
+func _teleport_cast(c: Combatant) -> bool:
+	for inc in battle.attacks_in_flight():
+		if inc.attacker == c and inc.move_id == "teleporte_rapido":
+			return true
+	return false
+
+
 func _v(v: Vector3) -> Array:
 	return [snappedf(v.x, 0.01), snappedf(v.y, 0.01), snappedf(v.z, 0.01)]
 
@@ -235,11 +245,11 @@ func _detect(c: Combatant, m: Node3D, row: Dictionary, dt: float) -> void:
 		var speed := step / dt
 		var mover: String = row["mover"]
 		# A body that moves with nobody driving it, or faster than any motion allows.
-		if step > MAX_STEP and prev["vis"] and m.visible:
+		if step > MAX_STEP and prev["vis"] and m.visible and not _teleport_cast(c):
 			_anomaly("TELEPORT", c, "moved %.2f units in one frame (%.0f u/s), mover=%s, atk=%s, from %s to %s" % [step, speed, mover, row["atk"], prev["pos"], m.position])
-		elif speed > MAX_SPEED and prev["vis"] and m.visible and step > 0.6:
+		elif speed > MAX_SPEED and prev["vis"] and m.visible and step > 0.6 and not _teleport_cast(c):
 			_anomaly("TOO_FAST", c, "%.0f u/s over %.2f units, mover=%s, atk=%s" % [speed, step, mover, row["atk"]])
-		elif step > 0.05 and mover == "NOBODY" and not fx._is_idle(c):  # (the idle ready-stance sway is the one allowed free mover)
+		elif step > 0.05 and mover == "NOBODY" and prev.get("mover", "NOBODY") == "NOBODY" and not fx._is_idle(c):  # (the idle ready-stance sway is the one allowed free mover)
 			_anomaly("UNEXPLAINED_MOVE", c, "moved %.2f units with no attack, tween, dodge or engagement driving it" % step)
 		# A body that appears/disappears somewhere other than where it was.
 		if prev["vis"] != m.visible:
@@ -264,4 +274,4 @@ func _detect(c: Combatant, m: Node3D, row: Dictionary, dt: float) -> void:
 		_anomaly("HP_RANGE", c, "hp=%d/%d" % [c.hp, c.max_hp])
 	if not c.is_alive() and m.visible and row["atk"] != {}:
 		_anomaly("DEAD_ATTACKING", c, "dead but still has an attack in flight: %s" % [row["atk"]])
-	_prev[c] = {"pos": m.position, "vis": m.visible, "scale": m.scale, "yaw": m.rotation.y}
+	_prev[c] = {"mover": row["mover"], "pos": m.position, "vis": m.visible, "scale": m.scale, "yaw": m.rotation.y}

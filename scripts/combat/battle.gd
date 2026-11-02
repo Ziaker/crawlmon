@@ -63,6 +63,7 @@ var rewards: Array[BattleReward] = []
 var _reward_id := 0
 var _landing: Array[Incoming] = []  ## Resolved attacks whose strike has not landed yet.
 var _returning: Array[Incoming] = []  ## Struck already: only the return is left to play.
+var _freeze_left := 0.0  ## Hit-stop: the whole battle clock holds still for this many seconds.
 var _evade := BattleEvade.new(self)
 var _planner := AttackPlanner.new(self)
 var _hop_back := 0.3  ## Placeholder; BattleFx decides how long a return takes.
@@ -97,7 +98,16 @@ func _update_positions() -> void:
 			c.pos = c.rest_pos()
 
 
+## Holds the battle clock for `seconds` (the contact freeze), so movement, rules and the
+## frozen animations stay on the same frame.
+func freeze(seconds: float) -> void:
+	_freeze_left = maxf(_freeze_left, seconds)
+
+
 func _process(delta: float) -> void:
+	if _freeze_left > 0.0:
+		_freeze_left -= delta
+		return
 	if not running:
 		if not _returning.is_empty():
 			_step_attacks(delta)  # The winners' leaps back still play out after the last hit.
@@ -375,6 +385,7 @@ func _step_attacks(delta: float) -> void:
 			_returning.erase(inc)
 			if inc.motion != "engaged":
 				inc.attacker.clear_rest()  # Back at its step spot.
+				inc.attacker.pos = inc.attacker.rest_pos()
 			attack_phase.emit(inc, Phase.DONE)
 	_check_end()
 
@@ -577,6 +588,17 @@ func _check_end() -> void:
 	for inc in incoming:
 		attack_cancelled.emit(inc)
 	incoming.clear()
+	# Winners caught mid-run or mid-swing hop home from where they are; nothing else lands.
+	for inc in _landing.duplicate():
+		if inc.attacker.is_alive() and AttackMotion.carries(inc):
+			AttackMotion.begin_plain_return(inc, inc.attacker.pos)
+			inc.impacted = true
+			inc.interrupted = true
+			inc.plan_i = 0
+			inc.phase = Phase.RETURN
+			inc.phase_time = 0.0
+			_returning.append(inc)
+			attack_phase.emit(inc, Phase.RETURN)
 	_landing.clear()
 	_update_positions()
 	for r in rewards:

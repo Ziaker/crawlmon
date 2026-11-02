@@ -478,7 +478,7 @@ func _psybeam_impact(pos: Vector3, dir: Vector3, big: bool) -> Array[Node3D]:
 	for i in 3:
 		var col: Color = [Color("63d9ec"), Color("d6fa66"), Color("bd9afd")][i]
 		var ring := _tackle_torus("PsybeamPrismRing%d" % i, pos, Color(col, 0.78), 2.8, 0.18 + i * 0.08, (2.0 + i * 0.38) * k, 0.36, dir)
-		root.add_child(ring)
+		ring.reparent(root)  # (the helper already parented it to the FX node)
 	VfxLib.burst(fx, pos, {"amount": 28, "life": 0.46, "speed": Vector2(4.0, 9.0), "size": Vector2(0.10, 0.28), "ramp": VfxLib.ramp([Color.WHITE, Color("63d9ec"), Color("d6fa66"), Color("bd9afd", 0.0)])})
 	var cleanup := root.create_tween()
 	cleanup.tween_interval(0.42)
@@ -824,7 +824,7 @@ func _sand_attack_impact(pos: Vector3, dir: Vector3) -> Array[Node3D]:
 	# Blinding sand burst around target face
 	var face_pos := pos + Vector3(0, 0.65, 0)
 	var sand_ring := _tackle_torus("SandBlindRing", face_pos, Color("f0c57e", 0.85), 2.2, 0.45, 1.25, 0.48, Vector3.UP)
-	root.add_child(sand_ring)
+	sand_ring.reparent(root)  # (the helper already parented it to the FX node)
 	VfxLib.burst(fx, face_pos, {"amount": 20, "life": 0.45, "speed": Vector2(1.5, 3.5), "size": Vector2(0.12, 0.30), "ramp": VfxLib.ramp([Color("f0c57e"), Color("d98a3c"), Color("d98a3c", 0.0)])})
 
 	var cleanup := root.create_tween()
