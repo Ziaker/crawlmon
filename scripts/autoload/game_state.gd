@@ -5,6 +5,7 @@ extends Node
 
 const EXPLORATION := "res://scenes/exploration.tscn"
 const BATTLE := "res://scenes/battle.tscn"
+const DungeonGen = preload("res://scripts/dungeon/dungeon_generator.gd")
 
 var player_pos := Vector2.INF  ## INF = use the map's spawn point.
 var encounter_id := ""
@@ -14,13 +15,57 @@ var transition: EncounterTransition
 var party: Array[Combatant] = []
 var inventory: Dictionary = {"potion": 3, "amulet": 1, "charm": 1}
 
+## Current exploration floor. The layout is cached so leaving to a battle and
+## coming back does not regenerate it (GDD R9-Q2).
+var dungeon_seed := 0
+var dungeon_layout: Array[String] = []
+## Fog of war: one byte per tile (1 = already explored). Kept here so the map
+## memory survives the trip to a battle and back.
+var dungeon_explored := PackedByteArray()
+
 
 func _ready() -> void:
 	_register_key("confirm", KEY_Z)
 	_register_key("menu", KEY_X)
 	_register_key("settings", KEY_C)
 	_register_key("evade", KEY_SPACE)
+	_register_key("new_dungeon", KEY_R)  ## Debug: regenerate the exploration floor.
 	_build_party()
+	if "--battle" in OS.get_cmdline_user_args():  # godot --path . -- --battle
+		_debug_battle.call_deferred()
+
+
+## Debug: F9 jumps straight into a battle (from anywhere) or restarts the current one.
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F9:
+		_debug_battle()
+
+
+func _debug_battle() -> void:
+	Engine.time_scale = 1.0
+	get_tree().paused = false
+	if in_battle and get_tree().current_scene != null and get_tree().current_scene.scene_file_path == BATTLE:
+		get_tree().reload_current_scene()
+	else:
+		in_battle = true
+		encounter_id = "debug"
+		get_tree().change_scene_to_file(BATTLE)
+
+
+## Generates the floor once and keeps it for the rest of the exploration.
+func ensure_dungeon() -> void:
+	if dungeon_layout.is_empty():
+		new_dungeon(dungeon_seed)
+
+
+## Starts a brand-new exploration. Pass 0 to roll a random seed; the chosen
+## seed is kept in dungeon_seed so the layout can be reproduced.
+func new_dungeon(seed_value := 0) -> void:
+	dungeon_seed = seed_value if seed_value != 0 else randi()
+	dungeon_layout = DungeonGen.generate(dungeon_seed)
+	dungeon_explored.clear()
+	defeated.clear()
+	player_pos = Vector2.INF
 
 
 func start_battle(id: String, pos: Vector2) -> void:

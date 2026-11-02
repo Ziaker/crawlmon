@@ -10,7 +10,8 @@ enum Act { ATTACK, SKILL, HOLD }  ## Tactics: what an AI ally does with its bloc
 enum React { NONE, EVADE }  ## Tactics: how an AI ally reacts to incoming attacks.
 
 const BLOCKS := 5.0
-const BURST_MAX := 1
+const BURST_MAX := 5
+const ATB_PACE_MULT := 1.0
 
 var name: String
 var max_hp: int
@@ -27,6 +28,15 @@ var act_policy := Act.ATTACK
 var react_policy := React.NONE
 var atb := 0.0
 var burst := 0
+var counter_ready := false  ## True right after a manual Evade: the next attack has no wind-up.
+## Position steps (-2 behind .. +2 in front, 0 = middle). `pos_step` is the logic value;
+## `step_from`/`step_t` animate the move on Battle's clock (BattleFx draws `visual_step()`).
+var pos_step := 0
+var step_from := 0.0
+var step_t := 1.0
+var tactic_pos := 0  ## Where an AI-controlled ally wants to stand (set in Tactics).
+var engaged_with: Combatant = null  ## Standing next to the opponent it interrupted (Evade).
+var engage_left := 0.0  ## Real seconds left of the engaged state (the Burst slow-motion).
 
 var attack: int:
 	get:
@@ -46,6 +56,12 @@ func _init(p_name: String, p_hp: int, p_attack: int, p_speed: float, p_is_player
 	is_player = p_is_player
 
 
+## The (fractional) step the body is drawn at while it moves between two positions.
+func visual_step() -> float:
+	var k := clampf(step_t, 0.0, 1.0)
+	return lerpf(step_from, float(pos_step), k * k * (3.0 - 2.0 * k))
+
+
 func get_held_item() -> Item:
 	return Item.get_item(held_item_id) if held_item_id != "" else null
 
@@ -56,7 +72,7 @@ func is_alive() -> bool:
 
 func tick(delta: float) -> void:
 	if is_alive():
-		atb = minf(atb + speed * delta, BLOCKS)
+		atb = minf(atb + speed * ATB_PACE_MULT * delta, BLOCKS)
 
 
 ## A burst charge pays for any one action for free.

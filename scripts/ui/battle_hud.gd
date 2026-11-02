@@ -202,9 +202,9 @@ func _process(_delta: float) -> void:
 	if _battle == null:
 		return
 	var lines := PackedStringArray()
-	for inc in _battle.incoming:
+	for inc in _battle.active_attacks():
 		if not inc.dodged:
-			lines.append("! %s  >  %s   %.1fs" % [inc.attacker.name, inc.target.name, inc.time_left])
+			lines.append("! %s  >  %s   %.1fs" % [inc.attacker.name, inc.target.name, inc.eta()])
 	_alert.text = ""  # The floating attack tags replace this text.
 	_track_hp()
 	_layout_cards()
@@ -226,7 +226,7 @@ func _screen_pos(c: Combatant, height: float) -> Variant:
 func _sync_incoming() -> void:
 	var live := {}
 	if not _status_open:
-		for inc in _battle.incoming:
+		for inc in _battle.active_attacks():
 			if inc.dodged:
 				continue
 			live[inc] = true
@@ -255,7 +255,8 @@ func _sync_incoming() -> void:
 		_hint.visible = hp != null
 		if hp != null:
 			_hint.position = (hp as Vector2) - Vector2(_hint.size.x * 0.5, _hint.size.y + 14.0)
-		_hint.time_left = evadable.time_left
+		_hint.time_left = minf(evadable.travel_left(), 9.99)
+		_hint.can_now = evadable.can_evade_now()
 		_hint.queue_redraw()
 
 
@@ -299,6 +300,16 @@ func _layout_tags() -> void:
 			tag.queue_redraw()
 
 
+## Five position marks (-2..+2) under a character: the filled one is where it stands.
+static func draw_pos_marks(ci: CanvasItem, center: Vector2, step: int) -> void:
+	for i in 5:
+		var r := Rect2(center + Vector2((i - 2) * 14.0 - 5.0, 0.0), Vector2(10.0, 5.0))
+		var here := i - 2 == step
+		ci.draw_rect(r, Color(0.95, 0.93, 0.85, 0.95) if here else Color(0.4, 0.5, 0.6, 0.45))
+		if i == 2 and not here:
+			ci.draw_rect(Rect2(r.position + Vector2(3.0, -2.0), Vector2(4.0, 2.0)), Color(0.95, 0.93, 0.85, 0.5))  # The middle
+
+
 func _draw() -> void:
 	var font := FanMenu.body_font()
 	var title := FanMenu.title_font()
@@ -310,7 +321,6 @@ func _draw() -> void:
 	draw_line(Vector2(0, 720 - FOOTER_H), Vector2(1280, 720 - FOOTER_H), Color("2a3d47"), 1.0)
 	var hint := "SETAS MOVER   ·   Z CONFIRMAR   ·   X VOLTAR   ·   ESPAÇO DESVIAR (EVADE)   ·   C CONFIGURAÇÕES"
 	draw_string(font, Vector2(MARGIN, 720 - 13), hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color("b5c3c2"))
-	text_right(self, font, 1280 - MARGIN, 720 - 13, "ATB DE 5 BLOCOS", 11, GOLD)
 
 
 # --- Unit card -----------------------------------------------------------------
@@ -427,9 +437,6 @@ class UnitCard extends Control:
 		var shown := hud.shown_hp(c)
 		draw_rect(Rect2(bar_x, 52, bar_w * clampf(shown / c.max_hp, 0.0, 1.0), 7), hp_col)
 		draw_string(font, Vector2(bar_x + bar_w + 8, 59), "HP %d/%d" % [ceili(shown), c.max_hp], HORIZONTAL_ALIGNMENT_LEFT, -1, 10, fg)
-		# MP (not in the runtime yet).
-		draw_rect(Rect2(bar_x, 66, bar_w, 7), Color(track, 0.35))
-		draw_string(font, Vector2(bar_x + bar_w + 8, 73), "MP N/D", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(fg, 0.45))
 
 		# ATB blocks + burst slot.
 		draw_string(font, Vector2(bar_x, 91), "ATB", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, fg)
@@ -508,6 +515,7 @@ class UnitCard extends Control:
 			draw_rect(slot, Color("344254"), false, 1.0)
 			draw_string(font, slot.position + Vector2(0, 13), "B", HORIZONTAL_ALIGNMENT_CENTER, slot.size.x, 11, Color("4a576b"))
 
+		BattleHud.draw_pos_marks(self, Vector2(size.x * 0.5, 108.0), c.pos_step)
 		# Order numeral.
 		draw_rect(Rect2(size.x - 40, 18, 30, 82), Color("d6d6c9") if hero else Color("33455b"))
 		draw_string(FanMenu.title_font(), Vector2(size.x - 40, 70), ROMAN[mini(order, 3)], HORIZONTAL_ALIGNMENT_CENTER, 30, 22, Color("203448") if hero else Color("e3dcfb"))
@@ -536,6 +544,7 @@ class EnemyTag extends Control:
 		var shown := hud.shown_hp(c)
 		draw_rect(Rect2(14, 23, (size.x - 28) * clampf(shown / c.max_hp, 0.0, 1.0), 5), CORAL)
 		draw_string(font, Vector2(0, 40), "HP %d / %d" % [ceili(shown), c.max_hp], HORIZONTAL_ALIGNMENT_CENTER, size.x, 10, Color("111d2a") if active else CREAM)
+		BattleHud.draw_pos_marks(self, Vector2(size.x * 0.5, 70.0), c.pos_step)
 		var cx := size.x * 0.5
 		var cy := 54.0
 		var diamond := PackedVector2Array([Vector2(cx, cy - 8), Vector2(cx + 8, cy), Vector2(cx, cy + 8), Vector2(cx - 8, cy)])
@@ -575,7 +584,7 @@ class AttackTag extends Control:
 	var inc
 
 	func _init() -> void:
-		size = Vector2(160, 48)
+		size = Vector2(150, 42)
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	func _draw() -> void:
@@ -584,31 +593,39 @@ class AttackTag extends Control:
 		var font := FanMenu.body_font()
 		var col: Color = BattleFx.COLORS[inc.element]
 		var enemy: bool = not inc.attacker.is_player
-		BattleHud.slant(self, Rect2(Vector2(3, 4), size - Vector2(3, 4)), 7.0, Color(0, 0, 0, 0.5))
-		BattleHud.slant(self, Rect2(Vector2.ZERO, size - Vector2(3, 4)), 7.0, Color(0.04, 0.08, 0.14, 0.94))
-		draw_rect(Rect2(0, 0, 6, size.y - 4), col)
-		draw_string(font, Vector2(14, 17), String(inc.label).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, size.x - 24, 13, Color.WHITE)
-		draw_string(font, Vector2(14, 31), "%s  >  %s" % [inc.attacker.name, inc.target.name], HORIZONTAL_ALIGNMENT_LEFT, size.x - 24, 10, CORAL if enemy else AQUA)
-		var k := clampf(1.0 - inc.time_left / Battle.WINDUP, 0.0, 1.0)
-		draw_rect(Rect2(14, 36, size.x - 30, 4), Color(1, 1, 1, 0.15))
-		draw_rect(Rect2(14, 36, (size.x - 30) * k, 4), col)
+		var w_total: float = inc.total_windup if inc.get("total_windup") != null and inc.total_windup > 0.05 else Battle.WINDUP
+		var in_perfect: bool = enemy and inc.can_evade_now()  # Gold while the Evade works
+		BattleHud.slant(self, Rect2(Vector2(3, 4), size - Vector2(3, 4)), 6.0, Color(0, 0, 0, 0.5))
+		BattleHud.slant(self, Rect2(Vector2.ZERO, size - Vector2(3, 4)), 6.0, Color(0.04, 0.08, 0.14, 0.94))
+		draw_rect(Rect2(0, 0, 5, size.y - 4), GOLD if in_perfect else col)
+		draw_string(font, Vector2(12, 16), String(inc.label).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, size.x - 20, 12, GOLD if in_perfect else Color.WHITE)
+		draw_string(font, Vector2(12, 28), "%s > %s" % [inc.attacker.name, inc.target.name], HORIZONTAL_ALIGNMENT_LEFT, size.x - 20, 9, CORAL if enemy else AQUA)
+		var k := 1.0 if inc.resolved else clampf(1.0 - inc.time_left / w_total, 0.0, 1.0)
+		var bar_w := size.x - 26.0
+		draw_rect(Rect2(12, 32, bar_w, 4), Color(1, 1, 1, 0.15))
+		draw_rect(Rect2(12, 32, bar_w * k, 4), GOLD if in_perfect else col)
 
 
-## Pulsing prompt over the player's character while an attack aimed at it can
-## still be evaded.
+## Dynamic reaction prompt over the player's character: shows early (wait) vs normal vs PERFECT window.
 class EvadeHint extends Control:
 	var time_left := 0.0
+	var can_now := false  ## The attack is on its way: Evade works now.
 
 	func _init() -> void:
-		size = Vector2(190, 50)
+		size = Vector2(204, 52)
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 		visible = false
 
 	func _draw() -> void:
 		var font := FanMenu.body_font()
-		var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.012)
-		BattleHud.slant(self, Rect2(Vector2(4, 5), size - Vector2(4, 5)), 8.0, Color(0, 0, 0, 0.5))
-		BattleHud.slant(self, Rect2(Vector2.ZERO, size - Vector2(4, 5)), 8.0, LIME.lerp(Color.WHITE, pulse * 0.5))
-		draw_string(FanMenu.title_font(), Vector2(16, 30), "ESPAÇO", HORIZONTAL_ALIGNMENT_LEFT, -1, 26, INK)
-		draw_string(font, Vector2(104, 21), "DESVIAR!", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, INK)
-		draw_string(font, Vector2(104, 36), "%.1fs" % time_left, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(INK, 0.7))
+		var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.016)
+		var is_perfect := false
+		var is_early := not can_now
+		var bg_col := GOLD.lerp(Color.WHITE, pulse * 0.6) if is_perfect else (Color("2b394a") if is_early else LIME.lerp(Color.WHITE, pulse * 0.45))
+		var fg_col := INK if not is_early else CREAM
+		BattleHud.slant(self, Rect2(Vector2(4, 5), size - Vector2(4, 5)), 8.0, Color(0, 0, 0, 0.55))
+		BattleHud.slant(self, Rect2(Vector2.ZERO, size - Vector2(4, 5)), 8.0, bg_col)
+		draw_string(FanMenu.title_font(), Vector2(14, 31), "ESPAÇO", HORIZONTAL_ALIGNMENT_LEFT, -1, 25, fg_col)
+		var status_txt := "PERFECT!" if is_perfect else ("AGUARDE..." if is_early else "DESVIAR!")
+		draw_string(font, Vector2(102, 21), status_txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, CORAL if is_early else fg_col)
+		draw_string(font, Vector2(102, 36), ("%.2fs" % time_left) if can_now else "", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(fg_col, 0.8))

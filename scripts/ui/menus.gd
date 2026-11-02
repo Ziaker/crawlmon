@@ -158,13 +158,17 @@ Fraquezas: %s" % [
 func _build_settings(_keep_index: bool) -> void:
 	mode = Mode.SETTINGS
 	_title.text = "Configurações  (X ou C fecha)"
-	_list.set_entries([{"text": "(vazio)", "enabled": false}])
+	_list.set_entries([{"text": "Debug: iniciar batalha agora  (F9 em qualquer tela)"}])
 
 
 # --- Signals ---------------------------------------------------------------
 
 func _on_chosen(i: int) -> void:
 	match mode:
+		Mode.SETTINGS:
+			if i == 0:
+				_close()
+				GameState._debug_battle()
 		Mode.TABS:
 			if tab == 1:
 				_root.visible = false

@@ -1,0 +1,5738 @@
+{
+  "total_crawlmon": 721,
+  "total_com_modelo": 300,
+  "total_sem_modelo": 421,
+  "com_modelo": [
+    {
+      "id": 1,
+      "identifier": "bulbasaur",
+      "name": "Bulbasaur",
+      "za_name": "bulbasaur",
+      "models": [
+        "pm0001_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 2,
+      "identifier": "ivysaur",
+      "name": "Ivysaur",
+      "za_name": "ivysaur",
+      "models": [
+        "pm0002_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 3,
+      "identifier": "venusaur",
+      "name": "Venusaur",
+      "za_name": "venusaur",
+      "models": [
+        "pm0003_00_00",
+        "pm0003_01_00",
+        "pm0003_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 4,
+      "identifier": "charmander",
+      "name": "Charmander",
+      "za_name": "charmander",
+      "models": [
+        "pm0004_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 5,
+      "identifier": "charmeleon",
+      "name": "Charmeleon",
+      "za_name": "charmeleon",
+      "models": [
+        "pm0005_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 6,
+      "identifier": "charizard",
+      "name": "Charizard",
+      "za_name": "charizard",
+      "models": [
+        "pm0006_00_00",
+        "pm0006_51_00",
+        "pm0006_52_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 7,
+      "identifier": "squirtle",
+      "name": "Squirtle",
+      "za_name": "squirtle",
+      "models": [
+        "pm0007_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 8,
+      "identifier": "wartortle",
+      "name": "Wartortle",
+      "za_name": "wartortle",
+      "models": [
+        "pm0008_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 9,
+      "identifier": "blastoise",
+      "name": "Blastoise",
+      "za_name": "blastoise",
+      "models": [
+        "pm0009_00_00",
+        "pm0009_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 13,
+      "identifier": "weedle",
+      "name": "Weedle",
+      "za_name": "weedle",
+      "models": [
+        "pm0013_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 14,
+      "identifier": "kakuna",
+      "name": "Kakuna",
+      "za_name": "kakuna",
+      "models": [
+        "pm0014_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 15,
+      "identifier": "beedrill",
+      "name": "Beedrill",
+      "za_name": "beedrill",
+      "models": [
+        "pm0015_00_00",
+        "pm0015_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 16,
+      "identifier": "pidgey",
+      "name": "Pidgey",
+      "za_name": "pidgey",
+      "models": [
+        "pm0016_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 17,
+      "identifier": "pidgeotto",
+      "name": "Pidgeotto",
+      "za_name": "pidgeotto",
+      "models": [
+        "pm0017_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 18,
+      "identifier": "pidgeot",
+      "name": "Pidgeot",
+      "za_name": "pidgeot",
+      "models": [
+        "pm0018_00_00",
+        "pm0018_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 23,
+      "identifier": "ekans",
+      "name": "Ekans",
+      "za_name": "ekans",
+      "models": [
+        "pm0023_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 24,
+      "identifier": "arbok",
+      "name": "Arbok",
+      "za_name": "arbok",
+      "models": [
+        "pm0024_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 25,
+      "identifier": "pikachu",
+      "name": "Pikachu",
+      "za_name": "pikachu",
+      "models": [
+        "pm0025_00_00",
+        "pm0025_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 26,
+      "identifier": "raichu",
+      "name": "Raichu",
+      "za_name": "raichu",
+      "models": [
+        "pm0026_00_00",
+        "pm0026_00_11",
+        "pm0026_01_00",
+        "pm0026_51_00",
+        "pm0026_52_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 35,
+      "identifier": "clefairy",
+      "name": "Clefairy",
+      "za_name": "clefairy",
+      "models": [
+        "pm0035_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 36,
+      "identifier": "clefable",
+      "name": "Clefable",
+      "za_name": "clefable",
+      "models": [
+        "pm0036_00_00",
+        "pm0036_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 39,
+      "identifier": "jigglypuff",
+      "name": "Jigglypuff",
+      "za_name": "jigglypuff",
+      "models": [
+        "pm0039_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 40,
+      "identifier": "wigglytuff",
+      "name": "Wigglytuff",
+      "za_name": "wigglytuff",
+      "models": [
+        "pm0040_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 41,
+      "identifier": "zubat",
+      "name": "Zubat",
+      "za_name": "zubat",
+      "models": [
+        "pm0041_00_00",
+        "pm0041_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 42,
+      "identifier": "golbat",
+      "name": "Golbat",
+      "za_name": "golbat",
+      "models": [
+        "pm0042_00_00",
+        "pm0042_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 52,
+      "identifier": "meowth",
+      "name": "Meowth",
+      "za_name": "meowth",
+      "models": [
+        "pm0052_00_00",
+        "pm0052_00_11",
+        "pm0052_00_31"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 53,
+      "identifier": "persian",
+      "name": "Persian",
+      "za_name": "persian",
+      "models": [
+        "pm0053_00_00",
+        "pm0053_00_11"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 56,
+      "identifier": "mankey",
+      "name": "Mankey",
+      "za_name": "mankey",
+      "models": [
+        "pm0056_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 57,
+      "identifier": "primeape",
+      "name": "Primeape",
+      "za_name": "primeape",
+      "models": [
+        "pm0057_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 63,
+      "identifier": "abra",
+      "name": "Abra",
+      "za_name": "abra",
+      "models": [
+        "pm0063_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 64,
+      "identifier": "kadabra",
+      "name": "Kadabra",
+      "za_name": "kadabra",
+      "models": [
+        "pm0064_00_00",
+        "pm0064_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 65,
+      "identifier": "alakazam",
+      "name": "Alakazam",
+      "za_name": "alakazam",
+      "models": [
+        "pm0065_00_00",
+        "pm0065_01_00",
+        "pm0065_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 66,
+      "identifier": "machop",
+      "name": "Machop",
+      "za_name": "machop",
+      "models": [
+        "pm0066_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 67,
+      "identifier": "machoke",
+      "name": "Machoke",
+      "za_name": "machoke",
+      "models": [
+        "pm0067_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 68,
+      "identifier": "machamp",
+      "name": "Machamp",
+      "za_name": "machamp",
+      "models": [
+        "pm0068_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 69,
+      "identifier": "bellsprout",
+      "name": "Bellsprout",
+      "za_name": "bellsprout",
+      "models": [
+        "pm0069_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 70,
+      "identifier": "weepinbell",
+      "name": "Weepinbell",
+      "za_name": "weepinbell",
+      "models": [
+        "pm0070_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 71,
+      "identifier": "victreebel",
+      "name": "Victreebel",
+      "za_name": "victreebel",
+      "models": [
+        "pm0071_00_00",
+        "pm0071_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 79,
+      "identifier": "slowpoke",
+      "name": "Slowpoke",
+      "za_name": "slowpoke",
+      "models": [
+        "pm0079_00_00",
+        "pm0079_00_31"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 80,
+      "identifier": "slowbro",
+      "name": "Slowbro",
+      "za_name": "slowbro",
+      "models": [
+        "pm0080_00_00",
+        "pm0080_00_31",
+        "pm0080_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 83,
+      "identifier": "farfetchd",
+      "name": "Farfetch’d",
+      "za_name": "farfetchd",
+      "models": [
+        "pm0083_00_00",
+        "pm0083_00_31"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 92,
+      "identifier": "gastly",
+      "name": "Gastly",
+      "za_name": "gastly",
+      "models": [
+        "pm0092_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 93,
+      "identifier": "haunter",
+      "name": "Haunter",
+      "za_name": "haunter",
+      "models": [
+        "pm0093_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 94,
+      "identifier": "gengar",
+      "name": "Gengar",
+      "za_name": "gengar",
+      "models": [
+        "pm0094_00_00",
+        "pm0094_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 95,
+      "identifier": "onix",
+      "name": "Onix",
+      "za_name": "onix",
+      "models": [
+        "pm0095_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 104,
+      "identifier": "cubone",
+      "name": "Cubone",
+      "za_name": "cubone",
+      "models": [
+        "pm0104_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 105,
+      "identifier": "marowak",
+      "name": "Marowak",
+      "za_name": "marowak",
+      "models": [
+        "pm0105_00_00",
+        "pm0105_00_11"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 115,
+      "identifier": "kangaskhan",
+      "name": "Kangaskhan",
+      "za_name": "kangaskhan",
+      "models": [
+        "pm0115_00_00",
+        "pm0115_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 120,
+      "identifier": "staryu",
+      "name": "Staryu",
+      "za_name": "staryu",
+      "models": [
+        "pm0120_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 121,
+      "identifier": "starmie",
+      "name": "Starmie",
+      "za_name": "starmie",
+      "models": [
+        "pm0121_00_00",
+        "pm0121_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 122,
+      "identifier": "mr-mime",
+      "name": "Mr. Mime",
+      "za_name": "mr-mime",
+      "models": [
+        "pm0122_00_00",
+        "pm0122_00_31"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 123,
+      "identifier": "scyther",
+      "name": "Scyther",
+      "za_name": "scyther",
+      "models": [
+        "pm0123_00_00",
+        "pm0123_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 127,
+      "identifier": "pinsir",
+      "name": "Pinsir",
+      "za_name": "pinsir",
+      "models": [
+        "pm0127_00_00",
+        "pm0127_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 129,
+      "identifier": "magikarp",
+      "name": "Magikarp",
+      "za_name": "magikarp",
+      "models": [
+        "pm0129_00_00",
+        "pm0129_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 130,
+      "identifier": "gyarados",
+      "name": "Gyarados",
+      "za_name": "gyarados",
+      "models": [
+        "pm0130_00_00",
+        "pm0130_01_00",
+        "pm0130_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 133,
+      "identifier": "eevee",
+      "name": "Eevee",
+      "za_name": "eevee",
+      "models": [
+        "pm0133_00_00",
+        "pm0133_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 134,
+      "identifier": "vaporeon",
+      "name": "Vaporeon",
+      "za_name": "vaporeon",
+      "models": [
+        "pm0134_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 135,
+      "identifier": "jolteon",
+      "name": "Jolteon",
+      "za_name": "jolteon",
+      "models": [
+        "pm0135_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 136,
+      "identifier": "flareon",
+      "name": "Flareon",
+      "za_name": "flareon",
+      "models": [
+        "pm0136_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 137,
+      "identifier": "porygon",
+      "name": "Porygon",
+      "za_name": "porygon",
+      "models": [
+        "pm0137_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 142,
+      "identifier": "aerodactyl",
+      "name": "Aerodactyl",
+      "za_name": "aerodactyl",
+      "models": [
+        "pm0142_00_00",
+        "pm0142_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 147,
+      "identifier": "dratini",
+      "name": "Dratini",
+      "za_name": "dratini",
+      "models": [
+        "pm0147_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 148,
+      "identifier": "dragonair",
+      "name": "Dragonair",
+      "za_name": "dragonair",
+      "models": [
+        "pm0148_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 149,
+      "identifier": "dragonite",
+      "name": "Dragonite",
+      "za_name": "dragonite",
+      "models": [
+        "pm0149_00_00",
+        "pm0149_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 150,
+      "identifier": "mewtwo",
+      "name": "Mewtwo",
+      "za_name": "mewtwo",
+      "models": [
+        "pm0150_00_00",
+        "pm0150_51_00",
+        "pm0150_52_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 152,
+      "identifier": "chikorita",
+      "name": "Chikorita",
+      "za_name": "chikorita",
+      "models": [
+        "pm0152_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 153,
+      "identifier": "bayleef",
+      "name": "Bayleef",
+      "za_name": "bayleef",
+      "models": [
+        "pm0153_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 154,
+      "identifier": "meganium",
+      "name": "Meganium",
+      "za_name": "meganium",
+      "models": [
+        "pm0154_00_00",
+        "pm0154_01_00",
+        "pm0154_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 158,
+      "identifier": "totodile",
+      "name": "Totodile",
+      "za_name": "totodile",
+      "models": [
+        "pm0158_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 159,
+      "identifier": "croconaw",
+      "name": "Croconaw",
+      "za_name": "croconaw",
+      "models": [
+        "pm0159_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 160,
+      "identifier": "feraligatr",
+      "name": "Feraligatr",
+      "za_name": "feraligatr",
+      "models": [
+        "pm0160_00_00",
+        "pm0160_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 167,
+      "identifier": "spinarak",
+      "name": "Spinarak",
+      "za_name": "spinarak",
+      "models": [
+        "pm0167_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 168,
+      "identifier": "ariados",
+      "name": "Ariados",
+      "za_name": "ariados",
+      "models": [
+        "pm0168_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 169,
+      "identifier": "crobat",
+      "name": "Crobat",
+      "za_name": "crobat",
+      "models": [
+        "pm0169_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 172,
+      "identifier": "pichu",
+      "name": "Pichu",
+      "za_name": "pichu",
+      "models": [
+        "pm0172_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 173,
+      "identifier": "cleffa",
+      "name": "Cleffa",
+      "za_name": "cleffa",
+      "models": [
+        "pm0173_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 174,
+      "identifier": "igglybuff",
+      "name": "Igglybuff",
+      "za_name": "igglybuff",
+      "models": [
+        "pm0174_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 179,
+      "identifier": "mareep",
+      "name": "Mareep",
+      "za_name": "mareep",
+      "models": [
+        "pm0179_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 180,
+      "identifier": "flaaffy",
+      "name": "Flaaffy",
+      "za_name": "flaaffy",
+      "models": [
+        "pm0180_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 181,
+      "identifier": "ampharos",
+      "name": "Ampharos",
+      "za_name": "ampharos",
+      "models": [
+        "pm0181_00_00",
+        "pm0181_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 196,
+      "identifier": "espeon",
+      "name": "Espeon",
+      "za_name": "espeon",
+      "models": [
+        "pm0196_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 197,
+      "identifier": "umbreon",
+      "name": "Umbreon",
+      "za_name": "umbreon",
+      "models": [
+        "pm0197_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 199,
+      "identifier": "slowking",
+      "name": "Slowking",
+      "za_name": "slowking",
+      "models": [
+        "pm0199_00_00",
+        "pm0199_00_31"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 208,
+      "identifier": "steelix",
+      "name": "Steelix",
+      "za_name": "steelix",
+      "models": [
+        "pm0208_00_00",
+        "pm0208_01_00",
+        "pm0208_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 211,
+      "identifier": "qwilfish",
+      "name": "Qwilfish",
+      "za_name": "qwilfish",
+      "models": [
+        "pm0211_00_00",
+        "pm0211_00_41"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 212,
+      "identifier": "scizor",
+      "name": "Scizor",
+      "za_name": "scizor",
+      "models": [
+        "pm0212_00_00",
+        "pm0212_01_00",
+        "pm0212_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 214,
+      "identifier": "heracross",
+      "name": "Heracross",
+      "za_name": "heracross",
+      "models": [
+        "pm0214_00_00",
+        "pm0214_01_00",
+        "pm0214_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 225,
+      "identifier": "delibird",
+      "name": "Delibird",
+      "za_name": "delibird",
+      "models": [
+        "pm0225_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 227,
+      "identifier": "skarmory",
+      "name": "Skarmory",
+      "za_name": "skarmory",
+      "models": [
+        "pm0227_00_00",
+        "pm0227_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 228,
+      "identifier": "houndour",
+      "name": "Houndour",
+      "za_name": "houndour",
+      "models": [
+        "pm0228_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 229,
+      "identifier": "houndoom",
+      "name": "Houndoom",
+      "za_name": "houndoom",
+      "models": [
+        "pm0229_00_00",
+        "pm0229_01_00",
+        "pm0229_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 233,
+      "identifier": "porygon2",
+      "name": "Porygon2",
+      "za_name": "porygon2",
+      "models": [
+        "pm0233_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 246,
+      "identifier": "larvitar",
+      "name": "Larvitar",
+      "za_name": "larvitar",
+      "models": [
+        "pm0246_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 247,
+      "identifier": "pupitar",
+      "name": "Pupitar",
+      "za_name": "pupitar",
+      "models": [
+        "pm0247_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 248,
+      "identifier": "tyranitar",
+      "name": "Tyranitar",
+      "za_name": "tyranitar",
+      "models": [
+        "pm0248_00_00",
+        "pm0248_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 252,
+      "identifier": "treecko",
+      "name": "Treecko",
+      "za_name": "treecko",
+      "models": [
+        "pm0252_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 253,
+      "identifier": "grovyle",
+      "name": "Grovyle",
+      "za_name": "grovyle",
+      "models": [
+        "pm0253_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 254,
+      "identifier": "sceptile",
+      "name": "Sceptile",
+      "za_name": "sceptile",
+      "models": [
+        "pm0254_00_00",
+        "pm0254_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 255,
+      "identifier": "torchic",
+      "name": "Torchic",
+      "za_name": "torchic",
+      "models": [
+        "pm0255_00_00",
+        "pm0255_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 256,
+      "identifier": "combusken",
+      "name": "Combusken",
+      "za_name": "combusken",
+      "models": [
+        "pm0256_00_00",
+        "pm0256_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 257,
+      "identifier": "blaziken",
+      "name": "Blaziken",
+      "za_name": "blaziken",
+      "models": [
+        "pm0257_00_00",
+        "pm0257_01_00",
+        "pm0257_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 258,
+      "identifier": "mudkip",
+      "name": "Mudkip",
+      "za_name": "mudkip",
+      "models": [
+        "pm0258_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 259,
+      "identifier": "marshtomp",
+      "name": "Marshtomp",
+      "za_name": "marshtomp",
+      "models": [
+        "pm0259_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 260,
+      "identifier": "swampert",
+      "name": "Swampert",
+      "za_name": "swampert",
+      "models": [
+        "pm0260_00_00",
+        "pm0260_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 280,
+      "identifier": "ralts",
+      "name": "Ralts",
+      "za_name": "ralts",
+      "models": [
+        "pm0280_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 281,
+      "identifier": "kirlia",
+      "name": "Kirlia",
+      "za_name": "kirlia",
+      "models": [
+        "pm0281_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 282,
+      "identifier": "gardevoir",
+      "name": "Gardevoir",
+      "za_name": "gardevoir",
+      "models": [
+        "pm0282_00_00",
+        "pm0282_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 302,
+      "identifier": "sableye",
+      "name": "Sableye",
+      "za_name": "sableye",
+      "models": [
+        "pm0302_00_00",
+        "pm0302_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 303,
+      "identifier": "mawile",
+      "name": "Mawile",
+      "za_name": "mawile",
+      "models": [
+        "pm0303_00_00",
+        "pm0303_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 304,
+      "identifier": "aron",
+      "name": "Aron",
+      "za_name": "aron",
+      "models": [
+        "pm0304_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 305,
+      "identifier": "lairon",
+      "name": "Lairon",
+      "za_name": "lairon",
+      "models": [
+        "pm0305_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 306,
+      "identifier": "aggron",
+      "name": "Aggron",
+      "za_name": "aggron",
+      "models": [
+        "pm0306_00_00",
+        "pm0306_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 307,
+      "identifier": "meditite",
+      "name": "Meditite",
+      "za_name": "meditite",
+      "models": [
+        "pm0307_00_00",
+        "pm0307_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 308,
+      "identifier": "medicham",
+      "name": "Medicham",
+      "za_name": "medicham",
+      "models": [
+        "pm0308_00_00",
+        "pm0308_01_00",
+        "pm0308_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 309,
+      "identifier": "electrike",
+      "name": "Electrike",
+      "za_name": "electrike",
+      "models": [
+        "pm0309_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 310,
+      "identifier": "manectric",
+      "name": "Manectric",
+      "za_name": "manectric",
+      "models": [
+        "pm0310_00_00",
+        "pm0310_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 315,
+      "identifier": "roselia",
+      "name": "Roselia",
+      "za_name": "roselia",
+      "models": [
+        "pm0315_00_00",
+        "pm0315_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 316,
+      "identifier": "gulpin",
+      "name": "Gulpin",
+      "za_name": "gulpin",
+      "models": [
+        "pm0316_00_00",
+        "pm0316_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 317,
+      "identifier": "swalot",
+      "name": "Swalot",
+      "za_name": "swalot",
+      "models": [
+        "pm0317_00_00",
+        "pm0317_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 318,
+      "identifier": "carvanha",
+      "name": "Carvanha",
+      "za_name": "carvanha",
+      "models": [
+        "pm0318_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 319,
+      "identifier": "sharpedo",
+      "name": "Sharpedo",
+      "za_name": "sharpedo",
+      "models": [
+        "pm0319_00_00",
+        "pm0319_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 322,
+      "identifier": "numel",
+      "name": "Numel",
+      "za_name": "numel",
+      "models": [
+        "pm0322_00_00",
+        "pm0322_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 323,
+      "identifier": "camerupt",
+      "name": "Camerupt",
+      "za_name": "camerupt",
+      "models": [
+        "pm0323_00_00",
+        "pm0323_01_00",
+        "pm0323_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 325,
+      "identifier": "spoink",
+      "name": "Spoink",
+      "za_name": "spoink",
+      "models": [
+        "pm0325_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 326,
+      "identifier": "grumpig",
+      "name": "Grumpig",
+      "za_name": "grumpig",
+      "models": [
+        "pm0326_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 333,
+      "identifier": "swablu",
+      "name": "Swablu",
+      "za_name": "swablu",
+      "models": [
+        "pm0333_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 334,
+      "identifier": "altaria",
+      "name": "Altaria",
+      "za_name": "altaria",
+      "models": [
+        "pm0334_00_00",
+        "pm0334_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 335,
+      "identifier": "zangoose",
+      "name": "Zangoose",
+      "za_name": "zangoose",
+      "models": [
+        "pm0335_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 336,
+      "identifier": "seviper",
+      "name": "Seviper",
+      "za_name": "seviper",
+      "models": [
+        "pm0336_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 349,
+      "identifier": "feebas",
+      "name": "Feebas",
+      "za_name": "feebas",
+      "models": [
+        "pm0349_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 350,
+      "identifier": "milotic",
+      "name": "Milotic",
+      "za_name": "milotic",
+      "models": [
+        "pm0350_00_00",
+        "pm0350_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 352,
+      "identifier": "kecleon",
+      "name": "Kecleon",
+      "za_name": "kecleon",
+      "models": [
+        "pm0352_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 353,
+      "identifier": "shuppet",
+      "name": "Shuppet",
+      "za_name": "shuppet",
+      "models": [
+        "pm0353_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 354,
+      "identifier": "banette",
+      "name": "Banette",
+      "za_name": "banette",
+      "models": [
+        "pm0354_00_00",
+        "pm0354_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 358,
+      "identifier": "chimecho",
+      "name": "Chimecho",
+      "za_name": "chimecho",
+      "models": [
+        "pm0358_00_00",
+        "pm0358_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 359,
+      "identifier": "absol",
+      "name": "Absol",
+      "za_name": "absol",
+      "models": [
+        "pm0359_00_00",
+        "pm0359_51_00",
+        "pm0359_52_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 361,
+      "identifier": "snorunt",
+      "name": "Snorunt",
+      "za_name": "snorunt",
+      "models": [
+        "pm0361_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 362,
+      "identifier": "glalie",
+      "name": "Glalie",
+      "za_name": "glalie",
+      "models": [
+        "pm0362_00_00",
+        "pm0362_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 371,
+      "identifier": "bagon",
+      "name": "Bagon",
+      "za_name": "bagon",
+      "models": [
+        "pm0371_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 372,
+      "identifier": "shelgon",
+      "name": "Shelgon",
+      "za_name": "shelgon",
+      "models": [
+        "pm0372_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 373,
+      "identifier": "salamence",
+      "name": "Salamence",
+      "za_name": "salamence",
+      "models": [
+        "pm0373_00_00",
+        "pm0373_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 374,
+      "identifier": "beldum",
+      "name": "Beldum",
+      "za_name": "beldum",
+      "models": [
+        "pm0374_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 375,
+      "identifier": "metang",
+      "name": "Metang",
+      "za_name": "metang",
+      "models": [
+        "pm0375_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 376,
+      "identifier": "metagross",
+      "name": "Metagross",
+      "za_name": "metagross",
+      "models": [
+        "pm0376_00_00",
+        "pm0376_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 380,
+      "identifier": "latias",
+      "name": "Latias",
+      "za_name": "latias",
+      "models": [
+        "pm0380_00_00",
+        "pm0380_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 381,
+      "identifier": "latios",
+      "name": "Latios",
+      "za_name": "latios",
+      "models": [
+        "pm0381_00_00",
+        "pm0381_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 382,
+      "identifier": "kyogre",
+      "name": "Kyogre",
+      "za_name": "kyogre",
+      "models": [
+        "pm0382_00_00",
+        "pm0382_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 383,
+      "identifier": "groudon",
+      "name": "Groudon",
+      "za_name": "groudon",
+      "models": [
+        "pm0383_00_00",
+        "pm0383_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 384,
+      "identifier": "rayquaza",
+      "name": "Rayquaza",
+      "za_name": "rayquaza",
+      "models": [
+        "pm0384_00_00",
+        "pm0384_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 396,
+      "identifier": "starly",
+      "name": "Starly",
+      "za_name": "starly",
+      "models": [
+        "pm0396_00_00",
+        "pm0396_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 397,
+      "identifier": "staravia",
+      "name": "Staravia",
+      "za_name": "staravia",
+      "models": [
+        "pm0397_00_00",
+        "pm0397_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 398,
+      "identifier": "staraptor",
+      "name": "Staraptor",
+      "za_name": "staraptor",
+      "models": [
+        "pm0398_00_00",
+        "pm0398_01_00",
+        "pm0398_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 406,
+      "identifier": "budew",
+      "name": "Budew",
+      "za_name": "budew",
+      "models": [
+        "pm0406_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 407,
+      "identifier": "roserade",
+      "name": "Roserade",
+      "za_name": "roserade",
+      "models": [
+        "pm0407_00_00",
+        "pm0407_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 427,
+      "identifier": "buneary",
+      "name": "Buneary",
+      "za_name": "buneary",
+      "models": [
+        "pm0427_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 428,
+      "identifier": "lopunny",
+      "name": "Lopunny",
+      "za_name": "lopunny",
+      "models": [
+        "pm0428_00_00",
+        "pm0428_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 433,
+      "identifier": "chingling",
+      "name": "Chingling",
+      "za_name": "chingling",
+      "models": [
+        "pm0433_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 439,
+      "identifier": "mime-jr",
+      "name": "Mime Jr.",
+      "za_name": "mime-jr",
+      "models": [
+        "pm0439_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 443,
+      "identifier": "gible",
+      "name": "Gible",
+      "za_name": "gible",
+      "models": [
+        "pm0443_00_00",
+        "pm0443_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 444,
+      "identifier": "gabite",
+      "name": "Gabite",
+      "za_name": "gabite",
+      "models": [
+        "pm0444_00_00",
+        "pm0444_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 445,
+      "identifier": "garchomp",
+      "name": "Garchomp",
+      "za_name": "garchomp",
+      "models": [
+        "pm0445_00_00",
+        "pm0445_01_00",
+        "pm0445_51_00",
+        "pm0445_52_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 447,
+      "identifier": "riolu",
+      "name": "Riolu",
+      "za_name": "riolu",
+      "models": [
+        "pm0447_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 448,
+      "identifier": "lucario",
+      "name": "Lucario",
+      "za_name": "lucario",
+      "models": [
+        "pm0448_00_00",
+        "pm0448_51_00",
+        "pm0448_52_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 449,
+      "identifier": "hippopotas",
+      "name": "Hippopotas",
+      "za_name": "hippopotas",
+      "models": [
+        "pm0449_00_00",
+        "pm0449_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 450,
+      "identifier": "hippowdon",
+      "name": "Hippowdon",
+      "za_name": "hippowdon",
+      "models": [
+        "pm0450_00_00",
+        "pm0450_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 459,
+      "identifier": "snover",
+      "name": "Snover",
+      "za_name": "snover",
+      "models": [
+        "pm0459_00_00",
+        "pm0459_01_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 460,
+      "identifier": "abomasnow",
+      "name": "Abomasnow",
+      "za_name": "abomasnow",
+      "models": [
+        "pm0460_00_00",
+        "pm0460_01_00",
+        "pm0460_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 470,
+      "identifier": "leafeon",
+      "name": "Leafeon",
+      "za_name": "leafeon",
+      "models": [
+        "pm0470_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 471,
+      "identifier": "glaceon",
+      "name": "Glaceon",
+      "za_name": "glaceon",
+      "models": [
+        "pm0471_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 474,
+      "identifier": "porygon-z",
+      "name": "Porygon-Z",
+      "za_name": "porygon-z",
+      "models": [
+        "pm0474_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 475,
+      "identifier": "gallade",
+      "name": "Gallade",
+      "za_name": "gallade",
+      "models": [
+        "pm0475_00_00",
+        "pm0475_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 478,
+      "identifier": "froslass",
+      "name": "Froslass",
+      "za_name": "froslass",
+      "models": [
+        "pm0478_00_00",
+        "pm0478_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 479,
+      "identifier": "rotom",
+      "name": "Rotom",
+      "za_name": "rotom",
+      "models": [
+        "pm0479_11_00",
+        "pm0479_12_00",
+        "pm0479_13_00",
+        "pm0479_14_00",
+        "pm0479_15_00",
+        "pm0479_16_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 485,
+      "identifier": "heatran",
+      "name": "Heatran",
+      "za_name": "heatran",
+      "models": [
+        "pm0485_00_00",
+        "pm0485_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 491,
+      "identifier": "darkrai",
+      "name": "Darkrai",
+      "za_name": "darkrai",
+      "models": [
+        "pm0491_00_00",
+        "pm0491_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 498,
+      "identifier": "tepig",
+      "name": "Tepig",
+      "za_name": "tepig",
+      "models": [
+        "pm0498_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 499,
+      "identifier": "pignite",
+      "name": "Pignite",
+      "za_name": "pignite",
+      "models": [
+        "pm0499_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 500,
+      "identifier": "emboar",
+      "name": "Emboar",
+      "za_name": "emboar",
+      "models": [
+        "pm0500_00_00",
+        "pm0500_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 504,
+      "identifier": "patrat",
+      "name": "Patrat",
+      "za_name": "patrat",
+      "models": [
+        "pm0504_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 505,
+      "identifier": "watchog",
+      "name": "Watchog",
+      "za_name": "watchog",
+      "models": [
+        "pm0505_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 509,
+      "identifier": "purrloin",
+      "name": "Purrloin",
+      "za_name": "purrloin",
+      "models": [
+        "pm0509_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 510,
+      "identifier": "liepard",
+      "name": "Liepard",
+      "za_name": "liepard",
+      "models": [
+        "pm0510_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 511,
+      "identifier": "pansage",
+      "name": "Pansage",
+      "za_name": "pansage",
+      "models": [
+        "pm0511_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 512,
+      "identifier": "simisage",
+      "name": "Simisage",
+      "za_name": "simisage",
+      "models": [
+        "pm0512_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 513,
+      "identifier": "pansear",
+      "name": "Pansear",
+      "za_name": "pansear",
+      "models": [
+        "pm0513_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 514,
+      "identifier": "simisear",
+      "name": "Simisear",
+      "za_name": "simisear",
+      "models": [
+        "pm0514_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 515,
+      "identifier": "panpour",
+      "name": "Panpour",
+      "za_name": "panpour",
+      "models": [
+        "pm0515_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 516,
+      "identifier": "simipour",
+      "name": "Simipour",
+      "za_name": "simipour",
+      "models": [
+        "pm0516_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 517,
+      "identifier": "munna",
+      "name": "Munna",
+      "za_name": "munna",
+      "models": [
+        "pm0517_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 518,
+      "identifier": "musharna",
+      "name": "Musharna",
+      "za_name": "musharna",
+      "models": [
+        "pm0518_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 529,
+      "identifier": "drilbur",
+      "name": "Drilbur",
+      "za_name": "drilbur",
+      "models": [
+        "pm0529_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 530,
+      "identifier": "excadrill",
+      "name": "Excadrill",
+      "za_name": "excadrill",
+      "models": [
+        "pm0530_00_00",
+        "pm0530_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 531,
+      "identifier": "audino",
+      "name": "Audino",
+      "za_name": "audino",
+      "models": [
+        "pm0531_00_00",
+        "pm0531_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 538,
+      "identifier": "throh",
+      "name": "Throh",
+      "za_name": "throh",
+      "models": [
+        "pm0538_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 539,
+      "identifier": "sawk",
+      "name": "Sawk",
+      "za_name": "sawk",
+      "models": [
+        "pm0539_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 543,
+      "identifier": "venipede",
+      "name": "Venipede",
+      "za_name": "venipede",
+      "models": [
+        "pm0543_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 545,
+      "identifier": "scolipede",
+      "name": "Scolipede",
+      "za_name": "scolipede",
+      "models": [
+        "pm0545_00_00",
+        "pm0545_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 551,
+      "identifier": "sandile",
+      "name": "Sandile",
+      "za_name": "sandile",
+      "models": [
+        "pm0551_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 552,
+      "identifier": "krokorok",
+      "name": "Krokorok",
+      "za_name": "krokorok",
+      "models": [
+        "pm0552_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 553,
+      "identifier": "krookodile",
+      "name": "Krookodile",
+      "za_name": "krookodile",
+      "models": [
+        "pm0553_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 559,
+      "identifier": "scraggy",
+      "name": "Scraggy",
+      "za_name": "scraggy",
+      "models": [
+        "pm0559_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 560,
+      "identifier": "scrafty",
+      "name": "Scrafty",
+      "za_name": "scrafty",
+      "models": [
+        "pm0560_00_00",
+        "pm0560_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 562,
+      "identifier": "yamask",
+      "name": "Yamask",
+      "za_name": "yamask",
+      "models": [
+        "pm0562_00_00",
+        "pm0562_00_31"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 563,
+      "identifier": "cofagrigus",
+      "name": "Cofagrigus",
+      "za_name": "cofagrigus",
+      "models": [
+        "pm0563_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 568,
+      "identifier": "trubbish",
+      "name": "Trubbish",
+      "za_name": "trubbish",
+      "models": [
+        "pm0568_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 569,
+      "identifier": "garbodor",
+      "name": "Garbodor",
+      "za_name": "garbodor",
+      "models": [
+        "pm0569_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 582,
+      "identifier": "vanillite",
+      "name": "Vanillite",
+      "za_name": "vanillite",
+      "models": [
+        "pm0582_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 583,
+      "identifier": "vanillish",
+      "name": "Vanillish",
+      "za_name": "vanillish",
+      "models": [
+        "pm0583_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 584,
+      "identifier": "vanilluxe",
+      "name": "Vanilluxe",
+      "za_name": "vanilluxe",
+      "models": [
+        "pm0584_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 587,
+      "identifier": "emolga",
+      "name": "Emolga",
+      "za_name": "emolga",
+      "models": [
+        "pm0587_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 590,
+      "identifier": "foongus",
+      "name": "Foongus",
+      "za_name": "foongus",
+      "models": [
+        "pm0590_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 591,
+      "identifier": "amoonguss",
+      "name": "Amoonguss",
+      "za_name": "amoonguss",
+      "models": [
+        "pm0591_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 602,
+      "identifier": "tynamo",
+      "name": "Tynamo",
+      "za_name": "tynamo",
+      "models": [
+        "pm0602_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 603,
+      "identifier": "eelektrik",
+      "name": "Eelektrik",
+      "za_name": "eelektrik",
+      "models": [
+        "pm0603_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 604,
+      "identifier": "eelektross",
+      "name": "Eelektross",
+      "za_name": "eelektross",
+      "models": [
+        "pm0604_00_00",
+        "pm0604_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 607,
+      "identifier": "litwick",
+      "name": "Litwick",
+      "za_name": "litwick",
+      "models": [
+        "pm0607_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 608,
+      "identifier": "lampent",
+      "name": "Lampent",
+      "za_name": "lampent",
+      "models": [
+        "pm0608_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 609,
+      "identifier": "chandelure",
+      "name": "Chandelure",
+      "za_name": "chandelure",
+      "models": [
+        "pm0609_00_00",
+        "pm0609_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 615,
+      "identifier": "cryogonal",
+      "name": "Cryogonal",
+      "za_name": "cryogonal",
+      "models": [
+        "pm0615_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 618,
+      "identifier": "stunfisk",
+      "name": "Stunfisk",
+      "za_name": "stunfisk",
+      "models": [
+        "pm0618_00_00",
+        "pm0618_00_31"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 622,
+      "identifier": "golett",
+      "name": "Golett",
+      "za_name": "golett",
+      "models": [
+        "pm0622_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 623,
+      "identifier": "golurk",
+      "name": "Golurk",
+      "za_name": "golurk",
+      "models": [
+        "pm0623_00_00",
+        "pm0623_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 638,
+      "identifier": "cobalion",
+      "name": "Cobalion",
+      "za_name": "cobalion",
+      "models": [
+        "pm0638_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 639,
+      "identifier": "terrakion",
+      "name": "Terrakion",
+      "za_name": "terrakion",
+      "models": [
+        "pm0639_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 640,
+      "identifier": "virizion",
+      "name": "Virizion",
+      "za_name": "virizion",
+      "models": [
+        "pm0640_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 647,
+      "identifier": "keldeo",
+      "name": "Keldeo",
+      "za_name": "keldeo",
+      "models": [
+        "pm0647_11_00",
+        "pm0647_12_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 648,
+      "identifier": "meloetta",
+      "name": "Meloetta",
+      "za_name": "meloetta",
+      "models": [
+        "pm0648_11_00",
+        "pm0648_12_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 649,
+      "identifier": "genesect",
+      "name": "Genesect",
+      "za_name": "genesect",
+      "models": [
+        "pm0649_11_00",
+        "pm0649_12_00",
+        "pm0649_13_00",
+        "pm0649_14_00",
+        "pm0649_15_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 650,
+      "identifier": "chespin",
+      "name": "Chespin",
+      "za_name": "chespin",
+      "models": [
+        "pm0720_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 651,
+      "identifier": "quilladin",
+      "name": "Quilladin",
+      "za_name": "quilladin",
+      "models": [
+        "pm0721_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 652,
+      "identifier": "chesnaught",
+      "name": "Chesnaught",
+      "za_name": "chesnaught",
+      "models": [
+        "pm0722_00_00",
+        "pm0722_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 653,
+      "identifier": "fennekin",
+      "name": "Fennekin",
+      "za_name": "fennekin",
+      "models": [
+        "pm0717_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 654,
+      "identifier": "braixen",
+      "name": "Braixen",
+      "za_name": "braixen",
+      "models": [
+        "pm0718_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 655,
+      "identifier": "delphox",
+      "name": "Delphox",
+      "za_name": "delphox",
+      "models": [
+        "pm0719_00_00",
+        "pm0719_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 656,
+      "identifier": "froakie",
+      "name": "Froakie",
+      "za_name": "froakie",
+      "models": [
+        "pm0723_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 657,
+      "identifier": "frogadier",
+      "name": "Frogadier",
+      "za_name": "frogadier",
+      "models": [
+        "pm0724_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 658,
+      "identifier": "greninja",
+      "name": "Greninja",
+      "za_name": "greninja",
+      "models": [
+        "pm0725_11_00",
+        "pm0725_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 659,
+      "identifier": "bunnelby",
+      "name": "Bunnelby",
+      "za_name": "bunnelby",
+      "models": [
+        "pm0711_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 660,
+      "identifier": "diggersby",
+      "name": "Diggersby",
+      "za_name": "diggersby",
+      "models": [
+        "pm0712_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 661,
+      "identifier": "fletchling",
+      "name": "Fletchling",
+      "za_name": "fletchling",
+      "models": [
+        "pm0753_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 662,
+      "identifier": "fletchinder",
+      "name": "Fletchinder",
+      "za_name": "fletchinder",
+      "models": [
+        "pm0754_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 663,
+      "identifier": "talonflame",
+      "name": "Talonflame",
+      "za_name": "talonflame",
+      "models": [
+        "pm0755_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 664,
+      "identifier": "scatterbug",
+      "name": "Scatterbug",
+      "za_name": "scatterbug",
+      "models": [
+        "pm0706_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 665,
+      "identifier": "spewpa",
+      "name": "Spewpa",
+      "za_name": "spewpa",
+      "models": [
+        "pm0707_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 666,
+      "identifier": "vivillon",
+      "name": "Vivillon",
+      "za_name": "vivillon",
+      "models": [
+        "pm0708_11_00",
+        "pm0708_12_00",
+        "pm0708_13_00",
+        "pm0708_14_00",
+        "pm0708_15_00",
+        "pm0708_16_00",
+        "pm0708_17_00",
+        "pm0708_18_00",
+        "pm0708_19_00",
+        "pm0708_20_00",
+        "pm0708_21_00",
+        "pm0708_22_00",
+        "pm0708_23_00",
+        "pm0708_24_00",
+        "pm0708_25_00",
+        "pm0708_26_00",
+        "pm0708_27_00",
+        "pm0708_28_00",
+        "pm0708_29_00",
+        "pm0708_30_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 667,
+      "identifier": "litleo",
+      "name": "Litleo",
+      "za_name": "litleo",
+      "models": [
+        "pm0704_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 668,
+      "identifier": "pyroar",
+      "name": "Pyroar",
+      "za_name": "pyroar",
+      "models": [
+        "pm0705_00_00",
+        "pm0705_01_00",
+        "pm0705_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 669,
+      "identifier": "flabebe",
+      "name": "Flabébé",
+      "za_name": "flabebe",
+      "models": [
+        "pm0713_11_00",
+        "pm0713_12_00",
+        "pm0713_13_00",
+        "pm0713_14_00",
+        "pm0713_15_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 670,
+      "identifier": "floette",
+      "name": "Floette",
+      "za_name": "floette",
+      "models": [
+        "pm0714_11_00",
+        "pm0714_12_00",
+        "pm0714_13_00",
+        "pm0714_14_00",
+        "pm0714_15_00",
+        "pm0714_16_00",
+        "pm0714_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 671,
+      "identifier": "florges",
+      "name": "Florges",
+      "za_name": "florges",
+      "models": [
+        "pm0715_11_00",
+        "pm0715_12_00",
+        "pm0715_13_00",
+        "pm0715_14_00",
+        "pm0715_15_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 672,
+      "identifier": "skiddo",
+      "name": "Skiddo",
+      "za_name": "skiddo",
+      "models": [
+        "pm0728_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 673,
+      "identifier": "gogoat",
+      "name": "Gogoat",
+      "za_name": "gogoat",
+      "models": [
+        "pm0729_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 674,
+      "identifier": "pancham",
+      "name": "Pancham",
+      "za_name": "pancham",
+      "models": [
+        "pm0752_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 675,
+      "identifier": "pangoro",
+      "name": "Pangoro",
+      "za_name": "pangoro",
+      "models": [
+        "pm0730_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 676,
+      "identifier": "furfrou",
+      "name": "Furfrou",
+      "za_name": "furfrou",
+      "models": [
+        "pm0701_11_00",
+        "pm0701_12_00",
+        "pm0701_13_00",
+        "pm0701_14_00",
+        "pm0701_15_00",
+        "pm0701_16_00",
+        "pm0701_17_00",
+        "pm0701_18_00",
+        "pm0701_19_00",
+        "pm0701_20_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 677,
+      "identifier": "espurr",
+      "name": "Espurr",
+      "za_name": "espurr",
+      "models": [
+        "pm0733_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 678,
+      "identifier": "meowstic",
+      "name": "Meowstic",
+      "za_name": "meowstic",
+      "models": [
+        "pm0734_00_00",
+        "pm0734_01_00",
+        "pm0734_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 679,
+      "identifier": "honedge",
+      "name": "Honedge",
+      "za_name": "honedge",
+      "models": [
+        "pm0744_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 680,
+      "identifier": "doublade",
+      "name": "Doublade",
+      "za_name": "doublade",
+      "models": [
+        "pm0745_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 681,
+      "identifier": "aegislash",
+      "name": "Aegislash",
+      "za_name": "aegislash",
+      "models": [
+        "pm0746_11_00",
+        "pm0746_12_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 682,
+      "identifier": "spritzee",
+      "name": "Spritzee",
+      "za_name": "spritzee",
+      "models": [
+        "pm0758_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 683,
+      "identifier": "aromatisse",
+      "name": "Aromatisse",
+      "za_name": "aromatisse",
+      "models": [
+        "pm0759_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 684,
+      "identifier": "swirlix",
+      "name": "Swirlix",
+      "za_name": "swirlix",
+      "models": [
+        "pm0742_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 685,
+      "identifier": "slurpuff",
+      "name": "Slurpuff",
+      "za_name": "slurpuff",
+      "models": [
+        "pm0743_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 686,
+      "identifier": "inkay",
+      "name": "Inkay",
+      "za_name": "inkay",
+      "models": [
+        "pm0726_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 687,
+      "identifier": "malamar",
+      "name": "Malamar",
+      "za_name": "malamar",
+      "models": [
+        "pm0727_00_00",
+        "pm0727_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 688,
+      "identifier": "binacle",
+      "name": "Binacle",
+      "za_name": "binacle",
+      "models": [
+        "pm0747_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 689,
+      "identifier": "barbaracle",
+      "name": "Barbaracle",
+      "za_name": "barbaracle",
+      "models": [
+        "pm0748_00_00",
+        "pm0748_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 690,
+      "identifier": "skrelp",
+      "name": "Skrelp",
+      "za_name": "skrelp",
+      "models": [
+        "pm0709_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 691,
+      "identifier": "dragalge",
+      "name": "Dragalge",
+      "za_name": "dragalge",
+      "models": [
+        "pm0710_00_00",
+        "pm0710_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 692,
+      "identifier": "clauncher",
+      "name": "Clauncher",
+      "za_name": "clauncher",
+      "models": [
+        "pm0756_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 693,
+      "identifier": "clawitzer",
+      "name": "Clawitzer",
+      "za_name": "clawitzer",
+      "models": [
+        "pm0757_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 694,
+      "identifier": "helioptile",
+      "name": "Helioptile",
+      "za_name": "helioptile",
+      "models": [
+        "pm0731_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 695,
+      "identifier": "heliolisk",
+      "name": "Heliolisk",
+      "za_name": "heliolisk",
+      "models": [
+        "pm0732_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 696,
+      "identifier": "tyrunt",
+      "name": "Tyrunt",
+      "za_name": "tyrunt",
+      "models": [
+        "pm0737_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 697,
+      "identifier": "tyrantrum",
+      "name": "Tyrantrum",
+      "za_name": "tyrantrum",
+      "models": [
+        "pm0738_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 698,
+      "identifier": "amaura",
+      "name": "Amaura",
+      "za_name": "amaura",
+      "models": [
+        "pm0739_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 699,
+      "identifier": "aurorus",
+      "name": "Aurorus",
+      "za_name": "aurorus",
+      "models": [
+        "pm0740_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 700,
+      "identifier": "sylveon",
+      "name": "Sylveon",
+      "za_name": "sylveon",
+      "models": [
+        "pm0767_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 701,
+      "identifier": "hawlucha",
+      "name": "Hawlucha",
+      "za_name": "hawlucha",
+      "models": [
+        "pm0761_00_00",
+        "pm0761_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 702,
+      "identifier": "dedenne",
+      "name": "Dedenne",
+      "za_name": "dedenne",
+      "models": [
+        "pm0741_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 703,
+      "identifier": "carbink",
+      "name": "Carbink",
+      "za_name": "carbink",
+      "models": [
+        "pm0766_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 704,
+      "identifier": "goomy",
+      "name": "Goomy",
+      "za_name": "goomy",
+      "models": [
+        "pm0763_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 705,
+      "identifier": "sliggoo",
+      "name": "Sliggoo",
+      "za_name": "sliggoo",
+      "models": [
+        "pm0764_00_00",
+        "pm0764_00_41"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 706,
+      "identifier": "goodra",
+      "name": "Goodra",
+      "za_name": "goodra",
+      "models": [
+        "pm0765_00_00",
+        "pm0765_00_41"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 707,
+      "identifier": "klefki",
+      "name": "Klefki",
+      "za_name": "klefki",
+      "models": [
+        "pm0760_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 708,
+      "identifier": "phantump",
+      "name": "Phantump",
+      "za_name": "phantump",
+      "models": [
+        "pm0702_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 709,
+      "identifier": "trevenant",
+      "name": "Trevenant",
+      "za_name": "trevenant",
+      "models": [
+        "pm0703_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 710,
+      "identifier": "pumpkaboo",
+      "name": "Pumpkaboo",
+      "za_name": "pumpkaboo",
+      "models": [
+        "pm0735_11_00",
+        "pm0735_12_00",
+        "pm0735_13_00",
+        "pm0735_14_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 711,
+      "identifier": "gourgeist",
+      "name": "Gourgeist",
+      "za_name": "gourgeist",
+      "models": [
+        "pm0736_11_00",
+        "pm0736_12_00",
+        "pm0736_13_00",
+        "pm0736_14_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 712,
+      "identifier": "bergmite",
+      "name": "Bergmite",
+      "za_name": "bergmite",
+      "models": [
+        "pm0749_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 713,
+      "identifier": "avalugg",
+      "name": "Avalugg",
+      "za_name": "avalugg",
+      "models": [
+        "pm0751_00_00",
+        "pm0751_00_41"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 714,
+      "identifier": "noibat",
+      "name": "Noibat",
+      "za_name": "noibat",
+      "models": [
+        "pm0716_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 715,
+      "identifier": "noivern",
+      "name": "Noivern",
+      "za_name": "noivern",
+      "models": [
+        "pm0762_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 716,
+      "identifier": "xerneas",
+      "name": "Xerneas",
+      "za_name": "xerneas",
+      "models": [
+        "pm0768_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 717,
+      "identifier": "yveltal",
+      "name": "Yveltal",
+      "za_name": "yveltal",
+      "models": [
+        "pm0769_00_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 718,
+      "identifier": "zygarde",
+      "name": "Zygarde",
+      "za_name": "zygarde",
+      "models": [
+        "pm0770_11_00",
+        "pm0770_12_00",
+        "pm0770_13_00",
+        "pm0770_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 719,
+      "identifier": "diancie",
+      "name": "Diancie",
+      "za_name": "diancie",
+      "models": [
+        "pm0772_00_00",
+        "pm0772_51_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 720,
+      "identifier": "hoopa",
+      "name": "Hoopa",
+      "za_name": "hoopa",
+      "models": [
+        "pm0774_11_00",
+        "pm0774_12_00"
+      ],
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 721,
+      "identifier": "volcanion",
+      "name": "Volcanion",
+      "za_name": "volcanion",
+      "models": [
+        "pm0773_00_00"
+      ],
+      "in_arenamon_chars": false
+    }
+  ],
+  "sem_modelo": [
+    {
+      "id": 10,
+      "identifier": "caterpie",
+      "name": "Caterpie",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 11,
+      "identifier": "metapod",
+      "name": "Metapod",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 12,
+      "identifier": "butterfree",
+      "name": "Butterfree",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 19,
+      "identifier": "rattata",
+      "name": "Rattata",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 20,
+      "identifier": "raticate",
+      "name": "Raticate",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 21,
+      "identifier": "spearow",
+      "name": "Spearow",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 22,
+      "identifier": "fearow",
+      "name": "Fearow",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 27,
+      "identifier": "sandshrew",
+      "name": "Sandshrew",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 28,
+      "identifier": "sandslash",
+      "name": "Sandslash",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 29,
+      "identifier": "nidoran-f",
+      "name": "Nidoran♀",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 30,
+      "identifier": "nidorina",
+      "name": "Nidorina",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 31,
+      "identifier": "nidoqueen",
+      "name": "Nidoqueen",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 32,
+      "identifier": "nidoran-m",
+      "name": "Nidoran♂",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 33,
+      "identifier": "nidorino",
+      "name": "Nidorino",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 34,
+      "identifier": "nidoking",
+      "name": "Nidoking",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 37,
+      "identifier": "vulpix",
+      "name": "Vulpix",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 38,
+      "identifier": "ninetales",
+      "name": "Ninetales",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 43,
+      "identifier": "oddish",
+      "name": "Oddish",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 44,
+      "identifier": "gloom",
+      "name": "Gloom",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 45,
+      "identifier": "vileplume",
+      "name": "Vileplume",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 46,
+      "identifier": "paras",
+      "name": "Paras",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 47,
+      "identifier": "parasect",
+      "name": "Parasect",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 48,
+      "identifier": "venonat",
+      "name": "Venonat",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 49,
+      "identifier": "venomoth",
+      "name": "Venomoth",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 50,
+      "identifier": "diglett",
+      "name": "Diglett",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 51,
+      "identifier": "dugtrio",
+      "name": "Dugtrio",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 54,
+      "identifier": "psyduck",
+      "name": "Psyduck",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 55,
+      "identifier": "golduck",
+      "name": "Golduck",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 58,
+      "identifier": "growlithe",
+      "name": "Growlithe",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 59,
+      "identifier": "arcanine",
+      "name": "Arcanine",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 60,
+      "identifier": "poliwag",
+      "name": "Poliwag",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 61,
+      "identifier": "poliwhirl",
+      "name": "Poliwhirl",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 62,
+      "identifier": "poliwrath",
+      "name": "Poliwrath",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 72,
+      "identifier": "tentacool",
+      "name": "Tentacool",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 73,
+      "identifier": "tentacruel",
+      "name": "Tentacruel",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 74,
+      "identifier": "geodude",
+      "name": "Geodude",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 75,
+      "identifier": "graveler",
+      "name": "Graveler",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 76,
+      "identifier": "golem",
+      "name": "Golem",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 77,
+      "identifier": "ponyta",
+      "name": "Ponyta",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 78,
+      "identifier": "rapidash",
+      "name": "Rapidash",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 81,
+      "identifier": "magnemite",
+      "name": "Magnemite",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 82,
+      "identifier": "magneton",
+      "name": "Magneton",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 84,
+      "identifier": "doduo",
+      "name": "Doduo",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 85,
+      "identifier": "dodrio",
+      "name": "Dodrio",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 86,
+      "identifier": "seel",
+      "name": "Seel",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 87,
+      "identifier": "dewgong",
+      "name": "Dewgong",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 88,
+      "identifier": "grimer",
+      "name": "Grimer",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 89,
+      "identifier": "muk",
+      "name": "Muk",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 90,
+      "identifier": "shellder",
+      "name": "Shellder",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 91,
+      "identifier": "cloyster",
+      "name": "Cloyster",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 96,
+      "identifier": "drowzee",
+      "name": "Drowzee",
+      "in_arenamon_chars": true
+    },
+    {
+      "id": 97,
+      "identifier": "hypno",
+      "name": "Hypno",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 98,
+      "identifier": "krabby",
+      "name": "Krabby",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 99,
+      "identifier": "kingler",
+      "name": "Kingler",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 100,
+      "identifier": "voltorb",
+      "name": "Voltorb",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 101,
+      "identifier": "electrode",
+      "name": "Electrode",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 102,
+      "identifier": "exeggcute",
+      "name": "Exeggcute",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 103,
+      "identifier": "exeggutor",
+      "name": "Exeggutor",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 106,
+      "identifier": "hitmonlee",
+      "name": "Hitmonlee",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 107,
+      "identifier": "hitmonchan",
+      "name": "Hitmonchan",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 108,
+      "identifier": "lickitung",
+      "name": "Lickitung",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 109,
+      "identifier": "koffing",
+      "name": "Koffing",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 110,
+      "identifier": "weezing",
+      "name": "Weezing",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 111,
+      "identifier": "rhyhorn",
+      "name": "Rhyhorn",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 112,
+      "identifier": "rhydon",
+      "name": "Rhydon",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 113,
+      "identifier": "chansey",
+      "name": "Chansey",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 114,
+      "identifier": "tangela",
+      "name": "Tangela",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 116,
+      "identifier": "horsea",
+      "name": "Horsea",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 117,
+      "identifier": "seadra",
+      "name": "Seadra",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 118,
+      "identifier": "goldeen",
+      "name": "Goldeen",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 119,
+      "identifier": "seaking",
+      "name": "Seaking",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 124,
+      "identifier": "jynx",
+      "name": "Jynx",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 125,
+      "identifier": "electabuzz",
+      "name": "Electabuzz",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 126,
+      "identifier": "magmar",
+      "name": "Magmar",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 128,
+      "identifier": "tauros",
+      "name": "Tauros",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 131,
+      "identifier": "lapras",
+      "name": "Lapras",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 132,
+      "identifier": "ditto",
+      "name": "Ditto",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 138,
+      "identifier": "omanyte",
+      "name": "Omanyte",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 139,
+      "identifier": "omastar",
+      "name": "Omastar",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 140,
+      "identifier": "kabuto",
+      "name": "Kabuto",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 141,
+      "identifier": "kabutops",
+      "name": "Kabutops",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 143,
+      "identifier": "snorlax",
+      "name": "Snorlax",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 144,
+      "identifier": "articuno",
+      "name": "Articuno",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 145,
+      "identifier": "zapdos",
+      "name": "Zapdos",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 146,
+      "identifier": "moltres",
+      "name": "Moltres",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 151,
+      "identifier": "mew",
+      "name": "Mew",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 155,
+      "identifier": "cyndaquil",
+      "name": "Cyndaquil",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 156,
+      "identifier": "quilava",
+      "name": "Quilava",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 157,
+      "identifier": "typhlosion",
+      "name": "Typhlosion",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 161,
+      "identifier": "sentret",
+      "name": "Sentret",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 162,
+      "identifier": "furret",
+      "name": "Furret",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 163,
+      "identifier": "hoothoot",
+      "name": "Hoothoot",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 164,
+      "identifier": "noctowl",
+      "name": "Noctowl",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 165,
+      "identifier": "ledyba",
+      "name": "Ledyba",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 166,
+      "identifier": "ledian",
+      "name": "Ledian",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 170,
+      "identifier": "chinchou",
+      "name": "Chinchou",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 171,
+      "identifier": "lanturn",
+      "name": "Lanturn",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 175,
+      "identifier": "togepi",
+      "name": "Togepi",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 176,
+      "identifier": "togetic",
+      "name": "Togetic",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 177,
+      "identifier": "natu",
+      "name": "Natu",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 178,
+      "identifier": "xatu",
+      "name": "Xatu",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 182,
+      "identifier": "bellossom",
+      "name": "Bellossom",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 183,
+      "identifier": "marill",
+      "name": "Marill",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 184,
+      "identifier": "azumarill",
+      "name": "Azumarill",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 185,
+      "identifier": "sudowoodo",
+      "name": "Sudowoodo",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 186,
+      "identifier": "politoed",
+      "name": "Politoed",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 187,
+      "identifier": "hoppip",
+      "name": "Hoppip",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 188,
+      "identifier": "skiploom",
+      "name": "Skiploom",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 189,
+      "identifier": "jumpluff",
+      "name": "Jumpluff",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 190,
+      "identifier": "aipom",
+      "name": "Aipom",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 191,
+      "identifier": "sunkern",
+      "name": "Sunkern",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 192,
+      "identifier": "sunflora",
+      "name": "Sunflora",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 193,
+      "identifier": "yanma",
+      "name": "Yanma",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 194,
+      "identifier": "wooper",
+      "name": "Wooper",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 195,
+      "identifier": "quagsire",
+      "name": "Quagsire",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 198,
+      "identifier": "murkrow",
+      "name": "Murkrow",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 200,
+      "identifier": "misdreavus",
+      "name": "Misdreavus",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 201,
+      "identifier": "unown",
+      "name": "Unown",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 202,
+      "identifier": "wobbuffet",
+      "name": "Wobbuffet",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 203,
+      "identifier": "girafarig",
+      "name": "Girafarig",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 204,
+      "identifier": "pineco",
+      "name": "Pineco",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 205,
+      "identifier": "forretress",
+      "name": "Forretress",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 206,
+      "identifier": "dunsparce",
+      "name": "Dunsparce",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 207,
+      "identifier": "gligar",
+      "name": "Gligar",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 209,
+      "identifier": "snubbull",
+      "name": "Snubbull",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 210,
+      "identifier": "granbull",
+      "name": "Granbull",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 213,
+      "identifier": "shuckle",
+      "name": "Shuckle",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 215,
+      "identifier": "sneasel",
+      "name": "Sneasel",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 216,
+      "identifier": "teddiursa",
+      "name": "Teddiursa",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 217,
+      "identifier": "ursaring",
+      "name": "Ursaring",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 218,
+      "identifier": "slugma",
+      "name": "Slugma",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 219,
+      "identifier": "magcargo",
+      "name": "Magcargo",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 220,
+      "identifier": "swinub",
+      "name": "Swinub",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 221,
+      "identifier": "piloswine",
+      "name": "Piloswine",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 222,
+      "identifier": "corsola",
+      "name": "Corsola",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 223,
+      "identifier": "remoraid",
+      "name": "Remoraid",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 224,
+      "identifier": "octillery",
+      "name": "Octillery",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 226,
+      "identifier": "mantine",
+      "name": "Mantine",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 230,
+      "identifier": "kingdra",
+      "name": "Kingdra",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 231,
+      "identifier": "phanpy",
+      "name": "Phanpy",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 232,
+      "identifier": "donphan",
+      "name": "Donphan",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 234,
+      "identifier": "stantler",
+      "name": "Stantler",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 235,
+      "identifier": "smeargle",
+      "name": "Smeargle",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 236,
+      "identifier": "tyrogue",
+      "name": "Tyrogue",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 237,
+      "identifier": "hitmontop",
+      "name": "Hitmontop",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 238,
+      "identifier": "smoochum",
+      "name": "Smoochum",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 239,
+      "identifier": "elekid",
+      "name": "Elekid",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 240,
+      "identifier": "magby",
+      "name": "Magby",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 241,
+      "identifier": "miltank",
+      "name": "Miltank",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 242,
+      "identifier": "blissey",
+      "name": "Blissey",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 243,
+      "identifier": "raikou",
+      "name": "Raikou",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 244,
+      "identifier": "entei",
+      "name": "Entei",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 245,
+      "identifier": "suicune",
+      "name": "Suicune",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 249,
+      "identifier": "lugia",
+      "name": "Lugia",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 250,
+      "identifier": "ho-oh",
+      "name": "Ho-Oh",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 251,
+      "identifier": "celebi",
+      "name": "Celebi",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 261,
+      "identifier": "poochyena",
+      "name": "Poochyena",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 262,
+      "identifier": "mightyena",
+      "name": "Mightyena",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 263,
+      "identifier": "zigzagoon",
+      "name": "Zigzagoon",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 264,
+      "identifier": "linoone",
+      "name": "Linoone",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 265,
+      "identifier": "wurmple",
+      "name": "Wurmple",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 266,
+      "identifier": "silcoon",
+      "name": "Silcoon",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 267,
+      "identifier": "beautifly",
+      "name": "Beautifly",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 268,
+      "identifier": "cascoon",
+      "name": "Cascoon",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 269,
+      "identifier": "dustox",
+      "name": "Dustox",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 270,
+      "identifier": "lotad",
+      "name": "Lotad",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 271,
+      "identifier": "lombre",
+      "name": "Lombre",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 272,
+      "identifier": "ludicolo",
+      "name": "Ludicolo",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 273,
+      "identifier": "seedot",
+      "name": "Seedot",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 274,
+      "identifier": "nuzleaf",
+      "name": "Nuzleaf",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 275,
+      "identifier": "shiftry",
+      "name": "Shiftry",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 276,
+      "identifier": "taillow",
+      "name": "Taillow",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 277,
+      "identifier": "swellow",
+      "name": "Swellow",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 278,
+      "identifier": "wingull",
+      "name": "Wingull",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 279,
+      "identifier": "pelipper",
+      "name": "Pelipper",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 283,
+      "identifier": "surskit",
+      "name": "Surskit",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 284,
+      "identifier": "masquerain",
+      "name": "Masquerain",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 285,
+      "identifier": "shroomish",
+      "name": "Shroomish",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 286,
+      "identifier": "breloom",
+      "name": "Breloom",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 287,
+      "identifier": "slakoth",
+      "name": "Slakoth",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 288,
+      "identifier": "vigoroth",
+      "name": "Vigoroth",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 289,
+      "identifier": "slaking",
+      "name": "Slaking",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 290,
+      "identifier": "nincada",
+      "name": "Nincada",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 291,
+      "identifier": "ninjask",
+      "name": "Ninjask",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 292,
+      "identifier": "shedinja",
+      "name": "Shedinja",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 293,
+      "identifier": "whismur",
+      "name": "Whismur",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 294,
+      "identifier": "loudred",
+      "name": "Loudred",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 295,
+      "identifier": "exploud",
+      "name": "Exploud",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 296,
+      "identifier": "makuhita",
+      "name": "Makuhita",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 297,
+      "identifier": "hariyama",
+      "name": "Hariyama",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 298,
+      "identifier": "azurill",
+      "name": "Azurill",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 299,
+      "identifier": "nosepass",
+      "name": "Nosepass",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 300,
+      "identifier": "skitty",
+      "name": "Skitty",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 301,
+      "identifier": "delcatty",
+      "name": "Delcatty",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 311,
+      "identifier": "plusle",
+      "name": "Plusle",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 312,
+      "identifier": "minun",
+      "name": "Minun",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 313,
+      "identifier": "volbeat",
+      "name": "Volbeat",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 314,
+      "identifier": "illumise",
+      "name": "Illumise",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 320,
+      "identifier": "wailmer",
+      "name": "Wailmer",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 321,
+      "identifier": "wailord",
+      "name": "Wailord",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 324,
+      "identifier": "torkoal",
+      "name": "Torkoal",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 327,
+      "identifier": "spinda",
+      "name": "Spinda",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 328,
+      "identifier": "trapinch",
+      "name": "Trapinch",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 329,
+      "identifier": "vibrava",
+      "name": "Vibrava",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 330,
+      "identifier": "flygon",
+      "name": "Flygon",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 331,
+      "identifier": "cacnea",
+      "name": "Cacnea",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 332,
+      "identifier": "cacturne",
+      "name": "Cacturne",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 337,
+      "identifier": "lunatone",
+      "name": "Lunatone",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 338,
+      "identifier": "solrock",
+      "name": "Solrock",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 339,
+      "identifier": "barboach",
+      "name": "Barboach",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 340,
+      "identifier": "whiscash",
+      "name": "Whiscash",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 341,
+      "identifier": "corphish",
+      "name": "Corphish",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 342,
+      "identifier": "crawdaunt",
+      "name": "Crawdaunt",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 343,
+      "identifier": "baltoy",
+      "name": "Baltoy",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 344,
+      "identifier": "claydol",
+      "name": "Claydol",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 345,
+      "identifier": "lileep",
+      "name": "Lileep",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 346,
+      "identifier": "cradily",
+      "name": "Cradily",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 347,
+      "identifier": "anorith",
+      "name": "Anorith",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 348,
+      "identifier": "armaldo",
+      "name": "Armaldo",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 351,
+      "identifier": "castform",
+      "name": "Castform",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 355,
+      "identifier": "duskull",
+      "name": "Duskull",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 356,
+      "identifier": "dusclops",
+      "name": "Dusclops",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 357,
+      "identifier": "tropius",
+      "name": "Tropius",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 360,
+      "identifier": "wynaut",
+      "name": "Wynaut",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 363,
+      "identifier": "spheal",
+      "name": "Spheal",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 364,
+      "identifier": "sealeo",
+      "name": "Sealeo",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 365,
+      "identifier": "walrein",
+      "name": "Walrein",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 366,
+      "identifier": "clamperl",
+      "name": "Clamperl",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 367,
+      "identifier": "huntail",
+      "name": "Huntail",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 368,
+      "identifier": "gorebyss",
+      "name": "Gorebyss",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 369,
+      "identifier": "relicanth",
+      "name": "Relicanth",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 370,
+      "identifier": "luvdisc",
+      "name": "Luvdisc",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 377,
+      "identifier": "regirock",
+      "name": "Regirock",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 378,
+      "identifier": "regice",
+      "name": "Regice",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 379,
+      "identifier": "registeel",
+      "name": "Registeel",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 385,
+      "identifier": "jirachi",
+      "name": "Jirachi",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 386,
+      "identifier": "deoxys",
+      "name": "Deoxys",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 387,
+      "identifier": "turtwig",
+      "name": "Turtwig",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 388,
+      "identifier": "grotle",
+      "name": "Grotle",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 389,
+      "identifier": "torterra",
+      "name": "Torterra",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 390,
+      "identifier": "chimchar",
+      "name": "Chimchar",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 391,
+      "identifier": "monferno",
+      "name": "Monferno",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 392,
+      "identifier": "infernape",
+      "name": "Infernape",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 393,
+      "identifier": "piplup",
+      "name": "Piplup",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 394,
+      "identifier": "prinplup",
+      "name": "Prinplup",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 395,
+      "identifier": "empoleon",
+      "name": "Empoleon",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 399,
+      "identifier": "bidoof",
+      "name": "Bidoof",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 400,
+      "identifier": "bibarel",
+      "name": "Bibarel",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 401,
+      "identifier": "kricketot",
+      "name": "Kricketot",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 402,
+      "identifier": "kricketune",
+      "name": "Kricketune",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 403,
+      "identifier": "shinx",
+      "name": "Shinx",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 404,
+      "identifier": "luxio",
+      "name": "Luxio",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 405,
+      "identifier": "luxray",
+      "name": "Luxray",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 408,
+      "identifier": "cranidos",
+      "name": "Cranidos",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 409,
+      "identifier": "rampardos",
+      "name": "Rampardos",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 410,
+      "identifier": "shieldon",
+      "name": "Shieldon",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 411,
+      "identifier": "bastiodon",
+      "name": "Bastiodon",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 412,
+      "identifier": "burmy",
+      "name": "Burmy",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 413,
+      "identifier": "wormadam",
+      "name": "Wormadam",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 414,
+      "identifier": "mothim",
+      "name": "Mothim",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 415,
+      "identifier": "combee",
+      "name": "Combee",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 416,
+      "identifier": "vespiquen",
+      "name": "Vespiquen",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 417,
+      "identifier": "pachirisu",
+      "name": "Pachirisu",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 418,
+      "identifier": "buizel",
+      "name": "Buizel",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 419,
+      "identifier": "floatzel",
+      "name": "Floatzel",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 420,
+      "identifier": "cherubi",
+      "name": "Cherubi",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 421,
+      "identifier": "cherrim",
+      "name": "Cherrim",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 422,
+      "identifier": "shellos",
+      "name": "Shellos",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 423,
+      "identifier": "gastrodon",
+      "name": "Gastrodon",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 424,
+      "identifier": "ambipom",
+      "name": "Ambipom",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 425,
+      "identifier": "drifloon",
+      "name": "Drifloon",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 426,
+      "identifier": "drifblim",
+      "name": "Drifblim",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 429,
+      "identifier": "mismagius",
+      "name": "Mismagius",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 430,
+      "identifier": "honchkrow",
+      "name": "Honchkrow",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 431,
+      "identifier": "glameow",
+      "name": "Glameow",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 432,
+      "identifier": "purugly",
+      "name": "Purugly",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 434,
+      "identifier": "stunky",
+      "name": "Stunky",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 435,
+      "identifier": "skuntank",
+      "name": "Skuntank",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 436,
+      "identifier": "bronzor",
+      "name": "Bronzor",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 437,
+      "identifier": "bronzong",
+      "name": "Bronzong",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 438,
+      "identifier": "bonsly",
+      "name": "Bonsly",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 440,
+      "identifier": "happiny",
+      "name": "Happiny",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 441,
+      "identifier": "chatot",
+      "name": "Chatot",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 442,
+      "identifier": "spiritomb",
+      "name": "Spiritomb",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 446,
+      "identifier": "munchlax",
+      "name": "Munchlax",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 451,
+      "identifier": "skorupi",
+      "name": "Skorupi",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 452,
+      "identifier": "drapion",
+      "name": "Drapion",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 453,
+      "identifier": "croagunk",
+      "name": "Croagunk",
+      "in_arenamon_chars": true
+    },
+    {
+      "id": 454,
+      "identifier": "toxicroak",
+      "name": "Toxicroak",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 455,
+      "identifier": "carnivine",
+      "name": "Carnivine",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 456,
+      "identifier": "finneon",
+      "name": "Finneon",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 457,
+      "identifier": "lumineon",
+      "name": "Lumineon",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 458,
+      "identifier": "mantyke",
+      "name": "Mantyke",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 461,
+      "identifier": "weavile",
+      "name": "Weavile",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 462,
+      "identifier": "magnezone",
+      "name": "Magnezone",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 463,
+      "identifier": "lickilicky",
+      "name": "Lickilicky",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 464,
+      "identifier": "rhyperior",
+      "name": "Rhyperior",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 465,
+      "identifier": "tangrowth",
+      "name": "Tangrowth",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 466,
+      "identifier": "electivire",
+      "name": "Electivire",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 467,
+      "identifier": "magmortar",
+      "name": "Magmortar",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 468,
+      "identifier": "togekiss",
+      "name": "Togekiss",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 469,
+      "identifier": "yanmega",
+      "name": "Yanmega",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 472,
+      "identifier": "gliscor",
+      "name": "Gliscor",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 473,
+      "identifier": "mamoswine",
+      "name": "Mamoswine",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 476,
+      "identifier": "probopass",
+      "name": "Probopass",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 477,
+      "identifier": "dusknoir",
+      "name": "Dusknoir",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 480,
+      "identifier": "uxie",
+      "name": "Uxie",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 481,
+      "identifier": "mesprit",
+      "name": "Mesprit",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 482,
+      "identifier": "azelf",
+      "name": "Azelf",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 483,
+      "identifier": "dialga",
+      "name": "Dialga",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 484,
+      "identifier": "palkia",
+      "name": "Palkia",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 486,
+      "identifier": "regigigas",
+      "name": "Regigigas",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 487,
+      "identifier": "giratina",
+      "name": "Giratina",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 488,
+      "identifier": "cresselia",
+      "name": "Cresselia",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 489,
+      "identifier": "phione",
+      "name": "Phione",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 490,
+      "identifier": "manaphy",
+      "name": "Manaphy",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 492,
+      "identifier": "shaymin",
+      "name": "Shaymin",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 493,
+      "identifier": "arceus",
+      "name": "Arceus",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 494,
+      "identifier": "victini",
+      "name": "Victini",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 495,
+      "identifier": "snivy",
+      "name": "Snivy",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 496,
+      "identifier": "servine",
+      "name": "Servine",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 497,
+      "identifier": "serperior",
+      "name": "Serperior",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 501,
+      "identifier": "oshawott",
+      "name": "Oshawott",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 502,
+      "identifier": "dewott",
+      "name": "Dewott",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 503,
+      "identifier": "samurott",
+      "name": "Samurott",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 506,
+      "identifier": "lillipup",
+      "name": "Lillipup",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 507,
+      "identifier": "herdier",
+      "name": "Herdier",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 508,
+      "identifier": "stoutland",
+      "name": "Stoutland",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 519,
+      "identifier": "pidove",
+      "name": "Pidove",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 520,
+      "identifier": "tranquill",
+      "name": "Tranquill",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 521,
+      "identifier": "unfezant",
+      "name": "Unfezant",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 522,
+      "identifier": "blitzle",
+      "name": "Blitzle",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 523,
+      "identifier": "zebstrika",
+      "name": "Zebstrika",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 524,
+      "identifier": "roggenrola",
+      "name": "Roggenrola",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 525,
+      "identifier": "boldore",
+      "name": "Boldore",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 526,
+      "identifier": "gigalith",
+      "name": "Gigalith",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 527,
+      "identifier": "woobat",
+      "name": "Woobat",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 528,
+      "identifier": "swoobat",
+      "name": "Swoobat",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 532,
+      "identifier": "timburr",
+      "name": "Timburr",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 533,
+      "identifier": "gurdurr",
+      "name": "Gurdurr",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 534,
+      "identifier": "conkeldurr",
+      "name": "Conkeldurr",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 535,
+      "identifier": "tympole",
+      "name": "Tympole",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 536,
+      "identifier": "palpitoad",
+      "name": "Palpitoad",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 537,
+      "identifier": "seismitoad",
+      "name": "Seismitoad",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 540,
+      "identifier": "sewaddle",
+      "name": "Sewaddle",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 541,
+      "identifier": "swadloon",
+      "name": "Swadloon",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 542,
+      "identifier": "leavanny",
+      "name": "Leavanny",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 544,
+      "identifier": "whirlipede",
+      "name": "Whirlipede",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 546,
+      "identifier": "cottonee",
+      "name": "Cottonee",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 547,
+      "identifier": "whimsicott",
+      "name": "Whimsicott",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 548,
+      "identifier": "petilil",
+      "name": "Petilil",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 549,
+      "identifier": "lilligant",
+      "name": "Lilligant",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 550,
+      "identifier": "basculin",
+      "name": "Basculin",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 554,
+      "identifier": "darumaka",
+      "name": "Darumaka",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 555,
+      "identifier": "darmanitan",
+      "name": "Darmanitan",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 556,
+      "identifier": "maractus",
+      "name": "Maractus",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 557,
+      "identifier": "dwebble",
+      "name": "Dwebble",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 558,
+      "identifier": "crustle",
+      "name": "Crustle",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 561,
+      "identifier": "sigilyph",
+      "name": "Sigilyph",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 564,
+      "identifier": "tirtouga",
+      "name": "Tirtouga",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 565,
+      "identifier": "carracosta",
+      "name": "Carracosta",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 566,
+      "identifier": "archen",
+      "name": "Archen",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 567,
+      "identifier": "archeops",
+      "name": "Archeops",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 570,
+      "identifier": "zorua",
+      "name": "Zorua",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 571,
+      "identifier": "zoroark",
+      "name": "Zoroark",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 572,
+      "identifier": "minccino",
+      "name": "Minccino",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 573,
+      "identifier": "cinccino",
+      "name": "Cinccino",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 574,
+      "identifier": "gothita",
+      "name": "Gothita",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 575,
+      "identifier": "gothorita",
+      "name": "Gothorita",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 576,
+      "identifier": "gothitelle",
+      "name": "Gothitelle",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 577,
+      "identifier": "solosis",
+      "name": "Solosis",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 578,
+      "identifier": "duosion",
+      "name": "Duosion",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 579,
+      "identifier": "reuniclus",
+      "name": "Reuniclus",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 580,
+      "identifier": "ducklett",
+      "name": "Ducklett",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 581,
+      "identifier": "swanna",
+      "name": "Swanna",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 585,
+      "identifier": "deerling",
+      "name": "Deerling",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 586,
+      "identifier": "sawsbuck",
+      "name": "Sawsbuck",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 588,
+      "identifier": "karrablast",
+      "name": "Karrablast",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 589,
+      "identifier": "escavalier",
+      "name": "Escavalier",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 592,
+      "identifier": "frillish",
+      "name": "Frillish",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 593,
+      "identifier": "jellicent",
+      "name": "Jellicent",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 594,
+      "identifier": "alomomola",
+      "name": "Alomomola",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 595,
+      "identifier": "joltik",
+      "name": "Joltik",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 596,
+      "identifier": "galvantula",
+      "name": "Galvantula",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 597,
+      "identifier": "ferroseed",
+      "name": "Ferroseed",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 598,
+      "identifier": "ferrothorn",
+      "name": "Ferrothorn",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 599,
+      "identifier": "klink",
+      "name": "Klink",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 600,
+      "identifier": "klang",
+      "name": "Klang",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 601,
+      "identifier": "klinklang",
+      "name": "Klinklang",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 605,
+      "identifier": "elgyem",
+      "name": "Elgyem",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 606,
+      "identifier": "beheeyem",
+      "name": "Beheeyem",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 610,
+      "identifier": "axew",
+      "name": "Axew",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 611,
+      "identifier": "fraxure",
+      "name": "Fraxure",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 612,
+      "identifier": "haxorus",
+      "name": "Haxorus",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 613,
+      "identifier": "cubchoo",
+      "name": "Cubchoo",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 614,
+      "identifier": "beartic",
+      "name": "Beartic",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 616,
+      "identifier": "shelmet",
+      "name": "Shelmet",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 617,
+      "identifier": "accelgor",
+      "name": "Accelgor",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 619,
+      "identifier": "mienfoo",
+      "name": "Mienfoo",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 620,
+      "identifier": "mienshao",
+      "name": "Mienshao",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 621,
+      "identifier": "druddigon",
+      "name": "Druddigon",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 624,
+      "identifier": "pawniard",
+      "name": "Pawniard",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 625,
+      "identifier": "bisharp",
+      "name": "Bisharp",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 626,
+      "identifier": "bouffalant",
+      "name": "Bouffalant",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 627,
+      "identifier": "rufflet",
+      "name": "Rufflet",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 628,
+      "identifier": "braviary",
+      "name": "Braviary",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 629,
+      "identifier": "vullaby",
+      "name": "Vullaby",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 630,
+      "identifier": "mandibuzz",
+      "name": "Mandibuzz",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 631,
+      "identifier": "heatmor",
+      "name": "Heatmor",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 632,
+      "identifier": "durant",
+      "name": "Durant",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 633,
+      "identifier": "deino",
+      "name": "Deino",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 634,
+      "identifier": "zweilous",
+      "name": "Zweilous",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 635,
+      "identifier": "hydreigon",
+      "name": "Hydreigon",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 636,
+      "identifier": "larvesta",
+      "name": "Larvesta",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 637,
+      "identifier": "volcarona",
+      "name": "Volcarona",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 641,
+      "identifier": "tornadus",
+      "name": "Tornadus",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 642,
+      "identifier": "thundurus",
+      "name": "Thundurus",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 643,
+      "identifier": "reshiram",
+      "name": "Reshiram",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 644,
+      "identifier": "zekrom",
+      "name": "Zekrom",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 645,
+      "identifier": "landorus",
+      "name": "Landorus",
+      "in_arenamon_chars": false
+    },
+    {
+      "id": 646,
+      "identifier": "kyurem",
+      "name": "Kyurem",
+      "in_arenamon_chars": false
+    }
+  ]
+}

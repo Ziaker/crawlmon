@@ -1,0 +1,1030 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Crawlmon — transição para o combate (3 ideias)</title>
+<style>
+  *{box-sizing:border-box}
+  :root{
+    --lime:#d7fd6a; --coral:#ff624f; --ink:#080e18; --navy:#101c2c;
+    --cream:#f0eedf; --mute:#8b97a8; --line:#22344a;
+  }
+  html,body{margin:0;background:var(--ink);color:var(--cream);
+    font:14px/1.45 "Segoe UI",system-ui,-apple-system,sans-serif}
+  .wrap{max-width:1360px;margin:0 auto;padding:20px 20px 48px}
+  header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;margin-bottom:14px}
+  h1{margin:0;font-size:19px;letter-spacing:.16em;text-transform:uppercase;font-weight:700}
+  h1 b{color:var(--lime)}
+  .sub{color:var(--mute);font-size:12px;letter-spacing:.04em}
+  .stage{position:relative;background:var(--navy);border:1px solid var(--line);padding:6px;
+    clip-path:polygon(0 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%)}
+  #cv{display:block;width:100%;height:auto;background:#05080d}
+  .compare{display:none;grid-template-columns:1fr 1fr;gap:6px}
+  .compare.on{display:grid}
+  .compare figure{margin:0;position:relative}
+  .compare canvas{display:block;width:100%;height:auto;background:#05080d}
+  .compare figcaption{position:absolute;left:8px;top:6px;font-size:11px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--lime);background:#080e18cc;padding:2px 7px;
+    clip-path:polygon(0 0,100% 0,calc(100% - 6px) 100%,0 100%)}
+  .compare figure:nth-child(2) figcaption{color:var(--coral)}
+  .compare figure:nth-child(3) figcaption{color:var(--cream)}
+  .hud{position:absolute;right:16px;bottom:14px;font:11px/1 ui-monospace,Consolas,monospace;
+    letter-spacing:.1em;color:var(--mute);background:#080e18b0;padding:5px 9px}
+  .hud b{color:var(--lime);font-weight:600}
+
+  .panel{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:20px;margin-top:18px}
+  @media (max-width:900px){.panel{grid-template-columns:1fr}}
+
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .tab{appearance:none;border:1px solid var(--line);background:#0c1624;color:var(--cream);
+    padding:9px 16px;font:inherit;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;
+    cursor:pointer;clip-path:polygon(0 0,100% 0,calc(100% - 10px) 100%,0 100%);transition:.15s}
+  .tab small{display:block;letter-spacing:.04em;text-transform:none;color:var(--mute);font-size:11px}
+  .tab:hover{border-color:#3a5470;background:#122234}
+  .tab.on{background:var(--lime);border-color:var(--lime);color:#0b1220}
+  .tab.on small{color:#3d4a1a}
+
+  .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .btn{appearance:none;border:1px solid var(--line);background:#0c1624;color:var(--cream);
+    padding:8px 14px;font:inherit;font-size:12.5px;letter-spacing:.06em;cursor:pointer;transition:.15s}
+  .btn:hover{border-color:#3a5470;background:#122234}
+  .btn.primary{background:var(--lime);color:#0b1220;border-color:var(--lime);font-weight:600}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .btn.on{border-color:var(--coral);color:var(--coral)}
+  .check{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mute);cursor:pointer;
+    user-select:none;letter-spacing:.04em}
+  .check input{accent-color:var(--lime)}
+
+  .field{margin-bottom:14px}
+  .field label{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--mute);margin-bottom:6px}
+  .field label b{color:var(--cream);font-weight:600;letter-spacing:.02em;text-transform:none;
+    font-family:ui-monospace,Consolas,monospace}
+  input[type=range]{width:100%;appearance:none;height:4px;background:#22344a;outline:none;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;background:var(--lime);
+    border:0;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+  input[type=range]::-moz-range-thumb{width:13px;height:13px;background:var(--lime);border:0}
+
+  .beats{position:relative;height:22px;margin:-4px 0 16px}
+  .beats .track{position:absolute;left:0;right:0;top:9px;height:1px;background:#22344a}
+  .beats i{position:absolute;top:4px;width:2px;height:11px;background:var(--coral);
+    transform:translateX(-1px);opacity:.85}
+  .beats i.lime{background:var(--lime)}
+  .beats span{position:absolute;top:-3px;font:10px/1 ui-monospace,Consolas,monospace;color:var(--mute);
+    transform:translateX(-50%)}
+
+  .notes{background:#0c1624;border:1px solid var(--line);padding:16px 18px;
+    clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%)}
+  .notes h2{margin:0 0 4px;font-size:14px;letter-spacing:.12em;text-transform:uppercase}
+  .notes h2 em{font-style:normal;color:var(--coral)}
+  .notes p{margin:0 0 12px;color:var(--mute);font-size:12.5px}
+  .notes h3{margin:14px 0 6px;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--lime);font-weight:600}
+  .notes h3.against{color:var(--coral)}
+  .notes ul{margin:0;padding-left:16px;font-size:12.5px;line-height:1.55}
+  .notes li{margin-bottom:4px}
+  .notes code{font-family:ui-monospace,Consolas,monospace;font-size:11.5px;color:var(--cream);
+    background:#182a3e;padding:1px 4px}
+  .keys{margin-top:16px;font-size:11.5px;color:var(--mute);letter-spacing:.03em}
+  .keys kbd{font-family:ui-monospace,Consolas,monospace;background:#182a3e;border:1px solid var(--line);
+    padding:1px 5px;font-size:11px;color:var(--cream)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Crawlmon · transição de <b>encontro</b></h1>
+    <span class="sub">3 ideias · 1,5 s cada · protótipo navegável</span>
+  </header>
+
+  <div class="stage">
+    <canvas id="cv" width="1280" height="720"></canvas>
+    <div class="compare" id="compare">
+      <figure><canvas width="640" height="360"></canvas><figcaption>1 · Fenda tática</figcaption></figure>
+      <figure><canvas width="640" height="360"></canvas><figcaption>2 · Estilhaço</figcaption></figure>
+    </div>
+    <div class="hud"><b id="timecode">0 ms</b> / <span id="durcode">1500 ms</span></div>
+  </div>
+
+  <div class="panel">
+    <div>
+      <div class="tabs" id="tabs">
+        <button class="tab on" data-idea="0">1 · Impacto<small>flash + zoom no inimigo</small></button>
+        <button class="tab" data-idea="1">2 · Fenda tática<small>painéis + selo</small></button>
+        <button class="tab" data-idea="2">3 · Estilhaço<small>o mapa quebra</small></button>
+      </div>
+
+      <div class="row">
+        <button class="btn primary" id="play">▶ Tocar</button>
+        <button class="btn" id="replay">↺ Replay</button>
+        <button class="btn" id="compareBtn">▦ Comparar as 3</button>
+        <label class="check"><input type="checkbox" id="loop" checked> loop</label>
+        <label class="check"><input type="checkbox" id="slow"> 0,25×</label>
+      </div>
+
+      <div class="field">
+        <label>Duração <b id="durLabel">1500 ms</b></label>
+        <input type="range" id="dur" min="800" max="2500" step="50" value="1500">
+      </div>
+
+      <div class="field" style="margin-bottom:6px">
+        <label>Linha do tempo <b id="scrubLabel">0,00</b></label>
+        <input type="range" id="scrub" min="0" max="1000" step="1" value="0">
+      </div>
+      <div class="beats" id="beats"><div class="track"></div></div>
+
+      <div class="keys">
+        <kbd>Espaço</kbd> tocar/pausar · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> ideia · <kbd>R</kbd> replay ·
+        <kbd>C</kbd> comparar · arraste a linha do tempo para inspecionar quadros.
+      </div>
+    </div>
+
+    <div class="notes" id="notes"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+// ---------------------------------------------------------------------------
+// Base
+// ---------------------------------------------------------------------------
+const W = 1280, H = 720, TILE = 48, COLS = 33, ROWS = 19;
+const MAPW = COLS * TILE, MAPH = ROWS * TILE;
+
+const PAL = {
+  lime: "#d7fd6a", coral: "#ff624f", ink: "#080e18", navy: "#101c2c", cream: "#f0eedf",
+  floor: [77, 71, 84], cap: [107, 107, 133], face: [92, 87, 111],
+};
+
+const clamp = (v, a = 0, b = 1) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
+const easeOut = t => 1 - Math.pow(1 - clamp(t), 3);
+const easeIn = t => Math.pow(clamp(t), 3);
+const easeInOut = t => { const x = clamp(t); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const easeOutBack = t => { const c1 = 1.9, c3 = c1 + 1, x = clamp(t) - 1; return 1 + c3 * x * x * x + c1 * x * x; };
+const rgb = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+const mulberry32 = a => () => {
+  a |= 0; a = a + 0x6D2B79F5 | 0;
+  let t = Math.imul(a ^ a >>> 15, 1 | a);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+  return ((t ^ t >>> 14) >>> 0) / 4294967296;
+};
+const hash2 = (x, y) => { let h = (x * 73856093) ^ (y * 19349663); h = (h ^ (h >>> 13)) * 1274126177; return (h ^ (h >>> 16)) >>> 0; };
+
+function rr(c, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  c.beginPath();
+  c.moveTo(x + r, y); c.lineTo(x + w - r, y); c.quadraticCurveTo(x + w, y, x + w, y + r);
+  c.lineTo(x + w, y + h - r); c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  c.lineTo(x + r, y + h); c.quadraticCurveTo(x, y + h, x, y + h - r);
+  c.lineTo(x, y + r); c.quadraticCurveTo(x, y, x + r, y); c.closePath();
+}
+
+// ---------------------------------------------------------------------------
+// Mapa: salas + corredores (mesma lógica de scripts/dungeon/dungeon_generator.gd)
+// ---------------------------------------------------------------------------
+const rng = mulberry32(20261101);
+const grid = Array.from({ length: ROWS }, () => new Array(COLS).fill("#"));
+const rooms = [];
+
+const carve = (x, y) => { if (x > 0 && y > 0 && x < COLS - 1 && y < ROWS - 1) grid[y][x] = "."; };
+
+for (let i = 0; i < 8; i++) {
+  for (let tries = 0; tries < 80; tries++) {
+    const w = 4 + ((rng() * 5) | 0), h = 3 + ((rng() * 3) | 0);
+    const x = 1 + ((rng() * (COLS - w - 2)) | 0), y = 1 + ((rng() * (ROWS - h - 2)) | 0);
+    const r = { x, y, w, h, cx: x + (w >> 1), cy: y + (h >> 1) };
+    if (rooms.some(o => x < o.x + o.w + 1 && x + w + 1 > o.x && y < o.y + o.h + 1 && y + h + 1 > o.y)) continue;
+    rooms.push(r);
+    for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) carve(xx, yy);
+    break;
+  }
+}
+
+// Liga cada sala à anterior com um L, e depois fecha um laço para o mapa não ser uma árvore.
+const link = (a, b) => {
+  let x = a.cx, y = a.cy;
+  while (x !== b.cx) { carve(x, y); x += Math.sign(b.cx - x); }
+  while (y !== b.cy) { carve(x, y); y += Math.sign(b.cy - y); }
+  carve(x, y);
+};
+for (let i = 1; i < rooms.length; i++) link(rooms[i - 1], rooms[i]);
+link(rooms[0], rooms[rooms.length - 1]);
+
+// Jogador e inimigo ficam num par de salas perto do centro da tela, para que a
+// câmera do protótipo (fixa) mostre os dois sem cortes.
+let pair = null, bestScore = Infinity;
+for (let i = 0; i < rooms.length; i++) {
+  for (let j = i + 1; j < rooms.length; j++) {
+    const a = rooms[i], b = rooms[j];
+    const d = Math.hypot(b.cx - a.cx, b.cy - a.cy);
+    if (d < 3 || d > 7) continue;
+    const mx = (a.cx + b.cx) / 2 * TILE + TILE / 2;
+    const my = (a.cy + b.cy) / 2 * TILE + TILE / 2;
+    const score = Math.hypot(mx - W / 2, my - H / 2) + Math.abs(d - 4.5) * 22;
+    if (score < bestScore) { bestScore = score; pair = [a, b]; }
+  }
+}
+if (!pair) pair = [rooms[0], rooms[1]];
+
+const PLAYER = { cx: pair[0].cx, cy: pair[0].cy };
+const ENEMY = { cx: pair[1].cx, cy: pair[1].cy };
+const px = (c) => (c + .5) * TILE;
+PLAYER.x = px(PLAYER.cx); PLAYER.y = px(PLAYER.cy);
+ENEMY.x = px(ENEMY.cx); ENEMY.y = px(ENEMY.cy);
+
+// Câmera fixa no jogador (como no jogo), presa aos limites do mapa.
+const camX = clamp(PLAYER.x - W / 2, 0, MAPW - W);
+const camY = clamp(PLAYER.y - H / 2, 0, MAPH - H);
+PLAYER.sx = PLAYER.x - camX; PLAYER.sy = PLAYER.y - camY;
+ENEMY.sx = ENEMY.x - camX; ENEMY.sy = ENEMY.y - camY;
+
+const isWall = (x, y) => y < 0 || y >= ROWS || x < 0 || x >= COLS || grid[y][x] === "#";
+
+// ---------------------------------------------------------------------------
+// Fundo do mapa, pré-renderizado (piso, paredes, decoração, tochas)
+// ---------------------------------------------------------------------------
+const mapBg = document.createElement("canvas"); mapBg.width = MAPW; mapBg.height = MAPH;
+const torches = [];
+
+(function buildMap() {
+  const c = mapBg.getContext("2d");
+  c.fillStyle = "#05080d"; c.fillRect(0, 0, MAPW, MAPH);
+
+  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+    if (isWall(x, y)) continue;
+    const n = (hash2(x, y) % 100) / 100;
+    const base = PAL.floor.map(v => v + (n - .5) * 14);
+    c.fillStyle = rgb(base); c.fillRect(x * TILE, y * TILE, TILE, TILE);
+    // juntas do ladrilho
+    c.strokeStyle = "rgba(0,0,0,.35)"; c.lineWidth = 2;
+    c.beginPath();
+    c.moveTo(x * TILE, y * TILE + TILE - 1); c.lineTo(x * TILE + TILE, y * TILE + TILE - 1);
+    c.moveTo(x * TILE + TILE - 1, y * TILE); c.lineTo(x * TILE + TILE - 1, y * TILE + TILE);
+    c.stroke();
+    // sombra junto das paredes (dá profundidade, como no jogo)
+    if (isWall(x, y - 1)) {
+      const g = c.createLinearGradient(0, y * TILE, 0, y * TILE + 14);
+      g.addColorStop(0, "rgba(0,0,0,.5)"); g.addColorStop(1, "rgba(0,0,0,0)");
+      c.fillStyle = g; c.fillRect(x * TILE, y * TILE, TILE, 14);
+    }
+    if (isWall(x - 1, y)) {
+      const g = c.createLinearGradient(x * TILE, 0, x * TILE + 8, 0);
+      g.addColorStop(0, "rgba(0,0,0,.42)"); g.addColorStop(1, "rgba(0,0,0,0)");
+      c.fillStyle = g; c.fillRect(x * TILE, y * TILE, 8, TILE);
+    }
+  }
+
+  // decoração: rachadura, ossos, entulho, poça
+  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+    if (isWall(x, y)) continue;
+    const h = hash2(x, y), kind = h % 11;
+    if (kind > 3) continue;
+    const ox = x * TILE + TILE / 2 + ((h >> 3) % 9) - 4, oy = y * TILE + TILE / 2 + ((h >> 7) % 9) - 4;
+    c.save();
+    if (kind === 0) {
+      c.strokeStyle = "rgba(18,16,22,.85)"; c.lineWidth = 1.6;
+      c.beginPath(); c.moveTo(ox - 10, oy - 4); c.lineTo(ox - 3, oy + 1); c.lineTo(ox + 2, oy - 3); c.lineTo(ox + 9, oy + 3); c.stroke();
+    } else if (kind === 1) {
+      c.strokeStyle = "rgba(216,209,186,.8)"; c.lineWidth = 2;
+      c.beginPath(); c.moveTo(ox - 7, oy - 3); c.lineTo(ox + 7, oy + 3); c.moveTo(ox - 7, oy + 3); c.lineTo(ox + 7, oy - 3); c.stroke();
+      c.fillStyle = "rgba(224,218,196,.85)"; c.beginPath(); c.arc(ox, oy - 6, 3.4, 0, 7); c.fill();
+    } else if (kind === 2) {
+      c.fillStyle = "rgba(120,117,132,.75)";
+      c.beginPath(); c.arc(ox - 5, oy + 2, 3, 0, 7); c.arc(ox + 3, oy - 2, 4, 0, 7); c.arc(ox + 6, oy + 5, 2, 0, 7); c.fill();
+    } else {
+      c.fillStyle = "rgba(64,102,153,.5)";
+      c.beginPath(); c.ellipse(ox, oy, 12, 6, 0, 0, 7); c.fill();
+      c.fillStyle = "rgba(178,216,255,.4)";
+      c.beginPath(); c.ellipse(ox - 3, oy - 1, 4, 1.6, 0, 0, 7); c.fill();
+    }
+    c.restore();
+  }
+
+  // paredes: capa (topo) e face (frente exposta)
+  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+    if (!isWall(x, y)) continue;
+    const exposed = !isWall(x, y + 1);
+    const X = x * TILE, Y = y * TILE;
+    const base = exposed ? PAL.face : PAL.cap;
+    const n = (hash2(x, y) % 100) / 100;
+    c.fillStyle = rgb(base.map(v => v + (n - .5) * 10));
+    c.fillRect(X, Y, TILE, TILE);
+    if (exposed) {
+      // fiadas de tijolo
+      c.strokeStyle = "rgba(0,0,0,.4)"; c.lineWidth = 2;
+      for (let i = 1; i < 4; i++) { c.beginPath(); c.moveTo(X, Y + i * 12); c.lineTo(X + TILE, Y + i * 12); c.stroke(); }
+      for (let i = 0; i < 4; i++) {
+        const off = (i % 2) * 12;
+        c.beginPath(); c.moveTo(X + off + 12, Y + i * 12); c.lineTo(X + off + 12, Y + i * 12 + 12); c.stroke();
+      }
+      const g = c.createLinearGradient(0, Y + TILE - 10, 0, Y + TILE);
+      g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.55)");
+      c.fillStyle = g; c.fillRect(X, Y + TILE - 10, TILE, 10);
+    } else {
+      c.strokeStyle = "rgba(255,255,255,.05)"; c.lineWidth = 1;
+      c.strokeRect(X + .5, Y + .5, TILE - 1, TILE - 1);
+    }
+  }
+
+  // tochas em paredes com piso à frente
+  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+    if (!isWall(x, y) || isWall(x, y + 1)) continue;
+    if ((x * 7 + y * 13) % 5 !== 0) continue;
+    torches.push({ x: x * TILE + TILE / 2, y: y * TILE + TILE - 4, phase: (x * 1.7 + y) % 6.28 });
+  }
+  for (const t of torches) {
+    const g = c.createRadialGradient(t.x, t.y, 6, t.x, t.y, 150);
+    g.addColorStop(0, "rgba(255,168,80,.30)");
+    g.addColorStop(.45, "rgba(255,140,60,.10)");
+    g.addColorStop(1, "rgba(255,120,50,0)");
+    c.fillStyle = g; c.beginPath(); c.arc(t.x, t.y, 150, 0, 7); c.fill();
+  }
+})();
+
+// ---------------------------------------------------------------------------
+// Fundo da batalha, pré-renderizado (vista 3D falsa)
+// ---------------------------------------------------------------------------
+const battleBg = document.createElement("canvas"); battleBg.width = W; battleBg.height = H;
+
+(function buildBattle() {
+  const c = battleBg.getContext("2d");
+
+  // céu / caverna
+  const g = c.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#0a1522"); g.addColorStop(.55, "#13263a"); g.addColorStop(1, "#0a1119");
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+
+  // feixes diagonais (identidade "Ângulo Zero")
+  c.save(); c.globalAlpha = .07; c.fillStyle = PAL.lime;
+  for (let i = -6; i < 14; i++) {
+    c.beginPath();
+    const x = i * 130;
+    c.moveTo(x, 0); c.lineTo(x + 46, 0); c.lineTo(x + 46 - 260, H); c.lineTo(x - 260, H);
+    c.closePath(); c.fill();
+  }
+  c.restore();
+
+  // piso em perspectiva
+  const horizon = 300;
+  c.save();
+  c.beginPath(); c.moveTo(0, H); c.lineTo(0, horizon + 120); c.lineTo(W, horizon + 120); c.lineTo(W, H); c.closePath();
+  const fg = c.createLinearGradient(0, horizon + 120, 0, H);
+  fg.addColorStop(0, "#1b2a3a"); fg.addColorStop(1, "#0d1721");
+  c.fillStyle = fg; c.fill();
+  c.clip();
+  c.strokeStyle = "rgba(215,253,106,.13)"; c.lineWidth = 2;
+  for (let i = -10; i <= 10; i++) {
+    c.beginPath(); c.moveTo(W / 2 + i * 40, horizon + 120); c.lineTo(W / 2 + i * 190, H); c.stroke();
+  }
+  for (let i = 0; i < 9; i++) {
+    const t = i / 9, y = horizon + 120 + Math.pow(t, 1.8) * (H - horizon - 120);
+    c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke();
+  }
+  c.restore();
+
+  // vinheta
+  const v = c.createRadialGradient(W / 2, H * .45, 120, W / 2, H * .45, 780);
+  v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,.72)");
+  c.fillStyle = v; c.fillRect(0, 0, W, H);
+
+  // criatura inimiga (coral) — grande, à direita
+  drawMon(c, 880, 470, 1.55, PAL.coral, "#2a0d10", true);
+  // parceiro (lime) — menor, à esquerda, de costas
+  drawMon(c, 392, 500, 1.15, PAL.lime, "#12200a", false);
+
+  // HUD de combate
+  hudPanel(c, 34, 560, 380, 118, PAL.lime, "CRAWL", .86);
+  hudPanel(c, 812, 44, 434, 118, PAL.coral, "MON SELVAGEM", 1);
+
+  // tarja "TURNO 1"
+  c.save();
+  c.translate(W / 2, 120);
+  c.fillStyle = "rgba(8,14,24,.82)";
+  c.beginPath(); c.moveTo(-118, 0); c.lineTo(118, 0); c.lineTo(104, 34); c.lineTo(-132, 34); c.closePath(); c.fill();
+  c.fillStyle = PAL.cream; c.font = "600 17px ui-monospace,Consolas,monospace";
+  c.textAlign = "center"; c.textBaseline = "middle";
+  c.fillText("TURNO 1", 0, 17);
+  c.restore();
+
+  // scanlines
+  c.save(); c.globalAlpha = .05; c.fillStyle = "#000";
+  for (let y = 0; y < H; y += 3) c.fillRect(0, y, W, 1);
+  c.restore();
+})();
+
+function drawMon(c, x, y, s, main, dark, enemy) {
+  c.save(); c.translate(x, y); c.scale(s, s);
+
+  // sombra
+  c.fillStyle = "rgba(0,0,0,.45)";
+  c.beginPath(); c.ellipse(0, 6, 74, 20, 0, 0, 7); c.fill();
+
+  // corpo
+  const body = c.createLinearGradient(0, -110, 0, 10);
+  body.addColorStop(0, main); body.addColorStop(1, dark);
+  c.fillStyle = body;
+  c.beginPath();
+  c.moveTo(-66, 0);
+  c.bezierCurveTo(-78, -74, -34, -112, 0, -112);
+  c.bezierCurveTo(34, -112, 78, -74, 66, 0);
+  c.bezierCurveTo(40, 14, -40, 14, -66, 0);
+  c.closePath(); c.fill();
+
+  // brilho de contorno
+  c.strokeStyle = "rgba(255,255,255,.18)"; c.lineWidth = 3; c.stroke();
+
+  // olhos
+  c.fillStyle = "#080e18";
+  c.beginPath(); c.ellipse(-24, -62, 12, 15, 0, 0, 7); c.ellipse(24, -62, 12, 15, 0, 0, 7); c.fill();
+  c.fillStyle = "#f0eedf";
+  c.beginPath(); c.arc(-21, -66, 4.2, 0, 7); c.arc(27, -66, 4.2, 0, 7); c.fill();
+
+  // boca
+  c.strokeStyle = "#080e18"; c.lineWidth = 4; c.lineCap = "round";
+  c.beginPath(); c.moveTo(-22, -28); c.quadraticCurveTo(0, enemy ? -14 : -36, 22, -28); c.stroke();
+
+  // cristas
+  c.fillStyle = main;
+  for (let i = -1; i <= 1; i++) {
+    c.beginPath();
+    c.moveTo(i * 30 - 12, -100); c.lineTo(i * 30, -126); c.lineTo(i * 30 + 12, -100);
+    c.closePath(); c.fill();
+  }
+  c.restore();
+}
+
+function hudPanel(c, x, y, w, h, accent, name, hp) {
+  c.save();
+  c.fillStyle = "rgba(8,14,24,.88)";
+  c.beginPath();
+  c.moveTo(x, y); c.lineTo(x + w, y); c.lineTo(x + w - 18, y + h); c.lineTo(x, y + h);
+  c.closePath(); c.fill();
+  c.strokeStyle = accent; c.lineWidth = 2; c.stroke();
+
+  c.fillStyle = PAL.cream; c.font = "600 15px ui-monospace,Consolas,monospace";
+  c.textAlign = "left"; c.textBaseline = "middle";
+  c.fillText(name, x + 18, y + 26);
+
+  // barra de vida
+  const bx = x + 18, by = y + 48, bw = w - 54, bh = 16;
+  c.fillStyle = "#0a1420"; c.fillRect(bx, by, bw, bh);
+  c.fillStyle = accent; c.fillRect(bx, by, bw * hp, bh);
+  c.strokeStyle = "rgba(255,255,255,.25)"; c.lineWidth = 1; c.strokeRect(bx + .5, by + .5, bw - 1, bh - 1);
+  c.fillStyle = PAL.cream; c.font = "12px ui-monospace,Consolas,monospace";
+  c.fillText(`${Math.round(hp * 100)} / 100`, bx, by + 34);
+  c.restore();
+}
+
+// ---------------------------------------------------------------------------
+// Cena 2D composta por frame (mapa + entidades + escuridão)
+// ---------------------------------------------------------------------------
+const sceneCv = document.createElement("canvas"); sceneCv.width = W; sceneCv.height = H;
+const sceneCtx = sceneCv.getContext("2d");
+let lastSceneP = -1;
+
+function renderScene(p) {
+  if (Math.abs(p - lastSceneP) < 1e-6) return sceneCv;
+  lastSceneP = p;
+
+  const c = sceneCtx;
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.clearRect(0, 0, W, H);
+  c.setTransform(1, 0, 0, 1, -camX, -camY);
+  c.drawImage(mapBg, 0, 0);
+
+  // pequena animação: o inimigo avança, o jogador recua
+  const lunge = Math.sin(clamp(p / .55) * Math.PI) * 16;
+  const recoil = Math.sin(clamp(p / .7) * Math.PI) * 10;
+
+  drawPlayer(c, PLAYER.x + recoil, PLAYER.y, p);
+  drawEnemy(c, ENEMY.x - lunge, ENEMY.y, p);
+  c.setTransform(1, 0, 0, 1, 0, 0);
+
+  // escuridão radial (névoa simplificada) centrada no jogador
+  const dark = c.createRadialGradient(PLAYER.sx, PLAYER.sy, 90, PLAYER.sx, PLAYER.sy, 470);
+  dark.addColorStop(0, "rgba(3,5,10,0)");
+  dark.addColorStop(.55, "rgba(3,5,10,.42)");
+  dark.addColorStop(1, "rgba(3,5,10,.86)");
+  c.fillStyle = dark; c.fillRect(0, 0, W, H);
+
+  // alerta do inimigo
+  if (p < .42) {
+    const a = 1 - smooth(.28, .42, p);
+    const bob = Math.sin(p * 60) * 3;
+    c.save(); c.globalAlpha = a;
+    c.fillStyle = PAL.coral;
+    c.beginPath();
+    c.moveTo(ENEMY.sx - 9, ENEMY.sy - 92 + bob); c.lineTo(ENEMY.sx + 9, ENEMY.sy - 92 + bob);
+    c.lineTo(ENEMY.sx + 9, ENEMY.sy - 74 + bob); c.lineTo(ENEMY.sx, ENEMY.sy - 66 + bob);
+    c.lineTo(ENEMY.sx - 9, ENEMY.sy - 74 + bob); c.closePath(); c.fill();
+    c.fillStyle = "#080e18"; c.font = "700 13px ui-monospace,Consolas,monospace";
+    c.textAlign = "center"; c.fillText("!", ENEMY.sx, ENEMY.sy - 76 + bob);
+    c.restore();
+  }
+  return sceneCv;
+}
+
+function drawPlayer(c, x, y, p) {
+  c.save(); c.translate(x, y);
+  c.fillStyle = "rgba(0,0,0,.45)";
+  c.beginPath(); c.ellipse(0, 14, 14, 5.5, 0, 0, 7); c.fill();
+
+  // capa
+  c.fillStyle = PAL.lime;
+  c.beginPath();
+  c.moveTo(0, -12); c.lineTo(13, 15); c.lineTo(-13, 15); c.closePath(); c.fill();
+  // capuz
+  c.fillStyle = "#eaf7bd";
+  c.beginPath(); c.arc(0, -16, 8.5, 0, 7); c.fill();
+  // abertura do capuz
+  c.fillStyle = "#1b2608";
+  rr(c, -5.6, -17.5, 11.2, 7.5, 3.2); c.fill();
+  // olhos
+  c.fillStyle = PAL.lime;
+  c.beginPath(); c.arc(-2.2, -13.8, 1.5, 0, 7); c.arc(2.2, -13.8, 1.5, 0, 7); c.fill();
+  // contorno
+  c.strokeStyle = "rgba(8,14,24,.65)"; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(0, -12); c.lineTo(13, 15); c.lineTo(-13, 15); c.closePath(); c.stroke();
+  c.restore();
+}
+
+function drawEnemy(c, x, y, p) {
+  c.save(); c.translate(x, y);
+  const bob = Math.sin(p * 34) * 2.2;
+  c.fillStyle = "rgba(0,0,0,.45)";
+  c.beginPath(); c.ellipse(0, 15, 15, 6, 0, 0, 7); c.fill();
+
+  c.fillStyle = PAL.coral;
+  c.beginPath();
+  c.moveTo(-14, 14);
+  c.bezierCurveTo(-20, -10, -8, -22, 0, -22);
+  c.bezierCurveTo(8, -22, 20, -10, 14, 14);
+  c.closePath(); c.fill();
+  c.strokeStyle = "rgba(8,14,24,.6)"; c.lineWidth = 2; c.stroke();
+
+  c.fillStyle = "#080e18";
+  c.beginPath(); c.ellipse(-5, -6 + bob * .2, 3.2, 4, 0, 0, 7); c.ellipse(5, -6 + bob * .2, 3.2, 4, 0, 0, 7); c.fill();
+  c.restore();
+}
+
+/* === EFEITOS === */
+function drawIdea(ctx, idea, p, w, h) {
+  const s = w / W;
+  ctx.setTransform(s, 0, 0, s, 0, 0);
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = "#05080d"; ctx.fillRect(0, 0, W, H);
+  if (idea === 0) effectImpact(ctx, p);
+  else if (idea === 1) effectRift(ctx, p);
+  else effectShatter(ctx, p);
+}
+
+// ---------------------------------------------------------------------------
+// Ideia 1 — Impacto: flash, zoom no inimigo, corte seco
+// ---------------------------------------------------------------------------
+function effectImpact(ctx, p) {
+  const scene = renderScene(p);
+
+  const push = easeOut(smooth(.06, .80, p));          // 0 → 1
+  const zoom = 1 + .42 * push;
+  const shake = Math.sin(p * 90) * 7 * push * (1 - smooth(.72, .86, p));
+
+  ctx.save();
+  ctx.translate(ENEMY.sx + shake, ENEMY.sy + shake * .5);
+  ctx.scale(zoom, zoom);
+  ctx.translate(-ENEMY.sx, -ENEMY.sy);
+  ctx.drawImage(scene, 0, 0);
+
+  // linhas de velocidade saindo do inimigo
+  const lines = smooth(.14, .42, p) * (1 - smooth(.72, .86, p));
+  if (lines > .01) {
+    ctx.save();
+    ctx.globalAlpha = lines * .32;
+    ctx.strokeStyle = PAL.cream; ctx.lineWidth = 2;
+    for (let i = 0; i < 16; i++) {
+      const a = i / 16 * Math.PI * 2 + .2;
+      const r0 = 118 + (i % 3) * 22, r1 = r0 + 55 + (i % 4) * 22;
+      ctx.beginPath();
+      ctx.moveTo(ENEMY.sx + Math.cos(a) * r0, ENEMY.sy + Math.sin(a) * r0);
+      ctx.lineTo(ENEMY.sx + Math.cos(a) * r1, ENEMY.sy + Math.sin(a) * r1);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // anel de choque
+  const ring = clamp((p - .07) / .38);
+  if (ring > 0 && ring < 1) {
+    ctx.save();
+    ctx.globalAlpha = (1 - ring) * .9;
+    ctx.strokeStyle = PAL.lime;
+    ctx.lineWidth = 10 * (1 - ring) + 2;
+    ctx.beginPath(); ctx.arc(ENEMY.sx, ENEMY.sy, 30 + easeOut(ring) * 460, 0, 7); ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // a batalha entra por cima, no fim do zoom
+  const ba = smooth(.50, .78, p);
+  if (ba > 0) {
+    ctx.save(); ctx.globalAlpha = ba; ctx.drawImage(battleBg, 0, 0); ctx.restore();
+  }
+
+  // flash inicial e flash do corte
+  const flash = Math.max(smooth(0, .025, p) * (1 - smooth(.025, .14, p)), p > .78 ? .65 * (1 - smooth(.78, .88, p)) : 0);
+  if (flash > .01) {
+    ctx.save();
+    ctx.globalAlpha = flash * .92;
+    ctx.fillStyle = PAL.cream; ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+
+  // leve aberração coral nas bordas no momento do impacto
+  const ca = 1 - smooth(.05, .3, p);
+  if (ca > .01) {
+    ctx.save(); ctx.globalAlpha = ca * .55; ctx.fillStyle = PAL.coral;
+    ctx.fillRect(0, 0, W, 8); ctx.fillRect(0, H - 8, W, 8);
+    ctx.fillRect(0, 0, 8, H); ctx.fillRect(W - 8, 0, 8, H);
+    ctx.restore();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Ideia 2 — Fenda tática: painéis inclinados + selo "ENCONTRO"
+// ---------------------------------------------------------------------------
+const PANELS = 5;
+
+function effectRift(ctx, p) {
+  ctx.drawImage(renderScene(p), 0, 0);
+
+  // a cena de batalha já está montada atrás dos painéis
+  if (p >= .44) ctx.drawImage(battleBg, 0, 0);
+
+  const pw = W / PANELS, slant = 84;
+
+  for (let i = 0; i < PANELS; i++) {
+    const closed = smooth(.02 + i * .025, .44, p);
+    const open = smooth(.60 + i * .02, .98, p);
+    const k = clamp(closed - open);
+    if (k <= .001) continue;
+
+    const dir = i % 2 === 0 ? -1 : 1;
+    const dy = dir * (H + 140) * (1 - k);
+
+    ctx.save();
+    ctx.translate(0, dy);
+
+    const x0 = i * pw - slant, x1 = (i + 1) * pw;
+    ctx.beginPath();
+    ctx.moveTo(x0 + slant, 0);
+    ctx.lineTo(x1 + slant, 0);
+    ctx.lineTo(x1, H);
+    ctx.lineTo(x0, H);
+    ctx.closePath();
+
+    // corpo do painel: tinta com veios diagonais
+    ctx.fillStyle = "#0b1420"; ctx.fill();
+    ctx.save(); ctx.clip();
+    ctx.strokeStyle = "rgba(215,253,106,.06)"; ctx.lineWidth = 2;
+    for (let g = -H; g < W; g += 26) {
+      ctx.beginPath(); ctx.moveTo(g, 0); ctx.lineTo(g + H * .5, H); ctx.stroke();
+    }
+    ctx.restore();
+
+    // aresta de luz na ponta que entra por último
+    ctx.strokeStyle = i % 2 ? PAL.coral : PAL.lime;
+    ctx.globalAlpha = .9 * k;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    if (dir === -1) { ctx.moveTo(x0, H); ctx.lineTo(x1, H); }
+    else { ctx.moveTo(x0 + slant, 0); ctx.lineTo(x1 + slant, 0); }
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  // selo
+  const sealIn = smooth(.38, .46, p), sealOut = smooth(.58, .66, p);
+  const a = sealIn * (1 - sealOut);
+  if (a > .01) {
+    const sc = lerp(.6, 1, easeOutBack(clamp((p - .38) / .16)));
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.translate(W / 2, H / 2);
+    ctx.rotate(-.045);
+    ctx.scale(sc, sc);
+
+    // faixa coral
+    ctx.fillStyle = PAL.coral;
+    ctx.beginPath();
+    ctx.moveTo(-250, -46); ctx.lineTo(258, -46); ctx.lineTo(236, 46); ctx.lineTo(-272, 46);
+    ctx.closePath(); ctx.fill();
+
+    // texto
+    ctx.fillStyle = "#150406";
+    ctx.font = "800 62px 'Segoe UI',system-ui,sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.letterSpacing = "10px";
+    ctx.fillText("ENCONTRO", 0, -2);
+    ctx.letterSpacing = "0px";
+
+    // linhas laterais
+    ctx.strokeStyle = PAL.lime; ctx.lineWidth = 4;
+    const grow = easeOut(smooth(.42, .60, p));
+    ctx.beginPath();
+    ctx.moveTo(-250, 62); ctx.lineTo(-250 + 150 * grow, 62);
+    ctx.moveTo(250, 62); ctx.lineTo(250 - 150 * grow, 62);
+    ctx.stroke();
+
+    ctx.fillStyle = PAL.cream;
+    ctx.font = "600 15px ui-monospace,Consolas,monospace";
+    ctx.letterSpacing = "6px";
+    ctx.fillText("MON SELVAGEM", 0, 76);
+    ctx.letterSpacing = "0px";
+    ctx.restore();
+  }
+
+  // brilho de transição quando os painéis abrem
+  const gl = smooth(.60, .70, p) * (1 - smooth(.72, .86, p));
+  if (gl > .01) {
+    ctx.save(); ctx.globalAlpha = gl * .35; ctx.fillStyle = PAL.cream;
+    ctx.fillRect(0, 0, W, H); ctx.restore();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Ideia 3 — Estilhaço: o mapa se parte em ladrilhos, em onda
+// ---------------------------------------------------------------------------
+function effectShatter(ctx, p) {
+  // a batalha já está no fundo, com um leve recuo de câmera
+  const bs = 1.14 - .14 * easeOut(p);
+  ctx.save();
+  ctx.translate(W / 2, H / 2); ctx.scale(bs, bs); ctx.translate(-W / 2, -H / 2);
+  ctx.drawImage(battleBg, 0, 0);
+  ctx.restore();
+
+  const scene = renderScene(p);
+  const T = .42;
+
+  // ladrilhos: enquanto o q é 0 o ladrilho ainda está no lugar, então o mapa
+  // aparece inteiro e vai se desprendendo em onda (antes ele sumia fora do
+  // disco inicial, o que parecia bug).
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      const sx0 = x * TILE - camX, sy0 = y * TILE - camY;
+      if (sx0 > W || sy0 > H || sx0 + TILE < 0 || sy0 + TILE < 0) continue;
+      const cx = sx0 + TILE / 2, cy = sy0 + TILE / 2;
+      const dx = cx - ENEMY.sx, dy = cy - ENEMY.sy;
+      const dist = Math.hypot(dx, dy) / 900;
+      const t0 = .10 + clamp(dist) * .40;
+      const q = clamp((p - t0) / T);
+      if (q >= 1) continue;
+
+      const e = easeIn(q);
+      const len = Math.hypot(dx, dy) || 1;
+      const ox = dx / len * e * 300 + Math.sin(q * 9 + x) * 14;
+      const oy = dy / len * e * 300 - e * 90 + Math.cos(q * 7 + y) * 10;
+      const rot = (dx >= 0 ? 1 : -1) * e * 1.5;
+      const sc = 1 - e * .55;
+
+      ctx.save();
+      ctx.globalAlpha = 1 - smooth(.35, 1, q);
+      ctx.translate(cx + ox, cy + oy);
+      ctx.rotate(rot);
+      ctx.scale(sc, sc);
+      ctx.drawImage(scene, sx0, sy0, TILE, TILE, -TILE / 2, -TILE / 2, TILE, TILE);
+      // aresta do fragmento (só depois de desprender, para não virar grade)
+      if (q > .015) {
+        ctx.strokeStyle = `rgba(215,253,106,${Math.min(.3, q * .8)})`;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-TILE / 2, -TILE / 2, TILE, TILE);
+      }
+      ctx.restore();
+    }
+  }
+
+  // onda de choque, por cima dos fragmentos para não sumir
+  const wave = clamp((p - .02) / .30);
+  if (wave > 0 && wave < 1) {
+    ctx.save();
+    ctx.globalAlpha = (1 - wave) * .85;
+    ctx.strokeStyle = PAL.lime; ctx.lineWidth = 9 * (1 - wave) + 2;
+    ctx.beginPath(); ctx.arc(ENEMY.sx, ENEMY.sy, 24 + easeOut(wave) * 540, 0, 7); ctx.stroke();
+    ctx.restore();
+  }
+
+  // poeira no ponto de impacto
+  if (p < .55) {
+    ctx.save();
+    ctx.globalAlpha = (1 - smooth(.2, .55, p)) * .55;
+    const g = ctx.createRadialGradient(ENEMY.sx, ENEMY.sy, 10, ENEMY.sx, ENEMY.sy, 260);
+    g.addColorStop(0, "rgba(255,98,79,.75)"); g.addColorStop(1, "rgba(255,98,79,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(ENEMY.sx, ENEMY.sy, 260, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+
+  // flash final, curto
+  if (p > .93) {
+    ctx.save(); ctx.globalAlpha = .22 * (1 - smooth(.93, 1, p)); ctx.fillStyle = PAL.lime;
+    ctx.fillRect(0, 0, W, H); ctx.restore();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Interface
+// ---------------------------------------------------------------------------
+const IDEAS = [
+  { name: "Impacto", note: "flash + zoom no inimigo" },
+  { name: "Fenda tática", note: "painéis + selo" },
+  { name: "Estilhaço", note: "o mapa quebra" },
+];
+
+const NOTES = [
+  {
+    title: "1 · <em>Impacto</em>",
+    lead: "Um flash curto marca o toque do inimigo; a câmera dá um empurrão no inimigo e a batalha entra em corte seco. É a transição mais curta e barata das três.",
+    good: ["Lê como “pancada”: o zoom no inimigo explica de onde vem o combate.",
+      "Custo quase zero: um flash, um zoom e um corte. Funciona até em celular fraco.",
+      "Não esconde o mapa — quem quiser voltar reconhece onde estava."],
+    bad: ["É a menos “Crawlmon”: não usa a linguagem de painéis inclinados do resto da UI.",
+      "O corte seco pode parecer bug se o jogador não estiver olhando.",
+      "Sem espaço para texto — não dá para anunciar “encontro” ou tipo de inimigo."],
+    when: "Se a prioridade for <b>tempo de resposta</b>: combate em 1,5 s sem tirar o jogador do fluxo.",
+  },
+  {
+    title: "2 · <em>Fenda tática</em>",
+    lead: "Painéis diagonais fecham a tela como uma persiana, um selo “ENCONTRO” carimba o quadro e os painéis abrem já na batalha. É a opção mais autoral.",
+    good: ["Diálogo direto com o HUD inclinado e a paleta do jogo.",
+      "Os painéis são um <b>espaço de leitura</b>: dá para escrever o nome do inimigo ou “EMBOSCADA”.",
+      "A tela fechada esconde o carregamento — dá para montar a cena de batalha atrás dos painéis."],
+    bad: ["1,5 s é apertado: fechar + carimbar + abrir deixa cada etapa com ~0,4 s.",
+      "Cobre o mapa por completo; se o jogador se perder, precisa reabrir o mapa mental.",
+      "Mais peças animando ao mesmo tempo: 5 painéis + selo + texto."],
+    when: "Se a prioridade for <b>identidade visual</b> e a transição puder ser um pequeno “intervalo”.",
+  },
+  {
+    title: "3 · <em>Estilhaço</em>",
+    lead: "A batalha já está atrás. O mapa se parte em ladrilhos que voam para fora em onda, do inimigo para as bordas, revelando o combate.",
+    good: ["A metáfora é literal: o mapa <b>vira</b> a batalha, sem corte.",
+      "A onda a partir do inimigo liga o efeito ao gatilho do encontro.",
+      "Escala bem: 27×15 = 405 ladrilhos, todos desenhados a partir de um único canvas."],
+    bad: ["É o mais caro dos três (405 recortes + rotação por frame).",
+      "Com 1,5 s os ladrilhos ainda estão saindo quando o combate começa — precisa de ~1,2 s só para o efeito.",
+      "Movimento intenso pode incomodar quem é sensível a flash/ movimento."],
+    when: "Se a prioridade for <b>espetáculo</b> e o jogo puder gastar um pouco mais de GPU.",
+  },
+];
+
+const BEATS = [
+  [{ t: .13, label: "flash" }, { t: .50, label: "funde" }, { t: .80, label: "corte", lime: true }],
+  [{ t: .44, label: "fecha" }, { t: .60, label: "abre" }, { t: .68, label: "selo", lime: true }],
+  [{ t: .10, label: "onda" }, { t: .50, label: "meio" }, { t: .95, label: "fim", lime: true }],
+];
+
+const state = { idea: 0, p: 0, playing: false, loop: true, slow: false, dur: 1500, compare: false };
+
+const cv = document.getElementById("cv");
+const ctx = cv.getContext("2d");
+const minis = [...document.querySelectorAll("#compare canvas")].map(c => c.getContext("2d"));
+const compareEl = document.getElementById("compare");
+const tabs = [...document.querySelectorAll(".tab")];
+const playBtn = document.getElementById("play");
+const scrub = document.getElementById("scrub");
+const durInput = document.getElementById("dur");
+const beatsEl = document.getElementById("beats");
+const notesEl = document.getElementById("notes");
+const timecode = document.getElementById("timecode");
+
+function buildBeats() {
+  beatsEl.querySelectorAll("i,span").forEach(n => n.remove());
+  for (const b of BEATS[state.idea]) {
+    const i = document.createElement("i");
+    i.style.left = (b.t * 100) + "%";
+    if (b.lime) i.className = "lime";
+    beatsEl.appendChild(i);
+    const sp = document.createElement("span");
+    sp.style.left = (b.t * 100) + "%";
+    sp.textContent = b.label;
+    sp.style.top = "-9px";
+    beatsEl.appendChild(sp);
+  }
+}
+
+function setIdea(i) {
+  state.idea = i;
+  state.p = 0; state.playing = false;
+  tabs.forEach((t, k) => t.classList.toggle("on", k === i));
+  const n = NOTES[i];
+  notesEl.innerHTML =
+    `<h2>${n.title}</h2><p>${n.lead}</p>` +
+    `<h3>A favor</h3><ul>${n.good.map(g => `<li>${g}</li>`).join("")}</ul>` +
+    `<h3 class="against">Contra</h3><ul>${n.bad.map(g => `<li>${g}</li>`).join("")}</ul>` +
+    `<h3>Quando escolher</h3><p style="margin:0">${n.when}</p>`;
+  buildBeats();
+  render();
+}
+
+function updateUI() {
+  const ms = Math.round(state.p * state.dur);
+  timecode.textContent = ms + " ms";
+  document.getElementById("durcode").textContent = state.dur + " ms";
+  document.getElementById("scrubLabel").textContent = state.p.toFixed(2);
+  document.getElementById("durLabel").textContent = state.dur + " ms";
+  scrub.value = Math.round(state.p * 1000);
+  playBtn.textContent = state.playing ? "❚❚ Pausar" : "▶ Tocar";
+}
+
+function render() {
+  if (state.compare) {
+    for (let i = 0; i < 3; i++) {
+      const c = minis[i];
+      c.setTransform(1, 0, 0, 1, 0, 0);
+      c.clearRect(0, 0, 640, 360);
+      drawIdea(c, i, state.p, 640, 360);
+    }
+  } else {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    drawIdea(ctx, state.idea, state.p, W, H);
+  }
+  updateUI();
+}
+
+let last = performance.now();
+function tick(now) {
+  const dt = Math.min((now - last) / 1000, .05);
+  last = now;
+  if (state.playing) {
+    state.p += dt / (state.dur / 1000) * (state.slow ? .25 : 1);
+    if (state.p >= 1) {
+      if (state.loop) state.p = 0;
+      else { state.p = 1; state.playing = false; }
+    }
+  }
+  render();
+  requestAnimationFrame(tick);
+}
+
+// --- controles -------------------------------------------------------------
+tabs.forEach((t, i) => t.addEventListener("click", () => setIdea(i)));
+
+playBtn.addEventListener("click", () => {
+  if (state.p >= 1) state.p = 0;
+  state.playing = !state.playing;
+});
+
+document.getElementById("replay").addEventListener("click", () => {
+  state.p = 0; state.playing = true;
+});
+
+document.getElementById("compareBtn").addEventListener("click", () => {
+  state.compare = !state.compare;
+  compareEl.classList.toggle("on", state.compare);
+  cv.style.display = state.compare ? "none" : "block";
+  document.getElementById("compareBtn").classList.toggle("on", state.compare);
+  state.p = 0; state.playing = state.compare ? true : state.playing;
+  render();
+});
+
+document.getElementById("loop").addEventListener("change", e => { state.loop = e.target.checked; });
+document.getElementById("slow").addEventListener("change", e => { state.slow = e.target.checked; });
+
+durInput.addEventListener("input", e => {
+  state.dur = +e.target.value;
+  updateUI();
+});
+
+scrub.addEventListener("input", e => {
+  state.p = +e.target.value / 1000;
+  state.playing = false;
+  render();
+});
+
+window.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT") return;
+  if (e.code === "Space") { e.preventDefault(); playBtn.click(); }
+  else if (e.key === "1") setIdea(0);
+  else if (e.key === "2") setIdea(1);
+  else if (e.key === "3") setIdea(2);
+  else if (e.key.toLowerCase() === "r") { state.p = 0; state.playing = true; }
+  else if (e.key.toLowerCase() === "c") document.getElementById("compareBtn").click();
+});
+
+setIdea(0);
+
+// Atalho de revisão: ?frame=ideia,progresso (ex.: ?frame=2,0.62) abre parado no quadro.
+const qs = new URLSearchParams(location.search);
+if (qs.has("frame")) {
+  const [i, f] = qs.get("frame").split(",");
+  setIdea(Math.max(0, Math.min(2, parseInt(i, 10) || 0)));
+  state.p = clamp(parseFloat(f) || 0);
+  state.playing = false;
+  render();
+}
+
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

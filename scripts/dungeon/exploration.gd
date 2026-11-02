@@ -1,29 +1,55 @@
 extends Node2D
 ## Top-down 2D dungeon map built from an ASCII grid.
-## '#' wall, '.' floor, 'P' player spawn, 'E' enemy encounter.
+## '#' wall, '.' floor, 'P' player spawn, 'E' enemy encounter, 'N' friendly NPC.
+
+const DungeonNPCClass = preload("res://scripts/dungeon/npc.gd")
+const DungeonEnemyClass = preload("res://scripts/dungeon/enemy.gd")
+const FogOfWarClass = preload("res://scripts/dungeon/fog_of_war.gd")
+const DialogueBoxClass = preload("res://scripts/ui/dialogue_box.gd")
+const NPCData = preload("res://scripts/dungeon/npc_data.gd")
 
 const TILE := 48
-const MAP: Array[String] = [
-	"##############",
-	"#P.....#.....#",
-	"#..##..#..E..#",
-	"#..#E.....#..#",
-	"#..#..###.#..#",
-	"#.....#E..#..#",
-	"##############",
-]
+
+## Encounters stay dormant for a moment after returning from battle, so the
+## player is not dragged straight back into the fight they just left.
+const POST_BATTLE_GRACE := 1.25
 
 var player: CharacterBody2D
-var enemies: Dictionary = {}  ## id -> cell center
-var _triggered := false
+var enemies: Dictionary = {}  ## id -> DungeonEnemy
+var fog: Node2D
+var entities: Node2D  ## Y-sorted container for the player, enemies and NPCs.
+var _map: Array[String] = []
+var npcs: Array[Node2D] = []
+var dialogue_box: CanvasLayer
+var _battle_started := false
+var _grace := 0.0
 
 
 func _ready() -> void:
+	# Generates the floor once; revisiting it (after a battle) reuses the cache.
+	GameState.ensure_dungeon()
+	_map = GameState.dungeon_layout
+	$Visuals.setup(_map)
+	
+	# Cria a caixa de diálogo do mapa
+	dialogue_box = DialogueBoxClass.new()
+	add_child(dialogue_box)
+
+	# Entidades ficam num container Y-sorted próprio, para que a névoa (criada
+	# depois dele) seja desenhada por cima de jogador, inimigos e NPCs.
+	entities = Node2D.new()
+	entities.name = "Entities"
+	entities.y_sort_enabled = true
+	add_child(entities)
+	
 	var spawn := Vector2(TILE * 1.5, TILE * 1.5)
-	for y in MAP.size():
-		for x in MAP[y].length():
+	var npc_spots: Array[Vector2] = []
+	var enemy_cells: Dictionary = {}  ## id -> Vector2i
+	
+	for y in _map.size():
+		for x in _map[y].length():
 			var center := Vector2(x + 0.5, y + 0.5) * TILE
-			match MAP[y][x]:
+			match _map[y][x]:
 				"#":
 					_add_wall(center)
 				"P":
@@ -31,12 +57,76 @@ func _ready() -> void:
 				"E":
 					var id := "%d,%d" % [x, y]
 					if not GameState.defeated.has(id):
-						enemies[id] = center
-						_add_enemy_trigger(id, center)
+						enemy_cells[id] = Vector2i(x, y)
+				"N":
+					npc_spots.append(center)
+					
+	# Cria o jogador
 	player = CharacterBody2D.new()
 	player.set_script(load("res://scripts/dungeon/player.gd"))
-	player.position = spawn if GameState.player_pos == Vector2.INF else GameState.player_pos
-	add_child(player)
+	player.position = _resolve_spawn(spawn)
+	entities.add_child(player)
+	
+	# Cria os NPCs com sprites aleatórios e ícones respectivos
+	_spawn_npcs(npc_spots)
+	# Inimigos precisam do jogador e de um AStarGrid2D já montado.
+	_spawn_enemies(enemy_cells)
+	# Névoa por último: fica acima do mapa, inimigos e NPCs.
+	fog = FogOfWarClass.new()
+	add_child(fog)
+	fog.setup(_map, player, GameState)
+	
+	# Coming back from a battle: give the player time to walk away.
+	if GameState.player_pos != Vector2.INF:
+		_grace = POST_BATTLE_GRACE
+
+
+func _process(delta: float) -> void:
+	if _grace > 0.0:
+		_grace = maxf(_grace - delta, 0.0)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not event.is_action_pressed("new_dungeon"):
+		return
+	if dialogue_box != null and "is_open" in dialogue_box and dialogue_box.is_open:
+		return
+	get_viewport().set_input_as_handled()
+	GameState.new_dungeon()
+	get_tree().reload_current_scene.call_deferred()
+
+
+## Uses the position saved when the battle started, unless it is now inside a
+## wall (e.g. the map changed), in which case the map's spawn point is used.
+func _resolve_spawn(fallback: Vector2) -> Vector2:
+	var wanted: Vector2 = GameState.player_pos if GameState.player_pos != Vector2.INF else fallback
+	return fallback if _is_wall_at(wanted) else wanted
+
+
+func _is_wall_at(p: Vector2) -> bool:
+	var tx := int(p.x / TILE)
+	var ty := int(p.y / TILE)
+	if ty < 0 or ty >= _map.size() or tx < 0 or tx >= _map[ty].length():
+		return true
+	return _map[ty][tx] == "#"
+
+
+func _spawn_npcs(spots: Array[Vector2]) -> void:
+	var pool: Array[Dictionary] = NPCData.CANDIDATES.duplicate()
+	pool.shuffle()
+	var dialogue_pool: Array[String] = NPCData.DIALOGUES.duplicate()
+	dialogue_pool.shuffle()
+	
+	for i in spots.size():
+		var pos: Vector2 = spots[i]
+		var candidate_data: Dictionary = pool[i % pool.size()]
+		var chosen_dialogue: String = dialogue_pool[i % dialogue_pool.size()]
+		
+		var npc := DungeonNPCClass.new()
+		npc.position = pos
+		npc.setup(candidate_data, chosen_dialogue, dialogue_box, player)
+		entities.add_child(npc)
+		npcs.append(npc)
 
 
 func _add_wall(center: Vector2) -> void:
@@ -50,26 +140,46 @@ func _add_wall(center: Vector2) -> void:
 	add_child(body)
 
 
-func _add_enemy_trigger(id: String, center: Vector2) -> void:
-	var area := Area2D.new()
-	area.position = center
-	var shape := CollisionShape2D.new()
-	var circle := CircleShape2D.new()
-	circle.radius = 16.0
-	shape.shape = circle
-	area.add_child(shape)
-	area.body_entered.connect(func(body: Node2D) -> void:
-		if body == player and not _triggered:
-			_triggered = true
-			GameState.start_battle(id, player.position)
-	)
-	add_child(area)
+func _spawn_enemies(cells: Dictionary) -> void:
+	if cells.is_empty():
+		return
+	var astar := _build_astar()
+	for id in cells:
+		var enemy := DungeonEnemyClass.new()
+		enemy.setup(id, cells[id], _map, astar, player)
+		enemy.can_act = func() -> bool:
+			return dialogue_box == null or not ("is_open" in dialogue_box and dialogue_box.is_open)
+		enemy.touched.connect(_on_enemy_touched)
+		entities.add_child(enemy)
+		enemies[id] = enemy
+
+
+## Cardinal pathfinding grid: walls and NPCs are solid, everything else is
+## walkable. Shared by every enemy on the floor.
+func _build_astar() -> AStarGrid2D:
+	var astar := AStarGrid2D.new()
+	astar.region = Rect2i(0, 0, _map[0].length(), _map.size())
+	astar.cell_size = Vector2(TILE, TILE)
+	astar.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_NEVER
+	astar.update()
+	for y in _map.size():
+		for x in _map[y].length():
+			if _map[y][x] == "#" or _map[y][x] == "N":
+				astar.set_point_solid(Vector2i(x, y), true)
+	return astar
+
+
+func _on_enemy_touched(enemy: DungeonEnemy) -> void:
+	if _battle_started or _grace > 0.0:
+		return
+	if dialogue_box != null and "is_open" in dialogue_box and dialogue_box.is_open:
+		return
+	_battle_started = true
+	GameState.start_battle(enemy.id, player.position)
 
 
 func _draw() -> void:
-	for y in MAP.size():
-		for x in MAP[y].length():
+	for y in _map.size():
+		for x in _map[y].length():
 			var rect := Rect2(Vector2(x, y) * TILE, Vector2(TILE, TILE))
-			draw_rect(rect, Color(0.35, 0.35, 0.42) if MAP[y][x] == "#" else Color(0.14, 0.13, 0.16))
-	for center in enemies.values():
-		draw_circle(center, 14.0, Color(0.85, 0.25, 0.25))
+			draw_rect(rect, Color(0.35, 0.35, 0.42) if _map[y][x] == "#" else Color(0.14, 0.13, 0.16))

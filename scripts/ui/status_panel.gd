@@ -125,10 +125,9 @@ func _draw_unit(c: Combatant, r: Rect2) -> void:
 		["VELOCIDADE", "%.2f blocos/s" % c.speed],
 		["ATB", "%.1f / %d" % [c.atb, int(Combatant.BLOCKS)]],
 		["BURST", str(c.burst)],
-		["MP", "N/D"],
 	]:
 		draw_string(font, Vector2(x, y), row[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 11, dim)
-		BattleHud.text_right(self, font, right, y, row[1], 13, fg if row[0] != "MP" else dim)
+		BattleHud.text_right(self, font, right, y, row[1], 13, fg)
 		y += 22.0
 	y += 10.0
 	_section(r, x, right, y, "FRAQUEZAS", fg)

@@ -6,9 +6,50 @@ extends RefCounted
 
 static var _tex: Dictionary = {}
 static var _shaders: Dictionary = {}
+static var _meshes: Dictionary = {}
 
 
-# --- Textures ----------------------------------------------------------------
+# --- Textures & Blender VFX Assets -------------------------------------------
+
+static func flipbook_tex(sheet_name: String) -> Texture2D:
+	var key := "fb_" + sheet_name
+	if not _tex.has(key):
+		var path := "res://assets/vfx/flipbook_%s.png" % sheet_name
+		if ResourceLoader.exists(path):
+			_tex[key] = load(path)
+		else:
+			_tex[key] = smoke_tex() if sheet_name == "smoke" else star_tex()
+	return _tex[key]
+
+
+static func slash_trail_tex() -> Texture2D:
+	if not _tex.has("slash_trail"):
+		var path := "res://assets/vfx/slash_trail_tex.png"
+		if ResourceLoader.exists(path):
+			_tex["slash_trail"] = load(path)
+		else:
+			_tex["slash_trail"] = spark_tex()
+	return _tex["slash_trail"]
+
+
+static func vfx_mesh(mesh_name: String) -> Mesh:
+	if not _meshes.has(mesh_name):
+		var path := "res://assets/vfx/%s.glb" % mesh_name
+		if ResourceLoader.exists(path):
+			var scene: PackedScene = load(path)
+			if scene != null:
+				var inst := scene.instantiate()
+				for n in inst.find_children("*", "MeshInstance3D", true, false):
+					var mi := n as MeshInstance3D
+					if mi.mesh != null:
+						_meshes[mesh_name] = mi.mesh.duplicate()
+						break
+				inst.free()
+		if not _meshes.has(mesh_name):
+			var q := QuadMesh.new()
+			q.size = Vector2(2.0, 2.0)
+			_meshes[mesh_name] = q
+	return _meshes[mesh_name]
 
 static func glow_tex() -> ImageTexture:
 	if not _tex.has("glow"):
@@ -193,6 +234,57 @@ static func animated_quad(parent: Node, size: Vector2, shader_name: String, para
 	var tw := mi.create_tween()
 	tw.tween_method(func(v: float) -> void: mat.set_shader_parameter("progress", v), 0.0, 1.0, duration)
 	tw.tween_callback(mi.queue_free)
+	return mi
+
+
+## Spawns a 16-frame animated sprite-sheet billboard (`impact`, `smoke`, `fire`, `lightning`).
+static func flipbook(parent: Node, pos: Vector3, sheet_name: String, color: Color, size: float, duration: float, roll_deg := 0.0, energy := 2.2, _additive := true) -> MeshInstance3D:
+	var q := QuadMesh.new()
+	q.size = Vector2(size, size)
+	var mi := MeshInstance3D.new()
+	mi.mesh = q
+	var mat := shader_mat("flipbook", {
+		"sheet_tex": flipbook_tex(sheet_name),
+		"color": color,
+		"progress": 0.0,
+		"energy": energy,
+		"h_frames": 4,
+		"v_frames": 4,
+		"roll_rad": deg_to_rad(roll_deg),
+	})
+	mi.material_override = mat
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.position = pos
+	parent.add_child(mi)
+	var tw := mi.create_tween()
+	tw.tween_method(func(v: float) -> void: mat.set_shader_parameter("progress", v), 0.0, 1.0, duration)
+	tw.tween_callback(mi.queue_free)
+	return mi
+
+
+## Spawns a 3D curved Blender mesh (`slash_arc`, `shock_cone`, `ribbon_trail`) with animated
+## scrolling trail texture (`slash_trail_tex.png`) for anime-style 3D slashes and ribbons.
+static func mesh_slash(parent: Node, pos: Vector3, dir: Vector3, color: Color, roll_deg := 0.0, scale_k := 1.0, duration := 0.26, mesh_name := "slash_arc", energy := 2.8) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	mi.mesh = vfx_mesh(mesh_name)
+	var mat := shader_mat("mesh_slash", {
+		"trail_tex": slash_trail_tex(),
+		"color": color,
+		"progress": 0.0,
+		"energy": energy,
+	})
+	mi.material_override = mat
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.position = pos
+	var yaw := atan2(dir.x, dir.z) if Vector2(dir.x, dir.z).length() > 0.01 else 0.0
+	mi.rotation = Vector3(0.0, yaw, deg_to_rad(roll_deg))
+	var scale_v := Vector3.ONE * scale_k
+	mi.scale = scale_v * 0.82
+	parent.add_child(mi)
+	var tw := mi.create_tween().set_parallel(true)
+	tw.tween_method(func(v: float) -> void: mat.set_shader_parameter("progress", v), 0.0, 1.0, duration)
+	tw.tween_property(mi, "scale", scale_v * 1.12, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.chain().tween_callback(mi.queue_free)
 	return mi
 
 

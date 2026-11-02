@@ -26,6 +26,9 @@ var _fov := FOV
 var _tween: Tween
 var _token := 0
 var _lines: SpeedLines
+var _post_rect: ColorRect
+var _post_mat: ShaderMaterial
+var _post_tw: Tween
 
 
 func setup(p_camera: Camera3D) -> void:
@@ -33,6 +36,16 @@ func setup(p_camera: Camera3D) -> void:
 	var layer := CanvasLayer.new()
 	layer.layer = 0  # Above the 3D scene, below the battle UI.
 	add_child(layer)
+	_post_rect = ColorRect.new()
+	_post_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_post_mat = VfxLib.shader_mat("impact_post", {
+		"strength": 0.0,
+		"center": Vector2(0.5, 0.45),
+		"tint_color": Color(1.0, 0.9, 0.7, 1.0),
+	})
+	_post_rect.material = _post_mat
+	layer.add_child(_post_rect)
+	_post_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_lines = SpeedLines.new()
 	layer.add_child(_lines)
 	_lines.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -41,6 +54,27 @@ func setup(p_camera: Camera3D) -> void:
 
 func _process(_delta: float) -> void:
 	_apply()
+
+
+## Screen-space impact post-processing (subtle chromatic aberration, radial blur
+## and elemental color grade strictly during the strike frame — zero camera shake).
+func impact_post(world_pos: Vector3, elem_color: Color, heavy := false) -> void:
+	if _post_mat == null or camera == null or not camera.is_inside_tree():
+		return
+	var uv := Vector2(0.5, 0.45)
+	if not camera.is_position_behind(world_pos):
+		var sp := camera.unproject_position(world_pos)
+		var vp := camera.get_viewport().get_visible_rect().size
+		if vp.x > 1.0 and vp.y > 1.0:
+			uv = Vector2(clampf(sp.x / vp.x, 0.1, 0.9), clampf(sp.y / vp.y, 0.1, 0.9))
+	_post_mat.set_shader_parameter("center", uv)
+	_post_mat.set_shader_parameter("tint_color", elem_color)
+	var peak := 0.88 if heavy else 0.52
+	_post_mat.set_shader_parameter("strength", peak)
+	if _post_tw != null and _post_tw.is_valid():
+		_post_tw.kill()
+	_post_tw = create_tween()
+	_post_tw.tween_method(func(v: float) -> void: _post_mat.set_shader_parameter("strength", v), peak, 0.0, 0.24 if heavy else 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 
 func cinema(time := GLIDE) -> void:

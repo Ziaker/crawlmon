@@ -10,6 +10,7 @@ Dungeon crawler em Godot 4.7 com mapa 2D top-down e combate em 3D com **ATB** em
 | X | Abrir menu (Itens, Status, Segurar) no mapa; voltar nos submenus |
 | Espaço | Evade (atalho, em combate) |
 | C | Configurações |
+| R | Nova dungeon (atalho de debug) |
 
 ## Combate
 - Cada personagem tem um ATB de **5 blocos** que enche gradualmente. Ações custam **2 blocos**; itens custam **1**.
@@ -26,7 +27,7 @@ Dungeon crawler em Godot 4.7 com mapa 2D top-down e combate em 3D com **ATB** em
 - Configurações (C): ainda vazio.
 
 ## Estrutura
-- `scenes/exploration.tscn` — mapa 2D (cena principal). Visual procedural em `scripts/dungeon/map_visuals.gd`: tiles de pedra/tijolo, decoração, tochas com luz e sombra tremulante, luz no jogador, sombras e inimigos animados.
+- `scenes/exploration.tscn` — mapa 2D (cena principal). Layout gerado por `scripts/dungeon/dungeon_generator.gd` (salas + corredores com seed reproduzível; o layout fica em cache em `GameState` para não mudar ao revisitar o andar). Visual em `scripts/dungeon/map_visuals.gd`: atlas gerado em runtime e desenhado por dois `TileMapLayer` (piso/paredes e decoração), com a oclusão de luz embutida nos tiles de parede; só as tochas e as sombras dos personagens são redesenhadas por frame. Inimigos em `scripts/dungeon/enemy.gd` patrulham o próprio tile, perseguem o jogador (visão + audição) com `AStarGrid2D` e iniciam a batalha ao encostar. Névoa de guerra em `scripts/dungeon/fog_of_war.gd`: tiles não visitados ficam pretos, os já visitados ficam na memória e a área visível é revelada por linha de visão (o que já foi explorado é guardado em `GameState` e sobrevive às batalhas).
 - `scenes/battle.tscn` — palco 3D (modelos placeholder; trocar em `_make_model()`).
 - `personagens/` — biblioteca de sprites dos **303 Pokémon utilizáveis** no jogo (com modelo 3D disponível).
 - `personagens_sem_modelo/` — pasta separada (com `.gdignore`) contendo os **418 Pokémon arquivados** que não possuem modelo 3D.

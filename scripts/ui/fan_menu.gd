@@ -8,6 +8,7 @@ extends Control
 signal chosen(index: int)
 signal cancelled
 signal moved(index: int)
+signal side(direction: int)  ## Left (-1) / right (+1) on the highlighted row.
 
 enum Style { FAN, DRAWER }
 
@@ -96,6 +97,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("confirm"):
 		if _enabled[index]:
 			chosen.emit(index)
+	elif event.is_action_pressed("ui_left"):
+		side.emit(-1)
+	elif event.is_action_pressed("ui_right"):
+		side.emit(1)
 	else:
 		return
 	get_viewport().set_input_as_handled()

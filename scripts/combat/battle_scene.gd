@@ -31,6 +31,7 @@ var _status_unit: Combatant
 var _saved_anim: Dictionary = {}  ## AnimationPlayer -> [name, position]
 
 var _menu: FanMenu
+var _tactic_rows: Array = []  ## {unit, kind: act | react | pos} per Tactics row
 var _fight_skills: Array[Skill] = []
 var _item_list: Array[Item] = []
 var _targets: Array[Combatant] = []
@@ -80,10 +81,18 @@ func _ready() -> void:
 	_menu.chosen.connect(_on_chosen)
 	_menu.cancelled.connect(_on_cancel)
 	_menu.moved.connect(_on_moved)
+	_menu.side.connect(_on_menu_side)
 	battle.state_changed.connect(_refresh)
 	battle.battle_ended.connect(_on_battle_ended)
 	battle.attack_telegraphed.connect(fx.telegraph)
 	battle.attack_resolved.connect(fx.resolve_attack)
+	battle.attack_phase.connect(fx.on_phase)
+	battle.engaged.connect(fx.on_engaged)
+	battle.engage_ended.connect(fx.on_engage_ended)
+	battle.engage_ended.connect(func(actor: Combatant, _o, _g, _s) -> void:
+		if actor == leader:
+			_end_slowmo())
+	battle.cue.connect(fx.on_cue)
 	battle.attack_cancelled.connect(fx.clear_telegraph)
 	battle.manual_evaded.connect(fx.manual_evade)
 	battle.evade_whiffed.connect(fx.evade_whiff)
@@ -153,8 +162,9 @@ func _make_model(c: Combatant, color: Color) -> Node3D:
 			var anim_player: AnimationPlayer = _find_anim_player(pokemon_instance)
 			if anim_player:
 				root.set_meta("anim_player", anim_player)
+				_strip_root_motion(anim_player)
 				# Configure linear loops for resting animations
-				for anim_name in ["idle", "battle_idle", "walk", "run", "charge"]:
+				for anim_name in ["idle", "battle_idle", "walk", "run"]:
 					if anim_player.has_animation(anim_name):
 						anim_player.get_animation(anim_name).loop_mode = Animation.LOOP_LINEAR
 				if anim_player.has_animation("battle_idle"):
@@ -204,6 +214,21 @@ func _measure_head(model: Node3D) -> float:
 	return top if top > 0.1 else 2.0
 
 
+## The exported clips slide the "origin" bone forward (the run moves the body up to
+## ~2.7 units per cycle). The script already moves the character, so that body
+## drift made it run past its mark; keep only the vertical part of the root track.
+func _strip_root_motion(ap: AnimationPlayer) -> void:
+	for anim_name in ap.get_animation_list():
+		var anim := ap.get_animation(anim_name)
+		for i in anim.get_track_count():
+			if anim.track_get_type(i) != Animation.TYPE_POSITION_3D or not str(anim.track_get_path(i)).ends_with(":origin"):
+				continue
+			var first: Vector3 = anim.track_get_key_value(i, 0)
+			for k in anim.track_get_key_count(i):
+				var v: Vector3 = anim.track_get_key_value(i, k)
+				anim.track_set_key_value(i, k, Vector3(first.x, v.y, first.z))
+
+
 func _find_anim_player(node: Node) -> AnimationPlayer:
 	if node is AnimationPlayer:
 		return node
@@ -225,12 +250,10 @@ func _on_died(c: Combatant) -> void:
 	tween.tween_property(models[c], "scale", Vector3.ZERO, 0.4)
 
 
-## A Perfect Evade (last 0.22s window) by the leader slows the whole game (Witch Time)
-## until the player executes their instant counter-action or the timer expires.
-func _on_manual_evaded(actor: Combatant, inc) -> void:
+## A manual Evade by the leader slows the whole game (the Burst slow-motion) until the
+## player executes the instant counter-action or the timer expires.
+func _on_manual_evaded(actor: Combatant, _inc) -> void:
 	if actor != leader:
-		return
-	if inc != null and not inc.perfect_evaded:
 		return
 	_slow_token += 1
 	var token := _slow_token
@@ -382,19 +405,56 @@ func _show_tactics() -> void:
 
 func _fill_tactics(keep_index: bool) -> void:
 	var entries: Array = []
-	for i in range(1, battle.party.size()):
+	_tactic_rows.clear()
+	for i in battle.party.size():
 		var a := battle.party[i]
-		entries.append({"text": "%s · Ação" % a.name, "detail": ACT_NAMES[a.act_policy]})
-		entries.append({"text": "%s · Reação" % a.name, "detail": REACT_NAMES[a.react_policy]})
-	if entries.is_empty():
-		entries.append({"text": "(sem aliados)", "enabled": false})
+		if i > 0:
+			entries.append({"text": "%s · Ação" % a.name, "detail": ACT_NAMES[a.act_policy]})
+			_tactic_rows.append({"unit": a, "kind": "act"})
+			entries.append({"text": "%s · Reação" % a.name, "detail": REACT_NAMES[a.react_policy]})
+			_tactic_rows.append({"unit": a, "kind": "react"})
+		entries.append({"text": "%s · Posição  (←/→, 1 ATB)" % a.name, "detail": _pos_text(a, i == 0)})
+		_tactic_rows.append({"unit": a, "kind": "pos"})
 	_menu.set_entries(entries, keep_index)
 
 
+## "< - - O - - >": O = where it stands, o = where an AI ally is heading.
+func _pos_text(c: Combatant, is_leader: bool) -> String:
+	var marks := PackedStringArray()
+	for p in range(-Battle.STEP_MAX, Battle.STEP_MAX + 1):
+		marks.append("O" if p == c.pos_step else ("o" if not is_leader and p == c.tactic_pos else "-"))
+	return "< " + " ".join(marks) + " >"
+
+
+## Left/right on a Position row: the leader steps now (1 ATB); an ally's AI is told
+## where to stand and walks there by itself.
+func _on_menu_side(direction: int) -> void:
+	if state != S.TACTICS or _menu.index >= _tactic_rows.size():
+		return
+	var row: Dictionary = _tactic_rows[_menu.index]
+	if row["kind"] != "pos":
+		return
+	var u: Combatant = row["unit"]
+	if u == leader:
+		battle.step(leader, direction)
+	else:
+		u.tactic_pos = clampi(u.tactic_pos + direction, -Battle.STEP_MAX, Battle.STEP_MAX)
+	_fill_tactics(true)
+
+
 func _pick_target(candidates: Array[Combatant], on_target: Callable, back: Callable) -> void:
+	if leader.engaged_with != null and leader.engaged_with.is_alive() and candidates == battle.enemies:
+		var only: Array[Combatant] = [leader.engaged_with]  # Engaged: it can only act on that opponent.
+		candidates = only
+	var alive := candidates.filter(func(c: Combatant) -> bool: return c.is_alive())
+	if alive.size() == 1 and alive[0] != leader and not alive[0].is_player:
+		on_target.call(alive[0])  # Only one possible enemy: no need to pick.
+		if battle.running:
+			_show_main()
+		return
 	_set_state(S.TARGET)
 	hud.set_menu_style(FanMenu.Style.DRAWER, "ESCOLHA O ALVO")
-	_targets.assign(candidates.filter(func(c: Combatant) -> bool: return c.is_alive()))
+	_targets.assign(alive)
 	_on_target = on_target
 	_back = back
 	var entries: Array = []
@@ -426,10 +486,11 @@ func _on_chosen(i: int) -> void:
 			if battle.running:
 				_show_main()
 		S.TACTICS:
-			var ally := battle.party[1 + i / 2]
-			if i % 2 == 0:
+			var row: Dictionary = _tactic_rows[i]
+			var ally: Combatant = row["unit"]
+			if row["kind"] == "act":
 				ally.act_policy = (ally.act_policy + 1) % ACT_NAMES.size()
-			else:
+			elif row["kind"] == "react":
 				ally.react_policy = (ally.react_policy + 1) % REACT_NAMES.size()
 			_fill_tactics(true)
 
