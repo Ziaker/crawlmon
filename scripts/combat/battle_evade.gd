@@ -21,7 +21,7 @@ func find_evadable(actor: Combatant) -> Incoming:
 		return null
 	var winding: Incoming = null
 	for inc in b.active_attacks():
-		if inc.target != actor or inc.dodged or inc.evade_tried or inc.interrupted:
+		if inc.target != actor or inc.dodged or inc.evade_tried or inc.interrupted or inc.is_friendly:
 			continue
 		if inc.can_evade_now():
 			return inc
@@ -31,7 +31,7 @@ func find_evadable(actor: Combatant) -> Incoming:
 
 
 func try_evade(actor: Combatant, inc: Incoming) -> bool:
-	if inc == null or actor.blocks() < Battle.EVADE_BLOCKS or actor.engaged_with != null or b.is_attacking(actor):
+	if inc == null or inc.is_friendly or actor.blocks() < Battle.EVADE_BLOCKS or actor.engaged_with != null or b.is_attacking(actor):
 		return false
 	actor.spend(Battle.EVADE_BLOCKS)
 	inc.evade_tried = true

@@ -340,6 +340,8 @@ func _pick_skill(c: Combatant) -> Skill:
 
 func _resolve_incoming(delta: float) -> void:
 	for inc in incoming.duplicate():
+		if inc.attacker.is_alive() and not inc.target.is_alive():
+			_retarget_aoe(inc)
 		if not inc.attacker.is_alive() or not inc.target.is_alive():
 			attack_cancelled.emit(inc)
 			incoming.erase(inc)
@@ -403,8 +405,8 @@ func _step_attacks(delta: float) -> void:
 
 ## A computer-controlled target reacts on the way in with a chance equal to its speed.
 func _roll_ai_evade(inc: Incoming) -> void:
-	if inc.phase != Phase.TRAVEL or inc.ghost:
-		return
+	if inc.phase != Phase.TRAVEL or inc.ghost or inc.is_friendly:
+		return  # (a buff or a heal is not something to dodge)
 	var t := inc.target
 	if t == party[0] or t.react_policy != Combatant.React.EVADE:
 		return
@@ -420,6 +422,8 @@ func _strike(inc: Incoming) -> void:
 		_returning.append(inc)
 	if inc.ghost or inc.interrupted:
 		return
+	if not inc.target.is_alive():
+		_retarget_aoe(inc)
 	if inc.dodged:
 		log_message.emit("%s esquivou de %s!" % [inc.target.name, inc.label])
 	elif inc.attacker.is_alive() and inc.kind == Skill.Kind.STATUS:
@@ -427,10 +431,21 @@ func _strike(inc: Incoming) -> void:
 	elif inc.target.is_alive() and (inc.attacker.is_alive() or inc.kind == Skill.Kind.PROJECTILE):
 		_hit(inc.attacker, inc.target, inc.power, inc.element, inc.label, inc.whiffed, inc.auto_dodged)
 		if inc.is_aoe:
-			var foes: Array[Combatant] = enemies if inc.target.is_player else party
+			var foes: Array[Combatant] = enemies if inc.attacker.is_player else party  # The attacker's opponents.
 			for foe in foes:
 				if foe.is_alive() and foe != inc.target:
 					_hit(inc.attacker, foe, inc.power * 0.85, inc.element, inc.label, inc.whiffed, false)
+
+
+## An area attack whose aimed target is gone aims at the next opponent still standing, so the
+## rest of the team does not escape it. (Single-target attacks are simply lost.)
+func _retarget_aoe(inc: Incoming) -> void:
+	if not inc.is_aoe or inc.is_friendly:
+		return
+	var foes: Array[Combatant] = enemies if inc.attacker.is_player else party
+	var next := _first_alive(foes)
+	if next != null:
+		inc.target = next
 
 
 func _execute_status_move(inc: Incoming) -> void:
