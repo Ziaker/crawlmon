@@ -363,6 +363,7 @@ func _step_attacks(delta: float) -> void:
 				attack_phase.emit(inc, inc.phase)
 				_roll_ai_evade(inc)
 		AttackMotion.update(inc)
+		AttackMotion.update_projectile(inc)
 		if inc.can_evade_now() and inc.ai_evade_at >= 0.0 and inc.phase_time >= inc.ai_evade_at:
 			inc.ai_evade_at = -1.0
 			if inc.target.is_alive() and inc.target.blocks() >= EVADE_BLOCKS and not inc.evade_tried:
@@ -577,6 +578,7 @@ func _check_end() -> void:
 		attack_cancelled.emit(inc)
 	incoming.clear()
 	_landing.clear()
+	_update_positions()
 	for r in rewards:
 		_release_pending(r)
 	rewards.clear()

@@ -16,8 +16,8 @@ const HIT_HOLD := 0.15
 
 ## True while this attack moves its attacker's body.
 static func carries(inc: Incoming) -> bool:
-	if not inc.resolved:
-		return false
+	if not inc.resolved or inc.plan_i < 0 or inc.plan_i >= inc.plan.size():
+		return false  # Not started, or its last phase already ended this frame.
 	if inc.motion != "melee" and inc.motion != "engaged" and inc.motion != "return":
 		return false
 	return inc.phase == Phase.TRAVEL or inc.phase == Phase.STRIKE or inc.phase == Phase.RETURN
@@ -105,3 +105,28 @@ static func begin_plain_return(inc: Incoming, from: Vector3) -> void:
 		inc.hop_t = clampf(dist / 70.0, 0.22, 0.4)
 		inc.hop_h = clampf(dist * 0.12, 1.2, 3.0)
 	inc.plan = [[Phase.RETURN, inc.hop_t]]
+
+
+## A projectile (or any cast that travels) leaves the attacker's spot. It sails past when the
+## attack was already decided to miss; otherwise it is guided to the target's live position.
+static func start_projectile(inc: Incoming) -> void:
+	var to := inc.target.rest_pos()
+	inc.aim = to + BattleSpace.flat_dir(inc.from, to) * 7.0 if (inc.dodged or inc.auto_dodged) else to
+	inc.proj_pos = inc.from
+
+
+## Each frame: the guided projectile follows the target until the attack is evaded (then it
+## keeps its last aim point, so its path stays continuous) and sits at its share of the flight.
+static func update_projectile(inc: Incoming) -> void:
+	if inc.motion != "cast" or not inc.resolved or inc.ghost:
+		return
+	if not (inc.dodged or inc.auto_dodged or inc.interrupted) and inc.phase != Phase.RETURN:
+		inc.aim = inc.target.pos
+	var k := 1.0
+	if inc.phase == Phase.TRAVEL:
+		k = inc.progress()
+	else:
+		for i in inc.plan.size():
+			if inc.plan[i][0] == Phase.TRAVEL:
+				k = 0.0 if i > inc.plan_i else 1.0  # Not left yet, or already arrived.
+	inc.proj_pos = inc.from.lerp(inc.aim, k)

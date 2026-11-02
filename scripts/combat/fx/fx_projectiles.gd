@@ -16,10 +16,9 @@ func _init(p_fx: BattleFx) -> void:
 func spawn(inc) -> void:
 	var move_id := String(inc.data.get("move_id", BattleFx.normalize_move_id(inc.label)))
 	var lift := Vector3(0, 0.35 if inc.ground else 1.0, 0)  # A ground shot rolls along the floor.
-	var from: Vector3 = fx.rest_pos(inc.attacker) + lift
-	var to: Vector3 = fx.rest_pos(inc.target) + lift
+	var from: Vector3 = inc.from + lift
+	var end: Vector3 = inc.aim + lift
 	var missed: bool = inc.dodged or inc.auto_dodged
-	var end := to + fx._flat_dir(from, to) * 7.0 if missed else to
 	var node := _spawn_move(inc, move_id, from, end, fx.COLORS[inc.element])
 	if node == null:
 		node = _make_ground_shot(from, end, fx.COLORS[inc.element]) if inc.ground else _make_projectile(from, end, fx.COLORS[inc.element], inc.element)
@@ -33,15 +32,7 @@ func drive(inc) -> void:
 	if p.is_empty() or not is_instance_valid(p["node"]):
 		return
 	var node := p["node"] as Node3D
-	var to: Vector3 = p["to"]
-	if p.get("homing", false):
-		if inc.dodged:
-			# Evaded mid-flight: keep the last aim point so the path stays continuous (no jump)
-			# and the shot reaches the spot the target just left.
-			to = p.get("last_to", to)
-		else:
-			to = (fx._models[inc.target] as Node3D).position + (p["lift"] as Vector3)
-			p["last_to"] = to
+	var to: Vector3 = inc.aim + (p["lift"] as Vector3)  # The rules aim it (live target, or the spot it misses).
 	if _drive_move(inc, String(inc.data.get("move_id", "")), p, node, to):
 		return
 	if inc.phase != Battle.Phase.TRAVEL:

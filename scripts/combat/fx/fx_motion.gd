@@ -395,6 +395,7 @@ func on_engage_ended(_actor: Combatant, _opponent: Combatant, ghost, staggered) 
 func on_attack_interrupted(inc) -> void:
 	var a: Combatant = inc.attacker
 	var m: Node3D = fx._models[a]
+	var y_at_hit: float = m.position.y
 	m.position.y = 0.0
 	m.scale = fx._base_scale.get(a, m.scale)
 	if inc.data.has("quick_cone") and is_instance_valid(inc.data["quick_cone"]):
@@ -406,6 +407,7 @@ func on_attack_interrupted(inc) -> void:
 		inc.data = {"kind": "hit_interrupted", "base_scale": fx._base_scale.get(a, m.scale)}
 	else:
 		inc.data = _return_data(inc, m.rotation.y)
+		inc.data["y0"] = y_at_hit
 
 
 ## Drawing data of a hop home the rules planned (an evader leaving its opponent, a stunned
@@ -490,7 +492,7 @@ func drive() -> void:
 			Battle.Phase.RETURN:
 				m.rotation.y = d["yaw_out"]
 				var hold: float = inc.hold
-				m.position = Vector3(body.x, 0.0, body.z)
+				m.position = Vector3(body.x, float(d.get("y0", 0.0)) * (1.0 - clampf(e / 0.11, 0.0, 1.0)) if e < hold else 0.0, body.z)
 				if e >= hold:
 					if not d.get("hopped", false):
 						d["hopped"] = true

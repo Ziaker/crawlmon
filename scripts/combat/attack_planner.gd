@@ -102,6 +102,9 @@ func plan(inc: Incoming) -> float:
 		else:
 			inc.plan = [[Phase.STRIKE, hit], [Phase.RETURN, maxf(total - hit, 0.05)]]
 			inc.impact_phase = Phase.STRIKE
+	if inc.motion == "cast":
+		inc.from = a.rest_pos()
+		AttackMotion.start_projectile(inc)
 	var sum := 0.0
 	for seg in inc.plan:
 		sum += seg[1]
