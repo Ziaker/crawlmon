@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.28 — Rodada 37 consolidada, 2026-11-02.  
+> **Revisão:** 1.29 — Rodada 38 consolidada, 2026-11-02.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -79,7 +79,7 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
 **APROVADO (R25-Q4 = C, “apenas itens que estao sendo segurados nao sao perdidos”):** na **derrota definitiva de uma expedição**, entre os **itens obtidos durante aquela expedição**, **somente os itens que estiverem sendo segurados não são perdidos; os demais itens obtidos na expedição são perdidos**. **PENDENTE:** definição operacional de “segurando” e quais Pokémon/personagens podem segurar itens, regras para itens trazidos de antes da expedição e outras consequências. Não confundir essa regra de itens com o pertencimento preservado dos Pokémon recrutados (R24-Q5).
 
-**APROVADO (R23-Q5 = C):** resposta literal **“combinacao com mestres e possiveis personagens que dao hms”**. O sistema de aprendizado de Moves admite **fontes combinadas, incluindo mestres e possíveis personagens que concedem HMs**. **APROVADO posteriormente (R24-Q4 = C):** HMs e TMs são **somente para combate por enquanto**, sem funções de exploração. **PENDENTE:** demais fontes, obtenção, requisitos, relação de HMs/TMs com os quatro Moves equipados e seus slots. Não presumir custos.
+**APROVADO (R23-Q5 = C):** resposta literal **“combinacao com mestres e possiveis personagens que dao hms”**. O sistema de aprendizado de Moves admite **fontes combinadas, incluindo mestres e possíveis personagens que concedem HMs**. **APROVADO posteriormente (R24-Q4 = C):** HMs e TMs são **somente para combate por enquanto**, sem funções de exploração. **ATUALIZAÇÃO R38-Q5:** a relação de HMs/TMs com **até oito Moves utilizáveis e quatro principais de hotkeys rápidas** permanece pendente, assim como obtenção e demais fontes. Não presumir custos.
 
 **APROVADO (R25-Q3 = A):** quando um Pokémon **satisfizer os requisitos para sua evolução de espécie**, **o jogador poderá escolher quando efetuar a evolução**, em vez de ela ocorrer obrigatoriamente de forma automática assim que o requisito for atingido. **PENDENTE:** requisitos por espécie, interface, possíveis restrições e efeitos de evolução; não confundir com subida de nível ou distribuição de atributos.
 
@@ -99,7 +99,7 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
 **APROVADO (R27-Q3 = B) — ambientes das dungeons:** **uma mesma dungeon pode conter ambientes mistos e mudar de tema ao longo de uma expedição**. **PENDENTE:** quais biomas/temas existem, como ocorrem as mudanças, sua influência na geração e no gameplay. Esta decisão não exige que toda dungeon sempre mude de bioma e não altera a geração procedural aprovada.
 
-**APROVADO (R27-Q4 = A) — aprendizado de Moves comuns:** **o nível e a progressão do Pokémon são a fonte principal de novos Moves comuns**, **sem excluir mestres, HMs/TMs de combate e outros meios anteriormente aprovados**. **PENDENTE:** listas por espécie, requisitos, ritmo e seleção/aprendizado de novos Moves; continuam quatro Moves equipados mais Tackle genérico e ausência de PP.
+**APROVADO (R27-Q4 = A) — aprendizado de Moves comuns:** **o nível e a progressão do Pokémon são a fonte principal de novos Moves comuns**, **sem excluir mestres, HMs/TMs de combate e outros meios anteriormente aprovados**. **ATUALIZAÇÃO R38-Q5 = C:** o Pokémon pode ter **até oito Moves utilizáveis em combate**, com **quatro principais para hotkeys rápidas**, além do Tackle genérico separado conforme regra anterior. **PENDENTE:** listas por espécie, requisitos, ritmo, aprendizado e gerenciamento dos Moves; não criar PP nem alterar custos ATB/Burst.
 
 **APROVADO (R27-Q5 = C) — recompensas de batalha:** resposta literal **“moedas recursos itens”**. **Moedas, recursos e itens** são **tipos de recompensas materiais previstas para batalhas comuns**, além da experiência já aprovada (R26-Q3). **PENDENTE:** se cada vitória sempre oferece recompensa, quais combinações são possíveis, taxas, valores, origem, uso de moedas/recursos e destino no inventário. Não inferir três recompensas garantidas em toda batalha nem taxas ou economia concreta.
 
@@ -203,6 +203,17 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
 **APROVADO (R37-Q5 = B) — dificuldade em novas visitas:** **a dificuldade de dungeons já concluídas também pode adaptar-se à progressão ou à força atual da equipe quando revisitadas**, com critérios, alcance e limites ainda pendentes. **Mantém-se a progressão geral de dificuldade por andares e novas dungeons** (R29-Q5); não aplicar escalonamento obrigatório universal, fórmula, níveis ou multiplicadores não aprovados.
 
+**APROVADO (R38-Q1 = B) — detecção de inimigos:** **inimigos patrulhando a exploração 2D detectam o grupo principalmente por proximidade, sem exigir linha de visão estrita**. **PENDENTE:** alcance, condições, obstáculos, comportamento de perseguição e interrupção da perseguição; não concluir que paredes nunca interferem. Mantêm-se patrulha, perseguição após detecção (R9-Q3) e início de combate por contato hostil com qualquer ativo (R37-Q1).
+
+**APROVADO (R38-Q2 = A) — arenas 3D por ambiente:** **a arena de batalha 3D reflete visualmente o bioma e ambiente do ponto onde o encontro ocorreu no mapa 2D**. A transição continua levando a **uma cena 3D separada** (D-003). **PENDENTE:** catálogo de cenários, correspondências por bioma, variações e efeitos concretos do ambiente na jogabilidade; não presumir bônus, colisões ou modificadores por bioma.
+
+**APROVADO (R38-Q3 = B) — capacidade da reserva:** **a reserva de Pokémon é limitada em capacidade**. **PENDENTE:** quantidade máxima, gerenciamento dos excedentes, acesso e transições entre ativos/reserva. Não escolher valor arbitrário nem revogar a possibilidade de enviar recrutas à reserva quando os três ativos estiverem ocupados (R24-Q3).
+
+**APROVADO (R38-Q4 = A) — inventário ao mover Pokémon para reserva:** **os itens transportados permanecem associados ao Pokémon ao sair da equipe ativa e ir para a reserva**, com acesso, manuseio e restrições pendentes. A capacidade de **até dez itens não segurados por Pokémon ativo**, totalizando até trinta com três (R35-Q3), continua válida; não estabelecer novo teto ou inventário compartilhado. **A associação ao Pokémon não altera a perda de itens coletados na expedição que não estejam segurados** após derrota definitiva ou retirada voluntária (R25-Q4/R31-Q1).
+
+**APROVADO (R38-Q5 = C) — oito Moves no combate e quatro hotkeys:** resposta literal **“Pode ter até 8 moves no combate, os 4 principais servem mais para hotkeys rapidas”**. **Um Pokémon pode ter até oito Moves utilizáveis em combate, dos quais quatro são os principais destinados a hotkeys rápidas**. A decisão **atualiza expressamente o antigo limite de quatro Moves equipados como total de opções em combate**, registrado nas rodadas anteriores. O **Tackle genérico permanece separado dos espaços de Move**, como nas regras históricas, sem uma nova decisão que o inclua entre os oito. **PENDENTE:** escolha/armazenamento de Moves conhecidos, critérios para os oito disponíveis, organização dos quatro principais, forma de acessar os demais e eventual relação das posições extras com custos já documentados. **Não alterar os custos ATB/Burst/MP previamente aprovados, nem criar PP, custos para os quatro adicionais ou hotkeys específicas sem decisão.**
+
+
 
 
 
@@ -216,7 +227,7 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
  **APROVADO posteriormente (R23-Q1 = A):** movimento contínuo e livre nas quatro direções cardeais, sem movimento diagonal direto. **PENDENTE:** controles, colisão e animação.
 
-**PENDENTE:** sprites 2D, geração procedural, seeds, passagens, critérios de detecção/patrulha, estados de novas expedições e colisões de inimigos com qualquer integrante ativo (R37-Q1); **catálogo do conjunto selecionado de espécies iniciais** (R37-Q4) e espécies por dungeon/bioma, recrutamento comum/especial, reservas/hub, evolução, XP, treinamento; **inventário individual de 10 itens por Pokémon ativo (até 30 com três), transferências/empilhamento e relação com a reserva** (R35-Q3), itens segurados, recuperação do protagonista, arenas/transições, formação do grupo de aliados, **catálogos e exceções de missões secundárias com progresso normalmente reiniciado entre expedições** (R37-Q2), **critérios de desbloqueio principalmente por conclusão de dungeons/chefes, com objetivos narrativos complementares** (R37-Q3), fuga comum e condições de êxito, biomas, aprendizado/equipamento de Moves, lojas e recompensas, chefes, cura e interface, **critérios de dificuldade adaptativa nas revisitas** (R37-Q5). Não revogar missões secundárias opcionais para chegar ao chefe (R36-Q2), persistência de eventos na mesma expedição (R36-Q3) nem preservação de Pokémon recrutados na retirada (R36-Q4). “Recursos” seguem indefinidos; a pergunta R33-Q5 foi rejeitada.
+**PENDENTE:** sprites 2D, geração procedural, seeds e passagens; **alcance e condições de detecção principalmente por proximidade** (R38-Q1), perseguição e colisões de inimigos com qualquer integrante ativo; estados de expedições, catálogo de espécies iniciais/dungeons/biomas, recrutamento, **limite numérico e gerenciamento de uma reserva de capacidade limitada** (R38-Q3), hub, evolução, XP e treinamento; **inventário de 10 itens não segurados por Pokémon ativo (até 30 com três), redistribuição/empilhamento e acesso aos itens que permanecem com o Pokémon ao ir para a reserva** (R38-Q4), itens segurados, recuperação do protagonista, **catálogo de arenas 3D visualmente correspondentes ao ambiente do encontro** (R38-Q2) e efeitos de arena não aprovados, transições, formação do grupo de aliados, missões secundárias, desbloqueios principalmente por chefes, fuga comum, **seleção e acesso a até oito Moves utilizáveis com quatro principais para hotkeys** (R38-Q5), sem PP ou custos novos, lojas e recompensas, chefes, cura e interface, dificuldade adaptativa nas revisitas. Manter missões secundárias opcionais para enfrentar o chefe, persistência de eventos dentro da mesma expedição e posse de recrutados após retirada voluntária. “Recursos” genéricos seguem indefinidos; a pergunta R33-Q5 foi rejeitada.
 
 ### Fluxo de experiência (somente encadeamento conceitual)
 
@@ -228,7 +239,7 @@ Explorar uma dungeon 2D em movimentação cardinal contínua → encontrar adver
 
 | Comando | Intenção e comportamento aprovado | O que permanece indefinido |
 | --- | --- | --- |
-| **1 — FIGHT** | Apresenta **Tackle como ataque físico genérico** e **quatro Moves** equipados. Tackle não ocupa um dos quatro espaços de Move e **custa 2 blocos ATB** (R4-Q4). Os **quatro Moves têm custo-base 2 ATB**, com exceções por Move, incluindo ataques de custo 5 ou com requisito Burst (R6-Q5). **Os quatro Moves não usam PP** (R7-Q3). **Moves mágicos/especiais consomem MP adicional** aos recursos ATB/Burst aplicáveis (R12-Q1). | Potência, precisão, custo ATB das exceções e custo MP de cada Move mágico/especial, seleção de alvo e disponibilidade por espécie. **Não há PP no Crawlmon** (R8-Q2). |
+| **1 — FIGHT** | Apresenta **Tackle físico genérico** e, após R38-Q5 = C, **até oito Moves utilizáveis em combate**, dos quais **quatro principais são destinados a hotkeys rápidas**. Tackle segue **separado dos espaços de Move** e custa **2 ATB** (R4-Q4). Os **quatro Moves originais tinham custo-base de 2 ATB** (R6-Q5), com exceções por Move; **R38-Q5 não aprovou novos custos ou alterações para os Moves adicionais**. **Nenhuma ação usa PP** (R8-Q2); Moves mágicos/especiais consomem MP além dos demais recursos aplicáveis (R12-Q1). | Seleção/acesso dos oito Moves, organização das quatro hotkeys, custos de Moves ainda não especificados, potência, precisão, exceções, alvos e disponibilidade por espécie. **Sem PP e sem novos custos ATB/Burst definidos**. |
 | **2 — ITENS** | Acessa e permite usar consumíveis em batalha; **cada utilização de item custa 1 bloco ATB** (R6-Q2 = C: “1”). A navegação em ITENS **não pausa o combate**. | Catálogo de itens, alvos, efeitos, inventário e instante preciso de cobrança ainda não definidos. |
 | **3 — Tactic** | **Orienta somente a IA dos aliados**, sem ordens diretas (R2-Q4) e **sem custo ATB** (R3-Q3). As orientações persistem entre encontros da dungeon (R5-Q5). **Nas configurações, o jogador escolhe** entre reiniciar as orientações ao encerrar a dungeon ou preservá-las entre dungeons (R6-Q4); a opção **padrão é reiniciar** (R7-Q1). | A orientação de IA padrão, detalhes da interface e salvamento da preferência ainda não definidos. |
 | **4 — Evade** | Ação ativa e reativa de esquiva durante ataques; seus **3 blocos de ATB são descontados na ativação**, tanto em sucesso quanto em falha (R4-Q3). | Janela temporal, interface física/botão de reação, elegibilidade por alvo, animações e interações com golpes múltiplos/em área. |
@@ -239,15 +250,15 @@ Explorar uma dungeon 2D em movimentação cardinal contínua → encontrar adver
 
 **APROVADO (R3-Q3 = A):** **Tactic não consome ATB**. Ajustar a orientação da IA é uma configuração de interface, **não** uma ação de combate cobrada; essa é uma exceção explícita à regra geral de consumo de blocos por ações.
 
-**APROVADO (R4-Q4 = A + R8-Q2 = C):** **Tackle físico genérico custa 2 blocos ATB, sem PP**, permanecendo fora dos quatro espaços de Move. Potência e precisão ainda não definidas.
+**APROVADO (R4-Q4 = A + R8-Q2 = C):** **Tackle físico genérico custa 2 blocos ATB, sem PP**, permanecendo **separado dos espaços de Move**. **R38-Q5 = C atualizou para até oito Moves utilizáveis no combate, com quatro principais para hotkeys**, sem incluir explicitamente Tackle nesses oito. Potência e precisão ainda não definidas.
 
 **APROVADO (R5-Q4 = B):** **buff/debuff via Burst consome apenas um bloco Burst, sem custo de ATB normal ou extra**. Em contraste, **Moves ofensivos via Burst continuam custando 1 Burst + o custo ATB próprio do Move** (R2-Q3).
 
 **APROVADO (R6-Q2 = C: “1”):** **cada utilização de item em batalha custa 1 bloco ATB**, independentemente do tipo de consumível; não confundir com apenas abrir/navegar pelo menu ITENS. A escolha pelo menu não pausa a batalha (R1-Q3). O momento exato do desconto, efeitos e restrições por item seguem pendentes.
 
-**APROVADO (R6-Q5 = A):** os **quatro Moves equipados usam custo-base de 2 ATB**. Há **exceções específicas por Move**, inclusive ataques fortes com custo de 5 blocos e Moves que requerem Burst, cuja identificação e custos devem ser documentados por Move. Se um Move for executado via Burst, preserva-se a exigência já aprovada de **1 Burst + custo ATB desse Move** (R2-Q3); não determinar silenciosamente o custo de uma exceção.
+**APROVADO (R6-Q5 = A) — custo-base histórico:** os **quatro Moves originalmente equipados usam custo-base de 2 ATB**, com **exceções específicas por Move**, inclusive ataques fortes com custo de 5 blocos e Moves que requerem Burst. **R38-Q5 = C atualizou a disponibilidade para até oito Moves em combate, com quatro principais para hotkeys, sem decidir novos custos dos Moves adicionais**. Os custos anteriores não foram revogados. Se um Move for executado via Burst, preserva-se **1 Burst + custo ATB do Move** (R2-Q3). Não extrapolar custos nem determinar exceções silenciosamente.
 
-**APROVADO (R7-Q3 = B; esclarecido por R8-Q2 = C):** **Crawlmon não utiliza PP como recurso de combate**: os **quatro Moves equipados e o Tackle genérico não têm PP**, e tampouco se deve acrescentar um medidor ou custo de PP às ações do sistema. Os custos dos Moves e de Tackle são em **ATB** e, quando cabível, **Burst**. A antiga dúvida sobre PP de Tackle está **encerrada** por R8-Q2. Não propor PP novamente como pendência.
+**APROVADO (R7-Q3 = B; esclarecido por R8-Q2 = C):** **Crawlmon não utiliza PP como recurso de combate**: **nenhum dos Moves utilizáveis (até oito conforme R38-Q5) nem o Tackle genérico usa PP**, e tampouco se deve acrescentar um medidor ou custo de PP às ações do sistema. Os custos já documentados de Moves e Tackle permanecem em **ATB** e, quando cabível, **Burst/MP**, sem novos valores definidos nesta rodada. A antiga dúvida sobre PP de Tackle foi **encerrada** por R8-Q2.
 
 **APROVADO (R12-Q1 = A):** **todos os Moves de categoria mágica/especial consomem MP**, além de seus custos de **ATB e Burst, quando aplicáveis**. **R13-Q1 = A aprovou posteriormente custo-base comum de MP, com exceções por Move**. Os números do custo-base e das exceções permanecem pendentes. Esta decisão **não** dispensa os custos já aprovados, **não** cria PP e não determina o consumo de MP por Moves de outras categorias.
 
@@ -367,7 +378,7 @@ Ataque direcionado a um Pokémon → tentativa de Evade ativo com custo de 3 →
 Sem decisão adicional, não fixar:
 
 - **Pokémon e progressão:** espécies elegíveis, protagonista inicial, recrutamento, reservas e trocas (**equipe ativa de até 3 aprovada**), evolução, **cinco atributos inspirados em SMT3 em escala-base 1–100, Agilidade/Velocidade como atributo único, HP derivado de Vitalidade+nível e MP máximo de Magia+nível**. Ao subir de nível, **o jogador distribui manualmente os pontos apenas do protagonista**, com **1 ponto distribuível por nível (R13-Q4)**; **aliados crescem automaticamente por curvas próprias de cada espécie**, ainda sem valores/fórmulas (R13-Q5). **MP persiste entre batalhas da mesma dungeon** (R12-Q3), é recuperável por **consumíveis e pontos de descanso** (R13-Q2) e **restaurado ao máximo no início de cada nova exploração** (R13-Q3). Valor de referência do ATB e fórmulas de HP/MP seguem pendentes.
-- **Moves:** Tackle genérico versus golpe homônimo da franquia (**Tackle genérico custa 2 ATB, sem PP**); lista concreta dos quatro Moves por Pokémon, status, efeitos e **exceções ao custo-base de 2 ATB**, incluindo golpes de custo 5 e requisitos Burst. **Nenhuma ação do Crawlmon utiliza PP** (R8-Q2; complementa R7-Q3). **R23-Q5 = C** aprovou aprendizado combinado com mestres e possíveis personagens que concedam HMs; **R24-Q4 = C** fixou **HMs e TMs apenas para combate por enquanto**. Outras fontes, ensino e slots continuam pendentes.
+- **Moves:** Tackle genérico versus golpe homônimo da franquia (**Tackle genérico custa 2 ATB, sem PP e permanece separado**); **até oito Moves utilizáveis em combate, dos quais quatro principais destinados a hotkeys rápidas** (R38-Q5), com seleção, catálogo, acesso e organização ainda pendentes. **Custos ATB/Burst anteriores permanecem válidos**, incluindo o custo-base histórico de 2 ATB para os quatro Moves originais e exceções documentadas; não extrapolar valores aos adicionais sem aprovação. **Nenhuma ação do Crawlmon utiliza PP** (R8-Q2). **R23-Q5 = C** aprovou aprendizado com mestres e possíveis personagens que concedam HMs; **R24-Q4 = C** fixou HMs/TMs apenas para combate. Outras fontes e regras de ensino permanecem pendentes.
 - **Combate 3D:** câmera, sequência de animações, timings, hitstop, interface gráfica final, modelos, rigging, VFX e arenas por bioma.
 - **Dungeon 2D:** geração **procedural por exploração/andar, com salas e corredores** já aprovada (R7-Q5); seed reproduzível (R8-Q3), **layout persistente nas revisitas da mesma exploração** (R9-Q2), **inimigos visíveis que patrulham e perseguem após detecção** (R9-Q3), **inimigos derrotados removidos até o fim da exploração** (R9-Q4) e **movimentação cardinal em quatro direções** (R9-Q5). Permanecem pendentes parâmetros do gerador, interface/armazenamento de seeds, escala dos tiles, alcance/IA de detecção, movimentação contínua cardinal aprovada em R23-Q1, detalhes de controles/colisão, armadilhas, itens, progressão entre andares até o chefe, posicionamento e retorno.
 
@@ -796,6 +807,23 @@ Sem decisão adicional, não fixar:
 
 **Preservação:** D-001 a D-199 integralmente preservadas, inclusive D-192 com 10 itens não segurados por integrante ativo (até 30 com três) e rejeição de R33-Q5. Não definir recursos materiais genéricos, PP ou novos custos ATB/Burst. Documentação não comprova implementação.
 
+
+### 7.29. Detecção por proximidade, arenas por bioma, reserva e oito Moves — Rodada 38
+
+**APROVADO (R38-Q1 = B) — percepção de inimigos:** **inimigos patrulhando o mapa 2D detectam o grupo principalmente por proximidade, sem exigir linha de visão estrita**. Mantêm-se patrulha, perseguição após detectar (R9-Q3) e encontros iniciados por contato com qualquer integrante ativo (R37-Q1). **PENDENTE:** distância, obstáculos, condições e perda do alvo. A ausência de exigência de linha de visão estrita não elimina todas as influências do cenário.
+
+**APROVADO (R38-Q2 = A) — arena 3D correspondente ao ambiente:** **o cenário da batalha 3D reflete o bioma e o ambiente do ponto de encontro na exploração 2D**, embora a batalha continue em uma **cena separada** (D-003). **PENDENTE:** catálogo, efeitos visuais e possíveis características físicas das arenas; não acrescentar bônus ou modificadores de combate não aprovados.
+
+**APROVADO (R38-Q3 = B) — capacidade limitada da reserva:** **a reserva de Pokémon possui limite de capacidade**, sem tamanho nem gerenciamento dos excedentes ainda aprovados. Permanecem o máximo de três Pokémon ativos (R6-Q3) e a possibilidade de enviar à reserva recrutados quando a equipe ativa estiver completa (R24-Q3). **PENDENTE:** valor do limite, acesso, gestão da reserva cheia e regras de troca; não introduzir número.
+
+**APROVADO (R38-Q4 = A) — itens acompanham o Pokémon na reserva:** **os itens transportados continuam associados ao Pokémon quando ele sai da equipe ativa para a reserva**. **PENDENTE:** acesso a esses itens, uso fora da equipe ativa, movimentação/transferência e regras da reserva. Não alterar a regra de 10 itens não segurados por Pokémon ativo, até 30 com três (R35-Q3), nem os itens segurados. **A preservação da associação durante a troca não protege automaticamente de perdas após derrota/retirada** (R25-Q4/R31-Q1).
+
+**APROVADO (R38-Q5 = C) — Moves utilizáveis em combate:** resposta literal **“Pode ter até 8 moves no combate, os 4 principais servem mais para hotkeys rapidas”**. **Um Pokémon pode dispor de até oito Moves em combate, quatro deles como principais para hotkeys rápidas**, atualizando a antiga regra em que os quatro Moves representavam a totalidade dos espaços disponíveis. O **Tackle físico genérico permanece separado** como já aprovado (R4-Q4/R8-Q2). **PENDENTE:** gerenciamento de Moves conhecidos, seleção até oito, mudança dos quatro principais e acesso aos demais; não inferir hotkeys específicas, capacidade além dos oito ou custos novos dos Moves adicionais. Os quatro Moves históricos conservam seus custos aprovados, Moves especiais continuam sujeitos a MP (R12-Q1), e **nenhum Move usa PP**.
+
+**Conflito resolvido por decisão posterior:** o texto antigo dos registros **D-006, D-050 e D-053** documentava quatro Moves como opções de combate. Esses registros permanecem **intactos como histórico**, mas **D-209 (R38-Q5)** substitui o teto de quatro por até oito Moves utilizáveis, com quatro principais para atalhos. Não concluir como consequência que os quatro adicionais tenham exatamente os mesmos custos ou o mesmo modo de ativação.
+
+**Preservação:** D-001 a D-204, rejeição R33-Q5, inventário R35-Q3, custos ATB/Burst/MP aprovados e ausência de PP seguem válidos. Nenhum código ou outro arquivo é alterado por esta revisão documental.
+
 ## 8. Estado real do repositório (inspeção de código, não de execução)
 
 Referência: `main` em `1171b5f3c427edc34c486c82d42569f41fd0ea62`. Projeto **Godot 4.7**, configurado em `project.godot`, com cena inicial 2D.
@@ -1022,6 +1050,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-202 | R37-Q3 = A: **desbloqueio de dungeons principalmente por conclusão de outras dungeons e vitória contra seus chefes**, objetivos narrativos complementares. |
 | D-203 | R37-Q4 = A: **protagonista escolhido entre conjunto selecionado de espécies iniciais**, catálogo e apresentação pendentes. |
 | D-204 | R37-Q5 = B: **dificuldade de dungeons revisitadas pode adaptar-se à progressão ou força atual da equipe**, critérios/limites pendentes. |
+| D-205 | R38-Q1 = B: **detecção de inimigos principalmente por proximidade, sem linha de visão estrita**, alcance e condições pendentes. |
+| D-206 | R38-Q2 = A: **arena 3D reflete bioma e ambiente do encontro no mapa 2D**, mantendo batalha em cena separada; catálogo/efeitos pendentes. |
+| D-207 | R38-Q3 = B: **reserva de Pokémon com capacidade limitada**, número e gerenciamento de excedentes pendentes. |
+| D-208 | R38-Q4 = A: **itens transportados permanecem associados ao Pokémon que passa da equipe ativa à reserva**, acesso/condições pendentes; perdas após derrota/retirada inalteradas. |
+| D-209 | R38-Q5 = C — “Pode ter até 8 moves no combate, os 4 principais servem mais para hotkeys rapidas”: **até oito Moves utilizáveis em combate, quatro principais para hotkeys rápidas**, atualizando o antigo limite de quatro; Tackle genérico separado conforme decisões anteriores, gerenciamento e custos dos Moves extras pendentes. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -1543,39 +1576,55 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Preservação:** D-001 a D-199 intactas. Inventário por Pokémon ativo (R35-Q3), rejeição expressa de R33-Q5, ausência de PP e custos ATB/Burst anteriores preservados. Nenhuma implementação de código autorizada.
 
-## 10.37. Rodada 38 — encontros, arenas, reservas e aprendizado de Moves (cinco perguntas abertas)
+## 10.37. Rodada 38 — encontros, arenas, reservas e aprendizado de Moves (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas aprovadas. Questões substanciais ainda pendentes no GDD, sem definir valores nem sistemas de recursos materiais.
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-02, decisões D-205 a D-209.
 
-**R38-Q1 — Como os Pokémon inimigos patrulhando o mapa 2D detectam o grupo e começam a persegui-lo?**  
-A. **Principalmente por visão e linha de visão**, de modo que paredes/obstáculos possam impedir a detecção; alcance e condições pendentes.  
-B. **Principalmente por proximidade do grupo**, independentemente de uma linha de visão estrita; alcance e condições pendentes.  
-C. Outra abordagem ou combinação, descrita pelo criador.  
-*R9-Q3 aprovou patrulha e perseguição após detecção, mas não definiu o mecanismo de percepção.*
+| ID | Resposta literal do criador | Regra aprovada e pendências |
+| --- | --- | --- |
+| **R38-Q1** | **B** — “Os inimigos detectam o grupo principalmente pela proximidade, sem exigir linha de visão estrita; alcance pendente.” | **Detecção principalmente por proximidade**, alcance e condições pendentes. |
+| **R38-Q2** | **A** — “A arena 3D reflete o bioma e ambiente em que o encontro ocorreu no mapa 2D, com catálogo e detalhes pendentes.” | **Arenas 3D visualmente relacionadas ao bioma e lugar do encontro**, efeitos de gameplay não definidos. |
+| **R38-Q3** | **B** — “A reserva de Pokémon possui limite de capacidade, com tamanho e gestão de excedentes pendentes.” | **Reserva com capacidade limitada**, valor e gestão pendentes. |
+| **R38-Q4** | **A** — “Os itens transportados permanecem associados ao Pokémon quando ele vai para a reserva, com acesso e regras pendentes.” | **Itens continuam associados ao Pokémon na reserva**, sem proteção extra contra perdas de expedição. |
+| **R38-Q5** | **C** — “Pode ter até 8 moves no combate, os 4 principais servem mais para hotkeys rapidas” | **Até oito Moves utilizáveis no combate, quatro principais para hotkeys rápidas**; antigo teto de quatro superado, sem PP nem novos custos aprovados. |
 
-**R38-Q2 — Como será a identidade visual dos locais de combate 3D iniciados na exploração 2D?**  
-A. **As arenas 3D refletem o bioma e ambiente do local do encontro**, mantendo combate em cena separada; catálogo e execução pendentes.  
-B. **As batalhas usam arenas 3D padronizadas ou recorrentes, independentemente do ambiente imediato do encontro**, com variações opcionais pendentes.  
-C. Outra relação entre mapa e arena, descrita pelo criador.  
-*O combate em cena 3D separada está aprovado (D-003), mas sua relação com os biomas variados da exploração não está fechada.*
+**Rastreabilidade da mudança de Moves:** preservar os registros históricos D-006, D-050, D-053 e decisões anteriores tal como originalmente aprovados. **R38-Q5 altera o número máximo de Moves utilizáveis, não os custos anteriores**. Tackle continua separado por decisão anterior; associação dos Moves extras a custos e acesso permanece pendente.
 
-**R38-Q3 — A reserva de Pokémon pertencentes ao jogador terá limite de capacidade?**  
-A. **A reserva não terá limite geral de quantidade de Pokémon**, mantendo regras de acesso e organização pendentes.  
-B. **A reserva terá capacidade limitada**, com tamanho e formas de gerenciar excedentes pendentes.  
-C. Outro modelo, descrito pelo criador.  
-*R24-Q3 aprovou enviar recrutados excedentes à reserva; seu limite permanece explicitamente indefinido.*
+**Preservação:** D-001 a D-204 e histórico mantidos, incluindo R35-Q3 (10 itens por Pokémon ativo, até 30 com três) e a rejeição R33-Q5. Não criar fórmulas, recursos materiais não especificados, PP ou custos ATB/Burst novos.
 
-**R38-Q4 — O que acontece com os dez itens transportados por um Pokémon ativo quando ele sai da equipe para a reserva?**  
-A. **Os itens transportados permanecem associados ao Pokémon**, mesmo na reserva; acessibilidade e limites fora da equipe pendentes.  
-B. **Os itens precisam ser reorganizados ou retirados antes de colocar o Pokémon na reserva**, com destino e condições pendentes.  
+## 10.38. Rodada 39 — configuração de Moves, arenas e consequências da progressão (cinco perguntas abertas)
+
+**Status:** ABERTA — 0/5 respostas, nenhuma alternativa aprovada. Questões relevantes ainda pendentes, sem atribuir custos, números adicionais ou funcionalidades inventadas.
+
+**R39-Q1 — Como um Pokémon escolhe quais Moves estarão entre os oito utilizáveis em combate?**  
+A. **Selecionar previamente um conjunto de até oito Moves conhecidos para levar ao combate**, com configuração dos quatro principais para hotkeys rápidas; acesso e momento de configuração pendentes.  
+B. **Ter acesso em combate a todos os Moves conhecidos, respeitando um máximo de oito utilizáveis por vez**, com critérios de disponibilidade e troca pendentes.  
+C. Outra regra, descrita pelo criador.  
+*R38-Q5 aprovou até oito Moves utilizáveis e quatro principais para hotkeys, mas não definiu gerenciamento dos Moves conhecidos.*
+
+**R39-Q2 — Os ambientes das arenas 3D terão efeitos reais sobre o combate?**  
+A. **O bioma influencia principalmente a aparência da arena**, sem exigir obstáculos ou efeitos de terreno com impacto mecânico.  
+B. **O bioma pode influenciar também a movimentação e o combate por obstáculos ou características do cenário**, com regras concretas pendentes.  
+C. Outra relação entre cenário e combate, descrita pelo criador.  
+*R38-Q2 vinculou a arena 3D visualmente ao local do encontro; não decidiu se o terreno altera gameplay.*
+
+**R39-Q3 — O que acontece ao tentar recrutar um Pokémon com a equipe ativa e a reserva já lotadas?**  
+A. **Permitir reorganizar a coleção para abrir espaço, substituindo ou liberando um Pokémon existente**, com regras e salvaguardas pendentes.  
+B. **Impedir a efetivação de novos recrutamentos até existir uma vaga**, mantendo outras interações possíveis.  
 C. Outro comportamento, descrito pelo criador.  
-*R35-Q3 atribuiu capacidade de dez itens a cada integrante ativo e R25-Q2 permite trocas provisórias; o destino dos itens quando o integrante deixa os ativos ainda não foi definido. Itens segurados seguem com regras próprias.*
+*R38-Q3 aprovou reserva com capacidade limitada; excedentes, quando todos os lugares estão ocupados, permanecem sem solução.*
 
-**R38-Q5 — Quando um Pokémon que já tem quatro Moves equipados aprende outro Move comum, como funciona a seleção?**  
-A. **Os Moves aprendidos podem permanecer disponíveis fora dos quatro equipados para trocas futuras**, com condições e interface pendentes.  
-B. **Aprender um Move com quatro espaços ocupados exige substituição de um Move equipado**, com regras sobre eventual reaprendizado pendentes.  
-C. Outra regra de aprendizado e equipamento, descrita pelo criador.  
-*O jogo usa quatro Moves equipados mais Tackle genérico e aprende principalmente por nível (R27-Q4), mas não definiu o que ocorre ao aprender um quinto Move.*
+**R39-Q4 — Como serão recuperados HP e estados negativos da equipe entre expedições?**  
+A. **Ao iniciar uma nova expedição, a equipe ativa começa com HP recuperado e estados negativos de combate removidos**, com detalhes pendentes.  
+B. **HP e estados negativos podem persistir entre expedições**, exigindo recuperação por descanso, itens ou serviços, com condições pendentes.  
+C. Outra política de recuperação, descrita pelo criador.  
+*O GDD restaura MP ao iniciar nova expedição e define pontos seguros de descanso com HP, mas não estabelece integralmente a condição inicial de HP/status entre expedições.*
+
+**R39-Q5 — Quais efeitos a evolução de espécie poderá ter sobre os Moves já aprendidos?**  
+A. **Preservar todos os Moves conhecidos ao evoluir**, com possibilidade de aprender novos Moves conforme a espécie evoluída, regras pendentes.  
+B. **A evolução pode modificar a lista de Moves disponíveis**, exigindo que alguns sejam substituídos ou deixem de ficar disponíveis, com regras pendentes.  
+C. Outro comportamento, descrito pelo criador.  
+*R25-Q3 permite decidir quando evoluir e R27-Q4 associa Moves à progressão; o destino dos Moves conhecidos ao evoluir não foi decidido.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -1642,5 +1691,7 @@ C. Outra regra de aprendizado e equipamento, descrita pelo criador.
 | 1.27 | 2026-11-02 | Rodada 36 (D-195 a D-199): aliados acompanham protagonista em grupo próximo no 2D; missões/eventos secundários não bloqueiam chefe; itens coletados e eventos concluídos preservam estado ao revisitar andar na mesma expedição; Pokémon recrutados persistem após retirada voluntária; cada dungeon possui espécies características com variações por bioma. Mantida a atualização de inventário por Pokémon (R35-Q3) e rejeição R33-Q5. Abre Rodada 37 sobre contatos hostis na equipe, missões entre expedições, desbloqueios de campanha, espécies iniciais e dificuldade nas revisitas. | Rodada 36 fechada / Rodada 37 aberta |
 
 | 1.28 | 2026-11-02 | Rodada 37 (D-200 a D-204): contato hostil com qualquer integrante ativo inicia encontro 3D; missões secundárias principalmente locais à expedição e normalmente reiniciadas em nova tentativa; novas dungeons principalmente desbloqueadas por conclusão e chefes, objetivos narrativos complementares; protagonista entre conjunto selecionado de iniciais; dificuldade pode se adaptar à força/progressão da equipe nas revisitas. Rejeição R33-Q5 e inventário por Pokémon R35-Q3 preservados. Abre Rodada 38 sobre percepção dos inimigos, arenas 3D, capacidade da reserva, itens em trocas de equipe e Moves aprendidos. | Rodada 37 fechada / Rodada 38 aberta |
+
+| 1.29 | 2026-11-02 | Rodada 38 (D-205 a D-209): detecção de inimigos principalmente por proximidade, sem linha de visão estrita; arenas 3D correspondem visualmente ao bioma/ambiente do encontro; reserva de Pokémon com capacidade limitada; itens transportados permanecem associados ao Pokémon na reserva; R38-Q5 C amplia para até oito Moves utilizáveis em combate, dos quais quatro principais para hotkeys rápidas, preservando Tackle separado e custos anteriores sem criar PP. Atualização dos trechos normativos sem editar registros históricos. Abre Rodada 39 sobre gestão dos oito Moves, impacto do bioma em arenas, reserva cheia, HP entre expedições e Moves após evolução. | Rodada 38 fechada / Rodada 39 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
