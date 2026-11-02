@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.27 — Rodada 36 consolidada, 2026-11-02.  
+> **Revisão:** 1.28 — Rodada 37 consolidada, 2026-11-02.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -193,6 +193,17 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
 **APROVADO (R36-Q5 = A) — espécies características por dungeon:** **cada dungeon tem um conjunto de espécies de Pokémon característico, com variações internas por bioma**. **PENDENTE:** quais espécies, catálogos, distribuição por bioma, inclusão de espécies em mais de uma dungeon e regras de geração. Preservar a possibilidade de mudanças de bioma afetarem encontros (R28-Q4); não exigir exclusividade absoluta das espécies por dungeon.
 
+**APROVADO (R37-Q1 = A) — contatos hostis com a equipe:** **o contato de um inimigo hostil com qualquer Pokémon da equipe ativa presente no mapa 2D pode iniciar um combate 3D**, inclusive quando o inimigo encosta em um aliado acompanhante. **PENDENTE:** resolução de múltiplos contatos simultâneos, posicionamento, transição e regras concretas da colisão. Não revogar o controle direto exclusivo do protagonista nem fazer Pokémon elegíveis para recrutamento iniciar combate por mera aproximação.
+
+**APROVADO (R37-Q2 = A) — missões secundárias entre expedições:** **o progresso de missões secundárias fica principalmente restrito à expedição atual e normalmente é reiniciado em uma nova tentativa**. **PENDENTE:** exceções, missões concretas e quais efeitos persistem. **Na mesma expedição**, eventos concluídos e coletas registradas seguem preservados nas revisitas aos andares (R36-Q3). Não generalizar reinício às missões principais da campanha ou à progressão de XP/níveis já preservada.
+
+**APROVADO (R37-Q3 = A) — desbloqueios principais de campanha:** **desbloquear novas dungeons depende principalmente de concluir outras dungeons e vencer seus chefes**, com objetivos narrativos funcionando como caminhos complementares. **PENDENTE:** sequência, requisitos exatos, missões e exceções. Preservar apresentação de objetivos por NPCs/personagens/acontecimentos (R31-Q4), histórias relativamente independentes (R34-Q1) e missões secundárias não obrigatórias para enfrentar o chefe (R36-Q2).
+
+**APROVADO (R37-Q4 = A) — conjunto selecionado de iniciais:** **o jogador escolhe o Pokémon protagonista entre um conjunto selecionado de espécies iniciais**, com catálogo, critérios e interface ainda pendentes. Essa escolha não libera todas as espécies nem inventa uma lista; mantém a Nature do protagonista conforme as regras de sorteio anteriores (R26-Q1).
+
+**APROVADO (R37-Q5 = B) — dificuldade em novas visitas:** **a dificuldade de dungeons já concluídas também pode adaptar-se à progressão ou à força atual da equipe quando revisitadas**, com critérios, alcance e limites ainda pendentes. **Mantém-se a progressão geral de dificuldade por andares e novas dungeons** (R29-Q5); não aplicar escalonamento obrigatório universal, fórmula, níveis ou multiplicadores não aprovados.
+
+
 
 
 
@@ -205,7 +216,7 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
  **APROVADO posteriormente (R23-Q1 = A):** movimento contínuo e livre nas quatro direções cardeais, sem movimento diagonal direto. **PENDENTE:** controles, colisão e animação.
 
-**PENDENTE:** sprites 2D, geração procedural, seeds, passagens, detecção/patrulha e estados de novas expedições; espécies iniciais, **catálogos de espécies características por dungeon e bioma** (R36-Q5), recrutamento comum/especial, reservas/hub, evolução, XP e treinamento; **inventário de 10 itens não segurados por Pokémon ativo (até 30 com três), transferência/empilhamento** (R35-Q3), itens segurados, recuperação do protagonista, arenas, transições, **formação e movimentação do grupo de aliados próximos ao protagonista** (R36-Q1), missões variáveis e seus conteúdos sem **bloquear acesso ao chefe por eventos secundários** (R36-Q2), **estado de itens e eventos em novas expedições e casos especiais**, preservando revisitas dentro da mesma expedição (R36-Q3), objetivos de campanha, condições de fuga comuns, biomas, Moves, lojas/recompensas, chefes, cura e interface. **Recrutados persistem após retirada voluntária** (R36-Q4), mantendo perda de itens não segurados e XP/níveis preservados. Não definir recursos materiais genéricos: R33-Q5 foi rejeitada. Não presumir outras pendências resolvidas.
+**PENDENTE:** sprites 2D, geração procedural, seeds, passagens, critérios de detecção/patrulha, estados de novas expedições e colisões de inimigos com qualquer integrante ativo (R37-Q1); **catálogo do conjunto selecionado de espécies iniciais** (R37-Q4) e espécies por dungeon/bioma, recrutamento comum/especial, reservas/hub, evolução, XP, treinamento; **inventário individual de 10 itens por Pokémon ativo (até 30 com três), transferências/empilhamento e relação com a reserva** (R35-Q3), itens segurados, recuperação do protagonista, arenas/transições, formação do grupo de aliados, **catálogos e exceções de missões secundárias com progresso normalmente reiniciado entre expedições** (R37-Q2), **critérios de desbloqueio principalmente por conclusão de dungeons/chefes, com objetivos narrativos complementares** (R37-Q3), fuga comum e condições de êxito, biomas, aprendizado/equipamento de Moves, lojas e recompensas, chefes, cura e interface, **critérios de dificuldade adaptativa nas revisitas** (R37-Q5). Não revogar missões secundárias opcionais para chegar ao chefe (R36-Q2), persistência de eventos na mesma expedição (R36-Q3) nem preservação de Pokémon recrutados na retirada (R36-Q4). “Recursos” seguem indefinidos; a pergunta R33-Q5 foi rejeitada.
 
 ### Fluxo de experiência (somente encadeamento conceitual)
 
@@ -770,6 +781,21 @@ Sem decisão adicional, não fixar:
 
 **Preservação:** decisões D-001 a D-194 mantidas, incluindo D-192 (dez itens por membro ativo, até trinta com três) e a rejeição histórica de R33-Q5. Nenhuma regra numérica, PP, recurso material não definido, custo ATB/Burst, UI ou código foi introduzido.
 
+
+### 7.28. Contatos com aliados, missões, campanha, iniciais e revisitas — Rodada 37
+
+**APROVADO (R37-Q1 = A) — contato hostil com qualquer ativo:** **o encontro 3D pode começar quando um inimigo hostil toca qualquer Pokémon da equipe ativa que acompanha o protagonista no mapa 2D**, inclusive um aliado controlado pela IA. **PENDENTE:** regras de detecção, colisões simultâneas e transição de combate. Contatos com Pokémon de recrutamento elegível continuam sujeitos à interação voluntária (R24-Q2/R35-Q2), e o protagonista segue como único controlado diretamente.
+
+**APROVADO (R37-Q2 = A) — progresso de missões secundárias por expedição:** **as missões secundárias têm progresso principalmente limitado à expedição atual e normalmente reiniciam ao começar uma nova tentativa**. **PENDENTE:** exceções e conteúdo. Isso não reinicia eventos concluídos ou itens coletados quando o jogador somente revisita um andar **na mesma expedição** (R36-Q3), nem revoga a preservação de XP/níveis (R32-Q3) ou as missões principais da campanha.
+
+**APROVADO (R37-Q3 = A) — desbloqueio de novas dungeons:** **a campanha avança e desbloqueia dungeons principalmente por concluir expedições e vencer chefes**, enquanto objetivos narrativos são **complementares**, com requisitos e sequência específicos pendentes. Permanecem NPCs como meio principal de apresentar objetivos (R31-Q4), dungeons com histórias relativamente independentes (R34-Q1) e missões secundárias opcionais para chegar ao chefe (R36-Q2).
+
+**APROVADO (R37-Q4 = A) — espécie inicial selecionada:** **a escolha inicial do protagonista é feita entre um conjunto selecionado de espécies iniciais disponíveis**. **PENDENTE:** espécies concretas, número, apresentação e elegibilidade. Preservar as regras de Nature do protagonista; não inferir quais Pokémon compõem o conjunto.
+
+**APROVADO (R37-Q5 = B) — dificuldade adaptativa nas revisitas:** **revisitar uma dungeon já concluída pode trazer dificuldade ajustada à progressão ou força atual da equipe**, com parâmetros e limites ainda pendentes. Esta possibilidade complementa o aumento de dificuldade entre andares e novas dungeons (R29-Q5) e a repetição de dungeons (R29-Q3); não exigir ajuste em toda visita nem inventar fórmulas, níveis ou multiplicadores.
+
+**Preservação:** D-001 a D-199 integralmente preservadas, inclusive D-192 com 10 itens não segurados por integrante ativo (até 30 com três) e rejeição de R33-Q5. Não definir recursos materiais genéricos, PP ou novos custos ATB/Burst. Documentação não comprova implementação.
+
 ## 8. Estado real do repositório (inspeção de código, não de execução)
 
 Referência: `main` em `1171b5f3c427edc34c486c82d42569f41fd0ea62`. Projeto **Godot 4.7**, configurado em `project.godot`, com cena inicial 2D.
@@ -991,6 +1017,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-197 | R36-Q3 = A: **itens coletados e eventos concluídos mantêm estado ao revisitar o andar na mesma expedição, sem reaparecer/reiniciar automaticamente**, preservando regras de layout/inimigos. |
 | D-198 | R36-Q4 = A: **Pokémon recrutados permanecem com o jogador após retirada voluntária**, como na derrota definitiva; perdas de itens e XP/níveis preservados conforme decisões anteriores. |
 | D-199 | R36-Q5 = A: **cada dungeon possui espécies características com variações internas por bioma**, catálogos/distribuições pendentes. |
+| D-200 | R37-Q1 = A: **contato hostil com qualquer Pokémon ativo presente no mapa 2D pode iniciar batalha 3D**, incluindo aliados acompanhantes. |
+| D-201 | R37-Q2 = A: **progresso de missões secundárias principalmente limitado à expedição atual, normalmente reiniciando em nova tentativa**, exceções pendentes. |
+| D-202 | R37-Q3 = A: **desbloqueio de dungeons principalmente por conclusão de outras dungeons e vitória contra seus chefes**, objetivos narrativos complementares. |
+| D-203 | R37-Q4 = A: **protagonista escolhido entre conjunto selecionado de espécies iniciais**, catálogo e apresentação pendentes. |
+| D-204 | R37-Q5 = B: **dificuldade de dungeons revisitadas pode adaptar-se à progressão ou força atual da equipe**, critérios/limites pendentes. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -1498,39 +1529,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Preservação:** todas as 194 decisões anteriores mantidas; D-192 continua definindo até 10 itens por integrante ativo, somando até 30 com três Pokémon. A rejeição de R33-Q5 permanece registrada. Não criar PP, fórmulas, recursos materiais indefinidos ou custos ATB/Burst.
 
-## 10.36. Rodada 37 — combate no mapa, progressão e missões (cinco perguntas abertas)
+## 10.36. Rodada 37 — combate no mapa, progressão e missões (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa foi aprovada. Questões relevantes e ainda não resolvidas, sem detalhamento numérico ou perguntas sobre recursos materiais genéricos.
+**Status:** FECHADA — 5/5 decisões aprovadas em 2026-11-02, D-200 a D-204.
 
-**R37-Q1 — Quem pode iniciar um encontro hostil por contato durante a exploração 2D?**  
-A. **Contato de um inimigo hostil com qualquer membro da equipe ativa que acompanha o protagonista pode iniciar batalha 3D**.  
-B. **Somente contato hostil com o protagonista inicia a batalha**; contatos com aliados acompanhantes não iniciam automaticamente encontros.  
-C. Outra regra para encontros em grupo, descrita pelo criador.  
-*Contato de inimigos visíveis inicia combate (R8-Q5), mas o GDD não definiu como isso funciona quando aliados também estão presentes fisicamente no mapa (R35/R36).*
+| ID | Resposta literal do criador | Regra aprovada e pendências |
+| --- | --- | --- |
+| **R37-Q1** | **A** — “O contato de um inimigo hostil com qualquer Pokémon da equipe ativa pode iniciar combate 3D.” | **Contato hostil com qualquer membro ativo no 2D inicia encontro 3D**, critérios físicos pendentes. |
+| **R37-Q2** | **A** — “O progresso das missões secundárias fica principalmente restrito à expedição atual e normalmente reinicia em nova tentativa.” | **Missões secundárias principalmente locais à expedição**, com exceções pendentes. |
+| **R37-Q3** | **A** — “O desbloqueio de dungeons depende principalmente de concluir dungeons e vencer seus chefes, com objetivos narrativos complementares.” | **Concluir dungeons/chefes como via principal de desbloqueio**, narrativa complementar. |
+| **R37-Q4** | **A** — “O protagonista é escolhido entre um conjunto selecionado de espécies iniciais, com catálogo pendente.” | **Conjunto selecionado de iniciais**, sem catálogo definido. |
+| **R37-Q5** | **B** — “Nas revisitas, a dificuldade também pode se adaptar à progressão ou à força atual da equipe, com regras pendentes.” | **Dificuldade adaptativa possível nas revisitas**, sem fórmulas ou regras concretas. |
 
-**R37-Q2 — O que deve acontecer com o progresso de missões secundárias quando a expedição termina antes de vencer o chefe?**  
-A. **O progresso das missões secundárias fica restrito à expedição e normalmente reinicia em uma nova tentativa**, sem obrigar persistência entre expedições.  
-B. **Parte das missões secundárias pode manter progresso entre expedições**, com missões e consequências persistentes ainda pendentes.  
-C. Outra regra, descrita pelo criador.  
-*R30-Q2 definiu efeitos narrativos principalmente locais e R36-Q3 preservou eventos concluídos na mesma expedição; não há política completa para retomada de missões em uma nova expedição.*
+**Preservação:** D-001 a D-199 intactas. Inventário por Pokémon ativo (R35-Q3), rejeição expressa de R33-Q5, ausência de PP e custos ATB/Burst anteriores preservados. Nenhuma implementação de código autorizada.
 
-**R37-Q3 — O desbloqueio de novas dungeons na campanha deve depender principalmente de quê?**  
-A. **Concluir dungeons e vencer seus chefes**, com os demais objetivos narrativos funcionando como caminhos complementares, pendentes.  
-B. **Cumprir missões e marcos narrativos da campanha**, que podem incluir derrotar chefes; requisitos concretos ainda pendentes.  
-C. Outra combinação de critérios, descrita pelo criador.  
-*R25-Q1 aprovou desbloqueios por conquistas/objetivos e R31-Q4 aprovou missões apresentadas por NPCs, mas a prioridade dos critérios de desbloqueio não foi definida.*
+## 10.37. Rodada 38 — encontros, arenas, reservas e aprendizado de Moves (cinco perguntas abertas)
 
-**R37-Q4 — Como a escolha da espécie inicial do protagonista deverá funcionar?**  
-A. **Escolher entre um conjunto selecionado de espécies iniciais para o começo da campanha**, catálogo e apresentação pendentes.  
-B. **Escolher entre todas as espécies declaradas elegíveis como protagonistas iniciais**, com catálogo de elegibilidade ainda pendente, sem limitar a escolha a um pequeno grupo inicial predeterminado.  
-C. Outra regra de seleção, descrita pelo criador.  
-*R26-Q1 aprovou escolher a espécie do protagonista entre espécies iniciais disponíveis; não estabeleceu a abrangência desse conjunto.*
+**Status:** ABERTA — 0/5 respostas aprovadas. Questões substanciais ainda pendentes no GDD, sem definir valores nem sistemas de recursos materiais.
 
-**R37-Q5 — Como deverá funcionar a dificuldade dos inimigos ao repetir uma dungeon já concluída?**  
-A. **Manter a dificuldade principalmente vinculada à dungeon e ao andar**, sem elevar inimigos automaticamente só porque a equipe ficou mais forte.  
-B. **Permitir adaptação da dificuldade ao progresso ou força atual da equipe também nas revisitas**, com regras e limites ainda pendentes.  
-C. Outro sistema de dificuldade, descrito pelo criador.  
-*R29-Q5 estabeleceu dificuldade crescente por andares e novas dungeons, mas não definiu se as revisitadas acompanham a força da equipe.*
+**R38-Q1 — Como os Pokémon inimigos patrulhando o mapa 2D detectam o grupo e começam a persegui-lo?**  
+A. **Principalmente por visão e linha de visão**, de modo que paredes/obstáculos possam impedir a detecção; alcance e condições pendentes.  
+B. **Principalmente por proximidade do grupo**, independentemente de uma linha de visão estrita; alcance e condições pendentes.  
+C. Outra abordagem ou combinação, descrita pelo criador.  
+*R9-Q3 aprovou patrulha e perseguição após detecção, mas não definiu o mecanismo de percepção.*
+
+**R38-Q2 — Como será a identidade visual dos locais de combate 3D iniciados na exploração 2D?**  
+A. **As arenas 3D refletem o bioma e ambiente do local do encontro**, mantendo combate em cena separada; catálogo e execução pendentes.  
+B. **As batalhas usam arenas 3D padronizadas ou recorrentes, independentemente do ambiente imediato do encontro**, com variações opcionais pendentes.  
+C. Outra relação entre mapa e arena, descrita pelo criador.  
+*O combate em cena 3D separada está aprovado (D-003), mas sua relação com os biomas variados da exploração não está fechada.*
+
+**R38-Q3 — A reserva de Pokémon pertencentes ao jogador terá limite de capacidade?**  
+A. **A reserva não terá limite geral de quantidade de Pokémon**, mantendo regras de acesso e organização pendentes.  
+B. **A reserva terá capacidade limitada**, com tamanho e formas de gerenciar excedentes pendentes.  
+C. Outro modelo, descrito pelo criador.  
+*R24-Q3 aprovou enviar recrutados excedentes à reserva; seu limite permanece explicitamente indefinido.*
+
+**R38-Q4 — O que acontece com os dez itens transportados por um Pokémon ativo quando ele sai da equipe para a reserva?**  
+A. **Os itens transportados permanecem associados ao Pokémon**, mesmo na reserva; acessibilidade e limites fora da equipe pendentes.  
+B. **Os itens precisam ser reorganizados ou retirados antes de colocar o Pokémon na reserva**, com destino e condições pendentes.  
+C. Outro comportamento, descrito pelo criador.  
+*R35-Q3 atribuiu capacidade de dez itens a cada integrante ativo e R25-Q2 permite trocas provisórias; o destino dos itens quando o integrante deixa os ativos ainda não foi definido. Itens segurados seguem com regras próprias.*
+
+**R38-Q5 — Quando um Pokémon que já tem quatro Moves equipados aprende outro Move comum, como funciona a seleção?**  
+A. **Os Moves aprendidos podem permanecer disponíveis fora dos quatro equipados para trocas futuras**, com condições e interface pendentes.  
+B. **Aprender um Move com quatro espaços ocupados exige substituição de um Move equipado**, com regras sobre eventual reaprendizado pendentes.  
+C. Outra regra de aprendizado e equipamento, descrita pelo criador.  
+*O jogo usa quatro Moves equipados mais Tackle genérico e aprende principalmente por nível (R27-Q4), mas não definiu o que ocorre ao aprender um quinto Move.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -1595,5 +1640,7 @@ C. Outro sistema de dificuldade, descrito pelo criador.
 | 1.26 | 2026-11-02 | Rodada 35 (D-190 a D-194): aliados ativos visíveis acompanhando protagonista no 2D; recrutamento comum por interação voluntária direta; inventário 10 itens não segurados por Pokémon ativo, até 30 com três ativos, e alternativa A de deixar/trocar item quando cheio (R35-Q3 C), atualizando regra global da R34 sem reescrever D-189; proibição de fuga contra chefes; missões e histórias também variáveis entre expedições. Rejeição de R33-Q5 mantida. Abre Rodada 36 sobre comportamento de aliados, requisitos de missões, estados em revisitas, recrutamento em retirada e espécies por dungeon. | Rodada 35 fechada / Rodada 36 aberta |
 
 | 1.27 | 2026-11-02 | Rodada 36 (D-195 a D-199): aliados acompanham protagonista em grupo próximo no 2D; missões/eventos secundários não bloqueiam chefe; itens coletados e eventos concluídos preservam estado ao revisitar andar na mesma expedição; Pokémon recrutados persistem após retirada voluntária; cada dungeon possui espécies características com variações por bioma. Mantida a atualização de inventário por Pokémon (R35-Q3) e rejeição R33-Q5. Abre Rodada 37 sobre contatos hostis na equipe, missões entre expedições, desbloqueios de campanha, espécies iniciais e dificuldade nas revisitas. | Rodada 36 fechada / Rodada 37 aberta |
+
+| 1.28 | 2026-11-02 | Rodada 37 (D-200 a D-204): contato hostil com qualquer integrante ativo inicia encontro 3D; missões secundárias principalmente locais à expedição e normalmente reiniciadas em nova tentativa; novas dungeons principalmente desbloqueadas por conclusão e chefes, objetivos narrativos complementares; protagonista entre conjunto selecionado de iniciais; dificuldade pode se adaptar à força/progressão da equipe nas revisitas. Rejeição R33-Q5 e inventário por Pokémon R35-Q3 preservados. Abre Rodada 38 sobre percepção dos inimigos, arenas 3D, capacidade da reserva, itens em trocas de equipe e Moves aprendidos. | Rodada 37 fechada / Rodada 38 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
