@@ -4,7 +4,7 @@ extends RefCounted
 ## Part of BattleFx (see battle_fx.gd): the shared state lives in `fx`.
 
 var fx: BattleFx
-const TELEPORT_PINCH_PROGRESS := 0.12 / 0.22
+const TELEPORT_PINCH_PROGRESS := BattleSpace.TELEPORT_PINCH
 
 
 func _init(p_fx: BattleFx) -> void:
@@ -16,10 +16,9 @@ func _init(p_fx: BattleFx) -> void:
 func spawn(inc) -> void:
 	var move_id := String(inc.data.get("move_id", BattleFx.normalize_move_id(inc.label)))
 	var lift := Vector3(0, 0.35 if inc.ground else 1.0, 0)  # A ground shot rolls along the floor.
-	var from: Vector3 = fx.rest_pos(inc.attacker) + lift
-	var to: Vector3 = fx.rest_pos(inc.target) + lift
+	var from: Vector3 = inc.from + lift
+	var end: Vector3 = inc.aim + lift
 	var missed: bool = inc.dodged or inc.auto_dodged
-	var end := to + fx._flat_dir(from, to) * 7.0 if missed else to
 	var node := _spawn_move(inc, move_id, from, end, fx.COLORS[inc.element])
 	if node == null:
 		node = _make_ground_shot(from, end, fx.COLORS[inc.element]) if inc.ground else _make_projectile(from, end, fx.COLORS[inc.element], inc.element)
@@ -33,15 +32,7 @@ func drive(inc) -> void:
 	if p.is_empty() or not is_instance_valid(p["node"]):
 		return
 	var node := p["node"] as Node3D
-	var to: Vector3 = p["to"]
-	if p.get("homing", false):
-		if inc.dodged:
-			# Evaded mid-flight: keep the last aim point so the path stays continuous (no jump)
-			# and the shot reaches the spot the target just left.
-			to = p.get("last_to", to)
-		else:
-			to = (fx._models[inc.target] as Node3D).position + (p["lift"] as Vector3)
-			p["last_to"] = to
+	var to: Vector3 = inc.aim + (p["lift"] as Vector3)  # The rules aim it (live target, or the spot it misses).
 	if _drive_move(inc, String(inc.data.get("move_id", "")), p, node, to):
 		return
 	if inc.phase != Battle.Phase.TRAVEL:
@@ -165,21 +156,18 @@ func _teleport_scale(progress: float) -> Vector3:
 	return pinch.lerp(Vector3.ONE, clampf((progress - TELEPORT_PINCH_PROGRESS) / (1.0 - TELEPORT_PINCH_PROGRESS), 0.0, 1.0))
 
 
-func _drive_rapid_teleport(inc, projectile: Dictionary, _node: Node3D) -> bool:
+func _drive_rapid_teleport(inc, _projectile: Dictionary, _node: Node3D) -> bool:
 	var model: Node3D = fx._models.get(inc.attacker)
 	if model == null:
 		return true
-	var origin: Vector3 = inc.data.get("teleport_origin", projectile["from"] - projectile["lift"])
-	var dest: Vector3 = inc.data.get("teleport_dest", origin)
+	# The rules move the caster (AttackMotion blink); this only draws the pinch and the flashes.
+	var origin: Vector3 = inc.from
+	var dest: Vector3 = inc.dest
 	var base_scale: Vector3 = inc.data.get("teleport_base_scale", fx._base_scale.get(inc.attacker, Vector3.ONE))
-	if not inc.data.get("teleport_configured", false):
-		var attack_dir := fx._flat_dir(origin, projectile["to"])
-		var right := Vector3(attack_dir.z, 0, -attack_dir.x)
-		dest = origin + right * 2.2 + attack_dir * 0.55
-		inc.data["teleport_origin"] = origin
-		inc.data["teleport_dest"] = dest
-		inc.data["teleport_base_scale"] = base_scale
-		inc.data["teleport_configured"] = true
+	inc.data["teleport_origin"] = origin
+	inc.data["teleport_base_scale"] = base_scale
+	var body: Vector3 = inc.attacker.pos
+	model.position = Vector3(body.x, 0.0, body.z)
 	if inc.phase == Battle.Phase.TRAVEL:
 		var p: float = inc.progress()
 		if not inc.data.get("teleport_ghost", false):
@@ -187,9 +175,7 @@ func _drive_rapid_teleport(inc, projectile: Dictionary, _node: Node3D) -> bool:
 			VfxLib.spawn_ghost_snapshot(fx, model, Color("63d9ec"), 0.38)
 			VfxLib.flash_star(fx, origin + Vector3.UP, Color.WHITE, 2.4, 0.18)
 		model.scale = base_scale * _teleport_scale(p)
-		model.position = origin if p < TELEPORT_PINCH_PROGRESS else dest
 	elif inc.phase == Battle.Phase.STRIKE:
-		model.position = dest
 		model.scale = base_scale
 	elif inc.phase == Battle.Phase.RETURN:
 		var p: float = inc.progress()
@@ -197,7 +183,6 @@ func _drive_rapid_teleport(inc, projectile: Dictionary, _node: Node3D) -> bool:
 			inc.data["teleport_return_flash"] = true
 			VfxLib.flash_star(fx, origin + Vector3.UP, Color("63d9ec"), 2.2, 0.18)
 		model.scale = base_scale * _teleport_scale(1.0 - p)
-		model.position = dest if p < (1.0 - TELEPORT_PINCH_PROGRESS) else origin
 	return true
 
 

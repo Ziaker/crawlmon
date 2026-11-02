@@ -95,7 +95,10 @@ static func move_hit_stop_duration(move_id: String) -> float:
 
 
 static func move_uses_bw_pulse(move_id: String) -> bool:
-	return normalize_move_id(move_id) in ["golpe_carate", "quebra_telha", "onda_choque", "garra_dragao", "furia_dragao", "investida_subterranea", "investida_escavadora"]
+	return normalize_move_id(move_id) in [
+		"golpe_carate", "quebra_telha", "onda_choque", "garra_dragao", "furia_dragao",
+		"investida_subterranea", "investida_escavadora", "megido", "titanomachia", "hassou_tobi"
+	]
 
 
 func register(c: Combatant, model: Node3D) -> void:
@@ -139,7 +142,15 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 		if handled:
 			flash(target)
 			if cam != null:
-				cam.impact_post(to, Color("ff4d6d"), false, false)
+				cam.impact_post(to, Color("ff4d6d") if not info.get("heal", false) else Color("a8ffb2"), false, false)
+			if info.get("heal", false):
+				float_text(to + Vector3(0, 1.8, 0), "+HP", Color("76ff03"), 46)
+			elif info.get("buff", "") == "atk":
+				float_text(to + Vector3(0, 1.8, 0), "⚔ ATK ▲", Color("ff6d00"), 44)
+			elif info.get("debuff", "") == "def":
+				float_text(to + Vector3(0, 1.8, 0), "🛡 DEF ▼", Color("ba68c8"), 44)
+			elif info.get("debuff", "") == "spd":
+				float_text(to + Vector3(0, 1.8, 0), "⚡ VEL ▼", Color("00e5ff"), 44)
 			return
 		# No damage: a mark pulses on the target.
 		_ring(to, color, Vector3.ONE * 0.6, Vector3.ONE * 2.6, 0.5, Vector3(90, 0, 0))
@@ -432,10 +443,6 @@ func finish(player_won: bool) -> void:
 	fx_motion.finish(player_won)
 
 
-func _clip_hit(c: Combatant, anim: String, fallback: float) -> float:
-	return fx_motion._clip_hit(c, anim, fallback)
-
-
 func _hit_stop(attacker: Combatant, target: Combatant, heavy: bool, strike_dir := Vector3.FORWARD, impact_fx: Array[Node3D] = [], duration_override := -1.0) -> void:
 	await fx_motion._hit_stop(attacker, target, heavy, strike_dir, impact_fx, duration_override)
 
@@ -549,6 +556,14 @@ func _exit_tree() -> void:
 
 func on_phase(inc, phase: int) -> void:
 	fx_motion.on_phase(inc, phase)
+
+
+func on_evade_returned(actor: Combatant, from: Vector3) -> void:
+	fx_dodge.return_flash(actor, from)
+
+
+func on_evade_teleported(actor: Combatant, opponent: Combatant, from: Vector3) -> void:
+	fx_dodge.teleport_flash(actor, opponent, from)
 
 
 func on_engaged(actor: Combatant, opponent: Combatant, _inc) -> void:

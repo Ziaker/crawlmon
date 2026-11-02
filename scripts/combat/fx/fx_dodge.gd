@@ -23,17 +23,44 @@ func _vis_tween(c: Combatant) -> Tween:
 ## attack arrives (see fx.resolve_attack), never before the enemy has struck.
 func manual_evade(actor: Combatant, inc) -> void:
 	fx.clear_telegraph(inc)
-	if inc.kind != Skill.Kind.MELEE:
-		dodge(actor, "", false)  # Just a sidestep; the engaged arrival is only for melee.
+	if not inc.perfect and not inc.evader_home:
+		dodge(actor, "", false)  # The usual dodge (or just MISS! while its own run owns the body).
+
+
+## A perfect Evade during its own run (D-027): the rules already moved the body in front of
+## the opponent; this only draws the jump (dash streak, ghost where it was, flashes, MISS!).
+func teleport_flash(actor: Combatant, opponent: Combatant, from: Vector3) -> void:
+	var m: Node3D = fx._models[actor]
+	var spot := Vector3(actor.pos.x, 0.0, actor.pos.z)
+	miss_text(from + Vector3(0, 1.4, 0))
+	_dash_streak(from, spot)
+	VfxLib.ghost(fx, m, fx.DODGE_COLOR, 0.55)
+	VfxLib.flash_star(fx, from + Vector3(0, 1.1, 0), fx.DODGE_COLOR, 2.6, 0.2)
+	VfxLib.flash_star(fx, spot + Vector3(0, 1.1, 0), fx.GOLD, 2.4, 0.2)
+	var face: Vector3 = BattleSpace.flat_dir(spot, opponent.pos)
+	m.rotation.y = atan2(face.x, face.z)
+
+
+## A non-perfect Evade during its own run (D-029): it vanishes where it was and reappears
+## at its spot (the rules already put it there and cancelled the run).
+func return_flash(actor: Combatant, from: Vector3) -> void:
+	var m: Node3D = fx._models[actor]
+	var home := Vector3(actor.pos.x, 0.0, actor.pos.z)
+	fx._stop_moving(actor)
+	miss_text(from + Vector3(0, 1.4, 0))
+	_vanish(actor, m, from, home, 0.11)
+	var tw := _vis_tween(actor)
+	tw.tween_interval(0.11)
+	tw.tween_callback(func() -> void:
+		if fx != null:
+			_appear(actor, home, true))
 
 
 ## A manual Evade against a melee attack: the usual dodge (vanish, reappear aside, come back).
 func engage_arrive(actor: Combatant, opponent: Combatant) -> void:
 	# The evader dodges as always: it vanishes, shows up to the side and comes back. It only
 	# teleports up to the interrupted attacker if and when it attacks (see arrive_to_attack).
-	var op := (fx._models[opponent] as Node3D).position
-	opponent.set_rest(op)
-	dodge(actor, "", false)
+	dodge(actor, "", false)  # (the rules already left the interrupted attacker where it stopped)
 
 
 ## Its first attack after the Evade: it vanishes and appears next to the interrupted attacker.
@@ -89,7 +116,7 @@ func dodge(target: Combatant, _text: String, hold := false) -> void:
 		else:
 			_appear(target, spot, true))
 	if not hold:
-		tw.tween_interval(0.45)
+		tw.tween_interval(0.39)  # 0.5 s to the side in all, then back (D-029).
 		tw.tween_callback(func() -> void:
 			if fx != null:
 				settle(target))

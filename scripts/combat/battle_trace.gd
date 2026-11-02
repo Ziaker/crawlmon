@@ -28,6 +28,7 @@ var _frame := 0
 var _prev: Dictionary = {}  ## Combatant -> {pos, vis, scale, who}
 var _vis_changes: Dictionary = {}
 var anomaly_count := 0
+static var _opened := false
 var _drive := false  ## --drive: the leader plays by itself (attacks, evades) so every path is exercised.
 
 
@@ -47,8 +48,15 @@ func setup(p_battle: Battle, p_fx: BattleFx, p_models: Dictionary, p_party: Arra
 			seed(int(arg.get_slice("=", 1)))  # Same seed + --fixed-fps = the same battle, run after run.
 		elif arg == "--drive":
 			_drive = true
-	_file = FileAccess.open("user://battle_trace.jsonl", FileAccess.WRITE)
-	_anoms = FileAccess.open("user://battle_anomalies.txt", FileAccess.WRITE)
+	# One file for the whole run: a second battle in the same process appends to it.
+	var mode := FileAccess.READ_WRITE if _opened else FileAccess.WRITE
+	_file = FileAccess.open("user://battle_trace.jsonl", mode)
+	_anoms = FileAccess.open("user://battle_anomalies.txt", mode)
+	if _opened:
+		_file.seek_end()
+		_anoms.seek_end()
+	_opened = true
+	_event("battle_trace_started", {"seed_args": OS.get_cmdline_user_args()})
 	_connect_events()
 	print("[trace] recording to ", ProjectSettings.globalize_path("user://"))
 
@@ -123,6 +131,8 @@ func _mover(c: Combatant) -> String:
 		who.append("displaced")
 	if c.engaged_with != null:
 		who.append("engaged")
+	if not fx.fx_motion._frozen.is_empty():
+		who.append("hitstop")  # The contact shake moves the target on purpose.
 	return "+".join(who) if not who.is_empty() else "NOBODY"
 
 
@@ -148,7 +158,7 @@ func _process(delta: float) -> void:
 				atk = {"phase": Battle.Phase.keys()[inc.phase], "p": snappedf(inc.progress(), 0.001), "kind": inc.kind, "ghost": inc.ghost}
 		var ap: AnimationPlayer = fx.fx_motion._anim_player(c)
 		var row := {
-			"n": c.name, "pos": _v(m.position), "yaw": snappedf(m.rotation.y, 0.01), "scale": _v(m.scale), "vis": m.visible,
+			"n": c.name, "pos": _v(m.position), "cpos": [snappedf(c.pos.x, 0.01), snappedf(c.pos.z, 0.01)], "yaw": snappedf(m.rotation.y, 0.01), "scale": _v(m.scale), "vis": m.visible,
 			"anim": ap.current_animation if ap != null else "", "mover": _mover(c), "atk": atk,
 			"hp": c.hp, "atb": snappedf(c.atb, 0.01), "extra": c.extra, "burst": c.burst, "step": c.pos_step,
 			"eng": c.engaged_with.name if c.engaged_with != null else "", "counter": c.counter_ready,
@@ -176,7 +186,8 @@ func _check_sync(att: Combatant, tgt: Combatant, info: Dictionary) -> void:
 	var ap: AnimationPlayer = fx.fx_motion._anim_player(att)
 	var d := {
 		"attacker": att.name, "target": tgt.name, "ts": Engine.time_scale, "evaded": info.get("evaded", false),
-		"body_dist": snappedf((flat.call(ma.position) as Vector3).distance_to(flat.call(mt.position)), 0.01),
+		"body_dist": snappedf(BattleSpace.flat(att.pos).distance_to(BattleSpace.flat(tgt.pos)), 0.01),  # the rules' own positions
+		"model_dist": snappedf((flat.call(ma.position) as Vector3).distance_to(flat.call(mt.position)), 0.01),
 		"anim": ap.current_animation if ap != null else "", "anim_pos": snappedf(ap.current_animation_position, 0.001) if ap != null else -1.0,
 		"anim_speed": ap.speed_scale if ap != null else -1.0,
 	}
@@ -186,10 +197,9 @@ func _check_sync(att: Combatant, tgt: Combatant, info: Dictionary) -> void:
 		d["move"] = data.get("move_id", "")
 		d["plan"] = inc.plan
 		d["expected_hit"] = snappedf(float(data.get("hit", -1.0)), 0.001)
-		var proj: Dictionary = data.get("proj", {})
-		if not proj.is_empty() and is_instance_valid(proj["node"]):
-			d["proj_dist"] = snappedf((flat.call((proj["node"] as Node3D).position) as Vector3).distance_to(flat.call(mt.position)), 0.01)
-			if not info.get("evaded", false) and d["proj_dist"] > 2.0:
+		if inc.motion == "cast" and inc.kind == Skill.Kind.PROJECTILE:
+			d["proj_dist"] = snappedf(BattleSpace.flat(inc.proj_pos).distance_to(BattleSpace.flat(tgt.pos)), 0.01)  # the rules' own positions
+			if not info.get("evaded", false) and d["proj_dist"] > 1.0:
 				_anomaly("PROJ_HIT_FAR", att, "damage applied with the projectile %.2f units from %s" % [d["proj_dist"], tgt.name])
 		elif inc.kind == Skill.Kind.MELEE and not info.get("evaded", false) and not data.get("engaged", false) and d["body_dist"] > (fx.STAND_GAP + 1.5):
 			_anomaly("MELEE_HIT_FAR", att, "damage applied with the attacker %.2f units from %s" % [d["body_dist"], tgt.name])
@@ -212,7 +222,7 @@ func _drive_leader() -> void:
 	if evadable != null and evadable.can_evade_now() and evadable.progress() > 0.35:
 		battle.try_evade(leader, evadable)
 		return
-	if battle.is_winding_up(leader) or leader.blocks() < Battle.SKILL_BLOCKS + Battle.EVADE_BLOCKS:
+	if battle.is_winding_up(leader) or leader.blocks() < Battle.SKILL_BLOCKS + Battle.EVADE_STILL:
 		return
 	var foe: Combatant = null
 	for e in enemies:
@@ -221,6 +231,14 @@ func _drive_leader() -> void:
 			break
 	if foe != null and not leader.skills.is_empty():
 		battle.use_skill(leader, leader.skills[randi() % leader.skills.size()], foe)
+
+
+## Teleporte Rapido moves its caster across the floor by design.
+func _teleport_cast(c: Combatant) -> bool:
+	for inc in battle.attacks_in_flight():
+		if inc.attacker == c and inc.move_id == "teleporte_rapido":
+			return true
+	return false
 
 
 func _v(v: Vector3) -> Array:
@@ -235,11 +253,11 @@ func _detect(c: Combatant, m: Node3D, row: Dictionary, dt: float) -> void:
 		var speed := step / dt
 		var mover: String = row["mover"]
 		# A body that moves with nobody driving it, or faster than any motion allows.
-		if step > MAX_STEP and prev["vis"] and m.visible:
+		if step > MAX_STEP and prev["vis"] and m.visible and not _teleport_cast(c):
 			_anomaly("TELEPORT", c, "moved %.2f units in one frame (%.0f u/s), mover=%s, atk=%s, from %s to %s" % [step, speed, mover, row["atk"], prev["pos"], m.position])
-		elif speed > MAX_SPEED and prev["vis"] and m.visible and step > 0.6:
+		elif speed > MAX_SPEED and prev["vis"] and m.visible and step > 0.6 and not _teleport_cast(c):
 			_anomaly("TOO_FAST", c, "%.0f u/s over %.2f units, mover=%s, atk=%s" % [speed, step, mover, row["atk"]])
-		elif step > 0.05 and mover == "NOBODY" and not fx._is_idle(c):  # (the idle ready-stance sway is the one allowed free mover)
+		elif step > 0.05 and mover == "NOBODY" and prev.get("mover", "NOBODY") == "NOBODY" and not fx._is_idle(c):  # (the idle ready-stance sway is the one allowed free mover)
 			_anomaly("UNEXPLAINED_MOVE", c, "moved %.2f units with no attack, tween, dodge or engagement driving it" % step)
 		# A body that appears/disappears somewhere other than where it was.
 		if prev["vis"] != m.visible:
@@ -264,4 +282,4 @@ func _detect(c: Combatant, m: Node3D, row: Dictionary, dt: float) -> void:
 		_anomaly("HP_RANGE", c, "hp=%d/%d" % [c.hp, c.max_hp])
 	if not c.is_alive() and m.visible and row["atk"] != {}:
 		_anomaly("DEAD_ATTACKING", c, "dead but still has an attack in flight: %s" % [row["atk"]])
-	_prev[c] = {"pos": m.position, "vis": m.visible, "scale": m.scale, "yaw": m.rotation.y}
+	_prev[c] = {"mover": row["mover"], "pos": m.position, "vis": m.visible, "scale": m.scale, "yaw": m.rotation.y}

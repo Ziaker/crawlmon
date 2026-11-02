@@ -12,6 +12,9 @@ var element := Element.Type.FISICO
 var kind := 0  ## Skill.Kind.MELEE
 var ground := false
 var label := ""
+var is_aoe := false
+var is_friendly := false
+var skill: Skill = null
 var time_left := 0.0
 var total_windup := 1.5
 var dodged := false
@@ -29,6 +32,8 @@ var phase := Phase.WINDUP
 var phase_time := 0.0  ## Seconds spent in the current phase.
 var impacted := false
 var interrupted := false  ## Stopped on its way by a manual Evade: it never hits.
+var evader_home := false  ## Dodged by a non-perfect Evade during the evader's run: it went home (D-029).
+var perfect := false  ## Dodged by a perfect Evade during the evader's own run (D-027).
 var ghost := false  ## Not an attack: only the return of an engaged character.
 var ai_evade_at := -1.0  ## Seconds into TRAVEL when an AI target will try to evade (-1: never).
 ## Kinematics, planned by AttackPlanner when the wind-up ends (flat x/z, seconds):
@@ -46,6 +51,10 @@ var hop_h := 1.2
 var fly := 0.0
 var lunged := Vector3.ZERO  ## Where the body was when the return started
 var push := Vector3.ZERO  ## Knockback it takes before hopping home (an attacker hit on its way)
+var aim := Vector3.ZERO  ## Where a projectile is heading now (the live target, or the spot it missed)
+var proj_pos := Vector3.ZERO  ## Where the projectile is now
+var blink := false  ## Teleporte Rapido: the caster itself blinks to `dest` and back.
+var dest := Vector3.ZERO
 var arrived := false  ## An engaged evader's first attack: the rules just moved it next to its opponent.
 var data := {}  ## Drawing data owned by BattleFx (positions, clip times); logic never reads it.
 
@@ -62,7 +71,8 @@ func progress() -> float:
 
 ## The manual Evade works only while the attack is on its way (the run or the projectile).
 func can_evade_now() -> bool:
-	return resolved and not impacted and not interrupted and not ghost and phase == Phase.TRAVEL
+	# Only during the strike itself: the phase that ends with the hit (D-030).
+	return resolved and not impacted and not interrupted and not ghost and phase == impact_phase
 
 
 ## Seconds of travel left (the Evade window); large when it is not travelling.

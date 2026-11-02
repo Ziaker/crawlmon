@@ -7,7 +7,6 @@ var fx: BattleFx
 ## Overlapping hit-stops share one saved speed per player (never capture 0 as "previous").
 var _frozen: Dictionary = {}  # AnimationPlayer -> [saved speed, holders]
 var _react_token: Dictionary = {}  ## Combatant -> int
-var _interrupted_traj: Dictionary = {}  ## Combatant -> bool (hit while in attack trajectory)
 
 
 func _init(p_fx: BattleFx) -> void:
@@ -116,23 +115,23 @@ func finish(player_won: bool) -> void:
 	for c in fx._models:
 		if c.is_player and c.is_alive():
 			fx._busy_for(c, 60.0)
-			_stop_moving(c)
-			(fx._models[c] as Node3D).position = fx._home[c]
-			_play(c, "victory")
+			_victory_pose(c)
+
+
+## Waits for a winner that is still hopping home from its last attack, then strikes the pose.
+func _victory_pose(c: Combatant) -> void:
+	var waited := 0.0
+	while is_driven(c) and waited < 2.0:
+		await fx.get_tree().create_timer(0.05, false).timeout
+		waited += 0.05
+		if fx == null:
+			return
+	_stop_moving(c)
+	(fx._models[c] as Node3D).position = fx._home[c]
+	_play(c, "victory")
 
 
 # --- Character motion --------------------------------------------------------
-
-
-func _clip_len(c: Combatant, anim: String) -> float:
-	var ap := _anim_player(c)
-	return ap.get_animation(anim).length if ap != null and ap.has_animation(anim) else 0.0
-
-
-## When the strike lands: the middle of the model's own clip (fallback: the constant).
-func _clip_hit(c: Combatant, anim: String, fallback: float) -> float:
-	var len := _clip_len(c, anim)
-	return clampf(len * 0.5, 0.25, 0.8) if len > 0.0 else fallback
 
 
 func is_driven(c: Combatant) -> bool:
@@ -347,6 +346,10 @@ func on_phase(inc, phase: int) -> void:
 			if d.get("move_id", "") == "teleporte_rapido":
 				m.position = d.get("teleport_origin", fx._home[a])
 				m.scale = d.get("teleport_base_scale", fx._base_scale.get(a, Vector3.ONE))
+			if not a.is_alive():
+				m.position.y = 0.0  # A body stays where it fell.
+				fx.fx_projectiles.finish(inc)
+				return
 			if d["kind"] == "hit_interrupted":
 				var tw_k: Tween = fx._tweens.get(a)
 				if tw_k == null or not tw_k.is_valid() or not tw_k.is_running():
@@ -354,7 +357,6 @@ func on_phase(inc, phase: int) -> void:
 					m.position = Vector3(h_int.x, 0.0, h_int.z)
 					m.rotation.y = fx._home_yaw[a]
 					m.scale = d["base_scale"]
-					a.clear_rest()
 					fx._displaced[a] = false
 					_reset_idle(a)
 				fx.fx_projectiles.finish(inc)
@@ -368,13 +370,11 @@ func on_phase(inc, phase: int) -> void:
 				m.position = Vector3(h.x, 0.0, h.z)
 				m.rotation.y = fx._home_yaw[a]
 				m.scale = d["base_scale"]
-				a.clear_rest()
 				fx._displaced[a] = false
 				fx._shock(fx._home[a], Color(0.8, 0.95, 1.0), 2.2, 0.25)
 				fx._smoke((fx._home[a] as Vector3) + Vector3(0, 0.2, 0), Color(0.75, 0.85, 0.9), 6, Vector2(0.9, 1.5), 0.45, 0.3)
 			else:
 				m.position.y = 0.0
-				a.clear_rest()
 			_reset_idle(a)
 			fx.fx_projectiles.finish(inc)
 
@@ -395,6 +395,7 @@ func on_engage_ended(_actor: Combatant, _opponent: Combatant, ghost, staggered) 
 func on_attack_interrupted(inc) -> void:
 	var a: Combatant = inc.attacker
 	var m: Node3D = fx._models[a]
+	var y_at_hit: float = m.position.y
 	m.position.y = 0.0
 	m.scale = fx._base_scale.get(a, m.scale)
 	if inc.data.has("quick_cone") and is_instance_valid(inc.data["quick_cone"]):
@@ -406,6 +407,7 @@ func on_attack_interrupted(inc) -> void:
 		inc.data = {"kind": "hit_interrupted", "base_scale": fx._base_scale.get(a, m.scale)}
 	else:
 		inc.data = _return_data(inc, m.rotation.y)
+		inc.data["y0"] = y_at_hit
 
 
 ## Drawing data of a hop home the rules planned (an evader leaving its opponent, a stunned
@@ -419,10 +421,6 @@ func _return_data(inc, yaw: float) -> Dictionary:
 
 func _ease_quad_out(k: float) -> float:
 	return 1.0 - (1.0 - k) * (1.0 - k)
-
-
-func _ease_expo_out(k: float) -> float:
-	return 1.0 if k >= 1.0 else 1.0 - pow(2.0, -10.0 * k)
 
 
 func _ease_back_out(k: float) -> float:
@@ -490,7 +488,7 @@ func drive() -> void:
 			Battle.Phase.RETURN:
 				m.rotation.y = d["yaw_out"]
 				var hold: float = inc.hold
-				m.position = Vector3(body.x, 0.0, body.z)
+				m.position = Vector3(body.x, float(d.get("y0", 0.0)) * (1.0 - clampf(e / 0.11, 0.0, 1.0)) if e < hold else 0.0, body.z)
 				if e >= hold:
 					if not d.get("hopped", false):
 						d["hopped"] = true
@@ -505,11 +503,15 @@ func drive() -> void:
 ## Vibrates strictly the target model and the impact effect (never the camera).
 func _hit_stop(attacker: Combatant, target: Combatant, heavy: bool, strike_dir := Vector3.FORWARD, impact_fx: Array[Node3D] = [], duration_override := -1.0) -> void:
 	var stop_dur: float = duration_override if duration_override > 0.0 else (0.115 if heavy else 0.07)
-	var ap_a := _anim_player(attacker)
-	var ap_t := _anim_player(target)
-	_freeze(ap_a)
-	if ap_t != ap_a:
-		_freeze(ap_t)
+	if fx.battle != null:
+		fx.battle.freeze(stop_dur)  # The rules' clock stops with the animations: no drift.
+	# The whole battle clock holds still, so every animation holds with it.
+	var frozen_aps: Array[AnimationPlayer] = []
+	for c in fx._models:
+		var ap_c := _anim_player(c)
+		if ap_c != null and not frozen_aps.has(ap_c):
+			frozen_aps.append(ap_c)
+			_freeze(ap_c)
 	var mt: Node3D = fx._models.get(target)
 	var base_pos := Vector3(mt.position.x, 0.0, mt.position.z) if mt != null else Vector3.ZERO
 	var perp := Vector3(strike_dir.z, 0.0, -strike_dir.x)
@@ -531,9 +533,8 @@ func _hit_stop(attacker: Combatant, target: Combatant, heavy: bool, strike_dir :
 		elapsed += step
 	if mt != null and is_instance_valid(mt) and not is_driven(target):
 		mt.position = base_pos
-	_unfreeze(ap_a)
-	if ap_t != ap_a:
-		_unfreeze(ap_t)
+	for ap_c in frozen_aps:
+		_unfreeze(ap_c)
 
 
 func _freeze(ap: AnimationPlayer) -> void:
@@ -611,68 +612,30 @@ func _reset_idle(c: Combatant) -> void:
 		ap.play("idle", 0.15)
 
 
-## Tells the HUD to keep the HP bar where it is until the strike lands.
-func _hold_hp(c: Combatant, seconds: float) -> void:
-	c.set_meta("hp_hold_until", Time.get_ticks_msec() + int((seconds + 0.14) * 1000.0))
-
-
-## Physical knockback proportional to the hit's force (`mult`), with foot skid dust.
-## If the target was standing at its spot, pushes it backward and returns it there.
-## If the target was hit in trajectory, pushes it backward from the impact point and returns it to its origin.
+## Physical knockback proportional to the hit's force (`mult`), with foot skid dust. Only a
+## drawing recoil around the rules' rest spot: a target hit on its own attack is knocked
+## back by the rules (AttackMotion.begin_hit_return) and never reaches this.
 func knock(target: Combatant, from_pos: Vector3, mult := 1.0) -> void:
 	if is_driven(target):
 		return  # Its own attack is posing it; no knockback tween fighting that.
 	var m: Node3D = fx._models[target]
 	var start_pos := Vector3(m.position.x, 0.0, m.position.z)
 	m.position = start_pos
-	var rest_spot: Vector3 = fx.rest_pos(target)
-	var home_spot := Vector3((fx._home[target] as Vector3).x, 0.0, (fx._home[target] as Vector3).z)
-	var in_traj: bool = _interrupted_traj.get(target, false) or (target.engaged_with == null and start_pos.distance_to(rest_spot) > 1.35)
-	_interrupted_traj.erase(target)
-	var origin_pos := home_spot if in_traj else rest_spot
-	origin_pos.y = 0.0
-	if in_traj:
-		target.clear_rest()
-		fx._displaced[target] = false
+	var origin_pos := fx.rest_pos(target)
 	var yaw_home: float = fx._home_yaw[target]
 	var own_back := -Vector3(sin(yaw_home), 0.0, cos(yaw_home))
 	var hit_push := fx._flat_dir(from_pos, start_pos)
 	var back_dir := hit_push if (start_pos.distance_to(from_pos) > 0.25 and hit_push.dot(own_back) > 0.15) else own_back
 	back_dir.y = 0.0
-	if back_dir.length() < 0.01:
-		back_dir = own_back
-	else:
-		back_dir = back_dir.normalized()
-	var dist := clampf(1.5 * mult, 1.1, 2.4)
-	var push_pos := start_pos + back_dir * dist
+	back_dir = own_back if back_dir.length() < 0.01 else back_dir.normalized()
+	var push_pos := start_pos + back_dir * clampf(1.5 * mult, 1.1, 2.4)
 	push_pos.y = 0.0
 	fx._smoke(start_pos + Vector3(0, 0.12, 0), Color(0.75, 0.85, 0.9), 6 if mult > 1.2 else 4, Vector2(0.75, 1.35), 0.38, 0.28)
 	var tw := fx._move(target)
 	tw.tween_property(m, "position", push_pos, 0.11).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.tween_interval(0.04)
-	if in_traj and target.is_alive():
-		var ret_dist := push_pos.distance_to(origin_pos)
-		var ret_dur := clampf(ret_dist / 52.0, 0.26, 0.44)
-		var hop_h := clampf(ret_dist * 0.10, 0.9, 2.2)
-		fx._busy_for(target, 0.15 + ret_dur + 0.15)
-		tw.tween_callback(func() -> void:
-			if target.is_alive():
-				_play(target, "battle_idle")
-				fx._smoke(push_pos + Vector3(0, 0.15, 0), Color(0.75, 0.85, 0.9), 4, Vector2(0.7, 1.2), 0.35, 0.25))
-		tw.tween_method(func(k: float) -> void:
-			var p := push_pos.lerp(origin_pos, k)
-			p.y = sin(k * PI) * hop_h
-			m.position = p
-			m.rotation.y = lerp_angle(m.rotation.y, yaw_home, k), 0.0, 1.0, ret_dur)
-		tw.tween_callback(func() -> void:
-			m.position = origin_pos
-			m.rotation.y = yaw_home
-			m.scale = fx._base_scale.get(target, m.scale)
-			if target.is_alive():
-				_reset_idle(target))
-	else:
-		fx._busy_for(target, 0.42)
-		tw.tween_property(m, "position", origin_pos, 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	fx._busy_for(target, 0.42)
+	tw.tween_property(m, "position", origin_pos, 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 ## Short dust puffs along the floor while a character runs.

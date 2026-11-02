@@ -1,7 +1,7 @@
 class_name BattleEvade
 extends RefCounted
-## Evade, interruption and the engaged state that follows a successful Evade against a
-## melee attack. A helper of Battle: it reads and writes Battle's lists and emits its signals.
+## Evade (D-006 / D-027), plus the old interruption and engaged-state helpers (no longer
+## triggered by an Evade). A helper of Battle: it reads and writes Battle's lists and emits its signals.
 
 const Phase = Incoming.Phase
 
@@ -12,51 +12,116 @@ func _init(p_battle: Battle) -> void:
 	b = p_battle
 
 
+## Evade cost (D-006 / D-027): 2 ATB while its own melee attack is running at a target,
+## 3 ATB otherwise (standing still, or preparing/casting).
+func cost(actor: Combatant) -> float:
+	return Battle.EVADE_ON_RUN if own_run(actor) != null else Battle.EVADE_STILL
+
+
+## Its own melee attack while it is still running (the trajectory), or null.
+func own_run(actor: Combatant) -> Incoming:
+	for inc in b._landing:
+		if inc.attacker == actor and inc.motion == "melee" and inc.phase == Phase.TRAVEL and not inc.interrupted:
+			return inc
+	return null
+
+
+## Standing still, preparing or casting, or running in its own melee attack. Not while
+## its body is swinging or hopping back.
+func _can_act(actor: Combatant) -> bool:
+	if actor.engaged_with != null:
+		return false
+	if own_run(actor) != null:
+		return true
+	for inc in b._landing:
+		if inc.attacker == actor and AttackMotion.carries(inc):
+			return false
+	for inc in b._returning:
+		if inc.attacker == actor and AttackMotion.carries(inc):
+			return false
+	return true
+
+
 func find_evadable(actor: Combatant) -> Incoming:
-	if not actor.is_alive() or actor.blocks() < Battle.EVADE_BLOCKS:
+	if not actor.is_alive() or actor.blocks() < cost(actor) or not _can_act(actor):
 		return null
-	# No Evade in the middle of its own attack (it would pull the body out of the run)
-	# or while engaged next to an opponent.
-	if actor.engaged_with != null or b.is_attacking(actor):
-		return null
-	var winding: Incoming = null
+	# Only during the action (the run or the flight), never during the call (D-028).
 	for inc in b.active_attacks():
-		if inc.target != actor or inc.dodged or inc.evade_tried or inc.interrupted:
+		if inc.target != actor or inc.dodged or inc.evade_tried or inc.interrupted or inc.is_friendly:
 			continue
 		if inc.can_evade_now():
 			return inc
-		if not inc.resolved and winding == null:
-			winding = inc
-	return winding
+	return null
 
 
+## D-027: a successful Evade never teleports, except a PERFECT one (last PERFECT_WINDOW
+## seconds of the attacker's run or flight, the Evade window) made while its own melee attack runs: then it appears in front of the attacker,
+## its own attack carries on, and its next attack has no wind-up.
 func try_evade(actor: Combatant, inc: Incoming) -> bool:
-	if inc == null or actor.blocks() < Battle.EVADE_BLOCKS or actor.engaged_with != null or b.is_attacking(actor):
+	if inc == null or inc.is_friendly or not actor.is_alive() or not _can_act(actor):
 		return false
-	actor.spend(Battle.EVADE_BLOCKS)
-	inc.evade_tried = true
-	# Pressing before the attack is on its way (during the wind-up) is the early whiff.
+	var price := cost(actor)
+	if actor.blocks() < price:
+		return false
 	if not inc.can_evade_now():
-		inc.whiffed = true
-		b.log_message.emit("%s esquivou cedo demais! Vulnerável a crítico!" % actor.name)
-		b.evade_whiffed.emit(actor, inc)
-		return true
+		return false  # During the call (the wind-up) there is no Evade at all (D-028).
+	var run := own_run(actor)
+	actor.spend(price)
+	inc.evade_tried = true
 	inc.dodged = true
 	var burst_before := actor.burst
 	actor.burst = mini(actor.burst + 1, Combatant.BURST_MAX)
 	if actor.burst > burst_before:
 		b.grant_burst(actor, actor)
-	if inc.kind == Skill.Kind.MELEE:
-		# The attacker is running at it: the evader interrupts it and arrives next to it.
+	if run != null and inc.travel_left() <= Battle.PERFECT_WINDOW and inc.attacker.is_alive():
+		inc.perfect = true
 		actor.counter_ready = true
-		b.log_message.emit("%s desvia de %s no caminho e o interrompe! BURST!" % [actor.name, inc.attacker.name])
-		_interrupt(inc)
-		_engage(actor, inc.attacker, inc)
+		var from := actor.pos
+		_teleport_into_run(run, inc.attacker)
+		b.log_message.emit("%s desvia perfeitamente e surge diante de %s! BURST!" % [actor.name, inc.attacker.name])
+		b.evade_teleported.emit(actor, inc.attacker, from)
+	elif run != null:
+		# Not perfect during its own run: the run is cancelled (its ATB is lost) and it is
+		# back at its spot at once (D-029).
+		var from := actor.pos
+		_cancel_run_home(run)
+		inc.evader_home = true
+		b.log_message.emit("%s desvia de %s e volta ao seu lugar! BURST!" % [actor.name, inc.attacker.name])
+		b.evade_returned.emit(actor, from)
 	else:
-		# A projectile or a cast: nobody is running, so there is no one to advance on.
 		b.log_message.emit("%s desvia do ataque de %s! BURST!" % [actor.name, inc.attacker.name])
 	b.manual_evaded.emit(actor, inc)
 	return true
+
+
+## Cancels the runner's own attack and puts it back at its step spot this very frame.
+func _cancel_run_home(run: Incoming) -> void:
+	var a := run.attacker
+	b._landing.erase(run)
+	run.interrupted = true
+	run.impacted = true
+	a.has_rest = false
+	a.pos = a.stand_pos()
+	run.plan_i = run.plan.size()
+	run.phase = Phase.DONE
+	b.attack_cancelled.emit(run)
+	b.attack_phase.emit(run, Phase.DONE)
+
+
+## Puts the runner in front of `opponent` and lets its own run carry on from there: the run's
+## start point is moved so the body is at the new spot at the current moment of the run.
+func _teleport_into_run(run: Incoming, opponent: Combatant) -> void:
+	var a := run.attacker
+	var spot := opponent.pos + BattleSpace.flat_dir(opponent.pos, a.pos) * BattleSpace.STAND_GAP
+	spot.y = 0.0
+	var e := run.phase_time
+	if e <= AttackMotion.RUN_START:
+		run.from = spot
+	else:
+		var k := clampf((e - AttackMotion.RUN_START) / maxf(run.run_t, 0.01), 0.0, 1.0)
+		var w := 0.5 - 0.5 * cos(k * PI)
+		run.from = spot if w >= 0.98 else (spot - run.stand * w) / (1.0 - w)
+	a.pos = spot
 
 
 ## The attack stops where it is and never hits.

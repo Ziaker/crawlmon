@@ -52,13 +52,19 @@ var has_rest := false
 var body_scale := 1.0  ## Model scale, used as its radius when something passes in front of it.
 var clips: Dictionary = {}  ## Animation name -> seconds; registered by whoever loads the model.
 
+var atk_buff := 0   ## -2 .. +2 (Tarukaja / Tarunda)
+var def_buff := 0   ## -2 .. +2 (Rakukaja / Rakunda)
+var speed_buff := 0 ## -2 .. +2 (Sukukaja / Sukunda)
+
 var attack: int:
 	get:
-		return base_attack
+		var mult := 1.0 + float(atk_buff) * 0.25
+		return maxi(1, roundi(base_attack * maxf(mult, 0.4)))
 
 var speed: float:
 	get:
-		return base_speed
+		var mult := 1.0 + float(speed_buff) * 0.25
+		return maxf(base_speed * maxf(mult, 0.3), 0.1)
 
 
 func _init(p_name: String, p_hp: int, p_attack: int, p_speed: float, p_is_player: bool) -> void:
@@ -133,10 +139,32 @@ func pay(cost: float) -> void:
 
 
 func take_damage(amount: int) -> void:
-	hp = maxi(hp - amount, 0)
-	damaged.emit(self, amount)
+	var def_mult := 1.0 - float(def_buff) * 0.25
+	var final_dmg := maxi(1, roundi(amount * maxf(def_mult, 0.4)))
+	hp = maxi(hp - final_dmg, 0)
+	damaged.emit(self, final_dmg)
 	if hp == 0:
 		died.emit(self)
+
+
+func buff_stat(stat: String, delta: int) -> int:
+	match stat.to_lower():
+		"attack", "atk":
+			atk_buff = clampi(atk_buff + delta, -2, 2)
+			return atk_buff
+		"defense", "def":
+			def_buff = clampi(def_buff + delta, -2, 2)
+			return def_buff
+		"speed", "spd":
+			speed_buff = clampi(speed_buff + delta, -2, 2)
+			return speed_buff
+	return 0
+
+
+func clear_buffs() -> void:
+	atk_buff = 0
+	def_buff = 0
+	speed_buff = 0
 
 
 func heal(amount: int) -> void:
@@ -191,6 +219,7 @@ func clear_pending() -> void:
 	pending_extra = 0
 	pending_burst = 0
 	extra = 0.0
+	clear_buffs()
 
 
 func weakness_text() -> String:

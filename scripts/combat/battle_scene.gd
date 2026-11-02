@@ -61,6 +61,9 @@ func _ready() -> void:
 		Skill.new("Tiro de Areia", 1.3, 2, Element.Type.TERRA, Skill.Kind.PROJECTILE, true),
 		Skill.new("Fúria do Dragão", 1.6, 3, Element.Type.FISICO, Skill.Kind.PROJECTILE),
 		Skill.new("Investida Subterrânea", 1.5, 2, Element.Type.TERRA, Skill.Kind.MELEE, true),
+		Skill.new("Rakunda", 0.0, 1, Element.Type.TREVAS, Skill.Kind.STATUS, false, false, false),
+		Skill.new("Mabufula", 1.35, 2, Element.Type.AGUA_GELO, Skill.Kind.PROJECTILE, false, true, false),
+		Skill.new("Titanomachia", 1.5, 3, Element.Type.TERRA, Skill.Kind.MELEE, false, true, false),
 	])
 	enemies[0].inventory = {"potion": 1}
 	for e in enemies:  # Same Tactics the allies have: cast skills and evade when able.
@@ -82,7 +85,7 @@ func _ready() -> void:
 	hud.setup(battle, party, enemies, $Camera3D, models, director)
 	var debug_panel := BattleDebug.new()  # F1: quick-test panel (hotkeys F2..F11)
 	add_child(debug_panel)
-	debug_panel.setup(battle, party, enemies)
+	debug_panel.setup(battle, party, enemies, fx, $Camera3D, director)
 	_menu = hud.menu
 	hud.status_closed.connect(_close_status)
 	hud.status_unit_selected.connect(_on_status_unit)
@@ -96,6 +99,8 @@ func _ready() -> void:
 	battle.attack_resolved.connect(fx.resolve_attack)
 	battle.attack_phase.connect(fx.on_phase)
 	battle.engaged.connect(fx.on_engaged)
+	battle.evade_teleported.connect(fx.on_evade_teleported)
+	battle.evade_returned.connect(fx.on_evade_returned)
 	battle.attack_interrupted.connect(fx.on_attack_interrupted)
 	if BattleTrace.wanted():  # Flight recorder: every frame and event to user://battle_trace.jsonl
 		var trace := BattleTrace.new()
@@ -280,9 +285,9 @@ func _on_died(c: Combatant) -> void:
 
 ## A manual Evade by the leader slows the whole game (the Burst slow-motion) until the
 ## player executes the instant counter-action or the timer expires.
-func _on_manual_evaded(actor: Combatant, _inc) -> void:
-	if actor != leader or actor.engaged_with == null:
-		return  # Slow-motion only goes with the engaged state.
+func _on_manual_evaded(actor: Combatant, inc) -> void:
+	if actor != leader or not inc.perfect:
+		return  # Slow-motion only with a perfect Evade, until the counter-attack (D-027).
 	_slow_token += 1
 	var token := _slow_token
 	Engine.time_scale = SLOWMO_SCALE
@@ -342,7 +347,7 @@ func _show_main() -> void:
 	_menu.set_entries([
 		{"text": "Fight", "detail": "%d ATB" % int(Battle.SKILL_BLOCKS)},
 		{"text": "Itens", "detail": "%d ATB" % int(Battle.ITEM_BLOCKS)},
-		{"text": "Evade", "detail": "%d ATB" % int(Battle.EVADE_BLOCKS)},
+		{"text": "Evade", "detail": "%d ATB" % int(battle.evade_cost(leader))},
 		{"text": "Tactics", "detail": "PAUSA"},
 		{"text": "Status", "detail": "PAUSA"},
 	])
@@ -359,9 +364,9 @@ func _update_main_enabled() -> void:
 	_menu.set_detail(1, "%d ATB" % int(Battle.ITEM_BLOCKS) if can_item else ("sem itens" if _consumables().is_empty() else "falta ATB"))
 	var can_evade := battle.find_evadable(leader) != null
 	_menu.set_enabled(2, can_evade)
-	var why := "%d ATB" % int(Battle.EVADE_BLOCKS)
+	var why := "%d ATB" % int(battle.evade_cost(leader))
 	if not can_evade:
-		why = "engajado" if leader.engaged_with != null else ("em ação" if battle.is_attacking(leader) else ("falta ATB" if leader.blocks() < Battle.EVADE_BLOCKS else "nada a desviar"))
+		why = "engajado" if leader.engaged_with != null else ("em ação" if battle.is_attacking(leader) else ("falta ATB" if leader.blocks() < battle.evade_cost(leader) else "nada a desviar"))
 	_menu.set_detail(2, why)
 
 
@@ -423,12 +428,16 @@ func _fill_fight(keep_index: bool) -> void:
 			price = "em ação"
 		var tail := ""
 		var accent := Color(0, 0, 0, 0)
+		if sk.is_aoe:
+			tail += " · [ÁREA]"
+		elif sk.is_friendly:
+			tail += " · [GRUPO]"
 		if target != null:
 			if sk.kind == Skill.Kind.STATUS:
-				tail = " · sem dano"
+				tail += " · sem dano"
 			else:
 				var weak := sk.element in target.weaknesses
-				tail = " · ≈%d%s" % [Battle.estimate_damage(leader, target, sk), " FRAQ." if weak else ""]
+				tail += " · ≈%d%s" % [Battle.estimate_damage(leader, target, sk), " FRAQ." if weak else ""]
 				if weak:
 					accent = Color("ffd45a")
 		entries.append({
@@ -445,6 +454,10 @@ func _update_fight_header(i: int) -> void:
 		return
 	var sk := _fight_skills[i]
 	var text := Skill.kind_name(sk.kind).to_upper()
+	if sk.is_aoe:
+		text += " (ÁREA)"
+	elif sk.is_friendly:
+		text += " (SUPORTE)"
 	if _fight_target != null and (sk.kind == Skill.Kind.MELEE or sk.kind == Skill.Kind.PROJECTILE):
 		text += " %.2fs" % AttackPlanner.preview_travel(leader, _fight_target, sk.kind)
 	hud.set_menu_style(FanMenu.Style.DRAWER, text)
@@ -452,7 +465,10 @@ func _update_fight_header(i: int) -> void:
 
 ## Uses a move on a target right now (Fight menu, number keys and Repeat all end here).
 func _use_move(skill: Skill, target: Combatant) -> bool:
-	if target == null or not target.is_alive():
+	if skill.is_friendly:
+		if target == null or not target.is_alive() or target.is_player != leader.is_player:
+			target = leader
+	elif target == null or not target.is_alive():
 		return false
 	if not (leader.can_pay(skill.cost) and not battle.is_winding_up(leader)):
 		return false
@@ -621,7 +637,9 @@ func _on_chosen(i: int) -> void:
 				3: _show_tactics()
 				4: _show_status()
 		S.FIGHT:
-			if _use_move(_fight_skills[i], _fight_target if _fight_target != null and _fight_target.is_alive() else _default_target()):
+			var sk := _fight_skills[i]
+			var tgt: Combatant = leader if sk.is_friendly else (_fight_target if _fight_target != null and _fight_target.is_alive() else _default_target())
+			if _use_move(sk, tgt):
 				_show_main()
 		S.ITEMS:
 			var item := _item_list[i]

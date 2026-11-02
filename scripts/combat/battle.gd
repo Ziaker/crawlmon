@@ -18,6 +18,10 @@ signal attack_cancelled(inc)
 ## GOLPE (STRIKE) -> RETORNO (RETURN). BattleFx only draws the progress it reads here.
 signal attack_phase(inc, phase: int)  ## `inc` entered `phase` (Battle.Phase).
 signal manual_evaded(actor: Combatant, inc)
+## A perfect Evade during its own run: `actor` jumped from `from` to the front of `opponent`.
+signal evade_teleported(actor: Combatant, opponent: Combatant, from: Vector3)
+## A non-perfect Evade during its own run: the run was cancelled and `actor` is back home.
+signal evade_returned(actor: Combatant, from: Vector3)
 signal stepped(actor: Combatant, to_pos: int)  ## `actor` started a position step.
 ## `actor` dodged `opponent`'s attack on its way in: the attack is interrupted and `actor`
 ## is now next to it. BattleFx draws the arrival.
@@ -39,7 +43,9 @@ const REWARD_FLY := 0.25  ## Seconds it flies to the HUD.
 const REWARD_IMPACT := 0.46  ## Seconds of impact effect at the slot.
 const SKILL_BLOCKS := 2.0
 const ITEM_BLOCKS := 1.0
-const EVADE_BLOCKS := 2.0  ## Manual Evade (was 3 in the GDD; see report).
+const EVADE_STILL := 3.0  ## Evade while standing still (not running in its own attack) — D-006.
+const EVADE_ON_RUN := 2.0  ## Evade during the run of its own melee attack — D-006.
+const PERFECT_WINDOW := 0.22  ## Last seconds before the hit, inside the strike (the Evade window): a perfect Evade (D-027, D-030).
 const AUTO_DODGE_CHANCE := 0.10  ## Automatic evade chance per hit, for every target.
 const WINDUP := 1.5  ## Every attack takes this long to land; the attacker's ATB is locked meanwhile.
 const STEP_MAX := 2  ## Positions go from -STEP_MAX (behind) to +STEP_MAX (in front).
@@ -63,6 +69,7 @@ var rewards: Array[BattleReward] = []
 var _reward_id := 0
 var _landing: Array[Incoming] = []  ## Resolved attacks whose strike has not landed yet.
 var _returning: Array[Incoming] = []  ## Struck already: only the return is left to play.
+var _freeze_left := 0.0  ## Hit-stop: the whole battle clock holds still for this many seconds.
 var _evade := BattleEvade.new(self)
 var _planner := AttackPlanner.new(self)
 var _hop_back := 0.3  ## Placeholder; BattleFx decides how long a return takes.
@@ -97,7 +104,16 @@ func _update_positions() -> void:
 			c.pos = c.rest_pos()
 
 
+## Holds the battle clock for `seconds` (the contact freeze), so movement, rules and the
+## frozen animations stay on the same frame.
+func freeze(seconds: float) -> void:
+	_freeze_left = maxf(_freeze_left, seconds)
+
+
 func _process(delta: float) -> void:
+	if _freeze_left > 0.0:
+		_freeze_left -= delta
+		return
 	if not running:
 		if not _returning.is_empty():
 			_step_attacks(delta)  # The winners' leaps back still play out after the last hit.
@@ -120,10 +136,16 @@ func _process(delta: float) -> void:
 # --- Actions (same for the player, allies and enemies) -----------------------
 
 func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
-	if not actor.is_alive() or not target.is_alive() or is_winding_up(actor) or not actor.can_pay(skill.cost):
+	if not actor.is_alive() or is_winding_up(actor) or not actor.can_pay(skill.cost):
 		return false
-	if actor.engaged_with != null and target != actor.engaged_with:
-		return false  # Engaged: it only acts on the opponent it is standing next to.
+	if skill.is_friendly:
+		if target == null or not target.is_alive() or target.is_player != actor.is_player:
+			target = actor
+	else:
+		if target == null or not target.is_alive():
+			return false
+		if actor.engaged_with != null and target != actor.engaged_with:
+			return false  # Engaged: it only acts on the opponent it is standing next to.
 	actor.pay(skill.cost)
 	var inc := Incoming.new()
 	inc.attacker = actor
@@ -133,17 +155,20 @@ func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
 	inc.kind = skill.kind
 	inc.ground = skill.ground
 	inc.label = skill.display_name
-	# After a Perfect Evade the next attack is immediate: no wind-up, no preparation.
-	# Instant (no wind-up, no travel) only while engaged next to the opponent it interrupted;
-	# back at its original spot an attack is prepared and travels like any other.
-	inc.instant = actor.engaged_with != null
-	actor.counter_ready = false
-	if actor.engaged_with != null:
+	inc.is_aoe = skill.is_aoe
+	inc.is_friendly = skill.is_friendly
+	inc.skill = skill
+	# After a perfect Evade during its own run, the next attack is immediate (D-027).
+	inc.instant = (actor.engaged_with != null or actor.counter_ready) and not skill.is_friendly
+	if not skill.is_friendly:
+		actor.counter_ready = false
+	if actor.engaged_with != null and not skill.is_friendly:
 		actor.engage_left = ENGAGE_SECONDS  # Acting keeps it engaged.
 	inc.total_windup = 0.0 if inc.instant else WINDUP
 	inc.time_left = 0.0 if inc.instant else WINDUP
 	incoming.append(inc)
 	log_message.emit("%s prepara %s em %s..." % [actor.name, skill.display_name, target.name])
+	_planner.redirect_if_blocked(inc)
 	attack_telegraphed.emit(inc)
 	return true
 
@@ -246,6 +271,10 @@ func is_attacking(c: Combatant) -> bool:
 	return false
 
 
+func evade_cost(actor: Combatant) -> float:
+	return _evade.cost(actor)
+
+
 func find_evadable(actor: Combatant) -> Incoming:
 	return _evade.find_evadable(actor)
 
@@ -292,10 +321,11 @@ func _run_ai() -> void:
 			continue
 		if c.act_policy == Combatant.Act.HOLD or not c.can_pay(SKILL_BLOCKS):
 			continue
-		var target := c.engaged_with if c.engaged_with != null and c.engaged_with.is_alive() else _first_alive(foes)
+		var sk := _pick_skill(c)
+		var target := c if sk.is_friendly else (c.engaged_with if c.engaged_with != null and c.engaged_with.is_alive() else _first_alive(foes))
 		if target == null:
 			return
-		use_skill(c, _pick_skill(c), target)
+		use_skill(c, sk, target)
 
 
 func _first_consumable(c: Combatant) -> Item:
@@ -319,6 +349,8 @@ func _pick_skill(c: Combatant) -> Skill:
 
 func _resolve_incoming(delta: float) -> void:
 	for inc in incoming.duplicate():
+		if inc.attacker.is_alive() and not inc.target.is_alive():
+			_retarget_aoe(inc)
 		if not inc.attacker.is_alive() or not inc.target.is_alive():
 			attack_cancelled.emit(inc)
 			incoming.erase(inc)
@@ -363,25 +395,27 @@ func _step_attacks(delta: float) -> void:
 				attack_phase.emit(inc, inc.phase)
 				_roll_ai_evade(inc)
 		AttackMotion.update(inc)
+		AttackMotion.update_projectile(inc)
 		if inc.can_evade_now() and inc.ai_evade_at >= 0.0 and inc.phase_time >= inc.ai_evade_at:
 			inc.ai_evade_at = -1.0
-			if inc.target.is_alive() and inc.target.blocks() >= EVADE_BLOCKS and not inc.evade_tried:
+			if inc.target.is_alive() and inc.target.blocks() >= evade_cost(inc.target) and not inc.evade_tried:
 				try_evade(inc.target, inc)
 		if inc.plan_i >= inc.plan.size():
 			if not inc.impacted:
 				_strike(inc)
 			inc.phase = Phase.DONE
 			_returning.erase(inc)
-			if inc.motion != "engaged":
+			if inc.motion != "engaged" and inc.attacker.is_alive():
 				inc.attacker.clear_rest()  # Back at its step spot.
+				inc.attacker.pos = inc.attacker.rest_pos()
 			attack_phase.emit(inc, Phase.DONE)
 	_check_end()
 
 
 ## A computer-controlled target reacts on the way in with a chance equal to its speed.
 func _roll_ai_evade(inc: Incoming) -> void:
-	if inc.phase != Phase.TRAVEL or inc.ghost:
-		return
+	if inc.phase != inc.impact_phase or inc.ghost or inc.is_friendly:
+		return  # (a buff or a heal is not something to dodge)
 	var t := inc.target
 	if t == party[0] or t.react_policy != Combatant.React.EVADE:
 		return
@@ -390,20 +424,93 @@ func _roll_ai_evade(inc: Incoming) -> void:
 
 
 func _strike(inc: Incoming) -> void:
+	AttackMotion.arrive(inc)
 	inc.impacted = true
 	_landing.erase(inc)
 	if not _returning.has(inc):
 		_returning.append(inc)
 	if inc.ghost or inc.interrupted:
 		return
+	if not inc.target.is_alive():
+		_retarget_aoe(inc)
 	if inc.dodged:
 		log_message.emit("%s esquivou de %s!" % [inc.target.name, inc.label])
-	elif inc.attacker.is_alive() and inc.target.is_alive() and inc.kind == Skill.Kind.STATUS:
-		# A status move deals no damage (its effect is not defined yet).
-		log_message.emit("%s usa %s em %s" % [inc.attacker.name, inc.label, inc.target.name])
-		hit_resolved.emit(inc.attacker, inc.target, inc.element, {"status": true, "evaded": false, "dmg": 0, "weak": false, "crit": false, "gain": 0, "whiffed": false, "power": 0.0, "skill_name": inc.label})
+	elif inc.attacker.is_alive() and inc.kind == Skill.Kind.STATUS:
+		_execute_status_move(inc)
 	elif inc.target.is_alive() and (inc.attacker.is_alive() or inc.kind == Skill.Kind.PROJECTILE):
 		_hit(inc.attacker, inc.target, inc.power, inc.element, inc.label, inc.whiffed, inc.auto_dodged)
+		if inc.is_aoe:
+			var foes: Array[Combatant] = enemies if inc.attacker.is_player else party  # The attacker's opponents.
+			for foe in foes:
+				if foe.is_alive() and foe != inc.target:
+					_hit(inc.attacker, foe, inc.power * 0.85, inc.element, inc.label, inc.whiffed, false)
+
+
+## An area attack whose aimed target is gone aims at the next opponent still standing, so the
+## rest of the team does not escape it. (Single-target attacks are simply lost.)
+func _retarget_aoe(inc: Incoming) -> void:
+	if not inc.is_aoe or inc.is_friendly:
+		return
+	var foes: Array[Combatant] = enemies if inc.attacker.is_player else party
+	var next := _first_alive(foes)
+	if next != null:
+		inc.target = next
+
+
+func _execute_status_move(inc: Incoming) -> void:
+	var mid := BattleSpace.move_id(inc.label)
+	match mid:
+		"media":
+			var team: Array[Combatant] = party if inc.attacker.is_player else enemies
+			log_message.emit("%s usa Media! A equipe recupera HP!" % inc.attacker.name)
+			for ally in team:
+				if ally.is_alive():
+					var heal_amount := maxi(12, roundi(ally.max_hp * 0.40))
+					var before := ally.hp
+					ally.heal(heal_amount)
+					healed.emit(inc.attacker, ally, ally.hp - before)
+					hit_resolved.emit(inc.attacker, ally, inc.element, {
+						"status": true, "evaded": false, "dmg": 0, "weak": false,
+						"crit": false, "gain": 0, "whiffed": false, "power": 0.0,
+						"skill_name": inc.label, "heal": true
+					})
+		"tarukaja":
+			var team: Array[Combatant] = party if inc.attacker.is_player else enemies
+			log_message.emit("%s usa Tarukaja! O ataque da equipe aumentou!" % inc.attacker.name)
+			for ally in team:
+				if ally.is_alive():
+					ally.buff_stat("atk", 1)
+					hit_resolved.emit(inc.attacker, ally, inc.element, {
+						"status": true, "evaded": false, "dmg": 0, "weak": false,
+						"crit": false, "gain": 0, "whiffed": false, "power": 0.0,
+						"skill_name": inc.label, "buff": "atk"
+					})
+		"rakunda":
+			if inc.target.is_alive():
+				inc.target.buff_stat("def", -1)
+				log_message.emit("%s usa Rakunda! A defesa de %s foi reduzida!" % [inc.attacker.name, inc.target.name])
+				hit_resolved.emit(inc.attacker, inc.target, inc.element, {
+					"status": true, "evaded": false, "dmg": 0, "weak": false,
+					"crit": false, "gain": 0, "whiffed": false, "power": 0.0,
+					"skill_name": inc.label, "debuff": "def"
+				})
+		"sukunda":
+			if inc.target.is_alive():
+				inc.target.buff_stat("speed", -1)
+				log_message.emit("%s usa Sukunda! A agilidade de %s foi reduzida!" % [inc.attacker.name, inc.target.name])
+				hit_resolved.emit(inc.attacker, inc.target, inc.element, {
+					"status": true, "evaded": false, "dmg": 0, "weak": false,
+					"crit": false, "gain": 0, "whiffed": false, "power": 0.0,
+					"skill_name": inc.label, "debuff": "spd"
+				})
+		_:
+			if inc.target.is_alive():
+				log_message.emit("%s usa %s em %s" % [inc.attacker.name, inc.label, inc.target.name])
+				hit_resolved.emit(inc.attacker, inc.target, inc.element, {
+					"status": true, "evaded": false, "dmg": 0, "weak": false,
+					"crit": false, "gain": 0, "whiffed": false, "power": 0.0,
+					"skill_name": inc.label
+				})
 
 
 ## Resolved attacks that FX still has to draw (landing or returning).
@@ -509,6 +616,7 @@ func _hit(attacker: Combatant, target: Combatant, power: float, element: Element
 func _drop_returns_of(c: Combatant) -> void:
 	for inc in _returning.duplicate():
 		if inc.attacker == c and not inc.ghost:
+			c.set_rest(c.pos)  # It falls where it is.
 			_returning.erase(inc)
 			attack_cancelled.emit(inc)
 
@@ -534,7 +642,14 @@ func _interrupt_attacks_of(c: Combatant, hitter: Combatant, force: float) -> voi
 			continue  # Projectile already fired and in flight: hitting the caster no longer destroys it.
 		_landing.erase(inc)
 		inc.interrupted = true
-		if inc.motion == "cast":
+		if not c.is_alive():
+			c.set_rest(c.pos)  # It falls where it is: no hop home for a body.
+			inc.motion = "cast"
+			inc.plan = [[Phase.RETURN, 0.05]]
+			inc.plan_i = 0
+			inc.phase = Phase.RETURN
+			inc.phase_time = 0.0
+		elif inc.motion == "cast":
 			inc.plan = [[Phase.RETURN, 0.55]]
 			inc.plan_i = 0
 			inc.phase = Phase.RETURN
@@ -576,7 +691,19 @@ func _check_end() -> void:
 	for inc in incoming:
 		attack_cancelled.emit(inc)
 	incoming.clear()
+	# Winners caught mid-run or mid-swing hop home from where they are; nothing else lands.
+	for inc in _landing.duplicate():
+		if inc.attacker.is_alive() and AttackMotion.carries(inc):
+			AttackMotion.begin_plain_return(inc, inc.attacker.pos)
+			inc.impacted = true
+			inc.interrupted = true
+			inc.plan_i = 0
+			inc.phase = Phase.RETURN
+			inc.phase_time = 0.0
+			_returning.append(inc)
+			attack_phase.emit(inc, Phase.RETURN)
 	_landing.clear()
+	_update_positions()
 	for r in rewards:
 		_release_pending(r)
 	rewards.clear()
