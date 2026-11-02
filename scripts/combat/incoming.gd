@@ -32,6 +32,8 @@ var phase := Phase.WINDUP
 var phase_time := 0.0  ## Seconds spent in the current phase.
 var impacted := false
 var interrupted := false  ## Stopped on its way by a manual Evade: it never hits.
+var evader_home := false  ## Dodged by a non-perfect Evade during the evader's run: it went home (D-029).
+var perfect := false  ## Dodged by a perfect Evade during the evader's own run (D-027).
 var ghost := false  ## Not an attack: only the return of an engaged character.
 var ai_evade_at := -1.0  ## Seconds into TRAVEL when an AI target will try to evade (-1: never).
 ## Kinematics, planned by AttackPlanner when the wind-up ends (flat x/z, seconds):
@@ -69,7 +71,8 @@ func progress() -> float:
 
 ## The manual Evade works only while the attack is on its way (the run or the projectile).
 func can_evade_now() -> bool:
-	return resolved and not impacted and not interrupted and not ghost and phase == Phase.TRAVEL
+	# Only during the strike itself: the phase that ends with the hit (D-030).
+	return resolved and not impacted and not interrupted and not ghost and phase == impact_phase
 
 
 ## Seconds of travel left (the Evade window); large when it is not travelling.

@@ -85,7 +85,7 @@ func _ready() -> void:
 	hud.setup(battle, party, enemies, $Camera3D, models, director)
 	var debug_panel := BattleDebug.new()  # F1: quick-test panel (hotkeys F2..F11)
 	add_child(debug_panel)
-	debug_panel.setup(battle, party, enemies)
+	debug_panel.setup(battle, party, enemies, fx, $Camera3D, director)
 	_menu = hud.menu
 	hud.status_closed.connect(_close_status)
 	hud.status_unit_selected.connect(_on_status_unit)
@@ -99,6 +99,8 @@ func _ready() -> void:
 	battle.attack_resolved.connect(fx.resolve_attack)
 	battle.attack_phase.connect(fx.on_phase)
 	battle.engaged.connect(fx.on_engaged)
+	battle.evade_teleported.connect(fx.on_evade_teleported)
+	battle.evade_returned.connect(fx.on_evade_returned)
 	battle.attack_interrupted.connect(fx.on_attack_interrupted)
 	if BattleTrace.wanted():  # Flight recorder: every frame and event to user://battle_trace.jsonl
 		var trace := BattleTrace.new()
@@ -283,9 +285,9 @@ func _on_died(c: Combatant) -> void:
 
 ## A manual Evade by the leader slows the whole game (the Burst slow-motion) until the
 ## player executes the instant counter-action or the timer expires.
-func _on_manual_evaded(actor: Combatant, _inc) -> void:
-	if actor != leader or actor.engaged_with == null:
-		return  # Slow-motion only goes with the engaged state.
+func _on_manual_evaded(actor: Combatant, inc) -> void:
+	if actor != leader or not inc.perfect:
+		return  # Slow-motion only with a perfect Evade, until the counter-attack (D-027).
 	_slow_token += 1
 	var token := _slow_token
 	Engine.time_scale = SLOWMO_SCALE
@@ -345,7 +347,7 @@ func _show_main() -> void:
 	_menu.set_entries([
 		{"text": "Fight", "detail": "%d ATB" % int(Battle.SKILL_BLOCKS)},
 		{"text": "Itens", "detail": "%d ATB" % int(Battle.ITEM_BLOCKS)},
-		{"text": "Evade", "detail": "%d ATB" % int(Battle.EVADE_BLOCKS)},
+		{"text": "Evade", "detail": "%d ATB" % int(battle.evade_cost(leader))},
 		{"text": "Tactics", "detail": "PAUSA"},
 		{"text": "Status", "detail": "PAUSA"},
 	])
@@ -362,9 +364,9 @@ func _update_main_enabled() -> void:
 	_menu.set_detail(1, "%d ATB" % int(Battle.ITEM_BLOCKS) if can_item else ("sem itens" if _consumables().is_empty() else "falta ATB"))
 	var can_evade := battle.find_evadable(leader) != null
 	_menu.set_enabled(2, can_evade)
-	var why := "%d ATB" % int(Battle.EVADE_BLOCKS)
+	var why := "%d ATB" % int(battle.evade_cost(leader))
 	if not can_evade:
-		why = "engajado" if leader.engaged_with != null else ("em ação" if battle.is_attacking(leader) else ("falta ATB" if leader.blocks() < Battle.EVADE_BLOCKS else "nada a desviar"))
+		why = "engajado" if leader.engaged_with != null else ("em ação" if battle.is_attacking(leader) else ("falta ATB" if leader.blocks() < battle.evade_cost(leader) else "nada a desviar"))
 	_menu.set_detail(2, why)
 
 

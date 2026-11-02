@@ -558,6 +558,14 @@ func on_phase(inc, phase: int) -> void:
 	fx_motion.on_phase(inc, phase)
 
 
+func on_evade_returned(actor: Combatant, from: Vector3) -> void:
+	fx_dodge.return_flash(actor, from)
+
+
+func on_evade_teleported(actor: Combatant, opponent: Combatant, from: Vector3) -> void:
+	fx_dodge.teleport_flash(actor, opponent, from)
+
+
 func on_engaged(actor: Combatant, opponent: Combatant, _inc) -> void:
 	fx_dodge.engage_arrive(actor, opponent)
 

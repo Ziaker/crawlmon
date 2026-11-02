@@ -36,6 +36,7 @@ var _spiral_floor: MeshInstance3D
 var _spiral_air: MeshInstance3D
 var _halftone: MeshInstance3D
 var _gible_anim: AnimationPlayer
+var _battle_fx: BattleFx
 var _shots := false
 var _plan: Array = []  ## [[effect, time]...] screenshots to take in --shots mode
 var _plan_i := 0
@@ -51,6 +52,8 @@ func _ready() -> void:
 	add_child(_bolt_root)
 	_core_mat = _unshaded(LAVENDER, 1.0, false)
 	_glow_mat = _unshaded(Color(VIOLET, 0.55), 0.55, true)
+	_battle_fx = BattleFx.new()
+	add_child(_battle_fx)
 	var ui := CanvasLayer.new()
 	add_child(ui)
 	_label = Label.new()
@@ -71,7 +74,12 @@ func _ready() -> void:
 
 
 func _update_label() -> void:
-	_label.text = "FX LAB   1 fundo PSI   2 raio psíquico   3 onda de choque   4 confusão   0 parar\nefeito: %s" % (_active if _active != "" else "-")
+	_label.text = "FX LAB — Catálogo Visual de VFX\n" + \
+		"Golpes: [T] Tackle A2/B1  [M] Megido  [B] Mabufula  [H] Hassou Tobi  [E] Titanomachia\n" + \
+		"Status: [C] Media  [A] Tarukaja  [D] Rakunda  [S] Sukunda\n" + \
+		"Clássicos: [P] Soco Rápido  [K] Caratê  [W] Quebra Telha  [J] Mordida  [R] Fúria Dragão  [G] Garra  [U] Escavadora\n" + \
+		"Especiais: [1] Fundo PSI  [2] Raio Psíquico  [3] Onda Choque  [4] Confusão  [0] Parar\n" + \
+		"Efeito ativo: %s" % (_active if _active != "" else "-")
 
 
 # --- Stage ---------------------------------------------------------------------------------
@@ -228,6 +236,22 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_2: _start("beam")
 		KEY_3: _start("thunder")
 		KEY_4: _start("confusion")
+		KEY_T: _start("tackle")
+		KEY_M: _start("megido")
+		KEY_B: _start("mabufula")
+		KEY_H: _start("hassou_tobi")
+		KEY_E: _start("titanomachia")
+		KEY_C: _start("media")
+		KEY_A: _start("tarukaja")
+		KEY_D: _start("rakunda")
+		KEY_S: _start("sukunda")
+		KEY_P: _start("soco_rapido")
+		KEY_K: _start("golpe_carate")
+		KEY_W: _start("quebra_telha")
+		KEY_J: _start("mordida")
+		KEY_R: _start("furia_dragao")
+		KEY_G: _start("garra_dragao")
+		KEY_U: _start("investida_escavadora")
 		KEY_0: _stop()
 
 
@@ -267,6 +291,8 @@ func _start(effect: String) -> void:
 		"confusion":
 			_backdrop_want = 0.6
 			_setup_confusion()
+		_:
+			_play_battle_vfx(effect)
 	_update_label()
 
 
@@ -567,3 +593,49 @@ func _ripple(pos: Vector3) -> void:
 	tw.tween_property(ring, "scale", Vector3(4.2, 0.15, 4.2), 0.8)
 	tw.tween_property(ring, "position:y", pos.y + 1.6, 0.8)
 	tw.chain().tween_callback(ring.queue_free)
+
+
+func _play_battle_vfx(effect: String) -> void:
+	if _battle_fx == null:
+		return
+	var target_pos := GIBLE_POS + Vector3(0, 1.2, 0)
+	var caster_pos := ABRA_POS + Vector3(0, 1.2, 0)
+	var dir := (GIBLE_POS - ABRA_POS).normalized()
+
+	match effect:
+		"tackle":
+			_battle_fx.fx_motion._tackle_strike_vfx(ABRA_POS + dir * 1.5, dir)
+			_flash.color = Color(1, 0.85, 0.3, 0.45)
+			var tw := create_tween()
+			tw.tween_interval(0.24)
+			tw.tween_callback(func() -> void:
+				_battle_fx.fx_impacts._tackle_impact(target_pos, dir, false)
+				_flash.color = Color(1, 0.5, 0.1, 0.5)
+			)
+		"megido":
+			_battle_fx.fx_impacts._impact_move("megido", target_pos, Color.GOLD, true, dir)
+			_flash.color = Color(1, 1, 0.8, 0.6)
+		"mabufula":
+			_battle_fx.fx_impacts._impact_move("mabufula", target_pos, Color.CYAN, true, dir)
+			_flash.color = Color(0.6, 0.9, 1.0, 0.4)
+		"hassou_tobi":
+			_battle_fx.fx_impacts._impact_move("hassou_tobi", target_pos, Color.WHITE, true, dir)
+			_flash.color = Color(0.9, 0.95, 1.0, 0.4)
+		"titanomachia":
+			_battle_fx.fx_impacts._impact_move("titanomachia", GIBLE_POS + Vector3(0, 0.1, 0), Color("ff8f00"), true, dir)
+			_flash.color = Color(1.0, 0.6, 0.2, 0.45)
+		"media":
+			_battle_fx.fx_impacts._status_impact_move("media", caster_pos)
+			_flash.color = Color(0.5, 1.0, 0.6, 0.4)
+		"tarukaja":
+			_battle_fx.fx_impacts._status_impact_move("tarukaja", caster_pos)
+			_flash.color = Color(1.0, 0.4, 0.1, 0.45)
+		"rakunda":
+			_battle_fx.fx_impacts._status_impact_move("rakunda", target_pos)
+			_flash.color = Color(0.6, 0.1, 0.8, 0.4)
+		"sukunda":
+			_battle_fx.fx_impacts._status_impact_move("sukunda", target_pos)
+			_flash.color = Color(0.0, 0.8, 0.9, 0.4)
+		_:
+			_battle_fx.fx_impacts._impact(Element.Type.FISICO, target_pos, Color.WHITE, false, dir, effect)
+			_flash.color = Color(1, 1, 1, 0.3)

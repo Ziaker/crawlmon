@@ -18,6 +18,10 @@ signal attack_cancelled(inc)
 ## GOLPE (STRIKE) -> RETORNO (RETURN). BattleFx only draws the progress it reads here.
 signal attack_phase(inc, phase: int)  ## `inc` entered `phase` (Battle.Phase).
 signal manual_evaded(actor: Combatant, inc)
+## A perfect Evade during its own run: `actor` jumped from `from` to the front of `opponent`.
+signal evade_teleported(actor: Combatant, opponent: Combatant, from: Vector3)
+## A non-perfect Evade during its own run: the run was cancelled and `actor` is back home.
+signal evade_returned(actor: Combatant, from: Vector3)
 signal stepped(actor: Combatant, to_pos: int)  ## `actor` started a position step.
 ## `actor` dodged `opponent`'s attack on its way in: the attack is interrupted and `actor`
 ## is now next to it. BattleFx draws the arrival.
@@ -39,7 +43,9 @@ const REWARD_FLY := 0.25  ## Seconds it flies to the HUD.
 const REWARD_IMPACT := 0.46  ## Seconds of impact effect at the slot.
 const SKILL_BLOCKS := 2.0
 const ITEM_BLOCKS := 1.0
-const EVADE_BLOCKS := 2.0  ## Manual Evade (was 3 in the GDD; see report).
+const EVADE_STILL := 3.0  ## Evade while standing still (not running in its own attack) — D-006.
+const EVADE_ON_RUN := 2.0  ## Evade during the run of its own melee attack — D-006.
+const PERFECT_WINDOW := 0.22  ## Last seconds before the hit, inside the strike (the Evade window): a perfect Evade (D-027, D-030).
 const AUTO_DODGE_CHANCE := 0.10  ## Automatic evade chance per hit, for every target.
 const WINDUP := 1.5  ## Every attack takes this long to land; the attacker's ATB is locked meanwhile.
 const STEP_MAX := 2  ## Positions go from -STEP_MAX (behind) to +STEP_MAX (in front).
@@ -152,11 +158,10 @@ func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
 	inc.is_aoe = skill.is_aoe
 	inc.is_friendly = skill.is_friendly
 	inc.skill = skill
-	# After a Perfect Evade the next attack is immediate: no wind-up, no preparation.
-	# Instant (no wind-up, no travel) only while engaged next to the opponent it interrupted;
-	# back at its original spot an attack is prepared and travels like any other.
-	inc.instant = actor.engaged_with != null and not skill.is_friendly
-	actor.counter_ready = false
+	# After a perfect Evade during its own run, the next attack is immediate (D-027).
+	inc.instant = (actor.engaged_with != null or actor.counter_ready) and not skill.is_friendly
+	if not skill.is_friendly:
+		actor.counter_ready = false
 	if actor.engaged_with != null and not skill.is_friendly:
 		actor.engage_left = ENGAGE_SECONDS  # Acting keeps it engaged.
 	inc.total_windup = 0.0 if inc.instant else WINDUP
@@ -264,6 +269,10 @@ func is_attacking(c: Combatant) -> bool:
 		if inc.attacker == c:
 			return true
 	return false
+
+
+func evade_cost(actor: Combatant) -> float:
+	return _evade.cost(actor)
 
 
 func find_evadable(actor: Combatant) -> Incoming:
@@ -389,7 +398,7 @@ func _step_attacks(delta: float) -> void:
 		AttackMotion.update_projectile(inc)
 		if inc.can_evade_now() and inc.ai_evade_at >= 0.0 and inc.phase_time >= inc.ai_evade_at:
 			inc.ai_evade_at = -1.0
-			if inc.target.is_alive() and inc.target.blocks() >= EVADE_BLOCKS and not inc.evade_tried:
+			if inc.target.is_alive() and inc.target.blocks() >= evade_cost(inc.target) and not inc.evade_tried:
 				try_evade(inc.target, inc)
 		if inc.plan_i >= inc.plan.size():
 			if not inc.impacted:
@@ -405,7 +414,7 @@ func _step_attacks(delta: float) -> void:
 
 ## A computer-controlled target reacts on the way in with a chance equal to its speed.
 func _roll_ai_evade(inc: Incoming) -> void:
-	if inc.phase != Phase.TRAVEL or inc.ghost or inc.is_friendly:
+	if inc.phase != inc.impact_phase or inc.ghost or inc.is_friendly:
 		return  # (a buff or a heal is not something to dodge)
 	var t := inc.target
 	if t == party[0] or t.react_policy != Combatant.React.EVADE:

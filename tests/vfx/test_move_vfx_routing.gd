@@ -41,13 +41,14 @@ func _test_incoming_data_receives_move_id(battle_fx: BattleFx) -> void:
 	battle_fx.add_child(target_model)
 	battle_fx.register(attacker, attacker_model)
 	battle_fx.register(target, target_model)
-	var inc := Battle.Incoming.new()
+	var inc := Incoming.new()
 	inc.attacker = attacker
 	inc.target = target
 	inc.kind = Skill.Kind.MELEE
 	inc.element = Element.Type.FISICO
 	inc.label = "Soco Rápido"
-	battle_fx.fx_motion.begin_attack(inc)
+	inc.move_id = BattleSpace.move_id(inc.label)  # As the game does (AttackPlanner) before the FX plan.
+	battle_fx.fx_attack_plan.begin_attack(inc)
 	_expect(inc.data.get("move_id", "") == "soco_rapido", "begin_attack must propagate normalized move_id into inc.data")
 
 

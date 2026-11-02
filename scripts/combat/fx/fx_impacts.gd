@@ -310,7 +310,6 @@ func _quick_punch_impact(pos: Vector3, dir: Vector3, big: bool) -> Array[Node3D]
 		var at := pos + off
 		var fist := fx._node(fx._sphere(0.22 * k), Color.WHITE if i % 2 == 0 else Color("d6fa66"), at)
 		fist.name = "QuickPunchFist%d" % i
-		root.add_child(fist)
 		nodes.append(fist)
 		var delay := float(i) * 0.012
 		fx._pop(fist, 0.14, Vector3.ONE * 0.3, Vector3.ONE * 1.6, delay)
@@ -512,6 +511,7 @@ func _psybeam_impact(pos: Vector3, dir: Vector3, big: bool) -> Array[Node3D]:
 	root.name = "PsybeamPrismImpact"
 	root.position = pos
 	fx.add_child(root)
+	var nodes: Array[Node3D] = [root]
 	VfxLib.flash_star(fx, pos, Color.WHITE, 4.4 * k, 0.22)
 	VfxLib.flipbook(fx, pos, "impact", Color("bd9afd"), 5.2 * k, 0.34, 12.0, 3.5)
 	for i in 3:
@@ -522,7 +522,6 @@ func _psybeam_impact(pos: Vector3, dir: Vector3, big: bool) -> Array[Node3D]:
 	var cleanup := root.create_tween()
 	cleanup.tween_interval(0.42)
 	cleanup.tween_callback(root.queue_free)
-	var nodes: Array[Node3D] = [root]
 	return nodes
 
 
@@ -811,7 +810,7 @@ func _bite_impact(pos: Vector3, dir: Vector3) -> Array[Node3D]:
 	throat.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	throat.position = Vector3(0, 0, -0.15)
 	throat.scale = Vector3(0.2, 0.2, 0.2)
-	root.add_child(throat)
+	miasma.add_child(throat)
 	var tw_throat := throat.create_tween().set_parallel(true)
 	tw_throat.tween_property(throat, "scale", Vector3.ONE, 0.14).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
 	tw_throat.tween_property(throat, "scale:y", 0.05, 0.18).set_delay(0.14)

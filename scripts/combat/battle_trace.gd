@@ -222,7 +222,7 @@ func _drive_leader() -> void:
 	if evadable != null and evadable.can_evade_now() and evadable.progress() > 0.35:
 		battle.try_evade(leader, evadable)
 		return
-	if battle.is_winding_up(leader) or leader.blocks() < Battle.SKILL_BLOCKS + Battle.EVADE_BLOCKS:
+	if battle.is_winding_up(leader) or leader.blocks() < Battle.SKILL_BLOCKS + Battle.EVADE_STILL:
 		return
 	var foe: Combatant = null
 	for e in enemies:

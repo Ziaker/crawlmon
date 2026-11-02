@@ -1,0 +1,37 @@
+# Regras obrigatórias para qualquer agente neste projeto
+
+**Leia isto e `docs/decisoes/` ANTES de qualquer tarefa. Sempre. Sem exceção. Mesmo que a tarefa pareça pequena ou não relacionada.**
+
+## 1. Ler as decisões do criador (sempre)
+
+1. Abra `docs/decisoes/README.md` e **todos** os arquivos `docs/decisoes/D-*.md`. Cada arquivo é uma decisão do criador, com a frase literal dele.
+2. Comece a resposta citando os IDs que se aplicam (ex.: "Decisões aplicáveis: D-006, D-007") ou escreva "nenhuma decisão se aplica". Isso prova que você leu.
+3. Também leia `docs/REGRAS_DO_JOGO.md` antes de mexer em combate. **O GDD (`docs/GDD.md`) é ignorado no combate** (D-001).
+4. Se o código contradiz uma decisão, a decisão vale. Diga a divergência; não "conserte" por conta própria sem pedir.
+
+## 2. Ambiguidade = perguntar
+
+- Se qualquer parte do pedido puder ser entendida de mais de um jeito (o que muda, onde, quando, em que caso), **pergunte antes de mexer em qualquer coisa**.
+- Não preencha lacunas com palpite, "padrão sensato" ou exemplo inventado. Não ofereça "meu padrão" para decidir por ele.
+- Não repita pergunta que o criador já respondeu: releia a conversa e `docs/decisoes/`.
+
+## 3. Fazer só o que foi pedido
+
+- Nada de mudar regra, tempo, visual, ordem de eventos ou comportamento que ele não pediu.
+- **Refatorar = comportamento idêntico.** "Auditoria", "proponha", "corrija" **não** autorizam mudar regra de jogo.
+- Sim a um plano grande **não** autoriza as escolhas de detalhe dentro dele: pergunte cada detalhe ambíguo.
+- Se um teste ou detector sinaliza algo, **pergunte** se o jogo ou o teste está errado; não altere o jogo para o teste passar.
+
+## 4. Novas decisões
+
+- Quando o criador definir uma regra, **crie `docs/decisoes/D-xxx-*.md` antes de escrever código** (frase literal, decisão, ambiguidades, estado). Atualize o índice.
+- Se duas decisões se contradizem, preserve as duas e pergunte qual vale.
+
+## 5. Git
+
+- **Nada de `push` sem autorização expressa.** Não commite o que não é seu: outras sessões editam os mesmos arquivos. Confira `git branch --show-current` e `git status` antes de commitar/enviar e diga o que será enviado.
+- Commits terminam com a linha de coautoria. `assets/modelos/` nunca vai ao Git.
+
+## 6. Antes de dizer "pronto"
+
+Releia as decisões aplicáveis e confirme, uma a uma, que nenhuma foi violada. Diga o que **não** foi verificado.

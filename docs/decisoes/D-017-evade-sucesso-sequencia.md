@@ -1,0 +1,21 @@
+# D-017 — Evade bem-sucedido contra corpo a corpo: interrompe, Burst, chegada, golpe de graça, engajamento
+
+- **Data:** 2026-11-02
+- **Área:** Combate
+- **Origem:** PROMPT + memória
+
+## O que o criador disse (literal)
+
+> (a) o atacante é interrompido onde está ... (b) o personagem que desviou ganha +1 Burst e chega imediatamente ao atacante interrompido ... (c) o primeiro golpe seguinte não tem preparo e é golpe de graça: o Burst paga a ação inteira. / Depois de um Evade perfeito o personagem só aparece ao lado do inimigo quando ele então ATACA em trajeto.
+
+## Decisão
+
+1) O atacante é **interrompido onde está** (cambaleia; o ataque é cancelado). 2) Quem desviou ganha **+1 Burst**. 3) O personagem **só vai para junto do inimigo quando ATACA** (o contra-ataque, sem preparo); parado/sem atacar **nunca** teleporta. 4) O Burst paga a ação inteira (mantido). 5) **Estado engajado** enquanto durar a câmera lenta do Burst (2 s reais): se agir, continua engajado; se não agir, volta com o pulo rápido; também volta se o oponente morrer. 6) O **desvio visual** (some, reaparece ao lado, volta) e o texto **MISS!** ficam.
+
+## Ambiguidades em aberto (perguntar antes de agir)
+
+Nenhuma.
+
+## Estado no código
+
+Implementado.
