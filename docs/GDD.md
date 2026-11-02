@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.20 — Rodada 29 de gameplay consolidada, 2026-11-01.  
+> **Revisão:** 1.21 — Rodada 30 de gameplay consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -123,12 +123,23 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
 **APROVADO (R29-Q5 = A) — dificuldade:** **aumentar progressivamente o desafio nos andares mais avançados e nas novas dungeons desbloqueadas na campanha**. **PENDENTE:** tipos de desafio, variação por bioma, níveis, curvas e números; sem definir fórmulas ou valores.
 
+**APROVADO (R30-Q1 = A) — retirada voluntária:** o jogador **pode retirar-se voluntariamente da dungeon antes de derrotar o chefe e retornar à campanha**. **PENDENTE:** interface/local da retirada, consequências sobre itens, progresso, Pokémon e a expedição. A retirada **não é equiparada automaticamente a derrota definitiva** (R23-Q3) nem a fuga de combate (R27-Q1).
+
+**APROVADO (R30-Q2 = A) — alcance de eventos:** as **consequências das escolhas em eventos narrativos ficam principalmente na expedição atual, sem persistência obrigatória entre dungeons**. Eventos continuam oferecendo escolhas e situações narrativas (R29-Q2). Não proibir expressamente exceções futuras, mas não criar persistência de campanha como requisito.
+
+**APROVADO (R30-Q3 = B) — identidade de chefes:** **chefes são principalmente inimigos mais difíceis dentro das regras usuais do combate**, **sem obrigatoriedade de fases ou mecânicas exclusivas**. O chefe principal **pode continuar acompanhado de outros inimigos** (R29-Q4), respeitando três inimigos ativos no máximo. Isso não proíbe conteúdo especial aprovado futuramente; não fixar fases ou padrões exclusivos agora.
+
+**APROVADO (R30-Q4 = A) — recompensas de novas expedições:** **rejogar dungeons já concluídas continua oferecendo oportunidades de obter Pokémon, itens e recursos**, com catálogo, elegibilidade, quantidades e condições pendentes. Não garantir cada recompensa em toda visita e não alterar a geração procedural nem os desbloqueios da campanha.
+
+**APROVADO (R30-Q5 = A) — entrada imediata de recrutados:** **quando houver vaga na equipe ativa, Pokémon recém-recrutados podem entrar diretamente nela após o recrutamento bem-sucedido**, respeitando o limite de **três Pokémon ativos**. Não impor entrada automática sem escolha do jogador nem definir interface. Se a equipe estiver completa, o novo recrutado pode ir à reserva (R24-Q3); as trocas durante a expedição seguem provisórias (R25-Q2).
+
+
 
 
 
  **APROVADO posteriormente (R23-Q1 = A):** movimento contínuo e livre nas quatro direções cardeais, sem movimento diagonal direto. **PENDENTE:** controles, colisão e animação.
 
-**PENDENTE:** sprites 2D, geração procedural, seeds, escadas/saídas, patrulha/detecção e estado das revisitas; catálogo de espécies iniciais, candidatos a recrutamento, reservas/hub futuro, evolução, experiência numérica, inventário/itens segurados, derrota, arenas, transições e narrativa; critérios concretos de desbloqueio na campanha; fuga/chefes e demais efeitos de fuga; biomas, Moves comuns, economia e recompensas; **presença concreta, catálogo e preços de lojas tanto dentro como fora das dungeons** (R29-Q1); **eventos com escolhas e consequências** (R29-Q2); **acesso e recompensas de novas expedições em dungeons já vencidas** (R29-Q3); **composição de chefes com apoio de inimigos** (R29-Q4); **como escalar a dificuldade entre andares e dungeons** (R29-Q5). Não presumir resolvidas essas pendências.
+**PENDENTE:** sprites 2D, geração procedural, seeds, escadas/saídas, patrulha/detecção e estado das revisitas; catálogo de espécies iniciais e condições de recrutamento, gestão da reserva/hub futuro, evolução, experiência numérica (incluindo reservas), inventário/itens segurados, **consequências da retirada voluntária da expedição** (R30-Q1), consequências da derrota definitiva, arenas, transições e narrativa; desbloqueios da campanha, fuga de combate, biomas, Moves, economia, catálogos/preços de lojas, consequências concretas dos eventos narrativos principalmente locais (R30-Q2), **recompensas concretas ao repetir dungeons** (R30-Q4), composição/dificuldade de chefes sem fases exclusivas obrigatórias (R30-Q3), escalonamento de dificuldade e **interface de inclusão de recrutados com vaga na equipe ativa** (R30-Q5). Não presumir resolvidas essas pendências.
 
 ### Fluxo de experiência (somente encadeamento conceitual)
 
@@ -588,6 +599,21 @@ Sem decisão adicional, não fixar:
 
 **Preservação:** D-001 a D-160, regras de seeds, equipe inimiga, campanha, ATB/Burst e ausência de PP permanecem intactas. Esta revisão não implementa código.
 
+
+### 7.21. Retirada, eventos, chefes, expedições repetidas e recrutamento — Rodada 30
+
+**APROVADO (R30-Q1 = A) — retirada voluntária da dungeon:** **o jogador pode encerrar voluntariamente uma expedição antes da vitória contra o chefe e voltar à campanha**. **PENDENTE:** como iniciar a retirada, se existem restrições e quais consequências se aplicam aos itens, progresso e Pokémon. **Não presumir que a retirada tem as mesmas penalidades de derrota definitiva** ou o mesmo efeito da fuga de um combate comum.
+
+**APROVADO (R30-Q2 = A) — consequências dos eventos:** as **escolhas nos eventos narrativos afetam principalmente a exploração atual, sem exigir que persistam entre dungeons**. Mantêm-se eventos com opções e consequências reais (R29-Q2); **PENDENTE:** catálogo e efeitos concretos. Não impor decisões de campanha permanentes; também não proibir expressamente exceções futuras.
+
+**APROVADO (R30-Q3 = B) — chefes dentro das regras usuais:** **chefes são principalmente oponentes mais difíceis no sistema de combate comum**, sem obrigação de fases ou mecânicas exclusivas. **R29-Q4 permanece válido:** podem receber apoio de outros inimigos, desde que **não ultrapassem três inimigos ativos**. **PENDENTE:** identidades, Moves, composição de encontros, escalonamento de dificuldade e possíveis exceções específicas, se aprovadas futuramente.
+
+**APROVADO (R30-Q4 = A) — incentivo para repetir dungeons:** **novas expedições em dungeons já concluídas continuam oferecendo oportunidades de conseguir novos Pokémon, itens e recursos**. **PENDENTE:** catálogos, chances e condições. A decisão não garante recompensa a cada expedição nem revoga a geração procedural, a reprodução por seed ou a progressão de campanha previamente aprovadas.
+
+**APROVADO (R30-Q5 = A) — Pokémon recém-recrutado com vaga:** **quando houver espaço entre os três Pokémon ativos, um novo recrutado pode integrar diretamente a equipe após o recrutamento bem-sucedido**. Isso não obriga entrada automática nem determina controles ou telas. **Com três ativos, mantém-se a possibilidade de enviar recrutados à reserva** (R24-Q3); reorganização da equipe durante a exploração continua provisória (R25-Q2). **PENDENTE:** interface, escolha do destino e condições específicas.
+
+**Preservação:** R30 não cria fórmulas, PP, ATB/Burst adicionais, itens automaticamente perdidos na retirada ou regras novas de combate de chefes. São apenas decisões documentais; não representam implementação.
+
 ## 8. Estado real do repositório (inspeção de código, não de execução)
 
 Referência: `main` em `1171b5f3c427edc34c486c82d42569f41fd0ea62`. Projeto **Godot 4.7**, configurado em `project.godot`, com cena inicial 2D.
@@ -775,6 +801,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-163 | R29-Q3 = A: **novas expedições a dungeons já concluídas**, sem revogar geração por exploração, persistência do andar na expedição e seed reproduzível. |
 | D-164 | R29-Q4 = A: **chefe principal pode contar com apoio de inimigos**, até três inimigos ativos simultâneos. |
 | D-165 | R29-Q5 = A: **dificuldade crescente por andares e desbloqueio de novas dungeons**, sem números aprovados. |
+| D-166 | R30-Q1 = A: **permitir retirada voluntária de dungeon antes do chefe, retornando à campanha**, consequências pendentes; não equiparar automaticamente à derrota. |
+| D-167 | R30-Q2 = A: **efeitos de eventos narrativos principalmente durante a exploração atual, sem persistência obrigatória entre dungeons**, eventos concretos pendentes. |
+| D-168 | R30-Q3 = B: **chefes principalmente mais difíceis dentro das regras comuns de combate, sem fases/mecânicas exclusivas obrigatórias**, podendo ter apoio até três inimigos ativos. |
+| D-169 | R30-Q4 = A: **novas expedições em dungeons concluídas continuam dando oportunidades de obter Pokémon, itens e recursos**, condições pendentes. |
+| D-170 | R30-Q5 = A: **novo Pokémon pode entrar diretamente na equipe ativa se houver vaga após recrutamento**, até três ativos; com equipe completa mantém-se a reserva. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -1182,39 +1213,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Preservação:** R29-Q1 é resposta C personalizada, não exige o hub futuro. A repetição de dungeons não revoga seeds nem layouts estáveis dentro de uma expedição. Decisões D-001 a D-160 preservadas; sem PP ou novos custos ATB/Burst.
 
-## 10.29. Rodada 30 — retirada, eventos, chefes, repetição e equipe (cinco perguntas abertas)
+## 10.29. Rodada 30 — retirada, eventos, chefes, repetição e equipe (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa aprovada. Foco em gameplay e progressão, sem microcasos técnicos.
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01, decisões D-166 a D-170.
 
-**R30-Q1 — O jogador pode encerrar voluntariamente uma expedição antes de vencer o chefe?**  
-A. **Sim, permitir retirar-se da dungeon e retornar à campanha**, com consequências para itens, progresso e Pokémon pendentes.  
-B. **Não, a expedição só termina por vitória, derrota definitiva ou outros desfechos já aprovados**, sem retirada voluntária.  
-C. Outra regra, descrita pelo criador.  
-*Fuga de um combate comum já foi aprovada; retirada da expedição é diferente.*
+| ID | Resposta literal do criador | Regra aprovada e pendências |
+| --- | --- | --- |
+| **R30-Q1** | **A** — “Permitir retirar-se voluntariamente da dungeon antes do chefe e voltar à campanha, com consequências pendentes.” | **Saída voluntária antes do chefe**, retornando à campanha, com consequências ainda por decidir. |
+| **R30-Q2** | **A** — “Consequências dos eventos narrativos ficam principalmente na expedição atual, sem persistência obrigatória entre dungeons.” | **Eventos de impacto principalmente local à expedição**, sem obrigação de persistência futura. |
+| **R30-Q3** | **B** — “Chefes são principalmente inimigos mais difíceis dentro do sistema comum de combate, sem mecânicas ou fases exclusivas obrigatórias.” | **Chefes dentro das mecânicas usuais, com dificuldade maior**, sem fases especiais obrigatórias; apoio permitido conforme R29-Q4. |
+| **R30-Q4** | **A** — “Novas expedições a dungeons concluídas continuam oferecendo oportunidades de obter Pokémon, itens e recursos, com regras pendentes.” | **Rejogar permite novas oportunidades de Pokémon, itens e recursos**, sem garantias de drop ou quantidades. |
+| **R30-Q5** | **A** — “Pokémon recém-recrutados podem entrar diretamente na equipe ativa quando houver vaga, respeitando o máximo de três.” | **Entrada direta possível com vaga na equipe ativa**, preservando envio à reserva com equipe cheia. |
 
-**R30-Q2 — As escolhas em eventos narrativos podem afetar algo depois da expedição atual?**  
-A. **Consequências principalmente dentro da exploração atual**, sem persistência obrigatória para a campanha.  
-B. **Algumas decisões podem repercutir na campanha ou em expedições futuras**, com regras e efeitos pendentes.  
-C. Outro sistema narrativo, descrito pelo criador.  
-*R29-Q2 aprovou eventos com escolhas; não sua persistência.*
+**Preservação:** as 165 decisões anteriores permanecem válidas. R30-Q1 não equipara abandono a derrota; R30-Q3 não revoga a possibilidade de inimigos auxiliares; R30-Q5 não obriga entrada automática. Não foram fixados números, fórmulas, PP nem novos custos ATB/Burst.
 
-**R30-Q3 — Os chefes terão mecânicas próprias, diferentes das dos inimigos comuns?**  
-A. **Sim, priorizar padrões de ataque, fases ou mecânicas especiais de chefes**, conteúdo pendente.  
-B. **Chefes serão principalmente inimigos mais difíceis dentro das regras usuais de combate**, sem fases ou mecânicas exclusivas obrigatórias.  
-C. Outra abordagem, descrita pelo criador.  
-*R29-Q4 permite inimigos de apoio, mas não define os golpes e desafios de chefes.*
+## 10.30. Rodada 31 — consequências de expedições, combate e progressão da equipe (cinco perguntas abertas)
 
-**R30-Q4 — O que o jogador pode conquistar ao explorar novamente uma dungeon já concluída?**  
-A. **Continuar obtendo Pokémon, itens e recursos em novas expedições**, conforme condições pendentes.  
-B. **Concentrar recompensas importantes na primeira conclusão**, mantendo novas visitas sobretudo para explorar e treinar; exceções pendentes.  
-C. Outra regra de recompensas, descrita pelo criador.  
-*Rejogar dungeons já foi aprovado na R29-Q3; sua recompensa ainda não.*
+**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa foi aprovada. Questões de gameplay comprovadamente pendentes, distintas das decisões anteriores.
 
-**R30-Q5 — Quando há vaga nos três ativos, o Pokémon recém-recrutado entra na equipe imediatamente?**  
-A. **Pode entrar diretamente na equipe ativa após recrutamento bem-sucedido**, com interface e condições pendentes.  
-B. **Vai primeiro à reserva e o jogador escolhe quando incluí-lo entre os ativos**, mesmo com vaga; regras pendentes.  
-C. Outro fluxo, descrito pelo criador.  
-*Interação voluntária e reserva com equipe completa já estão aprovadas.*
+**R31-Q1 — O que acontece com os itens coletados quando o jogador abandona voluntariamente uma dungeon?**  
+A. **Mantém os itens coletados durante a expedição**, mesmo sem vencer o chefe; outras consequências pendentes.  
+B. **Perde itens coletados que não estejam sendo segurados**, assim como na derrota definitiva; itens segurados são mantidos.  
+C. Outro tratamento de itens, especificado pelo criador.  
+*R30-Q1 aprovou retirar-se voluntariamente, mas não suas consequências. R25-Q4 trata especificamente de derrota definitiva.*
+
+**R31-Q2 — Se o protagonista cair em combate 3D, mas seus aliados ainda puderem lutar, o que acontece?**  
+A. **A batalha continua com os aliados sob IA**, com condições de vitória/derrota e recuperação do protagonista pendentes.  
+B. **A queda do protagonista encerra imediatamente a batalha como derrota**, mesmo que os aliados estejam ativos.  
+C. Outro comportamento, especificado pelo criador.  
+*Derrota definitiva encerra a exploração, mas o GDD ainda não define o momento exato da derrota em equipe.*
+
+**R31-Q3 — Os Pokémon que ficam na reserva podem ganhar experiência com as vitórias da equipe ativa?**  
+A. **Sim, Pokémon da reserva podem receber experiência de vitórias**, com critérios e quantidades pendentes.  
+B. **Não, experiência de vitória fica restrita a participantes ativos**, mantendo progressão dos reservados por outras atividades futuras.  
+C. Outro sistema de experiência para reservas, especificado pelo criador.  
+*R26-Q3 garante XP aos participantes ativos, mas não decidiu sobre os reservados.*
+
+**R31-Q4 — Como o jogador conhecerá os próximos objetivos da campanha que desbloqueiam dungeons?**  
+A. **Missões e objetivos apresentados por personagens/NPCs e acontecimentos narrativos**, com catálogo e sequência pendentes.  
+B. **Objetivos apresentados diretamente na seleção das dungeons e no progresso da campanha**, sem depender de receber missões de NPCs.  
+C. Outra apresentação ou combinação, especificada pelo criador.  
+*A campanha e seus desbloqueios foram aprovados; a forma de apresentar os objetivos ainda não.*
+
+**R31-Q5 — Como os pontos de descanso influenciam a exploração, além da recuperação de MP já aprovada?**  
+A. **Serão locais seguros de pausa e preparação dentro das dungeons**, com serviços adicionais pendentes.  
+B. **Serão pontos de recuperação integrados à exploração, sem criar necessariamente uma área segura ou interromper ameaças ao redor.**  
+C. Outra função de descanso, especificada pelo criador.  
+*Pontos de descanso com restauração completa de MP já existem como requisito; localização, segurança e outros benefícios continuam pendentes.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -1265,5 +1310,7 @@ C. Outro fluxo, descrito pelo criador.
 | 1.19 | 2026-11-01 | Rodada 28 (D-156 a D-160): moedas para comprar itens e recursos de NPCs/lojas; itens segurados passivos ou automaticamente consumidos como berries (R28-Q2 C); fuga bem-sucedida retorna ao encontro e impede inimigo de mover/encostar por 3 segundos (R28-Q3 C); biomas podem alterar inimigos/eventos/recompensas; conclusão de dungeon prioriza progressão/desbloqueios, materiais opcionais. Abre Rodada 29 sobre comércio, eventos, revisitas, chefes e dificuldade. | Rodada 28 fechada / Rodada 29 aberta |
 
 | 1.20 | 2026-11-01 | Rodada 29 (D-161 a D-165): NPCs/lojas dentro e fora das dungeons (C — “ambos”); eventos especiais com escolhas e consequências; novas expedições a dungeons já concluídas com geração procedural e seed reproduzível; chefe principal pode ter aliados até três inimigos ativos; dificuldade progressivamente crescente por andar e campanha. Abre Rodada 30 sobre retirada, persistência de eventos, chefes, repetição e recrutamento. | Rodada 29 fechada / Rodada 30 aberta |
+
+| 1.21 | 2026-11-01 | Rodada 30 (D-166 a D-170): permitir retirada voluntária antes do chefe retornando à campanha, sem consequências ainda definidas; escolhas narrativas com efeitos principalmente locais à expedição; chefes principalmente dentro do combate comum sem fases exclusivas obrigatórias; revisitas a dungeons concluídas ainda oferecem oportunidades de Pokémon, itens e recursos; Pokémon recrutados podem entrar diretamente na equipe quando há vaga. Abre Rodada 31 sobre retirada, derrota em equipe, reserva, campanha e descanso. | Rodada 30 fechada / Rodada 31 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
