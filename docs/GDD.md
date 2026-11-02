@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.17 — Rodada 26 de gameplay consolidada, 2026-11-01.  
+> **Revisão:** 1.18 — Rodada 27 de gameplay consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -93,9 +93,20 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
 **APROVADO (R26-Q5 = A) — salas secretas:** as **salas secretas das dungeons são descobertas opcionais voltadas a recompensas, eventos e NPCs especiais**, **sem obrigatoriedade de encontrá-las para alcançar o chefe**. **PENDENTE:** conteúdo concreto, como descobrir/acessar as salas e distribuição procedural. A prioridade dada a salas secretas em R25-Q5 permanece válida.
 
+**APROVADO (R27-Q1 = A) — fuga de combates comuns:** o jogador **pode tentar fugir de combates comuns**, com **condições, consequências e restrições ainda pendentes**; o tratamento de combates contra chefes não está definido. A possibilidade de tentar não equivale a fuga garantida. Não presumir custo ATB/Burst, chance de sucesso ou novo comando de interface sem decisão adicional.
+
+**APROVADO (R27-Q2 = A) — equipe inicial:** **a aventura começa somente com o Pokémon protagonista escolhido pelo jogador**, sem companheiros iniciais; o jogador **forma sua equipe mediante recrutamento** durante a aventura. Preservar equipe ativa máxima de três Pokémon (protagonista e até dois aliados IA) e regras de reserva.
+
+**APROVADO (R27-Q3 = B) — ambientes das dungeons:** **uma mesma dungeon pode conter ambientes mistos e mudar de tema ao longo de uma expedição**. **PENDENTE:** quais biomas/temas existem, como ocorrem as mudanças, sua influência na geração e no gameplay. Esta decisão não exige que toda dungeon sempre mude de bioma e não altera a geração procedural aprovada.
+
+**APROVADO (R27-Q4 = A) — aprendizado de Moves comuns:** **o nível e a progressão do Pokémon são a fonte principal de novos Moves comuns**, **sem excluir mestres, HMs/TMs de combate e outros meios anteriormente aprovados**. **PENDENTE:** listas por espécie, requisitos, ritmo e seleção/aprendizado de novos Moves; continuam quatro Moves equipados mais Tackle genérico e ausência de PP.
+
+**APROVADO (R27-Q5 = C) — recompensas de batalha:** resposta literal **“moedas recursos itens”**. **Moedas, recursos e itens** são **tipos de recompensas materiais previstas para batalhas comuns**, além da experiência já aprovada (R26-Q3). **PENDENTE:** se cada vitória sempre oferece recompensa, quais combinações são possíveis, taxas, valores, origem, uso de moedas/recursos e destino no inventário. Não inferir três recompensas garantidas em toda batalha nem taxas ou economia concreta.
+
+
  **APROVADO posteriormente (R23-Q1 = A):** movimento contínuo e livre nas quatro direções cardeais, sem movimento diagonal direto. **PENDENTE:** controles, colisão e animação.
 
-**PENDENTE:** sprites 2D, algoritmo de salas/corredores, seeds, localização de escadas/saídas, patrulha/detecção, estado de inimigos e itens em revisitas, catálogo/apresentação das **espécies iniciais escolhidas pelo jogador** (R26-Q1), requisitos e identificação de **candidatos especiais a recrutamento** (R26-Q2), condições de recrutamento, **regras definitivas de trocas e design do hub futuro** (R25-Q2), requisitos/efeitos da evolução escolhida (R25-Q3), **quantidades e situações especiais de experiência** (R26-Q3), inventário/itens segurados (R25-Q4), demais consequências de derrota, arenas, transições, narrativa, critérios de desbloqueio da campanha (R25-Q1), **recompensas após o chefe** (R26-Q4) e acesso/conteúdo das **salas secretas opcionais** (R26-Q5). Não presumir resolvidas essas pendências.
+**PENDENTE:** sprites 2D, algoritmo procedural, seeds, escadas/saídas, patrulha/detecção, estado em revisitas, catálogo/apresentação de espécies iniciais (R26-Q1), condições dos recrutáveis especiais (R26-Q2), gestão de reservas/hub futuro (R25-Q2), requisitos da evolução (R25-Q3), experiência numérica (R26-Q3), itens segurados (R25-Q4), derrota, arenas, transições, narrativa e desbloqueios da campanha (R25-Q1); **regras de fuga de combates comuns e chefes** (R27-Q1), **ambientes mistos e mudanças de tema dentro das dungeons** (R27-Q3), **aprendizado concreto de Moves comuns por nível** (R27-Q4), **moedas/recursos/itens de vitórias** e respectivas regras de obtenção/uso (R27-Q5), recompensas após chefe (R26-Q4) e conteúdo de salas secretas (R26-Q5). Não presumir resolvidas essas pendências.
 
 ### Fluxo de experiência (somente encadeamento conceitual)
 
@@ -510,6 +521,21 @@ Sem decisão adicional, não fixar:
 
 **Preservação:** todas as regras anteriores sobre ATB, Burst, MP, ausência de PP, limites de equipe, progressão manual/automática, Nature e condições de vitória/derrota permanecem aprovadas. Somente design documental foi acrescentado.
 
+
+### 7.18. Fuga, composição inicial, ambientes, Moves e recompensas — Rodada 27
+
+**APROVADO (R27-Q1 = A) — fuga:** o jogador **pode tentar fugir de combates comuns**. **PENDENTE:** como pedir fuga, elegibilidade, chance, consequências em sucesso/falha e como lidar com chefes. Não acrescentar automaticamente comando novo ou custos ATB/Burst e não garantir sucesso.
+
+**APROVADO (R27-Q2 = A) — início da aventura:** o jogador começa **apenas com o protagonista**, cuja espécie escolhe entre os iniciais (R26-Q1). **Companheiros são obtidos por recrutamento**, sem aliados concedidos automaticamente no início. Limite da equipe ativa: protagonista + dois aliados sob IA. Não mudar as regras dos recrutáveis especiais (R26-Q2).
+
+**APROVADO (R27-Q3 = B) — variedade ambiental:** **uma dungeon pode combinar diferentes ambientes e alterar seu tema durante a mesma expedição**. **PENDENTE:** catálogo e identidade dos biomas, transições, locais de mudança, relação com inimigos, eventos e geração procedural. Não exigir que toda dungeon tenha vários temas.
+
+**APROVADO (R27-Q4 = A) — aprendizado:** **Moves comuns são obtidos principalmente ao avançar de nível e pela progressão do Pokémon**, sem eliminar aprendizado combinado com mestres e possíveis personagens que concedem HMs (R23-Q5), nem HMs/TMs exclusivamente de combate por enquanto (R24-Q4). **PENDENTE:** catálogo de Moves por espécie, ritmo de aprendizado, requisitos e interface de troca/equipamento. Preservar quatro espaços equipados, Tackle separado, ausência de PP e custos ATB/Burst anteriores.
+
+**APROVADO (R27-Q5 = C) — recompensas materiais de batalhas comuns:** resposta literal **“moedas recursos itens”**. **Moedas, recursos e itens constituem tipos de recompensa previstos para batalhas comuns**, além do ganho de experiência já aprovado. A decisão **não exige** que cada vitória conceda as três categorias, que exista drop garantido ou que toda recompensa venha exclusivamente de combate. **PENDENTE:** taxas, quantidades, itens e recursos concretos, economia das moedas, coleta/inventário e distribuição de recompensas. Não definir moeda nominal ou sistema de compra sem aprovação.
+
+**Preservação:** R27 não altera resultados de derrota, preservação de itens segurados, evolução, regras de equipe/reserva, HMs/TMs de combate nem ATB/Burst/MP/PP. A conclusão de dungeon segue vinculada ao último andar e ao chefe.
+
 ## 8. Estado real do repositório (inspeção de código, não de execução)
 
 Referência: `main` em `1171b5f3c427edc34c486c82d42569f41fd0ea62`. Projeto **Godot 4.7**, configurado em `project.godot`, com cena inicial 2D.
@@ -682,6 +708,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-148 | R26-Q3 = A: **todos os Pokémon ativos participantes de batalha vencida recebem XP, sem exigir golpe final**, valores e casos especiais pendentes. |
 | D-149 | R26-Q4 = A: **vencer chefe encerra expedição e retorna à seleção/progressão da campanha**, recompensas/desbloqueios pendentes, sem exigir hub. |
 | D-150 | R26-Q5 = A: **salas secretas opcionais para recompensas, eventos e NPCs especiais**, não obrigatórias para alcançar o chefe. |
+| D-151 | R27-Q1 = A: **permitir tentar fuga de combates comuns**, elegibilidade/consequências pendentes; chefes indefinidos. |
+| D-152 | R27-Q2 = A: **começar a aventura apenas com o protagonista**, obtendo companheiros por recrutamento; limite de três ativos preservado. |
+| D-153 | R27-Q3 = B: **mesma dungeon pode misturar ambientes e mudar de tema durante a expedição**, detalhes pendentes. |
+| D-154 | R27-Q4 = A: **Moves comuns obtidos principalmente por nível e progressão**, sem excluir mestres, HMs/TMs e outros meios. |
+| D-155 | R27-Q5 = C — “moedas recursos itens”: **moedas, recursos e itens previstos como tipos de recompensas de batalhas comuns**, sem afirmar drops garantidos ou valores. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -1047,39 +1078,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Preservação:** as 145 decisões anteriores são mantidas. A distinção entre recrutamento especial e encontro hostil preserva R8-Q5/R24-Q2. Não acrescentar fórmulas, valores, PP, novos custos ATB/Burst ou funcionalidades não aprovadas.
 
-## 10.26. Rodada 27 — combates, companhia e variedade de dungeons (cinco perguntas abertas)
+## 10.26. Rodada 27 — combates, companhia e variedade de dungeons (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa aprovada. As cinco decisões são de gameplay e permanecem sem definição concreta no GDD.
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01, registradas como D-151 a D-155.
 
-**R27-Q1 — O jogador poderá fugir de uma batalha 3D durante uma expedição?**  
-A. **Sim, permitir tentar fugir de combates comuns**, com elegibilidade, consequências e restrições (inclusive chefes) pendentes.  
-B. **Não oferecer fuga como comando disponível em combates comuns**; encontros iniciados devem ter outro desfecho para terminar, com casos especiais pendentes.  
-C. Outra regra sobre fuga, descrita pelo criador.  
-*O GDD cita fuga apenas como possibilidade pendente; não alterar FIGHT/ITENS/Tactic/Evade ou seus custos.*
+| ID | Resposta literal do criador | Regra aprovada e pendências |
+| --- | --- | --- |
+| **R27-Q1** | **A** — “Permitir tentar fugir de combates comuns, com condições e consequências pendentes; tratamento de chefes ainda indefinido.” | **Tentativa de fuga em combates comuns**; critérios/chefes pendentes, sem custo novo. |
+| **R27-Q2** | **A** — “A aventura começa somente com o protagonista; os companheiros iniciais serão obtidos por recrutamento.” | **Iniciar apenas com protagonista** e obter aliados via recrutamento. |
+| **R27-Q3** | **B** — “Uma mesma dungeon pode misturar ambientes e mudar de tema ao longo da expedição; detalhes pendentes.” | **Ambientes/biomas mistos e mudanças possíveis de tema na dungeon**; como/quando pendente. |
+| **R27-Q4** | **A** — “Novos Moves comuns são obtidos principalmente por nível/progressão, sem excluir mestres, HMs/TMs e outros meios aprovados.” | **Moves comuns principalmente por nível**, mantendo fontes complementares e regras anteriores. |
+| **R27-Q5** | **C** — “moedas recursos itens” | **Moedas, recursos e itens como categorias de recompensa material em batalhas comuns**, não necessariamente todas em cada vitória; valores/regras pendentes. |
 
-**R27-Q2 — Como o jogador inicia a primeira exploração em relação aos companheiros Pokémon?**  
-A. **Começa com o protagonista sozinho e forma a equipe por recrutamento**, respeitando a capacidade de três ativos.  
-B. **Começa com protagonista e um ou mais aliados iniciais**, com espécies, obtenção e composição pendentes.  
-C. Outro arranjo inicial, descrito pelo criador.  
-*A escolha da espécie do protagonista está aprovada; a composição da equipe inicial não.*
+**Preservação:** R27-Q5 é a resposta C personalizada, sem transposição irrestrita das alternativas A/B. Regras D-001 a D-150, ATB/Burst, Nature, experiência dos participantes, slots e ausência de PP continuam válidas.
 
-**R27-Q3 — Qual será a principal identidade visual e ambiental das dungeons da campanha?**  
-A. **Dungeons com biomas/temas próprios** (por exemplo, floresta, ruínas ou cavernas), refletidos nos ambientes e conteúdos; catálogo pendente.  
-B. **Dungeons de ambientes mistos com mudanças de tema dentro de uma mesma expedição**, com transições e conteúdos pendentes.  
-C. Outra organização de ambientes, descrita pelo criador.  
-*Geração procedural de salas/corredores já está aprovada; esta pergunta define variedade de cenários, não algoritmo.*
+## 10.27. Rodada 28 — economia, combate e exploração ambiental (cinco perguntas abertas)
 
-**R27-Q4 — Qual será a principal forma de obter novos Moves comuns além de mestres e HMs/TMs de combate?**  
-A. **Desbloqueio por nível e progressão do Pokémon**, com catálogo e requisitos pendentes.  
-B. **Encontrar recompensas e oportunidades de aprendizado nas dungeons**, com catálogo/requisitos pendentes.  
-C. Outra combinação de meios de aprendizado, descrita pelo criador.  
-*Aprendizado combinado já foi aprovado em R23-Q5; não excluir mestres, HMs/TMs ou introduzir PP.*
+**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa aprovada. Questões de impacto real na experiência de jogo, comprovadamente ainda pendentes.
 
-**R27-Q5 — Como as batalhas comuns recompensarão o jogador além de experiência?**  
-A. **Oferecer possibilidades de obtenção de itens e recompensas após vitória**, com conteúdo e condições pendentes.  
-B. **Concentrar recompensas materiais em eventos, tesouros e salas das dungeons**, mantendo batalhas comuns sobretudo como fontes de experiência.  
-C. Outra distribuição de recompensas, descrita pelo criador.  
-*XP para todos os participantes ativos na vitória já está aprovado; valores ou chances de itens não serão definidos agora.*
+**R28-Q1 — Qual será a principal utilidade das moedas obtidas nas batalhas?**  
+A. **Comprar itens e recursos de NPCs/lojas**, com catálogo, preços e localização pendentes.  
+B. **Financiar melhorias e serviços de progressão da equipe**, com serviços, locais e preços pendentes.  
+C. Uma combinação ou outra função, descrita pelo criador.  
+*Moedas foram aprovadas como recompensa em R27-Q5; não há uso econômico aprovado.*
+
+**R28-Q2 — Qual deve ser a função principal dos itens que os Pokémon seguram?**  
+A. **Conceder efeitos passivos enquanto segurados**, com efeitos e restrições pendentes.  
+B. **Ser itens utilizáveis/ativáveis pelo Pokémon que os segura**, com condições e efeitos pendentes.  
+C. Outra função ou combinação, descrita pelo criador.  
+*Itens segurados têm proteção contra perda na derrota (R25-Q4), mas seu efeito no gameplay não está definido.*
+
+**R28-Q3 — Quando o jogador consegue fugir de um combate comum, o que acontece na exploração 2D?**  
+A. **Retorna ao mapa no ponto do encontro**, com regras para o Pokémon inimigo depois da fuga pendentes.  
+B. **Retorna ao mapa em posição segura diferente do ponto de encontro**, com critério de posicionamento pendente.  
+C. Outro resultado, descrito pelo criador.  
+*É possível tentar fugir (R27-Q1), mas ainda não se decidiu o efeito da fuga bem-sucedida.*
+
+**R28-Q4 — As mudanças de ambiente dentro de uma dungeon terão impacto nos encontros e conteúdos?**  
+A. **Sim, biomas/temas podem alterar tipos de inimigos, eventos e recompensas encontrados**, com listas e distribuição pendentes.  
+B. **Priorizar variedade visual e ambiental**, sem exigir que a mudança de tema altere a seleção de inimigos/recompensas.  
+C. Outra abordagem, descrita pelo criador.  
+*Ambientes mistos e mudanças de tema estão aprovados (R27-Q3); impacto no gameplay ainda não.*
+
+**R28-Q5 — Qual será a principal recompensa por concluir uma dungeon e derrotar seu chefe?**  
+A. **Progresso na campanha e desbloqueio de novas dungeons, com recompensas materiais opcionais a definir.**  
+B. **Progresso na campanha acompanhado de recompensas especiais de conclusão**, com categorias específicas a definir.  
+C. Outra composição de recompensas, descrita pelo criador.  
+*O último andar/chefe e o retorno à campanha já estão aprovados; conteúdo de recompensas continua pendente.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -1124,5 +1169,7 @@ C. Outra distribuição de recompensas, descrita pelo criador.
 | 1.16 | 2026-11-01 | Rodada 25 (D-141 a D-145): campanha com desbloqueio progressivo de dungeons; trocas equipe/reserva provisoriamente durante exploração, hub futuro ainda não definido (R25-Q2 C); evolução de espécie mediante requisitos sob escolha do jogador; derrota preserva somente itens segurados dentre os obtidos na expedição (R25-Q4 C), perdendo os demais obtidos; priorizar eventos, salas secretas, recompensas especiais e NPCs. Abre Rodada 26 com foco em protagonista, recrutamento, XP e conclusão. | Rodada 25 fechada / Rodada 26 aberta |
 
 | 1.17 | 2026-11-01 | Rodada 26 (D-146 a D-150): jogador escolhe espécie inicial do protagonista; Pokémon normalmente hostis podem aparecer como recrutáveis especiais identificados em mapa, preservando interação voluntária/contatos hostis; XP de vitória para todos os Pokémon ativos participantes sem exigência de golpe final; chefe do último andar encerra expedição e devolve seleção/progressão da campanha; salas secretas opcionais para recompensas/eventos/NPCs. Abre Rodada 27 sobre combates, companheiros, variedade ambiental, Moves e recompensas. | Rodada 26 fechada / Rodada 27 aberta |
+
+| 1.18 | 2026-11-01 | Rodada 27 (D-151 a D-155): tentativas de fuga em combates comuns; aventura começa somente com protagonista e companheiros recrutados; dungeons podem misturar ambientes e mudar de tema; Moves comuns principalmente por nível sem excluir fontes combinadas; moedas, recursos e itens como categorias de recompensa de batalhas comuns (R27-Q5 C), sem drops garantidos. Abre Rodada 28 sobre economia, itens segurados, fuga, biomas e conclusão de dungeons. | Rodada 27 fechada / Rodada 28 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
