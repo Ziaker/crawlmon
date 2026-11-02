@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.23 — Rodada 32 de gameplay consolidada, 2026-11-01.  
+> **Revisão:** 1.24 — Rodada 33 encerrada com quatro decisões aprovadas e uma questão rejeitada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -153,6 +153,17 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
 **APROVADO (R32-Q5 = B) — recrutamento especial por evento:** **interagir voluntariamente com um Pokémon especial elegível inicia uma tarefa ou evento que deve ser resolvido antes de efetivar seu recrutamento**. **PENDENTE:** natureza das tarefas, requisitos, desfechos e condições de elegibilidade. Isso não transforma encontros hostis comuns em recrutamentos nem elimina as regras de composição da equipe/reserva; não estender obrigatoriamente essa tarefa a toda forma de recrutamento.
 
+**APROVADO (R33-Q1 = A) — derrota definitiva da equipe:** **se todos os Pokémon ativos forem incapacitados durante uma batalha, ocorre derrota definitiva e a expedição é encerrada**, aplicando as perdas e preservações previamente aprovadas, inclusive preservação de XP/níveis e Pokémon recrutados e perda de itens obtidos na expedição que não estiverem sendo segurados. **A queda isolada do protagonista não implica derrota** enquanto aliados puderem continuar lutando (R31-Q2).
+
+**APROVADO (R33-Q2 = A) — progressão de reservados:** **Pokémon na reserva podem progredir por treinamento ou serviços específicos disponíveis fora das expedições**. **PENDENTE:** acesso, requisitos, locais, resultados e como esses serviços concedem progressão. Reservados continuam **sem ganhar XP das vitórias da equipe ativa** (R31-Q3). Não presumir a existência ou a implementação do hub futuro (R25-Q2).
+
+**APROVADO (R33-Q3 = B) — quantidade variável de andares:** **a quantidade de andares de uma mesma dungeon pode variar de uma expedição para outra**, conforme regras de geração ainda pendentes. **PENDENTE:** critérios da variação e quantidade de andares, sem números aprovados. Preservar geração por exploração/andar, layout estável durante uma expedição, seed reproduzível e chefe no último andar.
+
+**APROVADO (R33-Q4 = B) — descoberta das salas secretas:** **salas secretas são descobertas principalmente por pistas, mapas especiais, NPCs ou eventos que revelem ou liberem seu acesso**. **PENDENTE:** tipos de pistas, mapas, eventos, distribuição e condições de acesso. Continuam opcionais para alcançar o chefe.
+
+**R33-Q5 — QUESTÃO REJEITADA, NÃO APROVADA:** resposta literal do criador: **“que recursos obtidos? já começou as perguntas idiotas redundates dnv??”**. Esta é uma **objeção à pergunta**, não a aprovação da alternativa C nem autorização para definir fabricação, materiais, sistemas de crafting ou melhorias. O histórico R27-Q5 registra literalmente “moedas recursos itens” como categorias gerais de recompensas, mas **não há catálogo, identidade nem função dos recursos definida**. Não repetir essa pergunta genérica sem esclarecer primeiro o objeto de jogo; **nenhuma decisão D-185 foi criada**.
+
+
 
 
 
@@ -161,7 +172,7 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
  **APROVADO posteriormente (R23-Q1 = A):** movimento contínuo e livre nas quatro direções cardeais, sem movimento diagonal direto. **PENDENTE:** controles, colisão e animação.
 
-**PENDENTE:** sprites 2D, geração procedural, seeds, passagens, detecção/patrulha e estados em revisitas; espécies iniciais, **tarefas/eventos concretos de recrutamento especial** (R32-Q5), reservas/hub futuro, evolução e XP numérico, treinamento dos reservados, inventário/itens segurados, outras perdas de derrota/retirada sem revogar **preservação de XP e níveis** (R32-Q3), **regras da recuperação mínima do protagonista após vitória dos aliados** (R32-Q1), arenas, transições, objetivos e narrativa, fuga, biomas, Moves, lojas e recompensas, chefes, **quantidade/condições de cura de HP nos pontos seguros de descanso** (R32-Q2), apresentação e persistência de áreas descobertas no **mapa revelado progressivamente** (R32-Q4), serviços adicionais de descanso e interface de recrutamento. Não presumir resolvidas essas pendências.
+**PENDENTE:** sprites 2D, geração procedural, seeds, passagens, detecção/patrulha e estados em revisitas; espécies iniciais, tarefas/eventos de recrutamento especial, reservas/hub futuro, evolução e XP numérico, **acesso/regras de treinamento ou serviços de progressão dos reservados fora das expedições** (R33-Q2), inventário/itens segurados, demais efeitos de derrota/retirada sem revogar os desfechos aprovados, recuperação mínima do protagonista, arenas, transições, objetivos e narrativa, fuga, biomas, Moves, lojas e recompensas, chefes, **regras de variação do número de andares entre expedições da mesma dungeon** (R33-Q3), **pistas/mapas/NPCs/eventos para descobrir salas secretas** (R33-Q4), cura de HP e serviços de descanso, apresentação do mapa e interface de recrutamento. O termo genérico “recursos” (R27-Q5) continua sem catálogo ou significado operacional definido; a pergunta R33-Q5 sobre sua função foi rejeitada. Não presumir resolvidas essas pendências.
 
 ### Fluxo de experiência (somente encadeamento conceitual)
 
@@ -666,6 +677,21 @@ Sem decisão adicional, não fixar:
 
 **Preservação:** permanecem integralmente válidas as decisões D-001 a D-175, o máximo de três Pokémon ativos, a reserva, o sistema de combate, custos de ATB/Burst, a inexistência de PP, a geração procedural e as regras previamente aprovadas de perda de itens.
 
+
+### 7.24. Derrota da equipe, treino de reservas, andares variáveis e salas secretas — Rodada 33
+
+**APROVADO (R33-Q1 = A) — derrota definitiva:** **quando todos os Pokémon ativos forem incapacitados, o combate termina em derrota definitiva e a exploração atual é encerrada**. Aplicam-se as regras já aprovadas de perda de itens coletados não segurados, preservação de itens segurados, Pokémon recrutados, XP e níveis. Isso **não substitui** a continuidade da batalha com aliados IA se apenas o protagonista cair (R31-Q2).
+
+**APROVADO (R33-Q2 = A) — treino da reserva fora das expedições:** **Pokémon reservados podem progredir por treinamentos ou serviços específicos fora das expedições**. **PENDENTE:** onde, com quem, quais condições e quais efeitos. Não atribuir XP das vitórias da equipe ativa aos Pokémon reservados (R31-Q3) e não implementar ou exigir o hub futuro.
+
+**APROVADO (R33-Q3 = B) — dungeon com extensão variável:** **a quantidade de andares de uma mesma dungeon pode variar entre novas expedições**, com critérios de geração pendentes. A geração por exploração/andar, seed reproduzível, layout persistente durante a mesma expedição e necessidade de derrotar o chefe no último andar permanecem. **PENDENTE:** quantidade, distribuição e regras concretas; não definir números.
+
+**APROVADO (R33-Q4 = B) — pistas para salas secretas:** **pistas, mapas especiais, NPCs e eventos serão meios principais para indicar, revelar ou liberar salas secretas**. A descoberta permanece opcional e não é condição para chegar ao chefe (R26-Q5). **PENDENTE:** conteúdo das pistas, acesso e eventos concretos.
+
+**REJEITADA SEM APROVAÇÃO (R33-Q5 = C, texto livre de objeção):** “que recursos obtidos? já começou as perguntas idiotas redundates dnv??”. **Não foi aprovada qualquer função para recursos materiais, crafting, preparação ou melhorias.** O termo “recursos” em R27-Q5 segue apenas como categoria geral de recompensa, sem definição de itens concretos. A pergunta foi rejeitada por insuficiência de contexto e redundância; **não registrar decisão D-185** nem reutilizar a questão como se houvesse escolha de alternativa.
+
+**Estado da rodada:** **4 decisões aprovadas (D-181 a D-184), 1 pergunta rejeitada sem aprovação**. A Rodada 33 é encerrada por instrução do criador sem inventar quinta decisão. Mantêm-se todas as decisões D-001 a D-180, as regras de combate, ATB/Burst, ausência de PP, evolução e progressão já aprovadas.
+
 ## 8. Estado real do repositório (inspeção de código, não de execução)
 
 Referência: `main` em `1171b5f3c427edc34c486c82d42569f41fd0ea62`. Projeto **Godot 4.7**, configurado em `project.godot`, com cena inicial 2D.
@@ -868,6 +894,10 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-178 | R32-Q3 = A: **XP e níveis adquiridos na expedição são mantidos após derrota definitiva ou retirada voluntária**, sem revogar perda de itens não segurados. |
 | D-179 | R32-Q4 = A: **mapa do andar revelado progressivamente conforme exploração**, apresentação/persistência entre expedições pendentes. |
 | D-180 | R32-Q5 = B: **Pokémon especial elegível inicia tarefa/evento de recrutamento por interação voluntária, a resolver antes de recrutar**, conteúdos pendentes. |
+| D-181 | R33-Q1 = A: **todos os Pokémon ativos incapacitados causam derrota definitiva e encerramento da expedição**, aplicando perdas/preservações já aprovadas; protagonista isolado não encerra batalha. |
+| D-182 | R33-Q2 = A: **reservados podem progredir por treinamento ou serviços específicos fora das expedições**, sem receber XP das vitórias dos ativos; condições pendentes. |
+| D-183 | R33-Q3 = B: **quantidade de andares de uma mesma dungeon pode variar entre expedições**, geração e seed reproduzíveis preservadas; critérios pendentes. |
+| D-184 | R33-Q4 = B: **salas secretas descobertas principalmente por pistas, mapas especiais, NPCs ou eventos**, acesso e regras pendentes. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -1317,39 +1347,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Preservação:** 175 decisões anteriores inalteradas. Não definir valores de recuperação, fórmulas, novos PP, custos ATB/Burst, consequências adicionais de derrota ou obrigação de missões para Pokémon não especiais.
 
-## 10.32. Rodada 33 — sobrevivência, reservas e exploração procedural (cinco perguntas abertas)
+## 10.32. Rodada 33 — sobrevivência, reservas e exploração procedural (ENCERRADA: quatro aprovadas, uma rejeitada)
 
-**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa aprovada. Cinco questões de gameplay relevantes e ainda pendentes no GDD.
+**Status:** ENCERRADA em 2026-11-01 — **4/5 decisões aprovadas (D-181 a D-184)**; **R33-Q5 rejeitada como pergunta redundante/imprecisa, sem decisão aprovada**. O pedido do criador de encerrar a rodada não deve ser interpretado como aprovação de sua alternativa C.
 
-**R33-Q1 — Se todos os Pokémon ativos forem incapacitados durante uma batalha, qual será o desfecho da expedição?**  
-A. **Considerar derrota definitiva e encerrar a exploração**, aplicando as perdas e preservações já aprovadas.  
-B. **Oferecer uma possibilidade de resgate/continuação antes de declarar derrota definitiva**, com condições pendentes.  
-C. Outro desfecho, descrito pelo criador.  
-*A queda isolada do protagonista não encerra a batalha, e os aliados podem vencer; a derrota de toda a equipe ainda não tem desfecho explicitamente definido.*
+| ID | Resposta literal do criador | Regra aprovada / status |
+| --- | --- | --- |
+| **R33-Q1** | **A** — “Quando todos os Pokémon ativos forem incapacitados, ocorre derrota definitiva e a expedição é encerrada, com as regras de perdas e preservações já aprovadas.” | **Derrota definitiva quando todos os ativos caem**, aplicando consequências anteriores. |
+| **R33-Q2** | **A** — “Pokémon da reserva podem progredir por treinamentos ou serviços fora das expedições, com acesso e requisitos pendentes.” | **Treinos e serviços fora das expedições para reservados**, critérios pendentes. |
+| **R33-Q3** | **B** — “A quantidade de andares de uma mesma dungeon pode variar entre expedições de acordo com regras de geração ainda pendentes.” | **Andares variáveis por expedição de uma dungeon**, preservando seed e layout da exploração. |
+| **R33-Q4** | **B** — “Salas secretas são descobertas principalmente por pistas, mapas especiais, NPCs ou eventos que revelam ou liberam seu acesso.” | **Descoberta por pistas, mapas, NPCs e eventos**, detalhes pendentes. |
+| **R33-Q5** | **C** — “que recursos obtidos? já começou as perguntas idiotas redundates dnv??” | **REJEITADA: nenhuma decisão aprovada.** Não inferir crafting ou uso de recursos; conteúdo “recursos” não foi detalhado além da categoria de R27-Q5. |
 
-**R33-Q2 — Como os Pokémon da reserva poderão evoluir e treinar sem receber XP das vitórias da equipe ativa?**  
-A. **Por treinamento ou serviços específicos disponíveis fora das expedições**, com locais e regras pendentes.  
-B. **Por atividades próprias ou missões de treinamento atribuídas aos reservados**, com condições e resultados pendentes.  
-C. Outra forma ou combinação, descrita pelo criador.  
-*O GDD exclui XP de vitória para os reservados, mas prevê progressão por outros meios ainda indefinidos.*
+**Preservação:** D-001 a D-180 intactas. Não criar D-185 fictícia; não fixar fórmulas, quantidades, PP ou novos custos ATB/Burst. Evitar novas perguntas sobre “recursos” genéricos enquanto os objetos concretos não estiverem definidos.
 
-**R33-Q3 — Como será determinada a extensão de cada dungeon da campanha?**  
-A. **Cada dungeon possui uma quantidade de andares definida pelo design**, ainda sem números aprovados; os layouts dos andares continuam procedurais.  
-B. **A quantidade de andares pode variar entre expedições de uma mesma dungeon**, segundo regras de geração ainda a definir.  
-C. Outro sistema, descrito pelo criador.  
-*Concluir exige chegar ao último andar e derrotar um chefe, mas a quantidade de andares ainda não está definida.*
+## 10.33. Rodada 34 — narrativa, estrutura dos andares e desafios das dungeons (cinco perguntas abertas)
 
-**R33-Q4 — Como o jogador descobrirá principalmente as salas secretas das dungeons?**  
-A. **Pela observação do cenário e investigação de passagens escondidas**, com pistas e meios de acesso pendentes.  
-B. **Por pistas, mapas especiais, NPCs ou eventos que indiquem ou liberem salas secretas**, com regras pendentes.  
-C. Uma combinação ou outro mecanismo, descrito pelo criador.  
-*Salas secretas já são opcionais e priorizam descobertas, NPCs e recompensas; ainda falta decidir sua descoberta.*
+**Status:** ABERTA — 0/5 respostas, nenhuma alternativa aprovada. Questões de gameplay de alto impacto, distintas das decisões já fechadas e sem novos sistemas de “recursos” imaginados.
 
-**R33-Q5 — Qual será a principal função dos recursos materiais recebidos em combates, além das moedas?**  
-A. **Servir à fabricação ou preparação de itens e equipamentos**, com receitas, estações e catálogo pendentes.  
-B. **Servir a trocas ou melhorias de Pokémon, itens e equipamentos por meio de serviços**, com regras e catálogo pendentes.  
-C. Uma combinação ou outra função, descrita pelo criador.  
-*Moedas já servem principalmente para compras; a utilização dos demais recursos materiais continua sem definição.*
+**R34-Q1 — Qual será a estrutura narrativa principal da campanha de Crawlmon?**  
+A. **Uma história principal contínua com personagens recorrentes e um objetivo narrativo central**, que motiva a progressão entre dungeons.  
+B. **Uma aventura organizada em histórias/missões relativamente independentes por dungeon**, ligadas por uma progressão geral mais aberta.  
+C. Outra estrutura narrativa, descrita pelo criador.  
+*Missões e objetivos apresentados por NPCs/narrativa (R31-Q4) já foram aprovados; o arco da campanha não foi.*
+
+**R34-Q2 — As dungeons terão desafios ambientais além de encontros com Pokémon e eventos narrativos?**  
+A. **Sim, incluir obstáculos, enigmas ou armadilhas como conteúdo de exploração**, com tipos e consequências pendentes, sem torná-los todos obrigatórios.  
+B. **Priorizar encontros, exploração de salas e eventos narrativos**, sem exigir enigmas/armadilhas como sistema central.  
+C. Outro papel para desafios ambientais, descrito pelo criador.  
+*Eventos, NPCs e salas secretas são prioridades (R25-Q5); desafios ambientais ainda não foram detalhados.*
+
+**R34-Q3 — Como os caminhos entre andares serão organizados quando uma dungeon tiver múltiplas rotas possíveis?**  
+A. **Permitir passagens alternativas e ramificações entre andares**, com rotas e consequências pendentes.  
+B. **Manter uma progressão principal sequencial de andar para andar**, embora cada andar possua seus corredores, salas e escolhas de caminho.  
+C. Outra estrutura entre andares, descrita pelo criador.  
+*A transição por escadas/saídas (R24-Q1) e a quantidade variável de andares (R33-Q3) não determinam se há ramificações entre andares.*
+
+**R34-Q4 — Quando uma dungeon concluída for explorada novamente, como será definido seu chefe final?**  
+A. **A dungeon mantém um chefe principal reconhecível entre expedições**, com outras variações de encontro ainda pendentes.  
+B. **O chefe pode variar entre expedições da mesma dungeon**, com catálogo e condições pendentes.  
+C. Outro sistema de chefes, descrito pelo criador.  
+*O combate final exige vencer um chefe, que usa principalmente as regras comuns e pode ter aliados; a identidade do chefe em novas expedições não foi escolhida.*
+
+**R34-Q5 — O inventário de itens levados na exploração terá capacidade limitada?**  
+A. **Sim, haverá limite de itens transportados na expedição**, com organização e capacidade exatas pendentes.  
+B. **Não impor um limite geral de capacidade ao inventário de exploração**, mantendo outras restrições específicas de itens para decisões futuras.  
+C. Outro modelo de inventário, descrito pelo criador.  
+*Itens carregados/segurados e regras de perda foram aprovados; capacidade de transporte ainda não foi definida.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -1406,5 +1450,7 @@ C. Uma combinação ou outra função, descrita pelo criador.
 | 1.22 | 2026-11-01 | Rodada 31 (D-171 a D-175): retirada voluntária perde itens coletados não segurados como na derrota, sem equiparar outros efeitos; aliados sob IA continuam combate após queda do protagonista; XP de vitórias restrita a participantes ativos, excluindo reserva; objetivos de campanha apresentados principalmente por NPCs/personagens/narrativa; descanso em locais seguros com pausa/preparação, mantendo restauração de MP já aprovada. Abre Rodada 32 sobre continuidade após queda, cura no descanso, persistência de XP, descoberta de mapas e recrutamento. | Rodada 31 fechada / Rodada 32 aberta |
 
 | 1.23 | 2026-11-01 | Rodada 32 (D-176 a D-180): protagonista pode voltar à exploração mediante recuperação mínima após vitória dos aliados; descanso seguro cura HP além de restaurar integralmente MP; XP e níveis da expedição persistem após derrota definitiva ou retirada voluntária; mapa do andar revelado progressivamente; recrutamento especial exige resolver tarefa/evento iniciado por interação. Abre Rodada 33 sobre derrota de equipe, treino de reservas, quantidade de andares, salas secretas e uso de recursos. | Rodada 32 fechada / Rodada 33 aberta |
+
+| 1.24 | 2026-11-01 | Rodada 33 encerrada: 4 decisões aprovadas (D-181 a D-184) e R33-Q5 rejeitada sem aprovação por pergunta imprecisa/redundante. Todos os ativos incapacitados causam derrota definitiva; treino/serviços para reservas fora das expedições; quantidade de andares pode variar por expedição; salas secretas descobertas por pistas, mapas, NPCs e eventos. Não definir função para “recursos” genéricos. Abre Rodada 34 sobre narrativa, desafios ambientais, rotas, chefes e inventário. | Rodada 33 encerrada (4 aprovadas / 1 rejeitada) / Rodada 34 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
