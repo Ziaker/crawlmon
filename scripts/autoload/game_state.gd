@@ -133,6 +133,9 @@ func _build_party() -> void:
 		Skill.new("Raio Psíquico", 1.7, 3, Element.Type.PSIQUICO),
 		Skill.new("Onda de Choque", 1.3, 2, Element.Type.RAIO),
 		Skill.new("Teleporte Rápido", 1.1, 1, Element.Type.PSIQUICO),
+		Skill.new("Media", 0.0, 2, Element.Type.LUZ, Skill.Kind.STATUS, false, true, true),
+		Skill.new("Sukunda", 0.0, 1, Element.Type.VENTO, Skill.Kind.STATUS, false, false, false),
+		Skill.new("Megido", 1.6, 3, Element.Type.LUZ, Skill.Kind.PROJECTILE, false, true, false),
 	])
 	var pancham := Combatant.new("Pancham", 45, 10, 0.45, true)
 	pancham.weaknesses.assign([Element.Type.PSIQUICO, Element.Type.VENTO])
@@ -141,5 +144,7 @@ func _build_party() -> void:
 		Skill.new("Golpe de Caratê", 1.5, 2, Element.Type.FISICO),
 		Skill.new("Quebra de Telha", 1.8, 3, Element.Type.FISICO),
 		Skill.new("Provocação", 0.0, 1, Element.Type.FISICO, Skill.Kind.STATUS),
+		Skill.new("Tarukaja", 0.0, 2, Element.Type.FOGO, Skill.Kind.STATUS, false, true, true),
+		Skill.new("Hassou Tobi", 1.4, 3, Element.Type.FISICO, Skill.Kind.MELEE, false, true, false),
 	])
 	party.assign([abra, pancham])

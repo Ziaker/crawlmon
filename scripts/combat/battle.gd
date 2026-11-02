@@ -130,10 +130,16 @@ func _process(delta: float) -> void:
 # --- Actions (same for the player, allies and enemies) -----------------------
 
 func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
-	if not actor.is_alive() or not target.is_alive() or is_winding_up(actor) or not actor.can_pay(skill.cost):
+	if not actor.is_alive() or is_winding_up(actor) or not actor.can_pay(skill.cost):
 		return false
-	if actor.engaged_with != null and target != actor.engaged_with:
-		return false  # Engaged: it only acts on the opponent it is standing next to.
+	if skill.is_friendly:
+		if target == null or not target.is_alive() or target.is_player != actor.is_player:
+			target = actor
+	else:
+		if target == null or not target.is_alive():
+			return false
+		if actor.engaged_with != null and target != actor.engaged_with:
+			return false  # Engaged: it only acts on the opponent it is standing next to.
 	actor.pay(skill.cost)
 	var inc := Incoming.new()
 	inc.attacker = actor
@@ -143,12 +149,15 @@ func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
 	inc.kind = skill.kind
 	inc.ground = skill.ground
 	inc.label = skill.display_name
+	inc.is_aoe = skill.is_aoe
+	inc.is_friendly = skill.is_friendly
+	inc.skill = skill
 	# After a Perfect Evade the next attack is immediate: no wind-up, no preparation.
 	# Instant (no wind-up, no travel) only while engaged next to the opponent it interrupted;
 	# back at its original spot an attack is prepared and travels like any other.
-	inc.instant = actor.engaged_with != null
+	inc.instant = actor.engaged_with != null and not skill.is_friendly
 	actor.counter_ready = false
-	if actor.engaged_with != null:
+	if actor.engaged_with != null and not skill.is_friendly:
 		actor.engage_left = ENGAGE_SECONDS  # Acting keeps it engaged.
 	inc.total_windup = 0.0 if inc.instant else WINDUP
 	inc.time_left = 0.0 if inc.instant else WINDUP
@@ -302,10 +311,11 @@ func _run_ai() -> void:
 			continue
 		if c.act_policy == Combatant.Act.HOLD or not c.can_pay(SKILL_BLOCKS):
 			continue
-		var target := c.engaged_with if c.engaged_with != null and c.engaged_with.is_alive() else _first_alive(foes)
+		var sk := _pick_skill(c)
+		var target := c if sk.is_friendly else (c.engaged_with if c.engaged_with != null and c.engaged_with.is_alive() else _first_alive(foes))
 		if target == null:
 			return
-		use_skill(c, _pick_skill(c), target)
+		use_skill(c, sk, target)
 
 
 func _first_consumable(c: Combatant) -> Item:
@@ -410,12 +420,71 @@ func _strike(inc: Incoming) -> void:
 		return
 	if inc.dodged:
 		log_message.emit("%s esquivou de %s!" % [inc.target.name, inc.label])
-	elif inc.attacker.is_alive() and inc.target.is_alive() and inc.kind == Skill.Kind.STATUS:
-		# A status move deals no damage (its effect is not defined yet).
-		log_message.emit("%s usa %s em %s" % [inc.attacker.name, inc.label, inc.target.name])
-		hit_resolved.emit(inc.attacker, inc.target, inc.element, {"status": true, "evaded": false, "dmg": 0, "weak": false, "crit": false, "gain": 0, "whiffed": false, "power": 0.0, "skill_name": inc.label})
+	elif inc.attacker.is_alive() and inc.kind == Skill.Kind.STATUS:
+		_execute_status_move(inc)
 	elif inc.target.is_alive() and (inc.attacker.is_alive() or inc.kind == Skill.Kind.PROJECTILE):
 		_hit(inc.attacker, inc.target, inc.power, inc.element, inc.label, inc.whiffed, inc.auto_dodged)
+		if inc.is_aoe:
+			var foes: Array[Combatant] = enemies if inc.target.is_player else party
+			for foe in foes:
+				if foe.is_alive() and foe != inc.target:
+					_hit(inc.attacker, foe, inc.power * 0.85, inc.element, inc.label, inc.whiffed, false)
+
+
+func _execute_status_move(inc: Incoming) -> void:
+	var mid := BattleSpace.move_id(inc.label)
+	match mid:
+		"media":
+			var team: Array[Combatant] = party if inc.attacker.is_player else enemies
+			log_message.emit("%s usa Media! A equipe recupera HP!" % inc.attacker.name)
+			for ally in team:
+				if ally.is_alive():
+					var heal_amount := maxi(12, roundi(ally.max_hp * 0.40))
+					var before := ally.hp
+					ally.heal(heal_amount)
+					healed.emit(inc.attacker, ally, ally.hp - before)
+					hit_resolved.emit(inc.attacker, ally, inc.element, {
+						"status": true, "evaded": false, "dmg": 0, "weak": false,
+						"crit": false, "gain": 0, "whiffed": false, "power": 0.0,
+						"skill_name": inc.label, "heal": true
+					})
+		"tarukaja":
+			var team: Array[Combatant] = party if inc.attacker.is_player else enemies
+			log_message.emit("%s usa Tarukaja! O ataque da equipe aumentou!" % inc.attacker.name)
+			for ally in team:
+				if ally.is_alive():
+					ally.buff_stat("atk", 1)
+					hit_resolved.emit(inc.attacker, ally, inc.element, {
+						"status": true, "evaded": false, "dmg": 0, "weak": false,
+						"crit": false, "gain": 0, "whiffed": false, "power": 0.0,
+						"skill_name": inc.label, "buff": "atk"
+					})
+		"rakunda":
+			if inc.target.is_alive():
+				inc.target.buff_stat("def", -1)
+				log_message.emit("%s usa Rakunda! A defesa de %s foi reduzida!" % [inc.attacker.name, inc.target.name])
+				hit_resolved.emit(inc.attacker, inc.target, inc.element, {
+					"status": true, "evaded": false, "dmg": 0, "weak": false,
+					"crit": false, "gain": 0, "whiffed": false, "power": 0.0,
+					"skill_name": inc.label, "debuff": "def"
+				})
+		"sukunda":
+			if inc.target.is_alive():
+				inc.target.buff_stat("speed", -1)
+				log_message.emit("%s usa Sukunda! A agilidade de %s foi reduzida!" % [inc.attacker.name, inc.target.name])
+				hit_resolved.emit(inc.attacker, inc.target, inc.element, {
+					"status": true, "evaded": false, "dmg": 0, "weak": false,
+					"crit": false, "gain": 0, "whiffed": false, "power": 0.0,
+					"skill_name": inc.label, "debuff": "spd"
+				})
+		_:
+			if inc.target.is_alive():
+				log_message.emit("%s usa %s em %s" % [inc.attacker.name, inc.label, inc.target.name])
+				hit_resolved.emit(inc.attacker, inc.target, inc.element, {
+					"status": true, "evaded": false, "dmg": 0, "weak": false,
+					"crit": false, "gain": 0, "whiffed": false, "power": 0.0,
+					"skill_name": inc.label
+				})
 
 
 ## Resolved attacks that FX still has to draw (landing or returning).

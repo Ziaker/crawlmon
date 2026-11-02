@@ -403,28 +403,67 @@ func _brick_break_impact(pos: Vector3, _dir: Vector3, big: bool) -> Array[Node3D
 
 
 func _status_impact_move(move_id: String, pos: Vector3) -> bool:
-	if BattleFx.normalize_move_id(move_id) != "provocacao":
-		return false
-	VfxLib.flipbook(fx, pos + Vector3.UP * 0.25, "smoke", Color("2b0938"), 3.8, 0.65, -12.0, 1.8, false)
-	VfxLib.flipbook(fx, pos + Vector3.UP * 0.55, "smoke", Color("ff624f"), 3.0, 0.52, 18.0, 2.0)
-	VfxLib.flipbook(fx, pos + Vector3.UP * 0.85, "fire", Color("ff4d6d"), 3.2, 0.45, 0.0, 2.4)
-	for i in 3:
-		var mark := Label3D.new()
-		mark.name = "RageMark%d" % i
-		mark.text = "💢"
-		mark.font_size = 96
-		mark.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-		mark.modulate = Color("ff4d6d")
-		mark.outline_modulate = Color("2b0938")
-		mark.outline_size = 18
-		mark.position = pos + Vector3((float(i) - 1.0) * 0.55, 1.55 + float(i % 2) * 0.42, 0.08 * i)
-		mark.scale = Vector3.ONE * 0.12
-		fx.add_child(mark)
-		var tw := mark.create_tween().set_parallel(true)
-		tw.tween_property(mark, "scale", Vector3.ONE * 0.82, 0.28).set_delay(float(i) * 0.08).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
-		tw.tween_property(mark, "modulate:a", 0.0, 0.25).set_delay(0.48 + float(i) * 0.08)
-		tw.chain().tween_callback(mark.queue_free)
-	return true
+	var mid := BattleFx.normalize_move_id(move_id)
+	match mid:
+		"provocacao":
+			VfxLib.flipbook(fx, pos + Vector3.UP * 0.25, "smoke", Color("2b0938"), 3.8, 0.65, -12.0, 1.8, false)
+			VfxLib.flipbook(fx, pos + Vector3.UP * 0.55, "smoke", Color("ff624f"), 3.0, 0.52, 18.0, 2.0)
+			VfxLib.flipbook(fx, pos + Vector3.UP * 0.85, "fire", Color("ff4d6d"), 3.2, 0.45, 0.0, 2.4)
+			for i in 3:
+				var mark := Label3D.new()
+				mark.name = "RageMark%d" % i
+				mark.text = "💢"
+				mark.font_size = 96
+				mark.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+				mark.modulate = Color("ff4d6d")
+				mark.outline_modulate = Color("2b0938")
+				mark.outline_size = 18
+				mark.position = pos + Vector3((float(i) - 1.0) * 0.55, 1.55 + float(i % 2) * 0.42, 0.08 * i)
+				mark.scale = Vector3.ONE * 0.12
+				fx.add_child(mark)
+				var tw := mark.create_tween().set_parallel(true)
+				tw.tween_property(mark, "scale", Vector3.ONE * 0.82, 0.28).set_delay(float(i) * 0.08).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+				tw.tween_property(mark, "modulate:a", 0.0, 0.25).set_delay(0.48 + float(i) * 0.08)
+				tw.chain().tween_callback(mark.queue_free)
+			return true
+		"media":
+			_media_impact(pos)
+			return true
+		"tarukaja":
+			_tarukaja_impact(pos)
+			return true
+		"rakunda":
+			_rakunda_impact(pos)
+			return true
+		"sukunda":
+			_sukunda_impact(pos)
+			return true
+		_:
+			return false
+
+
+func _media_impact(pos: Vector3) -> void:
+	_shock(pos - Vector3(0, 0.9, 0), Color("a8ffb2"), 3.4, 0.6)
+	_ring_cam(pos + Vector3(0, 0.4, 0), Color("d4ff78"), 2.8, 0.5)
+	_glow(pos, Color("a8ffb2"), 20, Vector2(0.18, 0.3), 0.7, Vector2(1.0, 3.5), Vector3(0, 2.8, 0))
+
+
+func _tarukaja_impact(pos: Vector3) -> void:
+	_shock(pos - Vector3(0, 0.9, 0), Color("ff5722"), 3.0, 0.55)
+	_glow(pos, Color("ff9800"), 24, Vector2(0.2, 0.35), 0.65, Vector2(1.5, 4.0), Vector3(0, 3.5, 0))
+	VfxLib.flipbook(fx, pos + Vector3(0, 0.4, 0), "fire", Color("ff5722"), 2.8, 0.45, 0.0, 2.0)
+
+
+func _rakunda_impact(pos: Vector3) -> void:
+	_shock(pos - Vector3(0, 0.9, 0), Color("7b1fa2"), 2.8, 0.55)
+	_glow(pos, Color("ba68c8"), 18, Vector2(0.18, 0.28), 0.6, Vector2(1.0, 2.5), Vector3(0, -2.5, 0))
+	_slash(pos, Color("9c27b0"), 2.4, 90.0, 0.3)
+
+
+func _sukunda_impact(pos: Vector3) -> void:
+	_shock(pos - Vector3(0, 0.9, 0), Color("00bcd4"), 2.8, 0.55)
+	_glow(pos, Color("80deea"), 18, Vector2(0.16, 0.26), 0.6, Vector2(1.0, 2.5), Vector3(0, -3.0, 0))
+	_ring_cam(pos + Vector3(0, 0.3, 0), Color("00e5ff"), 2.4, 0.4)
 
 
 func _confusion_impact(pos: Vector3, big: bool) -> Array[Node3D]:
@@ -692,8 +731,54 @@ func _impact_move(move_id: String, pos: Vector3, _color: Color, big: bool, dir: 
 			return {"handled": true, "nodes": _dragon_rage_impact(pos, big)}
 		"investida_subterranea", "investida_escavadora":
 			return {"handled": true, "nodes": _dig_rush_impact(pos, big)}
+		"mabufula":
+			return {"handled": true, "nodes": _mabufula_impact(pos, dir, big)}
+		"megido":
+			return {"handled": true, "nodes": _megido_impact(pos, dir, big)}
+		"hassou_tobi":
+			return {"handled": true, "nodes": _hassou_tobi_impact(pos, dir, big)}
+		"titanomachia":
+			return {"handled": true, "nodes": _titanomachia_impact(pos, dir, big)}
 		_:
 			return {"handled": false, "nodes": []}
+
+
+func _mabufula_impact(pos: Vector3, dir: Vector3, big: bool) -> Array[Node3D]:
+	_shock(pos - Vector3(0, 0.9, 0), Color("80d8ff"), 3.6, 0.55)
+	_ring_cam(pos, Color("e0f7fa"), 3.0, 0.38)
+	_sparks(pos, Color("80d8ff"), 24, Vector2(6.0, 14.0), Vector3(0, -6, 0))
+	_smoke(pos, Color("b3e5fc", 0.6), 8, Vector2(1.4, 2.2), 0.55, 1.2, true)
+	return []
+
+
+func _megido_impact(pos: Vector3, dir: Vector3, big: bool) -> Array[Node3D]:
+	_shock(pos - Vector3(0, 0.9, 0), Color("fff9c4"), 4.8, 0.7)
+	_ring_cam(pos + Vector3(0, 0.8, 0), Color("ffffff"), 3.8, 0.45)
+	_sparks(pos, Color("ffd54f"), 32, Vector2(8.0, 18.0), Vector3(0, -8, 0))
+	_glow(pos, Color("fff59d"), 22, Vector2(0.3, 0.5), 0.65, Vector2(3.0, 6.0))
+	return []
+
+
+func _hassou_tobi_impact(pos: Vector3, dir: Vector3, big: bool) -> Array[Node3D]:
+	for i in 8:
+		var angle := float(i) * 45.0 + randf_range(-15.0, 15.0)
+		var delay := float(i) * 0.032
+		var offset := Vector3(randf_range(-0.4, 0.4), randf_range(-0.3, 0.5), randf_range(-0.3, 0.3))
+		_slash(pos + offset, Color(0.95, 0.95, 1.0), 2.8, angle, 0.22, delay)
+	_sparks(pos, Color(1.0, 0.9, 0.7), 28, Vector2(7.0, 15.0))
+	_shock(pos - Vector3(0, 0.9, 0), Color(0.9, 0.9, 1.0), 3.2, 0.45)
+	return []
+
+
+func _titanomachia_impact(pos: Vector3, dir: Vector3, big: bool) -> Array[Node3D]:
+	_shock(pos - Vector3(0, 0.9, 0), Color("ff8f00"), 5.0, 0.7)
+	_shock(pos - Vector3(0, 0.9, 0), Color("795548"), 3.6, 0.55)
+	_smoke(pos, Color("8d6e63"), 16, Vector2(1.8, 2.8), 0.8, 2.5, false)
+	_sparks(pos, Color("ffb74d"), 30, Vector2(9.0, 16.0), Vector3(0, -18, 0))
+	return []
+
+
+
 
 
 func _bite_impact(pos: Vector3, dir: Vector3) -> Array[Node3D]:

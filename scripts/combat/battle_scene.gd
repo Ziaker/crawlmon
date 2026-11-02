@@ -61,6 +61,9 @@ func _ready() -> void:
 		Skill.new("Tiro de Areia", 1.3, 2, Element.Type.TERRA, Skill.Kind.PROJECTILE, true),
 		Skill.new("Fúria do Dragão", 1.6, 3, Element.Type.FISICO, Skill.Kind.PROJECTILE),
 		Skill.new("Investida Subterrânea", 1.5, 2, Element.Type.TERRA, Skill.Kind.MELEE, true),
+		Skill.new("Rakunda", 0.0, 1, Element.Type.TREVAS, Skill.Kind.STATUS, false, false, false),
+		Skill.new("Mabufula", 1.35, 2, Element.Type.AGUA_GELO, Skill.Kind.PROJECTILE, false, true, false),
+		Skill.new("Titanomachia", 1.5, 3, Element.Type.TERRA, Skill.Kind.MELEE, false, true, false),
 	])
 	enemies[0].inventory = {"potion": 1}
 	for e in enemies:  # Same Tactics the allies have: cast skills and evade when able.
@@ -423,12 +426,16 @@ func _fill_fight(keep_index: bool) -> void:
 			price = "em ação"
 		var tail := ""
 		var accent := Color(0, 0, 0, 0)
+		if sk.is_aoe:
+			tail += " · [ÁREA]"
+		elif sk.is_friendly:
+			tail += " · [GRUPO]"
 		if target != null:
 			if sk.kind == Skill.Kind.STATUS:
-				tail = " · sem dano"
+				tail += " · sem dano"
 			else:
 				var weak := sk.element in target.weaknesses
-				tail = " · ≈%d%s" % [Battle.estimate_damage(leader, target, sk), " FRAQ." if weak else ""]
+				tail += " · ≈%d%s" % [Battle.estimate_damage(leader, target, sk), " FRAQ." if weak else ""]
 				if weak:
 					accent = Color("ffd45a")
 		entries.append({
@@ -445,6 +452,10 @@ func _update_fight_header(i: int) -> void:
 		return
 	var sk := _fight_skills[i]
 	var text := Skill.kind_name(sk.kind).to_upper()
+	if sk.is_aoe:
+		text += " (ÁREA)"
+	elif sk.is_friendly:
+		text += " (SUPORTE)"
 	if _fight_target != null and (sk.kind == Skill.Kind.MELEE or sk.kind == Skill.Kind.PROJECTILE):
 		text += " %.2fs" % AttackPlanner.preview_travel(leader, _fight_target, sk.kind)
 	hud.set_menu_style(FanMenu.Style.DRAWER, text)
@@ -452,7 +463,10 @@ func _update_fight_header(i: int) -> void:
 
 ## Uses a move on a target right now (Fight menu, number keys and Repeat all end here).
 func _use_move(skill: Skill, target: Combatant) -> bool:
-	if target == null or not target.is_alive():
+	if skill.is_friendly:
+		if target == null or not target.is_alive() or target.is_player != leader.is_player:
+			target = leader
+	elif target == null or not target.is_alive():
 		return false
 	if not (leader.can_pay(skill.cost) and not battle.is_winding_up(leader)):
 		return false
@@ -621,7 +635,9 @@ func _on_chosen(i: int) -> void:
 				3: _show_tactics()
 				4: _show_status()
 		S.FIGHT:
-			if _use_move(_fight_skills[i], _fight_target if _fight_target != null and _fight_target.is_alive() else _default_target()):
+			var sk := _fight_skills[i]
+			var tgt: Combatant = leader if sk.is_friendly else (_fight_target if _fight_target != null and _fight_target.is_alive() else _default_target())
+			if _use_move(sk, tgt):
 				_show_main()
 		S.ITEMS:
 			var item := _item_list[i]

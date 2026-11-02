@@ -61,6 +61,8 @@ func plan(inc: Incoming) -> float:
 			"quebra_telha": run_t = Battle.travel_seconds(0.24, a, t)
 			"garra_dragao": run_t = Battle.travel_seconds(0.22, a, t)
 			"investida_escavadora": run_t = Battle.travel_seconds(0.26, a, t)
+			"hassou_tobi": run_t = Battle.travel_seconds(0.18, a, t)
+			"titanomachia": run_t = Battle.travel_seconds(0.24, a, t)
 		var hop_dist := stand.distance_to(a_home)
 		inc.motion = "melee"
 		inc.stand = stand
@@ -91,7 +93,7 @@ func plan(inc: Incoming) -> float:
 			inc.impact_phase = Phase.STRIKE
 		elif inc.kind == Skill.Kind.PROJECTILE:
 			# Whoever stands exactly on the projectile's line is hit before the aimed target.
-			var block := interceptor(inc, a_home, t_home)
+			var block := interceptor(inc, a_home, t_home) if not inc.is_aoe else null
 			if block != null:
 				b.redirect(inc, block)
 				t = block

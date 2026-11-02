@@ -120,9 +120,13 @@ func _draw_unit(c: Combatant, r: Rect2) -> void:
 	BattleHud.text_right(self, font, right, y, "%d / %d" % [c.hp, c.max_hp], 13, fg)
 	y += 26.0
 	# Stats.
+	var atk_str := str(c.attack) + (" (+%d)" % c.atk_buff if c.atk_buff > 0 else (" (%d)" % c.atk_buff if c.atk_buff < 0 else ""))
+	var def_str := ("+50%" if c.def_buff == 2 else ("+25%" if c.def_buff == 1 else ("-25%" if c.def_buff == -1 else ("-50%" if c.def_buff == -2 else "PADRÃO"))))
+	var spd_str := "%.2f blocos/s" % c.speed + (" (+%d)" % c.speed_buff if c.speed_buff > 0 else (" (%d)" % c.speed_buff if c.speed_buff < 0 else ""))
 	for row in [
-		["ATAQUE", str(c.attack)],
-		["VELOCIDADE", "%.2f blocos/s" % c.speed],
+		["ATAQUE", atk_str],
+		["DEFESA", def_str],
+		["VELOCIDADE", spd_str],
 		["ATB", "%.1f / %d" % [c.atb, int(Combatant.BLOCKS)]],
 		["BURST", str(c.burst)],
 	]:
