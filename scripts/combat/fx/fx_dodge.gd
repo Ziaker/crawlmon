@@ -4,25 +4,44 @@ extends RefCounted
 ## Part of BattleFx (see battle_fx.gd): the shared state lives in `fx`.
 
 var fx: BattleFx
+var _vis_tweens: Dictionary = {}  ## Combatant -> Tween (dedicated vanish/appear timer; never killed by fx._move)
 
 
 func _init(p_fx: BattleFx) -> void:
 	fx = p_fx
 
 
+func _vis_tween(c: Combatant) -> Tween:
+	if _vis_tweens.has(c) and (_vis_tweens[c] as Tween).is_valid():
+		(_vis_tweens[c] as Tween).kill()
+	var tw := fx.create_tween()
+	_vis_tweens[c] = tw
+	return tw
+
+
 ## Pressing Evade only clears the warning; the character actually dodges when the
 ## attack arrives (see fx.resolve_attack), never before the enemy has struck.
 func manual_evade(actor: Combatant, inc) -> void:
 	fx.clear_telegraph(inc)
+	if inc.kind != Skill.Kind.MELEE:
+		dodge(actor, "", false)  # Just a sidestep; the engaged arrival is only for melee.
 
 
-## The evader vanishes where it stands and arrives at once next to the attack it
-## interrupted (no travel), facing it. The MISS! lettering marks where it was.
+## A manual Evade against a melee attack: the usual dodge (vanish, reappear aside, come back).
 func engage_arrive(actor: Combatant, opponent: Combatant) -> void:
+	# The evader dodges as always: it vanishes, shows up to the side and comes back. It only
+	# teleports up to the interrupted attacker if and when it attacks (see arrive_to_attack).
+	var op := (fx._models[opponent] as Node3D).position
+	fx._rest[opponent] = Vector3(op.x, 0.0, op.z)
+	dodge(actor, "", false)
+
+
+## Its first attack after the Evade: it vanishes and appears next to the interrupted attacker.
+func arrive_to_attack(actor: Combatant, opponent: Combatant) -> void:
 	var m: Node3D = fx._models[actor]
-	var om: Node3D = fx._models[opponent]
-	var from := m.position
-	var opp_pos := om.position
+	var from := Vector3(m.position.x, 0.0, m.position.z)
+	var opp_pos := (fx._models[opponent] as Node3D).position
+	opp_pos.y = 0.0
 	var away: Vector3 = fx._flat_dir(opp_pos, fx._home[actor])
 	var spot := opp_pos + away * fx.STAND_GAP
 	spot.y = 0.0
@@ -30,12 +49,9 @@ func engage_arrive(actor: Combatant, opponent: Combatant) -> void:
 	fx._rest[actor] = spot
 	fx._stop_moving(actor)
 	fx._displaced[actor] = true
-	miss_text(from + Vector3(0, 1.4, 0))
 	_vanish(actor, m, from, spot)
-	_appear(actor, spot)
+	_appear(actor, spot, true)
 	m.rotation.y = atan2(-away.x, -away.z)
-	if fx.cam != null and (actor == fx.leader or opponent == fx.leader):
-		fx.cam.action(spot, 0.65)
 
 
 ## Timed moments on Battle's clock: the dodge just before the hit, the return after it.
@@ -72,42 +88,75 @@ func evade_whiff(actor: Combatant, _inc) -> void:
 ## Vanish in a ground dash and reappear to the side/behind. `hold` keeps the
 ## character displaced until settle() is called.
 func dodge(target: Combatant, _text: String, hold := false) -> void:
+	if fx.fx_motion.is_driven(target):
+		# Its own melee attack owns its body (one timeline): no dash that would pull it off the run.
+		miss_text((fx._models[target] as Node3D).position + Vector3(0, 1.4, 0))
+		return
 	fx._stop_moving(target)
 	fx._displaced[target] = true
-	fx._busy_for(target, 1.4)
+	fx._busy_for(target, 1.4 if hold else 0.75)
 	var m: Node3D = fx._models[target]
 	var home: Vector3 = fx._home[target]
+	home.y = 0.0
 	var side := -1.0 if target.is_player else 1.0
 	var spot := home + Vector3(side * 3.6, 0.0, 1.4)
-	_vanish(target, m, home, spot)
-	var tw := fx._move(target)
+	spot.y = 0.0
+	_vanish(target, m, home, spot, 0.11)
+	var tw := _vis_tween(target)
 	tw.tween_interval(0.11)
-	tw.tween_callback(func() -> void: _appear(target, spot))
+	tw.tween_callback(func() -> void:
+		if fx == null:
+			return
+		if fx.fx_motion.is_driven(target):
+			m.visible = true
+			fx._vanish_until.erase(target)
+		else:
+			_appear(target, spot, true))
 	if not hold:
 		tw.tween_interval(0.45)
-		tw.tween_callback(func() -> void: settle(target))
+		tw.tween_callback(func() -> void:
+			if fx != null:
+				settle(target))
 	miss_text(home + Vector3(0, 1.4, 0))
 
 
 ## Return to the home spot with another ground dash.
 func settle(target: Combatant) -> void:
+	if fx.fx_motion.is_driven(target):
+		var m_drv: Node3D = fx._models.get(target)
+		if m_drv != null:
+			m_drv.visible = true
+		fx._vanish_until.erase(target)
+		return
 	if not fx._displaced.get(target, false):
+		var m_home: Node3D = fx._models.get(target)
+		if m_home != null and not m_home.visible:
+			m_home.visible = true
+			fx._vanish_until.erase(target)
 		return  # Already home (e.g. it went on to a counter-attack): nothing to undo.
 	var m: Node3D = fx._models[target]
 	var home: Vector3 = fx._home[target]
-	_vanish(target, m, m.position, home)
-	var tw := fx._move(target)
-	tw.tween_interval(0.11)
-	tw.tween_callback(func() -> void: _appear(target, home))
+	home.y = 0.0
+	var from := Vector3(m.position.x, 0.0, m.position.z)
+	_vanish(target, m, from, home, 0.10)
+	var tw := _vis_tween(target)
+	tw.tween_interval(0.10)
+	tw.tween_callback(func() -> void:
+		if fx == null:
+			return
+		if fx.fx_motion.is_driven(target):
+			m.visible = true
+			fx._vanish_until.erase(target)
+		else:
+			_appear(target, home, false))
 
 
 ## "MISS!" spelled out in glowing letters: each pops in with an overshoot, shimmers
 ## white/gold in a travelling wave, then rises and fades.
-func miss_text(pos: Vector3) -> void:
+func miss_text(pos: Vector3, word := "MISS!") -> void:
 	var cam_p := fx._cam_pos()
 	var yaw := atan2(cam_p.x - pos.x, cam_p.z - pos.z)
 	var right := Vector3(cos(yaw), 0.0, -sin(yaw))
-	var word := "MISS!"
 	var gap := 0.5
 	for i in word.length():
 		var l := Label3D.new()
@@ -165,7 +214,9 @@ func _dash_streak(a: Vector3, b: Vector3) -> void:
 		q.transform = Transform3D(Basis(x_axis, y_axis, z_axis), (from + to) * 0.5 + Vector3(0, 0.07, 0))
 
 
-func _vanish(c: Combatant, m: Node3D, from: Vector3, to: Vector3) -> void:
+func _vanish(c: Combatant, m: Node3D, from: Vector3, to: Vector3, dur := 0.11) -> void:
+	from.y = 0.0
+	to.y = 0.0
 	_dash_streak(from, to)
 	# Holographic afterimages: one where it stood, one halfway along the dash.
 	VfxLib.ghost(fx, m, fx.DODGE_COLOR, 0.55)
@@ -175,39 +226,56 @@ func _vanish(c: Combatant, m: Node3D, from: Vector3, to: Vector3) -> void:
 	fx._glow(from + Vector3(0, 1.0, 0), fx.DODGE_COLOR, 22, Vector2(0.4, 0.9), 0.5, Vector2(2.0, 6.0), Vector3(0, 1, 0), 0.0, 0.5)
 	fx._smoke(from + Vector3(0, 0.3, 0), Color(0.75, 0.85, 0.9), 8, Vector2(1.0, 1.8), 0.7, 0.5)
 	m.visible = false
+	fx._vanish_until[c] = Time.get_ticks_msec() + int(dur * 1000.0) + 60
 
 
-func _appear(c: Combatant, pos: Vector3) -> void:
+func _appear(c: Combatant, pos: Vector3, mark_displaced := false) -> void:
+	pos.y = 0.0
 	var m: Node3D = fx._models[c]
-	m.position = pos
 	m.visible = true
-	fx._displaced[c] = pos.distance_to(fx._home[c]) > 0.5
+	fx._vanish_until.erase(c)
+	if not fx.fx_motion.is_driven(c):
+		m.position = pos
+		fx._displaced[c] = mark_displaced and pos.distance_to(fx._home[c]) > 0.5
 	VfxLib.flash_star(fx, pos + Vector3(0, 1.1, 0), fx.DODGE_COLOR, 2.2, 0.18)
 	fx._shock(pos, fx.DODGE_COLOR, 3.4, 0.45)
 	fx._glow(pos + Vector3(0, 0.6, 0), fx.DODGE_COLOR, 16, Vector2(0.3, 0.7), 0.45, Vector2(1.5, 4.0), Vector3(0, 1, 0), 0.0, 0.4)
-	if c.is_alive():
+	if c.is_alive() and not fx.fx_motion.is_driven(c):
 		fx._reset_idle(c)
 
 
 ## Automatic evade: the character does not move. It disappears behind a burst of
 ## vertical speed lines at its own spot and comes back in place.
 func _dodge_later(target: Combatant, text: String, delay: float, hold_time: float) -> void:
-	await fx.get_tree().create_timer(delay, false).timeout
-	_blink(target, text, hold_time)
+	if delay > 0.0:
+		await fx.get_tree().create_timer(delay, false).timeout
+	if fx != null:
+		_blink(target, text, hold_time)
 
 
 func _blink(target: Combatant, _text: String, hold_time: float) -> void:
-	fx._stop_moving(target)
-	fx._busy_for(target, hold_time + 1.0)
 	var m: Node3D = fx._models[target]
-	var pos := m.position
+	if fx.fx_motion.is_driven(target):
+		var p_drv := Vector3(m.position.x, 0.0, m.position.z)
+		_speed_lines_at(p_drv)
+		VfxLib.flash_star(fx, p_drv + Vector3(0, 1.1, 0), fx.DODGE_COLOR, 2.4, 0.18)
+		miss_text(p_drv + Vector3(0, 1.4, 0))
+		return
+	fx._stop_moving(target)
+	var dur := clampf(hold_time, 0.08, 0.14)
+	fx._busy_for(target, dur + 0.35)
+	var pos := fx.rest_pos(target)
+	pos.y = 0.0
 	_speed_lines_at(pos)
 	VfxLib.flash_star(fx, pos + Vector3(0, 1.1, 0), fx.DODGE_COLOR, 2.4, 0.18)
 	m.visible = false
+	fx._vanish_until[target] = Time.get_ticks_msec() + int(dur * 1000.0) + 60
 	miss_text(pos + Vector3(0, 1.4, 0))
-	var tw := fx._move(target)
-	tw.tween_interval(hold_time)
-	tw.tween_callback(func() -> void: _appear(target, pos))
+	var tw := _vis_tween(target)
+	tw.tween_interval(dur)
+	tw.tween_callback(func() -> void:
+		if fx != null:
+			_appear(target, pos, false))
 
 
 ## Streaks lying completely to the left (horizontal) around a spot, facing the camera.

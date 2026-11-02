@@ -33,6 +33,7 @@ var index := 0
 var _texts: Array[String] = []
 var _details: Array[String] = []
 var _enabled: Array[bool] = []
+var _accents: Array[Color] = []  ## Row text color when not highlighted (alpha 0 = default)
 static var _title_font: Font
 static var _body_font: Font
 
@@ -63,16 +64,35 @@ func set_entries(entries: Array, keep_index := false) -> void:
 	_texts.clear()
 	_details.clear()
 	_enabled.clear()
+	_accents.clear()
 	for e in entries:
 		if e is Dictionary:
 			_texts.append(e["text"])
 			_details.append(e.get("detail", ""))
 			_enabled.append(e.get("enabled", true))
+			_accents.append(e.get("accent", Color(0, 0, 0, 0)))
 		else:
 			_texts.append(str(e))
 			_details.append("")
 			_enabled.append(true)
+			_accents.append(Color(0, 0, 0, 0))
 	index = clampi(index if keep_index else 0, 0, maxi(_texts.size() - 1, 0))
+	queue_redraw()
+	moved.emit(index)
+
+
+## Changes the small text of one row (e.g. the reason a command is unavailable).
+func set_detail(i: int, text: String) -> void:
+	if i < _details.size() and _details[i] != text:
+		_details[i] = text
+		queue_redraw()
+
+
+## Highlights a row (used to reopen a menu on the last choice).
+func select(i: int) -> void:
+	if _texts.is_empty():
+		return
+	index = clampi(i, 0, _texts.size() - 1)
 	queue_redraw()
 	moved.emit(index)
 
@@ -166,7 +186,7 @@ func _draw_drawer() -> void:
 			draw_rect(Rect2(8, y, DRAWER_W - 16, ROW_H - 3), LIME)
 		else:
 			draw_line(Vector2(10, y + ROW_H - 2), Vector2(DRAWER_W - 10, y + ROW_H - 2), Color("354758"), 1.0)
-		var fg := INK if active else CREAM
+		var fg := INK if active else (CREAM if _accents[i].a == 0.0 else _accents[i])
 		var detail_w := small.get_string_size(_details[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x
 		draw_string(small, Vector2(16, y + 23), _texts[i], HORIZONTAL_ALIGNMENT_LEFT, DRAWER_W - 40.0 - detail_w, 15, Color(fg, alpha))
 		if _details[i] != "":

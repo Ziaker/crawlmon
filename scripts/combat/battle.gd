@@ -30,72 +30,20 @@ signal engage_ended(actor: Combatant, opponent: Combatant, ghost, staggered)
 signal evade_whiffed(actor: Combatant, inc)
 signal hit_resolved(attacker: Combatant, target: Combatant, element: Element.Type, info: Dictionary)
 signal healed(actor: Combatant, target: Combatant, amount: int)
+signal attack_missed(inc)  ## The attacker struck an empty spot (its target had left): a miss, not an evade.
+signal attack_interrupted(inc)  ## A hit stopped an attack on its way: BattleFx fills its recovery plan.
+signal reward_spawned(reward)
+signal reward_landed(reward)
 
-class Incoming:
-	var attacker: Combatant
-	var target: Combatant
-	var power := 1.0
-	var element := Element.Type.FISICO
-	var label := ""
-	var time_left := 0.0
-	var total_windup := 1.5
-	var dodged := false
-	var perfect_evaded := false
-	var instant := false  ## A counter-attack after a Perfect Evade: no wind-up at all.
-	var evade_tried := false
-	var whiffed := false
-	var auto_dodged := false  ## Decided when the wind-up ends so the visuals can play it out.
-	var resolved := false  ## The wind-up is over: the attacker is on its way to hit.
-	## Timeline after the wind-up, filled by BattleFx on attack_resolved:
-	## [[Phase, seconds], ...] in order, and which phase ends with the hit.
-	var plan: Array = []
-	var impact_phase := 1  ## Phase.STRIKE
-	var plan_i := -1
-	var phase := 0  ## Phase.WINDUP
-	var phase_time := 0.0  ## Seconds spent in the current phase.
-	var impacted := false
-	var interrupted := false  ## Stopped on its way by a manual Evade: it never hits.
-	var void_miss := false  ## Left before the target went away (engaged): it strikes the empty spot.
-	var ghost := false  ## Not an attack: only the return of an engaged character.
-	var ai_evade_at := -1.0  ## Seconds into TRAVEL when an AI target will try to evade (-1: never).
-	var data := {}  ## Drawing data owned by BattleFx (positions, clip times); logic never reads it.
+const Phase = Incoming.Phase
 
-	func phase_len() -> float:
-		return plan[plan_i][1] if plan_i >= 0 and plan_i < plan.size() else 0.0
-
-	## 0..1 inside the current phase.
-	func progress() -> float:
-		var l := phase_len()
-		return clampf(phase_time / l, 0.0, 1.0) if l > 0.0 else 1.0
-
-	## The manual Evade works only while the attack is on its way (the run or the projectile).
-	func can_evade_now() -> bool:
-		return resolved and not impacted and not interrupted and not ghost and phase == 1  ## Phase.TRAVEL
-
-	## Seconds of travel left (the Evade window); large when it is not travelling.
-	func travel_left() -> float:
-		return phase_len() - phase_time if can_evade_now() else 99.0
-
-	## Seconds until the hit reaches the target. Evading only counts near this moment.
-	func eta() -> float:
-		if not resolved:
-			return time_left + 5.0
-		if impacted:
-			return 0.0
-		var left := -phase_time
-		var i := plan_i
-		while i < plan.size():
-			left += plan[i][1]
-			if plan[i][0] == impact_phase:
-				break
-			i += 1
-		return maxf(left, 0.0)
-
-enum Phase { WINDUP, TRAVEL, STRIKE, RETURN, DONE, STAGGER }
-
+const REWARD_FLOAT := 0.6  ## Seconds a reward token floats over where it was earned.
+const REWARD_FLY := 0.25  ## Seconds it flies to the HUD.
+const REWARD_IMPACT := 0.46  ## Seconds of impact effect at the slot.
 const SKILL_BLOCKS := 2.0
 const ITEM_BLOCKS := 1.0
 const EVADE_BLOCKS := 2.0  ## Manual Evade (was 3 in the GDD; see report).
+const AUTO_DODGE_CHANCE := 0.10  ## Automatic evade chance per hit, for every target.
 const WINDUP := 1.5  ## Every attack takes this long to land; the attacker's ATB is locked meanwhile.
 const STEP_MAX := 2  ## Positions go from -STEP_MAX (behind) to +STEP_MAX (in front).
 const STEP_COST := 1.0  ## ATB blocks per step; nothing else.
@@ -114,9 +62,12 @@ var party: Array[Combatant] = []
 var enemies: Array[Combatant] = []
 var incoming: Array[Incoming] = []
 var running := false
+var rewards: Array[BattleReward] = []
+var _reward_id := 0
 var _landing: Array[Incoming] = []  ## Resolved attacks whose strike has not landed yet.
 var _returning: Array[Incoming] = []  ## Struck already: only the return is left to play.
 var _cues: Array[Dictionary] = []  ## {t, kind, actor, inc}
+var _evade := BattleEvade.new(self)
 var _hop_back := 0.3  ## Placeholder; BattleFx decides how long a return takes.
 
 
@@ -126,6 +77,7 @@ func start(p_party: Array[Combatant], p_enemies: Array[Combatant]) -> void:
 	for c in party + enemies:
 		c.atb = START_ATB
 		c.burst = 0
+		c.clear_pending()
 		c.engaged_with = null
 		c.pos_step = 0
 		c.step_from = 0.0
@@ -133,6 +85,7 @@ func start(p_party: Array[Combatant], p_enemies: Array[Combatant]) -> void:
 	_landing.clear()
 	_returning.clear()
 	_cues.clear()
+	rewards.clear()
 	running = true
 	log_message.emit("Batalha iniciada!")
 
@@ -151,7 +104,8 @@ func _process(delta: float) -> void:
 	_run_ai()
 	_resolve_incoming(delta)
 	_step_attacks(delta)
-	_step_engage(delta)
+	_step_rewards(delta)
+	_evade.step_engage(delta)
 	_step_cues(delta)
 	state_changed.emit()
 
@@ -169,6 +123,8 @@ func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
 	inc.target = target
 	inc.power = skill.power
 	inc.element = skill.element
+	inc.kind = skill.kind
+	inc.ground = skill.ground
 	inc.label = skill.display_name
 	# After a Perfect Evade the next attack is immediate: no wind-up, no preparation.
 	# Instant (no wind-up, no travel) only while engaged next to the opponent it interrupted;
@@ -214,7 +170,7 @@ func can_step(c: Combatant, dir: int) -> bool:
 	if not running or not c.is_alive() or dir == 0:
 		return false
 	var to := c.pos_step + dir
-	if to < -STEP_MAX or to > STEP_MAX or c.atb < STEP_COST:
+	if to < -STEP_MAX or to > STEP_MAX or c.blocks() < STEP_COST:
 		return false
 	if c.engaged_with != null or c.step_t < 1.0 or is_winding_up(c):
 		return false
@@ -225,10 +181,29 @@ func can_step(c: Combatant, dir: int) -> bool:
 	return true
 
 
+## Short reason a step is not possible right now ("" when it is).
+func step_block_reason(c: Combatant) -> String:
+	if not running or not c.is_alive():
+		return ""
+	if c.engaged_with != null:
+		return "engajado"
+	if c.step_t < 1.0:
+		return "andando"
+	if is_winding_up(c):
+		return "em ação"
+	for list in [incoming, _landing, _returning]:
+		for inc in list:
+			if inc.attacker == c or inc.target == c:
+				return "ataque em curso"
+	if c.blocks() < STEP_COST:
+		return "falta ATB"
+	return ""
+
+
 func step(c: Combatant, dir: int) -> bool:
 	if not can_step(c, dir):
 		return false
-	c.atb -= STEP_COST
+	c.spend(STEP_COST)
 	c.step_from = c.visual_step()
 	c.pos_step += dir
 	c.step_t = 0.0
@@ -239,18 +214,37 @@ func step(c: Combatant, dir: int) -> bool:
 
 ## The attack `actor` may press Evade against: one on its way in (works), otherwise one
 ## still winding up (pressing then is the "too early" whiff).
+## Damage a move would deal now (no crit), same formula as a hit; 0 for status moves.
+static func estimate_damage(attacker: Combatant, target: Combatant, skill: Skill) -> int:
+	if skill.kind == Skill.Kind.STATUS:
+		return 0
+	var weak := skill.element in target.weaknesses
+	var step_mult := (1.0 + DMG_PER_STEP * maxi(attacker.pos_step, 0)) * (1.0 - DMG_PER_STEP * maxi(-target.pos_step, 0))
+	return maxi(1, roundi(attacker.attack * skill.power * (WEAKNESS_MULT if weak else 1.0) * step_mult))
+
+
+## A projectile that meets another opponent on its way hits that one instead.
+func redirect(inc: Incoming, new_target: Combatant) -> void:
+	log_message.emit("%s intercepta %s de %s (era para %s)!" % [new_target.name, inc.label, inc.attacker.name, inc.target.name])
+	inc.target = new_target
+
+
+## True while `c` is itself attacking, returning from an attack or stunned.
+func is_attacking(c: Combatant) -> bool:
+	if is_winding_up(c):
+		return true
+	for inc in _returning:
+		if inc.attacker == c:
+			return true
+	return false
+
+
 func find_evadable(actor: Combatant) -> Incoming:
-	if not actor.is_alive() or actor.atb < EVADE_BLOCKS:
-		return null
-	var winding: Incoming = null
-	for inc in active_attacks():
-		if inc.target != actor or inc.dodged or inc.evade_tried or inc.interrupted:
-			continue
-		if inc.can_evade_now():
-			return inc
-		if not inc.resolved and winding == null:
-			winding = inc
-	return winding
+	return _evade.find_evadable(actor)
+
+
+func try_evade(actor: Combatant, inc: Incoming) -> bool:
+	return _evade.try_evade(actor, inc)
 
 
 ## Attacks still able to hurt: winding up, or already on their way to land.
@@ -259,92 +253,6 @@ func active_attacks() -> Array[Incoming]:
 	list.append_array(incoming)
 	list.append_array(_landing)
 	return list
-
-
-func try_evade(actor: Combatant, inc: Incoming) -> bool:
-	if inc == null or actor.atb < EVADE_BLOCKS:
-		return false
-	actor.atb -= EVADE_BLOCKS
-	inc.evade_tried = true
-	# Pressing before the attack is on its way (during the wind-up) is the early whiff.
-	if not inc.can_evade_now():
-		inc.whiffed = true
-		log_message.emit("%s esquivou cedo demais! Vulnerável a crítico!" % actor.name)
-		evade_whiffed.emit(actor, inc)
-		return true
-	inc.dodged = true
-	actor.burst = mini(actor.burst + 1, Combatant.BURST_MAX)
-	actor.counter_ready = true
-	log_message.emit("%s desvia de %s no caminho e o interrompe! BURST!" % [actor.name, inc.attacker.name])
-	manual_evaded.emit(actor, inc)
-	_interrupt(inc)
-	_engage(actor, inc.attacker, inc)
-	return true
-
-
-## The attack stops where it is and never hits.
-func _interrupt(inc: Incoming) -> void:
-	_landing.erase(inc)
-	inc.interrupted = true
-	inc.plan = [[Phase.STAGGER, 9999.0]]
-	inc.plan_i = 0
-	inc.phase = Phase.STAGGER
-	inc.phase_time = 0.0
-	if not _returning.has(inc):
-		_returning.append(inc)
-	attack_phase.emit(inc, Phase.STAGGER)
-
-
-func _engage(actor: Combatant, opponent: Combatant, inc: Incoming) -> void:
-	actor.engaged_with = opponent
-	actor.engage_left = ENGAGE_SECONDS
-	# Attacks that already left aim at where `actor` was: they now strike the empty spot.
-	for other in _landing:
-		if other.target == actor and other != inc:
-			other.void_miss = true
-	engaged.emit(actor, opponent, inc)
-
-
-func _step_engage(delta: float) -> void:
-	for c in party + enemies:
-		if c.engaged_with == null:
-			continue
-		if not c.is_alive() or not c.engaged_with.is_alive():
-			_end_engage(c)
-			continue
-		if is_winding_up(c):
-			continue
-		c.engage_left -= delta / maxf(Engine.time_scale, 0.01)  # Real seconds, like the slow-motion.
-		if c.engage_left <= 0.0:
-			_end_engage(c)
-
-
-## The evader goes back home with the quick leap, and the interrupted attacker recovers.
-func _end_engage(actor: Combatant) -> void:
-	var opponent := actor.engaged_with
-	actor.engaged_with = null
-	actor.counter_ready = false  # The free counter ends with the engagement; it never lingers.
-	actor.counter_ready = false  # The free instant action was only for the engaged state.
-	var staggered: Incoming = null
-	for inc in _returning:
-		if inc.attacker == opponent and inc.phase == Phase.STAGGER:
-			staggered = inc
-	var ghost := Incoming.new()
-	ghost.attacker = actor
-	ghost.target = opponent
-	ghost.ghost = true
-	ghost.resolved = true
-	ghost.impacted = true
-	engage_ended.emit(actor, opponent, ghost, staggered)
-	for inc in [ghost, staggered]:
-		if inc == null or inc.plan.is_empty() or (inc == staggered and inc.phase != Phase.STAGGER):
-			continue
-		inc.plan_i = 0
-		inc.phase = inc.plan[0][0]
-		inc.phase_time = 0.0
-		if inc == ghost:
-			_returning.append(inc)
-		attack_phase.emit(inc, inc.phase)
 
 
 func is_winding_up(c: Combatant) -> bool:
@@ -412,7 +320,7 @@ func _resolve_incoming(delta: float) -> void:
 		if inc.time_left > 0.0:
 			continue
 		incoming.erase(inc)
-		inc.auto_dodged = not inc.dodged and not inc.whiffed and randf() < inc.target.speed
+		inc.auto_dodged = inc.kind != Skill.Kind.STATUS and not inc.dodged and not inc.whiffed and randf() < AUTO_DODGE_CHANCE
 		inc.resolved = true
 		attack_resolved.emit(inc)  # BattleFx fills inc.plan here.
 		if inc.plan.is_empty():
@@ -447,7 +355,7 @@ func _step_attacks(delta: float) -> void:
 				_roll_ai_evade(inc)
 		if inc.can_evade_now() and inc.ai_evade_at >= 0.0 and inc.phase_time >= inc.ai_evade_at:
 			inc.ai_evade_at = -1.0
-			if inc.target.is_alive() and inc.target.atb >= EVADE_BLOCKS and not inc.evade_tried:
+			if inc.target.is_alive() and inc.target.blocks() >= EVADE_BLOCKS and not inc.evade_tried:
 				try_evade(inc.target, inc)
 		if inc.plan_i >= inc.plan.size():
 			if not inc.impacted:
@@ -476,9 +384,16 @@ func _strike(inc: Incoming) -> void:
 		_returning.append(inc)
 	if inc.ghost or inc.interrupted:
 		return
-	if inc.dodged or inc.void_miss:
-		log_message.emit("%s errou %s!" % [inc.attacker.name, inc.label])
-	elif inc.attacker.is_alive() and inc.target.is_alive():
+	if inc.void_miss:
+		log_message.emit("%s errou %s! (o alvo já não estava lá)" % [inc.attacker.name, inc.label])
+		attack_missed.emit(inc)
+	elif inc.dodged:
+		log_message.emit("%s esquivou de %s!" % [inc.target.name, inc.label])
+	elif inc.attacker.is_alive() and inc.target.is_alive() and inc.kind == Skill.Kind.STATUS:
+		# A status move deals no damage (its effect is not defined yet).
+		log_message.emit("%s usa %s em %s" % [inc.attacker.name, inc.label, inc.target.name])
+		hit_resolved.emit(inc.attacker, inc.target, inc.element, {"status": true, "evaded": false, "dmg": 0, "weak": false, "crit": false, "gain": 0, "whiffed": false, "power": 0.0, "skill_name": inc.label})
+	elif inc.target.is_alive() and (inc.attacker.is_alive() or inc.kind == Skill.Kind.PROJECTILE):
 		_hit(inc.attacker, inc.target, inc.power, inc.element, inc.label, inc.whiffed, inc.auto_dodged)
 
 
@@ -498,13 +413,71 @@ func attacks_in_flight() -> Array[Incoming]:
 	return list
 
 
+# --- Rewards ------------------------------------------------------------------
+
+## Credits `amount` ATB blocks to `owner` right now and queues one token per block.
+func grant_atb(owner: Combatant, amount: int, source: Combatant) -> void:
+	var before := owner.atb
+	var extra_in_grant := 0
+	for k in amount:
+		var r := BattleReward.new()
+		_reward_id += 1
+		r.id = _reward_id
+		r.owner = owner
+		r.source = source
+		r.delay = k * 0.09
+		if before + float(k) >= Combatant.BLOCKS - 0.001:  # No room in the bar: an extra block.
+			r.extra = true
+			r.slot = int(owner.extra) + extra_in_grant
+			extra_in_grant += 1
+			owner.pending_extra += 1
+		else:
+			r.slot = clampi(int(floor(before + float(k))), 0, int(Combatant.BLOCKS) - 1)
+			owner.pending_atb += 1
+		rewards.append(r)
+		reward_spawned.emit(r)
+	owner.add_atb(float(amount))
+
+
+func grant_burst(owner: Combatant, source: Combatant) -> void:
+	var r := BattleReward.new()
+	_reward_id += 1
+	r.id = _reward_id
+	r.kind = "burst"
+	r.owner = owner
+	r.source = source
+	owner.pending_burst += 1
+	rewards.append(r)
+	reward_spawned.emit(r)
+
+
+func _step_rewards(delta: float) -> void:
+	for r in rewards.duplicate():
+		r.t += delta
+		if not r.landed and r.age() >= REWARD_FLOAT + REWARD_FLY:
+			r.landed = true
+			_release_pending(r)
+			reward_landed.emit(r)
+		if r.age() >= REWARD_FLOAT + REWARD_FLY + REWARD_IMPACT:
+			rewards.erase(r)
+
+
+func _release_pending(r: BattleReward) -> void:
+	if r.kind == "burst":
+		r.owner.pending_burst = maxi(r.owner.pending_burst - 1, 0)
+	elif r.extra:
+		r.owner.pending_extra = maxi(r.owner.pending_extra - 1, 0)
+	else:
+		r.owner.pending_atb = maxi(r.owner.pending_atb - 1, 0)
+
+
 # --- Helpers ---------------------------------------------------------------
 
 func _hit(attacker: Combatant, target: Combatant, power: float, element: Element.Type, label: String, whiffed := false, auto_dodged := false) -> void:
-	var info := {"evaded": false, "dmg": 0, "weak": false, "crit": false, "gain": 0, "whiffed": whiffed, "power": power}
+	var info := {"evaded": false, "dmg": 0, "weak": false, "crit": false, "gain": 0, "whiffed": whiffed, "power": power, "skill_name": label}
 	# Automatic evade: disabled if the target whiffed an early manual Evade!
 	if auto_dodged:
-		target.add_atb(1.0)
+		grant_atb(target, 1, target)
 		info["evaded"] = true
 		log_message.emit("%s esquiva de %s automaticamente! +1 bloco" % [target.name, label])
 		hit_resolved.emit(attacker, target, element, info)
@@ -516,7 +489,8 @@ func _hit(attacker: Combatant, target: Combatant, power: float, element: Element
 	var dmg := maxi(1, roundi(attacker.attack * power * (WEAKNESS_MULT if weak else 1.0) * (CRIT_MULT if crit else 1.0) * step_mult))
 	target.take_damage(dmg)
 	var gain := (2 if weak else 0) + (1 if crit else 0)
-	attacker.add_atb(float(gain))
+	if gain > 0:
+		grant_atb(attacker, gain, target)
 	info["dmg"] = dmg
 	info["weak"] = weak
 	info["crit"] = crit
@@ -524,7 +498,43 @@ func _hit(attacker: Combatant, target: Combatant, power: float, element: Element
 	log_message.emit("%s usa %s (%s) em %s (%d dano)%s" % [
 		attacker.name, label, Element.name_of(element), target.name, dmg,
 		(" FRAQUEZA! +2 bloco(s)" if weak else "") + (" CRÍTICO! +1 bloco" if crit else "")])
+	_interrupt_attacks_of(target)
 	hit_resolved.emit(attacker, target, element, info)
+
+
+## Being hit before its own strike lands stops whatever `c` was doing: still winding up
+## (cancelled) or already on its way (it stops where it is, never hits, then recovers).
+func _interrupt_attacks_of(c: Combatant) -> void:
+	for inc in incoming.duplicate():
+		if inc.attacker == c and not inc.ghost:
+			incoming.erase(inc)
+			inc.interrupted = true
+			log_message.emit("%s é interrompido!" % c.name)
+			attack_cancelled.emit(inc)
+	for inc in _landing.duplicate():
+		if inc.attacker != c or inc.impacted or inc.interrupted or inc.ghost:
+			continue
+		if inc.kind == Skill.Kind.PROJECTILE and inc.phase == Phase.TRAVEL:
+			continue  # Projectile already fired and in flight: hitting the caster no longer destroys it.
+		_landing.erase(inc)
+		inc.interrupted = true
+		attack_interrupted.emit(inc)
+		if inc.plan.is_empty() or inc.phase == Phase.STAGGER:
+			inc.plan = [[Phase.RETURN, 0.55]]
+		inc.plan_i = 0
+		inc.phase = inc.plan[0][0]
+		inc.phase_time = 0.0
+		if not _returning.has(inc):
+			_returning.append(inc)
+		log_message.emit("%s é interrompido!" % c.name)
+		attack_phase.emit(inc, inc.phase)
+	for inc in _returning.duplicate():
+		if inc.attacker == c and inc.phase == Phase.RETURN and not inc.interrupted and not inc.ghost and inc.kind == Skill.Kind.MELEE:
+			inc.interrupted = true
+			attack_interrupted.emit(inc)
+			inc.plan_i = 0
+			inc.phase = inc.plan[0][0]
+			inc.phase_time = 0.0
 
 
 func _first_alive(list: Array[Combatant]) -> Combatant:
@@ -546,6 +556,9 @@ func _check_end() -> void:
 		attack_cancelled.emit(inc)
 	incoming.clear()
 	_landing.clear()
+	for r in rewards:
+		_release_pending(r)
+	rewards.clear()
 	for c in party + enemies:
 		c.engaged_with = null
 	log_message.emit("Vitória!" if enemies_dead else "Derrota...")

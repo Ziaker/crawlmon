@@ -18,6 +18,34 @@ func heal_fx(_actor: Combatant, target: Combatant, amount: int) -> void:
 	float_text(home + Vector3(0, 2.4, 0), "+%d" % amount, green, 64)
 
 
+## The damage points, shown the instant the hit lands: a screen-sized number that pops,
+## drifts up and fades. `fixed_size` keeps it readable at any camera distance.
+func damage_number(pos: Vector3, value: int, crit: bool, weak: bool) -> void:
+	var l := Label3D.new()
+	l.text = str(value) if not crit else "%d!" % value
+	l.font_size = 64
+	l.pixel_size = 0.0026 if not crit else 0.0034
+	l.fixed_size = true
+	l.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	l.no_depth_test = true
+	l.outline_size = 26
+	l.render_priority = 20
+	l.outline_render_priority = 19
+	l.outline_modulate = Color(0.05, 0.03, 0.02, 0.95)
+	l.modulate = Color(1.0, 0.9, 0.2) if crit else (Color(1.0, 0.55, 0.2) if weak else Color.WHITE)
+	l.position = pos + Vector3(randf_range(-1.4, 1.4), randf_range(-0.2, 0.5), 0.0)
+	l.scale = Vector3.ONE * 0.4
+	fx.add_child(l)
+	var tw := fx.create_tween()
+	tw.tween_property(l, "scale", Vector3.ONE * 1.35, 0.1).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(l, "scale", Vector3.ONE, 0.1)
+	var rise := fx.create_tween().set_parallel(true)
+	rise.tween_property(l, "position:y", pos.y + 0.9, 1.0).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	rise.tween_property(l, "modulate:a", 0.0, 0.3).set_delay(0.75)
+	rise.tween_property(l, "outline_modulate:a", 0.0, 0.3).set_delay(0.75)
+	rise.chain().tween_callback(l.queue_free)
+
+
 func float_text(pos: Vector3, text: String, color: Color, size := 48) -> void:
 	var l := Label3D.new()
 	l.text = text

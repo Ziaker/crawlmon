@@ -129,7 +129,7 @@ func _build_party() -> void:
 	abra.inventory = inventory  # The leader uses the shared party inventory.
 	abra.weaknesses.assign([Element.Type.TREVAS, Element.Type.SOM])
 	abra.skills.assign([
-		Skill.new("Confusão", 1.4, 2, Element.Type.PSIQUICO),
+		Skill.new("Confusão", 1.4, 2, Element.Type.PSIQUICO, Skill.Kind.PROJECTILE),
 		Skill.new("Raio Psíquico", 1.7, 3, Element.Type.PSIQUICO),
 		Skill.new("Onda de Choque", 1.3, 2, Element.Type.RAIO),
 		Skill.new("Teleporte Rápido", 1.1, 1, Element.Type.PSIQUICO),
@@ -140,6 +140,6 @@ func _build_party() -> void:
 		Skill.new("Soco Rápido", 1.2),
 		Skill.new("Golpe de Caratê", 1.5, 2, Element.Type.FISICO),
 		Skill.new("Quebra de Telha", 1.8, 3, Element.Type.FISICO),
-		Skill.new("Provocação", 1.1, 1, Element.Type.TREVAS),
+		Skill.new("Provocação", 0.0, 1, Element.Type.FISICO, Skill.Kind.STATUS),
 	])
 	party.assign([abra, pancham])

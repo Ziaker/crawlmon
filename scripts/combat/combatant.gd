@@ -27,7 +27,13 @@ var skill_cursor := 0  ## Next skill an AI on the SKILL policy tries.
 var act_policy := Act.ATTACK
 var react_policy := React.NONE
 var atb := 0.0
+var extra := 0.0  ## ATB blocks beyond the five normal ones (GDD: spent first, no cap).
 var burst := 0
+## Rewards credited to the logic whose token has not reached the HUD yet (the HUD shows
+## those blocks as reserved until they land).
+var pending_atb := 0
+var pending_extra := 0
+var pending_burst := 0
 var counter_ready := false  ## True right after a manual Evade: the next attack has no wind-up.
 ## Position steps (-2 behind .. +2 in front, 0 = middle). `pos_step` is the logic value;
 ## `step_from`/`step_t` animate the move on Battle's clock (BattleFx draws `visual_step()`).
@@ -77,14 +83,14 @@ func tick(delta: float) -> void:
 
 ## A burst charge pays for any one action for free.
 func can_pay(cost: float) -> bool:
-	return burst > 0 or atb >= cost
+	return burst > 0 or blocks() >= cost
 
 
 func pay(cost: float) -> void:
 	if burst > 0:
 		burst -= 1
 	else:
-		atb -= cost
+		spend(cost)
 
 
 func take_damage(amount: int) -> void:
@@ -109,8 +115,43 @@ func remove_item(id: String) -> void:
 		inventory[id] -= 1
 
 
-func add_atb(blocks: float) -> void:
-	atb = minf(atb + blocks, BLOCKS)
+## Normal plus extra blocks.
+func blocks() -> float:
+	return atb + extra
+
+
+## Extra blocks are spent first, then the normal ones.
+func spend(cost: float) -> void:
+	var from_extra := minf(extra, cost)
+	extra -= from_extra
+	atb = maxf(atb - (cost - from_extra), 0.0)
+
+
+## Fills the bar; what does not fit becomes extra blocks.
+func add_atb(amount: float) -> void:
+	var in_bar := minf(amount, maxf(BLOCKS - atb, 0.0))
+	atb += in_bar
+	extra += amount - in_bar
+
+
+## What the HUD shows: credited blocks whose token is still flying are not drawn yet.
+func shown_atb() -> float:
+	return maxf(atb - float(pending_atb), 0.0)
+
+
+func shown_extra() -> float:
+	return maxf(extra - float(pending_extra), 0.0)
+
+
+func shown_burst() -> int:
+	return maxi(burst - pending_burst, 0)
+
+
+func clear_pending() -> void:
+	pending_atb = 0
+	pending_extra = 0
+	pending_burst = 0
+	extra = 0.0
 
 
 func weakness_text() -> String:

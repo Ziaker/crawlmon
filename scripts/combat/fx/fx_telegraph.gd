@@ -28,9 +28,23 @@ func telegraph(inc) -> void:
 	var elem_col: Color = fx.COLORS.get(inc.element, warn)
 	fx._play(inc.attacker, "charge")
 	var nodes: Array[Node] = []
-	nodes.append_array(_ground_telegraph(a_home, t_home, warn, elem_col, w, not inc.attacker.is_player))
-	nodes.append_array(_charge_aura(inc.attacker, a_home, warn, elem_col, w))
+	var move_id := BattleFx.normalize_move_id(inc.label)
+	var authored := _telegraph_move(inc, move_id, a_home, t_home, warn, elem_col, w)
+	nodes.append_array(authored.get("nodes", []))
+	if not authored.get("handled", false):
+		nodes.append_array(_ground_telegraph(a_home, t_home, warn, elem_col, w, not inc.attacker.is_player))
+		nodes.append_array(_charge_aura(inc.attacker, a_home, warn, elem_col, w))
 	_telegraphs[inc] = nodes
+
+
+## Move telegraphs can replace the elemental/default warning without changing wind-up time.
+func _telegraph_move(_inc, _move_id: String, _from: Vector3, _to: Vector3, _warn: Color, _elem_col: Color, _duration: float) -> Dictionary:
+	var authored_nodes: Array[Node] = []
+	if _move_id == "quebra_telha":
+		var barrier := fx.fx_impacts.spawn_brick_barrier(_inc.target, _to + Vector3(0, 1.15, 0), fx._flat_dir(_from, _to))
+		if barrier != null:
+			authored_nodes.append(barrier)
+	return {"handled": false, "nodes": authored_nodes}
 
 
 ## Projects a 3D ground danger lane/cone and target danger reticle directly onto the arena floor.
@@ -111,9 +125,9 @@ func resolve_attack(inc) -> void:
 	var t: Combatant = inc.target
 	var a_home: Vector3 = fx._home[a]
 	var t_home: Vector3 = fx._home[t]
-	var total: float = fx.fx_motion.begin_attack(inc)
+	var total: float = fx.fx_attack_plan.begin_attack(inc)
 	if fx.cam != null and (a == fx.leader or t == fx.leader):
-		if inc.element == Element.Type.FISICO:
+		if inc.kind == Skill.Kind.MELEE:
 			fx.cam.action((a_home + t_home) * 0.5, 0.65)
 		else:
 			fx.cam.action(t_home, 0.65)

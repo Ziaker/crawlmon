@@ -11,9 +11,9 @@ enum Mode { CINEMA, TATICA, IMPACTO, STATUS }
 signal mode_changed(mode: Mode)
 
 const CINEMA_POS := Vector3(3.8, 2.5, 7.0)
-const CINEMA_LOOK := Vector3(0.0, 2.3, -20.0)
+const CINEMA_LOOK := Vector3(-2.0, 0.0, -20.0)
 const TATICA_POS := Vector3(3.0, 6.0, 9.5)
-const FOV := 60.0
+const FOV := 80.0
 const TILT_DEG := 4.0  ## Fixed Dutch angle (counter-clockwise).
 const GLIDE := 1.0
 
@@ -40,6 +40,7 @@ func setup(p_camera: Camera3D) -> void:
 	_post_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_post_mat = VfxLib.shader_mat("impact_post", {
 		"strength": 0.0,
+		"monochrome": 0.0,
 		"center": Vector2(0.5, 0.45),
 		"tint_color": Color(1.0, 0.9, 0.7, 1.0),
 	})
@@ -58,7 +59,7 @@ func _process(_delta: float) -> void:
 
 ## Screen-space impact post-processing (subtle chromatic aberration, radial blur
 ## and elemental color grade strictly during the strike frame — zero camera shake).
-func impact_post(world_pos: Vector3, elem_color: Color, heavy := false) -> void:
+func impact_post(world_pos: Vector3, elem_color: Color, heavy := false, monochrome_pulse := false) -> void:
 	if _post_mat == null or camera == null or not camera.is_inside_tree():
 		return
 	var uv := Vector2(0.5, 0.45)
@@ -71,10 +72,13 @@ func impact_post(world_pos: Vector3, elem_color: Color, heavy := false) -> void:
 	_post_mat.set_shader_parameter("tint_color", elem_color)
 	var peak := 0.88 if heavy else 0.52
 	_post_mat.set_shader_parameter("strength", peak)
+	_post_mat.set_shader_parameter("monochrome", 1.0 if monochrome_pulse else 0.0)
 	if _post_tw != null and _post_tw.is_valid():
 		_post_tw.kill()
-	_post_tw = create_tween()
+	_post_tw = create_tween().set_parallel(true)
 	_post_tw.tween_method(func(v: float) -> void: _post_mat.set_shader_parameter("strength", v), peak, 0.0, 0.24 if heavy else 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	if monochrome_pulse:
+		_post_tw.tween_method(func(v: float) -> void: _post_mat.set_shader_parameter("monochrome", v), 1.0, 0.0, 0.045)
 
 
 func cinema(time := GLIDE) -> void:

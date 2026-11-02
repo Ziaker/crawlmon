@@ -28,6 +28,9 @@ var _camera: Camera3D
 var _models: Dictionary = {}
 var _director: BattleCamera
 var _cards: Array[UnitCard] = []
+var _pops: Array = []  ## Damage numbers: {c, text, crit, weak, t0, dx}
+var _engage_marks: Array = []  ## {p, k, back} drawn by _draw()
+var _back_until: Dictionary = {}  ## Combatant -> msec: shows VOLTANDO until then
 var _tags: Dictionary = {}  ## enemy Combatant -> EnemyTag
 var _alert: Label
 var _log: Label
@@ -36,6 +39,7 @@ var _tabs: CameraTabs
 var _target: Combatant
 var _status: StatusPanel
 var _status_open := false
+var _reward_layer: RewardLayer
 var _inc_tags: Dictionary = {}  ## Battle.Incoming -> AttackTag
 var _hint: EvadeHint
 var _shown_hp: Dictionary = {}  ## Combatant -> float
@@ -56,6 +60,8 @@ static func text_right(c: CanvasItem, font: Font, right_x: float, y: float, text
 
 func setup(battle: Battle, party: Array[Combatant], enemies: Array[Combatant], camera: Camera3D, models: Dictionary, director: BattleCamera) -> void:
 	_battle = battle
+	battle.hit_resolved.connect(_on_hit_pop)
+	battle.engage_ended.connect(func(actor: Combatant, _o, _g, _s) -> void: _back_until[actor] = Time.get_ticks_msec() + 800)
 	_camera = camera
 	_models = models
 	_director = director
@@ -92,6 +98,12 @@ func setup(battle: Battle, party: Array[Combatant], enemies: Array[Combatant], c
 	add_child(_tabs)
 	_hint = EvadeHint.new()
 	add_child(_hint)
+	_reward_layer = RewardLayer.new()
+	_reward_layer.hud = self
+	_reward_layer.battle = battle
+	add_child(_reward_layer)
+	_reward_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	battle.reward_landed.connect(_on_reward_landed)
 	_status = StatusPanel.new()
 	add_child(_status)
 	_status.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -209,8 +221,85 @@ func _process(_delta: float) -> void:
 	_track_hp()
 	_layout_cards()
 	_layout_tags()
+	for card in _cards:  # A landed reward nudges its card for a moment.
+		if card.pulse > 0.0:
+			card.position += Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * 3.0 * card.pulse
+			card.pulse = maxf(card.pulse - _delta * 2.5, 0.0)
+	for e in _tags:
+		var t: EnemyTag = _tags[e]
+		if t.pulse > 0.0:
+			t.position += Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * 3.0 * t.pulse
+			t.pulse = maxf(t.pulse - _delta * 2.5, 0.0)
 	_sync_incoming()
+	_draw_engaged()
 	queue_redraw()
+
+
+## Damage numbers pop the instant a hit lands (hit_resolved is emitted at the impact).
+func _on_hit_pop(_attacker: Combatant, target: Combatant, _element: Element.Type, info: Dictionary) -> void:
+	if info.get("evaded", false) or info.get("status", false):
+		return
+	_pops.append({"c": target, "value": int(info["dmg"]), "crit": bool(info["crit"]), "weak": bool(info["weak"]),
+		"t0": Time.get_ticks_msec(), "dx": float((_pops.size() % 3) - 1) * 84.0 + randf_range(-14.0, 14.0)})
+
+
+func _draw_pops() -> void:
+	var now := Time.get_ticks_msec()
+	var title := FanMenu.title_font()
+	var keep: Array = []
+	for p in _pops:
+		var age := (now - int(p["t0"])) / 1000.0
+		if age > 1.05:
+			continue
+		keep.append(p)
+		var c: Combatant = p["c"]
+		var at: Variant = _screen_pos(c, _head_of(c) * 0.3)
+		if at == null:
+			continue
+		# Pop in with an overshoot, settle, drift up and fade out.
+		var sc := 1.0
+		if age < 0.1:
+			sc = lerpf(0.35, 1.5, age / 0.1)
+		elif age < 0.22:
+			sc = lerpf(1.5, 1.0, (age - 0.1) / 0.12)
+		var rise := 78.0 * (1.0 - pow(1.0 - clampf(age / 1.0, 0.0, 1.0), 2.0))
+		var jitter := sin(age * 90.0) * 5.0 * clampf(1.0 - age / 0.2, 0.0, 1.0)
+		var alpha := 1.0 - clampf((age - 0.68) / 0.37, 0.0, 1.0)
+		var crit: bool = p["crit"]
+		var weak: bool = p["weak"]
+		var size := 84 if crit else 62
+		var fill := Color("ffd84a") if crit else (Color("ff9a3a") if weak else Color("f6f3e6"))
+		var text := str(p["value"])
+		var origin: Vector2 = (at as Vector2) + Vector2(float(p["dx"]) + jitter, -4.0 - rise)
+		draw_set_transform(origin, -0.12, Vector2(sc, sc))
+		var half := Vector2(-200.0, 0.0)
+		draw_string(title, half + Vector2(5, 6), text, HORIZONTAL_ALIGNMENT_CENTER, 400.0, size, Color(CORAL.r, CORAL.g, CORAL.b, alpha))
+		draw_string_outline(title, half, text, HORIZONTAL_ALIGNMENT_CENTER, 400.0, size, 14, Color(0.04, 0.07, 0.12, alpha))
+		draw_string(title, half, text, HORIZONTAL_ALIGNMENT_CENTER, 400.0, size, Color(fill, alpha))
+		if crit:
+			draw_string(title, half + Vector2(0, -size * 0.75), "CRÍTICO!", HORIZONTAL_ALIGNMENT_CENTER, 400.0, 22, Color(1.0, 0.95, 0.6, alpha))
+		elif weak:
+			draw_string(title, half + Vector2(0, -size * 0.75), "FRAQUEZA!", HORIZONTAL_ALIGNMENT_CENTER, 400.0, 20, Color(1.0, 0.8, 0.5, alpha))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	_pops = keep
+
+
+## Above an engaged character: how long it stays next to its opponent (the slow-motion),
+## then a short "VOLTANDO" while it leaps back home.
+func _draw_engaged() -> void:
+	_engage_marks.clear()
+	if _status_open:
+		return
+	for c in _battle.party + _battle.enemies:
+		if not c.is_alive():
+			continue
+		var p: Variant = _screen_pos(c, _head_of(c) + 1.0)
+		if p == null:
+			continue
+		if c.engaged_with != null:
+			_engage_marks.append({"p": p, "k": clampf(c.engage_left / Battle.ENGAGE_SECONDS, 0.0, 1.0), "back": false})
+		elif Time.get_ticks_msec() < _back_until.get(c, 0):
+			_engage_marks.append({"p": p, "k": 0.0, "back": true})
 
 
 func _screen_pos(c: Combatant, height: float) -> Variant:
@@ -239,7 +328,7 @@ func _sync_incoming() -> void:
 			var p: Variant = _screen_pos(inc.attacker, _head_of(inc.attacker) + (0.4 if not inc.attacker.is_player else 0.2))
 			tag.visible = p != null
 			if p != null:
-				var lift := 72.0 if not inc.attacker.is_player else 10.0
+				var lift := 92.0 if not inc.attacker.is_player else 10.0
 				tag.position = (p as Vector2) - Vector2(tag.size.x * 0.5, tag.size.y + lift)
 			tag.queue_redraw()
 	for inc in _inc_tags.keys():
@@ -276,6 +365,50 @@ func _layout_cards() -> void:
 			if card.order > 1:
 				ally_y -= (card.order - 1) * (eff_h + 12.0)
 			card.position = Vector2(ally_x, ally_y)
+
+
+## Where the token flies to: the matching slot on the owner's card (or enemy tag).
+func reward_dest(r) -> Variant:
+	for card in _cards:
+		if card.combatant == r.owner:
+			if r.kind == "burst":
+				return card.burst_slot_global()
+			return card.extra_slot_global(r.slot) if r.extra else card.atb_slot_global(r.slot)
+	var tag: EnemyTag = _tags.get(r.owner)
+	if tag != null and tag.visible:
+		if r.kind == "burst":
+			return tag.burst_slot_global()
+		return tag.extra_slot_global(r.slot) if r.extra else tag.atb_slot_global(r.slot)
+	return null
+
+
+## Where the token is born: over the character that earned it.
+func reward_source(r) -> Variant:
+	return _screen_pos(r.source, _head_of(r.source) * 0.55)
+
+
+func _on_reward_landed(r) -> void:
+	for card in _cards:
+		if card.combatant == r.owner:
+			card.pulse = 1.0
+	var tag: EnemyTag = _tags.get(r.owner)
+	if tag != null:
+		tag.pulse = 1.0
+
+
+## Rising flame tongues behind a Burst slot (it is on fire while a Burst is available).
+static func draw_flames(ci: CanvasItem, rect: Rect2, now: int, power: float) -> void:
+	var cx := rect.position.x + rect.size.x * 0.5
+	var base_y := rect.position.y + rect.size.y * 0.55
+	ci.draw_circle(Vector2(cx, rect.position.y + rect.size.y * 0.4), rect.size.x * 1.1, Color(1.0, 0.55, 0.1, (0.12 + 0.05 * sin(now * 0.01)) * power))
+	for j in 5:
+		var ph := now * 0.013 + j * 1.9
+		var h := (13.0 + 8.0 * sin(ph)) * power * (rect.size.y / 17.0 + 0.4)
+		var x := rect.position.x + (j + 0.5) * rect.size.x / 5.0
+		var w := rect.size.x / 4.5
+		var sway := sin(ph * 0.7) * 2.5
+		ci.draw_colored_polygon(PackedVector2Array([Vector2(x - w, base_y), Vector2(x + sway, base_y - h), Vector2(x + w, base_y)]), Color(1.0, 0.42, 0.08, 0.9))
+		ci.draw_colored_polygon(PackedVector2Array([Vector2(x - w * 0.55, base_y), Vector2(x + sway * 0.7, base_y - h * 0.62), Vector2(x + w * 0.55, base_y)]), Color(1.0, 0.85, 0.3, 0.95))
 
 
 func _head_of(c: Combatant) -> float:
@@ -317,9 +450,20 @@ func _draw() -> void:
 	var w := title.get_string_size("CRAWL", HORIZONTAL_ALIGNMENT_LEFT, -1, 40).x
 	draw_string(title, Vector2(MARGIN + w, 52), "/", HORIZONTAL_ALIGNMENT_LEFT, -1, 44, CORAL)
 	draw_string(title, Vector2(MARGIN + w + 16, 52), "MON", HORIZONTAL_ALIGNMENT_LEFT, -1, 40, LIME)
+	for m in _engage_marks:
+		var pt: Vector2 = m["p"]
+		var bar := Rect2(pt + Vector2(-36, 0), Vector2(72, 7))
+		if m["back"]:
+			draw_string(font, pt + Vector2(-36, 8), "VOLTANDO", HORIZONTAL_ALIGNMENT_CENTER, 72, 11, CORAL)
+		else:
+			draw_string(font, pt + Vector2(-36, -4), "ENGAJADO", HORIZONTAL_ALIGNMENT_CENTER, 72, 10, Color(CREAM, 0.9))
+			draw_rect(bar, Color(0, 0, 0, 0.55))
+			draw_rect(Rect2(bar.position, Vector2(bar.size.x * float(m["k"]), bar.size.y)), LIME.lerp(CORAL, 1.0 - float(m["k"])))
+			draw_rect(bar, Color(1, 1, 1, 0.5), false, 1.0)
+	_draw_pops()
 	draw_rect(Rect2(0, 720 - FOOTER_H, 1280, FOOTER_H), Color(0.03, 0.07, 0.11, 0.95))
 	draw_line(Vector2(0, 720 - FOOTER_H), Vector2(1280, 720 - FOOTER_H), Color("2a3d47"), 1.0)
-	var hint := "SETAS MOVER   ·   Z CONFIRMAR   ·   X VOLTAR   ·   ESPAÇO DESVIAR (EVADE)   ·   C CONFIGURAÇÕES"
+	var hint := "SETAS MOVER   ·   Z CONFIRMAR   ·   X VOLTAR   ·   ESPAÇO DESVIAR   ·   1-9 GOLPES   ·   R REPETE   ·   C CONFIG."
 	draw_string(font, Vector2(MARGIN, 720 - 13), hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color("b5c3c2"))
 
 
@@ -345,6 +489,16 @@ class UnitCard extends Control:
 	var _block_fill_flash: Array[float] = [0.0, 0.0, 0.0, 0.0, 0.0]
 	var _extra_flash: Array[float] = [0.0, 0.0, 0.0, 0.0, 0.0]
 	var _burst_gain_flash := 0.0
+	var pulse := 0.0  ## Set when a reward lands: a small nudge of the whole card.
+
+	func atb_slot_global(i: int) -> Vector2:
+		return position + Vector2(84.0 + 30.0 + i * 29.0 + 13.0, 86.5) * scale
+
+	func extra_slot_global(k: int) -> Vector2:
+		return position + Vector2(84.0 + 30.0 + k * 11.0 + 4.5, 99.0) * scale
+
+	func burst_slot_global() -> Vector2:
+		return position + Vector2(84.0 + 30.0 + 5.0 * 29.0 + 4.0 + 12.5, 86.5) * scale
 
 	func _init() -> void:
 		size = Vector2(330, 104)
@@ -354,10 +508,10 @@ class UnitCard extends Control:
 		if not hero:
 			scale = Vector2(0.85, 0.85)
 		if combatant != null:
-			_prev_atb = combatant.atb
-			_prev_burst = combatant.burst
+			_prev_atb = combatant.shown_atb()
+			_prev_burst = combatant.shown_burst()
 			for i in 5:
-				_block_is_full[i] = combatant.atb >= float(i + 1)
+				_block_is_full[i] = combatant.shown_atb() >= float(i + 1)
 			var path := "res://personagens/portraits/%s.png" % combatant.name.to_lower()
 			if ResourceLoader.exists(path):
 				_portrait = load(path)
@@ -365,8 +519,8 @@ class UnitCard extends Control:
 	func _process(delta: float) -> void:
 		if combatant == null:
 			return
-		var cur_atb := combatant.atb
-		var cur_burst := combatant.burst
+		var cur_atb := combatant.shown_atb()
+		var cur_burst := combatant.shown_burst()
 
 		# Extra block detection: sudden ATB jump >= 0.7 blocks (from weakness/crit/auto-evade)
 		if cur_atb - _prev_atb >= 0.7:
@@ -416,7 +570,7 @@ class UnitCard extends Control:
 
 		# Title row.
 		draw_string(font, Vector2(8, 11), ("%s / RECURSOS" % c.name.to_upper()) if hero else "ALIADO / RECURSOS", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, CREAM if hero else Color("e6ddff"))
-		BattleHud.text_right(self, font, size.x - 8, 11, "ATB %02d" % int(c.atb), 10, LIME)
+		BattleHud.text_right(self, font, size.x - 8, 11, "ATB %02d" % int(c.shown_atb() + c.shown_extra()), 10, LIME)
 		# Card body.
 		var body := Rect2(0, 18, size.x, 82)
 		BattleHud.slant(self, Rect2(body.position + Vector2(6, 6), body.size), 8.0, Color(0, 0, 0, 0.5))
@@ -446,7 +600,7 @@ class UnitCard extends Control:
 			BattleHud.slant(self, r, 3.0, atb_bg)
 			BattleHud.slant(self, Rect2(r.position + Vector2(1, 1), r.size - Vector2(2, 2)), 2.8, atb_bg.darkened(0.2))
 
-			var fill := clampf(c.atb - i, 0.0, 1.0)
+			var fill := clampf(c.shown_atb() - i, 0.0, 1.0)
 			if fill > 0.0:
 				var fill_w := r.size.x * fill
 				var base_col: Color = atb_fill
@@ -474,6 +628,14 @@ class UnitCard extends Control:
 					# Full block: glowing top highlight line
 					draw_line(Vector2(r.position.x + 3.0, r.position.y + 1), Vector2(r.end.x, r.position.y + 1), Color(1, 1, 1, 0.45), 1.0)
 
+			# Reserved: credited to the logic, but its token is still on the way.
+			if clampf(c.atb - i, 0.0, 1.0) > fill + 0.001:
+				var rsv := 0.5 + 0.5 * sin(now * 0.012 + i)
+				var outline := PackedVector2Array([
+					Vector2(r.position.x + 3.0, r.position.y), Vector2(r.end.x, r.position.y),
+					Vector2(r.end.x - 3.0, r.end.y), Vector2(r.position.x, r.end.y), Vector2(r.position.x + 3.0, r.position.y)])
+				draw_polyline(outline, Color(0.45, 0.92, 1.0, 0.35 + 0.4 * rsv), 1.5)
+
 			# Extra blocks surge animation (from weakness/crit/auto-evade)
 			if _extra_flash[i] > 0.0:
 				var surge_alpha := _extra_flash[i]
@@ -489,8 +651,10 @@ class UnitCard extends Control:
 
 		# Burst slot
 		var slot := Rect2(bar_x + 30 + 5 * 29 + 4, 78, 25, 17)
-		if c.burst > 0:
+		var sb := c.shown_burst()
+		if sb > 0:
 			var b_pulse := 0.5 + 0.5 * sin(now * 0.01)
+			BattleHud.draw_flames(self, slot, now, 1.0)  # The slot burns while a Burst is ready.
 			# Outer pulsating aura
 			var aura := Rect2(slot.position - Vector2(2.0 + b_pulse * 1.5, 2.0 + b_pulse * 1.5), slot.size + Vector2(4.0 + b_pulse * 3.0, 4.0 + b_pulse * 3.0))
 			draw_rect(aura, Color(1.0, 0.82, 0.2, 0.25 + b_pulse * 0.25))
@@ -503,8 +667,10 @@ class UnitCard extends Control:
 			# Glowing border
 			draw_rect(slot, Color.WHITE.lerp(GOLD, 0.4), false, 1.5)
 			# Burst text
-			var b_txt := "B" if c.burst < 2 else "B%d" % c.burst
-			draw_string(font, slot.position + Vector2(0, 13), b_txt, HORIZONTAL_ALIGNMENT_CENTER, slot.size.x, 11, Color("201a08"))
+			var b_txt := "B" if sb < 2 else "B%d" % sb
+			for d in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:
+				draw_string(font, slot.position + Vector2(0, 14) + d, b_txt, HORIZONTAL_ALIGNMENT_CENTER, slot.size.x, 13, Color(1.0, 0.45, 0.05, 0.9))
+			draw_string(font, slot.position + Vector2(0, 14), b_txt, HORIZONTAL_ALIGNMENT_CENTER, slot.size.x, 13, Color(1.0, 1.0, 0.9))
 			# Sudden burst gain flash
 			if _burst_gain_flash > 0.0:
 				var g_col := Color(1, 1, 1, _burst_gain_flash * 0.85)
@@ -514,6 +680,18 @@ class UnitCard extends Control:
 			draw_rect(slot, Color("151a24"))
 			draw_rect(slot, Color("344254"), false, 1.0)
 			draw_string(font, slot.position + Vector2(0, 13), "B", HORIZONTAL_ALIGNMENT_CENTER, slot.size.x, 11, Color("4a576b"))
+			if c.burst > 0:  # Credited, token still flying: the slot is reserved.
+				draw_rect(slot, Color(1.0, 0.6, 0.15, 0.4 + 0.4 * (0.5 + 0.5 * sin(now * 0.012))), false, 1.5)
+
+		# Extra ATB blocks (beyond the five): small squares in a row under the bar.
+		var ex_shown := int(c.shown_extra())
+		for k in int(c.extra + 0.001):
+			var er := Rect2(bar_x + 30 + k * 11, 96, 9, 6)
+			if k < ex_shown:
+				draw_rect(er, Color(0.55, 0.95, 1.0))
+				draw_rect(er, Color.WHITE, false, 1.0)
+			else:
+				draw_rect(er, Color(0.45, 0.92, 1.0, 0.45), false, 1.0)
 
 		BattleHud.draw_pos_marks(self, Vector2(size.x * 0.5, 108.0), c.pos_step)
 		# Order numeral.
@@ -527,27 +705,72 @@ class EnemyTag extends Control:
 	var combatant: Combatant
 	var hud: BattleHud
 	var active := false
+	var pulse := 0.0  ## Set when a reward lands: a small nudge of the tag.
 
 	func _init() -> void:
-		size = Vector2(132, 64)
+		size = Vector2(132, 84)
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func atb_slot_global(i: int) -> Vector2:
+		return position + Vector2(8.0 + i * 18.0 + 8.0, 48.0)
+
+	func extra_slot_global(k: int) -> Vector2:
+		return position + Vector2(8.0 + k * 9.0 + 3.5, 61.0)
+
+	func burst_slot_global() -> Vector2:
+		return position + Vector2(112.5, 48.0)
 
 	func _draw() -> void:
 		var c := combatant
 		var font := FanMenu.body_font()
-		var box := Rect2(0, 0, size.x, 44)
+		var now := Time.get_ticks_msec()
+		var box := Rect2(0, 0, size.x, 56)
 		BattleHud.slant(self, Rect2(box.position + Vector2(3, 4), box.size), 7.0, Color(0, 0, 0, 0.45))
 		BattleHud.slant(self, box, 7.0, Color("eae9d9") if active else Color(INK, 0.9))
 		var name_col := Color("b74134") if active else CORAL
-		draw_string(font, Vector2(0, 17), c.name.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, size.x, 12, name_col)
-		draw_rect(Rect2(14, 23, size.x - 28, 5), Color("7b8c90") if active else Color("3a4756"))
+		draw_string(font, Vector2(0, 15), c.name.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, size.x, 12, name_col)
+		draw_rect(Rect2(14, 20, size.x - 28, 5), Color("7b8c90") if active else Color("3a4756"))
 		var shown := hud.shown_hp(c)
-		draw_rect(Rect2(14, 23, (size.x - 28) * clampf(shown / c.max_hp, 0.0, 1.0), 5), CORAL)
-		draw_string(font, Vector2(0, 40), "HP %d / %d" % [ceili(shown), c.max_hp], HORIZONTAL_ALIGNMENT_CENTER, size.x, 10, Color("111d2a") if active else CREAM)
-		BattleHud.draw_pos_marks(self, Vector2(size.x * 0.5, 70.0), c.pos_step)
+		draw_rect(Rect2(14, 20, (size.x - 28) * clampf(shown / c.max_hp, 0.0, 1.0), 5), CORAL)
+		draw_string(font, Vector2(0, 37), "HP %d / %d" % [ceili(shown), c.max_hp], HORIZONTAL_ALIGNMENT_CENTER, size.x, 10, Color("111d2a") if active else CREAM)
+		# ATB: five small blocks, reserved outlines for blocks still flying in.
+		for i in 5:
+			var r := Rect2(8 + i * 18, 44, 16, 8)
+			BattleHud.slant(self, r, 2.0, Color("9aa7b0") if active else Color("2a3442"))
+			var fill := clampf(c.shown_atb() - i, 0.0, 1.0)
+			if fill > 0.0:
+				BattleHud.slant(self, Rect2(r.position, Vector2(r.size.x * fill, r.size.y)), 2.0 * fill, Color(0.4, 0.88, 1.0) if fill >= 1.0 else Color(0.2, 0.55, 0.75))
+			if clampf(c.atb - i, 0.0, 1.0) > fill + 0.001:
+				var rsv := 0.5 + 0.5 * sin(now * 0.012 + i)
+				var o := PackedVector2Array([Vector2(r.position.x + 2.0, r.position.y), Vector2(r.end.x, r.position.y), Vector2(r.end.x - 2.0, r.end.y), Vector2(r.position.x, r.end.y), Vector2(r.position.x + 2.0, r.position.y)])
+				draw_polyline(o, Color(0.45, 0.92, 1.0, 0.35 + 0.4 * rsv), 1.5)
+		# Burst slot: on fire while a Burst is available.
+		var slot := Rect2(101, 43, 23, 10)
+		var sb := c.shown_burst()
+		if sb > 0:
+			BattleHud.draw_flames(self, slot, now, 0.8)
+			draw_rect(slot, GOLD.lerp(Color.WHITE, 0.15 + 0.15 * sin(now * 0.01)))
+			draw_rect(slot, Color.WHITE.lerp(GOLD, 0.4), false, 1.2)
+			var txt := "B" if sb < 2 else "B%d" % sb
+			draw_string(font, slot.position + Vector2(0, 9), txt, HORIZONTAL_ALIGNMENT_CENTER, slot.size.x, 10, Color(0.2, 0.1, 0.0))
+		else:
+			draw_rect(slot, Color("151a24"))
+			draw_rect(slot, Color("344254"), false, 1.0)
+			draw_string(font, slot.position + Vector2(0, 9), "B", HORIZONTAL_ALIGNMENT_CENTER, slot.size.x, 9, Color("4a576b"))
+			if c.burst > 0:
+				draw_rect(slot, Color(1.0, 0.6, 0.15, 0.4 + 0.4 * (0.5 + 0.5 * sin(now * 0.012))), false, 1.5)
+		# Extra ATB blocks.
+		var ex_shown := int(c.shown_extra())
+		for k in int(c.extra + 0.001):
+			var er := Rect2(8 + k * 9, 58, 7, 5)
+			if k < ex_shown:
+				draw_rect(er, Color(0.55, 0.95, 1.0))
+			else:
+				draw_rect(er, Color(0.45, 0.92, 1.0, 0.45), false, 1.0)
+		BattleHud.draw_pos_marks(self, Vector2(size.x * 0.5, 82.0), c.pos_step)
 		var cx := size.x * 0.5
-		var cy := 54.0
-		var diamond := PackedVector2Array([Vector2(cx, cy - 8), Vector2(cx + 8, cy), Vector2(cx, cy + 8), Vector2(cx - 8, cy)])
+		var cy := 72.0
+		var diamond := PackedVector2Array([Vector2(cx, cy - 7), Vector2(cx + 7, cy), Vector2(cx, cy + 7), Vector2(cx - 7, cy)])
 		if active:
 			draw_colored_polygon(diamond, CORAL)
 		else:

@@ -4,6 +4,7 @@ shader_type canvas_item;
 
 uniform sampler2D screen_tex : hint_screen_texture, filter_linear_mipmap;
 uniform float strength : hint_range(0.0, 1.0) = 0.0;
+uniform float monochrome : hint_range(0.0, 1.0) = 0.0;
 uniform vec2 center = vec2(0.5, 0.46);
 uniform vec4 tint_color : source_color = vec4(1.0, 0.9, 0.7, 1.0);
 
@@ -38,6 +39,11 @@ void fragment() {
 		// Edge vignette flash in elemental color
 		float edge_glow = smoothstep(0.28, 0.85, dist) * strength * 0.22;
 		graded += tint_color.rgb * edge_glow;
+
+		// Optional two-frame high-contrast monochrome impact pulse.
+		float luma = dot(graded, vec3(0.299, 0.587, 0.114));
+		float ink = smoothstep(0.30, 0.70, luma);
+		graded = mix(graded, vec3(ink), monochrome);
 
 		COLOR = vec4(graded, clamp(strength * 0.92, 0.0, 1.0));
 	}

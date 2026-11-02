@@ -31,6 +31,10 @@ var _status_unit: Combatant
 var _saved_anim: Dictionary = {}  ## AnimationPlayer -> [name, position]
 
 var _menu: FanMenu
+var _last_main := 0  ## Last command picked on the main menu (it reopens there).
+var _fight_target: Combatant  ## The opponent highlighted while the move list is open.
+var _last_skill := ""  ## Last Fight skill and target, by name.
+var _last_target := ""
 var _tactic_rows: Array = []  ## {unit, kind: act | react | pos} per Tactics row
 var _fight_skills: Array[Skill] = []
 var _item_list: Array[Item] = []
@@ -53,9 +57,10 @@ func _ready() -> void:
 	]
 	enemies[0].weaknesses.assign([Element.Type.AGUA_GELO])
 	enemies[0].skills.assign([
-		Skill.new("Mordida", 1.2, 1, Element.Type.TREVAS),
-		Skill.new("Tiro de Areia", 1.3, 2, Element.Type.TERRA),
-		Skill.new("Fúria do Dragão", 1.6, 3, Element.Type.FISICO),
+		Skill.new("Mordida", 1.2, 1, Element.Type.TREVAS, Skill.Kind.MELEE),
+		Skill.new("Tiro de Areia", 1.3, 2, Element.Type.TERRA, Skill.Kind.PROJECTILE, true),
+		Skill.new("Fúria do Dragão", 1.6, 3, Element.Type.FISICO, Skill.Kind.PROJECTILE),
+		Skill.new("Investida Subterrânea", 1.5, 2, Element.Type.TERRA, Skill.Kind.MELEE, true),
 	])
 	enemies[0].inventory = {"potion": 1}
 	for e in enemies:  # Same Tactics the allies have: cast skills and evade when able.
@@ -75,6 +80,9 @@ func _ready() -> void:
 	hud = BattleHud.new()
 	ui.add_child(hud)
 	hud.setup(battle, party, enemies, $Camera3D, models, director)
+	var debug_panel := BattleDebug.new()  # F1: quick-test panel (hotkeys F2..F11)
+	add_child(debug_panel)
+	debug_panel.setup(battle, party, enemies)
 	_menu = hud.menu
 	hud.status_closed.connect(_close_status)
 	hud.status_unit_selected.connect(_on_status_unit)
@@ -88,6 +96,12 @@ func _ready() -> void:
 	battle.attack_resolved.connect(fx.resolve_attack)
 	battle.attack_phase.connect(fx.on_phase)
 	battle.engaged.connect(fx.on_engaged)
+	battle.attack_interrupted.connect(fx.on_attack_interrupted)
+	battle.attack_missed.connect(fx.on_attack_missed)
+	if BattleTrace.wanted():  # Flight recorder: every frame and event to user://battle_trace.jsonl
+		var trace := BattleTrace.new()
+		add_child(trace)
+		trace.setup(battle, fx, models, party, enemies)
 	battle.engage_ended.connect(fx.on_engage_ended)
 	battle.engage_ended.connect(func(actor: Combatant, _o, _g, _s) -> void:
 		if actor == leader:
@@ -119,6 +133,22 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# 1-9 use that move of the list on the current target; R repeats the last move.
+	if event is InputEventKey and event.pressed and not event.echo and battle.running and leader.is_alive() \
+			and (state == S.MAIN or state == S.FIGHT):
+		var slot: int = event.keycode - KEY_1
+		var skill: Skill = null
+		_build_fight_skills()
+		if slot >= 0 and slot < 9 and slot < _fight_skills.size():
+			skill = _fight_skills[slot]
+		elif event.keycode == KEY_R:
+			skill = _move_by_name(_last_skill)
+		if skill != null:
+			var target := _fight_target if state == S.FIGHT and _fight_target != null and _fight_target.is_alive() else _default_target()
+			if _use_move(skill, target):
+				_show_main()
+			get_viewport().set_input_as_handled()
+			return
 	if event.is_action_pressed("evade") and battle.running and leader.is_alive():
 		if battle.try_evade(leader, battle.find_evadable(leader)):
 			get_viewport().set_input_as_handled()
@@ -253,8 +283,8 @@ func _on_died(c: Combatant) -> void:
 ## A manual Evade by the leader slows the whole game (the Burst slow-motion) until the
 ## player executes the instant counter-action or the timer expires.
 func _on_manual_evaded(actor: Combatant, _inc) -> void:
-	if actor != leader:
-		return
+	if actor != leader or actor.engaged_with == null:
+		return  # Slow-motion only goes with the engaged state.
 	_slow_token += 1
 	var token := _slow_token
 	Engine.time_scale = SLOWMO_SCALE
@@ -298,8 +328,9 @@ func _set_state(s: S) -> void:
 	state = s
 	# Tactics and Status pause the whole game while they are open.
 	get_tree().paused = s == S.TACTICS or s == S.STATUS
+	if s != S.TARGET and s != S.FIGHT:
+		hud.set_target(null)  # The target tag stays lit while the move list is open.
 	if was_target and s != S.TARGET:
-		hud.set_target(null)
 		director.cinema()
 
 
@@ -317,28 +348,126 @@ func _show_main() -> void:
 		{"text": "Tactics", "detail": "PAUSA"},
 		{"text": "Status", "detail": "PAUSA"},
 	])
+	_menu.select(_last_main)
 	_refresh()
 
 
 func _update_main_enabled() -> void:
-	_menu.set_enabled(0, leader.can_pay(Battle.SKILL_BLOCKS) and not battle.is_winding_up(leader))
-	_menu.set_enabled(1, leader.can_pay(Battle.ITEM_BLOCKS) and not _consumables().is_empty())
-	_menu.set_enabled(2, battle.find_evadable(leader) != null)
+	var can_fight := leader.can_pay(Battle.SKILL_BLOCKS) and not battle.is_winding_up(leader)
+	_menu.set_enabled(0, can_fight)
+	_menu.set_detail(0, "%d ATB" % int(Battle.SKILL_BLOCKS) if can_fight else ("em ação" if battle.is_winding_up(leader) else "falta ATB"))
+	var can_item := leader.can_pay(Battle.ITEM_BLOCKS) and not _consumables().is_empty()
+	_menu.set_enabled(1, can_item)
+	_menu.set_detail(1, "%d ATB" % int(Battle.ITEM_BLOCKS) if can_item else ("sem itens" if _consumables().is_empty() else "falta ATB"))
+	var can_evade := battle.find_evadable(leader) != null
+	_menu.set_enabled(2, can_evade)
+	var why := "%d ATB" % int(Battle.EVADE_BLOCKS)
+	if not can_evade:
+		why = "engajado" if leader.engaged_with != null else ("em ação" if battle.is_attacking(leader) else ("falta ATB" if leader.blocks() < Battle.EVADE_BLOCKS else "nada a desviar"))
+	_menu.set_detail(2, why)
 
 
 func _show_fight() -> void:
 	_set_state(S.FIGHT)
-	hud.set_menu_style(FanMenu.Style.DRAWER, "FIGHT // COMANDOS")
+	_build_fight_skills()
+	_fight_target = _default_target()
+	hud.set_target(_fight_target)
+	_fill_fight(false)
+	for n in _fight_skills.size():
+		if _fight_skills[n].display_name == _last_skill:
+			_menu.select(n)
+	_update_fight_header(_menu.index)
+
+
+func _build_fight_skills() -> void:
 	_fight_skills.clear()
 	_fight_skills.append(Skill.basic())
 	_fight_skills.append_array(leader.skills)
+
+
+## The opponent a move goes to when none was picked: the engaged one, the last target
+## still alive, or the first one alive.
+func _default_target() -> Combatant:
+	if leader.engaged_with != null and leader.engaged_with.is_alive():
+		return leader.engaged_with
+	var first: Combatant = null
+	for e in battle.enemies:
+		if not e.is_alive():
+			continue
+		if first == null:
+			first = e
+		if e.name == _last_target:
+			return e
+	return first
+
+
+## The move list with, for the current target: estimated damage, a weakness tag, the best
+## move starred and the reason (or "free" with Burst) for the price.
+func _fill_fight(keep_index: bool) -> void:
+	var target := _fight_target
+	var best := -1
+	var best_dmg := -1
+	for n in _fight_skills.size():
+		var sk := _fight_skills[n]
+		if target != null and leader.can_pay(sk.cost):
+			var dmg := Battle.estimate_damage(leader, target, sk)
+			if dmg > best_dmg:
+				best_dmg = dmg
+				best = n
 	var entries: Array = []
-	for s in _fight_skills:
+	for n in _fight_skills.size():
+		var sk := _fight_skills[n]
+		var affordable := leader.can_pay(sk.cost) and not battle.is_winding_up(leader)
+		var price := "GRÁTIS" if leader.burst > 0 else "%d ATB" % sk.cost
+		if not leader.can_pay(sk.cost):
+			price = "falta %d ATB" % int(ceilf(sk.cost - leader.blocks()))
+		elif battle.is_winding_up(leader):
+			price = "em ação"
+		var tail := ""
+		var accent := Color(0, 0, 0, 0)
+		if target != null:
+			if sk.kind == Skill.Kind.STATUS:
+				tail = " · sem dano"
+			else:
+				var weak := sk.element in target.weaknesses
+				tail = " · ≈%d%s" % [Battle.estimate_damage(leader, target, sk), " FRAQ." if weak else ""]
+				if weak:
+					accent = Color("ffd45a")
 		entries.append({
-			"text": s.display_name,
-			"detail": "%d ATB · %s" % [s.cost, Element.name_of(s.element)],
-			"enabled": leader.can_pay(s.cost) and not battle.is_winding_up(leader)})
-	_menu.set_entries(entries)
+			"text": ("★ " if n == best else "") + sk.display_name,
+			"detail": "%s · %s%s" % [price, Element.name_of(sk.element), tail],
+			"enabled": affordable,
+			"accent": accent})
+	_menu.set_entries(entries, keep_index)
+
+
+## Header strip: the highlighted move's category and travel time to the current target.
+func _update_fight_header(i: int) -> void:
+	if i < 0 or i >= _fight_skills.size():
+		return
+	var sk := _fight_skills[i]
+	var text := Skill.kind_name(sk.kind).to_upper()
+	if _fight_target != null and (sk.kind == Skill.Kind.MELEE or sk.kind == Skill.Kind.PROJECTILE):
+		text += " %.2fs" % fx.fx_attack_plan.preview_travel(leader, _fight_target, sk.kind)
+	hud.set_menu_style(FanMenu.Style.DRAWER, text)
+
+
+## Uses a move on a target right now (Fight menu, number keys and Repeat all end here).
+func _use_move(skill: Skill, target: Combatant) -> bool:
+	if target == null or not target.is_alive():
+		return false
+	if not (leader.can_pay(skill.cost) and not battle.is_winding_up(leader)):
+		return false
+	_last_skill = skill.display_name
+	_last_target = target.name
+	return battle.use_skill(leader, skill, target)
+
+
+func _move_by_name(skill_name: String) -> Skill:
+	for sk in _fight_skills:
+		if sk.display_name == skill_name:
+			return sk
+	return null
 
 
 func _show_items() -> void:
@@ -423,12 +552,28 @@ func _pos_text(c: Combatant, is_leader: bool) -> String:
 	var marks := PackedStringArray()
 	for p in range(-Battle.STEP_MAX, Battle.STEP_MAX + 1):
 		marks.append("O" if p == c.pos_step else ("o" if not is_leader and p == c.tactic_pos else "-"))
-	return "< " + " ".join(marks) + " >"
+	var text := "< " + " ".join(marks) + " >"
+	var why := battle.step_block_reason(c) if is_leader else ""
+	return text + ("  (%s)" % why if why != "" else "")
 
 
 ## Left/right on a Position row: the leader steps now (1 ATB); an ally's AI is told
 ## where to stand and walks there by itself.
 func _on_menu_side(direction: int) -> void:
+	if state == S.FIGHT:
+		# Left/right changes the target without leaving the move list.
+		if leader.engaged_with != null:
+			return  # Engaged: it can only act on that opponent.
+		var alive: Array[Combatant] = []
+		for e in battle.enemies:
+			if e.is_alive():
+				alive.append(e)
+		if alive.size() > 1:
+			_fight_target = alive[posmod(alive.find(_fight_target) + direction, alive.size())]
+			hud.set_target(_fight_target)
+			_fill_fight(true)
+			_update_fight_header(_menu.index)
+		return
 	if state != S.TACTICS or _menu.index >= _tactic_rows.size():
 		return
 	var row: Dictionary = _tactic_rows[_menu.index]
@@ -462,11 +607,15 @@ func _pick_target(candidates: Array[Combatant], on_target: Callable, back: Calla
 		var weak := t.weakness_text()
 		entries.append({"text": t.name, "detail": ("Fraq: " + weak) if weak != "" else "HP %d/%d" % [t.hp, t.max_hp]})
 	_menu.set_entries(entries)
+	for n in _targets.size():
+		if _targets[n].name == _last_target:
+			_menu.select(n)
 
 
 func _on_chosen(i: int) -> void:
 	match state:
 		S.MAIN:
+			_last_main = i
 			match i:
 				0: _show_fight()
 				1: _show_items()
@@ -474,14 +623,14 @@ func _on_chosen(i: int) -> void:
 				3: _show_tactics()
 				4: _show_status()
 		S.FIGHT:
-			var skill := _fight_skills[i]
-			_pick_target(battle.enemies,
-				func(t: Combatant) -> void: battle.use_skill(leader, skill, t), _show_fight)
+			if _use_move(_fight_skills[i], _fight_target if _fight_target != null and _fight_target.is_alive() else _default_target()):
+				_show_main()
 		S.ITEMS:
 			var item := _item_list[i]
 			_pick_target(battle.party,
 				func(t: Combatant) -> void: battle.use_item(leader, item, t), _show_items)
 		S.TARGET:
+			_last_target = _targets[i].name
 			_on_target.call(_targets[i])
 			if battle.running:
 				_show_main()
@@ -504,6 +653,8 @@ func _on_cancel() -> void:
 
 
 func _on_moved(i: int) -> void:
+	if state == S.FIGHT:
+		_update_fight_header(i)
 	if state == S.TARGET and i < _targets.size():
 		var target := _targets[i]
 		hud.set_target(target)

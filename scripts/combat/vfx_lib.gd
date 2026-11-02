@@ -348,9 +348,16 @@ static func ensure_flash(model: Node) -> ShaderMaterial:
 	return mat
 
 
-## Hologram copy of a model fading out in place (afterimage).
-static func ghost(parent: Node, model: Node3D, color: Color, life: float) -> Node3D:
+## Static hologram snapshot at the model's current world transform. The copy has no
+## running AnimationPlayer and owns only its short visual fade.
+static func spawn_ghost_snapshot(parent: Node, model: Node3D, color: Color, life := 0.18) -> Node3D:
 	var copy := model.duplicate() as Node3D
+	var snapshot_name := "GhostSnapshot"
+	var suffix := 2
+	while parent.has_node(NodePath(snapshot_name)):
+		snapshot_name = "GhostSnapshot%d" % suffix
+		suffix += 1
+	copy.name = snapshot_name
 	for ap in copy.find_children("*", "AnimationPlayer", true, false):
 		(ap as AnimationPlayer).stop()
 	copy.set_meta("anim_player", null)
@@ -369,3 +376,8 @@ static func ghost(parent: Node, model: Node3D, color: Color, life: float) -> Nod
 	tw.tween_method(func(v: float) -> void: mat.set_shader_parameter("alpha", v), 0.9, 0.0, life)
 	tw.tween_callback(copy.queue_free)
 	return copy
+
+
+## Backward-compatible name used by existing dodge choreography.
+static func ghost(parent: Node, model: Node3D, color: Color, life: float) -> Node3D:
+	return spawn_ghost_snapshot(parent, model, color, life)
