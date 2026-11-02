@@ -97,7 +97,6 @@ func _ready() -> void:
 	battle.attack_phase.connect(fx.on_phase)
 	battle.engaged.connect(fx.on_engaged)
 	battle.attack_interrupted.connect(fx.on_attack_interrupted)
-	battle.attack_missed.connect(fx.on_attack_missed)
 	if BattleTrace.wanted():  # Flight recorder: every frame and event to user://battle_trace.jsonl
 		var trace := BattleTrace.new()
 		add_child(trace)
@@ -106,7 +105,6 @@ func _ready() -> void:
 	battle.engage_ended.connect(func(actor: Combatant, _o, _g, _s) -> void:
 		if actor == leader:
 			_end_slowmo())
-	battle.cue.connect(fx.on_cue)
 	battle.attack_cancelled.connect(fx.clear_telegraph)
 	battle.manual_evaded.connect(fx.manual_evade)
 	battle.evade_whiffed.connect(fx.evade_whiff)

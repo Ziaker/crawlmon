@@ -465,7 +465,7 @@ func drive() -> void:
 		# A runner follows its target's body for the whole approach and the strike, even if
 		# the target itself is running or hopping somewhere. One that is going to miss
 		# (dodged, or the target left) keeps aiming at the spot it started for.
-		if d["kind"] == "melee" and not d.get("engaged", false) and d.has("from") and inc.phase == Battle.Phase.TRAVEL 				and not (inc.dodged or inc.auto_dodged or inc.void_miss or inc.interrupted or inc.ghost):
+		if d["kind"] == "melee" and not d.get("engaged", false) and d.has("from") and inc.phase == Battle.Phase.TRAVEL 				and not (inc.dodged or inc.auto_dodged or inc.interrupted or inc.ghost):
 			var tpos: Vector3 = (fx._models[inc.target] as Node3D).position
 			tpos.y = 0.0
 			var live_dir: Vector3 = fx._flat_dir(d["from"], tpos)

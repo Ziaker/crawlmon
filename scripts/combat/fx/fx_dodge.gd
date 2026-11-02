@@ -54,25 +54,6 @@ func arrive_to_attack(actor: Combatant, opponent: Combatant) -> void:
 	m.rotation.y = atan2(-away.x, -away.z)
 
 
-## Timed moments on Battle's clock: the dodge just before the hit, the return after it.
-func on_cue(kind: String, actor: Combatant, inc) -> void:
-	match kind:
-		"dodge":
-			_play_manual_evade(actor, inc)
-		"settle":
-			settle(actor)
-
-
-func _play_manual_evade(actor: Combatant, inc) -> void:
-	var is_perfect: bool = inc != null and inc.get("perfect_evaded") == true
-	var label := "PERFECT EVADE! +1 ATB" if is_perfect else "EVADE! BURST"
-	dodge(actor, label, true)
-	var home: Vector3 = fx._home[actor]
-	var fx_col := fx.GOLD if is_perfect else fx.DODGE_COLOR
-	fx._ring(home + Vector3(0, 1, 0), fx_col, Vector3.ONE * 0.4, Vector3.ONE * (3.2 if is_perfect else 2.4), 0.45, Vector3(90, 0, 0))
-	fx._burst(home + Vector3(0, 1, 0), fx_col, 26 if is_perfect else 18, 5.0 if is_perfect else 3.8, Vector3(0, 2, 0), 0.09, 0.55)
-
-
 ## Visual feedback when the player presses Evade too early (Whiff state: vulnerable to critical hit).
 func evade_whiff(actor: Combatant, _inc) -> void:
 	var m: Node3D = fx._models.get(actor)
@@ -226,7 +207,7 @@ func _vanish(c: Combatant, m: Node3D, from: Vector3, to: Vector3, dur := 0.11) -
 	fx._glow(from + Vector3(0, 1.0, 0), fx.DODGE_COLOR, 22, Vector2(0.4, 0.9), 0.5, Vector2(2.0, 6.0), Vector3(0, 1, 0), 0.0, 0.5)
 	fx._smoke(from + Vector3(0, 0.3, 0), Color(0.75, 0.85, 0.9), 8, Vector2(1.0, 1.8), 0.7, 0.5)
 	m.visible = false
-	fx._vanish_until[c] = Time.get_ticks_msec() + int(dur * 1000.0) + 60
+	fx._vanish_until[c] = fx.clock + dur + 0.06
 
 
 func _appear(c: Combatant, pos: Vector3, mark_displaced := false) -> void:
@@ -269,7 +250,7 @@ func _blink(target: Combatant, _text: String, hold_time: float) -> void:
 	_speed_lines_at(pos)
 	VfxLib.flash_star(fx, pos + Vector3(0, 1.1, 0), fx.DODGE_COLOR, 2.4, 0.18)
 	m.visible = false
-	fx._vanish_until[target] = Time.get_ticks_msec() + int(dur * 1000.0) + 60
+	fx._vanish_until[target] = fx.clock + dur + 0.06
 	miss_text(pos + Vector3(0, 1.4, 0))
 	var tw := _vis_tween(target)
 	tw.tween_interval(dur)

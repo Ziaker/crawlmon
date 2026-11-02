@@ -17,8 +17,6 @@ signal attack_cancelled(inc)
 ## One attack = one timeline owned by this node: PREPARO (WINDUP) -> TRAJETO (TRAVEL) ->
 ## GOLPE (STRIKE) -> RETORNO (RETURN). BattleFx only draws the progress it reads here.
 signal attack_phase(inc, phase: int)  ## `inc` entered `phase` (Battle.Phase).
-## A timed visual moment on the same clock (e.g. the evade starting just before the hit).
-signal cue(kind: String, actor: Combatant, inc)
 signal manual_evaded(actor: Combatant, inc)
 signal stepped(actor: Combatant, to_pos: int)  ## `actor` started a position step.
 ## `actor` dodged `opponent`'s attack on its way in: the attack is interrupted and `actor`
@@ -30,7 +28,6 @@ signal engage_ended(actor: Combatant, opponent: Combatant, ghost, staggered)
 signal evade_whiffed(actor: Combatant, inc)
 signal hit_resolved(attacker: Combatant, target: Combatant, element: Element.Type, info: Dictionary)
 signal healed(actor: Combatant, target: Combatant, amount: int)
-signal attack_missed(inc)  ## The attacker struck an empty spot (its target had left): a miss, not an evade.
 signal attack_interrupted(inc)  ## A hit stopped an attack on its way: BattleFx fills its recovery plan.
 signal reward_spawned(reward)
 signal reward_landed(reward)
@@ -66,7 +63,6 @@ var rewards: Array[BattleReward] = []
 var _reward_id := 0
 var _landing: Array[Incoming] = []  ## Resolved attacks whose strike has not landed yet.
 var _returning: Array[Incoming] = []  ## Struck already: only the return is left to play.
-var _cues: Array[Dictionary] = []  ## {t, kind, actor, inc}
 var _evade := BattleEvade.new(self)
 var _hop_back := 0.3  ## Placeholder; BattleFx decides how long a return takes.
 
@@ -84,7 +80,6 @@ func start(p_party: Array[Combatant], p_enemies: Array[Combatant]) -> void:
 		c.step_t = 1.0
 	_landing.clear()
 	_returning.clear()
-	_cues.clear()
 	rewards.clear()
 	running = true
 	log_message.emit("Batalha iniciada!")
@@ -106,7 +101,6 @@ func _process(delta: float) -> void:
 	_step_attacks(delta)
 	_step_rewards(delta)
 	_evade.step_engage(delta)
-	_step_cues(delta)
 	state_changed.emit()
 
 
@@ -384,10 +378,7 @@ func _strike(inc: Incoming) -> void:
 		_returning.append(inc)
 	if inc.ghost or inc.interrupted:
 		return
-	if inc.void_miss:
-		log_message.emit("%s errou %s! (o alvo já não estava lá)" % [inc.attacker.name, inc.label])
-		attack_missed.emit(inc)
-	elif inc.dodged:
+	if inc.dodged:
 		log_message.emit("%s esquivou de %s!" % [inc.target.name, inc.label])
 	elif inc.attacker.is_alive() and inc.target.is_alive() and inc.kind == Skill.Kind.STATUS:
 		# A status move deals no damage (its effect is not defined yet).
@@ -395,14 +386,6 @@ func _strike(inc: Incoming) -> void:
 		hit_resolved.emit(inc.attacker, inc.target, inc.element, {"status": true, "evaded": false, "dmg": 0, "weak": false, "crit": false, "gain": 0, "whiffed": false, "power": 0.0, "skill_name": inc.label})
 	elif inc.target.is_alive() and (inc.attacker.is_alive() or inc.kind == Skill.Kind.PROJECTILE):
 		_hit(inc.attacker, inc.target, inc.power, inc.element, inc.label, inc.whiffed, inc.auto_dodged)
-
-
-func _step_cues(delta: float) -> void:
-	for c in _cues.duplicate():
-		c["t"] -= delta
-		if c["t"] <= 0.0:
-			_cues.erase(c)
-			cue.emit(c["kind"], c["actor"], c["inc"])
 
 
 ## Resolved attacks that FX still has to draw (landing or returning).
@@ -488,6 +471,8 @@ func _hit(attacker: Combatant, target: Combatant, power: float, element: Element
 	var step_mult := (1.0 + DMG_PER_STEP * maxi(attacker.pos_step, 0)) * (1.0 - DMG_PER_STEP * maxi(-target.pos_step, 0))
 	var dmg := maxi(1, roundi(attacker.attack * power * (WEAKNESS_MULT if weak else 1.0) * (CRIT_MULT if crit else 1.0) * step_mult))
 	target.take_damage(dmg)
+	if not target.is_alive():
+		_drop_returns_of(target)
 	var gain := (2 if weak else 0) + (1 if crit else 0)
 	if gain > 0:
 		grant_atb(attacker, gain, target)
@@ -500,6 +485,14 @@ func _hit(attacker: Combatant, target: Combatant, power: float, element: Element
 		(" FRAQUEZA! +2 bloco(s)" if weak else "") + (" CRÍTICO! +1 bloco" if crit else "")])
 	_interrupt_attacks_of(target)
 	hit_resolved.emit(attacker, target, element, info)
+
+
+## A combatant that died while recovering from its own attack stops being driven by it.
+func _drop_returns_of(c: Combatant) -> void:
+	for inc in _returning.duplicate():
+		if inc.attacker == c and not inc.ghost:
+			_returning.erase(inc)
+			attack_cancelled.emit(inc)
 
 
 ## Being hit before its own strike lands stops whatever `c` was doing: still winding up

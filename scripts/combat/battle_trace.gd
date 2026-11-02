@@ -62,8 +62,6 @@ func _connect_events() -> void:
 	b.attack_cancelled.connect(func(inc) -> void: _event("cancelled", _inc(inc)))
 	b.attack_phase.connect(func(inc, ph: int) -> void: _event("phase", _inc(inc, {"to": Battle.Phase.keys()[ph]})))
 	b.attack_interrupted.connect(func(inc) -> void: _event("interrupted", _inc(inc)))
-	b.attack_missed.connect(func(inc) -> void: _event("missed", _inc(inc)))
-	b.cue.connect(func(kind: String, actor: Combatant, inc) -> void: _event("cue", {"kind": kind, "actor": actor.name}))
 	b.manual_evaded.connect(func(actor: Combatant, inc) -> void: _event("manual_evade", _inc(inc, {"actor": actor.name})))
 	b.evade_whiffed.connect(func(actor: Combatant, inc) -> void: _event("evade_whiff", _inc(inc, {"actor": actor.name})))
 	b.engaged.connect(func(actor: Combatant, opp: Combatant, _inc2) -> void: _event("engaged", {"actor": actor.name, "opponent": opp.name}))
@@ -83,7 +81,7 @@ func _inc(inc, extra := {}) -> Dictionary:
 		"attacker": inc.attacker.name, "target": inc.target.name, "label": inc.label, "kind": inc.kind,
 		"phase": Battle.Phase.keys()[inc.phase], "progress": snappedf(inc.progress(), 0.001),
 		"instant": inc.instant, "dodged": inc.dodged, "auto_dodged": inc.auto_dodged, "whiffed": inc.whiffed,
-		"interrupted": inc.interrupted, "void_miss": inc.void_miss, "ghost": inc.ghost, "impacted": inc.impacted,
+		"interrupted": inc.interrupted, "ghost": inc.ghost, "impacted": inc.impacted,
 	}
 	d.merge(extra)
 	return d
@@ -113,7 +111,7 @@ func _mover(c: Combatant) -> String:
 	if fx.fx_motion.is_driven(c):
 		who.append("attack")
 	var tw: Tween = fx._tweens.get(c)
-	if tw != null and tw.is_valid() and tw.is_running():
+	if tw != null and tw.is_valid():  # (a tween made this frame is valid before it first runs)
 		who.append("tween")
 	if fx._displaced.get(c, false):
 		who.append("displaced")
@@ -126,6 +124,9 @@ func _process(delta: float) -> void:
 	if battle == null or fx == null:
 		return
 	_frame += 1
+	if _frame % 30 == 0 and _file != null:
+		_file.flush()  # --quit-after never reaches _exit_tree: keep the tail on disk.
+		_anoms.flush()
 	var real_dt := delta
 	_t += real_dt
 	var rows := []
@@ -208,7 +209,7 @@ func _detect(c: Combatant, m: Node3D, row: Dictionary, dt: float) -> void:
 			_anomaly("TELEPORT", c, "moved %.2f units in one frame (%.0f u/s), mover=%s, atk=%s, from %s to %s" % [step, speed, mover, row["atk"], prev["pos"], m.position])
 		elif speed > MAX_SPEED and prev["vis"] and m.visible and step > 0.6:
 			_anomaly("TOO_FAST", c, "%.0f u/s over %.2f units, mover=%s, atk=%s" % [speed, step, mover, row["atk"]])
-		elif step > 0.05 and mover == "NOBODY":
+		elif step > 0.05 and mover == "NOBODY" and not fx._is_idle(c):  # (the idle ready-stance sway is the one allowed free mover)
 			_anomaly("UNEXPLAINED_MOVE", c, "moved %.2f units with no attack, tween, dodge or engagement driving it" % step)
 		# A body that appears/disappears somewhere other than where it was.
 		if prev["vis"] != m.visible:
@@ -232,5 +233,5 @@ func _detect(c: Combatant, m: Node3D, row: Dictionary, dt: float) -> void:
 	if c.hp < 0 or c.hp > c.max_hp:
 		_anomaly("HP_RANGE", c, "hp=%d/%d" % [c.hp, c.max_hp])
 	if not c.is_alive() and m.visible and row["atk"] != {}:
-		_anomaly("DEAD_ATTACKING", c, "dead but still has an attack in flight")
+		_anomaly("DEAD_ATTACKING", c, "dead but still has an attack in flight: %s" % [row["atk"]])
 	_prev[c] = {"pos": m.position, "vis": m.visible, "scale": m.scale, "yaw": m.rotation.y}

@@ -42,7 +42,8 @@ var _home_yaw: Dictionary = {}  ## Combatant -> float
 var _tweens: Dictionary = {}  ## Combatant -> Tween (movement)
 var _hit_at: Dictionary = {}  ## attacker -> seconds until its strike lands
 var _slot: Dictionary = {}  ## Combatant -> Vector3 (spawn spot; wandering stays near it)
-var _busy_until: Dictionary = {}  ## Combatant -> msec; no wandering before that
+var clock := 0.0  ## Seconds on the same (time-scaled) clock as Battle; all FX deadlines use it.
+var _busy_until: Dictionary = {}  ## Combatant -> clock; no wandering before that
 var _ready_off: Dictionary = {}  ## Combatant -> Vector3 (ready-stance offset from home)
 var _base_speed: Dictionary = {}  ## Combatant -> idle animation speed
 var _phase: Dictionary = {}  ## Combatant -> float (breathing phase)
@@ -51,7 +52,7 @@ var _stepping: Dictionary = {}  ## Combatant -> bool: walking a step
 var _rest: Dictionary = {}  ## Combatant -> Vector3: where it stands while it is not at home (engaged / stunned)
 var _base_scale: Dictionary = {}  ## Combatant -> Vector3 (as registered; enemies are scaled up)
 var _displaced: Dictionary = {}  ## Combatant -> bool (standing off its home after a dodge)
-var _vanish_until: Dictionary = {}  ## Combatant -> msec safety deadline to restore m.visible = true
+var _vanish_until: Dictionary = {}  ## Combatant -> clock safety deadline to restore m.visible = true
 
 ## Modules (one file per responsibility, see scripts/combat/fx/):
 var fx_telegraph: FxTelegraph
@@ -200,12 +201,13 @@ func rest_pos(c: Combatant) -> Vector3:
 
 
 func _busy_for(c: Combatant, seconds: float) -> void:
-	_busy_until[c] = maxi(_busy_until.get(c, 0), Time.get_ticks_msec() + int(seconds * 1000.0))
+	_busy_until[c] = maxf(_busy_until.get(c, 0.0), clock + seconds)
 
 
 ## Idle characters breathe (a slight sway) and step forward with a pulsing floor
 ## ring while they can act. Movement therefore always means something.
 func _process(delta: float) -> void:
+	clock += delta
 	fx_motion.drive()
 	# Position steps: the home spot is the step-0 spot moved along the facing axis by
 	# the logic's own (animated) step value; the run clip plays while it walks.
@@ -219,18 +221,17 @@ func _process(delta: float) -> void:
 		elif not walking and _stepping.get(c, false):
 			_stepping[c] = false
 			_reset_idle(c)
-	var now_ms := Time.get_ticks_msec()
-	var t := now_ms / 1000.0
+	var t := Time.get_ticks_msec() / 1000.0  # Breathing sway only: cosmetic, not a deadline.
 	for c in _models:
 		var m: Node3D = _models[c]
 		# Fail-safe: never let a vanished model stay invisible past its vanish window.
-		if not m.visible and _vanish_until.has(c) and now_ms >= int(_vanish_until[c]):
+		if not m.visible and _vanish_until.has(c) and clock >= float(_vanish_until[c]):
 			m.visible = true
 			_vanish_until.erase(c)
 			if c.is_alive() and not fx_motion.is_driven(c):
 				_reset_idle(c)
 		# Fail-safe: if a character was left displaced after an evade/blink whose sequence ended, settle it home.
-		if _displaced.get(c, false) and c.engaged_with == null and not fx_motion.is_driven(c) and now_ms >= int(_busy_until.get(c, 0)):
+		if _displaced.get(c, false) and c.engaged_with == null and not fx_motion.is_driven(c) and clock >= float(_busy_until.get(c, 0.0)):
 			var tw_chk: Tween = _tweens.get(c)
 			var vtw_chk: Tween = fx_dodge._vis_tweens.get(c)
 			if (tw_chk == null or not tw_chk.is_valid()) and (vtw_chk == null or not vtw_chk.is_valid()):
@@ -266,7 +267,7 @@ func _is_idle(c: Combatant) -> bool:
 	var m: Node3D = _models[c]
 	if not c.is_alive() or not m.visible or _displaced.get(c, false) or fx_motion.is_driven(c):
 		return false
-	if Time.get_ticks_msec() < _busy_until.get(c, 0):
+	if clock < float(_busy_until.get(c, 0.0)):
 		return false
 	var tw: Tween = _tweens.get(c)
 	return tw == null or not tw.is_valid()
@@ -531,16 +532,8 @@ func on_phase(inc, phase: int) -> void:
 	fx_motion.on_phase(inc, phase)
 
 
-func on_cue(kind: String, actor: Combatant, inc) -> void:
-	fx_dodge.on_cue(kind, actor, inc)
-
-
 func on_engaged(actor: Combatant, opponent: Combatant, _inc) -> void:
 	fx_dodge.engage_arrive(actor, opponent)
-
-
-func on_attack_missed(inc) -> void:
-	fx_dodge.miss_text((_models[inc.attacker] as Node3D).position + Vector3(0, 1.4, 0), "ERROU")
 
 
 func on_attack_interrupted(inc) -> void:

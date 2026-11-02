@@ -118,8 +118,6 @@ func _process(_delta: float) -> void:
 		var tag := ""
 		if inc.interrupted:
 			tag = " [interrompido]"
-		elif inc.void_miss:
-			tag = " [erra o vazio]"
 		elif inc.can_evade_now():
 			tag = " [EVADE AGORA %.2fs]" % inc.travel_left()
 		var prog := inc.progress() if inc.resolved else 1.0 - inc.time_left / maxf(inc.total_windup, 0.01)
