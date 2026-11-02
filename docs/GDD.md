@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.18 — Rodada 27 de gameplay consolidada, 2026-11-01.  
+> **Revisão:** 1.19 — Rodada 28 de gameplay consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -103,10 +103,21 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
 **APROVADO (R27-Q5 = C) — recompensas de batalha:** resposta literal **“moedas recursos itens”**. **Moedas, recursos e itens** são **tipos de recompensas materiais previstas para batalhas comuns**, além da experiência já aprovada (R26-Q3). **PENDENTE:** se cada vitória sempre oferece recompensa, quais combinações são possíveis, taxas, valores, origem, uso de moedas/recursos e destino no inventário. Não inferir três recompensas garantidas em toda batalha nem taxas ou economia concreta.
 
+**APROVADO (R28-Q1 = A) — moedas e comércio:** **moedas são usadas principalmente para comprar itens e recursos de NPCs ou lojas**. **PENDENTE:** NPCs/lojas disponíveis, locais, catálogo, preços e outros usos possíveis. Não definir moeda específica nem preços.
+
+**APROVADO (R28-Q2 = C) — itens segurados:** resposta literal **“alguns funcionarao passivament e alguns funcionarao automaticamente sendo consumidos como berries”**. **Alguns itens segurados produzem efeitos passivos e outros são ativados automaticamente e consumidos quando cabível, como berries**, com os gatilhos e efeitos concretos ainda pendentes. Não concluir que todos os itens segurados são consumíveis ou que toda berry possui um efeito específico. A preservação de itens ainda segurados após derrota definitiva (R25-Q4) permanece válida.
+
+**APROVADO (R28-Q3 = C) — retorno após fuga bem-sucedida:** resposta literal **“retorna ao local de encontro e stunna o inimigo por um tempo, nao pemitindo que ele se mova e encoste em vc por 3 segundos”**. Ao **fugir com sucesso de um combate comum**, o jogador **retorna ao local do encontro na exploração 2D**, e **o inimigo daquele encontro permanece imobilizado e impedido de se mover ou encostar no jogador por três segundos**. **PENDENTE:** condições para conseguir fugir, forma de solicitar a tentativa, consequências da falha e tratamento de chefes. Não estabelecer cooldown, imunidade global, distância de teleporte, custos ATB/Burst nem efeitos sobre outros inimigos.
+
+**APROVADO (R28-Q4 = A) — biomas e conteúdo:** as **mudanças de bioma/tema dentro de uma dungeon podem alterar os tipos de inimigos, eventos e recompensas encontrados**. **PENDENTE:** catálogos por bioma, distribuição e regras concretas de transição. Não presumir mudança obrigatória de cada tipo de conteúdo em toda transição.
+
+**APROVADO (R28-Q5 = A) — recompensa principal da dungeon:** a **conclusão de uma dungeon prioriza avanço da campanha e desbloqueio de novas dungeons**, enquanto **recompensas materiais adicionais são opcionais e permanecem pendentes**. A conclusão ainda exige alcançar o último andar e vencer o chefe, encerrando a expedição e retornando à progressão da campanha (R23-Q2/R26-Q4). Não presumir recompensa material garantida.
+
+
 
  **APROVADO posteriormente (R23-Q1 = A):** movimento contínuo e livre nas quatro direções cardeais, sem movimento diagonal direto. **PENDENTE:** controles, colisão e animação.
 
-**PENDENTE:** sprites 2D, algoritmo procedural, seeds, escadas/saídas, patrulha/detecção, estado em revisitas, catálogo/apresentação de espécies iniciais (R26-Q1), condições dos recrutáveis especiais (R26-Q2), gestão de reservas/hub futuro (R25-Q2), requisitos da evolução (R25-Q3), experiência numérica (R26-Q3), itens segurados (R25-Q4), derrota, arenas, transições, narrativa e desbloqueios da campanha (R25-Q1); **regras de fuga de combates comuns e chefes** (R27-Q1), **ambientes mistos e mudanças de tema dentro das dungeons** (R27-Q3), **aprendizado concreto de Moves comuns por nível** (R27-Q4), **moedas/recursos/itens de vitórias** e respectivas regras de obtenção/uso (R27-Q5), recompensas após chefe (R26-Q4) e conteúdo de salas secretas (R26-Q5). Não presumir resolvidas essas pendências.
+**PENDENTE:** sprites 2D, algoritmo procedural, seeds, escadas/saídas, patrulha/detecção e revisitas; catálogo de espécies iniciais (R26-Q1), recrutáveis especiais (R26-Q2), reservas/hub futuro (R25-Q2), evolução (R25-Q3), experiência numérica (R26-Q3), inventário e efeitos concretos de itens segurados (R28-Q2), derrota, arenas, transições, narrativa e critérios de desbloqueio da campanha; **chance/condições de fuga e tratamento de chefes** (R27-Q1), demais detalhes da imobilização por três segundos ao retornar da fuga (R28-Q3), **biomas e seus efeitos em inimigos/eventos/recompensas** (R28-Q4), Moves comuns por nível (R27-Q4), moedas e comércio com NPCs/lojas (R28-Q1), catálogo/valores de recompensas de batalhas (R27-Q5), recompensas materiais opcionais após chefes (R28-Q5) e conteúdo de salas secretas (R26-Q5). Não presumir resolvidas essas pendências.
 
 ### Fluxo de experiência (somente encadeamento conceitual)
 
@@ -524,17 +535,32 @@ Sem decisão adicional, não fixar:
 
 ### 7.18. Fuga, composição inicial, ambientes, Moves e recompensas — Rodada 27
 
-**APROVADO (R27-Q1 = A) — fuga:** o jogador **pode tentar fugir de combates comuns**. **PENDENTE:** como pedir fuga, elegibilidade, chance, consequências em sucesso/falha e como lidar com chefes. Não acrescentar automaticamente comando novo ou custos ATB/Burst e não garantir sucesso.
+**APROVADO (R27-Q1 = A) — fuga:** o jogador **pode tentar fugir de combates comuns**. **APROVADO posteriormente (R28-Q3 = C):** na fuga bem-sucedida, retorna ao ponto do encontro e o inimigo fica imobilizado, sem poder se mover ou encostar no jogador por três segundos. **PENDENTE:** como pedir fuga, elegibilidade, chance, falha e chefes. Não acrescentar automaticamente comando novo ou custos ATB/Burst e não garantir sucesso.
 
 **APROVADO (R27-Q2 = A) — início da aventura:** o jogador começa **apenas com o protagonista**, cuja espécie escolhe entre os iniciais (R26-Q1). **Companheiros são obtidos por recrutamento**, sem aliados concedidos automaticamente no início. Limite da equipe ativa: protagonista + dois aliados sob IA. Não mudar as regras dos recrutáveis especiais (R26-Q2).
 
-**APROVADO (R27-Q3 = B) — variedade ambiental:** **uma dungeon pode combinar diferentes ambientes e alterar seu tema durante a mesma expedição**. **PENDENTE:** catálogo e identidade dos biomas, transições, locais de mudança, relação com inimigos, eventos e geração procedural. Não exigir que toda dungeon tenha vários temas.
+**APROVADO (R27-Q3 = B) — variedade ambiental:** **uma dungeon pode combinar diferentes ambientes e alterar seu tema durante a mesma expedição**. **R28-Q4 = A complementou:** essas mudanças podem modificar tipos de inimigos, eventos e recompensas. **PENDENTE:** biomas concretos, distribuição e transições procedurais. Não exigir que toda dungeon tenha vários temas nem que todas as categorias mudem em cada transição.
 
 **APROVADO (R27-Q4 = A) — aprendizado:** **Moves comuns são obtidos principalmente ao avançar de nível e pela progressão do Pokémon**, sem eliminar aprendizado combinado com mestres e possíveis personagens que concedem HMs (R23-Q5), nem HMs/TMs exclusivamente de combate por enquanto (R24-Q4). **PENDENTE:** catálogo de Moves por espécie, ritmo de aprendizado, requisitos e interface de troca/equipamento. Preservar quatro espaços equipados, Tackle separado, ausência de PP e custos ATB/Burst anteriores.
 
-**APROVADO (R27-Q5 = C) — recompensas materiais de batalhas comuns:** resposta literal **“moedas recursos itens”**. **Moedas, recursos e itens constituem tipos de recompensa previstos para batalhas comuns**, além do ganho de experiência já aprovado. A decisão **não exige** que cada vitória conceda as três categorias, que exista drop garantido ou que toda recompensa venha exclusivamente de combate. **PENDENTE:** taxas, quantidades, itens e recursos concretos, economia das moedas, coleta/inventário e distribuição de recompensas. Não definir moeda nominal ou sistema de compra sem aprovação.
+**APROVADO (R27-Q5 = C) — recompensas materiais de batalhas comuns:** resposta literal **“moedas recursos itens”**. **Moedas, recursos e itens constituem tipos de recompensa previstos para batalhas comuns**, além da experiência. A decisão **não exige** que cada vitória conceda as três categorias nem drop garantido. **R28-Q1 = A esclareceu:** moedas são usadas principalmente para **comprar itens e recursos de NPCs ou lojas**. **PENDENTE:** catálogo, preços, localização, taxas, quantidades e distribuição de recompensas.
 
 **Preservação:** R27 não altera resultados de derrota, preservação de itens segurados, evolução, regras de equipe/reserva, HMs/TMs de combate nem ATB/Burst/MP/PP. A conclusão de dungeon segue vinculada ao último andar e ao chefe.
+
+
+### 7.19. Comércio, itens segurados, fuga e biomas — Rodada 28
+
+**APROVADO (R28-Q1 = A) — uso das moedas:** **moedas obtidas em batalhas servem principalmente para comprar itens e recursos com NPCs/lojas**. **PENDENTE:** onde e como funcionam os vendedores, catálogo e preços. Não inferir moeda nominal, fórmula econômica ou acesso obrigatório por hub.
+
+**APROVADO (R28-Q2 = C) — modos de funcionamento de itens segurados:** resposta literal **“alguns funcionarao passivament e alguns funcionarao automaticamente sendo consumidos como berries”**. **Alguns itens segurados funcionam passivamente; outros são ativados automaticamente e consumidos, como berries**. **PENDENTE:** qual item pertence a qual grupo, gatilhos de ativação, efeitos e relação com as regras de itens utilizados via ITENS no combate. A preservação de **itens que ainda estejam sendo segurados** após derrota definitiva (R25-Q4) mantém-se. Não definir consumo automático como um novo custo ATB ou Burst.
+
+**APROVADO (R28-Q3 = C) — fuga e proteção no mapa:** resposta literal **“retorna ao local de encontro e stunna o inimigo por um tempo, nao pemitindo que ele se mova e encoste em vc por 3 segundos”**. **Após fuga bem-sucedida de combate comum, o protagonista retorna ao local do encontro 2D, e o Pokémon inimigo daquele encontro fica imobilizado, incapaz de se mover e encostar no protagonista durante três segundos.** É uma regra aplicável à **fuga bem-sucedida**, não garantia de sucesso. **PENDENTE:** comando/condições de fuga, falha, chefes, implementação de colisão e comportamento após expirar o efeito; não atribuir efeito a outros inimigos sem aprovação. **Duração aprovada: 3 segundos**, único número adicional expressamente decidido nesta rodada.
+
+**APROVADO (R28-Q4 = A) — impacto de biomas:** **mudanças de bioma dentro da dungeon podem alterar tipos de inimigos, eventos e recompensas disponíveis**. **PENDENTE:** quais biomas, tabelas e regras de variação. Não exigir mudanças compulsórias de todo o conteúdo sempre que o cenário mudar.
+
+**APROVADO (R28-Q5 = A) — recompensa por conclusão:** **a principal recompensa de concluir uma dungeon é avançar na campanha e desbloquear novas dungeons**. Recompensas materiais adicionais são **opcionais e permanecem pendentes**. O encerramento após vencer o chefe e retorno à seleção/progressão da campanha (R26-Q4) seguem válidos. Não definir prêmios especiais garantidos.
+
+**Preservação:** as decisões sobre fuga não criam novos custos ATB/Burst, imobilização de outros inimigos nem exceções automáticas para chefes. Mantêm-se Tackle, quatro Moves, ausência de PP, inventário e regras de perda de itens já aprovadas. Somente o GDD é alterado.
 
 ## 8. Estado real do repositório (inspeção de código, não de execução)
 
@@ -713,6 +739,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-153 | R27-Q3 = B: **mesma dungeon pode misturar ambientes e mudar de tema durante a expedição**, detalhes pendentes. |
 | D-154 | R27-Q4 = A: **Moves comuns obtidos principalmente por nível e progressão**, sem excluir mestres, HMs/TMs e outros meios. |
 | D-155 | R27-Q5 = C — “moedas recursos itens”: **moedas, recursos e itens previstos como tipos de recompensas de batalhas comuns**, sem afirmar drops garantidos ou valores. |
+| D-156 | R28-Q1 = A: **moedas usadas principalmente para comprar itens e recursos de NPCs/lojas**, preços e catálogo pendentes. |
+| D-157 | R28-Q2 = C — “alguns funcionarao passivament e alguns funcionarao automaticamente sendo consumidos como berries”: **itens segurados podem ser passivos ou ativados automaticamente e consumidos**, exemplos como berries; efeitos/gatilhos pendentes. |
+| D-158 | R28-Q3 = C — “retorna ao local de encontro e stunna o inimigo por um tempo, nao pemitindo que ele se mova e encoste em vc por 3 segundos”: **fuga bem-sucedida retorna ao local do encontro e imobiliza o inimigo, impedindo movimento/contato por 3 segundos**. |
+| D-159 | R28-Q4 = A: **biomas diferentes podem alterar inimigos, eventos e recompensas**, catálogos e distribuição pendentes. |
+| D-160 | R28-Q5 = A: **concluir dungeon prioriza progresso da campanha/desbloqueios**, prêmios materiais adicionais opcionais e pendentes. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -1092,39 +1123,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Preservação:** R27-Q5 é a resposta C personalizada, sem transposição irrestrita das alternativas A/B. Regras D-001 a D-150, ATB/Burst, Nature, experiência dos participantes, slots e ausência de PP continuam válidas.
 
-## 10.27. Rodada 28 — economia, combate e exploração ambiental (cinco perguntas abertas)
+## 10.27. Rodada 28 — economia, combate e exploração ambiental (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa aprovada. Questões de impacto real na experiência de jogo, comprovadamente ainda pendentes.
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01, registradas como D-156 a D-160.
 
-**R28-Q1 — Qual será a principal utilidade das moedas obtidas nas batalhas?**  
-A. **Comprar itens e recursos de NPCs/lojas**, com catálogo, preços e localização pendentes.  
-B. **Financiar melhorias e serviços de progressão da equipe**, com serviços, locais e preços pendentes.  
-C. Uma combinação ou outra função, descrita pelo criador.  
-*Moedas foram aprovadas como recompensa em R27-Q5; não há uso econômico aprovado.*
+| ID | Resposta literal do criador | Regra aprovada / pendências |
+| --- | --- | --- |
+| **R28-Q1** | **A** — “Moedas são usadas principalmente para comprar itens e recursos em NPCs ou lojas; preços e catálogo pendentes.” | **Moedas para comércio com NPCs/lojas**, catálogo e preços pendentes. |
+| **R28-Q2** | **C** — “alguns funcionarao passivament e alguns funcionarao automaticamente sendo consumidos como berries” | **Parte dos itens segurados concede efeitos passivos; parte é automaticamente ativada e consumida, como berries**, gatilhos/efeitos pendentes. |
+| **R28-Q3** | **C** — “retorna ao local de encontro e stunna o inimigo por um tempo, nao pemitindo que ele se mova e encoste em vc por 3 segundos” | **Fuga com sucesso retorna ao local do encontro, com inimigo imobilizado e impedido de se mover/encostar por 3 segundos**; chance/chefes pendentes. |
+| **R28-Q4** | **A** — “Mudanças de bioma dentro da dungeon podem alterar os inimigos, eventos e recompensas encontrados; listas e regras pendentes.” | **Biomas podem alterar encontros, eventos e recompensas**, listas pendentes. |
+| **R28-Q5** | **A** — “Concluir uma dungeon concede principalmente avanço da campanha/desbloqueios; recompensas materiais adicionais permanecem opcionais e pendentes.” | **Prioridade a avanço/desbloqueios de campanha**, sem recompensa material garantida. |
 
-**R28-Q2 — Qual deve ser a função principal dos itens que os Pokémon seguram?**  
-A. **Conceder efeitos passivos enquanto segurados**, com efeitos e restrições pendentes.  
-B. **Ser itens utilizáveis/ativáveis pelo Pokémon que os segura**, com condições e efeitos pendentes.  
-C. Outra função ou combinação, descrita pelo criador.  
-*Itens segurados têm proteção contra perda na derrota (R25-Q4), mas seu efeito no gameplay não está definido.*
+**Preservação:** R28-Q2 e R28-Q3 são respostas C personalizadas, não equivalentes simplesmente às antigas alternativas A/B. Mantêm-se as 155 decisões anteriores, os custos ATB/Burst aprovados, a ausência de PP e a regra de perda de itens não segurados na derrota. Não registrar implementação sem verificação de código.
 
-**R28-Q3 — Quando o jogador consegue fugir de um combate comum, o que acontece na exploração 2D?**  
-A. **Retorna ao mapa no ponto do encontro**, com regras para o Pokémon inimigo depois da fuga pendentes.  
-B. **Retorna ao mapa em posição segura diferente do ponto de encontro**, com critério de posicionamento pendente.  
-C. Outro resultado, descrito pelo criador.  
-*É possível tentar fugir (R27-Q1), mas ainda não se decidiu o efeito da fuga bem-sucedida.*
+## 10.28. Rodada 29 — campanha, encontros especiais e identidade de dungeons (cinco perguntas abertas)
 
-**R28-Q4 — As mudanças de ambiente dentro de uma dungeon terão impacto nos encontros e conteúdos?**  
-A. **Sim, biomas/temas podem alterar tipos de inimigos, eventos e recompensas encontrados**, com listas e distribuição pendentes.  
-B. **Priorizar variedade visual e ambiental**, sem exigir que a mudança de tema altere a seleção de inimigos/recompensas.  
-C. Outra abordagem, descrita pelo criador.  
-*Ambientes mistos e mudanças de tema estão aprovados (R27-Q3); impacto no gameplay ainda não.*
+**Status:** ABERTA — 0/5 respostas. Nenhuma das alternativas abaixo foi aprovada. As cinco questões tratam de aspectos substantivos ainda pendentes no gameplay.
 
-**R28-Q5 — Qual será a principal recompensa por concluir uma dungeon e derrotar seu chefe?**  
-A. **Progresso na campanha e desbloqueio de novas dungeons, com recompensas materiais opcionais a definir.**  
-B. **Progresso na campanha acompanhado de recompensas especiais de conclusão**, com categorias específicas a definir.  
-C. Outra composição de recompensas, descrita pelo criador.  
-*O último andar/chefe e o retorno à campanha já estão aprovados; conteúdo de recompensas continua pendente.*
+**R29-Q1 — Onde o jogador poderá encontrar NPCs/lojas para gastar as moedas?**  
+A. **Dentro das dungeons durante a exploração**, incluindo comerciantes encontrados nas salas, com regras e disponibilidade pendentes.  
+B. **Fora das expedições, na seleção/progressão da campanha**, com interface/local pendentes e sem exigir o hub futuro.  
+C. Ambos os locais ou outra estrutura, especificada pelo criador.  
+*O comércio com NPCs/lojas está aprovado, mas sua presença em dungeons ou fora delas não foi decidida.*
+
+**R29-Q2 — Qual papel terão os eventos especiais encontrados nas dungeons?**  
+A. **Oferecer escolhas e pequenas situações narrativas com consequências para a exploração**, com catálogo e efeitos pendentes.  
+B. **Oferecer principalmente encontros opcionais com NPCs, serviços e recompensas**, sem exigir decisões narrativas em cada evento.  
+C. Uma combinação ou outro papel, especificado pelo criador.  
+*Eventos, NPCs e salas secretas já são prioritários; sua função concreta ainda está aberta.*
+
+**R29-Q3 — Uma dungeon já concluída poderá ser explorada novamente?**  
+A. **Sim, permitir novas expedições a dungeons concluídas**, com geração de novos layouts e recompensas conforme regras existentes.  
+B. **Restringir as expedições a dungeons já concluídas**, reservando novas entradas para situações especiais ainda a definir.  
+C. Outro modelo de revisitas, especificado pelo criador.  
+*O layout é persistente ao revisitar andares dentro da mesma exploração; isso não resolve novas expedições a uma dungeon já vencida.*
+
+**R29-Q4 — Como serão os chefes do último andar das dungeons?**  
+A. **Encontros com um chefe principal, podendo ter apoio de outros inimigos**, respeitando o limite de três inimigos ativos, com composição pendente.  
+B. **Encontros centrados exclusivamente em um único chefe inimigo ativo**, com padrões de ataque e mecânicas especiais a definir.  
+C. Outro formato, especificado pelo criador.  
+*O último andar exige vencer um chefe e as batalhas têm até três inimigos ativos; o formato do encontro do chefe não foi definido.*
+
+**R29-Q5 — Como a dificuldade aumentará durante a progressão da campanha e das dungeons?**  
+A. **Aumentar os desafios conforme o jogador avança em andares e novas dungeons**, com inimigos e perigos progressivamente mais exigentes, sem valores numéricos aprovados.  
+B. **Variar a dificuldade sobretudo por biomas, tipos de encontro e eventos especiais**, com progressão menos estritamente linear, sem valores aprovados.  
+C. Outra estrutura de dificuldade, especificada pelo criador.  
+*Campanha com desbloqueios e biomas mistos estão aprovados; progressão de dificuldade e variedade de desafios ainda não.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -1171,5 +1216,7 @@ C. Outra composição de recompensas, descrita pelo criador.
 | 1.17 | 2026-11-01 | Rodada 26 (D-146 a D-150): jogador escolhe espécie inicial do protagonista; Pokémon normalmente hostis podem aparecer como recrutáveis especiais identificados em mapa, preservando interação voluntária/contatos hostis; XP de vitória para todos os Pokémon ativos participantes sem exigência de golpe final; chefe do último andar encerra expedição e devolve seleção/progressão da campanha; salas secretas opcionais para recompensas/eventos/NPCs. Abre Rodada 27 sobre combates, companheiros, variedade ambiental, Moves e recompensas. | Rodada 26 fechada / Rodada 27 aberta |
 
 | 1.18 | 2026-11-01 | Rodada 27 (D-151 a D-155): tentativas de fuga em combates comuns; aventura começa somente com protagonista e companheiros recrutados; dungeons podem misturar ambientes e mudar de tema; Moves comuns principalmente por nível sem excluir fontes combinadas; moedas, recursos e itens como categorias de recompensa de batalhas comuns (R27-Q5 C), sem drops garantidos. Abre Rodada 28 sobre economia, itens segurados, fuga, biomas e conclusão de dungeons. | Rodada 27 fechada / Rodada 28 aberta |
+
+| 1.19 | 2026-11-01 | Rodada 28 (D-156 a D-160): moedas para comprar itens e recursos de NPCs/lojas; itens segurados passivos ou automaticamente consumidos como berries (R28-Q2 C); fuga bem-sucedida retorna ao encontro e impede inimigo de mover/encostar por 3 segundos (R28-Q3 C); biomas podem alterar inimigos/eventos/recompensas; conclusão de dungeon prioriza progressão/desbloqueios, materiais opcionais. Abre Rodada 29 sobre comércio, eventos, revisitas, chefes e dificuldade. | Rodada 28 fechada / Rodada 29 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
