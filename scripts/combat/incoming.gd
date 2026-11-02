@@ -51,6 +51,8 @@ var lunged := Vector3.ZERO  ## Where the body was when the return started
 var push := Vector3.ZERO  ## Knockback it takes before hopping home (an attacker hit on its way)
 var aim := Vector3.ZERO  ## Where a projectile is heading now (the live target, or the spot it missed)
 var proj_pos := Vector3.ZERO  ## Where the projectile is now
+var blink := false  ## Teleporte Rapido: the caster itself blinks to `dest` and back.
+var dest := Vector3.ZERO
 var arrived := false  ## An engaged evader's first attack: the rules just moved it next to its opponent.
 var data := {}  ## Drawing data owned by BattleFx (positions, clip times); logic never reads it.
 

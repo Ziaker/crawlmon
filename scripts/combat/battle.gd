@@ -163,6 +163,7 @@ func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
 	inc.time_left = 0.0 if inc.instant else WINDUP
 	incoming.append(inc)
 	log_message.emit("%s prepara %s em %s..." % [actor.name, skill.display_name, target.name])
+	_planner.redirect_if_blocked(inc)
 	attack_telegraphed.emit(inc)
 	return true
 
@@ -393,7 +394,7 @@ func _step_attacks(delta: float) -> void:
 				_strike(inc)
 			inc.phase = Phase.DONE
 			_returning.erase(inc)
-			if inc.motion != "engaged":
+			if inc.motion != "engaged" and inc.attacker.is_alive():
 				inc.attacker.clear_rest()  # Back at its step spot.
 				inc.attacker.pos = inc.attacker.rest_pos()
 			attack_phase.emit(inc, Phase.DONE)
@@ -412,6 +413,7 @@ func _roll_ai_evade(inc: Incoming) -> void:
 
 
 func _strike(inc: Incoming) -> void:
+	AttackMotion.arrive(inc)
 	inc.impacted = true
 	_landing.erase(inc)
 	if not _returning.has(inc):
@@ -590,6 +592,7 @@ func _hit(attacker: Combatant, target: Combatant, power: float, element: Element
 func _drop_returns_of(c: Combatant) -> void:
 	for inc in _returning.duplicate():
 		if inc.attacker == c and not inc.ghost:
+			c.set_rest(c.pos)  # It falls where it is.
 			_returning.erase(inc)
 			attack_cancelled.emit(inc)
 
@@ -615,7 +618,14 @@ func _interrupt_attacks_of(c: Combatant, hitter: Combatant, force: float) -> voi
 			continue  # Projectile already fired and in flight: hitting the caster no longer destroys it.
 		_landing.erase(inc)
 		inc.interrupted = true
-		if inc.motion == "cast":
+		if not c.is_alive():
+			c.set_rest(c.pos)  # It falls where it is: no hop home for a body.
+			inc.motion = "cast"
+			inc.plan = [[Phase.RETURN, 0.05]]
+			inc.plan_i = 0
+			inc.phase = Phase.RETURN
+			inc.phase_time = 0.0
+		elif inc.motion == "cast":
 			inc.plan = [[Phase.RETURN, 0.55]]
 			inc.plan_i = 0
 			inc.phase = Phase.RETURN

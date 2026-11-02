@@ -40,9 +40,19 @@ def run(seed):
     return errors, anomalies, hits
 
 
+def unit_test():
+    proc = subprocess.run([GODOT, "--headless", "--path", ROOT, "--script", "res://tests/battle/test_attack_motion.gd"],
+                          capture_output=True, text=True, timeout=300)
+    ok = "BATTLE_MOTION_TEST_PASS" in proc.stdout
+    print("rules (test_attack_motion.gd): %s" % ("ok" if ok else "FAIL"))
+    if not ok:
+        print((proc.stdout + proc.stderr)[-1500:])
+    return ok
+
+
 def main():
+    failed = not unit_test()
     seeds = [int(a) for a in sys.argv[1:]] or [1, 2, 3, 4]
-    failed = False
     for seed in seeds:
         errors, anomalies, hits = run(seed)
         bad = {k: v for k, v in anomalies.items() if k in HARD}

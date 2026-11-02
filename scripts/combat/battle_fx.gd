@@ -443,10 +443,6 @@ func finish(player_won: bool) -> void:
 	fx_motion.finish(player_won)
 
 
-func _clip_hit(c: Combatant, anim: String, fallback: float) -> float:
-	return fx_motion._clip_hit(c, anim, fallback)
-
-
 func _hit_stop(attacker: Combatant, target: Combatant, heavy: bool, strike_dir := Vector3.FORWARD, impact_fx: Array[Node3D] = [], duration_override := -1.0) -> void:
 	await fx_motion._hit_stop(attacker, target, heavy, strike_dir, impact_fx, duration_override)
 

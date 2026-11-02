@@ -28,6 +28,7 @@ var _frame := 0
 var _prev: Dictionary = {}  ## Combatant -> {pos, vis, scale, who}
 var _vis_changes: Dictionary = {}
 var anomaly_count := 0
+static var _opened := false
 var _drive := false  ## --drive: the leader plays by itself (attacks, evades) so every path is exercised.
 
 
@@ -47,8 +48,15 @@ func setup(p_battle: Battle, p_fx: BattleFx, p_models: Dictionary, p_party: Arra
 			seed(int(arg.get_slice("=", 1)))  # Same seed + --fixed-fps = the same battle, run after run.
 		elif arg == "--drive":
 			_drive = true
-	_file = FileAccess.open("user://battle_trace.jsonl", FileAccess.WRITE)
-	_anoms = FileAccess.open("user://battle_anomalies.txt", FileAccess.WRITE)
+	# One file for the whole run: a second battle in the same process appends to it.
+	var mode := FileAccess.READ_WRITE if _opened else FileAccess.WRITE
+	_file = FileAccess.open("user://battle_trace.jsonl", mode)
+	_anoms = FileAccess.open("user://battle_anomalies.txt", mode)
+	if _opened:
+		_file.seek_end()
+		_anoms.seek_end()
+	_opened = true
+	_event("battle_trace_started", {"seed_args": OS.get_cmdline_user_args()})
 	_connect_events()
 	print("[trace] recording to ", ProjectSettings.globalize_path("user://"))
 

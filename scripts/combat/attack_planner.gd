@@ -92,12 +92,6 @@ func plan(inc: Incoming) -> float:
 			inc.plan = [[Phase.TRAVEL, 0.22], [Phase.STRIKE, hit], [Phase.RETURN, 0.30]]
 			inc.impact_phase = Phase.STRIKE
 		elif inc.kind == Skill.Kind.PROJECTILE:
-			# Whoever stands exactly on the projectile's line is hit before the aimed target.
-			var block := interceptor(inc, a_home, t_home) if not inc.is_aoe else null
-			if block != null:
-				b.redirect(inc, block)
-				t = block
-				t0 = t.home  # The flight now ends at the interceptor.
 			inc.fly = Battle.travel_seconds(base_fly(a0, t0), a, t)
 			inc.plan = [[Phase.STRIKE, hit], [Phase.TRAVEL, inc.fly], [Phase.RETURN, maxf(total - hit - inc.fly, 0.05)]]
 			inc.impact_phase = Phase.TRAVEL
@@ -111,6 +105,19 @@ func plan(inc: Incoming) -> float:
 	for seg in inc.plan:
 		sum += seg[1]
 	return sum
+
+
+## Called when an attack is declared: a plain projectile is hit by whoever stands exactly on
+## its line before the aimed target, so the target is final from the start of the wind-up
+## (the warning and the Evade window then belong to who will really be hit).
+func redirect_if_blocked(inc: Incoming) -> void:
+	if inc.kind != Skill.Kind.PROJECTILE or inc.is_aoe or inc.is_friendly:
+		return
+	if BattleSpace.move_id(inc.label) in ["furia_dragao", "provocacao", "onda_choque", "teleporte_rapido"]:
+		return
+	var block := interceptor(inc, inc.attacker.rest_pos(), inc.target.rest_pos())
+	if block != null:
+		b.redirect(inc, block)
 
 
 ## The first opponent of the attacker standing on the flat line a_pos -> t_pos, or null.

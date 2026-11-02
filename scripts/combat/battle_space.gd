@@ -11,6 +11,7 @@ const HIT_AT := 0.45  ## Seconds into the attack clip when the strike lands.
 const CAST_AT := 0.5  ## Seconds into a cast when the effect leaves the caster.
 const FLY_TIME := 0.25  ## Shortest projectile flight.
 const FLY_SPEED := 50.0  ## Units per second of a projectile.
+const TELEPORT_PINCH := 0.12 / 0.22  ## Share of Teleporte Rapido's flight after which the caster has blinked away.
 const DODGE_SIDE := 3.6  ## How far to the side an evader's dodge spot is.
 const DODGE_BACK := 1.4
 

@@ -18,7 +18,7 @@ const HIT_HOLD := 0.15
 static func carries(inc: Incoming) -> bool:
 	if not inc.resolved or inc.plan_i < 0 or inc.plan_i >= inc.plan.size():
 		return false  # Not started, or its last phase already ended this frame.
-	if inc.motion != "melee" and inc.motion != "engaged" and inc.motion != "return":
+	if inc.motion != "melee" and inc.motion != "engaged" and inc.motion != "return" and not inc.blink:
 		return false
 	return inc.phase == Phase.TRAVEL or inc.phase == Phase.STRIKE or inc.phase == Phase.RETURN
 
@@ -35,6 +35,9 @@ static func update(inc: Incoming) -> void:
 		return
 	var a := inc.attacker
 	var e := inc.phase_time
+	if inc.blink:
+		a.pos = _blink_pos(inc)
+		return
 	match inc.phase:
 		Phase.TRAVEL:
 			_track(inc)
@@ -62,6 +65,33 @@ static func update(inc: Incoming) -> void:
 			else:
 				var k := clampf((e - inc.hold) / maxf(inc.hop_t, 0.001), 0.0, 1.0)
 				a.pos = start.lerp(a.stand_pos(), k)
+
+
+## The hit lands this very frame: put the striker (or the projectile) exactly at the contact
+## point, so the damage never happens a frame short of it.
+static func arrive(inc: Incoming) -> void:
+	if inc.interrupted or inc.ghost:
+		return
+	if inc.motion == "cast":
+		if not (inc.dodged or inc.auto_dodged):
+			inc.aim = inc.target.pos
+		inc.proj_pos = inc.aim
+	elif (inc.motion == "melee" or inc.motion == "engaged") and inc.phase == Phase.STRIKE and not inc.blink:
+		_track(inc)
+		inc.attacker.pos = inc.stand + inc.dir * LUNGE_OVERSHOOT
+
+
+## Teleporte Rapido: the caster is at its spot until the pinch, at `dest` through the strike,
+## and back at its spot once the return passes its own pinch.
+static func _blink_pos(inc: Incoming) -> Vector3:
+	var p := inc.progress()
+	match inc.phase:
+		Phase.TRAVEL:
+			return inc.from if p < BattleSpace.TELEPORT_PINCH else inc.dest
+		Phase.STRIKE:
+			return inc.dest
+		_:
+			return inc.dest if p < 1.0 - BattleSpace.TELEPORT_PINCH else inc.from
 
 
 ## While it still runs or swings at a target that will really be hit, the stand spot follows
@@ -117,6 +147,11 @@ static func start_projectile(inc: Incoming) -> void:
 	var to := inc.target.rest_pos()
 	inc.aim = to + BattleSpace.flat_dir(inc.from, to) * 7.0 if (inc.dodged or inc.auto_dodged) else to
 	inc.proj_pos = inc.from
+	if inc.move_id == "teleporte_rapido":
+		var attack_dir := BattleSpace.flat_dir(inc.from, inc.aim)
+		var right := Vector3(attack_dir.z, 0.0, -attack_dir.x)
+		inc.blink = true
+		inc.dest = inc.from + right * 2.2 + attack_dir * 0.55
 
 
 ## Each frame: the guided projectile follows the target until the attack is evaded (then it

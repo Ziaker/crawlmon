@@ -31,9 +31,7 @@ func manual_evade(actor: Combatant, inc) -> void:
 func engage_arrive(actor: Combatant, opponent: Combatant) -> void:
 	# The evader dodges as always: it vanishes, shows up to the side and comes back. It only
 	# teleports up to the interrupted attacker if and when it attacks (see arrive_to_attack).
-	var op := (fx._models[opponent] as Node3D).position
-	opponent.set_rest(op)
-	dodge(actor, "", false)
+	dodge(actor, "", false)  # (the rules already left the interrupted attacker where it stopped)
 
 
 ## Its first attack after the Evade: it vanishes and appears next to the interrupted attacker.
