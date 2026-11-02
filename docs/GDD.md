@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.12 — Rodada 21 consolidada, 2026-11-01.  
+> **Revisão:** 1.27 — Rodada 36 consolidada, 2026-11-02.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -55,13 +55,161 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
 **APROVADO (R9-Q4 = A):** o **Pokémon inimigo visível derrotado em combate é removido do andar durante a exploração atual** e **não reaparece nesse andar nessa exploração**, ressalvados eventos especiais ainda não especificados. A remoção deve continuar valendo caso o jogador revisite esse andar na mesma exploração; isso não define outros encontros, spawns ou o comportamento ao iniciar outra exploração.
 
-**APROVADO (R9-Q5 = B):** o protagonista se movimenta na exploração 2D em **quatro direções cardeais** (cima, baixo, esquerda, direita), **sem movimento diagonal direto**. **PENDENTE:** se o deslocamento é contínuo ou por tiles/turnos, esquema de comandos, colisão e animação.
+**APROVADO (R9-Q5 = B):** o protagonista se movimenta na exploração 2D em **quatro direções cardeais** (cima, baixo, esquerda, direita), **sem movimento diagonal direto**.
 
-**PENDENTE:** estilo dos sprites 2D, detalhes do algoritmo procedural de salas e corredores, interface/armazenamento de seeds e progressão dos andares, regras de IA de patrulha/detecção, estado dos inimigos/itens ao revisitar andares, personagens iniciais, regras de recrutamento e reserva de Pokémon além dos **3 membros máximos da equipe ativa**, evolução, inventário da exploração, derrota da expedição, formato e duração das arenas, transição/câmera e identidade narrativa. Nenhuma dessas escolhas é fixada por este GDD.
+**APROVADO (R23-Q1 = A):** movimentação **contínua e livre nas quatro direções cardeais** da exploração 2D, sem diagonais diretas e sem deslocamento obrigatório por tiles/turnos.
+
+**APROVADO (R23-Q2 = A):** uma dungeon é **concluída após chegar ao último andar e vencer um chefe**. Quantidade de andares, passagens e recompensas pendentes.
+
+**APROVADO (R24-Q1 = A):** **avançar de andar ao encontrar escada ou saída no mapa**, sem precisar derrotar todos os inimigos. Permanece obrigatório chegar ao último andar e vencer o chefe para concluir a dungeon. Detalhes das passagens pendentes.
+
+**APROVADO (R25-Q1 = A):** a progressão geral do jogo segue uma **campanha que desbloqueia novas dungeons conforme conquistas e objetivos**. **PENDENTE:** roteiro, requisitos concretos de desbloqueio, ordenação e possibilidade de revisitar dungeons. Cada dungeon ainda exige chegar ao último andar e derrotar seu chefe para ser concluída.
+
+**APROVADO (R23-Q3 = A):** **derrota definitiva em batalha encerra a exploração atual**. Consequências sobre Pokémon, inventário e progresso seguem pendentes; não presumir perda permanente.
+
+**APROVADO (R23-Q4 = B):** **Pokémon podem ser recrutados durante a exploração 2D por interações ou aproximação**. O contato com Pokémon **inimigos visíveis** continua iniciando combate 3D (R8-Q5). **PENDENTE:** diferenciar interações de recrutamento e encontros hostis, condições e reservas; não presumir recrutamento automático de inimigos por aproximação.
+
+**APROVADO (R24-Q2 = A):** o **recrutamento de Pokémon elegível exige interação voluntária explícita do jogador**, não acontecendo automaticamente por simples aproximação. Contato com inimigo hostil continua iniciando combate 3D. Elegibilidade e condições permanecem pendentes.
+
+**APROVADO (R24-Q3 = A):** **é possível recrutar mesmo com três Pokémon ativos, enviando o novo Pokémon para uma reserva**. Capacidade, gestão e trocas permanecem pendentes.
+
+**APROVADO (R25-Q2 = C, resposta provisória “A po ora, vou criar um hub pra isso depois masmais tarde”):** o criador indicou **A por ora**: **permitir provisoriamente alternar Pokémon entre a equipe ativa e a reserva durante a exploração**, preservando o máximo de três ativos. **O hub é uma intenção de projeto para momento posterior**, não funcionalidade já implementada nem regra definida sobre o local definitivo das trocas. **PENDENTE:** design do hub, regras definitivas de acesso à reserva, limites e momentos de troca. Não presumir que o hub será obrigatório para trocar de equipe.
+
+**APROVADO (R24-Q5 = A):** **Pokémon recrutados na expedição continuam pertencendo ao jogador após derrota definitiva**. Destino na equipe/reserva e perdas de itens/progresso pendentes.
+
+**APROVADO (R25-Q4 = C, “apenas itens que estao sendo segurados nao sao perdidos”):** na **derrota definitiva de uma expedição**, entre os **itens obtidos durante aquela expedição**, **somente os itens que estiverem sendo segurados não são perdidos; os demais itens obtidos na expedição são perdidos**. **PENDENTE:** definição operacional de “segurando” e quais Pokémon/personagens podem segurar itens, regras para itens trazidos de antes da expedição e outras consequências. Não confundir essa regra de itens com o pertencimento preservado dos Pokémon recrutados (R24-Q5).
+
+**APROVADO (R23-Q5 = C):** resposta literal **“combinacao com mestres e possiveis personagens que dao hms”**. O sistema de aprendizado de Moves admite **fontes combinadas, incluindo mestres e possíveis personagens que concedem HMs**. **APROVADO posteriormente (R24-Q4 = C):** HMs e TMs são **somente para combate por enquanto**, sem funções de exploração. **PENDENTE:** demais fontes, obtenção, requisitos, relação de HMs/TMs com os quatro Moves equipados e seus slots. Não presumir custos.
+
+**APROVADO (R25-Q3 = A):** quando um Pokémon **satisfizer os requisitos para sua evolução de espécie**, **o jogador poderá escolher quando efetuar a evolução**, em vez de ela ocorrer obrigatoriamente de forma automática assim que o requisito for atingido. **PENDENTE:** requisitos por espécie, interface, possíveis restrições e efeitos de evolução; não confundir com subida de nível ou distribuição de atributos.
+
+**APROVADO (R26-Q1 = A) — protagonista inicial:** o jogador **escolhe seu Pokémon protagonista entre espécies iniciais disponíveis**. **PENDENTE:** quais espécies compõem o catálogo, interface de escolha e demais aspectos da apresentação. A escolha da espécie **não substitui nem altera** as regras já aprovadas de sorteio da Nature do protagonista.
+
+**APROVADO (R26-Q2 = B) — candidatos especiais ao recrutamento:** **Pokémon normalmente hostis podem aparecer em situações especiais como candidatos a recrutamento, identificados no mapa da exploração 2D**. O candidato elegível ainda exige **interação voluntária explícita** (R24-Q2). **Encontros hostis normais continuam iniciando combate 3D por contato** (R8-Q5). **PENDENTE:** natureza da identificação visual, eventos/requisitos para aparecer como candidato e condições concretas para recrutamento. Não inferir recrutamento automático nem que todo inimigo possa ser recrutado em qualquer encontro.
+
+**APROVADO (R26-Q3 = A) — experiência de batalha:** **todos os Pokémon ativos que participarem de uma batalha vencida recebem experiência, independentemente de aplicar o golpe final**. **PENDENTE:** quantidades, divisão de experiência, tratamento de Pokémon que ficaram na reserva, situações com membros incapacitados e demais condições especiais. A evolução por nível, a distribuição manual de pontos do protagonista e o crescimento automático de aliados permanecem inalterados.
+
+**APROVADO (R26-Q4 = A) — depois do chefe:** **ao vencer o chefe do último andar, a dungeon é concluída, a expedição se encerra e o jogador retorna à seleção/progressão da campanha**. **PENDENTE:** recompensas, apresentação de resultados e critérios dos novos desbloqueios. Esse retorno não cria nem exige um hub implementado; a intenção de hub futuro de R25-Q2 permanece pendente.
+
+**APROVADO (R26-Q5 = A) — salas secretas:** as **salas secretas das dungeons são descobertas opcionais voltadas a recompensas, eventos e NPCs especiais**, **sem obrigatoriedade de encontrá-las para alcançar o chefe**. **PENDENTE:** conteúdo concreto, como descobrir/acessar as salas e distribuição procedural. A prioridade dada a salas secretas em R25-Q5 permanece válida.
+
+**APROVADO (R27-Q1 = A) — fuga de combates comuns:** o jogador **pode tentar fugir de combates comuns**, com **condições, consequências e restrições ainda pendentes**; o tratamento de combates contra chefes não está definido. A possibilidade de tentar não equivale a fuga garantida. Não presumir custo ATB/Burst, chance de sucesso ou novo comando de interface sem decisão adicional.
+
+**APROVADO (R27-Q2 = A) — equipe inicial:** **a aventura começa somente com o Pokémon protagonista escolhido pelo jogador**, sem companheiros iniciais; o jogador **forma sua equipe mediante recrutamento** durante a aventura. Preservar equipe ativa máxima de três Pokémon (protagonista e até dois aliados IA) e regras de reserva.
+
+**APROVADO (R27-Q3 = B) — ambientes das dungeons:** **uma mesma dungeon pode conter ambientes mistos e mudar de tema ao longo de uma expedição**. **PENDENTE:** quais biomas/temas existem, como ocorrem as mudanças, sua influência na geração e no gameplay. Esta decisão não exige que toda dungeon sempre mude de bioma e não altera a geração procedural aprovada.
+
+**APROVADO (R27-Q4 = A) — aprendizado de Moves comuns:** **o nível e a progressão do Pokémon são a fonte principal de novos Moves comuns**, **sem excluir mestres, HMs/TMs de combate e outros meios anteriormente aprovados**. **PENDENTE:** listas por espécie, requisitos, ritmo e seleção/aprendizado de novos Moves; continuam quatro Moves equipados mais Tackle genérico e ausência de PP.
+
+**APROVADO (R27-Q5 = C) — recompensas de batalha:** resposta literal **“moedas recursos itens”**. **Moedas, recursos e itens** são **tipos de recompensas materiais previstas para batalhas comuns**, além da experiência já aprovada (R26-Q3). **PENDENTE:** se cada vitória sempre oferece recompensa, quais combinações são possíveis, taxas, valores, origem, uso de moedas/recursos e destino no inventário. Não inferir três recompensas garantidas em toda batalha nem taxas ou economia concreta.
+
+**APROVADO (R28-Q1 = A) — moedas e comércio:** **moedas são usadas principalmente para comprar itens e recursos de NPCs ou lojas**. **PENDENTE:** NPCs/lojas disponíveis, locais, catálogo, preços e outros usos possíveis. Não definir moeda específica nem preços.
+
+**APROVADO (R28-Q2 = C) — itens segurados:** resposta literal **“alguns funcionarao passivament e alguns funcionarao automaticamente sendo consumidos como berries”**. **Alguns itens segurados produzem efeitos passivos e outros são ativados automaticamente e consumidos quando cabível, como berries**, com os gatilhos e efeitos concretos ainda pendentes. Não concluir que todos os itens segurados são consumíveis ou que toda berry possui um efeito específico. A preservação de itens ainda segurados após derrota definitiva (R25-Q4) permanece válida.
+
+**APROVADO (R28-Q3 = C) — retorno após fuga bem-sucedida:** resposta literal **“retorna ao local de encontro e stunna o inimigo por um tempo, nao pemitindo que ele se mova e encoste em vc por 3 segundos”**. Ao **fugir com sucesso de um combate comum**, o jogador **retorna ao local do encontro na exploração 2D**, e **o inimigo daquele encontro permanece imobilizado e impedido de se mover ou encostar no jogador por três segundos**. **PENDENTE:** condições para conseguir fugir, forma de solicitar a tentativa, consequências da falha e tratamento de chefes. Não estabelecer cooldown, imunidade global, distância de teleporte, custos ATB/Burst nem efeitos sobre outros inimigos.
+
+**APROVADO (R28-Q4 = A) — biomas e conteúdo:** as **mudanças de bioma/tema dentro de uma dungeon podem alterar os tipos de inimigos, eventos e recompensas encontrados**. **PENDENTE:** catálogos por bioma, distribuição e regras concretas de transição. Não presumir mudança obrigatória de cada tipo de conteúdo em toda transição.
+
+**APROVADO (R28-Q5 = A) — recompensa principal da dungeon:** a **conclusão de uma dungeon prioriza avanço da campanha e desbloqueio de novas dungeons**, enquanto **recompensas materiais adicionais são opcionais e permanecem pendentes**. A conclusão ainda exige alcançar o último andar e vencer o chefe, encerrando a expedição e retornando à progressão da campanha (R23-Q2/R26-Q4). Não presumir recompensa material garantida.
+
+**APROVADO (R29-Q1 = C) — comércio em ambos os locais:** resposta literal **“ambos”**. **NPCs comerciantes e lojas podem ser encontrados dentro das dungeons, durante a exploração, e fora das expedições, na seleção/progressão da campanha.** **PENDENTE:** localização, vendedores, catálogo, preços e acesso. Não tornar obrigatório o hub futuro de R25-Q2.
+
+**APROVADO (R29-Q2 = A) — eventos narrativos:** **eventos especiais oferecem escolhas e situações narrativas com consequências para a exploração**. **PENDENTE:** eventos, escolhas e efeitos concretos; não presumir persistência das consequências entre expedições.
+
+**APROVADO (R29-Q3 = A) — rejogar dungeons:** **novas expedições podem ocorrer em dungeons já concluídas**, com recompensas ainda pendentes. Mantêm-se a **geração procedural por exploração/andar** (R7-Q5), o **layout persistente ao revisitar andares na mesma exploração** (R9-Q2) e a **reprodutibilidade pela mesma seed, regras e versão do gerador** (R8-Q3). Não exigir layout inédito quando a mesma seed for reutilizada.
+
+**APROVADO (R29-Q4 = A) — chefes acompanhados:** **um chefe principal pode ter apoio de outros inimigos**, sem exceder **três inimigos ativos simultaneamente por combate** (R7-Q4). **PENDENTE:** composição do encontro, apoios e mecânicas de chefes. O chefe não precisa ter aliados em toda batalha.
+
+**APROVADO (R29-Q5 = A) — dificuldade:** **aumentar progressivamente o desafio nos andares mais avançados e nas novas dungeons desbloqueadas na campanha**. **PENDENTE:** tipos de desafio, variação por bioma, níveis, curvas e números; sem definir fórmulas ou valores.
+
+**APROVADO (R30-Q1 = A) — retirada voluntária:** o jogador **pode retirar-se voluntariamente da dungeon antes de derrotar o chefe e retornar à campanha**. **PENDENTE:** interface/local da retirada, consequências sobre itens, progresso, Pokémon e a expedição. A retirada **não é equiparada automaticamente a derrota definitiva** (R23-Q3) nem a fuga de combate (R27-Q1).
+
+**APROVADO (R30-Q2 = A) — alcance de eventos:** as **consequências das escolhas em eventos narrativos ficam principalmente na expedição atual, sem persistência obrigatória entre dungeons**. Eventos continuam oferecendo escolhas e situações narrativas (R29-Q2). Não proibir expressamente exceções futuras, mas não criar persistência de campanha como requisito.
+
+**APROVADO (R30-Q3 = B) — identidade de chefes:** **chefes são principalmente inimigos mais difíceis dentro das regras usuais do combate**, **sem obrigatoriedade de fases ou mecânicas exclusivas**. O chefe principal **pode continuar acompanhado de outros inimigos** (R29-Q4), respeitando três inimigos ativos no máximo. Isso não proíbe conteúdo especial aprovado futuramente; não fixar fases ou padrões exclusivos agora.
+
+**APROVADO (R30-Q4 = A) — recompensas de novas expedições:** **rejogar dungeons já concluídas continua oferecendo oportunidades de obter Pokémon, itens e recursos**, com catálogo, elegibilidade, quantidades e condições pendentes. Não garantir cada recompensa em toda visita e não alterar a geração procedural nem os desbloqueios da campanha.
+
+**APROVADO (R30-Q5 = A) — entrada imediata de recrutados:** **quando houver vaga na equipe ativa, Pokémon recém-recrutados podem entrar diretamente nela após o recrutamento bem-sucedido**, respeitando o limite de **três Pokémon ativos**. Não impor entrada automática sem escolha do jogador nem definir interface. Se a equipe estiver completa, o novo recrutado pode ir à reserva (R24-Q3); as trocas durante a expedição seguem provisórias (R25-Q2).
+
+**APROVADO (R31-Q1 = B) — itens na retirada voluntária:** **ao abandonar voluntariamente a dungeon, os itens coletados nessa expedição que não estiverem sendo segurados são perdidos; os itens segurados são mantidos**, assim como a regra já aprovada para itens adquiridos na expedição encerrada por derrota definitiva (R25-Q4). Essa equivalência se refere **somente ao tratamento desses itens**, não a outras consequências de retirada/derrota. **PENDENTE:** tratamento de itens trazidos antes da expedição, definição exata de “segurado” e destino de outros recursos.
+
+**APROVADO (R31-Q2 = A) — protagonista incapacitado em combate:** **se o protagonista cair durante uma batalha 3D, os aliados ainda capazes de combater continuam a batalha sob controle da IA**. **R32-Q1 = A aprovou posteriormente:** se os aliados vencerem, o protagonista **pode retornar à exploração mediante recuperação mínima**, com condições e quantidade pendentes. A queda do protagonista não equivale automaticamente à derrota definitiva (R23-Q3); não atribuir controle manual dos aliados nem recuperação completa automática.
+
+**APROVADO (R31-Q3 = B) — experiência de vitória e reserva:** **a experiência das vitórias de combate é restrita aos Pokémon ativos participantes** (R26-Q3). **Pokémon na reserva não recebem essa experiência por estarem reservados**; sua progressão por outros meios fica a definir. Não fixar XP, curvas ou meios específicos de treinamento.
+
+**APROVADO (R31-Q4 = A) — apresentação dos objetivos da campanha:** **objetivos e missões que orientam o desbloqueio de novas dungeons são apresentados principalmente por personagens, NPCs e acontecimentos narrativos**. **PENDENTE:** missões, personagens e requisitos concretos de desbloqueio. Não proibir que a interface também mostre o progresso; não presumir um hub implementado.
+
+**APROVADO (R31-Q5 = A) — pontos de descanso seguros:** **pontos de descanso dentro das dungeons são locais seguros de pausa e preparação da equipe**, com serviços adicionais pendentes. A **restauração completa de MP nesses pontos permanece aprovada** (R14-Q2/R15). **R32-Q2 = A aprovou posteriormente a recuperação de HP nesses pontos**, com quantidade e regras específicas pendentes. **PENDENTE:** acesso, localização, proteção concreta contra ameaças e serviços adicionais. Não inferir restauração completa de HP, trocas de equipe nem outras funções.
+
+**APROVADO (R32-Q1 = A) — protagonista após vitória dos aliados:** **se os aliados vencerem o combate após a queda do protagonista, ele poderá voltar à exploração mediante recuperação mínima**. **PENDENTE:** qual recuperação, quando acontece e condições de retorno. Não presumir valor de HP ou cura completa nem encerrar uma batalha automaticamente quando o protagonista cai.
+
+**APROVADO (R32-Q2 = A) — HP no descanso:** **pontos seguros de descanso recuperam HP além de restaurar MP**. A restauração de MP continua **completa** pelas regras anteriores; a quantidade e os critérios de recuperação de **HP ficam pendentes**. Não equiparar automaticamente a cura de HP à restauração integral de MP.
+
+**APROVADO (R32-Q3 = A) — persistência de progressão:** **XP e níveis conquistados durante a expedição são preservados após derrota definitiva ou retirada voluntária**, mesmo sem vitória contra o chefe. Mantêm-se independentemente as perdas dos **itens coletados não segurados** nesses dois desfechos (R25-Q4/R31-Q1). Não generalizar preservação para todas as moedas, materiais e demais recursos sem decisão.
+
+**APROVADO (R32-Q4 = A) — descoberta do mapa:** **o mapa de cada andar é revelado progressivamente conforme o jogador explora**, com áreas ainda não percorridas permanecendo desconhecidas na apresentação do mapa. **PENDENTE:** meio de consulta/visualização, grau exato de revelação e persistência das áreas descobertas após nova expedição. A seed reproduzível e o layout estável ao revisitar um andar da mesma exploração permanecem válidos.
+
+**APROVADO (R32-Q5 = B) — recrutamento especial por evento:** **interagir voluntariamente com um Pokémon especial elegível inicia uma tarefa ou evento que deve ser resolvido antes de efetivar seu recrutamento**. **PENDENTE:** natureza das tarefas, requisitos, desfechos e condições de elegibilidade. Isso não transforma encontros hostis comuns em recrutamentos nem elimina as regras de composição da equipe/reserva; não estender obrigatoriamente essa tarefa a toda forma de recrutamento.
+
+**APROVADO (R33-Q1 = A) — derrota definitiva da equipe:** **se todos os Pokémon ativos forem incapacitados durante uma batalha, ocorre derrota definitiva e a expedição é encerrada**, aplicando as perdas e preservações previamente aprovadas, inclusive preservação de XP/níveis e Pokémon recrutados e perda de itens obtidos na expedição que não estiverem sendo segurados. **A queda isolada do protagonista não implica derrota** enquanto aliados puderem continuar lutando (R31-Q2).
+
+**APROVADO (R33-Q2 = A) — progressão de reservados:** **Pokémon na reserva podem progredir por treinamento ou serviços específicos disponíveis fora das expedições**. **PENDENTE:** acesso, requisitos, locais, resultados e como esses serviços concedem progressão. Reservados continuam **sem ganhar XP das vitórias da equipe ativa** (R31-Q3). Não presumir a existência ou a implementação do hub futuro (R25-Q2).
+
+**APROVADO (R33-Q3 = B) — quantidade variável de andares:** **a quantidade de andares de uma mesma dungeon pode variar de uma expedição para outra**, conforme regras de geração ainda pendentes. **PENDENTE:** critérios da variação e quantidade de andares, sem números aprovados. Preservar geração por exploração/andar, layout estável durante uma expedição, seed reproduzível e chefe no último andar.
+
+**APROVADO (R33-Q4 = B) — descoberta das salas secretas:** **salas secretas são descobertas principalmente por pistas, mapas especiais, NPCs ou eventos que revelem ou liberem seu acesso**. **PENDENTE:** tipos de pistas, mapas, eventos, distribuição e condições de acesso. Continuam opcionais para alcançar o chefe.
+
+**R33-Q5 — QUESTÃO REJEITADA, NÃO APROVADA:** resposta literal do criador: **“que recursos obtidos? já começou as perguntas idiotas redundates dnv??”**. Esta é uma **objeção à pergunta**, não a aprovação da alternativa C nem autorização para definir fabricação, materiais, sistemas de crafting ou melhorias. O histórico R27-Q5 registra literalmente “moedas recursos itens” como categorias gerais de recompensas, mas **não há catálogo, identidade nem função dos recursos definida**. Não repetir essa pergunta genérica sem esclarecer primeiro o objeto de jogo; **nenhuma decisão D-185 foi criada**.
+
+**APROVADO (R34-Q1 = B) — narrativa por dungeon:** **a campanha é organizada em histórias e missões relativamente independentes por dungeon**, com progressão geral mais aberta. **Mantém-se o desbloqueio progressivo de dungeons por conquistas e objetivos** (R25-Q1), sem inferir disponibilidade de todas as dungeons desde o início. **PENDENTE:** conteúdos e personagens das histórias e missões, vínculos entre elas e critérios de desbloqueio.
+
+**APROVADO (R34-Q2 = B) — prioridades da exploração:** **a exploração prioriza encontros, salas e eventos narrativos, sem tornar enigmas ou armadilhas um sistema central**. Essa prioridade não proíbe desafios ambientais opcionais; tipos e ocorrências permanecem pendentes. Mantêm-se NPCs e salas secretas já aprovados.
+
+**APROVADO (R34-Q3 = B) — sequência entre andares:** **a progressão principal entre andares da dungeon é sequencial**, com salas, corredores e opções de caminho variadas dentro de cada andar. **Mantêm-se as escadas/saídas para avançar sem eliminar todos os inimigos** (R24-Q1) e a quantidade de andares variável entre expedições (R33-Q3). Não aprovar ramificações entre andares como percurso principal.
+
+**APROVADO (R34-Q4 = B) — chefes variáveis:** **o chefe final pode variar entre expedições da mesma dungeon**, com catálogo e condições de escolha ainda pendentes. Mantêm-se o chefe no último andar, o combate principalmente pelas regras usuais e o máximo de três inimigos ativos, incluindo eventuais aliados do chefe. Não fixar aleatoriedade específica ou exigir chefe diferente em toda repetição.
+
+**APROVADO (R34-Q5 = C) — capacidade do inventário (regra histórica, refinada em R35-Q3):** resposta literal **“10 itens não contando segurados”**. A decisão originalmente fixou **10 itens transportados, sem contar os itens segurados**. **COMPLEMENTO E ATUALIZAÇÃO EXPRESSA (R35-Q3 = C):** o limite de 10 é **por Pokémon integrante da equipe ativa**, totalizando **até 30 itens não segurados com três integrantes ativos**, sem permitir que um único integrante carregue mais de 10. **R35-Q3 também aprovou a alternativa A para inventário cheio:** escolher um item carregado para deixar/trocar antes de recolher outro. **PENDENTE:** itens empilhados, operações entre integrantes, vagas ao mudar equipe, limite/quantidade de itens segurados, detalhes de descarte e interface. Não modificar a decisão histórica D-189, preservada no ledger.
+
+**APROVADO (R35-Q1 = A) — aliados visíveis em 2D:** **os Pokémon aliados ativos acompanham visualmente o protagonista no mapa 2D durante a exploração**. O controle direto permanece exclusivo do protagonista; aliados continuam orientados pela IA. **PENDENTE:** formação, deslocamento, colisões, reações e comportamento visual da equipe no mapa. Não tornar reservados seguidores nem transferir controle direto a eles.
+
+**APROVADO (R35-Q2 = A) — recrutamento comum:** **Pokémon elegíveis comuns oferecem oportunidade de recrutamento por interação voluntária direta no mapa 2D**, sujeitos a requisitos de elegibilidade ainda pendentes. **Pokémon especiais seguem exigindo tarefa/evento prévio à efetivação do recrutamento** (R32-Q5), e contatos hostis normais continuam iniciando combate 3D (R8-Q5). Não inferir recrutamento automático por aproximação nem chance de sucesso específica.
+
+**APROVADO (R35-Q3 = C) — limite individual e inventário cheio:** resposta literal **“cada aliado tem 10 itens de limte, entao no geral tem 30 items mas cada aliado tem até 10, alias opção A”**. **Cada um dos três integrantes possíveis da equipe ativa, incluindo o protagonista, pode transportar até 10 itens não segurados**, totalizando **até 30 itens quando a equipe ativa tem três integrantes**. Nenhum integrante pode concentrar os 30 itens. **Ao encontrar novo item com o inventário correspondente cheio, é possível escolher um item carregado para deixar/trocar antes de recolher o novo** (alternativa A expressamente indicada). Mantêm-se os **itens segurados fora dessa contagem** (R34-Q5). **PENDENTE:** capacidade quando integrantes saem/entram, distribuição e transferência de itens, empilhamento, quantidade de itens segurados, consequências de descartar, interface e coleta concreta.
+
+**APROVADO (R35-Q4 = A) — chefes sem fuga:** **não é permitida tentativa de fuga durante combates contra chefes**, ressalvadas eventuais exceções futuras a decidir. **A tentativa de fuga em combates comuns permanece permitida** (R27-Q1), com regras de êxito e fuga bem-sucedida aprovadas em R28-Q3. Não criar custos ou chances novos.
+
+**APROVADO (R35-Q5 = B) — narrativa variável por expedição:** **histórias e missões também podem variar entre expedições da mesma dungeon por eventos e situações procedurais**, com conteúdo e regras pendentes. **Mantêm-se histórias/missões relativamente independentes por dungeon** (R34-Q1) e campanha que desbloqueia dungeons mediante conquistas/objetivos (R25-Q1). Não afirmar que todas as missões variam ou que NPCs/conteúdo sejam inteiramente aleatórios.
+
+**APROVADO (R36-Q1 = A) — comportamento dos aliados ativos no mapa 2D:** **os aliados ativos acompanham o protagonista em grupo e permanecem próximos durante a exploração**. **PENDENTE:** formação, deslocamento, colisões, desvio de obstáculos e demais detalhes. Não transformar esse acompanhamento em exploração autônoma de áreas distantes; o protagonista segue como único controlado diretamente (R35-Q1).
+
+**APROVADO (R36-Q2 = A) — missões secundárias e chefe:** **missões e eventos secundários não impedem o acesso ao chefe quando o jogador alcança o último andar**. A dungeon permanece concluída somente quando o chefe é vencido (R23-Q2). **PENDENTE:** conteúdo e objetivos de missões principais da campanha; não eliminar objetivos de desbloqueio de outras dungeons (R25-Q1) nem transformar salas secretas em obrigatórias (R26-Q5).
+
+**APROVADO (R36-Q3 = A) — persistência de itens e eventos na revisita:** **itens já coletados e eventos já concluídos mantêm seu estado ao revisitar um andar na mesma expedição e não são reiniciados automaticamente**. Permanecem preservados o layout do andar (R9-Q2) e a remoção dos inimigos derrotados nessa exploração (R9-Q4). **PENDENTE:** novas expedições, eventos ainda incompletos e ocorrências especiais não especificadas. Não criar respawn ou reset implícito ao subir/descer escadas.
+
+**APROVADO (R36-Q4 = A) — preservação dos Pokémon após retirada:** **Pokémon recrutados durante a expedição permanecem pertencendo ao jogador mesmo após retirada voluntária**, assim como após derrota definitiva (R24-Q5). A retirada continua fazendo perder **itens obtidos na expedição que não estiverem sendo segurados** (R31-Q1), mas preserva XP/níveis (R32-Q3). Não presumir que a retirada conclua a dungeon ou que preserve itens não segurados.
+
+**APROVADO (R36-Q5 = A) — espécies características por dungeon:** **cada dungeon tem um conjunto de espécies de Pokémon característico, com variações internas por bioma**. **PENDENTE:** quais espécies, catálogos, distribuição por bioma, inclusão de espécies em mais de uma dungeon e regras de geração. Preservar a possibilidade de mudanças de bioma afetarem encontros (R28-Q4); não exigir exclusividade absoluta das espécies por dungeon.
+
+
+
+
+
+
+
+
+
+
+
+ **APROVADO posteriormente (R23-Q1 = A):** movimento contínuo e livre nas quatro direções cardeais, sem movimento diagonal direto. **PENDENTE:** controles, colisão e animação.
+
+**PENDENTE:** sprites 2D, geração procedural, seeds, passagens, detecção/patrulha e estados de novas expedições; espécies iniciais, **catálogos de espécies características por dungeon e bioma** (R36-Q5), recrutamento comum/especial, reservas/hub, evolução, XP e treinamento; **inventário de 10 itens não segurados por Pokémon ativo (até 30 com três), transferência/empilhamento** (R35-Q3), itens segurados, recuperação do protagonista, arenas, transições, **formação e movimentação do grupo de aliados próximos ao protagonista** (R36-Q1), missões variáveis e seus conteúdos sem **bloquear acesso ao chefe por eventos secundários** (R36-Q2), **estado de itens e eventos em novas expedições e casos especiais**, preservando revisitas dentro da mesma expedição (R36-Q3), objetivos de campanha, condições de fuga comuns, biomas, Moves, lojas/recompensas, chefes, cura e interface. **Recrutados persistem após retirada voluntária** (R36-Q4), mantendo perda de itens não segurados e XP/níveis preservados. Não definir recursos materiais genéricos: R33-Q5 foi rejeitada. Não presumir outras pendências resolvidas.
 
 ### Fluxo de experiência (somente encadeamento conceitual)
 
-Explorar uma dungeon em 2D → encontrar um adversário → entrar na cena 3D → administrar ATB e escolhas reativas → resolver vitória/derrota/fuga, quando definidas → retornar ao contexto da dungeon.
+Explorar uma dungeon 2D em movimentação cardinal contínua → encontrar adversário → combater em 3D com ATB → retornar à exploração quando permitido ou encerrar em derrota definitiva → alcançar último andar e derrotar chefe para concluir a dungeon. Fuga e demais consequências pendentes.
 
 **IMPLEMENTADO/OBSERVADO:** já existe uma transição básica 2D/3D no protótipo. Isso não confirma que o fluxo completo acima, inclusive fuga, recursos e consequências, esteja implementado.
 
@@ -208,9 +356,9 @@ Ataque direcionado a um Pokémon → tentativa de Evade ativo com custo de 3 →
 Sem decisão adicional, não fixar:
 
 - **Pokémon e progressão:** espécies elegíveis, protagonista inicial, recrutamento, reservas e trocas (**equipe ativa de até 3 aprovada**), evolução, **cinco atributos inspirados em SMT3 em escala-base 1–100, Agilidade/Velocidade como atributo único, HP derivado de Vitalidade+nível e MP máximo de Magia+nível**. Ao subir de nível, **o jogador distribui manualmente os pontos apenas do protagonista**, com **1 ponto distribuível por nível (R13-Q4)**; **aliados crescem automaticamente por curvas próprias de cada espécie**, ainda sem valores/fórmulas (R13-Q5). **MP persiste entre batalhas da mesma dungeon** (R12-Q3), é recuperável por **consumíveis e pontos de descanso** (R13-Q2) e **restaurado ao máximo no início de cada nova exploração** (R13-Q3). Valor de referência do ATB e fórmulas de HP/MP seguem pendentes.
-- **Moves:** Tackle genérico versus golpe homônimo da franquia (**Tackle genérico custa 2 ATB, sem PP**); lista concreta dos quatro Moves por Pokémon, status, efeitos e **exceções ao custo-base de 2 ATB**, incluindo golpes de custo 5 e requisitos Burst. **Nenhuma ação do Crawlmon utiliza PP** (R8-Q2; complementa R7-Q3).
+- **Moves:** Tackle genérico versus golpe homônimo da franquia (**Tackle genérico custa 2 ATB, sem PP**); lista concreta dos quatro Moves por Pokémon, status, efeitos e **exceções ao custo-base de 2 ATB**, incluindo golpes de custo 5 e requisitos Burst. **Nenhuma ação do Crawlmon utiliza PP** (R8-Q2; complementa R7-Q3). **R23-Q5 = C** aprovou aprendizado combinado com mestres e possíveis personagens que concedam HMs; **R24-Q4 = C** fixou **HMs e TMs apenas para combate por enquanto**. Outras fontes, ensino e slots continuam pendentes.
 - **Combate 3D:** câmera, sequência de animações, timings, hitstop, interface gráfica final, modelos, rigging, VFX e arenas por bioma.
-- **Dungeon 2D:** geração **procedural por exploração/andar, com salas e corredores** já aprovada (R7-Q5); seed reproduzível (R8-Q3), **layout persistente nas revisitas da mesma exploração** (R9-Q2), **inimigos visíveis que patrulham e perseguem após detecção** (R9-Q3), **inimigos derrotados removidos até o fim da exploração** (R9-Q4) e **movimentação cardinal em quatro direções** (R9-Q5). Permanecem pendentes parâmetros do gerador, interface/armazenamento de seeds, escala dos tiles, alcance/IA de detecção, movimentação contínua vs. tiles/turnos, armadilhas, itens, progressão, posicionamento e retorno.
+- **Dungeon 2D:** geração **procedural por exploração/andar, com salas e corredores** já aprovada (R7-Q5); seed reproduzível (R8-Q3), **layout persistente nas revisitas da mesma exploração** (R9-Q2), **inimigos visíveis que patrulham e perseguem após detecção** (R9-Q3), **inimigos derrotados removidos até o fim da exploração** (R9-Q4) e **movimentação cardinal em quatro direções** (R9-Q5). Permanecem pendentes parâmetros do gerador, interface/armazenamento de seeds, escala dos tiles, alcance/IA de detecção, movimentação contínua cardinal aprovada em R23-Q1, detalhes de controles/colisão, armadilhas, itens, progressão entre andares até o chefe, posicionamento e retorno.
 
 ### 7.1. Atributos e progressão dos Pokémon — decisões da Rodada 10
 
@@ -382,6 +530,21 @@ Sem decisão adicional, não fixar:
 
 **Preservação:** uma execução continua uma ação; múltiplos hits/alvos não multiplicam registros de telemetria. Itens com efeito de suporte recebem somente a categoria item. As decisões anteriores e o histórico permanecem válidos; **sem fórmulas, valores numéricos, PP ou novos custos ATB/Burst**. Esta revisão é documental, não implementação.
 
+### 7.13. Categorias na execução, Tactic na evolução e limites de Nature — decisões da Rodada 22
+
+**APROVADO (R22-Q1 = A) — categorias previstas na ficha:** **quando o Move iniciar efetivamente sua execução, registrar as categorias de telemetria previstas em sua ficha**, mesmo se algum componente ou efeito planejado não ocorrer ou não atingir o alvo. O sucesso não é condição para classificar a execução. Preservar o máximo de **duas categorias**, selecionadas segundo a **prioridade específica da ficha do Move**, a **contagem de uma ação por execução**, e o registro somente ao **início efetivo da execução** (R19-Q3). **PENDENTE:** especificação das categorias de cada Move e prioridade concreta nas fichas, bem como critérios técnicos para distinguir início de execução de mera confirmação.
+
+**APROVADO (R22-Q2 = A) — ações não-Moves:** **definir classificação e prioridade da telemetria por tipo de ação**, incluindo **defesa/esquiva, itens e outros tipos**, com os critérios concretos ainda pendentes. A regra específica para **item com efeito de suporte** permanece: classificar **somente como uso de item** (R21-Q2). **PENDENTE:** catálogo dos tipos de ações, categorias e prioridades de cada um, incluindo o tratamento de ações automáticas. Não alterar efeitos ou custos das ações.
+
+**APROVADO (R22-Q3 = A) — referência temporal no desempate:** se houver empate de frequência entre categorias predominantes da telemetria, **a tática selecionada no momento da subida de nível do aliado é a referência para desempatar**. Esta regra detalha R21-Q3 e não modifica a prioridade geral da tática sobre a telemetria no crescimento (R17-Q3). **PENDENTE:** quais categorias são favorecidas por cada tática, comportamento se nenhuma tática estiver selecionada e critérios para empate ainda não resolvido. Não usar automaticamente a tática mais frequente no histórico.
+
+**APROVADO (R22-Q4 = A) — HP positivo após ajuste proporcional:** se um Pokémon possuía **HP positivo antes do recálculo proporcional por mudança de Nature**, e o arredondamento para baixo geraria **HP zero**, preservar **um mínimo de HP positivo**. O tratamento concreto desse mínimo e os casos-limite ainda dependem de especificação; **não fixar aqui um valor numérico**. A proteção só foi aprovada para quem tinha HP positivo; não inferir cura/reanimação de quem já estava com HP zero. Mantêm-se a preservação proporcional e o arredondamento para baixo (R20-Q4/R21-Q4).
+
+**APROVADO (R22-Q5 = A) — escala final dos atributos-base:** os **atributos-base após aplicar modificadores de Nature devem permanecer na faixa aprovada de 1–100**. O limite é aplicado ao **valor-base modificado**, sem autorização para exceder a escala final. **PENDENTE:** o procedimento concreto para impor o limite, eventual tratamento de excedentes, relação com a distribuição manual de atributos e reaplicação após novo sorteio de Nature. Não atribuir valores a Nature ou fórmulas de crescimento.
+
+**Preservação:** as decisões R22 refinam exclusivamente as regras pendentes. Telemetria de Move continua **uma ação por execução**, com até duas categorias e registro sem exigir sucesso; Tactic não envia ordens diretas, e seus custos permanecem os aprovados. Não introduzir PP, novos valores/fórmulas nem custos ATB/Burst.
+
+
 
 
 
@@ -396,6 +559,216 @@ Sem decisão adicional, não fixar:
 - **Modos de batalha:** pausa **exclusiva** na seleção das orientações de Tactic já aprovada; detalhes de processamento e concorrência de ações/animações sem introduzir outras pausas, prioridade de ações e múltiplos comandos simultâneos ainda exigem especificação técnica.
 - **Balanceamento:** recompensas-base (+1 fraqueza, +2 crítico normal, +2 evasão automática, +1 Evade ativo) e soma crítico normal+fraqueza aprovadas; **blocos ATB excedentes são preservados fora dos cinco normais, sem serem Burst** e são **gastos antes dos blocos normais**. O preenchimento natural não cria extras. Moves Burst não geram ATB por fraqueza nem por crítico garantido. **Extras não têm teto fixo e são exibidos em quadradinhos adicionais**, conforme R4-Q1/Q2. **R5-Q1:** os extras são descartados ao final de cada batalha. **R5-Q2/Q3:** em ataques normais multi-alvo e/ou multi-hit, no máximo +1 por fraqueza e +2 por crítico normal para a ação inteira. Permanecem pendentes duração de buffs/debuffs, dano de crítico, tabela de tipos e interações especiais.
 - **Distribuição/publicação:** direitos dos personagens, modelos e demais elementos de propriedade intelectual precisam ser considerados se houver distribuição pública.
+
+
+### 7.14. Exploração e progressão fundamentais — decisões da Rodada 23
+
+**APROVADO (R23-Q1 = A):** explorar dungeons 2D com **movimentação contínua cardinal**, sem diagonal direta, preservando R9-Q5. Controles, velocidade, colisão e animações pendentes.
+
+**APROVADO (R23-Q2 = A):** **conclusão da dungeon exige chegar ao último andar e vencer um chefe**. Transições, andares, recompensas e chefes concretos pendentes.
+
+**APROVADO (R23-Q3 = A):** **derrota definitiva termina a exploração atual**. Consequências sobre Pokémon, itens, progresso e recursos não escolhidas.
+
+**APROVADO (R23-Q4 = B):** **recrutamento durante exploração 2D por interação ou aproximação**. **Coexistência obrigatória com R8-Q5:** contato com Pokémon inimigo visível continua iniciando combate 3D. Critérios que diferenciam recrutáveis de inimigos e como funciona a interação ainda pendentes. Equipe ativa mantém máximo de protagonista + dois aliados IA.
+
+**APROVADO (R23-Q5 = C):** resposta literal **“combinacao com mestres e possiveis personagens que dao hms”**. **Aprendizado combinado de Moves com mestres e possíveis personagens que concedem HMs**. **R24-Q4 = C aprovou posteriormente HMs e TMs somente para combate por enquanto**, sem uso em exploração. Permanecem pendentes fontes adicionais (nível, exploração, recompensas), função de cada HM/TM dentro do combate, formas de obtenção e ocupação de slots. Preservar Tackle genérico, ATB/Burst e ausência de PP.
+
+**Foco:** priorizar perguntas futuras sobre experiência central do jogador, sem novas rodadas de microcasos técnicos.
+
+
+### 7.15. Passagens, recrutamento, reservas e HMs/TMs — Rodada 24
+
+**APROVADO (R24-Q1 = A):** **avançar ao próximo andar encontrando uma escada ou saída no mapa**, sem obrigação de derrotar todos os inimigos. O último andar e a vitória contra o chefe seguem necessários à conclusão (R23-Q2). Não fixar forma de geração ou localização dessas passagens.
+
+**APROVADO (R24-Q2 = A):** **recrutamento de Pokémon elegível na exploração 2D exige interação voluntária explícita**. Simples aproximação não basta para recrutar. **Preservar R8-Q5:** contato hostil com inimigo visível inicia combate 3D. **PENDENTE:** elegibilidade e efeitos da interação.
+
+**APROVADO (R24-Q3 = A):** **com a equipe ativa completa (três Pokémon), ainda é possível recrutar, enviando o novo Pokémon à reserva**. **PENDENTE:** limite, acesso, gestão e trocas. O máximo de três Pokémon ativos permanece intacto.
+
+**APROVADO (R24-Q4 = C):** resposta literal **“hms e tms so para combate por ora”**. **HMs e TMs são exclusivamente para combate por enquanto**, não para superar obstáculos ou cumprir tarefas de exploração. Complementa mestres e possíveis personagens que concedem HMs (R23-Q5). **PENDENTE:** aquisição/ensino e função específica das HMs/TMs em combate, ocupação de slots, requisitos e exemplos. Não inventar PP, ATB/Burst ou papel de HMs/TMs na exploração.
+
+**APROVADO (R24-Q5 = A):** **Pokémon recrutados na expedição continuam pertencendo ao jogador mesmo após derrota definitiva**; a derrota ainda encerra a exploração (R23-Q3). **PENDENTE:** destino na equipe/reserva e consequências para itens, níveis, experiência e outros recursos. Não generalizar a preservação dos Pokémon a todos os itens/progressos.
+
+**Preservação:** nenhuma regra nova sobre custos de Moves, número de slots, PP ou fórmula. Esta é uma consolidação documental de cinco decisões de gameplay, não uma implementação.
+
+
+### 7.16. Campanha, troca de equipe, evolução, itens e descobertas — Rodada 25
+
+**APROVADO (R25-Q1 = A) — campanha:** a progressão geral segue **campanha com novas dungeons desbloqueadas por conquistas e objetivos**. **PENDENTE:** objetivos concretos, sequência, estrutura narrativa, desbloqueios e repetição de dungeons. Permanecem os requisitos de último andar e chefe por dungeon.
+
+**APROVADO (R25-Q2 = C) — trocas provisórias e hub posterior:** resposta literal do criador **“A po ora, vou criar um hub pra isso depois masmais tarde”**. A referência expressa à alternativa **A por ora** permite **trocar Pokémon entre a equipe ativa e a reserva durante a exploração como comportamento provisório**, ainda com restrições não especificadas, mantendo **três ativos no máximo**. O criador pretende criar **um hub posteriormente**, mas **não aprovou agora a estrutura, funções ou a substituição futura das trocas pelo hub**. **PENDENTE:** mecânica definitiva de trocas, interface, disponibilidade da reserva e definição posterior do hub. Nenhum hub foi implementado por esta revisão.
+
+**APROVADO (R25-Q3 = A) — evolução de espécie escolhida:** **a evolução de espécie fica disponível ao Pokémon depois que os requisitos forem atendidos, e o jogador escolhe quando realizá-la**. Não transformar a evolução em evento automático obrigatório. **PENDENTE:** requisitos por espécie, local/interface e demais efeitos. A distribuição manual de pontos do protagonista e o crescimento automático dos aliados seguem intactos.
+
+**APROVADO (R25-Q4 = C) — derrota e itens segurados:** resposta literal **“apenas itens que estao sendo segurados nao sao perdidos”**. Em derrota definitiva, **dos itens obtidos na expedição, os que estiverem sendo segurados são preservados e os demais são perdidos**. **PENDENTE:** definição de segurar (sem presumir equivalência exata a equipado), regras para itens de posse anterior à expedição, disponibilidade de itens segurados e outras condições. Os Pokémon recrutados continuam pertencendo ao jogador após derrota (R24-Q5); não inferir perda de Pokémon.
+
+**APROVADO (R25-Q5 = A) — prioridade do conteúdo procedural:** **priorizar eventos, salas secretas, recompensas especiais e NPCs** nas dungeons procedurais, além de inimigos e passagens já aprovados. **PENDENTE:** catálogo de eventos, papel dos NPCs, critérios de salas secretas, recompensas e distribuição por dungeon. Essa prioridade **não proíbe** armadilhas, desafios ambientais ou salas especiais de combate; esses elementos continuam sem prioridade específica aprovada nesta decisão.
+
+**Preservação:** as decisões de R25 não definem fórmulas, valores de progressão, perdas de recursos não relacionados, PP, novos custos ATB/Burst, nem regras de TM/HM. Nenhum código ou hub foi implementado.
+
+
+### 7.17. Escolha do protagonista, recrutamento especial e resultados da dungeon — Rodada 26
+
+**APROVADO (R26-Q1 = A) — protagonista inicial:** o jogador **escolhe um Pokémon protagonista dentre espécies iniciais disponíveis**. **PENDENTE:** catálogo, apresentação da escolha e espécies elegíveis. A Nature do protagonista continua obedecendo suas próprias regras de sorteio (R17/R18), sem confundir Nature e espécie.
+
+**APROVADO (R26-Q2 = B) — candidatos especiais:** **Pokémon normalmente hostis podem surgir em situações especiais como candidatos a recrutamento identificados no mapa 2D**, com requisitos/eventos ainda pendentes. Continua obrigatória a **interação voluntária explícita** para recrutamento (R24-Q2), e **contatos hostis normais iniciam combate 3D** (R8-Q5). Não permitir recrutamento automático por contato ou presumir que qualquer inimigo é candidato.
+
+**APROVADO (R26-Q3 = A) — experiência:** **todos os Pokémon ativos participantes de batalha vencida recebem experiência**, **sem exigir participação no golpe final**. **PENDENTE:** valores e divisão de XP, elegibilidade de Pokémon incapacitados, Pokémon reservados, derrotas e demais exceções. Não estabelecer valores/fórmulas, não mudar o crescimento dos aliados nem os pontos manuais do protagonista.
+
+**APROVADO (R26-Q4 = A) — conclusão de expedição:** ao **derrotar o chefe do último andar**, o jogador **encerra a expedição e retorna à seleção/progressão da campanha**, podendo prosseguir conforme os desbloqueios de campanha. **PENDENTE:** recompensas específicas, telas de resultado e regras concretas de desbloqueio; não criar hub automaticamente.
+
+**APROVADO (R26-Q5 = A) — salas secretas:** salas secretas são **descobertas opcionais com recompensas, eventos e NPCs especiais**, **não necessárias para chegar ao chefe**. **PENDENTE:** catálogo, aparecimento, entrada, descoberta e recompensas. Não tornar sua exploração requisito de conclusão.
+
+**Preservação:** todas as regras anteriores sobre ATB, Burst, MP, ausência de PP, limites de equipe, progressão manual/automática, Nature e condições de vitória/derrota permanecem aprovadas. Somente design documental foi acrescentado.
+
+
+### 7.18. Fuga, composição inicial, ambientes, Moves e recompensas — Rodada 27
+
+**APROVADO (R27-Q1 = A) — fuga:** o jogador **pode tentar fugir de combates comuns**. **APROVADO posteriormente (R28-Q3 = C):** na fuga bem-sucedida, retorna ao ponto do encontro e o inimigo fica imobilizado, sem poder se mover ou encostar no jogador por três segundos. **PENDENTE:** como pedir fuga, elegibilidade, chance, falha e chefes. Não acrescentar automaticamente comando novo ou custos ATB/Burst e não garantir sucesso.
+
+**APROVADO (R27-Q2 = A) — início da aventura:** o jogador começa **apenas com o protagonista**, cuja espécie escolhe entre os iniciais (R26-Q1). **Companheiros são obtidos por recrutamento**, sem aliados concedidos automaticamente no início. Limite da equipe ativa: protagonista + dois aliados sob IA. Não mudar as regras dos recrutáveis especiais (R26-Q2).
+
+**APROVADO (R27-Q3 = B) — variedade ambiental:** **uma dungeon pode combinar diferentes ambientes e alterar seu tema durante a mesma expedição**. **R28-Q4 = A complementou:** essas mudanças podem modificar tipos de inimigos, eventos e recompensas. **PENDENTE:** biomas concretos, distribuição e transições procedurais. Não exigir que toda dungeon tenha vários temas nem que todas as categorias mudem em cada transição.
+
+**APROVADO (R27-Q4 = A) — aprendizado:** **Moves comuns são obtidos principalmente ao avançar de nível e pela progressão do Pokémon**, sem eliminar aprendizado combinado com mestres e possíveis personagens que concedem HMs (R23-Q5), nem HMs/TMs exclusivamente de combate por enquanto (R24-Q4). **PENDENTE:** catálogo de Moves por espécie, ritmo de aprendizado, requisitos e interface de troca/equipamento. Preservar quatro espaços equipados, Tackle separado, ausência de PP e custos ATB/Burst anteriores.
+
+**APROVADO (R27-Q5 = C) — recompensas materiais de batalhas comuns:** resposta literal **“moedas recursos itens”**. **Moedas, recursos e itens constituem tipos de recompensa previstos para batalhas comuns**, além da experiência. A decisão **não exige** que cada vitória conceda as três categorias nem drop garantido. **R28-Q1 = A esclareceu:** moedas são usadas principalmente para **comprar itens e recursos de NPCs ou lojas**. **PENDENTE:** catálogo, preços, localização, taxas, quantidades e distribuição de recompensas.
+
+**Preservação:** R27 não altera resultados de derrota, preservação de itens segurados, evolução, regras de equipe/reserva, HMs/TMs de combate nem ATB/Burst/MP/PP. A conclusão de dungeon segue vinculada ao último andar e ao chefe.
+
+
+### 7.19. Comércio, itens segurados, fuga e biomas — Rodada 28
+
+**APROVADO (R28-Q1 = A) — uso das moedas:** **moedas obtidas em batalhas servem principalmente para comprar itens e recursos com NPCs/lojas**. **PENDENTE:** onde e como funcionam os vendedores, catálogo e preços. Não inferir moeda nominal, fórmula econômica ou acesso obrigatório por hub.
+
+**APROVADO (R28-Q2 = C) — modos de funcionamento de itens segurados:** resposta literal **“alguns funcionarao passivament e alguns funcionarao automaticamente sendo consumidos como berries”**. **Alguns itens segurados funcionam passivamente; outros são ativados automaticamente e consumidos, como berries**. **PENDENTE:** qual item pertence a qual grupo, gatilhos de ativação, efeitos e relação com as regras de itens utilizados via ITENS no combate. A preservação de **itens que ainda estejam sendo segurados** após derrota definitiva (R25-Q4) mantém-se. Não definir consumo automático como um novo custo ATB ou Burst.
+
+**APROVADO (R28-Q3 = C) — fuga e proteção no mapa:** resposta literal **“retorna ao local de encontro e stunna o inimigo por um tempo, nao pemitindo que ele se mova e encoste em vc por 3 segundos”**. **Após fuga bem-sucedida de combate comum, o protagonista retorna ao local do encontro 2D, e o Pokémon inimigo daquele encontro fica imobilizado, incapaz de se mover e encostar no protagonista durante três segundos.** É uma regra aplicável à **fuga bem-sucedida**, não garantia de sucesso. **PENDENTE:** comando/condições de fuga, falha, chefes, implementação de colisão e comportamento após expirar o efeito; não atribuir efeito a outros inimigos sem aprovação. **Duração aprovada: 3 segundos**, único número adicional expressamente decidido nesta rodada.
+
+**APROVADO (R28-Q4 = A) — impacto de biomas:** **mudanças de bioma dentro da dungeon podem alterar tipos de inimigos, eventos e recompensas disponíveis**. **PENDENTE:** quais biomas, tabelas e regras de variação. Não exigir mudanças compulsórias de todo o conteúdo sempre que o cenário mudar.
+
+**APROVADO (R28-Q5 = A) — recompensa por conclusão:** **a principal recompensa de concluir uma dungeon é avançar na campanha e desbloquear novas dungeons**. Recompensas materiais adicionais são **opcionais e permanecem pendentes**. O encerramento após vencer o chefe e retorno à seleção/progressão da campanha (R26-Q4) seguem válidos. Não definir prêmios especiais garantidos.
+
+**Preservação:** as decisões sobre fuga não criam novos custos ATB/Burst, imobilização de outros inimigos nem exceções automáticas para chefes. Mantêm-se Tackle, quatro Moves, ausência de PP, inventário e regras de perda de itens já aprovadas. Somente o GDD é alterado.
+
+
+### 7.20. Comércio, eventos narrativos, revisitas, chefes e dificuldade — decisões da Rodada 29
+
+**APROVADO (R29-Q1 = C):** resposta literal **“ambos”**. **Comerciantes e lojas podem existir dentro das dungeons e fora das expedições, na seleção/progressão da campanha**. O uso principal das moedas para comprar itens e recursos continua conforme R28-Q1. **PENDENTE:** localização, catálogo, preços, interface e disponibilidade. Não exigir hub já implementado.
+
+**APROVADO (R29-Q2 = A):** **eventos especiais nas dungeons oferecem escolhas e situações narrativas com consequências para a exploração**. **PENDENTE:** decisões concretas, impactos e persistência futura. Preservar o conteúdo procedural e a prioridade de eventos/NPCs.
+
+**APROVADO (R29-Q3 = A):** **permitir novas expedições às dungeons já concluídas**. A geração procedural ocorre por exploração/andar (R7-Q5), e a estabilidade do layout ao revisitar um andar vale **dentro da mesma exploração** (R9-Q2). A mesma seed, regras e versão de gerador continuam podendo reproduzir o mesmo layout (R8-Q3); nenhuma repetição exige obrigatoriamente mapa diferente. **PENDENTE:** recompensas, condições de acesso, escolha de seeds e variações.
+
+**APROVADO (R29-Q4 = A):** **chefe principal pode enfrentar o jogador com outros inimigos de apoio**, preservando o máximo já aprovado de **três inimigos ativos ao mesmo tempo** (R7-Q4). **PENDENTE:** composição, mecânicas e escolha de quais chefes têm apoio. Não exigir apoio em todo confronto.
+
+**APROVADO (R29-Q5 = A):** **dificuldade aumenta progressivamente conforme o jogador avança pelos andares e desbloqueia novas dungeons**. **PENDENTE:** tipos de desafio, curvas e escalonamento; não estabelecer fórmulas, níveis ou multiplicadores.
+
+**Preservação:** D-001 a D-160, regras de seeds, equipe inimiga, campanha, ATB/Burst e ausência de PP permanecem intactas. Esta revisão não implementa código.
+
+
+### 7.21. Retirada, eventos, chefes, expedições repetidas e recrutamento — Rodada 30
+
+**APROVADO (R30-Q1 = A) — retirada voluntária da dungeon:** **o jogador pode encerrar voluntariamente uma expedição antes da vitória contra o chefe e voltar à campanha**. **PENDENTE:** como iniciar a retirada, se existem restrições e quais consequências se aplicam aos itens, progresso e Pokémon. **Não presumir que a retirada tem as mesmas penalidades de derrota definitiva** ou o mesmo efeito da fuga de um combate comum.
+
+**APROVADO (R30-Q2 = A) — consequências dos eventos:** as **escolhas nos eventos narrativos afetam principalmente a exploração atual, sem exigir que persistam entre dungeons**. Mantêm-se eventos com opções e consequências reais (R29-Q2); **PENDENTE:** catálogo e efeitos concretos. Não impor decisões de campanha permanentes; também não proibir expressamente exceções futuras.
+
+**APROVADO (R30-Q3 = B) — chefes dentro das regras usuais:** **chefes são principalmente oponentes mais difíceis no sistema de combate comum**, sem obrigação de fases ou mecânicas exclusivas. **R29-Q4 permanece válido:** podem receber apoio de outros inimigos, desde que **não ultrapassem três inimigos ativos**. **PENDENTE:** identidades, Moves, composição de encontros, escalonamento de dificuldade e possíveis exceções específicas, se aprovadas futuramente.
+
+**APROVADO (R30-Q4 = A) — incentivo para repetir dungeons:** **novas expedições em dungeons já concluídas continuam oferecendo oportunidades de conseguir novos Pokémon, itens e recursos**. **PENDENTE:** catálogos, chances e condições. A decisão não garante recompensa a cada expedição nem revoga a geração procedural, a reprodução por seed ou a progressão de campanha previamente aprovadas.
+
+**APROVADO (R30-Q5 = A) — Pokémon recém-recrutado com vaga:** **quando houver espaço entre os três Pokémon ativos, um novo recrutado pode integrar diretamente a equipe após o recrutamento bem-sucedido**. Isso não obriga entrada automática nem determina controles ou telas. **Com três ativos, mantém-se a possibilidade de enviar recrutados à reserva** (R24-Q3); reorganização da equipe durante a exploração continua provisória (R25-Q2). **PENDENTE:** interface, escolha do destino e condições específicas.
+
+**Preservação:** R30 não cria fórmulas, PP, ATB/Burst adicionais, itens automaticamente perdidos na retirada ou regras novas de combate de chefes. São apenas decisões documentais; não representam implementação.
+
+
+### 7.22. Itens na retirada, aliados após queda, XP, campanha e descanso — Rodada 31
+
+**APROVADO (R31-Q1 = B) — itens após retirada voluntária:** **quando o jogador abandona voluntariamente uma dungeon, os itens coletados durante a expedição e que não estejam sendo segurados são perdidos; itens segurados são preservados**. Neste aspecto, a regra coincide com a perda de itens coletados na derrota definitiva (R25-Q4). **PENDENTE:** tratamento de itens anteriores à expedição, outros recursos e demais consequências da retirada. **Não converter retirada em derrota** nem mudar a preservação de Pokémon recrutados após derrota (R24-Q5).
+
+**APROVADO (R31-Q2 = A) — continuidade do combate após queda do protagonista:** se o **protagonista cair em batalha 3D enquanto houver aliados capazes de lutar, a batalha continua com os aliados controlados pela IA**. **Complemento R32-Q1 = A:** com vitória dos aliados, o protagonista pode voltar à exploração mediante **recuperação mínima**, ainda sem condições ou quantidade aprovadas. **PENDENTE:** condição geral de derrota e procedimento de recuperação. Não atribuir controle direto dos aliados nem recuperação completa automática.
+
+**APROVADO (R31-Q3 = B) — experiência dos Pokémon reservados:** **experiência de vitórias em combate somente para Pokémon ativos participantes**, conforme R26-Q3. Pokémon na reserva **não recebem experiência dessas vitórias enquanto reservados**; evolução/treinamento dos reservados por outros meios **ainda será definido**. Não fixar XP, método de treinamento ou curva.
+
+**APROVADO (R31-Q4 = A) — objetivos da campanha:** **NPCs, personagens e acontecimentos narrativos são o principal meio de apresentar missões e objetivos de desbloqueio de novas dungeons**. **PENDENTE:** conteúdo, objetivos concretos, requisitos de desbloqueio e como acompanhar o progresso. O comércio fora da dungeon (R29-Q1) e o hub futuro (R25-Q2) não são transformados em dependências obrigatórias.
+
+**APROVADO (R31-Q5 = A) — locais de descanso seguros:** **os pontos de descanso são lugares seguros para pausa e preparação dentro das dungeons**, e a restauração completa de MP nesses pontos permanece válida. **R32-Q2 = A aprovou também recuperação de HP**, com quantidade e regras ainda não definidas. **PENDENTE:** demais serviços, acesso, segurança concreta. Não presumir cura integral de HP, novos custos, lojas ou trocas de equipe no descanso.
+
+**Preservação:** as cinco decisões refinam sistemas existentes sem alterar os 170 registros anteriores, a economia ATB/Burst/MP, os limites de equipe ou a ausência de PP. Nenhuma funcionalidade foi implementada no código por esta atualização.
+
+
+### 7.23. Recuperação, progressão preservada, mapa e recrutamento — Rodada 32
+
+**APROVADO (R32-Q1 = A) — retorno do protagonista:** **após os aliados IA vencerem a batalha em que o protagonista caiu, ele pode voltar à exploração mediante recuperação mínima**. **PENDENTE:** forma, momento, condição, valor e demais efeitos da recuperação. Não inferir HP total, controle dos aliados ou derrota definitiva pela queda do protagonista; R31-Q2 continua válido.
+
+**APROVADO (R32-Q2 = A) — descanso cura HP:** **pontos seguros de descanso recuperam HP e restauram MP**. A recuperação de **MP é integral por regras anteriores**; a de **HP tem quantidade e condições ainda pendentes**. Não presumir que HP seja restaurado completamente nem aplicar esse benefício a locais que não sejam pontos de descanso.
+
+**APROVADO (R32-Q3 = A) — manter progresso em derrotas e retiradas:** **experiência e níveis adquiridos ao longo de uma expedição permanecem com os Pokémon após derrota definitiva ou retirada voluntária**, mesmo que não vençam o chefe. **As perdas já aprovadas de itens coletados e não segurados continuam valendo** para esses desfechos; nenhuma nova política de moedas/recursos é decidida. XP de combate continua restrita aos Pokémon ativos participantes (R31-Q3).
+
+**APROVADO (R32-Q4 = A) — revelação de exploração:** **o mapa do andar é revelado gradualmente à medida que o jogador percorre a dungeon**. **PENDENTE:** interface, grau de revelação, visibilidade de áreas não visitadas e persistência do mapa descoberto entre expedições. Permanecem geração por seed e layout persistente ao revisitar andares na mesma exploração.
+
+**APROVADO (R32-Q5 = B) — recrutamento especial por tarefa:** **ao interagir voluntariamente com um Pokémon especial elegível, inicia-se uma tarefa/evento que deve ser resolvido antes de recrutá-lo**. **PENDENTE:** tipos de tarefas, objetivos, condições de sucesso, consequências e apresentação. Essa regra aplica-se aos **candidatos especiais** e não torna obrigatória uma missão para todo recrutamento nem substitui o início de combate ao tocar inimigos hostis normais.
+
+**Preservação:** permanecem integralmente válidas as decisões D-001 a D-175, o máximo de três Pokémon ativos, a reserva, o sistema de combate, custos de ATB/Burst, a inexistência de PP, a geração procedural e as regras previamente aprovadas de perda de itens.
+
+
+### 7.24. Derrota da equipe, treino de reservas, andares variáveis e salas secretas — Rodada 33
+
+**APROVADO (R33-Q1 = A) — derrota definitiva:** **quando todos os Pokémon ativos forem incapacitados, o combate termina em derrota definitiva e a exploração atual é encerrada**. Aplicam-se as regras já aprovadas de perda de itens coletados não segurados, preservação de itens segurados, Pokémon recrutados, XP e níveis. Isso **não substitui** a continuidade da batalha com aliados IA se apenas o protagonista cair (R31-Q2).
+
+**APROVADO (R33-Q2 = A) — treino da reserva fora das expedições:** **Pokémon reservados podem progredir por treinamentos ou serviços específicos fora das expedições**. **PENDENTE:** onde, com quem, quais condições e quais efeitos. Não atribuir XP das vitórias da equipe ativa aos Pokémon reservados (R31-Q3) e não implementar ou exigir o hub futuro.
+
+**APROVADO (R33-Q3 = B) — dungeon com extensão variável:** **a quantidade de andares de uma mesma dungeon pode variar entre novas expedições**, com critérios de geração pendentes. A geração por exploração/andar, seed reproduzível, layout persistente durante a mesma expedição e necessidade de derrotar o chefe no último andar permanecem. **PENDENTE:** quantidade, distribuição e regras concretas; não definir números.
+
+**APROVADO (R33-Q4 = B) — pistas para salas secretas:** **pistas, mapas especiais, NPCs e eventos serão meios principais para indicar, revelar ou liberar salas secretas**. A descoberta permanece opcional e não é condição para chegar ao chefe (R26-Q5). **PENDENTE:** conteúdo das pistas, acesso e eventos concretos.
+
+**REJEITADA SEM APROVAÇÃO (R33-Q5 = C, texto livre de objeção):** “que recursos obtidos? já começou as perguntas idiotas redundates dnv??”. **Não foi aprovada qualquer função para recursos materiais, crafting, preparação ou melhorias.** O termo “recursos” em R27-Q5 segue apenas como categoria geral de recompensa, sem definição de itens concretos. A pergunta foi rejeitada por insuficiência de contexto e redundância; **não registrar decisão D-185** nem reutilizar a questão como se houvesse escolha de alternativa.
+
+**Estado da rodada:** **4 decisões aprovadas (D-181 a D-184), 1 pergunta rejeitada sem aprovação**. A Rodada 33 é encerrada por instrução do criador sem inventar quinta decisão. Mantêm-se todas as decisões D-001 a D-180, as regras de combate, ATB/Burst, ausência de PP, evolução e progressão já aprovadas.
+
+
+### 7.25. Narrativa por dungeon, exploração, progressão, chefes e inventário — Rodada 34
+
+**APROVADO (R34-Q1 = B) — estrutura narrativa:** **dungeons têm histórias e missões relativamente independentes entre si, em uma campanha de progressão geral mais aberta**. A campanha continua a **desbloquear dungeons conforme conquistas e objetivos** (R25-Q1); não interpretar “mais aberta” como todas as dungeons liberadas desde o começo. **PENDENTE:** histórias, NPCs, missões concretas, ligações entre arcos e desbloqueios.
+
+**APROVADO (R34-Q2 = B) — prioridade na exploração:** **encontros, salas e eventos narrativos têm prioridade na experiência das dungeons**, **sem exigir enigmas ou armadilhas como sistemas centrais**. Desafios ambientais pontuais não ficam proibidos; sua inclusão, objetivos e efeitos seguem pendentes. Preservar salas secretas e NPCs aprovados anteriormente.
+
+**APROVADO (R34-Q3 = B) — andares sequenciais:** **a progressão principal vai sequencialmente de um andar ao seguinte**, embora cada andar possua salas, corredores e caminhos variados. Escadas/saídas permitem avançar sem eliminar todos os inimigos (R24-Q1). O número de andares pode variar entre expedições da mesma dungeon (R33-Q3); a sequência principal permanece ordenada, sem definir ramificações entre andares.
+
+**APROVADO (R34-Q4 = B) — chefe variável:** **o chefe final de uma mesma dungeon pode variar entre expedições**, com catálogo e condições ainda pendentes. O chefe permanece no último andar e segue principalmente o sistema comum de combate (R30-Q3), podendo contar com inimigos de apoio até o limite de três inimigos ativos (R29-Q4). Não exigir chefe diferente em toda nova expedição nem inventar regras de sorteio.
+
+**APROVADO (R34-Q5 = C) — inventário de 10 itens (histórico):** resposta literal **“10 itens não contando segurados”**. A decisão fixou 10 itens transportados e excluiu os itens segurados da contagem. **Atualização expressa aprovada em R35-Q3 = C:** **10 itens não segurados por cada Pokémon ativo (até 30 itens com os três integrantes ativos)**; não é inventário global de apenas 10 nem uma capacidade de 30 para um único Pokémon. **Inventário cheio:** R35-Q3 também aprova a alternativa A, permitindo escolher item anterior para deixar/trocar antes da coleta. **PENDENTE:** distribuição entre membros, mudanças de composição, empilhamento, capacidade de itens segurados, destinos dos itens deixados e UI. Preservar perda/preservação já aprovada e funcionamento passivo/automático dos itens segurados.
+
+**Preservação:** decisões D-001 a D-184 integralmente válidas. A rejeição de R33-Q5 permanece registrada. R34-Q5 é resposta personalizada C, não autorização para acrescentar sistemas de materiais, fórmulas, PP ou novos custos ATB/Burst. Apenas requisitos de documentação foram atualizados.
+
+
+### 7.26. Aliados em 2D, recrutamento comum, inventário individual, fuga e histórias — Rodada 35
+
+**APROVADO (R35-Q1 = A) — aliados acompanham visualmente:** **Pokémon aliados da equipe ativa aparecem no mapa de exploração 2D e acompanham o protagonista**. O **protagonista permanece o único controlado diretamente**; aliados usam IA. **PENDENTE:** formação, movimentação, colisões e interações durante a exploração; não definir reservados como acompanhantes.
+
+**APROVADO (R35-Q2 = A) — recrutamento comum:** **Pokémon comuns elegíveis podem oferecer recrutamento por interação voluntária direta no 2D**, com requisitos específicos pendentes. Recrutamento especial ainda exige tarefa/evento (R32-Q5). **Inimigos hostis comuns** continuam iniciando batalha por contato (R8-Q5), sem recrutamento automático por proximidade.
+
+**APROVADO (R35-Q3 = C) — inventário por Pokémon e coleta com espaço esgotado:** resposta literal **“cada aliado tem 10 itens de limte, entao no geral tem 30 items mas cada aliado tem até 10, alias opção A”**. **Cada integrante da equipe ativa — protagonista incluído para corresponder ao total de três — carrega até dez itens não segurados**; **com três integrantes, a capacidade agregada é até 30, distribuída em dez por Pokémon**, não trinta em um único inventário individual. **Itens segurados não entram na contagem**, conforme R34-Q5. A expressão **“alias opção A”** também aprova **permitir escolher um item carregado para deixar/trocar antes de recolher outro quando estiver cheio**. **PENDENTE:** coleta por Pokémon, redistribuição, capacidade ao mudar a equipe, pilhas, itens segurados, destino do item deixado e interface. Esta decisão **atualiza e especifica** o antigo limite geral de 10 da R34-Q5; o registro D-189 original permanece no histórico sem ser adulterado.
+
+**APROVADO (R35-Q4 = A) — fuga de chefes:** **combates contra chefes não permitem fuga**, salvo eventuais exceções futuras explicitamente aprovadas. Em combates comuns, a fuga segue permitida conforme R27-Q1 e o retorno/stun de três segundos após êxito conforme R28-Q3. Não determinar novas chances, comandos ou custos.
+
+**APROVADO (R35-Q5 = B) — narrativa procedural:** **as histórias e missões podem variar entre expedições de uma mesma dungeon em decorrência de eventos/situações procedurais**, com catálogo, relevância e critérios de geração pendentes. Mantêm-se a identidade narrativa relativamente independente de cada dungeon (R34-Q1) e o desbloqueio de dungeons na campanha (R25-Q1). Não presumir que todas as narrativas ou seus NPCs sejam gerados aleatoriamente.
+
+**Preservação:** decisões D-001 a D-189 intactas, inclusive rejeição de R33-Q5; R35-Q3 complementa o requisito de inventário sem alterar decisões históricas. Não implementar nem inventar recursos materiais, PP, fórmulas, custos ATB/Burst, capacidade de pilhas ou limite de itens segurados.
+
+
+### 7.27. Acompanhamento, missões secundárias, revisitas, retirada e espécies — Rodada 36
+
+**APROVADO (R36-Q1 = A) — acompanhamento em grupo:** **os aliados ativos caminham acompanhando o protagonista e permanecem próximos a ele na exploração 2D**. **PENDENTE:** formação, movimentação, colisões e comportamento frente a obstáculos. R35-Q1 continua válido: controle direto do protagonista, aliados pela IA. Não acrescentar exploração autônoma distante como regra.
+
+**APROVADO (R36-Q2 = A) — acesso ao chefe independente de missões secundárias:** **eventos e missões secundárias são opcionais para chegar ao chefe**; ao alcançar o último andar, o jogador não precisa concluir esses conteúdos para enfrentar o chefe. A vitória contra o chefe permanece obrigatória para concluir a dungeon (R23-Q2), e a progressão da campanha ainda exige conquistas/objetivos para desbloquear outras dungeons (R25-Q1). Não converter salas secretas em exigência.
+
+**APROVADO (R36-Q3 = A) — estado persistente no mesmo andar/expedição:** **itens coletados e eventos concluídos não reaparecem nem reiniciam automaticamente quando o jogador revisita um andar durante a mesma expedição**. O layout também permanece estável (R9-Q2) e Pokémon inimigos derrotados continuam removidos naquela expedição (R9-Q4). **PENDENTE:** novas expedições, situações especiais, eventos inacabados e possíveis novos eventos genuinamente gerados; não inferir resets automáticos.
+
+**APROVADO (R36-Q4 = A) — posse de recrutas após retirada voluntária:** **todos os Pokémon recrutados na expedição permanecem pertencendo ao jogador também se ele optar por abandoná-la antes de enfrentar o chefe**, como já acontecia após derrota definitiva (R24-Q5). **Não mudar** as consequências independentes: perda de itens coletados não segurados (R31-Q1) e preservação de XP/níveis (R32-Q3). **PENDENTE:** destino da equipe/reserva ao retornar e outras consequências não definidas.
+
+**APROVADO (R36-Q5 = A) — identidade das espécies por dungeon:** **cada dungeon conta com espécies de Pokémon características, variando internamente entre seus biomas**. **PENDENTE:** catálogos, distribuições, critérios de aparição e possíveis espécies compartilhadas entre dungeons. Biomas podem afetar inimigos, eventos e recompensas (R28-Q4); não impor exclusividade absoluta ou números.
+
+**Preservação:** decisões D-001 a D-194 mantidas, incluindo D-192 (dez itens por membro ativo, até trinta com três) e a rejeição histórica de R33-Q5. Nenhuma regra numérica, PP, recurso material não definido, custo ATB/Burst, UI ou código foi introduzido.
 
 ## 8. Estado real do repositório (inspeção de código, não de execução)
 
@@ -544,6 +917,80 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-123 | R21-Q3 = B: **tática selecionada desempata categorias de igual frequência predominante**, segundo critérios futuros. |
 | D-124 | R21-Q4 = A: **arredondar para baixo HP/MP atual proporcional** depois de mudança dos máximos por Nature, respeitando os novos máximos; casos-limite pendentes. |
 | D-125 | R21-Q5 = A: **Natures neutras nos atributos-base podem afetar crescimento e/ou tendências comportamentais**, regras pendentes. |
+| D-126 | R22-Q1 = A: **registrar as categorias previstas na ficha do Move no início efetivo da execução**, mesmo que algum componente não ocorra; até duas categorias e uma ação por execução, sem exigir sucesso. |
+| D-127 | R22-Q2 = A: **classificação e prioridade da telemetria definidas por tipo de ação**, incluindo defesa/esquiva, itens e outros; regras concretas pendentes, preservando a exceção de item+suporte como somente item. |
+| D-128 | R22-Q3 = A: **usar a tática selecionada no momento da subida de nível para desempatar categorias de telemetria**, com associações de categorias por tática pendentes. |
+| D-129 | R22-Q4 = A: **se HP era positivo e arredondamento proporcional por Nature resultaria em zero, preservar HP mínimo positivo**; valor e casos-limite pendentes. |
+| D-130 | R22-Q5 = A: **atributo-base após modificadores de Nature permanece na escala 1–100**; procedimento de aplicação dos limites pendente. |
+| D-131 | R23-Q1 = A: **movimento contínuo livre em quatro direções cardeais na exploração 2D**, sem diagonal direta. |
+| D-132 | R23-Q2 = A: **concluir dungeon exige alcançar último andar e vencer chefe**. |
+| D-133 | R23-Q3 = A: **derrota definitiva em batalha encerra exploração atual**; consequências sobre itens/progresso pendentes. |
+| D-134 | R23-Q4 = B: **recrutamento durante exploração 2D por interação/aproximação**; preservar R8-Q5 para encontros hostis; condições pendentes. |
+| D-135 | R23-Q5 = C — “combinacao com mestres e possiveis personagens que dao hms”: **aprendizado combinado de Moves com mestres e possíveis personagens de HMs**; função/fonte detalhada pendentes. |
+| D-136 | R24-Q1 = A: **avançar de andar por escada/saída encontrada no mapa**, sem derrotar todos os inimigos. |
+| D-137 | R24-Q2 = A: **recrutamento de Pokémon elegível exige interação voluntária explícita**, sem revogar combate por contato com inimigo hostil. |
+| D-138 | R24-Q3 = A: **recrutar com três Pokémon ativos e enviar o novo recrutado à reserva**, limites e gestão pendentes. |
+| D-139 | R24-Q4 = C — “hms e tms so para combate por ora”: **HMs e TMs exclusivamente para combate por enquanto**, sem exploração. |
+| D-140 | R24-Q5 = A: **Pokémon recrutados permanecem pertencendo ao jogador após derrota definitiva da expedição**, demais consequências pendentes. |
+| D-141 | R25-Q1 = A: **campanha com novas dungeons desbloqueadas por conquistas e objetivos**, detalhes de progressão pendentes. |
+| D-142 | R25-Q2 = C — “A po ora, vou criar um hub pra isso depois masmais tarde”: **A provisoriamente**, permitir troca equipe ativa/reserva durante exploração; hub planejado para depois, sem regra definitiva ou implementação. |
+| D-143 | R25-Q3 = A: **evolução de espécie disponível após requisitos e realizada quando o jogador escolher**, requisitos e demais efeitos pendentes. |
+| D-144 | R25-Q4 = C — “apenas itens que estao sendo segurados nao sao perdidos”: **itens obtidos na expedição só são preservados após derrota se estiverem sendo segurados; demais itens obtidos nela são perdidos**, outros casos pendentes. |
+| D-145 | R25-Q5 = A: **priorizar eventos, salas secretas, recompensas especiais e NPCs em dungeons procedurais**, sem excluir outros conteúdos. |
+| D-146 | R26-Q1 = A: **escolher espécie do protagonista entre Pokémon iniciais disponíveis**, catálogo e apresentação pendentes; Nature separada. |
+| D-147 | R26-Q2 = B: **Pokémon normalmente hostis podem aparecer em eventos especiais como candidatos marcados no mapa 2D para recrutamento**, exigindo interação voluntária; encontros hostis normais continuam iniciando combate. |
+| D-148 | R26-Q3 = A: **todos os Pokémon ativos participantes de batalha vencida recebem XP, sem exigir golpe final**, valores e casos especiais pendentes. |
+| D-149 | R26-Q4 = A: **vencer chefe encerra expedição e retorna à seleção/progressão da campanha**, recompensas/desbloqueios pendentes, sem exigir hub. |
+| D-150 | R26-Q5 = A: **salas secretas opcionais para recompensas, eventos e NPCs especiais**, não obrigatórias para alcançar o chefe. |
+| D-151 | R27-Q1 = A: **permitir tentar fuga de combates comuns**, elegibilidade/consequências pendentes; chefes indefinidos. |
+| D-152 | R27-Q2 = A: **começar a aventura apenas com o protagonista**, obtendo companheiros por recrutamento; limite de três ativos preservado. |
+| D-153 | R27-Q3 = B: **mesma dungeon pode misturar ambientes e mudar de tema durante a expedição**, detalhes pendentes. |
+| D-154 | R27-Q4 = A: **Moves comuns obtidos principalmente por nível e progressão**, sem excluir mestres, HMs/TMs e outros meios. |
+| D-155 | R27-Q5 = C — “moedas recursos itens”: **moedas, recursos e itens previstos como tipos de recompensas de batalhas comuns**, sem afirmar drops garantidos ou valores. |
+| D-156 | R28-Q1 = A: **moedas usadas principalmente para comprar itens e recursos de NPCs/lojas**, preços e catálogo pendentes. |
+| D-157 | R28-Q2 = C — “alguns funcionarao passivament e alguns funcionarao automaticamente sendo consumidos como berries”: **itens segurados podem ser passivos ou ativados automaticamente e consumidos**, exemplos como berries; efeitos/gatilhos pendentes. |
+| D-158 | R28-Q3 = C — “retorna ao local de encontro e stunna o inimigo por um tempo, nao pemitindo que ele se mova e encoste em vc por 3 segundos”: **fuga bem-sucedida retorna ao local do encontro e imobiliza o inimigo, impedindo movimento/contato por 3 segundos**. |
+| D-159 | R28-Q4 = A: **biomas diferentes podem alterar inimigos, eventos e recompensas**, catálogos e distribuição pendentes. |
+| D-160 | R28-Q5 = A: **concluir dungeon prioriza progresso da campanha/desbloqueios**, prêmios materiais adicionais opcionais e pendentes. |
+| D-161 | R29-Q1 = C — “ambos”: **NPCs/lojas tanto dentro das dungeons quanto fora das expedições, na seleção/progressão da campanha**, detalhes pendentes. |
+| D-162 | R29-Q2 = A: **eventos com escolhas e consequências narrativas para exploração**, conteúdo concreto pendente. |
+| D-163 | R29-Q3 = A: **novas expedições a dungeons já concluídas**, sem revogar geração por exploração, persistência do andar na expedição e seed reproduzível. |
+| D-164 | R29-Q4 = A: **chefe principal pode contar com apoio de inimigos**, até três inimigos ativos simultâneos. |
+| D-165 | R29-Q5 = A: **dificuldade crescente por andares e desbloqueio de novas dungeons**, sem números aprovados. |
+| D-166 | R30-Q1 = A: **permitir retirada voluntária de dungeon antes do chefe, retornando à campanha**, consequências pendentes; não equiparar automaticamente à derrota. |
+| D-167 | R30-Q2 = A: **efeitos de eventos narrativos principalmente durante a exploração atual, sem persistência obrigatória entre dungeons**, eventos concretos pendentes. |
+| D-168 | R30-Q3 = B: **chefes principalmente mais difíceis dentro das regras comuns de combate, sem fases/mecânicas exclusivas obrigatórias**, podendo ter apoio até três inimigos ativos. |
+| D-169 | R30-Q4 = A: **novas expedições em dungeons concluídas continuam dando oportunidades de obter Pokémon, itens e recursos**, condições pendentes. |
+| D-170 | R30-Q5 = A: **novo Pokémon pode entrar diretamente na equipe ativa se houver vaga após recrutamento**, até três ativos; com equipe completa mantém-se a reserva. |
+| D-171 | R31-Q1 = B: **na retirada voluntária, itens coletados na expedição e não segurados são perdidos; itens segurados mantidos**, sem igualar todas as consequências de retirada e derrota. |
+| D-172 | R31-Q2 = A: **queda do protagonista não encerra batalha enquanto aliados capazes de lutar continuarem sob IA**, condições de vitória/recuperação pendentes. |
+| D-173 | R31-Q3 = B: **XP de vitórias restrita aos participantes ativos; Pokémon reservados não a recebem por estarem na reserva**, outros meios de progressão pendentes. |
+| D-174 | R31-Q4 = A: **objetivos e missões da campanha apresentados principalmente por personagens, NPCs e acontecimentos narrativos**, catálogo e sequência pendentes. |
+| D-175 | R31-Q5 = A: **pontos de descanso são locais seguros de pausa e preparação nas dungeons**, mantendo restauração de MP já aprovada; serviços e cura de HP pendentes. |
+| D-176 | R32-Q1 = A: **após vitória dos aliados com protagonista caído, ele pode voltar à exploração mediante recuperação mínima**, condições e valor pendentes. |
+| D-177 | R32-Q2 = A: **pontos seguros de descanso também recuperam HP além de restaurar MP**, critérios/quantidade de HP pendentes. |
+| D-178 | R32-Q3 = A: **XP e níveis adquiridos na expedição são mantidos após derrota definitiva ou retirada voluntária**, sem revogar perda de itens não segurados. |
+| D-179 | R32-Q4 = A: **mapa do andar revelado progressivamente conforme exploração**, apresentação/persistência entre expedições pendentes. |
+| D-180 | R32-Q5 = B: **Pokémon especial elegível inicia tarefa/evento de recrutamento por interação voluntária, a resolver antes de recrutar**, conteúdos pendentes. |
+| D-181 | R33-Q1 = A: **todos os Pokémon ativos incapacitados causam derrota definitiva e encerramento da expedição**, aplicando perdas/preservações já aprovadas; protagonista isolado não encerra batalha. |
+| D-182 | R33-Q2 = A: **reservados podem progredir por treinamento ou serviços específicos fora das expedições**, sem receber XP das vitórias dos ativos; condições pendentes. |
+| D-183 | R33-Q3 = B: **quantidade de andares de uma mesma dungeon pode variar entre expedições**, geração e seed reproduzíveis preservadas; critérios pendentes. |
+| D-184 | R33-Q4 = B: **salas secretas descobertas principalmente por pistas, mapas especiais, NPCs ou eventos**, acesso e regras pendentes. |
+| D-185 | R34-Q1 = B: **campanha com histórias e missões relativamente independentes por dungeon, em progressão geral mais aberta**, preservando desbloqueios por conquistas/objetivos. |
+| D-186 | R34-Q2 = B: **exploração prioriza encontros, salas e eventos narrativos, sem enigmas/armadilhas como sistema central**, não os proibindo. |
+| D-187 | R34-Q3 = B: **progressão principal sequencial entre andares**, com salas e caminhos variados dentro de cada andar; escadas/saídas e extensão variável mantidas. |
+| D-188 | R34-Q4 = B: **chefe final pode variar entre expedições da mesma dungeon**, catálogo/condições pendentes, limites de combate preservados. |
+| D-189 | R34-Q5 = C — “10 itens não contando segurados”: **limite de 10 itens no inventário da exploração, excluindo os itens segurados pelos Pokémon**, regras de empilhamento e inventário cheio pendentes. |
+| D-190 | R35-Q1 = A: **aliados ativos acompanham visualmente o protagonista no mapa 2D**, com controle direto exclusivo do protagonista e aliados por IA. |
+| D-191 | R35-Q2 = A: **Pokémon comuns elegíveis oferecem recrutamento por interação voluntária direta**, requisitos pendentes; especiais continuam por tarefa/evento. |
+| D-192 | R35-Q3 = C — “cada aliado tem 10 itens de limte, entao no geral tem 30 items mas cada aliado tem até 10, alias opção A”: **10 itens não segurados por Pokémon ativo, até 30 com três ativos**, atualizando o total da R34-Q5; **com inventário cheio, escolher item para deixar/trocar antes de recolher outro** (alternativa A). |
+| D-193 | R35-Q4 = A: **não permitir fuga em combates contra chefes**, sem alterar fuga de combates comuns; possíveis exceções futuras não definidas. |
+| D-194 | R35-Q5 = B: **histórias e missões de uma dungeon podem variar entre expedições mediante eventos e situações procedurais**, regras e conteúdo pendentes. |
+| D-195 | R36-Q1 = A: **aliados ativos acompanham protagonista em grupo, próximos durante exploração 2D**, formação/movimentação pendentes; controle direto continua do protagonista. |
+| D-196 | R36-Q2 = A: **missões e eventos secundários não bloqueiam acesso ao chefe no último andar**, mantendo vitória contra o chefe necessária para concluir. |
+| D-197 | R36-Q3 = A: **itens coletados e eventos concluídos mantêm estado ao revisitar o andar na mesma expedição, sem reaparecer/reiniciar automaticamente**, preservando regras de layout/inimigos. |
+| D-198 | R36-Q4 = A: **Pokémon recrutados permanecem com o jogador após retirada voluntária**, como na derrota definitiva; perdas de itens e XP/níveis preservados conforme decisões anteriores. |
+| D-199 | R36-Q5 = A: **cada dungeon possui espécies características com variações internas por bioma**, catálogos/distribuições pendentes. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -839,39 +1286,251 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Preservação:** nenhuma fórmula de HP/MP máximo, quantidade de pontos, custo ATB/Burst, probabilidade ou PP foi acrescentada.
 
-## 10.21. Rodada 22 — classificação, telemetria e casos-limite de Nature (cinco perguntas abertas)
+## 10.21. Rodada 22 — classificação, telemetria e casos-limite de Nature (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa aprovada.
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01, registradas nas decisões D-126 a D-130.
 
-**R22-Q1 — Como a telemetria classifica um Move que tem duas categorias na ficha, mas somente um componente previsto chega a ocorrer?**  
-A. **Usar as categorias previstas na ficha desde o início efetivo da execução**, mesmo quando um componente não se concretize; sucesso não é obrigatório.  
-B. **Registrar só categorias correspondentes aos componentes que chegaram a iniciar execução**, ainda que falhem depois; prioridade permanece na ficha.  
-C. Outra regra, especificada pelo criador.  
-*Uma execução segue sendo uma ação, com até duas categorias e sem exigir acerto.*
+| ID | Resposta literal do criador | Regra aprovada e pendências |
+| --- | --- | --- |
+| **R22-Q1** | **A** — “Registrar as categorias previstas na ficha quando o Move iniciar sua execução, mesmo que algum componente não ocorra; sucesso não é obrigatório.” | **Categorias da ficha registradas no início efetivo da execução**, inclusive se algum componente não ocorrer, com no máximo duas categorias e uma ação por execução. |
+| **R22-Q2** | **A** — “Definir categorias e prioridades de telemetria por tipo de ação, incluindo defesa/esquiva, itens e outros tipos.” | **Classificação e prioridade por tipo de ação**, com categorias concretas pendentes; item com suporte continua apenas item. |
+| **R22-Q3** | **A** — “A tática selecionada no momento da subida de nível é usada para desempatar categorias de telemetria.” | **Tática selecionada na subida de nível desempata categorias predominantes**, associações e exceções pendentes. |
+| **R22-Q4** | **A** — “Se o HP proporcional arredondado for zero para um Pokémon anteriormente vivo, preservar um mínimo positivo de HP, com detalhes pendentes.” | **Preservar HP mínimo positivo** se antes havia HP positivo e o ajuste proporcional por Nature arredondaria a zero; quantidade e casos-limite pendentes. |
+| **R22-Q5** | **A** — “Manter o atributo-base modificado pela Nature dentro da escala aprovada de 1–100; aplicação dos limites pendente.” | **Atributos-base modificados por Nature devem permanecer na escala 1–100**; procedimento de limites pendente. |
 
-**R22-Q2 — Como definir categorias e prioridades de telemetria para ações que não são Moves?**  
-A. **Definir a classificação e prioridade por tipo de ação**, incluindo defesa/esquiva, itens e demais tipos.  
-B. **Definir regras gerais por categoria**, permitindo exceções explícitas por tipo de ação.  
-C. Outra regra, especificada pelo criador.  
-*O uso de item com efeito de suporte continua classificado somente como item.*
+**Preservação:** sem definir valores mínimos de HP, valores de Nature, fórmulas, novas pausas, PP ou custos ATB/Burst. As Rodadas 1–21 e suas decisões permanecem preservadas.
 
-**R22-Q3 — Se o aliado tiver mudado de tática ao longo do histórico, qual tática desempata as categorias mais frequentes?**  
-A. **A tática selecionada no momento da subida de nível**, com associações de categoria ainda pendentes.  
-B. **A tática predominante ao longo do histórico acumulado**, com cálculo de predominância pendente.  
-C. Outra regra, especificada pelo criador.  
-*O histórico de telemetria é acumulado e a tática exerce influência principal no crescimento.*
+## 10.22. Rodada 23 — gameplay fundamental (FECHADA; substitui perguntas não respondidas)
 
-**R22-Q4 — Se uma alteração proporcional por Nature gerar HP zero após arredondamento para um Pokémon que antes tinha HP positivo, como proceder?**  
-A. **Preservar um mínimo de HP positivo para o Pokémon anteriormente vivo**, com casos-limite e detalhes a decidir.  
-B. **Aplicar o resultado zero**, deixando as consequências de estado/derrota a definir.  
-C. Outra regra, especificada pelo criador.  
-*Preservação proporcional e arredondamento para baixo continuam aprovados.*
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01, decisões D-131 a D-135. As antigas perguntas técnicas desta rodada eram não respondidas e não aprovadas. Foram substituídas sem remover as decisões D-001 a D-130.
 
-**R22-Q5 — Como aplicar a escala-base 1–100 aos atributos-base modificados por Nature?**  
-A. **Restringir os valores-base modificados à escala 1–100**, detalhando depois a aplicação dos limites.  
-B. **Aplicar a escala 1–100 antes dos modificadores**, permitindo valores após a Nature fora da faixa, com limites futuros pendentes.  
-C. Outra regra, especificada pelo criador.  
-*Não serão definidos modificadores numéricos ou fórmulas de Nature nesta escolha.*
+| ID | Resposta literal do criador | Regra aprovada |
+| --- | --- | --- |
+| **R23-Q1** | **A** — “Exploração 2D com movimentação contínua e livre nas quatro direções cardeais.” | Movimento contínuo cardinal. |
+| **R23-Q2** | **A** — “Concluir uma dungeon exige alcançar o último andar e vencer um chefe.” | Último andar e chefe obrigatório para conclusão. |
+| **R23-Q3** | **A** — “Ao perder a batalha de forma definitiva, encerrar a exploração atual; consequências sobre itens e progresso pendentes.” | Derrota definitiva encerra exploração, consequências pendentes. |
+| **R23-Q4** | **B** — “Novos Pokémon podem ser recrutados durante exploração 2D, por interações ou aproximação, com regras pendentes.” | Recrutamento em exploração 2D; contato com inimigo ainda inicia batalha (R8-Q5). |
+| **R23-Q5** | **C** — “combinacao com mestres e possiveis personagens que dao hms” | Aprendizado combinado com mestres e possíveis NPCs de HM; formas de HM e outras fontes pendentes. |
+
+**Rastreabilidade:** R23-Q4 não revoga contato hostil de R8-Q5. R23-Q5 não determina funcionalidade de HMs nem altera PP, slots ou custos ATB/Burst.
+
+## 10.23. Rodada 24 — progressão da dungeon, recrutamento e HMs (FECHADA)
+
+**Status:** FECHADA — 5/5 decisões aprovadas em 2026-11-01, D-136 a D-140.
+
+| ID | Resposta literal do criador | Regra aprovada e pendências |
+| --- | --- | --- |
+| **R24-Q1** | **A** — “O jogador avança de andar ao encontrar uma escada ou saída no mapa, sem precisar derrotar todos os inimigos.” | **Escada/saída sem eliminar todos os inimigos.** |
+| **R24-Q2** | **A** — “O recrutamento de Pokémon elegível na exploração 2D exige uma interação voluntária explícita.” | **Interação voluntária de recrutamento.** Encontro hostil continua em combate. |
+| **R24-Q3** | **A** — “Quando a equipe ativa de três estiver completa, novos Pokémon podem ser recrutados e enviados para reserva.” | **Recrutamento com equipe completa por reserva.** Limites/trocas pendentes. |
+| **R24-Q4** | **C** — “hms e tms so para combate por ora” | **HMs e TMs apenas para combate por enquanto.** Nenhuma função de exploração aprovada. |
+| **R24-Q5** | **A** — “Pokémon recrutados na expedição permanecem pertencendo ao jogador mesmo após derrota definitiva.” | **Recrutados preservados após derrota**, demais recursos pendentes. |
+
+**Preservação:** as decisões D-001 a D-135 e a regra de contato hostil permanecem. A resposta personalizada C para HMs/TMs não estabelece custos, slots, lista de Moves nem exploração.
+
+## 10.24. Rodada 25 — campanha, equipe e evolução (FECHADA)
+
+**Status:** FECHADA — 5/5 decisões aprovadas em 2026-11-01, registradas nas decisões D-141 a D-145.
+
+| ID | Resposta literal do criador | Regra aprovada / pendências |
+| --- | --- | --- |
+| **R25-Q1** | **A** — “A progressão geral segue uma campanha que desbloqueia novas dungeons conforme conquistas e objetivos.” | **Campanha com desbloqueio progressivo de dungeons**, condições concretas pendentes. |
+| **R25-Q2** | **C** — “A po ora, vou criar um hub pra isso depois masmais tarde” | **Usar provisoriamente a alternativa A:** trocas entre equipe ativa e reserva durante a exploração; **hub futuro** apenas como intenção, sem estrutura ou implementação aprovada. |
+| **R25-Q3** | **A** — “A evolução de espécie fica disponível após satisfazer requisitos, e o jogador escolhe quando realizá-la.” | **Evolução escolhida pelo jogador depois dos requisitos**, não automática obrigatória. |
+| **R25-Q4** | **C** — “apenas itens que estao sendo segurados nao sao perdidos” | **Na derrota definitiva, preservar somente itens segurados entre os itens obtidos na expedição**; os demais obtidos nela se perdem. Tratamento de itens anteriores pendente. |
+| **R25-Q5** | **A** — “Priorizar eventos, salas secretas, recompensas especiais e NPCs nas dungeons procedurais.” | **Priorizar descobertas, eventos, NPCs e recompensas especiais**, sem excluir conteúdo ambiental. |
+
+**Preservação:** R25-Q2 e R25-Q4 são respostas C personalizadas, não aprovações irrestritas das antigas A/B; as decisões D-001 a D-140, as regras de equipe ativa, recrutamento, ATB/Burst, ausência de PP e histórico são preservadas.
+
+## 10.25. Rodada 26 — protagonista, exploração e progressão (FECHADA)
+
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01, registradas como D-146 a D-150.
+
+| ID | Resposta literal do criador | Regra aprovada / pendências |
+| --- | --- | --- |
+| **R26-Q1** | **A** — “O jogador escolhe seu Pokémon protagonista entre espécies iniciais disponíveis; catálogo e apresentação pendentes.” | **Escolha de protagonista entre espécies iniciais**; catálogo/interface pendentes, Nature independente. |
+| **R26-Q2** | **B** — “Pokémon normalmente hostis podem aparecer em situações especiais como candidatos a recrutamento, identificados no mapa; encontros hostis normais continuam iniciando combate.” | **Recrutáveis especiais identificados no mapa, inclusive espécies normalmente hostis**; interação voluntária continua obrigatória. |
+| **R26-Q3** | **A** — “Todos os Pokémon ativos que participam de uma batalha vencida recebem experiência, sem exigir que deem o golpe final; quantidades pendentes.” | **XP de vitória para todos os participantes ativos**, sem depender do golpe final; valores pendentes. |
+| **R26-Q4** | **A** — “Após derrotar o chefe, a expedição termina e o jogador retorna à seleção/progressão da campanha; recompensas e desbloqueios pendentes.” | **Expedição encerra e retorna à seleção/progressão da campanha**, sem introduzir hub. |
+| **R26-Q5** | **A** — “Salas secretas são descobertas opcionais voltadas a recompensas, eventos e NPCs especiais, sem serem exigidas para chegar ao chefe.” | **Salas secretas opcionais para descobertas/recompensas**, não bloqueiam caminho ao chefe. |
+
+**Preservação:** as 145 decisões anteriores são mantidas. A distinção entre recrutamento especial e encontro hostil preserva R8-Q5/R24-Q2. Não acrescentar fórmulas, valores, PP, novos custos ATB/Burst ou funcionalidades não aprovadas.
+
+## 10.26. Rodada 27 — combates, companhia e variedade de dungeons (FECHADA)
+
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01, registradas como D-151 a D-155.
+
+| ID | Resposta literal do criador | Regra aprovada e pendências |
+| --- | --- | --- |
+| **R27-Q1** | **A** — “Permitir tentar fugir de combates comuns, com condições e consequências pendentes; tratamento de chefes ainda indefinido.” | **Tentativa de fuga em combates comuns**; critérios/chefes pendentes, sem custo novo. |
+| **R27-Q2** | **A** — “A aventura começa somente com o protagonista; os companheiros iniciais serão obtidos por recrutamento.” | **Iniciar apenas com protagonista** e obter aliados via recrutamento. |
+| **R27-Q3** | **B** — “Uma mesma dungeon pode misturar ambientes e mudar de tema ao longo da expedição; detalhes pendentes.” | **Ambientes/biomas mistos e mudanças possíveis de tema na dungeon**; como/quando pendente. |
+| **R27-Q4** | **A** — “Novos Moves comuns são obtidos principalmente por nível/progressão, sem excluir mestres, HMs/TMs e outros meios aprovados.” | **Moves comuns principalmente por nível**, mantendo fontes complementares e regras anteriores. |
+| **R27-Q5** | **C** — “moedas recursos itens” | **Moedas, recursos e itens como categorias de recompensa material em batalhas comuns**, não necessariamente todas em cada vitória; valores/regras pendentes. |
+
+**Preservação:** R27-Q5 é a resposta C personalizada, sem transposição irrestrita das alternativas A/B. Regras D-001 a D-150, ATB/Burst, Nature, experiência dos participantes, slots e ausência de PP continuam válidas.
+
+## 10.27. Rodada 28 — economia, combate e exploração ambiental (FECHADA)
+
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01, registradas como D-156 a D-160.
+
+| ID | Resposta literal do criador | Regra aprovada / pendências |
+| --- | --- | --- |
+| **R28-Q1** | **A** — “Moedas são usadas principalmente para comprar itens e recursos em NPCs ou lojas; preços e catálogo pendentes.” | **Moedas para comércio com NPCs/lojas**, catálogo e preços pendentes. |
+| **R28-Q2** | **C** — “alguns funcionarao passivament e alguns funcionarao automaticamente sendo consumidos como berries” | **Parte dos itens segurados concede efeitos passivos; parte é automaticamente ativada e consumida, como berries**, gatilhos/efeitos pendentes. |
+| **R28-Q3** | **C** — “retorna ao local de encontro e stunna o inimigo por um tempo, nao pemitindo que ele se mova e encoste em vc por 3 segundos” | **Fuga com sucesso retorna ao local do encontro, com inimigo imobilizado e impedido de se mover/encostar por 3 segundos**; chance/chefes pendentes. |
+| **R28-Q4** | **A** — “Mudanças de bioma dentro da dungeon podem alterar os inimigos, eventos e recompensas encontrados; listas e regras pendentes.” | **Biomas podem alterar encontros, eventos e recompensas**, listas pendentes. |
+| **R28-Q5** | **A** — “Concluir uma dungeon concede principalmente avanço da campanha/desbloqueios; recompensas materiais adicionais permanecem opcionais e pendentes.” | **Prioridade a avanço/desbloqueios de campanha**, sem recompensa material garantida. |
+
+**Preservação:** R28-Q2 e R28-Q3 são respostas C personalizadas, não equivalentes simplesmente às antigas alternativas A/B. Mantêm-se as 155 decisões anteriores, os custos ATB/Burst aprovados, a ausência de PP e a regra de perda de itens não segurados na derrota. Não registrar implementação sem verificação de código.
+
+## 10.28. Rodada 29 — campanha, encontros especiais e identidade de dungeons (FECHADA)
+
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01, decisões D-161 a D-165.
+
+| ID | Resposta literal do criador | Regra aprovada e pendências |
+| --- | --- | --- |
+| **R29-Q1** | **C** — “ambos” | **Lojas e NPCs comerciantes dentro e fora das dungeons**, no contexto de exploração e de progressão/seleção da campanha; detalhes pendentes. |
+| **R29-Q2** | **A** — “Eventos especiais oferecem escolhas e situações narrativas com consequências para a exploração; eventos e efeitos específicos pendentes.” | **Eventos com escolhas e consequências**, catálogo pendente. |
+| **R29-Q3** | **A** — “Permitir novas expedições a dungeons já concluídas, respeitando a geração procedural por exploração e com recompensas pendentes.” | **Novas expedições em dungeons concluídas**, geração por exploração, seed reproduzível e recompensas pendentes. |
+| **R29-Q4** | **A** — “O chefe principal pode ter apoio de outros inimigos, mantendo no máximo três inimigos ativos.” | **Chefe pode ter inimigos de apoio**, sem exceder três ativos. |
+| **R29-Q5** | **A** — “Aumentar progressivamente a dificuldade conforme o jogador avança pelos andares e desbloqueia novas dungeons; valores pendentes.” | **Escalada progressiva entre andares e dungeons**, números pendentes. |
+
+**Preservação:** R29-Q1 é resposta C personalizada, não exige o hub futuro. A repetição de dungeons não revoga seeds nem layouts estáveis dentro de uma expedição. Decisões D-001 a D-160 preservadas; sem PP ou novos custos ATB/Burst.
+
+## 10.29. Rodada 30 — retirada, eventos, chefes, repetição e equipe (FECHADA)
+
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01, decisões D-166 a D-170.
+
+| ID | Resposta literal do criador | Regra aprovada e pendências |
+| --- | --- | --- |
+| **R30-Q1** | **A** — “Permitir retirar-se voluntariamente da dungeon antes do chefe e voltar à campanha, com consequências pendentes.” | **Saída voluntária antes do chefe**, retornando à campanha, com consequências ainda por decidir. |
+| **R30-Q2** | **A** — “Consequências dos eventos narrativos ficam principalmente na expedição atual, sem persistência obrigatória entre dungeons.” | **Eventos de impacto principalmente local à expedição**, sem obrigação de persistência futura. |
+| **R30-Q3** | **B** — “Chefes são principalmente inimigos mais difíceis dentro do sistema comum de combate, sem mecânicas ou fases exclusivas obrigatórias.” | **Chefes dentro das mecânicas usuais, com dificuldade maior**, sem fases especiais obrigatórias; apoio permitido conforme R29-Q4. |
+| **R30-Q4** | **A** — “Novas expedições a dungeons concluídas continuam oferecendo oportunidades de obter Pokémon, itens e recursos, com regras pendentes.” | **Rejogar permite novas oportunidades de Pokémon, itens e recursos**, sem garantias de drop ou quantidades. |
+| **R30-Q5** | **A** — “Pokémon recém-recrutados podem entrar diretamente na equipe ativa quando houver vaga, respeitando o máximo de três.” | **Entrada direta possível com vaga na equipe ativa**, preservando envio à reserva com equipe cheia. |
+
+**Preservação:** as 165 decisões anteriores permanecem válidas. R30-Q1 não equipara abandono a derrota; R30-Q3 não revoga a possibilidade de inimigos auxiliares; R30-Q5 não obriga entrada automática. Não foram fixados números, fórmulas, PP nem novos custos ATB/Burst.
+
+## 10.30. Rodada 31 — consequências de expedições, combate e progressão da equipe (FECHADA)
+
+**Status:** FECHADA — 5/5 decisões aprovadas em 2026-11-01, registradas como D-171 a D-175.
+
+| ID | Resposta literal do criador | Regra aprovada e pendências |
+| --- | --- | --- |
+| **R31-Q1** | **B** — “Ao abandonar voluntariamente, itens coletados que não estejam sendo segurados são perdidos, como na derrota definitiva.” | **Itens coletados não segurados perdidos na retirada**, preservação de itens segurados. Outros efeitos da retirada pendentes. |
+| **R31-Q2** | **A** — “Se o protagonista cair em combate, a batalha continua com os aliados controlados pela IA, com condições de vitória e recuperação pendentes.” | **Aliados sob IA continuam batalha após queda do protagonista**; vitória/recuperação pendentes. |
+| **R31-Q3** | **B** — “Experiência das vitórias fica restrita aos participantes ativos; reservados evoluem por outros meios a definir.” | **XP de vitória apenas aos participantes ativos**; progressão dos reservados por outros meios a definir. |
+| **R31-Q4** | **A** — “Objetivos de campanha são apresentados principalmente por personagens, NPCs e acontecimentos narrativos.” | **Objetivos de campanha apresentados principalmente por NPCs e narrativa**; conteúdo pendente. |
+| **R31-Q5** | **A** — “Pontos de descanso são locais seguros para pausa e preparação dentro das dungeons; serviços adicionais pendentes.” | **Pontos de descanso seguros para pausa/preparação**, MP restaurado conforme regras anteriores, demais serviços pendentes. |
+
+**Preservação:** as 170 decisões anteriores e todo o histórico continuam válidos. Não presumir cura de HP em descanso, XP de combate para a reserva, derrota automática quando protagonista cai ou penalidades adicionais na retirada. Não inventar fórmulas, PP ou custos ATB/Burst.
+
+## 10.31. Rodada 32 — sobrevivência da equipe, descanso e descobertas (FECHADA)
+
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01, decisões D-176 a D-180.
+
+| ID | Resposta literal do criador | Regra aprovada e pendências |
+| --- | --- | --- |
+| **R32-Q1** | **A** — “Se os aliados vencerem após a queda do protagonista, ele poderá voltar à exploração mediante uma recuperação mínima, com condições pendentes.” | **Protagonista pode voltar após recuperação mínima**, condições não especificadas, vitória dos aliados sob IA preservada. |
+| **R32-Q2** | **A** — “Pontos seguros de descanso também recuperam HP, além de restaurarem MP; quantidade e regras de cura de HP pendentes.” | **Descanso também recupera HP**; restauração integral de MP preservada, quantidade de HP pendente. |
+| **R32-Q3** | **A** — “XP e níveis conquistados durante uma expedição são preservados após derrota definitiva ou retirada voluntária.” | **Manter XP e níveis ganhos em ambos os desfechos** sem revogar perda de itens coletados não segurados. |
+| **R32-Q4** | **A** — “O mapa do andar é revelado progressivamente conforme o jogador explora.” | **Revelação gradual do mapa**, interface e persistência entre expedições pendentes. |
+| **R32-Q5** | **B** — “Interagir com um Pokémon especial elegível inicia uma tarefa ou evento que precisa ser resolvido antes do recrutamento.” | **Recrutamento especial exige resolver tarefa/evento após interação**, sem estender o requisito a todo recrutamento. |
+
+**Preservação:** 175 decisões anteriores inalteradas. Não definir valores de recuperação, fórmulas, novos PP, custos ATB/Burst, consequências adicionais de derrota ou obrigação de missões para Pokémon não especiais.
+
+## 10.32. Rodada 33 — sobrevivência, reservas e exploração procedural (ENCERRADA: quatro aprovadas, uma rejeitada)
+
+**Status:** ENCERRADA em 2026-11-01 — **4/5 decisões aprovadas (D-181 a D-184)**; **R33-Q5 rejeitada como pergunta redundante/imprecisa, sem decisão aprovada**. O pedido do criador de encerrar a rodada não deve ser interpretado como aprovação de sua alternativa C.
+
+| ID | Resposta literal do criador | Regra aprovada / status |
+| --- | --- | --- |
+| **R33-Q1** | **A** — “Quando todos os Pokémon ativos forem incapacitados, ocorre derrota definitiva e a expedição é encerrada, com as regras de perdas e preservações já aprovadas.” | **Derrota definitiva quando todos os ativos caem**, aplicando consequências anteriores. |
+| **R33-Q2** | **A** — “Pokémon da reserva podem progredir por treinamentos ou serviços fora das expedições, com acesso e requisitos pendentes.” | **Treinos e serviços fora das expedições para reservados**, critérios pendentes. |
+| **R33-Q3** | **B** — “A quantidade de andares de uma mesma dungeon pode variar entre expedições de acordo com regras de geração ainda pendentes.” | **Andares variáveis por expedição de uma dungeon**, preservando seed e layout da exploração. |
+| **R33-Q4** | **B** — “Salas secretas são descobertas principalmente por pistas, mapas especiais, NPCs ou eventos que revelam ou liberam seu acesso.” | **Descoberta por pistas, mapas, NPCs e eventos**, detalhes pendentes. |
+| **R33-Q5** | **C** — “que recursos obtidos? já começou as perguntas idiotas redundates dnv??” | **REJEITADA: nenhuma decisão aprovada.** Não inferir crafting ou uso de recursos; conteúdo “recursos” não foi detalhado além da categoria de R27-Q5. |
+
+**Preservação:** D-001 a D-180 intactas. Não criar D-185 fictícia; não fixar fórmulas, quantidades, PP ou novos custos ATB/Burst. Evitar novas perguntas sobre “recursos” genéricos enquanto os objetos concretos não estiverem definidos.
+
+## 10.33. Rodada 34 — narrativa, estrutura dos andares e desafios das dungeons (FECHADA)
+
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01, decisões D-185 a D-189. A rejeição de R33-Q5 permanece no histórico e não foi transformada em decisão.
+
+| ID | Resposta literal do criador | Regra aprovada e pendências |
+| --- | --- | --- |
+| **R34-Q1** | **B** — “A campanha é organizada em histórias e missões relativamente independentes por dungeon, com progressão geral mais aberta.” | **Histórias/missões por dungeon, com campanha mais aberta**, mantendo os desbloqueios por conquistas/objetivos. |
+| **R34-Q2** | **B** — “A exploração prioriza encontros, salas e eventos narrativos, sem tornar enigmas ou armadilhas um sistema central.” | **Priorizar encontros/salas/eventos**, sem tornar enigmas e armadilhas centrais nem proibi-los. |
+| **R34-Q3** | **B** — “Manter progressão principal sequencial entre andares, embora cada andar tenha salas e caminhos variados.” | **Sequência entre andares, variedade de caminhos dentro de cada andar**, com extensão variável por expedição. |
+| **R34-Q4** | **B** — “O chefe final pode variar entre expedições da mesma dungeon, com catálogo e condições pendentes.” | **Chefes podem variar entre expedições**, sem exigir variação em toda repetição. |
+| **R34-Q5** | **C** — “10 itens não contando segurados” | **Inventário limitado a dez itens, sem contar itens segurados**; empilhamento, interface e demais regras pendentes. |
+
+**Preservação:** D-001 a D-184 permanecem intactas, inclusive a rejeição expressa de R33-Q5. Nenhuma regra de PP, ATB/Burst, crafting, quantidades de itens segurados ou recursos materiais foi acrescentada.
+
+## 10.34. Rodada 35 — companheiros, recrutamento, inventário e narrativa procedural (FECHADA)
+
+**Status:** FECHADA — 5/5 decisões aprovadas em 2026-11-02, D-190 a D-194, com atualização expressa do limite de inventário anterior. A rejeição de R33-Q5 permanece intacta.
+
+| ID | Resposta literal do criador | Regra aprovada / pendências |
+| --- | --- | --- |
+| **R35-Q1** | **A** — “Os aliados ativos acompanham visualmente o protagonista no mapa 2D, sem mudar o controle direto do protagonista.” | **Aliados ativos acompanham visualmente no 2D**, controle do protagonista mantido. |
+| **R35-Q2** | **A** — “Pokémon elegíveis comuns oferecem oportunidades de recrutamento por interação voluntária direta, sujeitas a requisitos pendentes.” | **Recrutamento comum por interação voluntária direta**, distinto das tarefas dos especiais. |
+| **R35-Q3** | **C** — “cada aliado tem 10 itens de limte, entao no geral tem 30 items mas cada aliado tem até 10, alias opção A” | **Cada Pokémon ativo pode transportar até 10 itens não segurados, total até 30 com três ativos**; item segurado não conta (R34-Q5). **Alternativa A também aprovada:** escolher item anterior para deixar/trocar antes de recolher quando cheio. |
+| **R35-Q4** | **A** — “Não permitir fuga dos combates contra chefes, com exceções futuras pendentes.” | **Sem fuga de chefes**, fuga comum preservada. |
+| **R35-Q5** | **B** — “Histórias e missões também podem variar entre expedições da mesma dungeon por meio de eventos e situações procedurais.” | **Histórias/missões podem variar por expedição**, sem definir geração ou conteúdo. |
+
+**Rastreabilidade do inventário:** D-189, aprovado na R34, permanece transcrito exatamente como decisão histórica de 10 itens não segurados. **D-192 supera a interpretação anterior de limite global de 10** ao dividir a capacidade em até 10 por integrante ativo (até 30 com equipe completa). Não inferir 30 em um único Pokémon, transferência irrestrita ou limite/capacidade de itens segurados.
+
+**Preservação:** D-001 a D-189 intactas, inclusive rejeição expressa de R33-Q5. Não criar PP, fórmula, crafting ou custos ATB/Burst novos.
+
+## 10.35. Rodada 36 — exploração, missões e consequências da expedição (FECHADA)
+
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-02, decisões D-195 a D-199.
+
+| ID | Resposta literal do criador | Regra aprovada e pendências |
+| --- | --- | --- |
+| **R36-Q1** | **A** — “Os aliados acompanham o protagonista como um grupo, permanecendo próximos durante a exploração; formação e movimentação pendentes.” | **Aliados próximos em grupo na exploração 2D**, controle do protagonista e IA preservados. |
+| **R36-Q2** | **A** — “Missões e eventos secundários não impedem o acesso ao chefe ao chegar ao último andar.” | **Missões/eventos secundários opcionais para enfrentar o chefe**, derrota do chefe ainda necessária para concluir. |
+| **R36-Q3** | **A** — “Itens coletados e eventos concluídos permanecem registrados ao revisitar um andar, sem serem reiniciados automaticamente.” | **Estado persistente de coletas/eventos resolvidos na mesma expedição**, sem reinício automático ao revisitar. |
+| **R36-Q4** | **A** — “Pokémon recrutados durante a expedição permanecem com o jogador mesmo após retirada voluntária, como já ocorre na derrota definitiva.” | **Preservar Pokémon recrutados após retirada voluntária**, sem alterar perda de itens e preservação de XP/níveis. |
+| **R36-Q5** | **A** — “Cada dungeon possui espécies de Pokémon características, com variações internas por bioma.” | **Catálogos característicos por dungeon, com variação por bioma**, detalhes pendentes. |
+
+**Preservação:** todas as 194 decisões anteriores mantidas; D-192 continua definindo até 10 itens por integrante ativo, somando até 30 com três Pokémon. A rejeição de R33-Q5 permanece registrada. Não criar PP, fórmulas, recursos materiais indefinidos ou custos ATB/Burst.
+
+## 10.36. Rodada 37 — combate no mapa, progressão e missões (cinco perguntas abertas)
+
+**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa foi aprovada. Questões relevantes e ainda não resolvidas, sem detalhamento numérico ou perguntas sobre recursos materiais genéricos.
+
+**R37-Q1 — Quem pode iniciar um encontro hostil por contato durante a exploração 2D?**  
+A. **Contato de um inimigo hostil com qualquer membro da equipe ativa que acompanha o protagonista pode iniciar batalha 3D**.  
+B. **Somente contato hostil com o protagonista inicia a batalha**; contatos com aliados acompanhantes não iniciam automaticamente encontros.  
+C. Outra regra para encontros em grupo, descrita pelo criador.  
+*Contato de inimigos visíveis inicia combate (R8-Q5), mas o GDD não definiu como isso funciona quando aliados também estão presentes fisicamente no mapa (R35/R36).*
+
+**R37-Q2 — O que deve acontecer com o progresso de missões secundárias quando a expedição termina antes de vencer o chefe?**  
+A. **O progresso das missões secundárias fica restrito à expedição e normalmente reinicia em uma nova tentativa**, sem obrigar persistência entre expedições.  
+B. **Parte das missões secundárias pode manter progresso entre expedições**, com missões e consequências persistentes ainda pendentes.  
+C. Outra regra, descrita pelo criador.  
+*R30-Q2 definiu efeitos narrativos principalmente locais e R36-Q3 preservou eventos concluídos na mesma expedição; não há política completa para retomada de missões em uma nova expedição.*
+
+**R37-Q3 — O desbloqueio de novas dungeons na campanha deve depender principalmente de quê?**  
+A. **Concluir dungeons e vencer seus chefes**, com os demais objetivos narrativos funcionando como caminhos complementares, pendentes.  
+B. **Cumprir missões e marcos narrativos da campanha**, que podem incluir derrotar chefes; requisitos concretos ainda pendentes.  
+C. Outra combinação de critérios, descrita pelo criador.  
+*R25-Q1 aprovou desbloqueios por conquistas/objetivos e R31-Q4 aprovou missões apresentadas por NPCs, mas a prioridade dos critérios de desbloqueio não foi definida.*
+
+**R37-Q4 — Como a escolha da espécie inicial do protagonista deverá funcionar?**  
+A. **Escolher entre um conjunto selecionado de espécies iniciais para o começo da campanha**, catálogo e apresentação pendentes.  
+B. **Escolher entre todas as espécies declaradas elegíveis como protagonistas iniciais**, com catálogo de elegibilidade ainda pendente, sem limitar a escolha a um pequeno grupo inicial predeterminado.  
+C. Outra regra de seleção, descrita pelo criador.  
+*R26-Q1 aprovou escolher a espécie do protagonista entre espécies iniciais disponíveis; não estabeleceu a abrangência desse conjunto.*
+
+**R37-Q5 — Como deverá funcionar a dificuldade dos inimigos ao repetir uma dungeon já concluída?**  
+A. **Manter a dificuldade principalmente vinculada à dungeon e ao andar**, sem elevar inimigos automaticamente só porque a equipe ficou mais forte.  
+B. **Permitir adaptação da dificuldade ao progresso ou força atual da equipe também nas revisitas**, com regras e limites ainda pendentes.  
+C. Outro sistema de dificuldade, descrito pelo criador.  
+*R29-Q5 estabeleceu dificuldade crescente por andares e novas dungeons, mas não definiu se as revisitadas acompanham a força da equipe.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -906,5 +1565,35 @@ C. Outra regra, especificada pelo criador.
 | 1.11 | 2026-11-01 | Rodada 20 (D-116 a D-120): categorias principais da ficha de ação/Move selecionadas quando mais de duas são possíveis (prioridade pendente); ação com duas categorias conta uma ocorrência em cada sem multiplicar execuções; telemetria preservada sem acumular ações fora da equipe; proporção de HP/MP atual preservada se novos máximos forem alterados por Nature (arredondamento pendente); Natures neutras nos atributos-base permitidas, com efeitos futuros de crescimento/comportamento possíveis. Abre Rodada 21. | Rodada 20 fechada / Rodada 21 aberta |
 
 | 1.12 | 2026-11-01 | Rodada 21 (D-121 a D-125): prioridade de categorias definida na ficha de cada ação/Move; item com suporte classificado somente como item; tática selecionada desempata frequência igual; HP/MP proporcional após alteração do máximo por Nature arredondado para baixo; Nature neutra nos atributos-base pode afetar crescimento/comportamento. Abre Rodada 22. | Rodada 21 fechada / Rodada 22 aberta |
+
+| 1.13 | 2026-11-01 | Rodada 22 (D-126 a D-130): registrar as categorias da ficha do Move desde o início da execução mesmo quando um componente não ocorre; classificação e prioridade por tipo de ação para não-Moves; tática selecionada na subida de nível desempata categorias; preservar HP mínimo positivo quando arredondamento proporcional por Nature produzir zero em Pokémon antes vivo; atributos-base após Nature limitados a 1–100. Abre Rodada 23. | Rodada 22 fechada / Rodada 23 aberta |
+
+| 1.14 | 2026-11-01 | Rodada 23 reformulada (D-131 a D-135): exploração 2D cardinal contínua; último andar e chefe para conclusão; derrota definitiva encerra exploração; recrutamento por interação/aproximação em mapa 2D sem revogar encontros hostis; aprendizado combinado com mestres e possíveis NPCs que concedem HMs. Perguntas antigas não aprovadas da R23 substituídas; R24 aberta com foco em gameplay. | Rodada 23 fechada / Rodada 24 aberta |
+
+| 1.15 | 2026-11-01 | Rodada 24 (D-136 a D-140): escadas/saídas para avançar sem limpar todos inimigos; recrutamento voluntário no mapa; reserva com equipe ativa completa; HMs e TMs exclusivamente de combate (C); Pokémon recrutados mantidos após derrota definitiva. Abre Rodada 25 com perguntas centrais de campanha, equipe, evolução e exploração. | Rodada 24 fechada / Rodada 25 aberta |
+
+| 1.16 | 2026-11-01 | Rodada 25 (D-141 a D-145): campanha com desbloqueio progressivo de dungeons; trocas equipe/reserva provisoriamente durante exploração, hub futuro ainda não definido (R25-Q2 C); evolução de espécie mediante requisitos sob escolha do jogador; derrota preserva somente itens segurados dentre os obtidos na expedição (R25-Q4 C), perdendo os demais obtidos; priorizar eventos, salas secretas, recompensas especiais e NPCs. Abre Rodada 26 com foco em protagonista, recrutamento, XP e conclusão. | Rodada 25 fechada / Rodada 26 aberta |
+
+| 1.17 | 2026-11-01 | Rodada 26 (D-146 a D-150): jogador escolhe espécie inicial do protagonista; Pokémon normalmente hostis podem aparecer como recrutáveis especiais identificados em mapa, preservando interação voluntária/contatos hostis; XP de vitória para todos os Pokémon ativos participantes sem exigência de golpe final; chefe do último andar encerra expedição e devolve seleção/progressão da campanha; salas secretas opcionais para recompensas/eventos/NPCs. Abre Rodada 27 sobre combates, companheiros, variedade ambiental, Moves e recompensas. | Rodada 26 fechada / Rodada 27 aberta |
+
+| 1.18 | 2026-11-01 | Rodada 27 (D-151 a D-155): tentativas de fuga em combates comuns; aventura começa somente com protagonista e companheiros recrutados; dungeons podem misturar ambientes e mudar de tema; Moves comuns principalmente por nível sem excluir fontes combinadas; moedas, recursos e itens como categorias de recompensa de batalhas comuns (R27-Q5 C), sem drops garantidos. Abre Rodada 28 sobre economia, itens segurados, fuga, biomas e conclusão de dungeons. | Rodada 27 fechada / Rodada 28 aberta |
+
+| 1.19 | 2026-11-01 | Rodada 28 (D-156 a D-160): moedas para comprar itens e recursos de NPCs/lojas; itens segurados passivos ou automaticamente consumidos como berries (R28-Q2 C); fuga bem-sucedida retorna ao encontro e impede inimigo de mover/encostar por 3 segundos (R28-Q3 C); biomas podem alterar inimigos/eventos/recompensas; conclusão de dungeon prioriza progressão/desbloqueios, materiais opcionais. Abre Rodada 29 sobre comércio, eventos, revisitas, chefes e dificuldade. | Rodada 28 fechada / Rodada 29 aberta |
+
+| 1.20 | 2026-11-01 | Rodada 29 (D-161 a D-165): NPCs/lojas dentro e fora das dungeons (C — “ambos”); eventos especiais com escolhas e consequências; novas expedições a dungeons já concluídas com geração procedural e seed reproduzível; chefe principal pode ter aliados até três inimigos ativos; dificuldade progressivamente crescente por andar e campanha. Abre Rodada 30 sobre retirada, persistência de eventos, chefes, repetição e recrutamento. | Rodada 29 fechada / Rodada 30 aberta |
+
+| 1.21 | 2026-11-01 | Rodada 30 (D-166 a D-170): permitir retirada voluntária antes do chefe retornando à campanha, sem consequências ainda definidas; escolhas narrativas com efeitos principalmente locais à expedição; chefes principalmente dentro do combate comum sem fases exclusivas obrigatórias; revisitas a dungeons concluídas ainda oferecem oportunidades de Pokémon, itens e recursos; Pokémon recrutados podem entrar diretamente na equipe quando há vaga. Abre Rodada 31 sobre retirada, derrota em equipe, reserva, campanha e descanso. | Rodada 30 fechada / Rodada 31 aberta |
+
+| 1.22 | 2026-11-01 | Rodada 31 (D-171 a D-175): retirada voluntária perde itens coletados não segurados como na derrota, sem equiparar outros efeitos; aliados sob IA continuam combate após queda do protagonista; XP de vitórias restrita a participantes ativos, excluindo reserva; objetivos de campanha apresentados principalmente por NPCs/personagens/narrativa; descanso em locais seguros com pausa/preparação, mantendo restauração de MP já aprovada. Abre Rodada 32 sobre continuidade após queda, cura no descanso, persistência de XP, descoberta de mapas e recrutamento. | Rodada 31 fechada / Rodada 32 aberta |
+
+| 1.23 | 2026-11-01 | Rodada 32 (D-176 a D-180): protagonista pode voltar à exploração mediante recuperação mínima após vitória dos aliados; descanso seguro cura HP além de restaurar integralmente MP; XP e níveis da expedição persistem após derrota definitiva ou retirada voluntária; mapa do andar revelado progressivamente; recrutamento especial exige resolver tarefa/evento iniciado por interação. Abre Rodada 33 sobre derrota de equipe, treino de reservas, quantidade de andares, salas secretas e uso de recursos. | Rodada 32 fechada / Rodada 33 aberta |
+
+| 1.24 | 2026-11-01 | Rodada 33 encerrada: 4 decisões aprovadas (D-181 a D-184) e R33-Q5 rejeitada sem aprovação por pergunta imprecisa/redundante. Todos os ativos incapacitados causam derrota definitiva; treino/serviços para reservas fora das expedições; quantidade de andares pode variar por expedição; salas secretas descobertas por pistas, mapas, NPCs e eventos. Não definir função para “recursos” genéricos. Abre Rodada 34 sobre narrativa, desafios ambientais, rotas, chefes e inventário. | Rodada 33 encerrada (4 aprovadas / 1 rejeitada) / Rodada 34 aberta |
+
+| 1.25 | 2026-11-01 | Rodada 34 (D-185 a D-189): narrativas/missões relativamente independentes por dungeon com progressão de campanha mais aberta, mas desbloqueios mantidos; priorizar encontros/salas/eventos sem enigmas/armadilhas centrais; sequência principal entre andares com caminhos internos variados; chefe final variável entre expedições; inventário de 10 itens sem contabilizar segurados (R34-Q5 C). Rejeição de R33-Q5 mantida. Abre Rodada 35 sobre representação dos aliados, recrutamento comum, inventário cheio, fuga de chefes e histórias procedurais. | Rodada 34 fechada / Rodada 35 aberta |
+
+| 1.26 | 2026-11-02 | Rodada 35 (D-190 a D-194): aliados ativos visíveis acompanhando protagonista no 2D; recrutamento comum por interação voluntária direta; inventário 10 itens não segurados por Pokémon ativo, até 30 com três ativos, e alternativa A de deixar/trocar item quando cheio (R35-Q3 C), atualizando regra global da R34 sem reescrever D-189; proibição de fuga contra chefes; missões e histórias também variáveis entre expedições. Rejeição de R33-Q5 mantida. Abre Rodada 36 sobre comportamento de aliados, requisitos de missões, estados em revisitas, recrutamento em retirada e espécies por dungeon. | Rodada 35 fechada / Rodada 36 aberta |
+
+| 1.27 | 2026-11-02 | Rodada 36 (D-195 a D-199): aliados acompanham protagonista em grupo próximo no 2D; missões/eventos secundários não bloqueiam chefe; itens coletados e eventos concluídos preservam estado ao revisitar andar na mesma expedição; Pokémon recrutados persistem após retirada voluntária; cada dungeon possui espécies características com variações por bioma. Mantida a atualização de inventário por Pokémon (R35-Q3) e rejeição R33-Q5. Abre Rodada 37 sobre contatos hostis na equipe, missões entre expedições, desbloqueios de campanha, espécies iniciais e dificuldade nas revisitas. | Rodada 36 fechada / Rodada 37 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
