@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.19 — Rodada 28 de gameplay consolidada, 2026-11-01.  
+> **Revisão:** 1.20 — Rodada 29 de gameplay consolidada, 2026-11-01.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência do código no momento desta revisão:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -113,11 +113,22 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 
 **APROVADO (R28-Q5 = A) — recompensa principal da dungeon:** a **conclusão de uma dungeon prioriza avanço da campanha e desbloqueio de novas dungeons**, enquanto **recompensas materiais adicionais são opcionais e permanecem pendentes**. A conclusão ainda exige alcançar o último andar e vencer o chefe, encerrando a expedição e retornando à progressão da campanha (R23-Q2/R26-Q4). Não presumir recompensa material garantida.
 
+**APROVADO (R29-Q1 = C) — comércio em ambos os locais:** resposta literal **“ambos”**. **NPCs comerciantes e lojas podem ser encontrados dentro das dungeons, durante a exploração, e fora das expedições, na seleção/progressão da campanha.** **PENDENTE:** localização, vendedores, catálogo, preços e acesso. Não tornar obrigatório o hub futuro de R25-Q2.
+
+**APROVADO (R29-Q2 = A) — eventos narrativos:** **eventos especiais oferecem escolhas e situações narrativas com consequências para a exploração**. **PENDENTE:** eventos, escolhas e efeitos concretos; não presumir persistência das consequências entre expedições.
+
+**APROVADO (R29-Q3 = A) — rejogar dungeons:** **novas expedições podem ocorrer em dungeons já concluídas**, com recompensas ainda pendentes. Mantêm-se a **geração procedural por exploração/andar** (R7-Q5), o **layout persistente ao revisitar andares na mesma exploração** (R9-Q2) e a **reprodutibilidade pela mesma seed, regras e versão do gerador** (R8-Q3). Não exigir layout inédito quando a mesma seed for reutilizada.
+
+**APROVADO (R29-Q4 = A) — chefes acompanhados:** **um chefe principal pode ter apoio de outros inimigos**, sem exceder **três inimigos ativos simultaneamente por combate** (R7-Q4). **PENDENTE:** composição do encontro, apoios e mecânicas de chefes. O chefe não precisa ter aliados em toda batalha.
+
+**APROVADO (R29-Q5 = A) — dificuldade:** **aumentar progressivamente o desafio nos andares mais avançados e nas novas dungeons desbloqueadas na campanha**. **PENDENTE:** tipos de desafio, variação por bioma, níveis, curvas e números; sem definir fórmulas ou valores.
+
+
 
 
  **APROVADO posteriormente (R23-Q1 = A):** movimento contínuo e livre nas quatro direções cardeais, sem movimento diagonal direto. **PENDENTE:** controles, colisão e animação.
 
-**PENDENTE:** sprites 2D, algoritmo procedural, seeds, escadas/saídas, patrulha/detecção e revisitas; catálogo de espécies iniciais (R26-Q1), recrutáveis especiais (R26-Q2), reservas/hub futuro (R25-Q2), evolução (R25-Q3), experiência numérica (R26-Q3), inventário e efeitos concretos de itens segurados (R28-Q2), derrota, arenas, transições, narrativa e critérios de desbloqueio da campanha; **chance/condições de fuga e tratamento de chefes** (R27-Q1), demais detalhes da imobilização por três segundos ao retornar da fuga (R28-Q3), **biomas e seus efeitos em inimigos/eventos/recompensas** (R28-Q4), Moves comuns por nível (R27-Q4), moedas e comércio com NPCs/lojas (R28-Q1), catálogo/valores de recompensas de batalhas (R27-Q5), recompensas materiais opcionais após chefes (R28-Q5) e conteúdo de salas secretas (R26-Q5). Não presumir resolvidas essas pendências.
+**PENDENTE:** sprites 2D, geração procedural, seeds, escadas/saídas, patrulha/detecção e estado das revisitas; catálogo de espécies iniciais, candidatos a recrutamento, reservas/hub futuro, evolução, experiência numérica, inventário/itens segurados, derrota, arenas, transições e narrativa; critérios concretos de desbloqueio na campanha; fuga/chefes e demais efeitos de fuga; biomas, Moves comuns, economia e recompensas; **presença concreta, catálogo e preços de lojas tanto dentro como fora das dungeons** (R29-Q1); **eventos com escolhas e consequências** (R29-Q2); **acesso e recompensas de novas expedições em dungeons já vencidas** (R29-Q3); **composição de chefes com apoio de inimigos** (R29-Q4); **como escalar a dificuldade entre andares e dungeons** (R29-Q5). Não presumir resolvidas essas pendências.
 
 ### Fluxo de experiência (somente encadeamento conceitual)
 
@@ -562,6 +573,21 @@ Sem decisão adicional, não fixar:
 
 **Preservação:** as decisões sobre fuga não criam novos custos ATB/Burst, imobilização de outros inimigos nem exceções automáticas para chefes. Mantêm-se Tackle, quatro Moves, ausência de PP, inventário e regras de perda de itens já aprovadas. Somente o GDD é alterado.
 
+
+### 7.20. Comércio, eventos narrativos, revisitas, chefes e dificuldade — decisões da Rodada 29
+
+**APROVADO (R29-Q1 = C):** resposta literal **“ambos”**. **Comerciantes e lojas podem existir dentro das dungeons e fora das expedições, na seleção/progressão da campanha**. O uso principal das moedas para comprar itens e recursos continua conforme R28-Q1. **PENDENTE:** localização, catálogo, preços, interface e disponibilidade. Não exigir hub já implementado.
+
+**APROVADO (R29-Q2 = A):** **eventos especiais nas dungeons oferecem escolhas e situações narrativas com consequências para a exploração**. **PENDENTE:** decisões concretas, impactos e persistência futura. Preservar o conteúdo procedural e a prioridade de eventos/NPCs.
+
+**APROVADO (R29-Q3 = A):** **permitir novas expedições às dungeons já concluídas**. A geração procedural ocorre por exploração/andar (R7-Q5), e a estabilidade do layout ao revisitar um andar vale **dentro da mesma exploração** (R9-Q2). A mesma seed, regras e versão de gerador continuam podendo reproduzir o mesmo layout (R8-Q3); nenhuma repetição exige obrigatoriamente mapa diferente. **PENDENTE:** recompensas, condições de acesso, escolha de seeds e variações.
+
+**APROVADO (R29-Q4 = A):** **chefe principal pode enfrentar o jogador com outros inimigos de apoio**, preservando o máximo já aprovado de **três inimigos ativos ao mesmo tempo** (R7-Q4). **PENDENTE:** composição, mecânicas e escolha de quais chefes têm apoio. Não exigir apoio em todo confronto.
+
+**APROVADO (R29-Q5 = A):** **dificuldade aumenta progressivamente conforme o jogador avança pelos andares e desbloqueia novas dungeons**. **PENDENTE:** tipos de desafio, curvas e escalonamento; não estabelecer fórmulas, níveis ou multiplicadores.
+
+**Preservação:** D-001 a D-160, regras de seeds, equipe inimiga, campanha, ATB/Burst e ausência de PP permanecem intactas. Esta revisão não implementa código.
+
 ## 8. Estado real do repositório (inspeção de código, não de execução)
 
 Referência: `main` em `1171b5f3c427edc34c486c82d42569f41fd0ea62`. Projeto **Godot 4.7**, configurado em `project.godot`, com cena inicial 2D.
@@ -744,6 +770,11 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 | D-158 | R28-Q3 = C — “retorna ao local de encontro e stunna o inimigo por um tempo, nao pemitindo que ele se mova e encoste em vc por 3 segundos”: **fuga bem-sucedida retorna ao local do encontro e imobiliza o inimigo, impedindo movimento/contato por 3 segundos**. |
 | D-159 | R28-Q4 = A: **biomas diferentes podem alterar inimigos, eventos e recompensas**, catálogos e distribuição pendentes. |
 | D-160 | R28-Q5 = A: **concluir dungeon prioriza progresso da campanha/desbloqueios**, prêmios materiais adicionais opcionais e pendentes. |
+| D-161 | R29-Q1 = C — “ambos”: **NPCs/lojas tanto dentro das dungeons quanto fora das expedições, na seleção/progressão da campanha**, detalhes pendentes. |
+| D-162 | R29-Q2 = A: **eventos com escolhas e consequências narrativas para exploração**, conteúdo concreto pendente. |
+| D-163 | R29-Q3 = A: **novas expedições a dungeons já concluídas**, sem revogar geração por exploração, persistência do andar na expedição e seed reproduzível. |
+| D-164 | R29-Q4 = A: **chefe principal pode contar com apoio de inimigos**, até três inimigos ativos simultâneos. |
+| D-165 | R29-Q5 = A: **dificuldade crescente por andares e desbloqueio de novas dungeons**, sem números aprovados. |
 
 ## 10. Rodada 1 — cinco perguntas respondidas (FECHADA)
 
@@ -1137,39 +1168,53 @@ As IDs abaixo identificam regras vigentes, não implementações. A fonte é a s
 
 **Preservação:** R28-Q2 e R28-Q3 são respostas C personalizadas, não equivalentes simplesmente às antigas alternativas A/B. Mantêm-se as 155 decisões anteriores, os custos ATB/Burst aprovados, a ausência de PP e a regra de perda de itens não segurados na derrota. Não registrar implementação sem verificação de código.
 
-## 10.28. Rodada 29 — campanha, encontros especiais e identidade de dungeons (cinco perguntas abertas)
+## 10.28. Rodada 29 — campanha, encontros especiais e identidade de dungeons (FECHADA)
 
-**Status:** ABERTA — 0/5 respostas. Nenhuma das alternativas abaixo foi aprovada. As cinco questões tratam de aspectos substantivos ainda pendentes no gameplay.
+**Status:** FECHADA — 5/5 respostas aprovadas em 2026-11-01, decisões D-161 a D-165.
 
-**R29-Q1 — Onde o jogador poderá encontrar NPCs/lojas para gastar as moedas?**  
-A. **Dentro das dungeons durante a exploração**, incluindo comerciantes encontrados nas salas, com regras e disponibilidade pendentes.  
-B. **Fora das expedições, na seleção/progressão da campanha**, com interface/local pendentes e sem exigir o hub futuro.  
-C. Ambos os locais ou outra estrutura, especificada pelo criador.  
-*O comércio com NPCs/lojas está aprovado, mas sua presença em dungeons ou fora delas não foi decidida.*
+| ID | Resposta literal do criador | Regra aprovada e pendências |
+| --- | --- | --- |
+| **R29-Q1** | **C** — “ambos” | **Lojas e NPCs comerciantes dentro e fora das dungeons**, no contexto de exploração e de progressão/seleção da campanha; detalhes pendentes. |
+| **R29-Q2** | **A** — “Eventos especiais oferecem escolhas e situações narrativas com consequências para a exploração; eventos e efeitos específicos pendentes.” | **Eventos com escolhas e consequências**, catálogo pendente. |
+| **R29-Q3** | **A** — “Permitir novas expedições a dungeons já concluídas, respeitando a geração procedural por exploração e com recompensas pendentes.” | **Novas expedições em dungeons concluídas**, geração por exploração, seed reproduzível e recompensas pendentes. |
+| **R29-Q4** | **A** — “O chefe principal pode ter apoio de outros inimigos, mantendo no máximo três inimigos ativos.” | **Chefe pode ter inimigos de apoio**, sem exceder três ativos. |
+| **R29-Q5** | **A** — “Aumentar progressivamente a dificuldade conforme o jogador avança pelos andares e desbloqueia novas dungeons; valores pendentes.” | **Escalada progressiva entre andares e dungeons**, números pendentes. |
 
-**R29-Q2 — Qual papel terão os eventos especiais encontrados nas dungeons?**  
-A. **Oferecer escolhas e pequenas situações narrativas com consequências para a exploração**, com catálogo e efeitos pendentes.  
-B. **Oferecer principalmente encontros opcionais com NPCs, serviços e recompensas**, sem exigir decisões narrativas em cada evento.  
-C. Uma combinação ou outro papel, especificado pelo criador.  
-*Eventos, NPCs e salas secretas já são prioritários; sua função concreta ainda está aberta.*
+**Preservação:** R29-Q1 é resposta C personalizada, não exige o hub futuro. A repetição de dungeons não revoga seeds nem layouts estáveis dentro de uma expedição. Decisões D-001 a D-160 preservadas; sem PP ou novos custos ATB/Burst.
 
-**R29-Q3 — Uma dungeon já concluída poderá ser explorada novamente?**  
-A. **Sim, permitir novas expedições a dungeons concluídas**, com geração de novos layouts e recompensas conforme regras existentes.  
-B. **Restringir as expedições a dungeons já concluídas**, reservando novas entradas para situações especiais ainda a definir.  
-C. Outro modelo de revisitas, especificado pelo criador.  
-*O layout é persistente ao revisitar andares dentro da mesma exploração; isso não resolve novas expedições a uma dungeon já vencida.*
+## 10.29. Rodada 30 — retirada, eventos, chefes, repetição e equipe (cinco perguntas abertas)
 
-**R29-Q4 — Como serão os chefes do último andar das dungeons?**  
-A. **Encontros com um chefe principal, podendo ter apoio de outros inimigos**, respeitando o limite de três inimigos ativos, com composição pendente.  
-B. **Encontros centrados exclusivamente em um único chefe inimigo ativo**, com padrões de ataque e mecânicas especiais a definir.  
-C. Outro formato, especificado pelo criador.  
-*O último andar exige vencer um chefe e as batalhas têm até três inimigos ativos; o formato do encontro do chefe não foi definido.*
+**Status:** ABERTA — 0/5 respostas. Nenhuma alternativa aprovada. Foco em gameplay e progressão, sem microcasos técnicos.
 
-**R29-Q5 — Como a dificuldade aumentará durante a progressão da campanha e das dungeons?**  
-A. **Aumentar os desafios conforme o jogador avança em andares e novas dungeons**, com inimigos e perigos progressivamente mais exigentes, sem valores numéricos aprovados.  
-B. **Variar a dificuldade sobretudo por biomas, tipos de encontro e eventos especiais**, com progressão menos estritamente linear, sem valores aprovados.  
-C. Outra estrutura de dificuldade, especificada pelo criador.  
-*Campanha com desbloqueios e biomas mistos estão aprovados; progressão de dificuldade e variedade de desafios ainda não.*
+**R30-Q1 — O jogador pode encerrar voluntariamente uma expedição antes de vencer o chefe?**  
+A. **Sim, permitir retirar-se da dungeon e retornar à campanha**, com consequências para itens, progresso e Pokémon pendentes.  
+B. **Não, a expedição só termina por vitória, derrota definitiva ou outros desfechos já aprovados**, sem retirada voluntária.  
+C. Outra regra, descrita pelo criador.  
+*Fuga de um combate comum já foi aprovada; retirada da expedição é diferente.*
+
+**R30-Q2 — As escolhas em eventos narrativos podem afetar algo depois da expedição atual?**  
+A. **Consequências principalmente dentro da exploração atual**, sem persistência obrigatória para a campanha.  
+B. **Algumas decisões podem repercutir na campanha ou em expedições futuras**, com regras e efeitos pendentes.  
+C. Outro sistema narrativo, descrito pelo criador.  
+*R29-Q2 aprovou eventos com escolhas; não sua persistência.*
+
+**R30-Q3 — Os chefes terão mecânicas próprias, diferentes das dos inimigos comuns?**  
+A. **Sim, priorizar padrões de ataque, fases ou mecânicas especiais de chefes**, conteúdo pendente.  
+B. **Chefes serão principalmente inimigos mais difíceis dentro das regras usuais de combate**, sem fases ou mecânicas exclusivas obrigatórias.  
+C. Outra abordagem, descrita pelo criador.  
+*R29-Q4 permite inimigos de apoio, mas não define os golpes e desafios de chefes.*
+
+**R30-Q4 — O que o jogador pode conquistar ao explorar novamente uma dungeon já concluída?**  
+A. **Continuar obtendo Pokémon, itens e recursos em novas expedições**, conforme condições pendentes.  
+B. **Concentrar recompensas importantes na primeira conclusão**, mantendo novas visitas sobretudo para explorar e treinar; exceções pendentes.  
+C. Outra regra de recompensas, descrita pelo criador.  
+*Rejogar dungeons já foi aprovado na R29-Q3; sua recompensa ainda não.*
+
+**R30-Q5 — Quando há vaga nos três ativos, o Pokémon recém-recrutado entra na equipe imediatamente?**  
+A. **Pode entrar diretamente na equipe ativa após recrutamento bem-sucedido**, com interface e condições pendentes.  
+B. **Vai primeiro à reserva e o jogador escolhe quando incluí-lo entre os ativos**, mesmo com vaga; regras pendentes.  
+C. Outro fluxo, descrito pelo criador.  
+*Interação voluntária e reserva com equipe completa já estão aprovadas.*
 
 ## 11. Histórico de alterações do GDD
 
@@ -1218,5 +1263,7 @@ C. Outra estrutura de dificuldade, especificada pelo criador.
 | 1.18 | 2026-11-01 | Rodada 27 (D-151 a D-155): tentativas de fuga em combates comuns; aventura começa somente com protagonista e companheiros recrutados; dungeons podem misturar ambientes e mudar de tema; Moves comuns principalmente por nível sem excluir fontes combinadas; moedas, recursos e itens como categorias de recompensa de batalhas comuns (R27-Q5 C), sem drops garantidos. Abre Rodada 28 sobre economia, itens segurados, fuga, biomas e conclusão de dungeons. | Rodada 27 fechada / Rodada 28 aberta |
 
 | 1.19 | 2026-11-01 | Rodada 28 (D-156 a D-160): moedas para comprar itens e recursos de NPCs/lojas; itens segurados passivos ou automaticamente consumidos como berries (R28-Q2 C); fuga bem-sucedida retorna ao encontro e impede inimigo de mover/encostar por 3 segundos (R28-Q3 C); biomas podem alterar inimigos/eventos/recompensas; conclusão de dungeon prioriza progressão/desbloqueios, materiais opcionais. Abre Rodada 29 sobre comércio, eventos, revisitas, chefes e dificuldade. | Rodada 28 fechada / Rodada 29 aberta |
+
+| 1.20 | 2026-11-01 | Rodada 29 (D-161 a D-165): NPCs/lojas dentro e fora das dungeons (C — “ambos”); eventos especiais com escolhas e consequências; novas expedições a dungeons já concluídas com geração procedural e seed reproduzível; chefe principal pode ter aliados até três inimigos ativos; dificuldade progressivamente crescente por andar e campanha. Abre Rodada 30 sobre retirada, persistência de eventos, chefes, repetição e recrutamento. | Rodada 29 fechada / Rodada 30 aberta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
