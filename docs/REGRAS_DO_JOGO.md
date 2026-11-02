@@ -2,6 +2,7 @@
 
 > **Para que serve:** este é o índice único de **todas as regras já decididas ou implementadas**, para que nenhuma seja esquecida ou quebrada por uma mudança. Ele **não substitui** o `docs/GDD.md` (soberano nas regras de design, com os IDs das rodadas) — resume e cruza as fontes.
 > **Gerado em:** 2026-11-02, a partir do GDD rev. 1.27, do `PROMPT_trajeto_reposicionamento.md`, do README, do código da branch `feat/smt-moves` e do que o criador disse nesta conversa.
+> **[CONVERSA 2026-11-02] O GDD está desatualizado quanto ao COMBATE e deve ser IGNORADO nele.** As linhas marcadas [GDD] nas seções de combate (3 a 9) ficam só como histórico, sem valor de regra. Para combate valem: [CONVERSA] > [PROMPT] > [CÓDIGO]/README. O GDD continua valendo para exploração, campanha, progressão e economia (seções 14).
 > **Regra deste documento:** nada aqui foi inventado. Onde duas fontes se contradizem, **as duas ficam escritas** e o caso vai para a seção 12 (Conflitos). Ninguém (nem eu) escolhe um lado em silêncio.
 
 ## 0. Como ler
@@ -41,7 +42,7 @@ Hierarquia usada para *ler*, não para decidir: o que o criador disse por últim
 - **Dois modos:** exploração **2D** (mapa de dungeon) e combate **3D** (arena separada, com os modelos 3D dos mesmos Pokémon).
 - O protagonista é **um Pokémon controlado pelo jogador** (não um treinador). Aliados são controlados pela **IA**. Inimigos também têm ATB individual, recompensas e Evade/Burst.
 - **[GDD R6-Q3, R7-Q4]** Equipe ativa: **até 3** (1 protagonista + até 2 aliados IA). Inimigos ativos por batalha: **até 3**. **[CÓDIGO]** hoje a cena de batalha tem 1 inimigo (Gible) e 2 aliados (Abra líder, Pancham).
-- **[GDD R6-Q1 = A]** Todos os Pokémon começam cada batalha com **0/5** ATB normal. **[CONFLITO 1]**
+- **[GDD R6-Q1 = A]** Todos os Pokémon começam cada batalha com **0/5** ATB normal.
 
 ---
 
@@ -55,12 +56,12 @@ Hierarquia usada para *ler*, não para decidir: o que o criador disse por últim
 | **Tactic** | Só orienta a IA dos aliados; **sem ordens diretas**; **sem custo ATB** (R3-Q3). Persiste entre combates da dungeon (R5-Q5). Opção nas configurações: reiniciar ao sair da dungeon (**padrão**, R7-Q1) ou preservar (R6-Q4). Tactic escolhida prevalece integralmente sobre tendências de Nature (R16-Q5). |
 | **Evade** | Ação reativa de esquiva. Custo e regras na §3.5. |
 
-- **[GDD R2-Q3 = B]** Move via Burst consome **1 Burst + o custo ATB normal do Move**. **[GDD R5-Q4 = B]** buff/debuff via Burst custa **só 1 Burst**. **[CONFLITO 5]** (o código usa Burst como ação gratuita inteira).
-- **[CÓDIGO]** Custos hoje: ITENS 1; Evade 2; Tackle/skill = `cost` de cada skill (1, 2 ou 3); passo 1. **[CONFLITO 3, 6]**
+- **[GDD R2-Q3 = B]** Move via Burst consome **1 Burst + o custo ATB normal do Move**. **[GDD R5-Q4 = B]** buff/debuff via Burst custa **só 1 Burst**.
+- **[CÓDIGO]** Custos hoje: ITENS 1; Evade 2; Tackle/skill = `cost` de cada skill (1, 2 ou 3); passo 1.
 
 ### 3.2 Pausa
 - **[GDD R1-Q3 = C]** O combate **só pausa durante a escolha das orientações de Tactic**. FIGHT e ITENS não pausam.
-- **[CÓDIGO]** Tactics **e Status** pausam o jogo inteiro (`get_tree().paused`). **[PROMPT]** lista "pausa do Status/Tactics" como algo a preservar. **[CONFLITO 7]**
+- **[CÓDIGO]** Tactics **e Status** pausam o jogo inteiro (`get_tree().paused`). **[PROMPT]** lista "pausa do Status/Tactics" como algo a preservar.
 - **[CONVERSA — nova regra]** **Golpes de status pausam o jogo durante a ativação**, pausando ATBs e preparações; continuam após a conclusão do efeito visual do golpe. (Ainda **não implementado**; detalhes na §13.)
 
 ---
@@ -71,7 +72,7 @@ Hierarquia usada para *ler*, não para decidir: o que o criador disse por últim
 - **[GDD]** Cada Pokémon tem sua barra de **5 blocos normais** que enche com o tempo. Pode agir assim que tiver os blocos do custo (não precisa de 5/5). A execução desconta **só o custo**, preservando o saldo (R1-Q2).
 - **[GDD R2-Q5, R7-Q2, R8-Q1]** Taxa de enchimento depende da **Velocidade** individual: na Velocidade de referência a barra vai de 0 a 5 em **5 s** (1 bloco/s); tempo **inversamente proporcional** à Velocidade (T = 5 s × Vref / V). Valor numérico de Vref: **[PENDENTE]** (R9-Q1, R10-Q5).
 - **[GDD R3-Q4]** O enchimento natural **para em 5 blocos normais** e nunca cria extras.
-- **[CÓDIGO]** `tick`: `atb += speed × delta`, teto 5.0. Velocidades hoje: Abra 0,50; Pancham 0,45; Gible 0,42 (blocos/s). **[CONFLITO 2]** (início com 3 blocos).
+- **[CÓDIGO]** `tick`: `atb += speed × delta`, teto 5.0. Velocidades hoje: Abra 0,50; Pancham 0,45; Gible 0,42 (blocos/s).
 - **[CÓDIGO]** O ATB do atacante fica **travado** enquanto ele prepara/executa a própria ação (`is_winding_up`).
 
 ### 4.2 Blocos extras
@@ -98,8 +99,8 @@ Hierarquia usada para *ler*, não para decidir: o que o criador disse por últim
 
 - **[GDD §5]** Bloco especial, **independente** dos 5 normais e dos extras. Gerado por **Evade ativo bem-sucedido**, disponível na hora: pode **usar já ou guardar** (R1-Q1). Guardado até o fim da **batalha atual**, sem expirar, **não passa para outra batalha** (R2-Q1). **Vários simultâneos, sem teto** (R3-Q1). Esquiva automática **nunca** dá Burst.
 - Ação Burst pode: buff em aliados, debuff em inimigos, ou Move com **crítico garantido**.
-- **[CÓDIGO]** `Combatant.burst`, `BURST_MAX = 5`; `can_pay = burst > 0 or blocks ≥ custo`; `pay`: se há Burst, **gasta 1 Burst e nenhum ATB**. **[CONFLITO 5]**; **[PROMPT]** manda **manter o atual e registrar a divergência**.
-- **[CÓDIGO]** O Burst é limitado a 5 no código (`BURST_MAX`); o GDD diz "sem limite fixo". **[CONFLITO 8]**
+- **[CÓDIGO]** `Combatant.burst`, `BURST_MAX = 5`; `can_pay = burst > 0 or blocks ≥ custo`; `pay`: se há Burst, **gasta 1 Burst e nenhum ATB**. **[PROMPT]** manda manter o atual.
+- **[CÓDIGO]** O Burst é limitado a 5 no código (`BURST_MAX`); o GDD diz "sem limite fixo".
 
 ---
 
@@ -117,13 +118,17 @@ Hierarquia usada para *ler*, não para decidir: o que o criador disse por últim
 - **[PROMPT]** O Evade manual (Espaço) só funciona **durante o TRAJETO** do ataque que mira o personagem (corrida ou voo do projétil). Apertar no PREPARO = **whiff**: "esquivou cedo demais", perde o custo e fica **vulnerável a crítico** (o golpe contra o qual apertou cedo demais é crítico). Só o Evade **manual** dispara a sequência abaixo; esquiva automática não.
 - **[GDD §4]** Evade **malsucedido**: o golpe acerta obrigatoriamente (sem esquiva automática nesse ataque), mas **não ignora imunidades/proteções**. Custo descontado na ativação, sucesso ou não (R4-Q3).
 - **[GDD R4-Q5]** A IA dos aliados decide sozinha quando tentar Evade (Tactic pode influenciar a prioridade).
-- **[CONVERSA]** **O personagem pode desviar durante o trajeto do próprio ataque, ao custo de 2 ATB.** Frase do criador: *"A ideia sempre foi poder desviar durante o trajeto do próprio ataque ao custo de 2atb, eu fiz essa regra."* e, sobre o custo: *"só gasta 2atb se for durante um ataque do usuário contra um inimigo; se não estiver realizando uma ação que envolva deslocamento em trajeto, é 3atb"*. **[CONFLITO 3]**
-- **[CÓDIGO]** Hoje o Evade custa 2 sempre e é **bloqueado** enquanto o personagem ataca (`find_evadable`/`try_evade` recusam se `is_attacking`) e enquanto engajado. Isso **contradiz** a regra acima. O comentário no código ("tiraria o corpo da corrida") era suposição minha/anterior, **não** regra do criador.
+- **[CONVERSA] Dois Evades diferentes, com custos diferentes:**
+  - **Evade parado** = o personagem **não** está realizando ação que envolva deslocamento em trajeto → custa **3 ATB**.
+  - **Evade em trajeto** = o personagem desvia **durante o trajeto do próprio ataque** (contra um inimigo) → custa **2 ATB**.
+  - Frases do criador: *"A ideia sempre foi poder desviar durante o trajeto do próprio ataque ao custo de 2atb, eu fiz essa regra"* e *"só gasta 2atb se for durante um ataque do usuário contra um inimigo; se não estiver realizando uma ação que envolva deslocamento em trajeto, é 3atb"*.
+- **[CÓDIGO — diverge, a corrigir]** Hoje o Evade custa 2 sempre e é **bloqueado** enquanto o personagem ataca (`find_evadable`/`try_evade` recusam se `is_attacking`) e enquanto engajado. Isso **contradiz** as duas regras acima (o parado deveria custar 3; o em trajeto deveria ser permitido). O comentário no código ("tiraria o corpo da corrida") era suposição, **não** regra do criador.
+- **[PROMPT]** dizia "2 ATB (não 3)" para o Evade em geral: **superado** pela distinção acima.
 
 ### 6.3 Evade bem-sucedido contra corpo a corpo (**[PROMPT]** Fase 2)
 1. O atacante é **interrompido onde está** (cambaleia; o ataque dele é **cancelado**, não termina a corrida).
 2. Quem desviou ganha **+1 Burst** e **chega imediatamente** ao atacante interrompido, sem trajeto.
-3. O primeiro golpe seguinte **não tem preparo** (`instant`) e é **golpe de graça**: o Burst paga a ação inteira (comportamento atual; o GDD R2-Q3 diz outra coisa — **[CONFLITO 5]**).
+3. O primeiro golpe seguinte **não tem preparo** (`instant`) e é **golpe de graça**: o Burst paga a ação inteira (comportamento atual; o GDD R2-Q3 diz outra coisa —).
 - **[MEMÓRIA — regra final do criador]** Depois de um Evade perfeito o personagem **só aparece ao lado do inimigo quando ele então ATACA em trajeto (o contra-ataque)**. Parado/sem fazer nada/sem atacar: **nunca** teleporta para lugar nenhum.
 - **[MEMÓRIA]** O criador quer o **desvio visual** (o personagem some e reaparece ao lado e volta) e o texto **MISS!**; remover isso foi erro já cometido.
 
@@ -207,24 +212,23 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 
 ---
 
-## 12. Conflitos abertos (as duas versões preservadas)
+## 12. Conflitos
 
-| # | Tema | Versão A | Versão B |
+**Resolvidos por ordem do criador (GDD ignorado no combate):** ATB inicial (3 no código), enchimento do ATB, recompensas de ATB (fraqueza +2, crítico +1, esquiva automática +1), Burst paga a ação inteira (e `BURST_MAX = 5`), custos por skill (1, 2 ou 3; 7 skills por personagem), pausa (Tactics e Status), quantidade de inimigos. **Valem os valores do código/README/PROMPT** descritos nas seções 3–8.
+
+**Resolvidos por fala do criador:**
+- Esquiva automática: **10% fixo** (README ainda diz "igual à velocidade": desatualizado).
+- Alvo que saiu do lugar: o golpe **acerta** (o "erro no vazio" do PROMPT foi revogado).
+- Custo do Evade: **parado 3 ATB; em trajeto (no próprio ataque) 2 ATB**.
+
+**Ainda divergem do código (precisam ser implementadas):**
+| # | Tema | Regra do criador | Código hoje |
 |---|---|---|---|
-| 1 | ATB inicial | **GDD R6-Q1:** 0/5 | **Código:** `START_ATB = 3.0` |
-| 2 | Tempo de enchimento | **GDD:** 5 s de 0 a 5 na Vel. de referência | **Código:** `speed` direto em blocos/s (0,42–0,50 ⇒ ~10–12 s) |
-| 3 | Custo do Evade | **GDD:** 3 · **PROMPT:** 2 (não 3) · **Código:** 2 | **Conversa:** 2 durante o trajeto do próprio ataque; 3 se não estiver realizando ação com deslocamento |
-| 4 | Recompensas ATB | **GDD:** fraqueza +1, crítico +2, esquiva automática +2, Evade +1 | **Código/README:** fraqueza +2, crítico +1, esquiva automática +1 |
-| 5 | Burst | **GDD R2-Q3:** Move via Burst = 1 Burst + custo ATB do Move | **PROMPT/Código:** Burst paga a ação inteira (mantido por ordem do PROMPT) |
-| 6 | Custos dos Moves | **GDD:** Moves custam 2 (exceções 5/Burst); Tackle 2 | **Código:** custos 1, 2 ou 3 por skill; 7 skills por personagem (não 4) |
-| 7 | Pausa | **GDD R1-Q3:** só Tactic pausa | **Código/PROMPT:** Tactic e Status pausam; **Conversa:** status moves também pausam |
-| 8 | Burst máximo | **GDD R3-Q1:** sem teto | **Código:** `BURST_MAX = 5` |
-| 9 | Esquiva automática | **GDD/README:** chance depende de Velocidade/precisão | **Conversa/Código:** 10% fixo |
-| 10 | Alvos que saíram | **PROMPT:** golpes errantes no vazio | **Conversa:** acertam o alvo (revogado) |
-| 11 | AoE | **Conversa:** sem alvo principal, desvio individual, não cancela | **Código:** alvo principal, 85%, desvio dele cancela |
-| 12 | Evade no próprio ataque | **Conversa:** permitido (2 ATB) | **Código:** bloqueado |
-| 13 | Quatro Moves | **GDD:** 4 Moves + Tackle | **Código:** 7 skills por aliado/inimigo (SMT) |
-| 14 | Inimigos por batalha | **GDD:** até 3 | **Código:** 1 inimigo |
+| A | Evade parado | custa 3 ATB | custa 2 |
+| B | Evade em trajeto do próprio ataque | permitido, 2 ATB | bloqueado |
+| C | AoE | sem alvo principal, todos ao mesmo tempo, desvio individual, desvio de um não cancela os outros, dano 100%, ATB do atacante uma vez por golpe, atacante parado, onda única que chega em tempos diferentes | corre até um "alvo principal"; só ele desvia; o desvio dele cancela tudo; os outros levam 85% |
+| D | Golpes de status | pausam o jogo na ativação (ATB e preparações parados; seguem após o efeito visual) | não pausam |
+| E | Câmera | o inimigo sempre visível (estilo Kill la Kill IF) | enquadramento fixo; o inimigo pode sair de quadro |
 
 ---
 
