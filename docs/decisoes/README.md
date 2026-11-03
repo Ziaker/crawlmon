@@ -67,3 +67,13 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-059](D-059-r41-q9-evade-onda.md) | Combate / R41 | R41-Q9 (9B): Janela compartilhada de Evade da onda AoE | Aprovada; implementação não declarada |
 | [D-060](D-060-r41-q10-status-idle-camera.md) | Combate / R41 | R41-Q10 (10B): Pausa seletiva de status com idle e câmera | Aprovada; implementação não declarada |
 | [D-061](D-061-registro-continuo-das-decisoes.md) | Processo | Registrar e publicar cada decisão de design antes de avançar para a próxima rodada | Diretriz operacional |
+| [D-062](D-062-r42-q1-custo-na-selecao.md) | Combate / R42 | R42-Q1 (1A): Cobrança na seleção do contra-ataque | Aprovada; implementação não declarada |
+| [D-063](D-063-r42-q2-burst-antes-atb.md) | Combate / R42 | R42-Q2 (2A): Prioridade de Burst ao pagar Moves | Aprovada; implementação não declarada |
+| [D-064](D-064-r42-q3-interrupcao-cancela-extra.md) | Combate / R42 | R42-Q3 (3A): Interrupção do original cancela contra-ataque | Aprovada; implementação não declarada |
+| [D-065](D-065-r42-q4-alvo-morre-cancela-extra.md) | Combate / R42 | R42-Q4 (4A): Morte do alvo cancela golpe extra | Aprovada; implementação não declarada |
+| [D-066](D-066-r42-q5-onda-evade-perfeito-comum.md) | Combate / R42 | R42-Q5 (5A): Janela perfeita compartilhada na onda AoE | Aprovada; implementação não declarada |
+| [D-067](D-067-r42-q6-onda-alvos-posicao-atual.md) | Combate / R42 | R42-Q6 (6A): Onda AoE acompanha posições atuais | Aprovada; implementação não declarada |
+| [D-068](D-068-r42-q7-aliado-lancado-nao-some.md) | Combate / R42 | R42-Q7 (7C): Derrota fatal de aliado sem desaparecimento | Aprovada; implementação não declarada |
+| [D-069](D-069-r42-q8-intensidade-fatal-padronizada.md) | Combate / R42 | R42-Q8 (8A): Lançamento fatal de intensidade uniforme | Aprovada; implementação não declarada |
+| [D-070](D-070-r42-q9-apenas-idle-ja-existente.md) | Combate / R42 | R42-Q9 (9A): Somente idle existente durante FX de status | Aprovada; implementação não declarada |
+| [D-071](D-071-r42-q10-cronometro-pausado-hitstop-status.md) | Combate / R42 | R42-Q10 (10B): Pausar cronômetro do contra-ataque em hit-stop e status | Aprovada; implementação não declarada |
