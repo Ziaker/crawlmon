@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.30 — Adendo de rastreabilidade das Rodadas 39–60 de combate (2026-11-03); seções históricas da revisão 1.29 preservadas.  
+> **Revisão:** 1.31 — Rodada 61 adicionada ao adendo de combate em 2026-11-03; seções históricas das revisões 1.29 e 1.30 preservadas.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1696,6 +1696,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.30 | 2026-11-03 | Adendo rastreável para combate das Rodadas 39–60, com D-149, D-150 e D-151; R60-Q3D permanece pendente. Preservados os trechos anteriores, a numeração histórica do GDD e a prioridade documental da D-001. | Rodada 60 parcialmente definida / Rodada 61 proposta |
 
+| 1.31 | 2026-11-03 | Rodada 61: cinco escolhas aprovadas e documentadas em D-152 a D-156; curva de esquiva simétrica e decrescente, captura de duração no WINDUP, recálculo por troca de alvo e LUK por evento. | Rodada 61 fechada / Rodada 62 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -1736,3 +1738,24 @@ C. Outro comportamento, descrito pelo criador.
 - Na main consultada, **scripts/combat/battle.gd** declara **CRIT_CHANCE = 0.1** e **AUTO_DODGE_CHANCE = 0.10**. Esses são **valores observados no código**, não confirmação de implementação das fórmulas da Rodada 60.
 - Foram preservados o histórico e as regras antigas do GDD; esta atualização **não realizou migração ou auditoria integral das Rodadas 39–59 dentro das seções antigas**.
 - Nenhum arquivo de código, recurso, teste ou configuração foi alterado por esta rodada.
+
+
+### 12.5 Rodada 61 — decisões aprovadas em 2026-11-03 (revisão 1.31)
+
+As cinco escolhas da Rodada 61 foram expressamente aprovadas: **1B, 2A, 3A, 4A, 5A**, sem observações adicionais. Registradas nos arquivos de decisões individuais D-152 a D-156 e consolidadas em **docs/REGRAS_DO_JOGO.md, seção 41**. Esta seção é **aditiva**: as declarações e pendências históricas da revisão 1.30 permanecem como registro do estado anterior, mas foram respondidas quanto aos tópicos expressamente escolhidos agora.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R61-Q1 | **1B** | Esquiva automática por LUK: ganhos marginais de **1, 0,5, 0,25, 0,125... pp por ponto** em faixas consecutivas de dez pontos da diferença de LUK | [D-152](decisoes/D-152-r61-q1-esquiva-luk-retorno-decrescente.md) |
+| R61-Q2 | **2A** | Aplicar a mesma curva em sentido contrário quando a LUK do defensor é inferior; chance-base 10%, clamp 0–100% | [D-153](decisoes/D-153-r61-q2-esquiva-luk-curva-simetrica.md) |
+| R61-Q3 | **3A** | Calcular duração do trajeto ao entrar **efetivamente em WINDUP**, em complemento à D-148 | [D-154](decisoes/D-154-r61-q3-trajeto-calculo-inicio-windup.md) |
+| R61-Q4 | **4A** | Recalcular duração uma vez **por evento de troca automática de alvo** ainda no WINDUP | [D-155](decisoes/D-155-r61-q4-trajeto-recalculo-cada-troca-windup.md) |
+| R61-Q5 | **5A** | Consultar LUK efetiva no instante em que **cada evento probabilístico** é resolvido | [D-156](decisoes/D-156-r61-q5-luk-no-instante-da-rolagem.md) |
+
+**Exemplo de esquiva aprovado:** LUK defensor 70, atacante 40, diferença +30 → chance-base 10% + (10 + 5 + 2,5) pp = **27,5%**. Situação inversa, LUK 40 vs 70 → 10% − 17,5 pp = −7,5% intermediários → **0% final**. Os exemplos não alteram a fórmula linear de crítico da D-150 nem a de status probabilístico da D-146.
+
+**Exemplo de WINDUP:** o personagem inicia WINDUP contra Pancham e fixa o tempo do trajeto. Se Pancham morrer durante WINDUP, a troca para Abra recalcula uma vez. Se Abra também morrer durante WINDUP, a troca para Gible recalcula uma vez novamente. A duração mais recente permanece fixa durante o trajeto.
+
+**Exemplo de captura de LUK:** LUK atacante varia 40 → 50 → 60 entre declaração, início de TRAVEL e resolução do impacto; LUK alvo 40 na resolução. Se ocorrer rolagem de crítico probabilístico no impacto, a chance é **30%** pela D-150, usando o valor de LUK do momento da rolagem.
+
+**Hierarquia de fontes:** preservar D-001; o GDD permanece não normativo para combate e os registros anteriores não são reescritos. **Pendentes:** Moves sem WINDUP, desempate de alvos igualmente próximos, ordem de eventos simultâneos e referências numéricas de AGI. **Sem implementação de código ou testes de gameplay.**

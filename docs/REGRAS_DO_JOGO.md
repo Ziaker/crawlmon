@@ -1165,3 +1165,56 @@ Quatro decisões novas (D-132 a D-135), cinco notas aditivas aos documentos anti
 ### 40.4 Escopo
 
 Apenas D-149, D-150 e D-151, índice, este consolidado e adendo de rastreabilidade no GDD foram modificados. **Nenhum código, teste de gameplay, cena, ficha de Move, asset ou VFX foi alterado.** A execução do design continua não verificada no jogo.
+
+
+---
+
+## 41. Rodada 61 — curva de esquiva, captura no WINDUP, retarget sucessivo e LUK dinâmica
+
+> **2026-11-03.** Respostas explícitas **1B, 2A, 3A, 4A e 5A**, sem observações adicionais. Todas são registradas em D-152 a D-156. Os textos históricos das Rodadas 59–60 e os conflitos então pendentes permanecem documentados, mas estas escolhas encerram as pendências específicas indicadas abaixo.
+
+### 41.1 Matriz de escolhas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-152](decisoes/D-152-r61-q1-esquiva-luk-retorno-decrescente.md) | 1B | Chance-base de 10% de esquiva automática + contribuição por LUK com ganhos marginais 1, 0,5, 0,25, 0,125... pp por ponto a cada faixa adicional de 10 |
+| [D-153](decisoes/D-153-r61-q2-esquiva-luk-curva-simetrica.md) | 2A | Diferença negativa de LUK reduz a chance pela mesma curva aplicada em sentido positivo, limitada pela D-151 |
+| [D-154](decisoes/D-154-r61-q3-trajeto-calculo-inicio-windup.md) | 3A | Calcular e fixar a duração do trajeto ao **entrar efetivamente em WINDUP**, ressalvadas trocas de alvo |
+| [D-155](decisoes/D-155-r61-q4-trajeto-recalculo-cada-troca-windup.md) | 4A | Recalcular uma vez **em cada** troca automática durante WINDUP |
+| [D-156](decisoes/D-156-r61-q5-luk-no-instante-da-rolagem.md) | 5A | Consultar a LUK efetiva no instante da resolução de **cada evento probabilístico** |
+
+### 41.2 Curva de esquiva aprovada — D-005, D-127, D-151, D-152 e D-153
+
+Definir **Δ = LUK_defensor − LUK_atacante** e **F(x)** como a soma de contribuições sobre as faixas sucessivas de até dez pontos de **|Δ|**: taxa **1 pp/ponto** para os primeiros dez, **0,5 pp/ponto** para os próximos dez, **0,25 pp/ponto** para os próximos dez, e assim sucessivamente, reduzindo o ganho marginal à metade em cada faixa. Para Δ positivo somar F(|Δ|); para Δ negativo subtrair F(|Δ|); para Δ zero não aplicar correção.
+
+**P_esquiva = clamp(10% + sinal(Δ) × F(|Δ|), 0%, 100%)**.
+
+| LUK defensor | LUK atacante | Δ | Correção | Chance final |
+|---:|---:|---:|---:|---:|
+| 40 | 40 | 0 | 0 pp | 10% |
+| 45 | 40 | +5 | +5 pp | 15% |
+| 70 | 40 | +30 | +17,5 pp | 27,5% |
+| 40 | 70 | −30 | −17,5 pp | 0% |
+| 40 | 45 | −5 | −5 pp | 5% |
+
+Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua **10% + 1 pp/ponto da diferença LUK atacante − alvo** (D-150); a fórmula de **status probabilístico** continua **chance-base + 1 pp/ponto de diferença LUK aplicador − alvo** (D-146). Todas as chances finais respeitam os respectivos limites de **0–100%**. Evade manual/perfeito e reação ativa da IA dentro do trajeto (D-021) **não recebem esta curva**; preservar status não esquiváveis (D-012).
+
+### 41.3 Tempo do trajeto e trocas automáticas — D-108, D-148, D-149, D-154 e D-155
+
+- O instante técnico da expressão “ao iniciar o ataque” é **a entrada efetiva em WINDUP**. Calcular a duração do Move nesse instante com AGI aplicável, passos e mínimo temporal já aprovados.
+- Uma morte de alvo durante WINDUP pode disparar redirecionamento para o adversário vivo mais próximo (D-108). **Cada troca efetiva durante essa fase provoca um único recálculo**, substituindo a duração previamente congelada.
+- Exemplo: cálculo inicial contra Pancham ao entrar em WINDUP; morte de Pancham → alvo Abra → novo cálculo; morte de Abra ainda no WINDUP → alvo Gible → novo cálculo. Ao entrar em TRAVEL, **a última duração calculada permanece fixa até seu término**.
+- As exceções de morte do último inimigo, projéteis em voo e morte após iniciar investida são preservadas; não criar loop de recálculo durante TRAVEL.
+- **Pendente distinto:** política para Moves instantâneos que dispensam WINDUP; empate geométrico entre alvos igualmente próximos.
+
+### 41.4 Captura de LUK por evento — D-146, D-150, D-152, D-153 e D-156
+
+- **Crítico normal, esquiva automática e aplicação de status probabilístico:** consultar LUK efetiva de cada participante **no instante da resolução da respectiva rolagem**, não na declaração do ataque nem na captura da AGI do trajeto.
+- Exemplo: LUK atacante 40 na declaração, 50 na transição para TRAVEL e 60 no impacto, contra LUK alvo 40 no impacto → **30% de crítico normal**, se a rolagem ocorrer então. Isso não altera efeitos garantidos.
+- Não recalcular eventos já resolvidos; não determinar ordem de resolução para eventos simultâneos sem nova decisão.
+
+### 41.5 Escopo e pendências restantes
+
+- As pendências históricas **R60-Q3D, diferenças negativas, instante WINDUP e múltiplas trocas sucessivas** receberam respostas nas D-152 a D-155, preservando os registros originais como histórico.
+- Permanecem sem definição: regra para ataque sem WINDUP; empate na escolha do alvo vivo mais próximo; ordem de resolução para eventos simultâneos; referências numéricas de AGI para ATB e trajeto (D-145); calibração de fórmulas quantitativas ainda não aprovadas.
+- **Somente documentação**: novos arquivos D-152–D-156, índice, este consolidado e adendo do GDD. Sem mudanças de código, testes, modelos, recursos ou VFX.

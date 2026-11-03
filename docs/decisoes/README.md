@@ -157,3 +157,9 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-149](D-149-r60-q1-recalculo-unico-trajeto-na-troca-de-alvo.md) | Combate / R60 | R60-Q1 (1A): recalcular duração uma vez ao trocar alvo morto no wind-up; nova duração fixa | Aprovada expressamente; complemento de D-108/D-148; sem código |
 | [D-150](D-150-r60-q2-critico-luk-um-ponto-percentual.md) | Combate / R60 | R60-Q2 (2B): crítico 10% base + 1 pp por ponto de diferença de LUK | Aprovada expressamente; sem código |
 | [D-151](D-151-r60-q4-limites-critico-esquiva-automatica.md) | Combate / R60 | R60-Q4 (4A): crítico e esquiva automática entre 0–100%; R60-Q3D continua pendente | Aprovada expressamente apenas para limites; sem código |
+
+| [D-152](D-152-r61-q1-esquiva-luk-retorno-decrescente.md) | Combate / R61 | Q1B: esquiva automática usa ganho marginal de LUK reduzido pela metade a cada faixa de 10 | Aprovada expressamente; sem código |
+| [D-153](D-153-r61-q2-esquiva-luk-curva-simetrica.md) | Combate / R61 | Q2A: mesma curva da esquiva atua simetricamente para diferenças negativas | Aprovada expressamente; sem código |
+| [D-154](D-154-r61-q3-trajeto-calculo-inicio-windup.md) | Combate / R61 | Q3A: capturar duração do trajeto ao entrar efetivamente em WINDUP | Aprovada expressamente; sem código |
+| [D-155](D-155-r61-q4-trajeto-recalculo-cada-troca-windup.md) | Combate / R61 | Q4A: recálculo uma vez em cada troca automática de alvo no WINDUP | Aprovada expressamente; sem código |
+| [D-156](D-156-r61-q5-luk-no-instante-da-rolagem.md) | Combate / R61 | Q5A: consultar LUK efetiva na resolução de cada evento probabilístico | Aprovada expressamente; sem código |
