@@ -23,3 +23,7 @@ Se a última unidade de uma equipe morrer **enquanto ainda houver projéteis pre
 - **Referências:** D-019, D-047, D-081, D-090, D-091, D-094, D-095, D-096.
 - **Questões em aberto:** Esta decisão contempla a exceção de projéteis pendentes à comparação estrita de mortes no mesmo instante lógico da D-095; não generalizar para novos ataques lançados após a eliminação. **Não foi decidido se os personagens sobreviventes ainda podem iniciar novas ações durante essa espera**. Preservar D-096 para lutas logicamente em andamento sem esse caso-limite.
 - **Escopo desta entrega:** criar somente documentação. Nenhum código de jogo, FX, teste ou configuração foi alterado.
+
+## Conciliação posterior (2026-11-03)
+
+**Exceção posterior D-105:** quando o inimigo derrotado é o **último inimigo presente**, a vitória é fixada imediatamente e projéteis pendentes não podem causar dano nem mudar o resultado. A regra histórica de aguardar projéteis não se aplica a essa vitória. Não generalizar silenciosamente para eliminação da equipe aliada.

@@ -24,3 +24,7 @@
 - **Relacionadas:** D-017; D-019; D-030; D-035; D-092; D-093.
 - **Pendências:** O termo 'ambos são interrompidos' junto de 'ataques devem terminar visualmente para só então serem interrompidos' requer distinguir encerramento visual e estado lógico; não definir uma nova fase, duração ou animação sem decisão.
 - **Escopo:** somente documentação; nenhum código, teste, animação ou FX do jogo é alterado.
+
+## Conciliação posterior (2026-11-03)
+
+**Conflito encerrado pela resposta expressa D-106:** ataques evitados por Evade **terminam como ataques que erraram**, sem interrupção mecânica adicional; não são cancelados logicamente após a animação. A animação de interrupção não ocorre por Evade, permanecendo distinta quando um atacante recebe um golpe durante wind-up ou trajeto. A D-017 é histórica nesse ponto; demais regras de Evade e do golpe extra permanecem, quando compatíveis.

@@ -639,3 +639,34 @@ Cinco decisões **de design** documentadas (D-092–D-096), com atualização do
 ### 24.4 Estado
 
 **Dois arquivos de decisão adicionados**, índice e consolidado atualizados, sem mexer no histórico, sem alterar código, configurações, FX ou testes. A publicação documental dos conflitos não representa aprovação de um comportamento técnico contraditório.
+
+---
+
+## 25. Rodada 48 — conciliação expressa dos dois conflitos
+
+> **2026-11-03.** Resposta literal do criador: **“1A — A vitória é definitiva ao derrotar o último inimigo; o projétil não pode causar dano nem alterar o resultado.”** e **“2A — Os ataques desviados terminam como golpes que erraram, sem interrupção mecânica adicional.”** Esta seção é a regra atual para esses casos específicos; o histórico D-017, D-099, D-100, D-103 e D-104 permanece, anotado com o esclarecimento posterior. Nenhum código foi alterado.
+
+### 25.1 Resultado: último inimigo derrotado
+
+- **[D-105](decisoes/D-105-r48-esclarecimento-vitoria-ultimo-inimigo.md):** a derrota do **último inimigo presente** fixa **vitória definitiva imediatamente**. Projéteis já lançados e ainda em voo **não podem causar dano nem alterar o resultado** depois disso.
+- **Exceção sobre D-099/D-100:** não aguardar projéteis para decidir a vitória por eliminação do último inimigo. Manter a regra histórica de espera para outros cenários onde ela seja aplicável, sem extrapolar para a derrota do último aliado.
+- **Compatibilidade com D-103:** quando há mais inimigos vivos, o combate continua normalmente; alvo morto durante wind-up pode ser substituído, e projéteis previamente lançados ainda podem causar dano.
+- **Compatibilidade com D-081/D-090:** a vitória pode ser logicamente definitiva no KO, mesmo que a tela de resultado espere a sequência visual fatal. Não inferir a eliminação dessa sequência visual.
+
+### 25.2 Evade: golpe errado, não interrupção
+
+- **[D-106](decisoes/D-106-r48-esclarecimento-evade-ataque-erra.md):** ataques desviados **concluem como golpes que erraram**, sem interrupção mecânica adicional nem animação de cambaleio disparada pelo Evade.
+- **Prevalência sobre D-017/D-104:** a antiga interrupção imediata e o cancelamento lógico posterior à animação ficam **substituídos exclusivamente no caso de ataques evitados pelo Evade**. As outras decisões de Burst, golpe extra, custo, janela e IA continuam em vigor quando compatíveis.
+- **Interrupção genuína:** receber um ataque durante wind-up ou trajeto é o caso indicado pelo criador para interrupção/animação própria; não atribuir esse efeito à mera evasão.
+- **Ataques simultâneos:** a D-092 continua permitindo evitar dois impactos coincidentes com uma mesma esquiva; D-093 mantém um só contra-ataque extra.
+
+### 25.3 Pontos ainda não decididos
+
+- **Derrota da última unidade aliada:** a exceção D-105 está expressamente redigida para a derrota do último inimigo. Não definir por suposição se projéteis próprios em voo podem transformar uma derrota em empate.
+- **Projéteis sem dano após vitória:** não foi escolhido se desaparecem visualmente de imediato ou terminam a trajetória puramente cosmética.
+- **Novo alvo no wind-up quando outros inimigos sobrevivem:** o redirecionamento está aprovado em D-103, mas não o critério de escolha de alvo.
+- Os pontos de outras rodadas que não sejam estes dois conflitos permanecem como documentados.
+
+### 25.4 Estado
+
+Dois registros novos (D-105/D-106), seis documentos antigos com **notas aditivas** de conciliação, índice e consolidado atualizados. **Sem alterações de código, VFX, testes ou configurações.**

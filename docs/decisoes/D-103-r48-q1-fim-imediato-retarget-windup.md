@@ -24,3 +24,7 @@
 - **Relacionadas:** D-004; D-019; D-037; D-081; D-090; D-094; D-096; D-099; D-100.
 - **Pendências:** Se o novo encerramento imediato também vale quando a equipe aliada fica sem combatentes; qual é o destino de projéteis pendentes e do empate nesse caso; critério para selecionar novo alvo do wind-up. Nenhum deles foi definido por essa frase.
 - **Escopo:** somente documentação; nenhum código, teste, animação ou FX do jogo é alterado.
+
+## Conciliação posterior (2026-11-03)
+
+**Conflito encerrado pela resposta expressa D-105:** a vitória ao derrotar o último inimigo é definitiva naquele instante; projéteis em voo não podem causar dano nem mudar o resultado. Isso prevalece especificamente sobre a espera de D-099/D-100 nesse caso. Permanece o cenário já documentado em que há outros inimigos, com combate normal, redirecionamento durante wind-up e possibilidade de ser atingido por projétil lançado.

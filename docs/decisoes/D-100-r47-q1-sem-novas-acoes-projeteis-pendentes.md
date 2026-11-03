@@ -18,3 +18,7 @@ Quando uma equipe é eliminada e há projéteis já lançados em voo (D-099), **
 - **Pendente:** Não foi definido o tratamento de ações iniciadas antes dessa espera que ainda não resultaram em projéteis lançados. Não inferir cancelamento, continuação ou pausa.
 - **Observação literal do criador:** “na 3 ja temos o jogo vc ao menos ve o github direito?” — registro de contexto, não regra mecânica.
 - **Escopo:** exclusivamente documentação; nenhum código, VFX, teste, modelo ou dado de Move deve ser alterado por esta entrega.
+
+## Conciliação posterior (2026-11-03)
+
+**Exceção posterior D-105:** a espera por projéteis pendentes **não ocorre quando se derrota o último inimigo presente**; nesse caso, a vitória é definitiva no instante do KO e nenhum projétil pendente pode causar dano ou alterar o resultado. O alcance desta decisão antiga fora desse caso não foi redefinido.

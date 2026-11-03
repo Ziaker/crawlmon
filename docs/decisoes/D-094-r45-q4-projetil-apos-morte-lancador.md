@@ -18,3 +18,7 @@ Um projétil **já lançado** continua ativo após a morte de quem o lançou e *
 - **Decisões relacionadas:** D-004; D-009; D-019; D-037; D-047; D-058.
 - **Limite / pendência:** A regra não redefine efeitos de interrupção antes do lançamento, nem altera alvo, velocidade, dano ou trajetórias já estabelecidos.
 - **Escopo:** registro documental somente; nenhum código, VFX, teste ou dado de jogo modificado.
+
+## Conciliação posterior (2026-11-03)
+
+A persistência do projétil lançado após a morte do lançador continua válida **enquanto o combate puder prosseguir**. **Exceção explícita D-105:** quando o inimigo derrotado é o **último inimigo presente**, a vitória é definitiva imediatamente; qualquer projétil pendente **não causa dano nem altera o resultado**. Não foi decidido se o efeito visual do projétil desaparece ou completa sua trajetória.
