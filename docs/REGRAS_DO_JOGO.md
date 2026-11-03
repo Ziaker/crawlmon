@@ -996,3 +996,37 @@ Dois documentos novos (D-130/D-131), quatro notas posteriores em decisões hist�
 ### 35.5 Escopo
 
 Quatro decisões novas (D-132 a D-135), cinco notas aditivas aos documentos antigos (D-121, D-119, D-126, D-127 e D-129), índice e consolidado atualizados. **Sem edição de código, testes, VFX, fichas ou assets.**
+
+---
+
+## 36. Rodada 56 — AGI inversa, diferença de LUK, Defense abrangente; teto em conflito
+
+> **2026-11-03.** O criador escolheu expressamente **2A, 3B e 4A**. Também respondeu **1D — Outra regra**, acrescentando a observação literal: **“n tem problema ultrapassar 100 de status, n precisa se preocupar com isso”**. A questão 1 está **em conflito de escopo com D-129 e D-135**; o significado da exceção a 100 não pode ser fixado sem esclarecer se é restrita ao sorteio ±3 ou se revoga o teto de todos os atributos permanentes. Para preservar decisões anteriores, **nenhuma regra nova sobre ultrapassar 100 é declarada aprovada nesta seção**. Documentos individuais D-136, D-137 e D-138 registram apenas 2A/3B/4A.
+
+### 36.1 Decisões aprovadas e documentadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-136](decisoes/D-136-r56-q2-agi-inversamente-proporcional.md) | 2A | Usar proporcionalidade inversa à AGI efetiva, com uma AGI de referência comum a todos os Pokémon. |
+| [D-137](decisoes/D-137-r56-q3-diferenca-luk-aplicador-alvo.md) | 3B | A diferença entre a LUK de quem aplica e a LUK de quem recebe influencia a chance. |
+| [D-138](decisoes/D-138-r56-q4-defense-estagios-fisico-magico.md) | 4A | Manter os estágios atuais de Defense afetando dano físico e mágico, enquanto VIT e SPI fornecem resistências naturais separadas. |
+
+### 36.2 Conciliação com decisões anteriores
+
+1. **D-136 / D-117 / D-119 / D-133 / D-018:** tempo individual de Move é reduzido **inversamente à AGI efetiva**, referenciada por um valor comum entre as espécies. Depois, descontar **0,10 s × soma dos passos**, mantendo mínimo **0,25 s**. Não definir numericamente a AGI de referência, arredondamento ou o caso AGI ≤ 0.
+2. **D-137 / D-127 / D-134 / D-012:** a chance de **aplicação de status probabilístico** depende da **diferença entre LUK do aplicador e do alvo**. Apenas efeitos com chance declarada na ficha são afetados; efeitos garantidos continuam garantidos. Não criar Evade para debuffs de alvo único, nem definir fórmula percentual arbitrária.
+3. **D-138 / D-125 / D-130 / D-131:** os estágios existentes de **Defense** atuam tanto sobre dano físico como mágico, mas a resistência **natural** usa **VIT apenas para físico** e **SPI apenas para mágico**. Buffs não são automaticamente divididos em duas categorias.
+
+### 36.3 Conflito não resolvido — R56-Q1D
+
+- **Mensagem literal:** “1D — O que fazer se a variação de ±3 ultrapassar o limite 1–100? Outra regra.” **Observação:** “n tem problema ultrapassar 100 de status, n precisa se preocupar com isso”.
+- **D-129:** os seis atributos permanentes têm limite de **1–100**. **D-132:** sorteio persistente de até ±3 pontos por atributo. **D-135:** quando todos os seis estão em 100, dispensa-se a distribuição obrigatória na subida de nível. Uma permissão geral para ultrapassar 100 modificaria **D-129 e D-135**; uma exceção somente ao sorteio individual modificaria **D-129/D-132** mas não necessariamente a regra de progressão.
+- **Duas interpretações plausíveis:** (A) apenas a **variação inicial de ±3** pode deixar o atributo temporária ou permanentemente acima de 100, preservando o teto para progressão; (B) o teto 100 deixa de existir como limite geral, inclusive para o crescimento por nível. O criador **não especificou qual alcance**. Nenhuma delas foi selecionada por este registro.
+- **Ação pendente:** perguntar objetivamente qual alcance da ultrapassagem de 100 deve prevalecer; preservar ambas as fontes históricas, sem remendar a D-129 nem a D-135 por suposição.
+
+### 36.4 Código consultado e escopo
+
+- `scripts/combat/battle.gd`: `travel_seconds()` ainda desconta apenas passos e impõe piso de 0,25 s; não possui redução inversamente proporcional por AGI.
+- `scripts/data/skill.gd`: não há campo formal de tempo individual de Move nem chance de aplicação por efeito.
+- `scripts/combat/combatant.gd`: `def_buff` é aplicado genericamente em `take_damage()`, sem campos de VIT/SPI; não há fórmulas de LUK e progressão ainda integradas.
+- **Somente documentação:** 3 novas decisões D-136..D-138, 4 complementos históricos, índice e regras consolidadas. Nenhuma mudança em código, cenas, dados, assets, VFX, testes ou configuração.

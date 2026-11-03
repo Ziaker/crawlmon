@@ -22,3 +22,7 @@
 
 - **Documentação somente:** não alterar código, cenas, tabelas, fichas de Moves, VFX, testes ou configurações do projeto.
 - As fórmulas e dados marcados como pendentes não podem ser completados por suposição.
+
+## Complemento posterior — Rodada 56 (2026-11-03)
+
+**D-136 (Rodada 56, Q2A):** a redução por **AGI efetiva** deve ser **inversamente proporcional**, usando uma **AGI de referência comum a todas as espécies**. Preservar a ordem já aprovada nesta D-133: tempo próprio do Move → redução por AGI (incluindo buffs) → correção por passos D-018 → piso de 0,25 s. O valor de AGI de referência, arredondamento e tratamento de zero/não positivo continuam indefinidos.

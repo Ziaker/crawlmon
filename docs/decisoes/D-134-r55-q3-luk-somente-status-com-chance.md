@@ -22,3 +22,7 @@
 
 - **Documentação somente:** não alterar código, cenas, tabelas, fichas de Moves, VFX, testes ou configurações do projeto.
 - As fórmulas e dados marcados como pendentes não podem ser completados por suposição.
+
+## Complemento posterior — Rodada 56 (2026-11-03)
+
+**D-137 (Rodada 56, Q3B):** para efeitos de status probabilísticos explicitamente declarados na ficha de Move, a chance de aplicação considera a **diferença entre a LUK do aplicador e a LUK do alvo**. Preservar o requisito de chance declarada, efeitos garantidos e a impossibilidade de esquiva de debuffs de alvo único (D-012). Sem pesos, limites ou fórmula numérica presumidos.

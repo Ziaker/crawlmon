@@ -24,3 +24,7 @@
 ## Complemento posterior — D-130/D-131 (2026-11-03)
 
 **Substituição parcial posterior D-130:** a resistência-base derivada de **Vitality (VIT)** aplica-se **somente ao dano físico**. Para o **dano mágico**, acrescenta-se o novo atributo separado **Spirit (SPI)**, que cumpre papel defensivo análogo ao de Vitality para o tipo mágico. A frase original 'Não criar sexto atributo independente de Defesa' é histórica e cede à ordem expressa de criar Spirit, sem criar uma estatística genérica de Defesa adicional. Os estágios já aprovados de Defesa não são removidos; seu impacto em cada categoria e a fórmula permanecem pendentes.
+
+## Complemento posterior — Rodada 56 (2026-11-03)
+
+**D-138 (Rodada 56, Q4A):** o modificador comum por **estágios de Defense** atua **tanto em danos físicos quanto mágicos**, mas a resistência natural é separada pelo atributo: **VIT para físicos, SPI para mágicos (D-130)**. A distinção de VIT/SPI não separa automaticamente os buffs/debuffs por tipo. Fórmulas e ordem de mitigação permanecem pendentes.

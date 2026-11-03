@@ -27,3 +27,6 @@
 - Não foi definido o impacto do novo atributo sobre curvas de crescimento dos aliados, distribuição do ponto obrigatório do protagonista em Spirit, progressão de Nature e variações individuais, além do limite geral; respeitar regras anteriores sem criar taxa ou peso novo.
 - Nenhuma modificação de código, modelos, VFX, testes ou arquivos de personagem nesta atividade.
 
+## Complemento posterior — Rodada 56 (2026-11-03)
+
+**D-138 (Rodada 56, Q4A):** os **estágios atuais de Defense** continuam afetando **danos físicos e mágicos**, enquanto **Vitality (VIT)** determina apenas a resistência natural ao dano físico e **Spirit (SPI)** a resistência natural ao dano mágico. Não criar por esta decisão buffs diferentes para Physical Defense/Magic Defense nem alterar os estágios existentes. A integração matemática com as duas resistências ainda precisa de especificação.
