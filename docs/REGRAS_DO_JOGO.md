@@ -921,6 +921,8 @@ Dez arquivos individuais de decisões, índice e regras consolidadas atualizados
 
 ## 34. Novo atributo Spirit e nomes de atributos em inglês
 
+Referências diretas: [D-130](decisoes/D-130-separacao-vitality-fisico-spirit-magico.md) e [D-131](decisoes/D-131-nomes-atributos-em-ingles.md).
+
 > **2026-11-03.** O criador determinou a separação da defesa física e mágica, pediu um **novo atributo com nome inglês e sigla de três letras** e exigiu nomes de atributos em inglês. O assistente, autorizado a escolher o nome, selecionou **Spirit (SPI)**. A alteração do catálogo foi registrada em D-130 e D-131, sem modificar código. O questionário da Rodada 55 continua com as perguntas remanescentes.
 
 ### 34.1 Catálogo atualizado — seis atributos permanentes
