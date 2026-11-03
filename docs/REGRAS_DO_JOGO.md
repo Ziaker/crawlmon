@@ -1,5 +1,7 @@
 # Crawlmon — Regras do jogo (consolidado)
 
+> **Atualização documental de 2026-11-02:** as decisões de combate das Rodadas 39, 40 e 41, incluindo complementos de R40-Q1, R40-Q5 e R41-Q6, estão registradas na [seção 17](#17-rodadas-39-40-e-41-decisões-de-design-aprovadas). Onde houver divergência entre o histórico abaixo e as decisões mais recentes, consultar as entradas individuais D-031 a D-060 e os conflitos identificados na seção 17. **A documentação nova não representa implementação do código.**
+
 > **Para que serve:** este é o índice único de **todas as regras já decididas ou implementadas**, para que nenhuma seja esquecida ou quebrada por uma mudança. Ele **não substitui** o `docs/GDD.md` (soberano nas regras de design, com os IDs das rodadas) — resume e cruza as fontes.
 > **Gerado em:** 2026-11-02, a partir do GDD rev. 1.27, do `PROMPT_trajeto_reposicionamento.md`, do README, do código da branch `feat/smt-moves` e do que o criador disse nesta conversa.
 > **[CONVERSA 2026-11-02] O GDD está desatualizado quanto ao COMBATE e deve ser IGNORADO nele.** As linhas marcadas [GDD] nas seções de combate (3 a 9) ficam só como histórico, sem valor de regra. Para combate valem: [CONVERSA] > [PROMPT] > [CÓDIGO]/README. O GDD continua valendo para exploração, campanha, progressão e economia (seções 14).
@@ -312,3 +314,907 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - Toda decisão nova do criador entra aqui **no mesmo dia**, com a etiqueta e, quando possível, a frase literal.
 - Toda mudança de código que altere uma regra da §3–§9 atualiza a tabela de conflitos da §12.
 - Antes de mexer em combate, ler as seções 3 a 9 e 12.
+
+---
+
+## 17. Rodadas 39, 40 e 41 — decisões de design aprovadas
+
+> **Fonte vigente para o combate:** decisões expressas pelo criador nas Rodadas 39–41 e respectivos complementos. **Não é relatório de implementação.** O GDD permanece ignorado como fonte de combate (D-001). Os parágrafos anteriores foram preservados como histórico, inclusive quando há divergências.
+
+### 17.1 Matriz de decisões
+
+| Decisão | Alternativa | Regra aprovada |
+|---|---|---|
+| [R39-Q1](decisoes/D-031-r39-q1-atb-inicial.md) | 1A | Barra ATB começa em 3/5. Uma ação pode começar quando o personagem possui ATB suficiente para pagar seu custo. |
+| [R39-Q2](decisoes/D-032-r39-q2-moves-hotkeys.md) | 2A | Disponibilizar até oito Moves; quatro hotkeys e Tackle em comando separado. |
+| [R39-Q3](decisoes/D-033-r39-q3-burst-pagamento.md) | 3A | Uma unidade de Burst paga integralmente uma ação; limite de cinco unidades de Burst. |
+| [R39-Q4](decisoes/D-034-r39-q4-evade-janela.md) | 4A | Evade manual só opera durante golpe corpo a corpo ou voo de projétil; fora da janela, apertar o botão não produz efeito. Custa 3 ATB parado ou 2 ATB durante o próprio trajeto de ataque. |
+| [R39-Q5](decisoes/D-035-r39-q5-ataque-continua.md) | 5B | O ataque próprio não é cancelado após o Evade perfeito aplicável; o golpe extra não começa antes de terminar o ataque original. |
+| [R39-Q6](decisoes/D-036-r39-q6-aoe-individual.md) | 6A | Preservar D-007 a D-013: nenhum alvo principal; potência integral por alvo; Evade independente e sem cancelar impactos dos demais. |
+| [R39-Q7](decisoes/D-037-r39-q7-aoe-alvos-declaracao.md) | 7A | A lista de alvos participantes do AoE é determinada pelos alvos vivos na declaração do Move. |
+| [R39-Q8](decisoes/D-038-r39-q8-status-pausa.md) | 8A | A pausa começa na ativação do efeito de status; as outras ações congelam enquanto o FX é executado; retomam ao fim. |
+| [R39-Q9](decisoes/D-039-r39-q9-camera-inimigos.md) | 9A | Todos os inimigos devem permanecer visíveis na câmera, inclusive durante momentos cinematográficos. |
+| [R39-Q10](decisoes/D-040-r39-q10-fase2-arquitetura.md) | 10B | Aprovação da arquitetura reintegrada da Fase 2; não aprova indistintamente mudanças mecânicas não autorizadas. |
+| [R40-Q1](decisoes/D-041-r40-q1-fim-do-golpe.md) | 1A | A observação posterior esclarece o término: golpe efetuado e animação do golpe concluída, antes do pulo/teleporte de volta à posição original. Não equiparar automaticamente esse término ao instante de dano se a animação ainda não acabou. |
+| [R40-Q2](decisoes/D-042-r40-q2-contra-ataque-dois-segundos.md) | 2B | A escolha do golpe extra deve acontecer durante os dois segundos reais de câmera lenta após Evade perfeito. |
+| [R40-Q3](decisoes/D-043-r40-q3-contra-ataque-manual.md) | 3A | O jogador escolhe manualmente o Move do golpe extra. A restrição de escolher só depois do término foi complementada pela R41-Q2B, que admite seleção antecipada, mas não execução antecipada. |
+| [R40-Q4](decisoes/D-044-r40-q4-perseguicao-corrida.md) | 4B | A perseguição do alvo ocorre durante a corrida. Ao começar o golpe físico, sua trajetória deixa de acompanhar continuamente o alvo. |
+| [R40-Q5](decisoes/D-045-r40-q5-recuo-visual.md) | 5B | Todo hit recebido provoca recuo visual, independentemente de o personagem estar ou não atacando; esse recuo não muda a posição lógica. Não restringir a ataques interrompidos ou personagens em movimento. |
+| [R40-Q6](decisoes/D-046-r40-q6-contato-motor.md) | 6A | O contato espacial entre atacante e alvo é determinado exatamente pelo motor. |
+| [R40-Q7](decisoes/D-047-r40-q7-projetil-guiado.md) | 7A | Determinar o alvo do projétil na declaração e persegui-lo durante o voo. |
+| [R40-Q8](decisoes/D-048-r40-q8-atb-aoe-unico.md) | 8A | Em cada Move AoE, conceder no máximo uma recompensa de fraqueza e uma de crítico por ação, quando pelo menos um alvo satisfizer a condição respectiva; não multiplicar pelo número de alvos. |
+| [R40-Q9](decisoes/D-049-r40-q9-hitstop-onda.md) | 9A | Uma onda AoE de projéteis causa um único hit-stop quando atinge o primeiro alvo; os impactos seguintes não repetem o hit-stop. |
+| [R40-Q10](decisoes/D-050-r40-q10-camera-zoom.md) | 10A | Zoom e deslocamento da câmera são autorizados para manter todos os inimigos visíveis; tremor permanece proibido. |
+| [R41-Q1](decisoes/D-051-r41-q1-contra-ataque-fila.md) | 1B | A seleção manual dentro da janela de dois segundos reserva o golpe extra, que executará após terminar a animação original, mesmo que a janela de seleção já tenha encerrado. |
+| [R41-Q2](decisoes/D-052-r41-q2-selecao-antecipada.md) | 2B | O Move extra pode ser escolhido durante o ataque original; fica na fila e não executa até o ataque original terminar. |
+| [R41-Q3](decisoes/D-053-r41-q3-custo-contra-ataque.md) | 3A | O golpe extra respeita o custo normal do Move escolhido: gasta uma unidade de Burst disponível ou ATB suficiente. |
+| [R41-Q4](decisoes/D-054-r41-q4-contato-no-impacto.md) | 4A | Durante a animação do golpe, não corrigir continuamente a trajetória. Somente no instante do impacto, corrigir o ponto final necessário para o contato espacial exato. |
+| [R41-Q5](decisoes/D-055-r41-q5-recuos-acumulados.md) | 5B | Hits consecutivos acumulam deslocamentos de recuo apenas na apresentação visual. Depois, o modelo retorna à posição lógica inalterada pelo recuo. |
+| [R41-Q6](decisoes/D-056-r41-q6-fatal-lancamento.md) | 6D | Se um hit mata um inimigo, exibir lançamento para trás pelo ar, queda ao chão e desaparecimento posterior, com estética exagerada inspirada em Dragon Ball / Super Smash Bros. Trata-se da sequência visual fatal do inimigo. |
+| [R41-Q7](decisoes/D-057-r41-q7-onda-velocidade.md) | 7A | A onda AoE se propaga no espaço a velocidade constante, atingindo cada alvo conforme a distância e o instante de chegada. |
+| [R41-Q8](decisoes/D-058-r41-q8-alvo-morto.md) | 8A | O alvo incluído por estar vivo na declaração permanece referenciado, mas, se morrer antes da chegada da onda, a passagem não causa novo dano nem reação. Não selecionar alvo substituto. |
+| [R41-Q9](decisoes/D-059-r41-q9-evade-onda.md) | 9B | Todos os alvos possuem a mesma janela geral de Evade durante o voo da onda AoE, mantendo as decisões de esquiva individual e de efeitos individuais. |
+| [R41-Q10](decisoes/D-060-r41-q10-status-idle-camera.md) | 10B | Durante o efeito visual de status, as outras ações lógicas permanecem congeladas; animações ociosas continuam e a câmera acompanha o efeito de status. |
+
+### 17.2 Complementos que integram as respostas
+
+- **R40-Q1:** o ataque original termina quando o golpe foi efetuado e a animação do golpe acabou, **antes** do pulo/teleporte de retorno. Essa explicação complementa a escolha 1A; não reduzir o término ao frame do dano se a animação continua.
+- **R40-Q5:** o recuo ocorre a **qualquer hit recebido**, mesmo se o atingido não estiver atacando; é **somente visual**, sem mudar a posição lógica (escolha B posterior). R41-Q5 determina o acúmulo visual de hits consecutivos, seguido de retorno à posição lógica.
+- **R41-Q6D:** um **inimigo morto por hit fatal** voa para trás, cai ao chão e desaparece em sequência exagerada estilo Dragon Ball / Super Smash Bros. É exceção específica à regra histórica de cadáver ficar no chão; os aliados não foram abrangidos por essa definição.
+
+### 17.3 Relações com decisões anteriores e conflitos a preservar
+
+1. **D-025 × R39-Q10:** a reintegração da **arquitetura** da Fase 2 foi aprovada. A reversão histórica da D-025 permanece registrada, mas não deve bloquear essa aprovação posterior. Nenhuma mudança mecânica anteriormente não autorizada fica automaticamente aprovada.
+2. **D-016/D-027/D-030 × R39-Q4/R40-Q2/R41-Q1-Q3:** Evade fora da janela não tem efeito. Contra-ataque extra só executa após terminar o golpe original; o Move pode ser selecionado dentro dos **2 segundos reais** e enfileirado até depois. Cobra o custo normal. Pendente definir momento da cobrança e o comportamento se o saldo mudar entre a escolha e a execução.
+3. **D-004 × R40-Q4/R40-Q6/R41-Q4:** perseguição apenas durante a corrida; golpe mantém trajetória fixa; correção espacial autoritativa pontual **no contato**. Não confundir com perseguição contínua durante a animação do golpe.
+4. **D-007/D-009/D-011 × R39-Q6-Q7/R41-Q7-Q9:** AoE sem alvo principal e Evade individual. A **onda de projétil** é o caso em que impactos chegam em instantes diferentes com velocidade espacial constante. Alvos são fixados pela condição de vida na declaração; alvos que morram depois não sofrem novo hit nem geram substituição. A janela comum de Evade durante o voo precisa ser conciliada com a janela perfeita de **0,22 s** relativa a impactos individuais (D-030); **não decidido** se a janela perfeita é comum ou individual.
+5. **D-010 × R40-Q8:** no AoE, o atacante recebe no máximo uma recompensa por fraqueza e uma por crítico por execução, quando houver pelo menos um alvo com cada condição. Não multiplicar recompensas por alvo.
+6. **D-013 × R40-Q9:** na onda de projétil AoE, exatamente um hit-stop no primeiro impacto, sem repetir nos alvos seguintes. Preservar interrupção de alvos efetivamente atingidos, não dos que desviaram.
+7. **D-014/D-019/D-020 × R39-Q8/R41-Q10:** pausa de status começa na ativação do efeito; outras ações congelam, enquanto as animações ociosas continuam e a câmera acompanha o FX. Essa continuidade **não autoriza** reintroduzir locomoção ociosa removida. A arquitetura de relógio e a compatibilidade técnica ainda precisam de implementação/validação.
+8. **D-015/D-020 × R39-Q9/R40-Q10:** é obrigatório enquadrar todos os inimigos, inclusive na cinematografia. Zoom e deslocamento ficam permitidos para isso; tremor de câmera continua proibido. A regra posterior altera só essa restrição visual.
+9. **D-024/D-025 × R40-Q5/R41-Q5-Q6:** recuo de **qualquer** hit é cosmético e cumulativo, sem modificar a posição lógica. O lançamento fatal com desaparecimento **somente do inimigo** substitui a manutenção visual do corpo caído para esse caso. A regra de derrota dos aliados continua não definida.
+10. **Código atual × especificação:** trechos anteriores da seção 9 documentam a implementação antiga de AoE com alvo principal e 85%; são diagnóstico histórico, **não** decisão vigente. A implementação não foi alterada por esta atualização documental.
+
+### 17.4 Pendências ainda sem decisão (não preencher automaticamente)
+
+- No golpe extra enfileirado, **quando** debitar Burst/ATB e o que fazer se o saldo mudar antes da execução.
+- Na onda AoE, como compatibilizar janela comum de Evade com os últimos 0,22 s de perfeição e chegadas não simultâneas.
+- Parâmetros cinematográficos exatos do lançamento fatal do inimigo (tempo, distância, curva, desaparecimento); efeitos de derrota para aliados.
+- Diferença operacional entre animação ociosa mantida durante o FX de status e locomoção ociosa previamente proibida.
+- Revisar a execução de uma seleção antecipada de contra-ataque frente à morte do ator/alvo ou interrupções antes de o golpe original terminar.
+
+### 17.5 Registro contínuo obrigatório
+
+A diretriz **[D-061](decisoes/D-061-registro-continuo-das-decisoes.md)** determina que cada decisão aprovada seja registrada no GitHub imediatamente, com atualização do índice e deste consolidado, **sem modificar código automaticamente**. Antes da próxima rodada, conferir que as decisões anteriores estão publicadas. Nenhum teste de jogo é substituído por essa documentação.
+---
+
+## 18. Rodada 42 — decisões aprovadas e complementos às Rodadas 39–41
+
+> **2026-11-03.** A Rodada 42 foi registrada em D-062 a D-071. Este adendo **preserva integralmente** as seções anteriores e as decisões das Rodadas 39, 40 e 41. As pendências históricas da §17.4 foram escritas **antes da Rodada 42**; para os temas retomados, usar as decisões posteriores a seguir. A aprovação de design **não significa implementação no Godot**.
+
+### 18.1 Matriz de decisões aprovadas
+
+| Decisão | Alternativa | Regra |
+|---|---|---|
+| [R42-Q1](decisoes/D-062-r42-q1-custo-na-selecao.md) | 1A | Descontar o ATB ou Burst do Move extra **no momento da seleção manual**, mesmo que o contra-ataque fique enfileirado até terminar o ataque original. |
+| [R42-Q2](decisoes/D-063-r42-q2-burst-antes-atb.md) | 2A | Quando **Burst e ATB são ambos suficientes**, consumir **Burst primeiro**, preservando o ATB. Manter que **1 Burst paga a ação inteira**, no máximo 5 unidades acumuladas. |
+| [R42-Q3](decisoes/D-064-r42-q3-interrupcao-cancela-extra.md) | 3A | Se o ataque original for interrompido após a seleção do golpe extra, **cancelar o contra-ataque enfileirado**; ele não pode executar posteriormente. |
+| [R42-Q4](decisoes/D-065-r42-q4-alvo-morre-cancela-extra.md) | 4A | Se o **alvo do Move extra morrer antes de começar sua execução**, **cancelar** o contra-ataque de alvo único; não selecionar outro alvo automaticamente. |
+| [R42-Q5](decisoes/D-066-r42-q5-onda-evade-perfeito-comum.md) | 5A | Na onda de projéteis AoE, **todos os alvos compartilham a janela comum de Evade e também uma única janela de Evade perfeito**, preservando a resposta individual de cada alvo e a inexistência de alvo principal. |
+| [R42-Q6](decisoes/D-067-r42-q6-onda-alvos-posicao-atual.md) | 6A | A onda AoE considera a **posição atual de cada alvo durante a propagação**, mesmo que ele se movimente, **mantendo velocidade espacial constante**. O conjunto de alvos continua fixado na declaração, sem alvo principal. |
+| [R42-Q7](decisoes/D-068-r42-q7-aliado-lancado-nao-some.md) | 7C | No hit fatal de um **aliado**, ele é **lançado para trás e cai no chão**, **sem desaparecer**. Para **inimigos**, conservar D-056: lançamento, queda e desaparecimento. |
+| [R42-Q8](decisoes/D-069-r42-q8-intensidade-fatal-padronizada.md) | 8A | O **lançamento visual por hit fatal possui intensidade padronizada**, idêntica para todos os Moves, sem aumentar por dano, crítico ou fraqueza, nem variar por tipo de Move. |
+| [R42-Q9](decisoes/D-070-r42-q9-apenas-idle-ja-existente.md) | 9A | Durante o FX de status, **somente as animações idle já existentes continuam**; não há **deslocamento pelo cenário**. Outras ações ficam congeladas e a câmera acompanha o efeito, conforme R41-Q10. |
+| [R42-Q10](decisoes/D-071-r42-q10-cronometro-pausado-hitstop-status.md) | 10B | **Suspender o cronômetro dos dois segundos para selecionar o golpe extra durante hit-stop e pausas de Moves de status**. Retomar a contagem quando a pausa terminar, sem perder o tempo restante. |
+
+### 18.2 Compatibilidade com decisões anteriores
+
+1. **Contra-ataque e pagamento — D-062/D-063:** o custo é debitado na seleção antecipada, ainda que o Move aguarde a execução. Havendo Burst e ATB suficientes, Burst tem prioridade e paga a ação inteira (D-033 e D-053). O prazo de seleção e a conclusão do golpe original continuam definidos em D-041, D-042 e D-051–D-052.
+2. **Contra-ataque cancelado — D-064/D-065:** interromper o ataque original cancela o Move extra enfileirado; a morte do alvo do Move extra antes da execução também cancela o extra. Não há redirecionamento automático de alvo único. **Não foi decidido se o custo já debitado é reembolsado.**
+3. **AoE e Evade perfeito — D-066/D-067:** a janela geral de Evade **e a janela de Evade perfeito** são compartilhadas entre todos os alvos de uma onda de projéteis, sem eliminar a esquiva individual. A onda consulta a posição atual dos alvos, com velocidade espacial constante. R39-Q7 preserva os participantes vivos na declaração; D-007 impede alvo principal. **A janela perfeita global precisa ser conciliada com a regra dos últimos 0,22 s antes do impacto individual de D-030**, dado que a onda atinge os alvos em tempos diferentes.
+4. **Hit fatal — D-068/D-069:** inimigos são lançados, caem e desaparecem (D-056); aliados são lançados, caem e permanecem visíveis. O lançamento fatal é padronizado, igual para todos os Moves. Isso altera apenas a **apresentação visual** aprovada; não permite deslocamento lógico autoritativo do recuo (D-045).
+5. **Animações de status — D-070:** enquanto as demais ações param, continuam exclusivamente as animações idle **já existentes**, sem deslocamento pelo cenário. A câmera acompanha o Move de status (D-060); a proibição de reintroduzir locomoção ociosa segue válida (D-020).
+6. **Cronômetro da janela extra — D-071:** os 2 segundos de escolha do Move extra são **suspensos durante hit-stop e pausa de status**, voltando a contar após o fim da pausa. A seleção antecipada continua válida e a execução segue enfileirada após o golpe original (D-051/D-052).
+
+### 18.3 Pendências ainda abertas
+
+- **Restituição de recursos:** quando um Move extra já pago é cancelado por interrupção do ataque original ou morte do alvo, não foi decidido se ocorre devolução de ATB/Burst.
+- **Momento da janela perfeita AoE global:** falta determinar o início/fim da janela de perfeição compartilhada frente aos vários impactos em tempos diferentes e ao parâmetro de 0,22 s de D-030.
+- **Parâmetros cinematográficos do hit fatal:** faltam números para velocidade/altura/distância/tempo/queda e efeitos de desaparecimento; apenas a intensidade uniforme entre Moves foi definida.
+- **Geometria e velocidade concreta da onda AoE:** os critérios de propagação por posições atuais e velocidade constante estão aprovados, mas o método geométrico e os valores específicos ainda não foram fixados.
+- **Outros casos de invalidação do contra-ataque:** não presumir comportamento para situações não respondidas, como morte do próprio atacante antes da execução.
+
+### 18.4 Estado desta documentação
+
+As dez decisões estão registradas como **especificação de design**, não como funcionalidades implementadas. Nenhum arquivo de código, VFX, teste ou configuração do jogo foi alterado pela Rodada 42.
+
+---
+
+## 19. Rodada 43 — recomendações aceitas por delegação do usuário
+
+> **Fonte literal do usuário (2026-11-03):** “Sigo suas recomendações”. **Nota de proveniência:** as alternativas abaixo foram selecionadas e recomendadas pelo assistente após essa aceitação geral; o usuário **não escreveu individualmente** as letras 1A–10A. Os dez registros D-072 a D-081 preservam essa distinção e não representam implementação no Godot. Se houver dúvida sobre o alcance dessa delegação, confirmar com o criador antes de implementar mecânicas.
+
+### 19.1 Matriz de recomendações aceitas
+
+| Decisão | Alternativa recomendada | Regra registrada |
+|---|---|---|
+| [R43-Q1](decisoes/D-072-r43-q1-estorno-interrupcao.md) | 1A | Quando o contra-ataque extra já foi selecionado e pago, mas o ataque original é interrompido antes da execução, cancelar o extra (D-064) e **devolver integralmente o Burst ou o ATB que foi descontado por esse extra**. |
+| [R43-Q2](decisoes/D-073-r43-q2-estorno-alvo-morto.md) | 2A | Se o alvo do contra-ataque extra morrer antes de sua execução, cancelar o golpe extra sem redirecionar o alvo (D-065) e **devolver integralmente o recurso debitado na seleção**. |
+| [R43-Q3](decisoes/D-074-r43-q3-personagem-morre-estorno.md) | 3C | Se o personagem que selecionou e pagou o contra-ataque extra morrer antes de o golpe começar, **cancelar o Move extra**. Aplicar **a mesma regra de reembolso da interrupção do ataque original**: devolução integral do recurso pago (R43-Q1A / D-072), ainda que o personagem esteja derrotado. |
+| [R43-Q4](decisoes/D-075-r43-q4-janela-perfeita-primeiro-impacto.md) | 4A | Para a onda de projéteis AoE, a **única janela compartilhada de Evade perfeito dura 0,22 segundos e termina imediatamente antes do primeiro impacto da onda**. Todos os alvos participantes podem tentar o Evade perfeito nessa mesma janela, inclusive os que receberiam impacto depois. Preservar o Evade comum durante a janela geral de voo. |
+| [R43-Q5](decisoes/D-076-r43-q5-evade-visual-imediato.md) | 5A | Na onda AoE, quando um personagem aciona um Evade válido, **a esquiva visual acontece imediatamente ao apertar o botão**. O motor **registra o resultado desse Evade para a resolução do impacto posterior da mesma onda**, mesmo que a frente ainda não tenha alcançado o personagem. A resolução continua individual, sem cancelar danos dos outros alvos. |
+| [R43-Q6](decisoes/D-077-r43-q6-geometria-por-move.md) | 6D | **Não impor uma única geometria universal** às ondas de projéteis AoE. **Cada Move determina sua geometria**, respeitando as regras comuns: onda única para o Move, sem alvo principal, participantes vivos na declaração, Evade compartilhado com resoluções individuais, velocidade espacial constante, e consideração das posições atuais dos alvos. |
+| [R43-Q7](decisoes/D-078-r43-q7-velocidade-configuravel-move.md) | 7A | Cada Move de projétil AoE possui **sua própria velocidade de propagação configurável**, que se mantém **constante durante a onda** de sua execução, inclusive quando os alvos mudam de posição. |
+| [R43-Q8](decisoes/D-079-r43-q8-lancamento-fatal-oposto-atacante.md) | 8A | O personagem atingido por um hit fatal é lançado **para longe da posição de quem aplicou o golpe fatal**. Preservar intensidade visual padronizada para todos os Moves (D-069): inimigos caem e desaparecem; aliados caem e permanecem visíveis. |
+| [R43-Q9](decisoes/D-080-r43-q9-desaparecimento-particulas.md) | 9C | Após o lançamento e a queda fatal, **o inimigo desaparece em uma explosão visual estilizada de partículas e fumaça**. Esta regra não se aplica aos aliados derrotados, que permanecem visíveis no chão. |
+| [R43-Q10](decisoes/D-081-r43-q10-resultado-apos-fatal.md) | 10A | Quando a batalha terminar em consequência de um hit fatal, **mostrar a tela de vitória ou derrota somente depois da conclusão da sequência fatal do personagem derrotado**. Para inimigos inclui lançamento, queda e desaparecimento; para aliados inclui lançamento e queda, sem desaparecimento. |
+
+### 19.2 Compatibilidade e prioridades
+
+1. **Contra-ataque com pagamento antecipado (D-072/D-073/D-074):** manter desconto na seleção (D-062), Burst prioritário (D-063), cancelamento quando o original é interrompido ou o alvo morre (D-064/D-065). Nesses casos, o recurso pago pelo extra é restituído integralmente. Se o próprio ator morrer antes do golpe extra, cancelar e devolver conforme a mesma política; a restituição não revive o personagem.
+2. **Janela AoE e animação de Evade (D-075/D-076):** todos compartilham uma janela perfeita de 0,22 s imediatamente antes do **primeiro impacto** da onda; conserva-se a janela geral compartilhada. Cada personagem que desvia exibe imediatamente o efeito visual, e o resultado fica registrado para o impacto posterior dessa onda. A regra dos 0,22 s por alvo individual (D-030) permanece para golpes comuns, não para essa onda AoE.
+3. **Forma e propagação da onda (D-077/D-078):** a geometria e a velocidade configurável são determinadas **por Move**; dentro de cada execução a velocidade espacial permanece constante. Mantém-se onda única, alvos vivos na declaração, sem alvo principal, impacto por chegada e posição atual do alvo (D-007/D-009/D-037/D-057/D-067).
+4. **Derrota visual e tela final (D-079/D-080/D-081):** lançar a vítima fatal para longe do atacante com intensidade padronizada (D-069). Inimigos caem e desaparecem em partículas/fumaça; aliados caem sem sumir. Quando o hit fatal encerra a batalha, só apresentar a tela de resultado após concluir a sequência fatal aplicável.
+
+### 19.3 Pendências não decididas por esta rodada
+
+- Reembolso de recurso quando o medidor de ATB/Burst **já voltou ao máximo** antes do cancelamento: não há regra de capacidade/excesso aprovada para essa situação particular. Não presumir perda ou armazenamento extra sem esclarecimento.
+- O primeiro impacto **previsto** da onda não se realizar (por exemplo, o alvo morrer antes de ser alcançado): definir se o marco da janela perfeita de 0,22 s permanece no instante inicialmente previsto ou se muda. Não presumir novo alvo principal.
+- A geometria e os valores concretos de velocidade precisam ser definidos individualmente para cada Move AoE, conforme D-077/D-078; a categoria não fixa uma geometria universal.
+- Lançamento e desaparecimento fatal: faltam distância, altura, duração, parâmetros de colisão e características do efeito. Intensidade uniforme, direção relativa e tipo de desaparecimento já estão definidos.
+- Encerramentos que não sejam por hit fatal, múltiplos hits fatais e KO simultâneo: a D-081 não acrescenta uma regra nova para esses casos.
+
+### 19.4 Estado documental
+
+Essas escolhas foram aceitas **por delegação às recomendações** e estão registradas como requisitos. Nenhum código de combate, VFX, testes ou arquivo prévio foi modificado nesta rodada, além da inclusão dos dez registros e da atualização do índice/consolidado.
+
+---
+
+## 20. Rodada 44 — recomendações do assistente aceitas pelo criador
+
+> **Data: 2026-11-03.** Resposta literal do usuário: **“Sigo suas recomendações e já faça as próximas perguntas na próxima mensagem também”**. As escolhas R44-Q1 a Q10 foram **recomendadas pelo assistente e aceitas por delegação**, não escritas individualmente pelo usuário. Foram registradas nos documentos D-082 a D-091. Mantidas as regras e o histórico das Rodadas 39–43. Esta seção não afirma implementação no jogo.
+
+### 20.1 Matriz das dez decisões
+
+| Decisão | Escolha recomendada | Regra |
+|---|---|---|
+| [R44-Q1](decisoes/D-082-r44-q1-credito-estorno-excedente.md) | 1A | Se a restituição integral de Burst ou ATB decorrente do cancelamento de um contra-ataque extra exceder o limite normal do medidor (5), guardar a parcela excedente como **crédito separado daquele recurso**, sem elevar o valor mostrado da barra acima do limite. O crédito é **consumido antes do recurso normal correspondente** no pagamento de ações. Não descartar o excedente. |
+| [R44-Q2](decisoes/D-083-r44-q2-janela-aoe-primeiro-falha.md) | 2A | Se o primeiro impacto previsto de uma onda AoE não chegar a ocorrer, por exemplo devido à morte daquele alvo, a **única janela perfeita compartilhada** continua ligada ao **instante de impacto originalmente previsto**; a morte não desloca o marco temporal para outro alvo. Preservar 0,22 s de duração e ausência de dano/reação em alvos mortos. |
+| [R44-Q3](decisoes/D-084-r44-q3-onda-recalculo-primeiro-impacto.md) | 3A | Enquanto os alvos da onda AoE mudam de posição, recalcular continuamente a **previsão do primeiro impacto** para temporizar o Evade perfeito, respeitando posições atuais, velocidade espacial constante e **uma única janela compartilhada** de 0,22 s para toda a onda. Não criar janelas independentes por alvo. |
+| [R44-Q4](decisoes/D-085-r44-q4-onda-sem-alvos-vivos.md) | 4B | Mesmo que todos os alvos participantes de uma onda AoE morram antes de serem alcançados, a **propagação visual da onda continua até completar sua sequência**. Não aplicar dano adicional, nova reação ou redirecionamento para substitutos. |
+| [R44-Q5](decisoes/D-086-r44-q5-burst-evade-onda.md) | 5B | Cada personagem que tiver **Evade bem-sucedido** contra uma determinada onda AoE, **comum ou perfeito**, recebe **+1 Burst, uma única vez por onda**, individualmente. Não multiplicar o prêmio por cada impacto de uma mesma onda ou pelo número de alvos. |
+| [R44-Q6](decisoes/D-087-r44-q6-duracao-fatal-global.md) | 6A | A sequência de **lançamento fatal** utiliza uma **duração global configurável**, aplicada igualmente a todos os personagens, preservando a intensidade padronizada entre Moves. A duração é um parâmetro visual compartilhado; não modificar HP, posições lógicas ou condições de derrota por essa decisão. |
+| [R44-Q7](decisoes/D-088-r44-q7-arco-fatal-cinematografico.md) | 7A | O personagem atingido fatalmente segue uma trajetória visual de **arco aéreo exagerado**: sobe, desloca-se para longe de quem o atingiu e cai no chão. Preservar a intensidade e a duração compartilhadas; inimigos posteriormente desaparecem, enquanto aliados permanecem no chão. |
+| [R44-Q8](decisoes/D-089-r44-q8-colisao-fatal-obstaculos.md) | 8A | Se o personagem visualmente lançado por hit fatal atingir uma **parede ou obstáculo durante o voo**, **interromper o deslocamento aéreo na colisão e fazê-lo cair naquele local**. Preservar a sequência final: desaparecimento do inimigo após a queda ou permanência do aliado. |
+| [R44-Q9](decisoes/D-090-r44-q9-resultado-apos-multiplos-fatais.md) | 9A | Se o mesmo AoE derrotar vários personagens e a batalha terminar, **aguardar a conclusão de todas as sequências visuais fatais relevantes antes de exibir a tela de resultado**. Inimigos terminam após o desaparecimento com partículas e fumaça; aliados, após a queda, sem desaparecer. |
+| [R44-Q10](decisoes/D-091-r44-q10-ko-simultaneo-empate.md) | 10B | Se um mesmo AoE causar a derrota simultânea de **todas as unidades das duas equipes**, o resultado é **empate, sem vencedor**, com a batalha encerrada. Não estabelecer reinício automático ou um critério de desempate não aprovado. A tela de resultado aguarda as sequências fatais concluírem, conforme D-090. |
+
+### 20.2 Compatibilidade com regras anteriores
+
+1. **Ressarcimento e limite — D-082:** a restituição integral exigida por D-072 a D-074 preserva o limite visível de 5; eventuais excessos viram **créditos separados**, consumidos antes do recurso normal correspondente. A prioridade de Burst sobre ATB continua sendo D-063. A duração e a prioridade cruzada dos créditos ainda não foram decididas.
+2. **Janela perfeita AoE — D-083 e D-084:** se o primeiro impacto previsto deixar de ocorrer por morte do alvo, preservar o marco anteriormente previsto. Quando os alvos se movimentarem, recalcular continuamente a previsão do primeiro impacto, mantendo uma **única janela perfeita** de 0,22 s. Há casos-limite temporais ainda abertos quando a previsão muda durante/depois da janela, ou o alvo morre após um recálculo; nenhuma segunda janela foi autorizada.
+3. **AoE sem alvos e recompensa — D-085 e D-086:** se todos os alvos morrerem antes de a onda chegar, ela completa o seu efeito **visual**, sem aplicar novos hits ou reações. Cada personagem que executar Evade comum ou perfeito bem-sucedido contra uma onda recebe **+1 Burst, uma vez por onda**. Isso não concede invulnerabilidade adicional contra outros Moves.
+4. **Lançamento fatal — D-087 a D-089:** duração global configurável; arco aéreo exagerado com subida, deslocamento para longe do atacante e queda. Colisão contra obstáculo interrompe o voo e causa queda no ponto de contato visual. Inimigos continuam desaparecendo após cair; aliados permanecem visíveis. Nenhum dano ou mudança de posição lógica foi introduzido.
+5. **Resultados — D-090 e D-091:** se AoE derrubar vários personagens e encerrar a batalha, esperar todas as animações fatais terminarem para mostrar o resultado. Se **ambas as equipes** forem eliminadas simultaneamente por um AoE, declarar **empate sem vencedor**, encerrando a batalha; nenhuma repetição automática foi aprovada.
+
+### 20.3 Pendências remanescentes, sem aprovação implícita
+
+- **Créditos de estorno:** duração e persistência entre batalhas, prioridade relativa de créditos de Burst/ATB e apresentação na HUD.
+- **Janela única de Evade perfeito:** como proceder quando a previsão do primeiro impacto muda enquanto os 0,22 s estão correndo ou após o fim da janela, respeitando a impossibilidade de uma segunda janela.
+- **Primeiro alvo morto após movimento:** definir qual previsão fica congelada para D-083 após os recálculos de D-084, evitando escolher silenciosamente um marco de tempo.
+- **Movimentos cinematográficos:** valor da duração global, altura/distância do arco e efeitos físicos/cosméticos de colisões precisam de especificação. Nenhum movimento lógico permanente foi aprovado.
+- **Empate e término:** recompensas/progressão após empate ou AOEs com resultados múltiplos que não eliminem as duas equipes não receberam regras novas além das já documentadas.
+- **Moves AoE:** geometria e velocidade numéricas continuam a ser definidas individualmente por Move (D-077/D-078).
+
+### 20.4 Estado
+
+As dez regras acima são **decisões documentais** aceitas por delegação. Nenhum código, arte, VFX, parâmetro de Move ou teste do jogo foi alterado durante esta rodada.
+
+---
+
+## 21. Rodada 45 — cinco decisões expressas (Q2–Q6)
+
+> **Registradas em 2026-11-03.** O criador respondeu explicitamente **R45-Q2, Q3, Q4, Q5 e Q6**, todas com alternativa A. **R45-Q1 não recebeu resposta** e não foi aprovada. As cinco decisões estão em D-092 a D-096. Nenhuma regra anterior foi substituída além dos esclarecimentos expressos nesta rodada; o registro não equivale à implementação no código.
+
+### 21.1 Decisões aprovadas
+
+| Questão | Escolha | Regra |
+|---|---|---|
+| [R45-Q2](decisoes/D-092-r45-q2-evade-ataques-sobrepostos.md) | 2A | Um Evade bem-sucedido pode evitar **ambos os ataques de dois inimigos** quando os impactos dos dois coincidirem com a esquiva do personagem. Isso não exige dois Evades separados para esses impactos coincidentes. |
+| [R45-Q3](decisoes/D-093-r45-q3-contra-extra-unico-varios-atacantes.md) | 3A | Quando um personagem realiza Evade perfeito contra vários atacantes, ganha **um único contra-ataque extra**, direcionado a **um dos atacantes**. Não ganha automaticamente um golpe extra por atacante. |
+| [R45-Q4](decisoes/D-094-r45-q4-projetil-apos-morte-lancador.md) | 4A | Um projétil **já lançado** continua ativo após a morte de quem o lançou e **pode atingir normalmente seu alvo**. Não cancelar o projétil exclusivamente pela morte posterior do lançador. |
+| [R45-Q5](decisoes/D-095-r45-q5-empate-mesmo-instante-logico.md) | 5A | Se **as duas equipes forem totalmente eliminadas no mesmo instante lógico**, o resultado é **empate sem vencedor**, inclusive quando os golpes que provocaram a eliminação forem diferentes. A regra de empate por um único AoE (D-091) permanece. |
+| [R45-Q6](decisoes/D-096-r45-q6-combate-continua-durante-morte.md) | 6A | Enquanto uma sequência visual de morte cinematográfica é exibida, **o combate continua normalmente entre personagens vivos**, desde que a batalha ainda esteja logicamente em andamento. **Somente a exibição da tela de resultado aguarda** a conclusão das sequências fatais pertinentes. |
+
+### 21.2 Compatibilidade e restrições
+
+1. **D-092:** um Evade bem-sucedido pode evitar dois ataques de inimigos cujos impactos coincidam com a mesma esquiva. A definição de coincidência não concede invulnerabilidade ilimitada.
+2. **D-093:** Evade perfeito contra múltiplos atacantes concede **somente um contra-ataque extra**, com um dos atacantes como alvo. Preservar escolha manual do **Move** (D-043), seleção antecipada, custo, fila e cancelamento; não presumir o método de escolha do **alvo**.
+3. **D-094:** morte do lançador **depois que um projétil foi lançado** não extingue o projétil, que pode atingir o alvo conforme as regras do Move. Não aprova continuar ataques ainda em preparação.
+4. **D-095:** eliminação simultânea de ambas as equipes no **mesmo instante lógico** significa empate sem vencedor, mesmo com ataques diferentes. Generaliza o caso de único AoE já registrado em D-091, sem alterar os critérios de derrota de cada alvo.
+5. **D-096:** animações fatais **não congelam as ações dos sobreviventes** enquanto a batalha continua; apenas a apresentação do resultado aguarda as sequências fatais. Depois do encerramento lógico da batalha, não há autorização para novas ações; manter outras pausas aprovadas.
+
+### 21.3 Pergunta não respondida e pendências reais
+
+- **R45-Q1 — próximo escopo de implementação:** não respondida. As opções apresentadas foram implementação integral das Rodadas 39–44, implementação por sistemas completos ou testes de divergências antes das correções. **Nenhum método foi aprovado.**
+- **R45-Q3:** não está definido **quem escolhe entre os atacantes** o alvo do contra-ataque extra único.
+- **R45-Q2:** critério temporal preciso da sobreposição entre ataques e Evade; manter a condição aprovada sem criar janela numérica não solicitada.
+- **R45-Q5:** a granularidade técnica do instante lógico requer validação na arquitetura do motor; não premiar a ordem arbitrária de processamento.
+- As pendências das seções anteriores permanecem visíveis como histórico; nenhuma foi resolvida por omissão.
+
+### 21.4 Estado
+
+Cinco decisões **de design** documentadas (D-092–D-096), com atualização do índice e deste consolidado. **Nenhum arquivo de código, teste, VFX ou configuração de gameplay foi alterado.**
+
+---
+
+## 22. Rodada 46 — implementação por sistemas, escolha de alvo e projéteis pendentes
+
+> **Data: 2026-11-03.** O criador escreveu literalmente **“Crawlmon — Rodada 46: sigo suas recomendações 1B, 2A e 3A”** e ordenou registrar os documentos, preservar as decisões e **não modificar código**. As três alternativas foram recomendadas pelo assistente e **explicitamente aceitas por número e letra**, e não transcritas como se o criador tivesse redigido suas descrições. Registros: **D-097 a D-099**. Esta atualização é apenas documental.
+
+### 22.1 Matriz das decisões aprovadas
+
+| Decisão | Alternativa | Regra |
+|---|---|---|
+| [R46-Q1](decisoes/D-097-r46-q1-implementacao-por-sistemas-testados.md) | 1B | Adotar **implementação sequencial por sistemas completos e testados**, na ordem: **(1) ATB, Evade e contra-ataque; (2) AoE; (3) animações e câmera**. Concluir e validar cada sistema antes de avançar ao seguinte; preservar as regras já aprovadas nas Rodadas 39–45. Esta decisão **aprova o sequenciamento**, não autoriza editar código nesta atividade de registro. |
+| [R46-Q2](decisoes/D-098-r46-q2-alvo-contra-extra-multiplos.md) | 2A | Quando um personagem obtém **um único contra-ataque extra** ao evitar perfeitamente ataques de vários agressores (D-093), **o jogador escolhe manualmente um dos atacantes como alvo** se controlar o personagem; **a IA escolhe um dos atacantes** se controlar o personagem. Preservar escolha manual do Move, pagamento e enfileiramento já aprovados. |
+| [R46-Q3](decisoes/D-099-r46-q3-projetil-pendente-resultado.md) | 3A | Se a última unidade de uma equipe morrer **enquanto ainda houver projéteis previamente lançados em voo**, **adiar a determinação definitiva do resultado da batalha até a resolução dos projéteis já lançados**, que continuam ativos mesmo se o lançador morreu (D-094). Caso os projéteis pendentes eliminem também a outra equipe, **permitir empate sem vencedor**; não declarar vitória ou derrota antes de resolver esses ataques pendentes. A exibição da tela de resultado continua aguardando as sequências fatais pertinentes. |
+
+### 22.2 Compatibilidade e alcance
+
+1. **D-097 — plano de implementação:** o escopo foi aprovado **por sistemas completos e testados**, nesta ordem: ATB/Evade/contra-ataque → AoE → animações/câmera. A sequência é requisito de planejamento, **não** autorização para tocar no código agora. Preservar a documentação e as regras de simetria da IA (D-021).
+2. **D-098 — Evade perfeito múltiplo:** como previsto em D-093, só existe **um golpe extra**; se houver múltiplos atacantes, o jogador escolhe manualmente **um dos atacantes** como alvo, ou a IA escolhe quando controla o personagem. A escolha manual do Move (D-043), a fila, os custos e os cancelamentos continuam vigentes.
+3. **D-099 — projéteis após derrota da equipe:** um projétil lançado permanece válido após morte de seu dono (D-094). Se uma equipe ficar sem combatentes enquanto esses projéteis estiverem em voo, a decisão final **aguarda os projéteis lançados serem resolvidos**, inclusive para permitir empate se eliminarem a outra equipe. A regra de empate por **mesmo instante lógico** da D-095 segue válida como regra geral; D-099 estabelece **um caso adicional específico**, sem reinterpretar retroativamente outros golpes. A tela de resultado espera as sequências fatais (D-081, D-090).
+
+### 22.3 Pendências relevantes (sem decisão implícita)
+
+- **Fase 1 de implementação:** a D-097 aprova sequência, mas não define autorização de alteração de código neste turno. Testes de gameplay e critérios de aceitação precisam ser demonstrados quando a implementação for autorizada.
+- **Contra-ataque múltiplo:** não foi definido se o jogador deve escolher o alvo dentro da mesma janela de 2 segundos da seleção do Move ou se pode escolher depois. A lógica com que a IA prioriza atacantes também não foi especificada.
+- **Resultado aguardando projéteis:** falta decidir se os combatentes ainda vivos podem iniciar novas ações enquanto projéteis em voo mantêm o resultado pendente. A D-096 mantém combate entre vivos nas mortes não terminativas, mas D-099 cria um estado específico de resultado ainda não definitivo.
+- **Empate e resolução temporal:** D-099 permite empate causado por projéteis pendentes mesmo se o impacto posterior não coincidir exatamente com o primeiro KO; não estender esse comportamento a ataques futuros ou não lançados.
+- Pendências anteriores de geometria e velocidade AoE por Move, créditos de estorno e parâmetros cinematográficos permanecem como registradas, sem modificações silenciosas.
+
+### 22.4 Estado
+
+**3 documentos de decisão criados, índice e consolidado atualizados; nenhum código, teste ou VFX modificado.**
+
+---
+
+## 23. Rodada 47 — projéteis pendentes, seleção do contra-ataque e somente documentação
+
+> **2026-11-03.** O criador decidiu expressamente **1A, 2A e 3B**. Declarou que o Crawlmon **já é um jogo existente** e proibiu alterações no código nesta atividade. As decisões foram registradas em D-100 a D-102, preservando integralmente as seções e registros anteriores. Não representam implementação.
+
+### 23.1 Matriz de decisões
+
+| Decisão | Escolha | Regra |
+|---|---|---|
+| [R47-Q1](decisoes/D-100-r47-q1-sem-novas-acoes-projeteis-pendentes.md) | 1A | Quando uma equipe é eliminada e há projéteis já lançados em voo (D-099), **ninguém pode iniciar novas ações enquanto o resultado está pendente**, inclusive os sobreviventes. Os **projéteis já lançados continuam ativos até sua resolução**, permitindo empate se eliminarem também a outra equipe. Esta é uma exceção específica à continuidade normal do combate durante animações fatais (D-096). |
+| [R47-Q2](decisoes/D-101-r47-q2-move-alvo-dentro-dois-segundos.md) | 2A | Quando um Evade perfeito contra vários atacantes concede um único golpe extra (D-093), **o jogador deve escolher o Move e qual atacante será alvo dentro da mesma janela de dois segundos**. A escolha aceita é enfileirada e a execução aguarda o fim do ataque original (D-051/D-052). Preservar a suspensão do relógio durante hit-stop e pausa de status (D-071). |
+| [R47-Q3](decisoes/D-102-r47-q3-continuar-somente-documentacao.md) | 3B | **Não há autorização para alterar o código do Crawlmon nesta rodada**. Continuar somente com a documentação e decisões, preservando o jogo existente e suas implementações atuais. A D-097 permanece como ordem planejada para eventual implementação futura, não como autorização para iniciar alterações agora. |
+
+### 23.2 Compatibilidade
+
+1. **D-100 (R47-Q1A):** após uma equipe ser eliminada, quando projéteis já lançados mantêm o resultado pendente (D-099), ninguém pode iniciar novas ações; os projéteis em voo resolvem normalmente. Isso constitui exceção específica à regra geral D-096 de permitir que sobreviventes ajam durante sequências fatais enquanto há batalha em andamento.
+2. **D-101 (R47-Q2A):** o jogador escolhe Move e atacante-alvo na **mesma janela de dois segundos** do contra-ataque extra contra vários agressores. Mantém-se um único golpe extra, com escolha do alvo conforme D-098, fila conforme D-051/D-052 e pausa do cronômetro conforme D-071.
+3. **D-102 (R47-Q3B):** o usuário **não autoriza implementação nem modificações do código**; apenas documentação e decisões neste turno. A D-097 continua sendo um sequenciamento planejado, não um pedido de criar um jogo novo. A inspeção da main confirmou a presença de project.godot, scenes/, scripts/combat/ e tests/.
+
+### 23.3 Pendências importantes ainda abertas
+
+- **Ações já iniciadas** antes do estado de projéteis pendentes, mas ainda não lançadas como projétil: a R47-Q1A veda iniciar novas ações, sem definir se ações em andamento devem continuar, pausar ou ser canceladas.
+- **Seleção incompleta** de Move ou atacante-alvo ao fim dos dois segundos: não houve regra aprovada de cobrança/cancelamento/reembolso nessa hipótese.
+- **IA diante de múltiplos atacantes:** o algoritmo para escolher qual atacante será alvo não foi estabelecido; a D-098 define apenas quem faz a escolha.
+- As pendências documentais de outras rodadas continuam históricas e não foram resolvidas por omissão.
+
+### 23.4 Estado e escopo
+
+**Somente cinco arquivos documentais**: novos D-100, D-101 e D-102; atualização do índice e do consolidado. Nenhum código, FX, configuração ou teste do jogo alterado. As perguntas da Rodada 48 são apresentadas separadamente ao usuário e não estão aprovadas por antecedência.
+
+---
+
+## 24. Rodada 48 — novas declarações e conflitos com regras anteriores
+
+> **2026-11-03.** Duas declarações foram recebidas literalmente sobre: (1) encerramento quando o último inimigo cai e troca de alvo durante wind-up; (2) Evade de múltiplos ataques como evasão, com ataques visualmente concluídos e sem animação de interrupção. Foram registradas como D-103 e D-104. **Conflitos com decisões anteriores estão mantidos sem atribuir prevalência automática a uma delas.** O código não foi alterado.
+
+### 24.1 Declarações registradas
+
+| Referência | Origem | Conteúdo |
+|---|---|---|
+| [R48-Q1](decisoes/D-103-r48-q1-fim-imediato-retarget-windup.md) | Declaração expressa | **Último inimigo:** se o inimigo derrotado era o último inimigo presente, o criador determina que a batalha **acaba no instante da derrota dele**. A interpretação técnica precisa (encerramento lógico, tela de resultado, projéteis em trânsito) está assinalada como **conflito pendente** abaixo, sem revogar silenciosamente regras anteriores. **Ainda existem outros inimigos:** o combate **continua normalmente**. Se Pikachu já estava no **wind-up de um ataque** e o alvo morre, Pikachu **troca de alvo para executar o ataque**; o criador não determinou um novo custo, reinício de wind-up nem política de seleção do novo alvo. **Projéteis lançados:** Pikachu **continua podendo ser atingido pelo projétil já disparado** nessa situação em que outros inimigos permanecem. Preserva-se D-094 para projéteis lançados após a morte do atirador, na medida em que não conflitante com o fim da batalha. |
+| [R48-Q2](decisoes/D-104-r48-q2-evade-termino-visual-sem-stagger.md) | Declaração expressa | **Ataques simultâneos:** ao realizar o Evade contra dois agressores, o criador diz que **ambos são interrompidos**, porém esclarece que o **Evade é evasão, não defesa perfeita/parry**: visualmente, **os ataques dos dois agressores devem terminar antes de serem tratados como interrompidos**, sem reproduzir uma animação de interrupção em razão somente da esquiva. **Animação de interrupção:** só ocorre se o atacante **receber um ataque durante o trajeto ou o wind-up de um ataque**. Apenas desviar de sua investida não deve produzir essa animação. **Contra-ataque extra:** conserva-se D-093 (somente um golpe extra quando vários ataques são evitados perfeitamente), enquanto o modo exato de encerrar logicamente os ataques desviados permanece pendente. |
+
+### 24.2 Conflitos que exigem conciliação
+
+1. **Último KO versus projéteis pendentes (D-103 × D-099/D-100):** a nova regra declara que a batalha acaba quando cai o último inimigo. D-099/D-100 determinam aguardar projéteis em voo para possível empate. **Não resolver por suposição se o projétil desaparece, ainda acerta, ou pode alterar o resultado**. O caso de ainda existirem outros inimigos é explícito: combate continua, Pikachu em wind-up troca de alvo e pode ser atingido pelo projétil já lançado.
+2. **Encerramento da batalha versus tela de resultado (D-103 × D-081/D-090):** a expressão 'batalha acaba no segundo' não estabelece automaticamente que a tela de resultado interrompe as animações fatais. Preservar a regra documental anterior da exibição tardia até que seja esclarecida.
+3. **Evade versus animação de interrupção (D-104 × D-017):** o criador diz que ambos os ataques são interrompidos, mas devem **terminar visualmente antes**, **sem animação de interrupção por causa do Evade**. A animação de interrupção ocorre quando o atacante é **atingido por ataque durante trajeto ou wind-up**. D-017 antes determinava interrupção/cambaleio por Evade. Preservar ambos os registros e não definir silenciosamente se o resultado lógico da esquiva é cancelamento ou falha normal.
+4. **Compatibilidade com Evade simultâneo (D-092/D-093):** a esquiva pode evitar ambos os ataques e um Evade perfeito contra vários agressores concede no máximo um golpe extra. A nova declaração não altera explicitamente esse limite.
+
+### 24.3 Pendências importantes, sem assumir resposta
+
+- Quando cai **o último inimigo**, projéteis lançados anteriormente devem ainda poder atingir alguém ou alterar o resultado, conforme D-099, ou o fim da batalha é definitivo mesmo com projéteis em voo?
+- Se os ataques terminam visualmente após o Evade, o que significa 'ambos interrompidos' no **motor**: marcar como falhas concluídas ou cancelá-los logicamente só após a animação?
+- O critério para selecionar novo alvo quando um alvo morre durante o **wind-up**, se outros inimigos seguem vivos, ainda não foi escolhido; o fato de trocar alvo está registrado.
+- Se 'o último inimigo' foi derrotado, a **tela de resultado** continua aguardando animações fatais conforme D-081/D-090? Não assumir que a frase suprimiu essa espera.
+
+### 24.4 Estado
+
+**Dois arquivos de decisão adicionados**, índice e consolidado atualizados, sem mexer no histórico, sem alterar código, configurações, FX ou testes. A publicação documental dos conflitos não representa aprovação de um comportamento técnico contraditório.
+
+---
+
+## 25. Rodada 48 — conciliação expressa dos dois conflitos
+
+> **2026-11-03.** Resposta literal do criador: **“1A — A vitória é definitiva ao derrotar o último inimigo; o projétil não pode causar dano nem alterar o resultado.”** e **“2A — Os ataques desviados terminam como golpes que erraram, sem interrupção mecânica adicional.”** Esta seção é a regra atual para esses casos específicos; o histórico D-017, D-099, D-100, D-103 e D-104 permanece, anotado com o esclarecimento posterior. Nenhum código foi alterado.
+
+### 25.1 Resultado: último inimigo derrotado
+
+- **[D-105](decisoes/D-105-r48-esclarecimento-vitoria-ultimo-inimigo.md):** a derrota do **último inimigo presente** fixa **vitória definitiva imediatamente**. Projéteis já lançados e ainda em voo **não podem causar dano nem alterar o resultado** depois disso.
+- **Exceção sobre D-099/D-100:** não aguardar projéteis para decidir a vitória por eliminação do último inimigo. Manter a regra histórica de espera para outros cenários onde ela seja aplicável, sem extrapolar para a derrota do último aliado.
+- **Compatibilidade com D-103:** quando há mais inimigos vivos, o combate continua normalmente; alvo morto durante wind-up pode ser substituído, e projéteis previamente lançados ainda podem causar dano.
+- **Compatibilidade com D-081/D-090:** a vitória pode ser logicamente definitiva no KO, mesmo que a tela de resultado espere a sequência visual fatal. Não inferir a eliminação dessa sequência visual.
+
+### 25.2 Evade: golpe errado, não interrupção
+
+- **[D-106](decisoes/D-106-r48-esclarecimento-evade-ataque-erra.md):** ataques desviados **concluem como golpes que erraram**, sem interrupção mecânica adicional nem animação de cambaleio disparada pelo Evade.
+- **Prevalência sobre D-017/D-104:** a antiga interrupção imediata e o cancelamento lógico posterior à animação ficam **substituídos exclusivamente no caso de ataques evitados pelo Evade**. As outras decisões de Burst, golpe extra, custo, janela e IA continuam em vigor quando compatíveis.
+- **Interrupção genuína:** receber um ataque durante wind-up ou trajeto é o caso indicado pelo criador para interrupção/animação própria; não atribuir esse efeito à mera evasão.
+- **Ataques simultâneos:** a D-092 continua permitindo evitar dois impactos coincidentes com uma mesma esquiva; D-093 mantém um só contra-ataque extra.
+
+### 25.3 Pontos ainda não decididos
+
+- **Derrota da última unidade aliada:** a exceção D-105 está expressamente redigida para a derrota do último inimigo. Não definir por suposição se projéteis próprios em voo podem transformar uma derrota em empate.
+- **Projéteis sem dano após vitória:** não foi escolhido se desaparecem visualmente de imediato ou terminam a trajetória puramente cosmética.
+- **Novo alvo no wind-up quando outros inimigos sobrevivem:** o redirecionamento está aprovado em D-103, mas não o critério de escolha de alvo.
+- Os pontos de outras rodadas que não sejam estes dois conflitos permanecem como documentados.
+
+### 25.4 Estado
+
+Dois registros novos (D-105/D-106), seis documentos antigos com **notas aditivas** de conciliação, índice e consolidado atualizados. **Sem alterações de código, VFX, testes ou configurações.**
+
+---
+
+## 26. Rodada 49 — derrota definitiva e seleção automática de alvo no wind-up
+
+> **2026-11-03.** O criador escolheu expressamente **1A** e **2B**. As decisões são exclusivamente documentais, preservam as anteriores e estão registradas em D-107 e D-108.
+
+### 26.1 Decisões
+
+| Pergunta | Escolha | Regra |
+|---|---|---|
+| [R49-Q1](decisoes/D-107-r49-q1-derrota-definitiva-ultimo-aliado.md) | 1A | A morte da **última unidade aliada** fixa a **derrota definitiva imediatamente**. Projéteis já lançados por essa equipe não podem causar dano nem alterar o resultado depois do KO. |
+| [R49-Q2](decisoes/D-108-r49-q2-inimigo-vivo-mais-proximo-no-windup.md) | 2B | Se o alvo do ataque morrer durante o **wind-up**, com outros inimigos vivos, o jogo **redireciona automaticamente para o inimigo vivo mais próximo**. |
+
+### 26.2 Compatibilidade e histórico
+
+1. **D-105/D-107 — KO final de qualquer equipe:** ao morrer o último inimigo, a vitória é definitiva; ao morrer o último aliado, a derrota é definitiva. **D-099/D-100 deixam de reger a espera por projéteis em ambos os KOs finais**, sem exclusão de seus textos históricos. Projéteis que atingiriam depois não causam dano nem mudam o resultado.
+2. **D-095 e D-091 — empate simultâneo preservado:** ambas as equipes eliminadas no **mesmo instante lógico** continuam empatadas. Esta regra não cria empate por projétil que atinge depois do resultado definitivo.
+3. **D-103/D-108 — novo alvo:** enquanto outros inimigos sobrevivem, o ataque cujo alvo morreu **no wind-up** passa automaticamente para o inimigo vivo mais próximo. Não implica redirecionamento de projéteis **já disparados**, nem refaz a lista de alvos da onda AoE (D-037, D-058).
+4. **D-081/D-090 — tela final:** vitória/derrota é fixada no KO, mas apresentação aguarda as sequências fatais já aprovadas. Não foi escolhida a apresentação visual de projéteis residuais sem dano.
+
+### 26.3 Pendências ainda não decididas
+
+- Projétil de alvo único **já disparado** cujo alvo morre antes do impacto, enquanto outros inimigos permanecem vivos: não foi decidido se procura novo alvo, desaparece ou conclui trajeto sem dano.
+- Obstáculos sólidos: não foi especificado nesta rodada o tratamento de ondas AoE que encontram paredes ou cobertura; preservar as geometrias específicas por Move (D-077).
+- Com a batalha já encerrada, não foi decidido se projéteis que perderam a capacidade de causar dano devem sumir visualmente ou concluir sua animação.
+- Empate em distâncias exatamente iguais entre alvos elegíveis não foi especificado.
+
+### 26.4 Escopo documental
+
+Criados D-107 e D-108; seis documentos anteriores receberam **somente notas aditivas** de compatibilidade. Índice e consolidado atualizados. **Nenhum código, FX, teste ou configuração alterado.**
+
+---
+
+## 27. Rodada 50 — alvo morto de projétil; pergunta sobre paredes sem regra aprovada
+
+> **2026-11-03.** O criador respondeu **1A** sobre projétil de alvo único e **2D — Outra regra**, mas não especificou uma nova regra sobre paredes/obstáculos na observação. A observação literal **“2????????????????????? vc ao menos ta lendo o github ao menos ta vendo alguma coisa ou so ta mentindo esse tempo todo?”** sinaliza objeção à pergunta, **não uma autorização para criar física de paredes**. Esta rodada registra apenas a regra **D-109**. Nenhuma alteração de código foi autorizada.
+
+### 27.1 Decisão aprovada
+
+| Referência | Resposta | Regra |
+|---|---|---|
+| [R50-Q1](decisoes/D-109-r50-q1-projetil-alvo-morto-em-voo.md) | 1A | Se o **alvo de um projétil de alvo único já disparado morrer** antes do impacto, o projétil **perde o alvo e termina sem causar dano nem escolher substituto**. |
+
+### 27.2 Compatibilidade e fonte de verdade
+
+1. **Wind-up versus voo:** D-108 permite selecionar automaticamente o inimigo vivo mais próximo apenas se o alvo morrer **durante o wind-up**. **D-109 não redireciona um projétil já lançado** cujo alvo morreu. D-004/D-047 continuam permitindo acompanhar um alvo vivo.
+2. **Lançador morto versus alvo morto:** D-094 determina que o projétil já disparado permanece ativo se o **lançador** morrer e a batalha continuar, o que é diferente de morrer o **alvo** do projétil (D-109). Finais de batalha seguem D-105/D-107.
+3. **Ondas AoE:** D-037/D-058/D-077 mantêm os alvos participantes fixados na declaração do Move e sem seleção de substitutos quando um deles morre. D-109 se refere somente ao **projétil de alvo único**.
+4. **Pergunta R50-Q2:** resposta **2D — Outra regra**, sem nova regra explícita. Ao conferir o código atual, `BattleSpace` usa posições planas do combate e `BattleArena` gera pilares e parede como geometria visual, sem estabelecer colisão física/oclusão deles para AoE. A pergunta anterior pressupunha uma mecânica não verificada e **não se converte em requisito**. A geometria de AoE segue definida por Move (D-077).
+
+### 27.3 Pendências sem decisão implícita
+
+- Os efeitos visuais de um projétil que perde seu alvo após disparo não foram definidos; a regra aprovada é **terminar sem dano e sem substituição de alvo**.
+- A pergunta R50-Q2 está **sem regra nova aprovada**. Não se deve presumir existência de paredes físicas no combate nem iniciar discussão de cobertura sem necessidade comprovada pelas mecânicas reais.
+- Diferenças entre o código Godot existente e as decisões documentadas exigem implementação em outra atividade autorizada, não nesta rodada.
+
+### 27.4 Estado
+
+Novo documento **D-109**, índice e consolidado atualizados. **Nenhum arquivo de código, FX, teste ou configuração foi alterado**. As perguntas seguintes devem ser fundamentadas em código/mecânicas reais, com exemplos claros, sem pressupor sistemas inexistentes.
+
+---
+
+## 28. Rodada 51 — interceptação por personagens e seleção aleatória de alvos pela IA
+
+> **2026-11-03.** Duas respostas expressas: **1A** (manter interceptação existente de projéteis por personagens na linha do ataque) e **2C** (IA seleciona aleatoriamente um adversário vivo, exceto quando engajada). Ambas foram conferidas no código atual e registradas em **D-110** e **D-111**, sem mudança de arquivos de jogo.
+
+### 28.1 Matriz das decisões
+
+| Referência | Resposta | Regra aprovada |
+|---|---|---|
+| [R51-Q1](decisoes/D-110-r51-q1-manter-interceptacao-personagens.md) | 1A | Preservar a interceptação de projéteis de alvo único por **outro adversário que esteja na linha antes do alvo**, para os Moves em que a interceptação já se aplica. **Não** adicionar interceptação dinâmica durante o voo por esta resposta. |
+| [R51-Q2](decisoes/D-111-r51-q2-alvo-aleatorio-ia.md) | 2C | Personagens controlados pela **IA (aliados e inimigos)** escolhem **aleatoriamente entre adversários vivos elegíveis** quando não engajados. Se engajados com um adversário vivo, atacam esse adversário. Preservar Tactics, escolha de Move e simetria. |
+
+### 28.2 Código consultado e compatibilidade com decisões anteriores
+
+- **Interceptação real:** `scripts/combat/attack_planner.gd`, métodos `redirect_if_blocked()` e `interceptor()`, encontram um adversário na linha antes do alvo na **declaração do ataque**; `Battle.use_skill()` chama essa lógica. Existem exceções de Moves no código. A D-110 **mantém** a interceptação existente; não autoriza novas físicas, paredes ou interceptação em voo. Preservar D-047, D-108 e D-109.
+- **Seleção de alvos real:** `scripts/combat/battle.gd`, método `_run_ai()`, escolhe atualmente `c.engaged_with` se vivo, caso contrário `_first_alive(foes)`. A D-111 aprova a substituição **futura** do fallback por seleção aleatória entre vivos para personagens com IA. `use_skill()` impede escolher outro alvo se ainda engajado. Preservar D-021 e suas regras de simetria e Tactics.
+- **Separação de responsabilidades:** interceptação de projétil não é colisão de cenário. A decisão da R50-Q2D permaneceu sem regra nova; não a reutilizar como autorização para criar parede/oclusão de área.
+
+### 28.3 Limites não definidos por estas respostas
+
+- **D-110:** não acrescentar interceptação dinâmica durante o voo; a situação de personagens mudando de posição depois do disparo não foi alterada pela escolha de manter o comportamento atual.
+- **D-111:** nenhuma fórmula de pesos, prioridade de alvo por HP, proximidade ou inteligência preditiva foi escolhida. A resposta define aleatoriedade **respeitando engajamento**, não altera a escolha de Moves.
+- A documentação registra requisitos e estado do código consultado; não afirma que as regras da Rodada 51 estejam implementadas.
+
+### 28.4 Estado
+
+**Dois documentos novos, índice e regras consolidadas atualizados.** Nenhum arquivo de código, configuração, teste, animação ou VFX foi modificado. As próximas perguntas requerem aprovação separada.
+
+---
+
+## 29. Rodada 52 — IA tática e retorno quando o alvo morre durante investida
+
+> **2026-11-03.** Duas decisões expressas **1C** e **2C**, documentadas em D-112 e D-113. O código foi consultado para verificar fases e escolha atual de habilidades, mas não alterado.
+
+### 29.1 Decisões
+
+| Referência | Alternativa | Regra |
+|---|---|---|
+| [R52-Q1](decisoes/D-112-r52-q1-escolha-tatica-de-moves-ia.md) | 1C | A IA escolhe o **Move** com avaliação **tática** de dano, fraqueza elemental, efeitos e situação do combate. A **seleção do alvo permanece aleatória**, respeitando engajamento, conforme D-111. |
+| [R52-Q2](decisoes/D-113-r52-q2-interromper-investida-alvo-morto.md) | 2C | Se o alvo de uma investida corpo a corpo **morrer durante o trajeto**, interromper essa investida e **retornar imediatamente à posição de origem**, sem redirecionar. |
+
+### 29.2 Regras coexistentes e distinção de fases
+
+- **IA (D-021, D-111, D-112):** tanto aliados quanto inimigos seguem as Tactics. `_run_ai()` e `_pick_skill()` em `scripts/combat/battle.gd` mostram que o código atual escolhe o primeiro alvo vivo, exceto engajamento, e percorre Skills pagáveis em sequência. As decisões D-111/D-112 especificam o comportamento futuro — **alvo aleatório** e **Move tático**, respectivamente — mas não foram implementadas.
+- **Morte no wind-up (D-108):** se houver outros inimigos vivos, redirecionar o ataque ao inimigo vivo mais próximo antes do começo da investida.
+- **Morte durante investida (D-113):** interromper a investida corpo a corpo e retornar imediatamente à origem, sem escolher outro alvo nessa fase. O motor já representa as fases WINDUP, TRAVEL, STRIKE e RETURN (D-019).
+- **Finais de batalha (D-105/D-107):** vitória e derrota são fixadas quando a última unidade adversária ou aliada morre; não criar impacto tardio que modifique resultado.
+
+### 29.3 Questões não definidas
+
+- **IA:** não foram aprovados pesos matemáticos ou prioridade rígida entre dano, fraqueza e buffs/debuffs. A exigência tática não permite inferir fórmulas.
+- **Retorno à origem:** a decisão não especifica se o retorno é visualmente instantâneo ou se inicia imediatamente uma animação, nem define duração ou efeito.
+- **Morte durante STRIKE:** a resposta cobre apenas o trajeto da investida, não o momento depois que a investida termina e antes de acertar.
+- Todas as outras decisões permanecem válidas, salvo exceções expressas das rodadas anteriores.
+
+### 29.4 Escopo
+
+**D-112 e D-113 criados; três documentos anteriores receberam notas aditivas; índice e consolidado atualizados. Nenhum código, teste, VFX ou configuração de gameplay foi modificado.**
+
+---
+
+## 30. Rodada 53 — recomendações de IA aceitas por delegação e escopo futuro
+
+> **2026-11-03.** Declaração literal do criador: **“sigo suas recomendacoes quanto a forma que a IA deve agir, ate mesmo para as proximas perguntas”**. As perguntas da Rodada 53 não apresentavam alternativas previamente marcadas como recomendação. Após verificar `scripts/combat/battle.gd`, D-021, D-111 e D-112, o assistente **recomendou 1A e 2B** para as duas perguntas já formuladas. São **recomendações do assistente aceitas pela delegação do criador**, e não escolhas individuais de letras digitadas por ele. Documentos D-114, D-115 e D-116. Código inalterado.
+
+### 30.1 Recomendações concretas para a Rodada 53
+
+| Decisão | Recomendação do assistente aceita por delegação | Regra |
+|---|---|---|
+| [D-114](decisoes/D-114-r53-q1-alvo-antes-move-tatico.md) | **R53-Q1 — 1A** | **Primeiro** escolher o adversário-alvo aleatoriamente entre vivos elegíveis, respeitando engajamento (D-111); **depois** selecionar taticamente o Move adequado contra ele (D-112). Não substituir aleatoriedade do alvo por preferência de fraqueza. |
+| [D-115](decisoes/D-115-r53-q2-cura-situacional-da-ia.md) | **R53-Q2 — 2B** | Integrar a escolha entre **poção e Move** à avaliação da situação do combate, em vez de usar poção sempre que HP ≤ 50%. Preservar Tactics, custos, estoque e regras de itens existentes. Pesos e fórmulas não foram definidos. |
+
+### 30.2 Delegação de próximas decisões sobre IA
+
+- **[D-116](decisoes/D-116-delegacao-recomendacoes-ia.md):** o criador estendeu a aceitação das recomendações a **futuras perguntas sobre como a IA deve agir**. Não repetir baterias artificiais de perguntas de IA quando uma recomendação fundamentada nas regras e no código for possível.
+- As recomendações futuras **não são aprovadas antecipadamente como regras inexistentes**: cada questão concreta deve ser formulada, fundamentada, atribuída corretamente ao assistente, documentada em arquivo individual, indexada e consolidada conforme D-061. Conflitos de escopo ou com decisões anteriores não serão resolvidos por suposição.
+- A delegação não autoriza modificar **código**, arquitetura, FX, recursos do jogo ou regras fora do domínio de decisões sobre IA. Alterações de código continuam sujeitas a ordem expressa.
+
+### 30.3 Código verificado e diferenças de implementação
+
+- Em `_run_ai()` de `scripts/combat/battle.gd`, a IA **atualmente prioriza poção** se HP ≤ 50% e existe item/ATB, **antes** de avaliar Moves; isso não implementa D-115.
+- `_run_ai()` chama `_pick_skill()` antes de definir um alvo (engajado ou `_first_alive`); isso não implementa D-114 nem a escolha aleatória do alvo de D-111.
+- Tactics `ATTACK`, `SKILL` e `HOLD`, custo de item, inventário, engajamento e política de seleção manual do líder permanecem sem modificação.
+
+### 30.4 Estado
+
+Três novos arquivos de decisão (D-114, D-115 e D-116); duas notas aditivas em decisões anteriores; índice e consolidado atualizados. **Nenhum código, teste, VFX, configuração ou asset alterado.**
+
+---
+
+## 31. Rodada 54 — esclarecimentos parciais sobre Agilidade e elementos
+
+> **2026-11-03.** O criador esclareceu duas regras enquanto a lista de dez perguntas da Rodada 54 ainda estava em discussão. **São esclarecimentos expressos, não a aprovação das dez recomendações pré-selecionadas**. Apenas D-117 e D-118 são registrados nesta seção. Não houve autorização para alterações no código.
+
+### 31.1 Declarações e regras registradas
+
+| Decisão | Declaração do criador | Regra |
+|---|---|---|
+| [D-117](decisoes/D-117-r54-esclarecimento-agi-atb-e-trajeto.md) | “AGI funciona diferente, afeta ambas a regeneração de ATB como também a velocidade de movimento do Pokémon durante seus trajetos de ataque” | **Agilidade** influencia **ambos**: regeneração natural de ATB e **velocidade de movimento do Pokémon em seus trajetos de ataque**. O efeito de posicionamento de D-018 continua; fórmula conjunta ainda não definida. |
+| [D-118](decisoes/D-118-r54-referencia-elementos-smt.md) | “Quanto aos elementos, são baseados mais em shin megami tensei que pokémon” | O sistema elemental usa **Shin Megami Tensei como inspiração principal**, mais do que Pokémon. Nenhuma conversão automática Pokémon → Crawlmon nem cópia literal de uma tabela de SMT foi aprovada. |
+
+### 31.2 Comparação com as implementações
+
+- **ATB:** `Combatant.tick()` já preenche ATB conforme `speed`, derivada de `base_speed`. Ainda não existe integração dos cinco atributos permanentes.
+- **Trajetos de ataque:** `Battle.travel_seconds()` varia por duração-base e passos táticos (D-018), sem dependência de Agilidade. `AttackMotion.update()` desenha o deslocamento no tempo de `TRAVEL`. D-117 acrescenta uma exigência que **não está implementada**.
+- **Elementos:** `Element.Type` inclui Físico, Fogo, Água/Gelo, Raio, Psíquico, Veneno, Som, Terra, Vento, Luz e Trevas. D-118 muda a **referência de design**, não aprova modificar o catálogo existente ou as fraquezas já cadastradas.
+
+### 31.3 Pendências e preservação
+
+- **AGI:** fórmula, limites de velocidade de trajeto, comportamento sob buffs/debuffs e sua combinação com o cálculo de passos táticos (D-018) continuam pendentes.
+- **Elementos:** falta especificar concretamente afinidades/fraquezas por espécie no sistema inspirado principalmente em SMT; não usar tabela Pokémon como substituto automático.
+- As outras oito perguntas da Rodada 54 e as opções previamente recomendadas continuam **não respondidas** pelo criador; a pergunta 7 e a pergunta 9 precisam ser reformuladas considerando as duas declarações acima.
+- Não houve modificação de código, testes, VFX, modelos, configurações nem valores de personagens.
+
+---
+
+## 32. Rodada 54 — tempo de deslocamento individual por Move e retorno ao questionário
+
+> **2026-11-03.** Declaração literal do criador: “Tempo de deslocamento é uma variável própria dita na ficha dos moves também, ela é reduzida pela agi e efeitos que aumentam AGI. Voltamos as perguntas anteriores a minhas duas respostas”. Regra registrada como [D-119](decisoes/D-119-r54-tempo-trajeto-por-move-reduzido-agi.md). **Não equivale a aprovar as dez escolhas do questionário da Rodada 54**, que o criador pediu para retomar.
+
+### 32.1 Regra e compatibilidade
+
+- **Tempo de deslocamento por Move:** a ficha de cada Move deve declarar **sua própria variável de tempo de deslocamento**, não um valor global único. **AGI reduz esse tempo; efeitos que aumentam AGI também o reduzem**. D-117 mantém a segunda influência de AGI sobre ATB.
+- **Posicionamento tático D-018:** continua existindo, com ajuste de 0,10 s por soma de passos e mínimo histórico de 0,25 s. Não foi aprovada a fórmula que combina essa regra e a redução por AGI, nem um coeficiente de redução de AGI.
+- **Código verificado:** `Skill` ainda não declara `travel_time` por Move. `AttackPlanner` configura alguns tempos específicos em lógica por identificação de Move e chama `Battle.travel_seconds()`, que atualmente só usa tempo-base e posição, **sem AGI**. A documentação descreve requisito e lacuna, não implementação.
+- **Elementos D-118:** continuam prioritariamente inspirados em Shin Megami Tensei, não em conversão dos tipos de Pokémon.
+
+### 32.2 Questões pendentes
+
+- Coeficiente matemático e limites de redução de tempo por AGI e buffs; interação específica com os passos de D-018.
+- A Rodada 54 original continua aberta; apenas AGI e o referencial dos elementos receberam esclarecimentos expressos. As outras opções do questionário não foram escolhidas pelo criador.
+
+### 32.3 Escopo
+
+Um registro novo D-119, nota aditiva em D-117, índice e regras consolidadas atualizados. Nenhum código, configuração, arquivo de Move, teste, VFX ou modelo modificado.
+
+---
+
+## 33. Rodada 54 — dez decisões de atributos e identidade mecânica por espécie
+
+> **2026-11-03.** O criador respondeu expressamente as **dez perguntas**, escolhas **1C, 2B, 3A, 4B, 5B, 6A, 7A, 8C, 9A e 10A**. A formulação das alternativas tinha recomendações prévias do assistente, mas as **dez seleções foram enviadas diretamente pelo criador**, diferentemente da delegação apenas à IA (D-116). Preserve-se a íntegra do histórico D-001 a D-119. Registro documental, não implementação.
+
+### 33.1 Matriz consolidada das escolhas
+
+| Decisão | Escolha | Regra expressa do criador |
+|---|---|---|
+| [D-120](decisoes/D-120-r54-q1-atributos-base-especie-referencia-biologica.md) | 1C | Usar os atributos originais como referência biológica da espécie, ajustando os valores ao equilíbrio do Crawlmon. |
+| [D-121](decisoes/D-121-r54-q2-pequena-variacao-aleatoria-atributos-individuais.md) | 2B | Adicionar pequenas variações aleatórias individuais nos atributos-base. |
+| [D-122](decisoes/D-122-r54-q3-forca-dano-fisico-magia-dano-magico.md) | 3A | Força determina a base do dano físico; Magia determina a base do dano mágico/especial. |
+| [D-123](decisoes/D-123-r54-q4-magia-efeitos-por-move-escalaveis.md) | 4B | Magia aumenta dano mágico e somente os efeitos que cada Move definir como escaláveis. |
+| [D-124](decisoes/D-124-r54-q5-hp-vitalidade-nivel-coeficientes-especie.md) | 5B | Uma fórmula baseada em Vitalidade e nível, com coeficientes próprios de cada espécie. |
+| [D-125](decisoes/D-125-r54-q6-vitalidade-resistencia-base-defesa-estagios.md) | 6A | Vitalidade também influencia a resistência-base a dano, preservando os estágios de Defesa. |
+| [D-126](decisoes/D-126-r54-q7-calibrar-agi-atb-tempos-moves.md) | 7A | Calibrar AGI para preservar inicialmente os ritmos atuais de ATB e os tempos próprios dos Moves, introduzindo a redução por AGI sem alterar silenciosamente o equilíbrio. |
+| [D-127](decisoes/D-127-r54-q8-sorte-critico-esquiva-automatica-status.md) | 8C | Sorte modifica críticos, esquiva automática e aplicação de efeitos de status. |
+| [D-128](decisoes/D-128-r54-q9-afinidades-por-especie-referencia-smt.md) | 9A | Definir afinidades por espécie usando principalmente SMT como referência, preservando os elementos e as fraquezas existentes até revisão explícita. |
+| [D-129](decisoes/D-129-r54-q10-atributos-permanentes-1-a-100-buffs-separados.md) | 10A | Os atributos permanentes ficam entre 1 e 100 após progressão e Nature; buffs temporários atuam separadamente. |
+
+### 33.2 Prevalência e compatibilidade das regras
+
+1. **Referências das espécies versus elementos (D-120/D-128/D-118):** atributos biológicos originais são referência para o perfil de espécie, **não** conversão elementar Pokémon. Afinidades seguem design inspirado principalmente em SMT; os elementos/fraquezas já cadastrados continuam até revisão explícita.
+2. **Identidade e limite permanente (D-121/D-129):** pequenas variações aleatórias de atributos por indivíduo coexistem com Nature/progressão, mas os cinco atributos permanentes permanecem **entre 1 e 100**. Ainda faltam amplitude, distribuição, seed e resolução do teto.
+3. **Ofensiva e defesa (D-122 a D-125):** Força fornece dano físico; Magia fornece dano mágico e os efeitos **marcados por Move** como escaláveis. Vitalidade participa de HP máximo com coeficiente por espécie e também da resistência-base, preservando buffs de Defesa e multiplicadores já aprovados. Fórmulas ficam pendentes.
+4. **Agilidade, trajeto e posicionamento (D-126 + D-018/D-117/D-119):** AGI governa preenchimento ATB e reduz o **tempo de deslocamento definido em cada ficha de Move**, inclusive por efeitos que aumentam AGI. Calibrar valores inicialmente contra ritmo atual. Preservar a influência dos passos táticos e o piso da D-018; **a fórmula combinada, os coeficientes, a referência de ATB e o tratamento de limites ainda não foram definidos**.
+5. **Sorte versus esquiva fixa (D-127 × D-005):** a D-005 fixou esquiva automática em **10% por golpe** para todos, valor **ainda implementado**. A decisão posterior D-127 **aprova que Sorte altere essa probabilidade**, além de crítico e chances de aplicação de status. A universalidade da porcentagem fixa passa a ser histórica neste ponto, mas **não se estabelece novo valor/fórmula**. A reação de IA durante trajeto segue outra regra (D-021).
+6. **Sorte e status versus D-012:** um Move de debuff de alvo único **não ser esquivável** permanece verdadeiro. A probabilidade de um efeito de status ser aplicado é uma etapa distinta; a resposta 8C **não especifica quais efeitos são garantidos e quais possuem testes de aplicação**. Não converter todas as aplicações garantidas para chances de falha silenciosamente.
+7. **Crescimento do protagonista e teto (D-129 versus GDD R13-Q4/R14-Q4):** distribuir 1 ponto de atributo a cada nível continua obrigatório, mas o limite permanente 100 exige regra para quando não existe atributo elegível para receber o ponto. A decisão não autoriza perder, guardar ou redirecionar automaticamente o excedente.
+
+### 33.3 Diferenças verificadas no código atual
+
+- `scripts/combat/combatant.gd` ainda usa `base_attack`, `base_speed`, `max_hp`, fraquezas e buffs de ATK/DEF/Velocidade; os cinco atributos permanentes e suas fichas por espécie **não foram integrados**.
+- `scripts/combat/battle.gd` aplica chance fixa de crítico `0.10` e de esquiva automática `0.10`, e `travel_seconds()` considera a duração-base e a posição tática sem AGI; D-126/D-127 ainda não estão implementadas.
+- `scripts/data/skill.gd` não especifica tempo de deslocamento individual em campo de ficha nem escala de efeito mágico por Move; D-119/D-123 são requisitos documentais.
+- `scripts/data/element.gd` contém 11 elementos atuais e não foi modificado.
+
+### 33.4 Pormenores técnicos ainda não aprovados
+
+- Valores iniciais e curvas individuais de cada espécie, amplitude e distribuição das variações aleatórias; escalas das fórmulas físicas/mágicas, Vitalidade/HP/defesa, Magia/efeitos e impacto quantitativo das Natures.
+- Integração matemática entre AGI, duração individual por Move e posicionamento tático sem quebrar o piso histórico; calibração de ATB.
+- Probabilidades de crítico, esquiva automática e aplicação de status derivadas da Sorte, efeitos de status garantidos versus rolados, tratamento do limiar e do teto de atributos permanentes.
+- As dez respostas fecham **direções de design**, não os detalhes numéricos; não há autorização para inventar coeficientes ou implementar código.
+
+### 33.5 Escopo
+
+Dez arquivos individuais de decisões, índice e regras consolidadas atualizados. O documento histórico D-005 recebe somente nota aditiva sobre a regra posterior de Sorte; D-117/D-118/D-119 e outras decisões permanecem intactas. Nenhum código, dado de Move/personagem, VFX, teste ou configuração alterado.
+
+---
+
+## 34. Novo atributo Spirit e nomes de atributos em inglês
+
+Referências diretas: [D-130](decisoes/D-130-separacao-vitality-fisico-spirit-magico.md) e [D-131](decisoes/D-131-nomes-atributos-em-ingles.md).
+
+> **2026-11-03.** O criador determinou a separação da defesa física e mágica, pediu um **novo atributo com nome inglês e sigla de três letras** e exigiu nomes de atributos em inglês. O assistente, autorizado a escolher o nome, selecionou **Spirit (SPI)**. A alteração do catálogo foi registrada em D-130 e D-131, sem modificar código. O questionário da Rodada 55 continua com as perguntas remanescentes.
+
+### 34.1 Catálogo atualizado — seis atributos permanentes
+
+| Attribute | Abbr. | Papel principal |
+|---|---|---|
+| **Strength** | **STR** | Base de dano físico |
+| **Magic** | **MAG** | Base de dano mágico/especial; efeitos escaláveis definidos por Move; MP máximo conforme regra existente |
+| **Vitality** | **VIT** | **Mitigação apenas de dano físico** e HP máximo derivado de Vitality+nível+espécie |
+| **Spirit** | **SPI** | **Mitigação de dano mágico/especial**, analogamente à mitigação física por Vitality |
+| **Agility** | **AGI** | Regeneração ATB e tempo individual de deslocamento dos Moves |
+| **Luck** | **LUK** | Crítico, esquiva automática e chance de aplicação de status |
+
+### 34.2 Conciliação com histórico e regras previamente aprovadas
+
+1. **D-120, D-125, D-129 e GDD R10-Q1:** o antigo conjunto de **cinco** atributos foi **expressamente ampliado para seis**. A antiga vedação a um segundo atributo de defesa natural dá lugar ao novo **Spirit**, com domínio exclusivo mágico. Preservar redações anteriores como histórico; seguir D-130/D-131 no design atual.
+2. **D-124:** Vitality mantém o cálculo do HP máximo; a restrição 'apenas para dano físico' descreve a **mitigação**, sem aprovar mudança de HP. Spirit **não** recebe função em HP ou MP por analogia.
+3. **D-122/D-123:** Strength e Magic continuam atributos **ofensivos**, distintos de Vitality e Spirit **defensivos**.
+4. **D-125:** os estágios de Defense atuais continuam existindo. A nova divisão VIT/SPI não especifica se os estágios de DEF se aplicam a ambos os tipos de dano, nem sua fórmula, sem decisão ulterior.
+5. **D-129:** faixa permanente **1–100** agora abrange seis atributos; buffs temporários continuam separados. A quantidade de **1 ponto obrigatório por nível** para o protagonista não foi aumentada.
+6. **D-131:** os nomes usados nos atributos da **ficha e UI** devem estar em inglês: STR/MAG/VIT/SPI/AGI/LUK. Não reescrever citações históricas e não presumir renomeação de Moves/efeitos de status fora da ficha.
+
+### 34.3 Pendências expressas
+
+- Fórmula, coeficiente, teto e interação dos estágios de Defesa com mitigação física (VIT) e mágica (SPI).
+- Crescimento/variação individual de Spirit e sua participação na distribuição obrigatória por nível; curva das espécies.
+- Se novos Moves/buffs de Spirit poderão alterar o atributo temporariamente; sem criar novo Move ou status automaticamente.
+- As perguntas da Rodada 55 sobre variação individual, AGI+passos, aplicação probabilística de status e teto da progressão continuam abertas. A antiga pergunta sobre se VIT reduz dano mágico foi respondida pela nova regra: **não**, quem reduz dano mágico é SPI.
+
+### 34.4 Escopo
+
+Dois documentos novos (D-130/D-131), quatro notas posteriores em decisões históricas, índice e consolidado atualizados. **Nenhum código, jogo, UI, VFX, dado ou teste foi modificado.**
+
+---
+
+## 35. Rodada 55 — variação individual, AGI e posicionamento, LUK em status e teto de atributos
+
+> **2026-11-03.** Respostas expressas do criador: **1A, 2A, 3A, 5A**. A antiga questão **4** não foi reapresentada porque o criador já aprovou a separação defensiva: **Vitality (VIT) mitiga apenas dano físico; Spirit (SPI) mitiga dano mágico** (D-130/D-131). As quatro novas escolhas estão documentadas individualmente em D-132 a D-135. Apenas documentação foi atualizada; nenhuma implementação foi autorizada.
+
+### 35.1 Matriz de escolhas aprovadas
+
+| Referência | Escolha | Regra aprovada |
+|---|---|---|
+| [D-132](decisoes/D-132-r55-q1-variacao-individual-mais-menos-3.md) | 1A | Até ±3 pontos por atributo-base, sorteados uma vez e persistentes. |
+| [D-133](decisoes/D-133-r55-q2-agi-antes-passos-tempo-move.md) | 2A | Reduzir primeiro o tempo do Move por AGI; depois aplicar o ajuste dos passos, respeitando o mínimo aprovado. |
+| [D-134](decisoes/D-134-r55-q3-luk-somente-status-com-chance.md) | 3A | LUK modifica apenas efeitos cuja ficha declare chance de aplicação; efeitos garantidos continuam garantidos. |
+| [D-135](decisoes/D-135-r55-q5-seis-atributos-no-teto-sem-distribuicao.md) | 5A | Dispensar excepcionalmente a distribuição quando todos os atributos estiverem no limite. |
+
+### 35.2 Compatibilidade e limites concretos
+
+1. **Variação D-121/D-132:** sortear **uma única vez por indivíduo e persistir** modificadores de **até ±3 pontos por atributo-base**, agora para os seis atributos oficiais STR, MAG, VIT, SPI, AGI, LUK. A faixa final **1–100 (D-129)** permanece; escolha de *clamp* ou novo sorteio nos limites e distribuição de probabilidade não foram aprovadas.
+2. **AGI D-018/D-117/D-119/D-126/D-133:** primeiro reduzir **o tempo próprio da ficha de cada Move** pela AGI do Pokémon e pelos efeitos que a aumentam; depois aplicar o ajuste posicional **−0,10 s × (passo do atacante + passo do alvo)** da D-018; finalmente respeitar mínimo **0,25 s**. A curva quantitativa de AGI **não foi definida**; o valor de referência ATB e a calibração continuam pendentes.
+3. **LUK D-012/D-127/D-134:** LUK pode modificar **apenas efeitos de status com chance explicitamente declarada** na ficha. Efeitos garantidos continuam com aplicação garantida, sem nova rolagem por LUK. A decisão **não** elimina a influência de LUK em crítico e esquiva automática; **não** torna debuffs de alvo único esquiváveis.
+4. **Progressão D-129/D-130/D-131/D-135:** a distribuição obrigatória de 1 ponto pelo protagonista ao subir de nível é **dispensada somente quando todos os seis atributos permanentes estão em 100**. O nível continua avançando. Não inventar pontos compensatórios, conversão ou armazenamento dos pontos dispensados; o crescimento automático de aliados permanece conforme decisões anteriores.
+5. **Separação defensiva D-130/D-131 mantida:** VIT para mitigação física e HP máximo; SPI para mitigação mágica. A questão 4 da rodada anterior foi respondida por decisão própria e não recebeu documento repetido nesta rodada.
+
+### 35.3 Diferenças em relação ao código verificado
+
+- `scripts/combat/battle.gd` calcula duração de trajeto considerando tempo-base e passos (`TRAVEL_PER_STEP = 0.10`, `TRAVEL_MIN = 0.25`), **sem primeiro aplicar AGI** como D-133 exige.
+- `scripts/data/skill.gd` ainda não declara explicitamente um campo de tempo de deslocamento próprio de cada Move, nem chance de aplicação por efeito; essas especificações continuam requisitos não implementados.
+- `scripts/combat/combatant.gd` ainda não contém os seis atributos permanentes, suas variações individuais persistentes nem a lógica de progressão do protagonista.
+- Crítico e esquiva automática ainda usam probabilidades fixas no código de combate (D-127 e D-134 são decisões de design não implementadas).
+
+### 35.4 Decisões ainda pendentes, sem extrapolação
+
+- Formato da distribuição de probabilidade para ±3 e como preservar 1–100 quando o sorteio excederia o teto/piso; momento exato da geração do indivíduo.
+- Fórmula da redução do tempo do Move por AGI, valores de referência, arredondamento e interação detalhada com buffs; a **ordem** foi fixada nesta rodada.
+- Probabilidade-base dos efeitos de status não garantidos, contribuição de LUK e definição das fichas de Moves.
+- Tratamento de ganhos automáticos que ultrapassam 100 em aliados, além do caso especial de pontos do protagonista.
+
+### 35.5 Escopo
+
+Quatro decisões novas (D-132 a D-135), cinco notas aditivas aos documentos antigos (D-121, D-119, D-126, D-127 e D-129), índice e consolidado atualizados. **Sem edição de código, testes, VFX, fichas ou assets.**
+
+---
+
+## 36. Rodada 56 — AGI inversa, diferença de LUK, Defense abrangente; teto em conflito
+
+> **2026-11-03.** O criador escolheu expressamente **2A, 3B e 4A**. Também respondeu **1D — Outra regra**, acrescentando a observação literal: **“n tem problema ultrapassar 100 de status, n precisa se preocupar com isso”**. A questão 1 está **em conflito de escopo com D-129 e D-135**; o significado da exceção a 100 não pode ser fixado sem esclarecer se é restrita ao sorteio ±3 ou se revoga o teto de todos os atributos permanentes. Para preservar decisões anteriores, **nenhuma regra nova sobre ultrapassar 100 é declarada aprovada nesta seção**. Documentos individuais D-136, D-137 e D-138 registram apenas 2A/3B/4A.
+
+### 36.1 Decisões aprovadas e documentadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-136](decisoes/D-136-r56-q2-agi-inversamente-proporcional.md) | 2A | Usar proporcionalidade inversa à AGI efetiva, com uma AGI de referência comum a todos os Pokémon. |
+| [D-137](decisoes/D-137-r56-q3-diferenca-luk-aplicador-alvo.md) | 3B | A diferença entre a LUK de quem aplica e a LUK de quem recebe influencia a chance. |
+| [D-138](decisoes/D-138-r56-q4-defense-estagios-fisico-magico.md) | 4A | Manter os estágios atuais de Defense afetando dano físico e mágico, enquanto VIT e SPI fornecem resistências naturais separadas. |
+
+### 36.2 Conciliação com decisões anteriores
+
+1. **D-136 / D-117 / D-119 / D-133 / D-018:** tempo individual de Move é reduzido **inversamente à AGI efetiva**, referenciada por um valor comum entre as espécies. Depois, descontar **0,10 s × soma dos passos**, mantendo mínimo **0,25 s**. Não definir numericamente a AGI de referência, arredondamento ou o caso AGI ≤ 0.
+2. **D-137 / D-127 / D-134 / D-012:** a chance de **aplicação de status probabilístico** depende da **diferença entre LUK do aplicador e do alvo**. Apenas efeitos com chance declarada na ficha são afetados; efeitos garantidos continuam garantidos. Não criar Evade para debuffs de alvo único, nem definir fórmula percentual arbitrária.
+3. **D-138 / D-125 / D-130 / D-131:** os estágios existentes de **Defense** atuam tanto sobre dano físico como mágico, mas a resistência **natural** usa **VIT apenas para físico** e **SPI apenas para mágico**. Buffs não são automaticamente divididos em duas categorias.
+
+### 36.3 Conflito não resolvido — R56-Q1D
+
+- **Mensagem literal:** “1D — O que fazer se a variação de ±3 ultrapassar o limite 1–100? Outra regra.” **Observação:** “n tem problema ultrapassar 100 de status, n precisa se preocupar com isso”.
+- **D-129:** os seis atributos permanentes têm limite de **1–100**. **D-132:** sorteio persistente de até ±3 pontos por atributo. **D-135:** quando todos os seis estão em 100, dispensa-se a distribuição obrigatória na subida de nível. Uma permissão geral para ultrapassar 100 modificaria **D-129 e D-135**; uma exceção somente ao sorteio individual modificaria **D-129/D-132** mas não necessariamente a regra de progressão.
+- **Duas interpretações plausíveis:** (A) apenas a **variação inicial de ±3** pode deixar o atributo temporária ou permanentemente acima de 100, preservando o teto para progressão; (B) o teto 100 deixa de existir como limite geral, inclusive para o crescimento por nível. O criador **não especificou qual alcance**. Nenhuma delas foi selecionada por este registro.
+- **Ação pendente:** perguntar objetivamente qual alcance da ultrapassagem de 100 deve prevalecer; preservar ambas as fontes históricas, sem remendar a D-129 nem a D-135 por suposição.
+
+### 36.4 Código consultado e escopo
+
+- `scripts/combat/battle.gd`: `travel_seconds()` ainda desconta apenas passos e impõe piso de 0,25 s; não possui redução inversamente proporcional por AGI.
+- `scripts/data/skill.gd`: não há campo formal de tempo individual de Move nem chance de aplicação por efeito.
+- `scripts/combat/combatant.gd`: `def_buff` é aplicado genericamente em `take_damage()`, sem campos de VIT/SPI; não há fórmulas de LUK e progressão ainda integradas.
+- **Somente documentação:** 3 novas decisões D-136..D-138, 4 complementos históricos, índice e regras consolidadas. Nenhuma mudança em código, cenas, dados, assets, VFX, testes ou configuração.
+
+---
+
+## 37. Rodada 57 — atributos sem teto, AGI mínima, sorteio central e coeficiente de LUK
+
+> **2026-11-03:** o criador aprovou **1B, 2A, 3B e 4B**. A resposta 1B resolveu expressamente a ambiguidade da Rodada 56: o limite máximo permanente de 100 é abolido, inclusive para progressão, Nature e variações individuais. Regras individuais D-139 a D-142; preservado o histórico.
+
+### 37.1 Decisões aprovadas
+
+| Decisão | Escolha | Regra |
+|---|---|---|
+| [D-139](decisoes/D-139-r57-q1-atributos-sem-teto-100.md) | 1B | Atributos permanentes podem ultrapassar 100 sem teto máximo |
+| [D-140](decisoes/D-140-r57-q2-agi-minimo-1-formula.md) | 2A | AGI efetiva mínima de 1 apenas para o cálculo inverso do Move |
+| [D-141](decisoes/D-141-r57-q3-sorteio-individual-central.md) | 3B | Distribuição do sorteio individual favorece valores perto de zero |
+| [D-142](decisoes/D-142-r57-q4-luk-1pp-cada-10.md) | 4B | Status probabilístico: 1 ponto percentual para cada 10 pontos de diferença LUK |
+
+### 37.2 Relação explícita com D-129 e D-135
+
+- **D-129:** o limite permanente de **100** está **revogado** pela D-139. Não inventar limite substituto. A separação entre buffs temporários e atributos permanentes continua; a escala de valores-base de referência 1–100 não foi expressamente alterada.
+- **D-135:** a dispensa obrigatória de 1 ponto por nível só ocorria se todos os atributos estivessem **no teto de 100**. **Sem teto permanente**, o pré-requisito da exceção deixou de existir; a dispensa baseada no antigo teto **fica superada**. O protagonista continua distribuindo 1 ponto obrigatoriamente a cada nível, mesmo se os seis atributos forem exatamente 100. O texto da D-135 continua preservado como histórico.
+- **D-132/D-141:** variações individuais inteiras de −3 até +3 persistentes; distribuição favorece valores perto de zero, ±3 mais raros. Um atributo pode passar de 100; pesos e simetria não foram definidos.
+
+### 37.3 Fórmulas parciais e pendências
+
+- **D-140/D-136/D-133/D-018:** ao calcular a duração do trajeto por proporcionalidade inversa, utilizar AGI efetiva mínima **1 para essa operação**, sem modificar o atributo. Referência AGI comum ainda sem número. Aplicar depois a correção posicional `−0,10 s × soma de passos`; mínimo final `0,25 s`. Nenhuma alteração automática da regra de ATB.
+- **D-142/D-137/D-134:** apenas efeitos de status com chance declarada recebem correção pela diferença LUK(aplicador) − LUK(alvo), à razão de **1 ponto percentual a cada 10 pontos LUK**. Exemplo aprovado **40% + 3 pp = 43%** com +30 LUK. Efeitos garantidos continuam garantidos; nenhuma esquiva nova. Arredondamento/interpolação de diferenças não múltiplas de 10 e limites da chance calculada permanecem pendentes.
+- **Crescimento e integração:** não foram especificados pesos estatísticos para o sorteio, fórmulas de evolução por espécie/Nature, valor da AGI de referência nem políticas de apresentação de atributos elevados.
+
+### 37.4 Código consultado e escopo de edição
+
+- `scripts/combat/battle.gd` ainda usa tempo de trajeto com passos e mínimo de 0,25 s, sem AGI; chances de crítico e esquiva permanecem fixas no código.
+- `scripts/combat/combatant.gd` ainda usa atributos simplificados, não os seis atributos permanentes e progressão; `scripts/data/skill.gd` não possui ficha de chance de status por efeito.
+- **Somente documentação:** quatro documentos D-139..D-142 criados, notas aditivas em D-129, D-135, D-132, D-136, D-137, índice e consolidado atualizados. Nenhum código, teste, cena, Move ou asset alterado.
+
+---
+
+## 38. Rodada 58 — probabilidades válidas, sorteio triangular e referências distintas de AGI
+
+> **2026-11-03.** O criador aprovou diretamente as alternativas **2A, 3A e 4B**. Também respondeu **1D — Outra regra**, acompanhada da observação literal: **“não entendi a 1, 50% + 7 luck = 57% - 10luck do oponente = 47% de chance no total”**. Como ela contradiz o fator da D-142 sem indicar expressamente se está revogando a regra, **a questão 1 permanece pendente de esclarecimento**; nenhuma fórmula nova de LUK foi consolidada como aprovada. D-143, D-144 e D-145 registram somente as três escolhas inequívocas.
+
+### 38.1 Regras expressamente aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-143](decisoes/D-143-r58-q2-probabilidade-status-0-100.md) | 2A | Probabilidade final de status limitada ao intervalo 0–100% |
+| [D-144](decisoes/D-144-r58-q3-sorteio-triangular-1-2-3-4-3-2-1.md) | 3A | Sorteio individual triangular com pesos 1:2:3:4:3:2:1 |
+| [D-145](decisoes/D-145-r58-q4-referencias-agi-distintas-atb-trajeto.md) | 4B | Referências numéricas distintas para ATB e trajetos com AGI única |
+
+### 38.2 Compatibilidade e restrições
+
+- **D-143 (Q2A):** a chance final de aplicação de status probabilístico deve ser limitada ao intervalo **0% a 100%**, inclusive, após os modificadores. Exemplo: 98% + 5 pp = 103% intermediários ⇒ **100% final**. Efeitos garantidos continuam garantidos (D-134). Este limite não restringe atributos acima de 100 (D-139).
+- **D-144 (Q3A):** sorteio individual persistente de −3 a +3 (D-132) segue a distribuição triangular discreta com pesos **1:2:3:4:3:2:1**, equivalentes a **6,25%, 12,5%, 18,75%, 25%, 18,75%, 12,5%, 6,25%**. Não redefinir os pontos-base ou adicionar teto numérico.
+- **D-145 (Q4B):** **AGI permanece atributo único** com referências numéricas **independentes para ATB e tempo de trajeto**, de modo a calibrar os subsistemas separadamente. A referência de trajeto permanece **comum a todos os Pokémon** (D-136); nenhuma das referências recebeu valor numérico. Preservar D-140 e D-018/D-133.
+
+### 38.3 Conflito pendente — Q1D × D-142
+
+- **Nova expressão literal:** “não entendi a 1, 50% + 7 luck = 57% - 10luck do oponente = 47% de chance no total”. Ela descreve adição de **7 pontos percentuais por LUK 7** e subtração de **10 pontos percentuais por LUK 10**.
+- **D-142, aprovada expressamente na Rodada 57:** chance de aplicação recebe **1 ponto percentual a cada 10 pontos de diferença LUK** entre aplicador e alvo. Com base 50%, LUK 7 contra LUK 10, uma aplicação proporcional contínua desse coeficiente teria **50% + (7 − 10)/10 pp = 49,7%**. O tratamento de diferenças não múltiplas de 10 continua não definido em D-142.
+- **Pergunta de esclarecimento obrigatória:** o novo exemplo pretende **substituir a proporção da D-142 por 1 ponto percentual por 1 ponto de LUK de diferença** (resultado 47%), ou a D-142 permanece com 1 ponto percentual por 10 LUK (49,7% caso interpolação proporcional)? Não optar silenciosamente.
+- **D-143 não depende da escolha da taxa:** qualquer chance calculada, conforme a regra final que o criador definir, deve ser limitada a **0%–100%**. O conflito da Q1 não invalida as escolhas 2A, 3A e 4B.
+
+### 38.4 Código verificado e escopo
+
+- `scripts/combat/battle.gd` mantém chances atuais de crítico/esquiva e tempo de trajeto sem aplicação da AGI dos seis atributos.
+- `scripts/combat/combatant.gd` não implementa variações individuais persistentes de atributos; `scripts/data/skill.gd` não implementa chance de status declarada por efeito.
+- **Editados apenas documentos:** três novos D-143..D-145, notas aditivas em D-141, D-136 e D-142, índice e este consolidado. Nenhum código, asset, dado de Pokémon, configuração ou teste alterado.
+
+---
+
+## 39. Rodada 59 — LUK corrigida, variações independentes, duração de trajeto fixa
+
+> **2026-11-03.** Escolhas expressas do criador: **1A, 2A e 3A**. Três novas decisões individuais D-146 a D-148. As regras aprovadas não autorizam alterar código, fichas de Move, VFX, assets ou configurações.
+
+### 39.1 Matriz das decisões
+
+| Documento | Escolha | Regra aprovada |
+|---|---|---|
+| [D-146](decisoes/D-146-r59-q1-luk-um-ponto-percentual-por-ponto.md) | 1A | Aplicação de status: 1 ponto percentual por ponto da diferença de LUK |
+| [D-147](decisoes/D-147-r59-q2-sorteios-independentes-seis-atributos.md) | 2A | Sorteios individuais independentes nos seis atributos |
+| [D-148](decisoes/D-148-r59-q3-duracao-trajeto-fixa-ao-iniciar-ataque.md) | 3A | Duração de trajeto calculada no início do ataque e fixa até seu término |
+
+### 39.2 Conciliação expressa com decisões anteriores
+
+1. **D-146 substitui a taxa da D-142:** a D-142 dizia **1 ponto percentual por 10 pontos da diferença LUK**. A escolha expressa 1A desta Rodada 59 substitui essa escala por **1 ponto percentual por ponto de diferença LUK** entre aplicador e alvo. **Exemplo aprovado:** chance-base 50%, LUK 7 e LUK 10 => **50% + 7 pp − 10 pp = 47%**. O conflito apontado na seção 38.3 foi **resolvido nesta rodada**, sem alterar retroativamente o registro do conflito.
+2. **D-134/D-137/D-143 preservadas:** só efeitos de status com chance declarada na ficha do Move sofrem o ajuste por LUK. Efeitos garantidos continuam garantidos; a chance final de aplicação probabilística permanece **limitada a 0–100%**. Status não esquiváveis não ganham Evade por esta regra (D-012).
+3. **D-147 complementa D-132/D-144:** os seis atributos **STR, MAG, VIT, SPI, AGI e LUK** têm sorteios **independentes entre si**, todos com modificadores individuais −3..+3 e pesos triangulares **1:2:3:4:3:2:1**. Cada atributo é sorteado uma única vez por indivíduo e persistido. A variação de outro atributo não altera a probabilidade de um dado resultado.
+4. **D-148 complementa D-119/D-133/D-136/D-140/D-145:** a duração do trajeto é **calculada ao iniciar o ataque e mantida fixa até o fim do trajeto**. AGI e efeitos aplicáveis entram no cálculo, que mantém o ajuste posicional posterior e o mínimo de **0,25 s**. Mudanças posteriores de AGI durante o trajeto não recalculam sua duração. **Pendente:** determinar qual instante técnico do fluxo WINDUP/TRAVEL significa 'iniciar o ataque', quando essa distinção impactar implementação.
+
+### 39.3 Pendências restantes (não aprovadas automaticamente)
+
+- **LUK em crítico e esquiva automática:** D-127 diz que LUK influencia ambas, mas coeficientes e limites próprios não foram aprovados. A escala da D-146 aplica-se especificamente à **chance de status probabilístico**, não é uma tabela automática para todos os eventos.
+- **AGI:** valores numéricos de referência para ATB e trajetos (D-145), tratamento de buffs durante WINDUP antes do travamento do trajeto (D-148) e calibração concreta de velocidade.
+- **Sorteio/persistência:** quais dados persistentes e algoritmo de seed/ordem são necessários para reproduzir resultados (D-147); independência estatística foi definida, mas a implementação não.
+- **Mitigação VIT/SPI:** fórmulas quantitativas continuam por decidir, preservando a aplicação comum dos estágios de Defense (D-138).
+
+### 39.4 Estado verificado do código e escopo
+
+- `scripts/combat/attack_planner.gd`: as durações e cronogramas são planejados em torno da transição de fases após WINDUP; a lógica existente ainda não integra AGI efetiva ao tempo do trajeto nem contém os atributos permanentes do novo modelo.
+- `scripts/combat/battle.gd` mantém o ajuste por passos e o piso de 0,25 s, mas não aplica a redução inversa por AGI nem a fórmula LUK aprovada.
+- `scripts/data/skill.gd` ainda não declara chances de aplicação por efeito nem o tempo individual de deslocamento como campo próprio.
+- **Escopo desta alteração:** três D novos (D-146 a D-148), quatro notas complementares (D-119/D-142/D-143/D-144), índice e consolidado atualizados. **Somente documentação; nenhum código, teste, cena, VFX ou modelo alterado.**
+
+
+---
+
+## 40. Rodada 60 — recálculo excepcional do trajeto, crítico por LUK e limites
+
+> **2026-11-03.** O criador escolheu **1A, 2B, 3D e 4A**. As decisões **1A, 2B e 4A** estão determinadas sem ambiguidade e foram registradas em **D-149 a D-151**. A questão **3D** contém direção de design, mas não fórmula matemática inequívoca; sua escolha alternativa e observação literal foram preservadas como **pendência**, sem transformá-las em regra numérica.
+
+### 40.1 Matriz de decisões aprovadas
+
+| Documento | Questão | Regra aprovada |
+|---|---|---|
+| [D-149](decisoes/D-149-r60-q1-recalculo-unico-trajeto-na-troca-de-alvo.md) | 1A | Quando o alvo morre no wind-up, recalcular **uma vez no evento de troca automática** da D-108 e manter a nova duração fixa até o fim do trajeto |
+| [D-150](decisoes/D-150-r60-q2-critico-luk-um-ponto-percentual.md) | 2B | Crítico probabilístico com **10% de base + 1 pp por ponto de diferença de LUK (atacante − alvo)** |
+| [D-151](decisoes/D-151-r60-q4-limites-critico-esquiva-automatica.md) | 4A | Probabilidades finais de crítico e esquiva automática limitadas ao intervalo **0%–100%** |
+
+### 40.2 Conciliação e exemplos
+
+1. **D-108 × D-148 → D-149:** preservar o cálculo de duração fixo ao iniciar o ataque como regra geral da D-148; se houver morte do alvo e redirecionamento automático **durante wind-up**, fazer **uma exceção com um novo cálculo no momento da troca**. Exemplo: Gible muda o ataque de Pancham para Abra após a morte de Pancham no wind-up; a duração do trajeto é recalculada para essa troca, não continuamente durante TRAVEL. Não definir aqui uma política para múltiplas trocas subsequentes.
+2. **D-127 × D-150:** LUK modifica agora o crítico normal em **1 ponto percentual por ponto de diferença**. Com **LUK atacante 70** e **LUK alvo 40**, a chance é **10% + (70 − 40) pp = 40%**. A escala é própria de crítico e não autoriza copiá-la para esquiva automática.
+3. **D-151 × D-143 × D-139:** crítico e esquiva automática adotam limites finais **0–100%**, assim como aplicação probabilística de status (D-143); isso não cria teto para atributos LUK, que podem ultrapassar 100 (D-139).
+4. **D-005 e D-021:** **10%** continua como valor-base histórico/atual da esquiva automática por golpe; reação ativa da IA durante trajetória tem outra mecânica e não foi alterada.
+5. **D-134 e regras de crítico garantido:** não introduzir rolagem em efeitos de status garantidos nem converter críticos expressamente garantidos em eventos probabilísticos.
+
+### 40.3 R60-Q3D — observação preservada, fórmula pendente
+
+- **Escolha literal:** “3D — Como LUK deve modificar a esquiva automática? Outra regra.”
+- **Observação literal:** “3 - diferente de critico, a evasiva reduz quanto maior fica, dividindo pela metade”.
+- **Ambiguidade material:** “dividindo pela metade” pode se referir a um **ganho fixo pela metade em comparação com crítico**, ou a um **ganho que decai progressivamente conforme a LUK aumenta**, entre outras interpretações. Não aprovar nenhuma delas sem resposta do criador.
+- **Pendente:** coeficiente/função para esquiva automática, tratamento de diferenças negativas, instante técnico para congelar a duração em WINDUP/TRAVEL, e eventual política de trocas sucessivas de alvo.
+
+### 40.4 Escopo
+
+Apenas D-149, D-150 e D-151, índice, este consolidado e adendo de rastreabilidade no GDD foram modificados. **Nenhum código, teste de gameplay, cena, ficha de Move, asset ou VFX foi alterado.** A execução do design continua não verificada no jogo.
+
+
+---
+
+## 41. Rodada 61 — curva de esquiva, captura no WINDUP, retarget sucessivo e LUK dinâmica
+
+> **2026-11-03.** Respostas explícitas **1B, 2A, 3A, 4A e 5A**, sem observações adicionais. Todas são registradas em D-152 a D-156. Os textos históricos das Rodadas 59–60 e os conflitos então pendentes permanecem documentados, mas estas escolhas encerram as pendências específicas indicadas abaixo.
+
+### 41.1 Matriz de escolhas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-152](decisoes/D-152-r61-q1-esquiva-luk-retorno-decrescente.md) | 1B | Chance-base de 10% de esquiva automática + contribuição por LUK com ganhos marginais 1, 0,5, 0,25, 0,125... pp por ponto a cada faixa adicional de 10 |
+| [D-153](decisoes/D-153-r61-q2-esquiva-luk-curva-simetrica.md) | 2A | Diferença negativa de LUK reduz a chance pela mesma curva aplicada em sentido positivo, limitada pela D-151 |
+| [D-154](decisoes/D-154-r61-q3-trajeto-calculo-inicio-windup.md) | 3A | Calcular e fixar a duração do trajeto ao **entrar efetivamente em WINDUP**, ressalvadas trocas de alvo |
+| [D-155](decisoes/D-155-r61-q4-trajeto-recalculo-cada-troca-windup.md) | 4A | Recalcular uma vez **em cada** troca automática durante WINDUP |
+| [D-156](decisoes/D-156-r61-q5-luk-no-instante-da-rolagem.md) | 5A | Consultar a LUK efetiva no instante da resolução de **cada evento probabilístico** |
+
+### 41.2 Curva de esquiva aprovada — D-005, D-127, D-151, D-152 e D-153
+
+Definir **Δ = LUK_defensor − LUK_atacante** e **F(x)** como a soma de contribuições sobre as faixas sucessivas de até dez pontos de **|Δ|**: taxa **1 pp/ponto** para os primeiros dez, **0,5 pp/ponto** para os próximos dez, **0,25 pp/ponto** para os próximos dez, e assim sucessivamente, reduzindo o ganho marginal à metade em cada faixa. Para Δ positivo somar F(|Δ|); para Δ negativo subtrair F(|Δ|); para Δ zero não aplicar correção.
+
+**P_esquiva = clamp(10% + sinal(Δ) × F(|Δ|), 0%, 100%)**.
+
+| LUK defensor | LUK atacante | Δ | Correção | Chance final |
+|---:|---:|---:|---:|---:|
+| 40 | 40 | 0 | 0 pp | 10% |
+| 45 | 40 | +5 | +5 pp | 15% |
+| 70 | 40 | +30 | +17,5 pp | 27,5% |
+| 40 | 70 | −30 | −17,5 pp | 0% |
+| 40 | 45 | −5 | −5 pp | 5% |
+
+Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua **10% + 1 pp/ponto da diferença LUK atacante − alvo** (D-150); a fórmula de **status probabilístico** continua **chance-base + 1 pp/ponto de diferença LUK aplicador − alvo** (D-146). Todas as chances finais respeitam os respectivos limites de **0–100%**. Evade manual/perfeito e reação ativa da IA dentro do trajeto (D-021) **não recebem esta curva**; preservar status não esquiváveis (D-012).
+
+### 41.3 Tempo do trajeto e trocas automáticas — D-108, D-148, D-149, D-154 e D-155
+
+- O instante técnico da expressão “ao iniciar o ataque” é **a entrada efetiva em WINDUP**. Calcular a duração do Move nesse instante com AGI aplicável, passos e mínimo temporal já aprovados.
+- Uma morte de alvo durante WINDUP pode disparar redirecionamento para o adversário vivo mais próximo (D-108). **Cada troca efetiva durante essa fase provoca um único recálculo**, substituindo a duração previamente congelada.
+- Exemplo: cálculo inicial contra Pancham ao entrar em WINDUP; morte de Pancham → alvo Abra → novo cálculo; morte de Abra ainda no WINDUP → alvo Gible → novo cálculo. Ao entrar em TRAVEL, **a última duração calculada permanece fixa até seu término**.
+- As exceções de morte do último inimigo, projéteis em voo e morte após iniciar investida são preservadas; não criar loop de recálculo durante TRAVEL.
+- **Pendente distinto:** política para Moves instantâneos que dispensam WINDUP; empate geométrico entre alvos igualmente próximos.
+
+### 41.4 Captura de LUK por evento — D-146, D-150, D-152, D-153 e D-156
+
+- **Crítico normal, esquiva automática e aplicação de status probabilístico:** consultar LUK efetiva de cada participante **no instante da resolução da respectiva rolagem**, não na declaração do ataque nem na captura da AGI do trajeto.
+- Exemplo: LUK atacante 40 na declaração, 50 na transição para TRAVEL e 60 no impacto, contra LUK alvo 40 no impacto → **30% de crítico normal**, se a rolagem ocorrer então. Isso não altera efeitos garantidos.
+- Não recalcular eventos já resolvidos; não determinar ordem de resolução para eventos simultâneos sem nova decisão.
+
+### 41.5 Escopo e pendências restantes
+
+- As pendências históricas **R60-Q3D, diferenças negativas, instante WINDUP e múltiplas trocas sucessivas** receberam respostas nas D-152 a D-155, preservando os registros originais como histórico.
+- Permanecem sem definição: regra para ataque sem WINDUP; empate na escolha do alvo vivo mais próximo; ordem de resolução para eventos simultâneos; referências numéricas de AGI para ATB e trajeto (D-145); calibração de fórmulas quantitativas ainda não aprovadas.
+- **Somente documentação**: novos arquivos D-152–D-156, índice, este consolidado e adendo do GDD. Sem mudanças de código, testes, modelos, recursos ou VFX.

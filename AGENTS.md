@@ -25,6 +25,7 @@
 ## 4. Novas decisões
 
 - Quando o criador definir uma regra, **crie `docs/decisoes/D-xxx-*.md` antes de escrever código** (frase literal, decisão, ambiguidades, estado). Atualize o índice.
+- **Após cada rodada de respostas, registre imediatamente as decisões aprovadas em documentos individuais, atualize o índice e `docs/REGRAS_DO_JOGO.md` no GitHub ANTES de abrir outra rodada**, conforme D-061. Isso é atualização documental, não autorização para alterar o código. Se o criador proibir expressamente atualizar a documentação, respeite e informe o que não foi publicado.
 - Se duas decisões se contradizem, preserve as duas e pergunte qual vale.
 
 ## 5. Git

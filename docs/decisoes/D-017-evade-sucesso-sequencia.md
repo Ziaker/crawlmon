@@ -19,3 +19,7 @@ Nenhuma.
 ## Estado no código
 
 Implementado.
+
+## Conciliação posterior (2026-11-03)
+
+A descrição histórica de interrupção/cambaleio automático após Evade foi **substituída apenas nesse aspecto** pela D-106: um ataque evitado **conclui como golpe que errou**, sem interrupção mecânica adicional nem animação de interrupção por Evade. Permanecem as demais regras desta decisão onde compatíveis (Burst, contra-ataque, engajamento e teleporte conforme decisões posteriores).
