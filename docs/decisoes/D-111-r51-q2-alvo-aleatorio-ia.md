@@ -25,3 +25,7 @@
 ## Complemento posterior — Rodada 52
 
 **D-112 (R52):** selecionar aleatoriamente o **alvo vivo** respeitando engajamento continua válido (D-111). A seleção de **qual Move usar** passa a ser tática, considerando dano, fraqueza, efeitos e situação do combate. Não confundir alvo com Move.
+
+## Complemento posterior — Rodada 53
+
+**D-114 (Rodada 53):** preserva a escolha aleatória de **alvo** entre adversários vivos elegíveis, respeitando engajamento. Na hora de decidir qual habilidade executar, a IA primeiro fixa esse alvo e depois avalia taticamente o **Move** adequado a ele (D-112/D-114). Não se transforma a escolha do alvo em decisão tática.

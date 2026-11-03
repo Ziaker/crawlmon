@@ -119,3 +119,6 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-111](D-111-r51-q2-alvo-aleatorio-ia.md) | Combate / IA / R51 | R51-Q2 (2C): IA escolhe adversário vivo aleatoriamente, respeitando engajamento | Decisão expressa; implementação não declarada |
 | [D-112](D-112-r52-q1-escolha-tatica-de-moves-ia.md) | Combate / IA / R52 | R52-Q1 (1C): escolha tática de Move, sem alterar alvo aleatório | Decisão expressa; implementação não declarada |
 | [D-113](D-113-r52-q2-interromper-investida-alvo-morto.md) | Combate / R52 | R52-Q2 (2C): alvo morre na investida; retorno imediato à origem | Decisão expressa; implementação não declarada |
+| [D-114](D-114-r53-q1-alvo-antes-move-tatico.md) | Combate / IA / R53 | R53-Q1: escolher alvo aleatório antes do Move tático | Recomendação 1A aceita por delegação expressa; sem código |
+| [D-115](D-115-r53-q2-cura-situacional-da-ia.md) | Combate / IA / R53 | R53-Q2: cura por poção avaliada taticamente conforme a situação | Recomendação 2B aceita por delegação expressa; sem código |
+| [D-116](D-116-delegacao-recomendacoes-ia.md) | Processo / IA | Delegação das recomendações futuras sobre comportamento da IA | Autorização expressa limitada ao design de IA; sem implementação |

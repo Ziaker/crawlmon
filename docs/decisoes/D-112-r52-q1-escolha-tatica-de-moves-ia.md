@@ -21,3 +21,6 @@
 - Não modificar automaticamente cura, uso de itens, custos, Tactics, decisão de alvo, Evade ou comportamento de habilidades não aprovado.
 - **Escopo:** somente documentação; código e testes permanecem inalterados.
 
+## Complemento posterior — Rodada 53
+
+**D-114/D-115 (Rodada 53):** a escolha tática de Move agora tem ordem definida: **primeiro selecionar o alvo** aleatoriamente, respeitando engajamento, **depois escolher o Move** adequado. A escolha entre cura por poção e ataque também integra a avaliação situacional, sem prioridade rígida automática só por HP ≤ 50%; respeitar Tactics e regras de itens existentes. Pesos e fórmula continuam indefinidos.

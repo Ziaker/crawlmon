@@ -790,3 +790,32 @@ Novo documento **D-109**, índice e consolidado atualizados. **Nenhum arquivo de
 ### 29.4 Escopo
 
 **D-112 e D-113 criados; três documentos anteriores receberam notas aditivas; índice e consolidado atualizados. Nenhum código, teste, VFX ou configuração de gameplay foi modificado.**
+
+---
+
+## 30. Rodada 53 — recomendações de IA aceitas por delegação e escopo futuro
+
+> **2026-11-03.** Declaração literal do criador: **“sigo suas recomendacoes quanto a forma que a IA deve agir, ate mesmo para as proximas perguntas”**. As perguntas da Rodada 53 não apresentavam alternativas previamente marcadas como recomendação. Após verificar `scripts/combat/battle.gd`, D-021, D-111 e D-112, o assistente **recomendou 1A e 2B** para as duas perguntas já formuladas. São **recomendações do assistente aceitas pela delegação do criador**, e não escolhas individuais de letras digitadas por ele. Documentos D-114, D-115 e D-116. Código inalterado.
+
+### 30.1 Recomendações concretas para a Rodada 53
+
+| Decisão | Recomendação do assistente aceita por delegação | Regra |
+|---|---|---|
+| [D-114](decisoes/D-114-r53-q1-alvo-antes-move-tatico.md) | **R53-Q1 — 1A** | **Primeiro** escolher o adversário-alvo aleatoriamente entre vivos elegíveis, respeitando engajamento (D-111); **depois** selecionar taticamente o Move adequado contra ele (D-112). Não substituir aleatoriedade do alvo por preferência de fraqueza. |
+| [D-115](decisoes/D-115-r53-q2-cura-situacional-da-ia.md) | **R53-Q2 — 2B** | Integrar a escolha entre **poção e Move** à avaliação da situação do combate, em vez de usar poção sempre que HP ≤ 50%. Preservar Tactics, custos, estoque e regras de itens existentes. Pesos e fórmulas não foram definidos. |
+
+### 30.2 Delegação de próximas decisões sobre IA
+
+- **[D-116](decisoes/D-116-delegacao-recomendacoes-ia.md):** o criador estendeu a aceitação das recomendações a **futuras perguntas sobre como a IA deve agir**. Não repetir baterias artificiais de perguntas de IA quando uma recomendação fundamentada nas regras e no código for possível.
+- As recomendações futuras **não são aprovadas antecipadamente como regras inexistentes**: cada questão concreta deve ser formulada, fundamentada, atribuída corretamente ao assistente, documentada em arquivo individual, indexada e consolidada conforme D-061. Conflitos de escopo ou com decisões anteriores não serão resolvidos por suposição.
+- A delegação não autoriza modificar **código**, arquitetura, FX, recursos do jogo ou regras fora do domínio de decisões sobre IA. Alterações de código continuam sujeitas a ordem expressa.
+
+### 30.3 Código verificado e diferenças de implementação
+
+- Em `_run_ai()` de `scripts/combat/battle.gd`, a IA **atualmente prioriza poção** se HP ≤ 50% e existe item/ATB, **antes** de avaliar Moves; isso não implementa D-115.
+- `_run_ai()` chama `_pick_skill()` antes de definir um alvo (engajado ou `_first_alive`); isso não implementa D-114 nem a escolha aleatória do alvo de D-111.
+- Tactics `ATTACK`, `SKILL` e `HOLD`, custo de item, inventário, engajamento e política de seleção manual do líder permanecem sem modificação.
+
+### 30.4 Estado
+
+Três novos arquivos de decisão (D-114, D-115 e D-116); duas notas aditivas em decisões anteriores; índice e consolidado atualizados. **Nenhum código, teste, VFX, configuração ou asset alterado.**
