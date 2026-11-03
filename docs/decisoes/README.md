@@ -105,3 +105,6 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-097](D-097-r46-q1-implementacao-por-sistemas-testados.md) | Combate / R46 | R46-Q1 (1B): Implementação em sistemas completos e testados | Recomendação aceita expressamente; implementação não declarada |
 | [D-098](D-098-r46-q2-alvo-contra-extra-multiplos.md) | Combate / R46 | R46-Q2 (2A): Seleção manual do atacante-alvo e seleção pela IA | Recomendação aceita expressamente; implementação não declarada |
 | [D-099](D-099-r46-q3-projetil-pendente-resultado.md) | Combate / R46 | R46-Q3 (3A): Aguardar projéteis em voo antes do resultado definitivo | Recomendação aceita expressamente; implementação não declarada |
+| [D-100](D-100-r47-q1-sem-novas-acoes-projeteis-pendentes.md) | Combate / R47 | R47-Q1 (1A): Nenhuma nova ação durante resolução de projéteis pendentes | Decisão expressa; não implementada por esta entrega |
+| [D-101](D-101-r47-q2-move-alvo-dentro-dois-segundos.md) | Combate / R47 | R47-Q2 (2A): Move e atacante-alvo escolhidos na mesma janela de dois segundos | Decisão expressa; não implementada por esta entrega |
+| [D-102](D-102-r47-q3-continuar-somente-documentacao.md) | Processo / R47 | R47-Q3 (3B): Não alterar código do jogo existente; somente documentação e decisões | Decisão expressa; não implementada por esta entrega |

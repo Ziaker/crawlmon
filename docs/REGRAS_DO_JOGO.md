@@ -577,3 +577,34 @@ Cinco decisões **de design** documentadas (D-092–D-096), com atualização do
 ### 22.4 Estado
 
 **3 documentos de decisão criados, índice e consolidado atualizados; nenhum código, teste ou VFX modificado.**
+
+---
+
+## 23. Rodada 47 — projéteis pendentes, seleção do contra-ataque e somente documentação
+
+> **2026-11-03.** O criador decidiu expressamente **1A, 2A e 3B**. Declarou que o Crawlmon **já é um jogo existente** e proibiu alterações no código nesta atividade. As decisões foram registradas em D-100 a D-102, preservando integralmente as seções e registros anteriores. Não representam implementação.
+
+### 23.1 Matriz de decisões
+
+| Decisão | Escolha | Regra |
+|---|---|---|
+| [R47-Q1](decisoes/D-100-r47-q1-sem-novas-acoes-projeteis-pendentes.md) | 1A | Quando uma equipe é eliminada e há projéteis já lançados em voo (D-099), **ninguém pode iniciar novas ações enquanto o resultado está pendente**, inclusive os sobreviventes. Os **projéteis já lançados continuam ativos até sua resolução**, permitindo empate se eliminarem também a outra equipe. Esta é uma exceção específica à continuidade normal do combate durante animações fatais (D-096). |
+| [R47-Q2](decisoes/D-101-r47-q2-move-alvo-dentro-dois-segundos.md) | 2A | Quando um Evade perfeito contra vários atacantes concede um único golpe extra (D-093), **o jogador deve escolher o Move e qual atacante será alvo dentro da mesma janela de dois segundos**. A escolha aceita é enfileirada e a execução aguarda o fim do ataque original (D-051/D-052). Preservar a suspensão do relógio durante hit-stop e pausa de status (D-071). |
+| [R47-Q3](decisoes/D-102-r47-q3-continuar-somente-documentacao.md) | 3B | **Não há autorização para alterar o código do Crawlmon nesta rodada**. Continuar somente com a documentação e decisões, preservando o jogo existente e suas implementações atuais. A D-097 permanece como ordem planejada para eventual implementação futura, não como autorização para iniciar alterações agora. |
+
+### 23.2 Compatibilidade
+
+1. **D-100 (R47-Q1A):** após uma equipe ser eliminada, quando projéteis já lançados mantêm o resultado pendente (D-099), ninguém pode iniciar novas ações; os projéteis em voo resolvem normalmente. Isso constitui exceção específica à regra geral D-096 de permitir que sobreviventes ajam durante sequências fatais enquanto há batalha em andamento.
+2. **D-101 (R47-Q2A):** o jogador escolhe Move e atacante-alvo na **mesma janela de dois segundos** do contra-ataque extra contra vários agressores. Mantém-se um único golpe extra, com escolha do alvo conforme D-098, fila conforme D-051/D-052 e pausa do cronômetro conforme D-071.
+3. **D-102 (R47-Q3B):** o usuário **não autoriza implementação nem modificações do código**; apenas documentação e decisões neste turno. A D-097 continua sendo um sequenciamento planejado, não um pedido de criar um jogo novo. A inspeção da main confirmou a presença de project.godot, scenes/, scripts/combat/ e tests/.
+
+### 23.3 Pendências importantes ainda abertas
+
+- **Ações já iniciadas** antes do estado de projéteis pendentes, mas ainda não lançadas como projétil: a R47-Q1A veda iniciar novas ações, sem definir se ações em andamento devem continuar, pausar ou ser canceladas.
+- **Seleção incompleta** de Move ou atacante-alvo ao fim dos dois segundos: não houve regra aprovada de cobrança/cancelamento/reembolso nessa hipótese.
+- **IA diante de múltiplos atacantes:** o algoritmo para escolher qual atacante será alvo não foi estabelecido; a D-098 define apenas quem faz a escolha.
+- As pendências documentais de outras rodadas continuam históricas e não foram resolvidas por omissão.
+
+### 23.4 Estado e escopo
+
+**Somente cinco arquivos documentais**: novos D-100, D-101 e D-102; atualização do índice e do consolidado. Nenhum código, FX, configuração ou teste do jogo alterado. As perguntas da Rodada 48 são apresentadas separadamente ao usuário e não estão aprovadas por antecedência.
