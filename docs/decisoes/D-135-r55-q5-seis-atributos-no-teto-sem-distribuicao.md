@@ -22,3 +22,7 @@
 
 - **Documentação somente:** não alterar código, cenas, tabelas, fichas de Moves, VFX, testes ou configurações do projeto.
 - As fórmulas e dados marcados como pendentes não podem ser completados por suposição.
+
+## Complemento posterior — Rodada 57 (2026-11-03)
+
+**D-139 (R57-Q1B)** elimina o teto de 100. Assim, a condição **“todos os seis atributos no teto de 100”** desta D-135 não pode mais ocorrer: os atributos ainda podem crescer acima de 100. A dispensa excepcional do ponto por chegar a esse teto **fica superada**, enquanto a obrigação geral de distribuir **1 ponto do protagonista por nível** permanece. O texto da D-135 é preservado historicamente.

@@ -144,3 +144,7 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-136](D-136-r56-q2-agi-inversamente-proporcional.md) | Combate / atributos / R56 | R56-Q2: Tempo de trajeto inversamente proporcional à AGI efetiva | Aprovado expressamente; sem código |
 | [D-137](D-137-r56-q3-diferenca-luk-aplicador-alvo.md) | Combate / atributos / R56 | R56-Q3: Diferença entre Luck do aplicador e do alvo modifica a chance de status | Aprovado expressamente; sem código |
 | [D-138](D-138-r56-q4-defense-estagios-fisico-magico.md) | Combate / atributos / R56 | R56-Q4: Estágios de Defense afetam danos físicos e mágicos com VIT/SPI separados | Aprovado expressamente; sem código |
+| [D-139](D-139-r57-q1-atributos-sem-teto-100.md) | Personagens / R57 | R57-Q1B: Atributos permanentes podem ultrapassar 100 sem teto máximo | Aprovada expressamente; nenhuma alteração de código |
+| [D-140](D-140-r57-q2-agi-minimo-1-formula.md) | Personagens / R57 | R57-Q2A: AGI efetiva mínima de 1 apenas para o cálculo inverso do Move | Aprovada expressamente; nenhuma alteração de código |
+| [D-141](D-141-r57-q3-sorteio-individual-central.md) | Personagens / R57 | R57-Q3B: Distribuição do sorteio individual favorece valores perto de zero | Aprovada expressamente; nenhuma alteração de código |
+| [D-142](D-142-r57-q4-luk-1pp-cada-10.md) | Personagens / R57 | R57-Q4B: Status probabilístico: 1 ponto percentual para cada 10 pontos de diferença LUK | Aprovada expressamente; nenhuma alteração de código |

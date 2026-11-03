@@ -28,3 +28,7 @@
 ## Complemento posterior — Rodada 55 (2026-11-03)
 
 A decisão posterior **D-135 (R55-Q5, 5A)** cria exceção à distribuição obrigatória de um ponto pelo protagonista ao subir de nível **somente quando todos os seis atributos permanentes (STR, MAG, VIT, SPI, AGI, LUK) estiverem em 100**: dispensar a distribuição e **permitir a subida de nível**. Enquanto existir algum atributo elegível, a obrigação anterior permanece. A resposta não define conversão ou armazenamento do ponto dispensado.
+
+## Complemento posterior — Rodada 57 (2026-11-03)
+
+**D-139 (R57-Q1B)** revoga explicitamente o **teto máximo permanente de 100** desta decisão. STR, MAG, VIT, SPI, AGI e LUK podem superar 100 por progressão, Nature e variações individuais. A escala-base inicial 1–100 e a separação dos buffs não foram alteradas; o texto original continua como registro histórico. A exceção da D-135 baseada no teto anterior deixa de ser aplicável.

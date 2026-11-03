@@ -1030,3 +1030,36 @@ Quatro decisões novas (D-132 a D-135), cinco notas aditivas aos documentos anti
 - `scripts/data/skill.gd`: não há campo formal de tempo individual de Move nem chance de aplicação por efeito.
 - `scripts/combat/combatant.gd`: `def_buff` é aplicado genericamente em `take_damage()`, sem campos de VIT/SPI; não há fórmulas de LUK e progressão ainda integradas.
 - **Somente documentação:** 3 novas decisões D-136..D-138, 4 complementos históricos, índice e regras consolidadas. Nenhuma mudança em código, cenas, dados, assets, VFX, testes ou configuração.
+
+---
+
+## 37. Rodada 57 — atributos sem teto, AGI mínima, sorteio central e coeficiente de LUK
+
+> **2026-11-03:** o criador aprovou **1B, 2A, 3B e 4B**. A resposta 1B resolveu expressamente a ambiguidade da Rodada 56: o limite máximo permanente de 100 é abolido, inclusive para progressão, Nature e variações individuais. Regras individuais D-139 a D-142; preservado o histórico.
+
+### 37.1 Decisões aprovadas
+
+| Decisão | Escolha | Regra |
+|---|---|---|
+| [D-139](decisoes/D-139-r57-q1-atributos-sem-teto-100.md) | 1B | Atributos permanentes podem ultrapassar 100 sem teto máximo |
+| [D-140](decisoes/D-140-r57-q2-agi-minimo-1-formula.md) | 2A | AGI efetiva mínima de 1 apenas para o cálculo inverso do Move |
+| [D-141](decisoes/D-141-r57-q3-sorteio-individual-central.md) | 3B | Distribuição do sorteio individual favorece valores perto de zero |
+| [D-142](decisoes/D-142-r57-q4-luk-1pp-cada-10.md) | 4B | Status probabilístico: 1 ponto percentual para cada 10 pontos de diferença LUK |
+
+### 37.2 Relação explícita com D-129 e D-135
+
+- **D-129:** o limite permanente de **100** está **revogado** pela D-139. Não inventar limite substituto. A separação entre buffs temporários e atributos permanentes continua; a escala de valores-base de referência 1–100 não foi expressamente alterada.
+- **D-135:** a dispensa obrigatória de 1 ponto por nível só ocorria se todos os atributos estivessem **no teto de 100**. **Sem teto permanente**, o pré-requisito da exceção deixou de existir; a dispensa baseada no antigo teto **fica superada**. O protagonista continua distribuindo 1 ponto obrigatoriamente a cada nível, mesmo se os seis atributos forem exatamente 100. O texto da D-135 continua preservado como histórico.
+- **D-132/D-141:** variações individuais inteiras de −3 até +3 persistentes; distribuição favorece valores perto de zero, ±3 mais raros. Um atributo pode passar de 100; pesos e simetria não foram definidos.
+
+### 37.3 Fórmulas parciais e pendências
+
+- **D-140/D-136/D-133/D-018:** ao calcular a duração do trajeto por proporcionalidade inversa, utilizar AGI efetiva mínima **1 para essa operação**, sem modificar o atributo. Referência AGI comum ainda sem número. Aplicar depois a correção posicional `−0,10 s × soma de passos`; mínimo final `0,25 s`. Nenhuma alteração automática da regra de ATB.
+- **D-142/D-137/D-134:** apenas efeitos de status com chance declarada recebem correção pela diferença LUK(aplicador) − LUK(alvo), à razão de **1 ponto percentual a cada 10 pontos LUK**. Exemplo aprovado **40% + 3 pp = 43%** com +30 LUK. Efeitos garantidos continuam garantidos; nenhuma esquiva nova. Arredondamento/interpolação de diferenças não múltiplas de 10 e limites da chance calculada permanecem pendentes.
+- **Crescimento e integração:** não foram especificados pesos estatísticos para o sorteio, fórmulas de evolução por espécie/Nature, valor da AGI de referência nem políticas de apresentação de atributos elevados.
+
+### 37.4 Código consultado e escopo de edição
+
+- `scripts/combat/battle.gd` ainda usa tempo de trajeto com passos e mínimo de 0,25 s, sem AGI; chances de crítico e esquiva permanecem fixas no código.
+- `scripts/combat/combatant.gd` ainda usa atributos simplificados, não os seis atributos permanentes e progressão; `scripts/data/skill.gd` não possui ficha de chance de status por efeito.
+- **Somente documentação:** quatro documentos D-139..D-142 criados, notas aditivas em D-129, D-135, D-132, D-136, D-137, índice e consolidado atualizados. Nenhum código, teste, cena, Move ou asset alterado.

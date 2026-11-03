@@ -23,3 +23,7 @@
 
 - Número de AGI de referência, arredondamento, tratamento da AGI igual a zero ou não positiva, interação com debuffs de AGI e calibração de cada Move.
 - **Sem alteração de código, cenas, dados de personagens, fichas de Moves, VFX ou testes** nesta atividade.
+
+## Complemento posterior — Rodada 57 (2026-11-03)
+
+**D-140 (R57-Q2A):** se AGI efetiva chegar a zero, utilizar o valor **mínimo 1 apenas para a entrada numérica no cálculo inverso do tempo de deslocamento do Move**, sem modificar o atributo permanente. A referência comum de AGI continua sem valor numérico definido; a regra não estende automaticamente o piso ao ATB.

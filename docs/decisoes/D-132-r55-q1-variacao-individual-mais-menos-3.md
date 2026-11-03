@@ -21,3 +21,7 @@
 
 - **Documentação somente:** não alterar código, cenas, tabelas, fichas de Moves, VFX, testes ou configurações do projeto.
 - As fórmulas e dados marcados como pendentes não podem ser completados por suposição.
+
+## Complemento posterior — Rodada 57 (2026-11-03)
+
+**D-139/D-141 (R57):** a variação individual de −3 a +3 continua persistente, mas pode produzir valores permanentes **acima de 100**, sem truncar ao antigo teto. O sorteio deve favorecer valores **próximos de zero** e tornar os extremos −3/+3 raros. Pesos numéricos e distribuição exata continuam pendentes.

@@ -22,3 +22,7 @@
 
 - Chance-base por efeito, função que transforma diferença de LUK em porcentagem, valores mínimos e máximos, ordem de modificadores e arredondamento.
 - **Sem alteração de código, cenas, dados de personagens, fichas de Moves, VFX ou testes** nesta atividade.
+
+## Complemento posterior — Rodada 57 (2026-11-03)
+
+**D-142 (R57-Q4B):** a diferença LUK(aplicador) − LUK(alvo) modifica a chance **1 ponto percentual por 10 pontos da diferença**. Exemplo aprovado: base 40%, diferença +30 => 43%. Não foram aprovadas regras de arredondamento/interpolação para diferenças que não sejam múltiplas de dez nem política explícita para chance calculada fora de 0–100%. Efeitos garantidos permanecem garantidos.
