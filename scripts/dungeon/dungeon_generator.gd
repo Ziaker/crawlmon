@@ -2,7 +2,8 @@ class_name DungeonGenerator
 extends RefCounted
 ## Seeded rooms-and-corridors dungeon generator (GDD R7-Q5 / R8-Q3 / R8-Q4).
 ## Returns an ASCII grid with the same legend the exploration scene parses:
-## '#' wall, '.' floor, 'P' player spawn, 'E' enemy encounter, 'N' friendly NPC.
+## '#' wall, '.' floor, 'P' player spawn, 'E' enemy encounter, 'N' friendly NPC,
+## 'I' consumable item pickup (D-033).
 ##
 ## The same seed, rules and generator version always produce the same layout.
 ## The caller (GameState) is responsible for caching the result, so revisiting
@@ -13,7 +14,8 @@ const FLOOR := 1
 const SPAWN := 2
 const ENEMY := 3
 const NPC := 4
-const CHARS := ["#", ".", "P", "E", "N"]
+const ITEM := 5
+const CHARS := ["#", ".", "P", "E", "N", "I"]
 
 const MIN_ROOMS := 7
 const MAX_ROOMS := 11
@@ -22,6 +24,8 @@ const ROOM_MAX := Vector2i(9, 7)
 const PLACE_ATTEMPTS := 160
 const NPC_COUNT := Vector2i(2, 3)
 const ENEMY_COUNT := Vector2i(4, 6)
+const ITEM_COUNT := Vector2i(2, 4)
+const ITEM_MIN_SPAWN_DISTANCE := 8.0  ## Tiles; keeps pickups away from the start.
 
 var _rng := RandomNumberGenerator.new()
 var _w := 0
@@ -138,6 +142,38 @@ func _place_markers(rooms: Array[Rect2i]) -> void:
 		_cells[candidates[i].y][candidates[i].x] = NPC
 	for i in range(npc_total, npc_total + enemy_total):
 		_cells[candidates[i].y][candidates[i].x] = ENEMY
+	_place_items(rooms, spawn)
+
+
+## Poções coletáveis (D-033): 2 a 4 por andar, em tiles de chão livres de salas
+## fora da sala do spawn. Roda depois dos NPCs/inimigos, então nunca ocupa o
+## tile deles, e usa a RNG da seed para a posição ser reproduzível.
+func _place_items(rooms: Array[Rect2i], spawn: Vector2i) -> void:
+	var total := _rng.randi_range(ITEM_COUNT.x, ITEM_COUNT.y)
+	var candidates: Array[Vector2i] = []
+	for i in range(1, rooms.size()):
+		var room := rooms[i]
+		for y in range(room.position.y, room.position.y + room.size.y):
+			for x in range(room.position.x, room.position.x + room.size.x):
+				if _cells[y][x] != FLOOR:
+					continue
+				if _distance_to_spawn(Vector2i(x, y), spawn) < ITEM_MIN_SPAWN_DISTANCE:
+					continue
+				candidates.append(Vector2i(x, y))
+	# Degenerate floor (single room): fall back to any far enough floor tile.
+	if candidates.is_empty():
+		for y in _h:
+			for x in _w:
+				if _cells[y][x] == FLOOR and _distance_to_spawn(Vector2i(x, y), spawn) >= ITEM_MIN_SPAWN_DISTANCE:
+					candidates.append(Vector2i(x, y))
+	_shuffle(candidates)
+	for i in mini(total, candidates.size()):
+		var cell := candidates[i]
+		_cells[cell.y][cell.x] = ITEM
+
+
+func _distance_to_spawn(cell: Vector2i, spawn: Vector2i) -> float:
+	return Vector2(cell - spawn).length()
 
 
 ## Seeded Fisher-Yates (Array.shuffle() would use the global RNG).

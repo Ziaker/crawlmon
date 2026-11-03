@@ -123,7 +123,15 @@ func _draw_unit(c: Combatant, r: Rect2) -> void:
 	var atk_str := str(c.attack) + (" (+%d)" % c.atk_buff if c.atk_buff > 0 else (" (%d)" % c.atk_buff if c.atk_buff < 0 else ""))
 	var def_str := ("+50%" if c.def_buff == 2 else ("+25%" if c.def_buff == 1 else ("-25%" if c.def_buff == -1 else ("-50%" if c.def_buff == -2 else "PADRÃO"))))
 	var spd_str := "%.2f blocos/s" % c.speed + (" (+%d)" % c.speed_buff if c.speed_buff > 0 else (" (%d)" % c.speed_buff if c.speed_buff < 0 else ""))
+	# Status effects.
+	var status_list: Array[String] = []
+	if c.is_stunned(): status_list.append("Atordoado (%.1fs)" % c.stun_timer)
+	if c.is_blind(): status_list.append("Cegueira (%.1fs)" % c.blind_timer)
+	if c.taunted_by != null: status_list.append("Provocado")
+	if c.is_invulnerable: status_list.append("Invulnerável")
+	var status_str := ", ".join(status_list) if not status_list.is_empty() else "Normal"
 	for row in [
+		["ESTADO", status_str],
 		["ATAQUE", atk_str],
 		["DEFESA", def_str],
 		["VELOCIDADE", spd_str],

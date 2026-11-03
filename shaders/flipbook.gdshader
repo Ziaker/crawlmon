@@ -1,5 +1,5 @@
 shader_type spatial;
-render_mode unshaded, cull_disabled, depth_draw_never;
+render_mode unshaded, blend_add, cull_disabled, depth_draw_never;
 // Multi-frame sprite-sheet (flipbook) billboard shader for impacts, fire, lightning and smoke.
 
 uniform sampler2D sheet_tex : source_color, filter_linear_mipmap, repeat_disable;
@@ -31,7 +31,11 @@ void fragment() {
 	vec2 cell_size = vec2(1.0 / float(h_frames), 1.0 / float(v_frames));
 	vec2 uv = (UV + vec2(float(col), float(row))) * cell_size;
 	vec4 tex = texture(sheet_tex, uv);
+	float a = clamp(tex.a * color.a, 0.0, 1.0);
+	if (a < 0.02) {
+		discard;
+	}
 	float core = smoothstep(0.55, 0.98, tex.r);
 	ALBEDO = mix(tex.rgb * color.rgb, vec3(1.0), core * 0.45) * energy;
-	ALPHA = clamp(tex.a * color.a, 0.0, 1.0);
+	ALPHA = a;
 }

@@ -5,6 +5,9 @@ extends RefCounted
 
 signal damaged(combatant: Combatant, amount: int)
 signal died(combatant: Combatant)
+signal odometer_ticked(combatant: Combatant, new_value: int)  ## Mother 3 rolling HP odometer tick (D-048)
+
+static var rolling_hp_enabled: bool = true
 
 enum Act { ATTACK, SKILL, HOLD }  ## Tactics: what an AI ally does with its blocks.
 enum React { NONE, EVADE }  ## Tactics: how an AI ally reacts to incoming attacks.
@@ -16,9 +19,13 @@ const ATB_PACE_MULT := 1.0
 var name: String
 var max_hp: int
 var hp: int
+var target_hp: int
+var rolling_hp: float
+var _last_int_rolling_hp: int
 var base_attack: int
 var base_speed: float  ## Blocks per second.
 var is_player: bool
+var in_battle := false
 var skills: Array[Skill] = []
 var weaknesses: Array[Element.Type] = []
 var held_item_id := ""
@@ -56,9 +63,17 @@ var atk_buff := 0   ## -2 .. +2 (Tarukaja / Tarunda)
 var def_buff := 0   ## -2 .. +2 (Rakukaja / Rakunda)
 var speed_buff := 0 ## -2 .. +2 (Sukukaja / Sukunda)
 
+# Novos estados de combate (D-032)
+var is_invulnerable := false  ## Sumido em Teleport/Dig: imune a ataques direcionados.
+var stun_timer := 0.0         ## Atordoamento em segundos: ATB pausado, ações bloqueadas.
+var blind_timer := 0.0        ## Cegueira em segundos: 35% de chance de errar ações ofensivas.
+var taunted_by: Combatant = null  ## Alvo único forçado pelo Taunt.
+var taunt_atk_bonus := false  ## Bônus de +1 estágio de ATK exclusivo para a ação provocada.
+
 var attack: int:
 	get:
-		var mult := 1.0 + float(atk_buff) * 0.25
+		var extra_stage := 1 if taunt_atk_bonus else 0
+		var mult := 1.0 + float(atk_buff + extra_stage) * 0.25
 		return maxi(1, roundi(base_attack * maxf(mult, 0.4)))
 
 var speed: float:
@@ -67,10 +82,25 @@ var speed: float:
 		return maxf(base_speed * maxf(mult, 0.3), 0.1)
 
 
+func is_stunned() -> bool:
+	return stun_timer > 0.0
+
+
+func is_blind() -> bool:
+	return blind_timer > 0.0
+
+
+func is_invulnerable_target() -> bool:
+	return is_invulnerable
+
+
 func _init(p_name: String, p_hp: int, p_attack: int, p_speed: float, p_is_player: bool) -> void:
 	name = p_name
 	max_hp = p_hp
 	hp = p_hp
+	target_hp = p_hp
+	rolling_hp = float(p_hp)
+	_last_int_rolling_hp = p_hp
 	base_attack = p_attack
 	base_speed = p_speed
 	is_player = p_is_player
@@ -84,6 +114,7 @@ func visual_step() -> float:
 
 ## Puts the combatant on the floor at `p_home`, facing `p_yaw`.
 func place(p_home: Vector3, p_yaw: float) -> void:
+	in_battle = true
 	home = BattleSpace.flat(p_home)
 	yaw = p_yaw
 	pos = home
@@ -122,7 +153,11 @@ func is_alive() -> bool:
 
 
 func tick(delta: float) -> void:
-	if is_alive():
+	if stun_timer > 0.0:
+		stun_timer = maxf(stun_timer - delta, 0.0)
+	if blind_timer > 0.0:
+		blind_timer = maxf(blind_timer - delta, 0.0)
+	if is_alive() and stun_timer <= 0.0:
 		atb = minf(atb + speed * ATB_PACE_MULT * delta, BLOCKS)
 
 
@@ -138,13 +173,60 @@ func pay(cost: float) -> void:
 		spend(cost)
 
 
+func set_hp_instant(value: int) -> void:
+	hp = clampi(value, 0, max_hp)
+	target_hp = hp
+	rolling_hp = float(hp)
+	_last_int_rolling_hp = hp
+
+
 func take_damage(amount: int) -> void:
 	var def_mult := 1.0 - float(def_buff) * 0.25
 	var final_dmg := maxi(1, roundi(amount * maxf(def_mult, 0.4)))
-	hp = maxi(hp - final_dmg, 0)
-	damaged.emit(self, final_dmg)
-	if hp == 0:
+
+	if not is_player or not rolling_hp_enabled:
+		hp = maxi(hp - final_dmg, 0)
+		target_hp = hp
+		rolling_hp = float(hp)
+		_last_int_rolling_hp = hp
+		damaged.emit(self, final_dmg)
+		if hp == 0:
+			died.emit(self)
+		return
+
+	# D-048: Vida Rolante estilo Mother 3 / EarthBound
+	# Dano fatal (dano >= vida restante): morte imediata sem odômetro conforme decisão do criador
+	if final_dmg >= hp:
+		hp = 0
+		target_hp = 0
+		rolling_hp = 0.0
+		_last_int_rolling_hp = 0
+		damaged.emit(self, final_dmg)
 		died.emit(self)
+		return
+
+	# Dano não-fatal: atualiza o alvo e deixa o odômetro rolar com o tempo
+	target_hp = maxi(target_hp - final_dmg, 1)
+	damaged.emit(self, final_dmg)
+
+
+func tick_rolling_hp(delta: float) -> void:
+	if not is_player or not rolling_hp_enabled or hp == 0:
+		return
+	if is_equal_approx(rolling_hp, float(target_hp)):
+		rolling_hp = float(target_hp)
+		hp = target_hp
+		_last_int_rolling_hp = hp
+		return
+
+	# Taxa proporcional à vida máxima: ~3.0s para percorrer 100% de max_hp (D-048)
+	var drain_speed := maxf(float(max_hp) / 3.0, 5.0)
+	rolling_hp = move_toward(rolling_hp, float(target_hp), drain_speed * delta)
+	var new_int_hp := roundi(rolling_hp)
+	if new_int_hp != _last_int_rolling_hp:
+		_last_int_rolling_hp = new_int_hp
+		hp = new_int_hp
+		odometer_ticked.emit(self, new_int_hp)
 
 
 func buff_stat(stat: String, delta: int) -> int:
@@ -168,7 +250,15 @@ func clear_buffs() -> void:
 
 
 func heal(amount: int) -> void:
-	hp = mini(hp + amount, max_hp)
+	if not is_player or not rolling_hp_enabled or not in_battle:
+		hp = mini(hp + amount, max_hp)
+		target_hp = hp
+		rolling_hp = float(hp)
+		_last_int_rolling_hp = hp
+		return
+
+	# D-048: Cura atualiza o alvo e inverte o rolamento suavemente
+	target_hp = mini(target_hp + amount, max_hp)
 
 
 func item_count(id: String) -> int:
@@ -219,6 +309,11 @@ func clear_pending() -> void:
 	pending_extra = 0
 	pending_burst = 0
 	extra = 0.0
+	is_invulnerable = false
+	stun_timer = 0.0
+	blind_timer = 0.0
+	taunted_by = null
+	taunt_atk_bonus = false
 	clear_buffs()
 
 

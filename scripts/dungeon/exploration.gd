@@ -1,9 +1,11 @@
 extends Node2D
 ## Top-down 2D dungeon map built from an ASCII grid.
-## '#' wall, '.' floor, 'P' player spawn, 'E' enemy encounter, 'N' friendly NPC.
+## '#' wall, '.' floor, 'P' player spawn, 'E' enemy encounter, 'N' friendly NPC,
+## 'I' consumable item pickup.
 
 const DungeonNPCClass = preload("res://scripts/dungeon/npc.gd")
 const DungeonEnemyClass = preload("res://scripts/dungeon/enemy.gd")
+const DungeonPickupClass = preload("res://scripts/dungeon/pickup.gd")
 const FogOfWarClass = preload("res://scripts/dungeon/fog_of_war.gd")
 const DialogueBoxClass = preload("res://scripts/ui/dialogue_box.gd")
 const NPCData = preload("res://scripts/dungeon/npc_data.gd")
@@ -45,6 +47,7 @@ func _ready() -> void:
 	var spawn := Vector2(TILE * 1.5, TILE * 1.5)
 	var npc_spots: Array[Vector2] = []
 	var enemy_cells: Dictionary = {}  ## id -> Vector2i
+	var item_spots: Array[Dictionary] = []  ## {id, pos}
 	
 	for y in _map.size():
 		for x in _map[y].length():
@@ -60,6 +63,10 @@ func _ready() -> void:
 						enemy_cells[id] = Vector2i(x, y)
 				"N":
 					npc_spots.append(center)
+				"I":
+					var item_id := "%d,%d" % [x, y]
+					if not GameState.dungeon_items_collected.has(item_id):
+						item_spots.append({"id": item_id, "pos": center})
 					
 	# Cria o jogador
 	player = CharacterBody2D.new()
@@ -71,6 +78,7 @@ func _ready() -> void:
 	_spawn_npcs(npc_spots)
 	# Inimigos precisam do jogador e de um AStarGrid2D já montado.
 	_spawn_enemies(enemy_cells)
+	_spawn_items(item_spots)
 	# Névoa por último: fica acima do mapa, inimigos e NPCs.
 	fog = FogOfWarClass.new()
 	add_child(fog)
@@ -152,6 +160,24 @@ func _spawn_enemies(cells: Dictionary) -> void:
 		enemy.touched.connect(_on_enemy_touched)
 		entities.add_child(enemy)
 		enemies[id] = enemy
+
+
+func _spawn_items(spots: Array[Dictionary]) -> void:
+	for spot in spots:
+		var item_id: String = spot["id"]
+		var pos: Vector2 = spot["pos"]
+		var pickup = DungeonPickupClass.new()
+		pickup.position = pos
+		pickup.setup(item_id, player)
+		pickup.collected.connect(_on_item_collected)
+		entities.add_child(pickup)
+
+
+## Coleta automática (D-033): soma a Poção ao inventário e registra no GameState
+## para ela não reaparecer ao voltar de uma batalha.
+func _on_item_collected(pickup) -> void:
+	GameState.dungeon_items_collected.append(pickup.id)
+	GameState.add_item(DungeonPickupClass.ITEM_ID)
 
 
 ## Cardinal pathfinding grid: walls and NPCs are solid, everything else is

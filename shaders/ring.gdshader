@@ -15,6 +15,10 @@ void fragment() {
 	float ring = smoothstep(w, 0.0, abs(r - ring_r));
 	float inner = smoothstep(ring_r, 0.0, r) * (1.0 - progress) * 0.18;
 	float fade = (1.0 - progress) * (1.0 - progress);
+	float a = clamp((ring + inner) * fade * color.a, 0.0, 1.0);
+	if (a < 0.02) {
+		discard;
+	}
 	ALBEDO = mix(color.rgb, vec3(1.0), ring * 0.6) * energy;
-	ALPHA = clamp((ring + inner) * fade, 0.0, 1.0) * color.a;
+	ALPHA = a;
 }

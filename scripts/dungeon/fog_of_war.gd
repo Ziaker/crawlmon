@@ -1,8 +1,8 @@
 extends Node2D
 ## Per-tile fog of war for the ASCII floor (GDD R8-Q2).
 ##
-## Unexplored tiles are fully black, tiles the player has already visited stay
-## dimmed ("memory"), and tiles inside the player's line of sight are clear.
+## Unexplored tiles are fully black and tiles the player has already visited are
+## fully clear (D-033), so only what was never seen stays dark.
 ## Visibility is recomputed only when the player steps into a new tile.
 ##
 ## The explored set is stored on a state object (GameState) passed by
@@ -14,7 +14,7 @@ extends Node2D
 
 const TILE := 48
 const RADIUS := 7.5  ## Tiles of sight.
-const EXPLORED_ALPHA := 0.78
+const EXPLORED_ALPHA := 0.0  ## Visited tiles are fully lit (D-033).
 const FOG_COLOR := Color(0, 0, 0, 1)
 
 var _map: Array[String] = []

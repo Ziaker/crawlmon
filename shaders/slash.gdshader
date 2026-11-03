@@ -21,7 +21,10 @@ void fragment() {
 	float head = progress * 1.5;
 	float sweep = clamp(1.0 - (head - u) / 0.55, 0.0, 1.0) * step(u, head);
 	float fade = 1.0 - smoothstep(0.65, 1.0, progress);
-	float a = body * sweep * fade;
+	float a = clamp(body * sweep * fade * color.a, 0.0, 1.0);
+	if (a < 0.02) {
+		discard;
+	}
 	ALBEDO = mix(color.rgb, vec3(1.0), core) * energy;
-	ALPHA = clamp(a, 0.0, 1.0);
+	ALPHA = a;
 }

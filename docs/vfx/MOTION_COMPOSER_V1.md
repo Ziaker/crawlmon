@@ -1,0 +1,882 @@
+# Crawlmon — Especificação do Motion Composer V1
+
+Escopo aprovado: 20 comportamentos procedurais, combináveis entre si, com laboratório visual independente e preservação integral dos VFX atuais.
+
+A primeira versão será especificada como uma biblioteca de movimentos para criar efeitos visuais, não como uma coleção de 20 efeitos prontos.
+
+O projeto terá três capacidades centrais: criar movimentos individualmente, combiná-los em animações complexas e reaproveitar a mesma animação com diferentes representações visuais.
+
+A especificação também preservará os oito estudos helicoidais como referências para a evolução da biblioteca, sem transformá-los em oito implementações adicionais nesta primeira versão.
+
+Decisões aplicáveis: D-002, D-003, D-019, D-020, D-022 e as decisões locais do Motion Composer D-042, D-043, D-044 e D-045, além das decisões de combate que governarão uma eventual integração posterior. O desenvolvimento desta especificação não autoriza alterar o código ou substituir efeitos existentes.
+
+# Especificação técnica — Crawlmon Motion Composer V1
+
+**Tipo:** Especificação de design e arquitetura, sem implementação\
+**Projeto:** Crawlmon — Godot 4.7 / GL Compatibility\
+**Base local conferida:** commit `3397689c4f64d04681623fcc984159a5579d7a27`; árvore de trabalho compartilhada com alterações locais. A análise estática original está registrada nesta conversa; não equivale à validação em execução.\
+**Situação:** Catálogo de 20 movimentos aprovado; detalhes técnicos e artísticos propostos para avaliação.
+
+---
+
+## 1. Objetivo
+
+Desenvolver uma biblioteca independente de comportamentos procedurais para facilitar a criação, edição, combinação, visualização e reutilização de movimentos em efeitos visuais 3D.
+
+O sistema deverá permitir que agentes de IA e operadores humanos criem movimentos complexos combinando comportamentos simples, evitando a necessidade de reprogramar trajetórias e deformações a cada Move.
+
+**Princípio central:** movimento, representação visual e temporização são responsabilidades distintas.
+
+Um mesmo comportamento poderá controlar pontos, fragmentos, fitas, partículas ou outras representações compatíveis.
+
+### 1.1 Escopo aprovado
+
+- Implementação futura de 20 comportamentos específicos, definidos na seção 3.
+- Laboratório visual independente.
+- Composição de múltiplos comportamentos.
+- Independência entre lógica de movimento e aparência visual.
+- Preservação dos VFX existentes.
+- Preservação integral das regras de combate.
+- Possibilidade de futura integração mediante autorização separada.
+
+### 1.2 Fora do escopo desta primeira versão
+
+- Substituir efeitos visuais dos Moves existentes.
+- Modificar dano, colisões, trajetórias lógicas, ATB ou qualquer mecânica de combate.
+- Alterar câmera ou animações dos personagens.
+- Implementar os 64 comportamentos do catálogo conceitual.
+- Criar oito implementações helicoidais adicionais.
+- Introduzir simulação física complexa, fluidos ou um novo motor de partículas.
+- Refatorar sistemas atuais sem necessidade autorizada.
+
+Os oito exemplos da imagem original permanecem como referências geométricas e artísticas.
+
+---
+
+## 2. Princípios de arquitetura
+
+### 2.1 Movimento independente da geometria
+
+O movimento deverá ser calculado independentemente do recurso utilizado para desenhá-lo.
+
+Um avaliador receberá parâmetros, coordenadas de amostragem e tempo e produzirá informações geométricas e visuais.
+
+Os renderizadores consumirão os resultados sem modificar a lógica do movimento.
+
+### 2.2 Um único tempo por instância
+
+Cada instância deverá consumir um tempo fornecido por seu controlador.
+
+- **No laboratório:** relógio local controlado pela interface.
+- **No combate futuro:** relógio ou progresso da ação fornecido pelo motor.
+- **Em pausa:** o tempo correspondente permanece constante.
+- **Em câmera lenta:** o tempo progride conforme a escala autoritativa.
+- **Em pausas seletivas:** ações distintas podem receber tempos distintos.
+
+Nenhum comportamento poderá decidir autonomamente o instante lógico de dano, colisão, interrupção ou finalização do ataque.
+
+### 2.3 Composição explícita
+
+A ordem dos movimentos será parte da definição de cada composição.
+
+Aplicar curvatura e depois torção não é necessariamente equivalente a torcer primeiro e depois curvar.
+
+Também deverão ser representados explicitamente o sistema de coordenadas, a intensidade, a máscara espacial e os deslocamentos temporais.
+
+### 2.4 Determinismo
+
+Uma composição deverá produzir o mesmo resultado quando avaliada com parâmetros, tempo, contexto e semente idênticos.
+
+Isso é necessário para reprodução quadro a quadro, comparação A/B, testes e reconstrução de rastros.
+
+### 2.5 Preservação
+
+O Motion Composer não deverá substituir `VfxLib`, `BattleFx` ou os módulos atuais de combate nesta etapa.
+
+A reutilização de funções existentes deverá ser avaliada caso a caso. Funções que dependem de temporizadores ou tweens próprios não deverão ser consideradas automaticamente compatíveis com o novo contrato temporal.
+
+---
+
+## 3. Catálogo aprovado — 20 comportamentos
+
+Os comportamentos abaixo são os únicos aprovados como integrantes da V1.
+
+Os parâmetros indicados representam as capacidades a especificar. Valores iniciais, limites e curvas padrão permanecem pendentes.
+
+### Grupo A — Trajetórias
+
+| ID  | Comportamento      | Definição funcional e parâmetros principais                                                                                                  |
+| --- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| M01 | Espiral helicoidal | Deslocar amostras em torno de um eixo com avanço axial. Parâmetros: raio, passo, voltas, fase, sentido e evolução do raio                    |
+| M02 | Zigue-zague        | Alternar deslocamentos laterais durante a progressão. Parâmetros: amplitude, frequência espacial, suavização dos vértices e fase             |
+| M03 | Serpentina         | Criar deslocamento lateral contínuo e ondulatório ao longo de uma direção. Parâmetros: amplitude, comprimento de onda, fase e curvatura      |
+| M04 | Bézier dinâmica    | Avaliar uma trajetória com pontos de controle modificáveis ao longo do tempo. Parâmetros: pontos de controle, progressão e variação temporal |
+
+**Critério:** as quatro trajetórias devem produzir movimentos espacialmente distinguíveis, inclusive com representação neutra.
+
+### Grupo B — Campos de movimento
+
+| ID  | Comportamento | Definição funcional e parâmetros principais                                                                                          |
+| --- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| M05 | Vórtice       | Induzir circulação ao redor de um eixo ou núcleo. Parâmetros: centro, intensidade angular, raio de influência e decaimento           |
+| M06 | Convergência  | Aproximar elementos de uma posição de destino. Parâmetros: ponto-alvo, intensidade de atração, curva de aproximação e alcance        |
+| M07 | Turbulência   | Introduzir perturbações espaciais contínuas e não uniformes. Parâmetros: escala espacial, intensidade, frequência temporal e semente |
+
+A V1 deverá distinguir **campo de movimento** de **simulação de partículas**.
+
+Os três campos poderão inicialmente operar por avaliação procedural determinística. Integração numérica e comportamento físico acumulativo não estão automaticamente aprovados.
+
+### Grupo C — Deformações
+
+| ID  | Comportamento      | Definição funcional e parâmetros principais                                         |
+| --- | ------------------ | ----------------------------------------------------------------------------------- |
+| M08 | Torção progressiva | Aplicar rotação variável ao longo do comprimento, com propagação temporal da torção |
+| M09 | Curvatura          | Deformar progressivamente o eixo ou a estrutura espacial de um efeito               |
+| M10 | Alongamento        | Aumentar a extensão de regiões determinadas, com distribuição espacial configurável |
+| M11 | Compressão         | Reduzir a extensão ou concentração espacial das regiões selecionadas                |
+
+Parâmetros comuns: intensidade, posição de influência, extensão afetada, curva espacial, início temporal e duração da transformação.
+
+Os comportamentos deverão atuar sobre diferentes regiões da representação, e não apenas modificar a escala ou rotação global de um `Node3D`.
+
+### Grupo D — Propagação
+
+| ID  | Comportamento  | Definição funcional e parâmetros principais                                                         |
+| --- | -------------- | --------------------------------------------------------------------------------------------------- |
+| M12 | Pulso viajante | Deslocar uma concentração de intensidade ou deformação ao longo de um percurso                      |
+| M13 | Onda radial    | Propagar uma frente de influência a partir de um centro sobre um plano ou domínio espacial definido |
+
+Parâmetros: velocidade de propagação visual, extensão da frente, amplitude, frequência quando aplicável, alcance e perfil de dissipação.
+
+Esses parâmetros são puramente visuais no laboratório e não definem velocidade lógica de projéteis ou áreas de dano.
+
+### Grupo E — Composição espacial
+
+| ID  | Comportamento | Definição funcional e parâmetros principais                                                                 |
+| --- | ------------- | ----------------------------------------------------------------------------------------------------------- |
+| M14 | Bifurcação    | Separar um fluxo de origem em múltiplos percursos identificáveis                                            |
+| M15 | Recombinação  | Conduzir fluxos distintos a uma região comum, produzindo convergência espacial e eventual unificação visual |
+
+Parâmetros: quantidade de ramificações, ponto de separação, ângulo de abertura, distância, intensidade, ponto de reunião e duração.
+
+Os fluxos deverão manter identificadores estáveis para possibilitar animação determinística e associação correta dos rastros.
+
+### Grupo F — Impacto
+
+**M16 — Explosão direcional**
+
+Expansão rápida e orientada de elementos a partir de uma região de origem.
+
+Parâmetros: direção, abertura angular, distância, distribuição, intensidade, perfil temporal e dissipação.
+
+O comportamento não cria impactos adicionais nem modifica o resultado lógico de um ataque.
+
+### Grupo G — Nascimento e dissipação
+
+**M17 — Crescimento progressivo**
+
+Permite revelar gradualmente um movimento, aumentando o trecho visível ou a região ativa ao longo do tempo.
+
+**M18 — Dissolução progressiva**
+
+Permite remover gradualmente regiões do efeito, com progressão espacial e temporal.
+
+Parâmetros comuns: direção de propagação, duração, curva de intensidade, máscara e largura da transição.
+
+A dissolução deverá poder atuar sobre visibilidade, espessura ou intensidade, conforme a representação utilizada, sem exigir um único método de renderização.
+
+### Grupo H — Persistência
+
+**M19 — Rastro temporal**
+
+Representa posições anteriores de um movimento, com idade e propriedades visuais controláveis.
+
+Deverá preservar a história do emissor quando este mudar de posição ou direção.
+
+**M20 — Pós-imagem**
+
+Representa estados visuais anteriores em instantes discretos, com defasagem temporal e desaparecimento progressivo.
+
+Parâmetros comuns: duração da persistência, intervalo entre amostras, intensidade, tamanho, transparência e referência espacial.
+
+**Diferença obrigatória:** rastro temporal apresenta continuidade histórica; pós-imagem utiliza estados discretos. Os dois não deverão produzir resultados indistinguíveis.
+
+---
+
+## 4. Modelo de dados proposto
+
+Esta seção descreve um contrato lógico, não nomes obrigatórios de classes ou arquivos.
+
+### 4.1 Definição de comportamento
+
+Cada comportamento deverá possuir:
+
+- Identificador estável e versão.
+- Nome e descrição.
+- Categoria funcional.
+- Parâmetros editáveis, unidades e domínios válidos.
+- Tipos de entrada e saída.
+- Política de composição.
+- Requisitos de amostragem.
+- Indicação de funcionamento por avaliação direta ou histórico.
+- Regras de compatibilidade com máscaras e espaços de coordenadas.
+
+### 4.2 Contexto de avaliação
+
+O avaliador deverá receber, conceitualmente:
+
+| Entrada                     | Finalidade                                                        |
+| --------------------------- | ----------------------------------------------------------------- |
+| Tempo da instância          | Determinar o estado temporal                                      |
+| Coordenada de amostragem    | Identificar a região avaliada                                     |
+| Transformação de referência | Posicionar o efeito no espaço                                     |
+| Parâmetros                  | Configurar o comportamento                                        |
+| Semente                     | Garantir aleatoriedade reproduzível                               |
+| Identificador da instância  | Separar efeitos simultâneos                                       |
+| Contexto de origem/destino  | Referenciar pontos e orientações quando aplicável                 |
+| Estado histórico            | Disponibilizar dados de rastros ou simulações, quando necessários |
+
+O tempo em segundos e o progresso normalizado deverão ser conceitos diferentes. A conversão depende de uma duração conhecida, não presumida.
+
+### 4.3 Resultado da avaliação
+
+Um resultado poderá conter:
+
+- Posição 3D.
+- Orientação ou base local.
+- Direção tangente.
+- Escala e espessura.
+- Intensidade e opacidade.
+- Estado de visibilidade.
+- Identificador de ramo ou elemento.
+- Informações para construção das representações visuais.
+
+Nem todo comportamento precisa alterar todos esses campos.
+
+Um resultado não deverá incluir comandos para alterar dano, colisão lógica, câmera ou estado de combate.
+
+### 4.4 Tipos de operações
+
+Proponho distinguir:
+
+1. **Geradores:** produzem trajetórias ou conjuntos iniciais de amostras.
+2. **Modificadores:** transformam posições ou atributos existentes.
+3. **Campos:** aplicam deslocamentos ou influências espaciais.
+4. **Operadores de topologia:** ramificam ou reúnem fluxos.
+5. **Envelopes:** controlam ativação, crescimento, intensidade e dissipação.
+6. **Operadores históricos:** constroem rastros e pós-imagens.
+
+Essa divisão permite compartilhamento de algoritmos sem transformar comportamentos visualmente distintos em uma única entrada de catálogo.
+
+---
+
+## 5. Sistema de composição
+
+### 5.1 Modelo conceitual
+
+Uma composição é uma sequência ordenada de operações, com possibilidade de ramificação.
+
+Cada operação terá:
+
+- Comportamento selecionado.
+- Parâmetros.
+- Intensidade de aplicação.
+- Máscara de influência.
+- Espaço de coordenadas.
+- Defasagem temporal.
+- Condição de ativação.
+- Entrada e saída explícitas.
+
+Uma composição poderá conter várias instâncias do mesmo comportamento com parâmetros distintos.
+
+### 5.2 Operações de combinação propostas
+
+| Operação             | Semântica                                            |
+| -------------------- | ---------------------------------------------------- |
+| Substituir           | Usa a saída de um comportamento como novo valor-base |
+| Deslocar             | Soma um deslocamento ao resultado anterior           |
+| Deformar             | Transforma espacialmente a saída anterior            |
+| Multiplicar atributo | Modula intensidade, largura ou opacidade             |
+| Mascarar             | Restringe uma influência a uma região                |
+| Ramificar            | Produz múltiplas saídas identificadas                |
+| Reunir               | Combina fluxos que compartilham um destino ou região |
+| Persistir            | Usa informações de estados temporais anteriores      |
+
+Operações incompatíveis deverão produzir uma mensagem de validação, não uma conversão silenciosa.
+
+### 5.3 Espaços de coordenadas
+
+A especificação de composição deverá diferenciar, no mínimo:
+
+- Espaço local do efeito.
+- Espaço global do laboratório ou cena.
+- Espaço associado a uma trajetória.
+- Espaço relativo ao emissor.
+
+A troca de espaço deverá ser explícita e verificável.
+
+Uma trajetória que segue o emissor e um rastro que permanece no mundo não devem ser obrigados a usar a mesma transformação.
+
+### 5.4 Máscaras
+
+As máscaras deverão permitir controlar a influência por posição, tempo, ramo ou identificador de elemento.
+
+Exemplos:
+
+- Aplicar torção somente à metade final da trajetória.
+- Comprimir o núcleo, preservando as extremidades.
+- Dissolver a cauda antes da frente.
+- Aplicar turbulência somente após uma bifurcação.
+
+### 5.5 Curvas temporais
+
+Cada comportamento deverá permitir evolução temporal parametrizada.
+
+O sistema deverá suportar curvas para intensidades e outros parâmetros compatíveis.
+
+Os intervalos e perfis padrão das curvas ainda precisam de aprovação.
+
+---
+
+## 6. Exemplo obrigatório de composição
+
+### Rajada complexa de energia
+
+Sequência visual pretendida:
+
+**Compressão → Zigue-zague com torção → Bifurcação em três fluxos → Recombinação → Ondas radiais → Dissipação**
+
+| Etapa           | Comportamentos | Resultado esperado                                                  |
+| --------------- | -------------- | ------------------------------------------------------------------- |
+| Preparação      | M11 + M17      | Uma emissão nasce estreita e comprimida                             |
+| Avanço          | M02 + M08      | O fluxo progride em zigue-zague enquanto suas regiões sofrem torção |
+| Divisão         | M14            | O fluxo se divide visualmente em três percursos                     |
+| Desenvolvimento | M03 + M07      | Cada percurso adquire ondulação e turbulência                       |
+| Reunião         | M15            | Os três fluxos convergem em uma região comum                        |
+| Liberação       | M13 + M16      | Uma frente radial e uma expansão direcional se propagam visualmente |
+| Encerramento    | M18 + M19      | O fluxo desaparece, deixando rastros temporários                    |
+
+A sequência acima é uma **receita de teste do compositor**, não um Move aprovado do Crawlmon.
+
+A duração, a aparência, o número de partículas e os valores concretos dos parâmetros não estão definidos.
+
+O teste deve comprovar que a composição é construída reutilizando comportamentos da biblioteca, sem implementar manualmente uma trajetória exclusiva.
+
+---
+
+## 7. Referências helicoidais
+
+As oito superfícies da imagem serão tratadas como estudos de referência.
+
+A V1 deverá preservar a possibilidade de construir seus movimentos utilizando os comportamentos existentes.
+
+Exemplos de relações:
+
+| Referência                             | Recursos da V1 potencialmente aplicáveis |
+| -------------------------------------- | ---------------------------------------- |
+| Cylindrical helical strip              | Espiral helicoidal, crescimento e rastro |
+| Right helicoid                         | Espiral, torção e propagação             |
+| Oblique helicoid                       | Espiral, curvatura e orientação variável |
+| Pseudo-developable helicoid            | Torção, curvatura e compressão           |
+| Evolvent helicoid                      | Espiral, crescimento e curvatura         |
+| Convolute helicoid                     | Espiral, torção e pulso viajante         |
+| Degenerated convolute helicoid         | Torção, alongamento e compressão         |
+| Helical surface generated by normals | Espiral, orientação local e deformações  |
+
+Essas associações são hipóteses de composição para experimentação.
+
+Não representam equivalência matemática demonstrada entre os comportamentos e as superfícies originais.
+
+Se algum estudo exigir uma operação não disponível entre os 20, a lacuna deverá ser documentada. Não será criada automaticamente uma vigésima primeira operação.
+
+---
+
+## 8. Representações visuais
+
+O compositor deverá produzir dados de movimento independentes da aparência.
+
+### 8.1 Representações propostas
+
+| Representação        | Aplicação                                      |
+| -------------------- | ---------------------------------------------- |
+| Pontos e marcadores  | Depuração geométrica e estudo de trajetórias   |
+| Instâncias de malha  | Fragmentos, faíscas e elementos repetitivos    |
+| Fitas procedurais    | Fluxos de energia, cortes e rastros contínuos  |
+| Billboards           | Fumaça, brilho e elementos orientados à câmera |
+| Geometria procedural | Superfícies e deformações mais complexas       |
+
+D-044 aprova a disponibilidade de pontos, fragmentos, fitas e fumaça/billboards. A representação inicial de cada estudo continua sendo proposta técnica. Geometria procedural é um recurso de construção, sem ampliar as quatro representações aprovadas.
+
+### 8.2 Compatibilidade
+
+A implementação futura deverá respeitar o renderizador **GL Compatibility** efetivamente configurado no projeto.
+
+Recursos candidatos incluem malhas procedurais, `ArrayMesh`, `MultiMeshInstance3D`, `CPUParticles3D` e shaders espaciais compatíveis.
+
+Não deverá existir dependência obrigatória de funcionalidades exclusivas de outro renderizador.
+
+### 8.3 Qualidade visual independente
+
+Um movimento deverá poder ser apresentado com material neutro, sem brilho, partículas auxiliares ou cores distintas.
+
+Esse modo permitirá avaliar se a matemática do movimento é perceptível por si mesma.
+
+### 8.4 Relação com os sistemas atuais
+
+O `vfx_lib.gd` existente oferece texturas, materiais, gradientes e outros recursos reutilizáveis.
+
+O `fx_projectiles.gd` contém exemplos de apresentação de trajetórias controladas pelo progresso do ataque.
+
+Esses componentes serão referências para a integração futura, não dependências obrigatórias do laboratório isolado.
+
+---
+
+## 9. Contrato temporal
+
+### 9.1 Relógio do laboratório
+
+O laboratório possuirá um relógio de pré-visualização controlado localmente.
+
+Operações previstas:
+
+- Reproduzir.
+- Pausar.
+- Reiniciar.
+- Avançar quadro a quadro.
+- Retroceder ou procurar um instante anterior.
+- Alterar a velocidade de visualização.
+- Repetir o trecho selecionado.
+
+A taxa e os limites permanecem propostas técnicas. O comportamento das edições será selecionável pelo toggle da D-042 do Motion Composer.
+
+### 9.2 Avaliação direta
+
+Movimentos analíticos deverão permitir calcular um resultado diretamente a partir de tempo e parâmetros.
+
+A avaliação em um instante não poderá exigir que todos os quadros anteriores tenham sido renderizados.
+
+### 9.3 Histórico e rastros
+
+M19 e M20 exigem atenção específica.
+
+Os resultados históricos deverão representar posições e estados correspondentes aos instantes anteriores, não simplesmente reconstruir um rastro utilizando apenas a posição atual.
+
+Em reprodução aleatória, retrocesso ou reinício, o laboratório deverá conseguir reconstruir o histórico de forma determinística.
+
+Para eventos dependentes de simulação, poderão ser necessárias amostras históricas, snapshots ou reconstrução por passos determinísticos.
+
+### 9.4 Alteração de parâmetros
+
+A avaliação matemática deverá ser reproduzível para uma versão definida de parâmetros.
+
+Conforme D-042 do Motion Composer, um toggle seleciona entre atualizar no instante atual reconstruindo os rastros com os novos parâmetros e reiniciar a animação desde o nascimento.
+
+O sistema não deverá misturar silenciosamente estados históricos calculados com configurações diferentes.
+
+### 9.5 Integração com o combate
+
+Quando autorizada, a integração deverá respeitar D-019.
+
+A sequência será:
+
+**Estado autoritativo do motor → tempo da ação → avaliação visual → desenho**
+
+Pausa de status, hit-stop e câmera lenta deverão ser representados conforme as decisões atuais de combate.
+
+Não introduzir um relógio visual independente para determinar a conclusão lógica de ataques.
+
+---
+
+## 10. Laboratório independente
+
+### 10.1 Objetivo
+
+Permitir criar, inspecionar e comparar movimentos sem depender de personagens, mecânicas ou execução de batalhas.
+
+### 10.2 Áreas funcionais propostas
+
+**Catálogo:** seleção e busca dos 20 comportamentos.
+
+**Visualização:** cena 3D com câmera ajustável, eixo de referência e modo neutro.
+
+**Composição:** camadas ordenadas, conforme D-043. Bifurcação e recombinação operam sobre ramos identificados dentro dessa sequência.
+
+**Parâmetros:** edição dos valores do comportamento selecionado.
+
+**Linha do tempo:** controle de reprodução, pausa, avanço e inspeção temporal.
+
+**Inspeção:** apresentação de posições, trajetórias, amostras, identificadores de ramos e dados de desempenho.
+
+**Presets:** armazenamento e carregamento de configurações e composições.
+
+A disposição visual dessas áreas ainda não está definida.
+
+### 10.3 Inspeção individual
+
+Cada comportamento deverá possuir uma demonstração isolada que permita reconhecer suas propriedades específicas.
+
+O usuário deverá poder desativar outros comportamentos e observar apenas o selecionado.
+
+### 10.4 Inspeção de composição
+
+O laboratório deverá permitir comparar:
+
+- Movimento isolado.
+- Movimento combinado.
+- Resultado sem acabamento visual.
+- Resultado com representação visual.
+- Estado anterior e posterior à alteração de um parâmetro.
+
+### 10.5 Presets
+
+Um preset deverá preservar:
+
+- Identificação e versão.
+- Comportamentos utilizados.
+- Ordem de composição.
+- Parâmetros e curvas.
+- Referências de coordenadas.
+- Máscaras e defasagens.
+- Semente.
+- Configuração visual, quando aplicável.
+- Informações necessárias para migração de versão.
+
+D-045 define uma pasta fixa do laboratório. O caminho concreto e o formato de serialização são propostas técnicas no adendo consolidado.
+
+---
+
+## 11. Integração futura com Crawlmon
+
+**Esta seção não autoriza implementação.**
+
+Pontos existentes identificados:
+
+| Componente          | Possível responsabilidade futura         |
+| ------------------- | ---------------------------------------- |
+| `battle_fx.gd`      | Coordenação da apresentação dos eventos  |
+| `fx_telegraph.gd`   | Apresentação durante o preparo           |
+| `fx_projectiles.gd` | Apresentação visual durante o voo        |
+| `fx_motion.gd`      | Apresentação associada à execução física |
+| `fx_impacts.gd`     | Apresentação visual do impacto           |
+| `vfx_lib.gd`        | Recursos e auxiliares visuais            |
+
+A futura integração deverá possuir associações explícitas por Move, sem alterar efeitos existentes por omissão.
+
+### 11.1 Invariantes obrigatórios
+
+- O VFX não decide dano.
+- O VFX não cria novos impactos.
+- O VFX não decide esquiva.
+- O VFX não determina o resultado do combate.
+- A trajetória decorativa não altera a trajetória lógica.
+- O VFX não modifica a posição autoritativa dos personagens.
+- Pausas e escalas de tempo respeitam o motor.
+- O cancelamento visual segue o evento lógico correspondente.
+- Presets não sobrescrevem escolhas visuais existentes sem aprovação.
+
+### 11.2 Divergência arquitetural existente
+
+A documentação D-025 registra uma reversão da Fase 2, enquanto a árvore consultada contém `AttackPlanner`, `AttackMotion` e `BattleSpace`.
+
+O laboratório independente não precisa resolver essa divergência.
+
+Ela deverá ser reavaliada antes de qualquer integração efetiva ao combate.
+
+---
+
+## 12. Desempenho
+
+O projeto deverá permitir avaliar consumo de CPU, GPU e memória.
+
+### 12.1 Métricas
+
+- Tempo de avaliação procedural.
+- Tempo de atualização das representações.
+- Quantidade de amostras ativas.
+- Quantidade de elementos visuais.
+- Quantidade de vértices gerados.
+- Quantidade de instâncias.
+- Memória ocupada por históricos.
+- Desempenho com múltiplas composições simultâneas.
+
+### 12.2 Requisitos
+
+Os comportamentos deverão ser avaliados com a resolução necessária para a representação escolhida.
+
+Deverão ser evitadas reconstruções completas de geometria quando não forem necessárias.
+
+Rastros históricos deverão possuir limites configuráveis de amostragem e persistência.
+
+O sistema deverá disponibilizar medições para comparar uma composição simples e uma composição complexa.
+
+### 12.3 Limites pendentes
+
+Ainda não foram aprovados:
+
+- Hardware-alvo.
+- Orçamento de CPU/GPU.
+- Quantidade máxima de elementos por composição.
+- Quantidade máxima de camadas.
+- Número máximo de amostras de rastro.
+- Resolução dos estudos visuais.
+- Meta de desempenho por cenário.
+
+Nenhum valor numérico será considerado requisito definitivo sem confirmação.
+
+---
+
+## 13. Testes e validação
+
+### 13.1 Testes dos 20 comportamentos
+
+Cada comportamento deverá possuir testes que comprovem:
+
+1. Avaliação com parâmetros válidos.
+2. Comportamento previsível nos limites declarados.
+3. Ausência de valores numéricos inválidos.
+4. Repetibilidade com a mesma semente.
+5. Resposta a mudanças de intensidade.
+6. Pausa temporal correta.
+7. Funcionamento independente da representação visual.
+8. Identidade de movimento distinguível dos demais.
+
+### 13.2 Testes de composição
+
+- Combinação em ordem diferente.
+- Composição com comportamento desativado.
+- Máscara temporal.
+- Máscara espacial.
+- Defasagem temporal.
+- Transformações entre sistemas de coordenadas.
+- Bifurcação e recombinação.
+- Repetição de um mesmo comportamento.
+- Presets carregados e salvos.
+- Reprodução após alteração de parâmetros.
+
+### 13.3 Testes temporais
+
+- O mesmo instante produz o mesmo resultado com os mesmos parâmetros.
+- Pausar preserva o estado.
+- Avançar por intervalos diferentes não altera o resultado de comportamentos analíticos.
+- Reiniciar reproduz o mesmo movimento.
+- Buscar um instante anterior reconstrói corretamente os rastros.
+- A velocidade de reprodução não altera a definição espacial da animação.
+
+### 13.4 Testes visuais
+
+Registrar comparações de estados significativos:
+
+- Nascimento.
+- Desenvolvimento inicial.
+- Transformação principal.
+- Desenvolvimento final.
+- Dissipação.
+
+Para movimentos contínuos, observar também a evolução entre os estados, não apenas capturas isoladas.
+
+### 13.5 Testes de regressão
+
+Na implementação futura, verificar que o laboratório pode ser executado sem alterar as cenas de combate.
+
+Os testes atuais de VFX e combate deverão continuar sendo utilizados como referência de regressão, sem reescrevê-los para acomodar alterações não aprovadas.
+
+---
+
+## 14. Critérios de aprovação da V1
+
+A biblioteca poderá ser considerada funcionalmente completa somente quando:
+
+- Os 20 comportamentos aprovados estiverem disponíveis e individualmente inspecionáveis.
+- Cada comportamento possuir parâmetros funcionais.
+- A composição ordenada estiver operacional.
+- Máscaras e defasagens funcionarem conforme seus contratos aprovados.
+- Os movimentos puderem ser exibidos independentemente do material visual.
+- A receita complexa da seção 6 puder ser construída exclusivamente combinando comportamentos da biblioteca.
+- A pausa, reprodução, reinício e inspeção temporal funcionarem corretamente.
+- Os rastros e pós-imagens preservarem a evolução temporal.
+- Os resultados forem reproduzíveis.
+- Os testes pertinentes forem executados e seus resultados registrados.
+- O laboratório permanecer independente do combate.
+- Os efeitos existentes forem preservados.
+- Os limites de desempenho aprovados posteriormente forem atendidos.
+
+A aprovação visual também exige avaliação humana dos movimentos renderizados. Passar em testes automatizados não equivale, sozinho, à aprovação artística.
+
+---
+
+## 15. Organização proposta para implementação posterior
+
+Esta é uma divisão de responsabilidades, não uma estrutura de diretórios aprovada.
+
+| Componente lógico | Responsabilidade                                   |
+| ----------------- | -------------------------------------------------- |
+| Catálogo          | Registrar os 20 comportamentos e seus metadados    |
+| Avaliador         | Calcular trajetórias e deformações                 |
+| Compositor        | Aplicar operações em ordem e resolver ramificações |
+| Sistema temporal  | Fornecer e distribuir o tempo de avaliação         |
+| Histórico         | Gerenciar rastros, pós-imagens e reconstrução      |
+| Renderizadores    | Converter resultados em apresentações visuais      |
+| Presets           | Persistir e validar composições                    |
+| Laboratório       | Oferecer interface de edição e visualização        |
+| Diagnósticos      | Medir custos e executar verificações               |
+
+Não devem ser criados arquivos ou diretórios com base apenas nesta tabela.
+
+---
+
+## 16. Desenvolvimento futuro — sequência proposta
+
+**Etapa 1 — Contratos e avaliação**
+
+Definir formalmente entradas, saídas, tipos de operação, espaços de coordenadas e determinismo.
+
+**Etapa 2 — Comportamentos básicos**
+
+Implementar e validar trajetórias, campos, deformações e propagação.
+
+**Etapa 3 — Composição espacial**
+
+Adicionar bifurcação, recombinação, ordem de composição, máscaras e defasagens.
+
+**Etapa 4 — Persistência temporal**
+
+Adicionar rastros, pós-imagens e reconstrução de histórico.
+
+**Etapa 5 — Laboratório visual**
+
+Construir a interface e as ferramentas de inspeção para os 20 movimentos e composições.
+
+**Etapa 6 — Validação completa**
+
+Executar testes, inspecionar visualmente os movimentos, medir desempenho e documentar limitações.
+
+Essa ordem é apenas um sequenciamento técnico proposto; não representa autorização de implementação nem escolha de organização do repositório.
+
+---
+
+## 17. Decisões pendentes
+
+Situação consolidada das pendências originais; escolhas expressas posteriores prevalecem sobre a versão anexada:
+
+| ID   | Decisão necessária                                                               |
+| ---- | -------------------------------------------------------------------------------- |
+| P-01 | Duração inicial e curva temporal padrão dos comportamentos                       |
+| P-02 | Limites, passos e unidades de interface dos parâmetros editáveis                 |
+| P-03 | Resolvido por D-042 do Motion Composer: toggle entre atualização e reinício |
+| P-04 | Resolvido por D-043: camadas ordenadas |
+| P-05 | D-044: pontos, fragmentos, fitas e fumaça/billboards disponíveis; aparência inicial proposta |
+| P-06 | D-045: pasta fixa; caminho e formato propostos no adendo |
+| P-07 | Orçamento de desempenho e hardware-alvo                                          |
+| P-08 | Aparência e disposição da interface                                              |
+| P-09 | Quantidade e estilo das composições demonstrativas adicionais                    |
+| P-10 | D-042: reconstruir no instante atual ou reiniciar, conforme toggle; detalhes no adendo |
+
+As escolhas confirmadas e propostas técnicas do adendo permitem concluir esta especificação. Antes de uma implementação futura, distinguir requisitos aprovados de valores experimentais; não tratar as propostas como aprovação do criador.
+
+---
+
+## 18. Estado da especificação
+
+**Aprovado pelo criador:** desenvolvimento da especificação do Motion Composer com exatamente 20 comportamentos selecionados, laboratório independente, composição reutilizável e preservação dos VFX existentes.
+
+**Definido nesta proposta:** contratos conceituais, responsabilidades, operações, requisitos temporais, organização lógica, testes e critérios de aprovação.
+
+**Ainda proposto:** detalhes técnicos e artísticos não resolvidos pelas decisões D-042–D-045, incluindo os valores sugeridos no adendo.
+
+**Não executado:** implementação, criação de cenas, criação de shaders, atualização dos VFX existentes, publicação no GitHub, commits, push e testes em execução. A documentação foi consolidada localmente nesta entrega.
+
+Esta especificação deverá ser revista contra a versão atual do repositório antes de qualquer implementação autorizada.
+
+## 19. Consolidação local — 2026-11-03
+
+Este documento incorpora o anexo do criador e as respostas posteriores. Seu escopo atual é especificação, sem implementação. As propostas abaixo são escolhas técnicas sugeridas pelo agente, não falas nem aprovações do criador. Não exigem novas rodadas de perguntas para que a especificação seja concluída.
+
+### 19.1 Decisões confirmadas
+
+- Exatamente M01–M20; os oito estudos helicoidais são referências, não oito operadores adicionais.
+- Laboratório independente; preservação integral do combate e dos VFX atuais.
+- Toggle entre atualização no instante atual com reconstrução dos rastros e reinício desde o nascimento: [D-042 do Motion Composer](../decisoes/D-042-motion-composer-toggle-edicao.md).
+- Camadas ordenadas: [D-043](../decisoes/D-043-motion-composer-camadas-ordenadas.md).
+- Pontos, fragmentos, fitas e fumaça/billboards: [D-044](../decisoes/D-044-motion-composer-representacoes-v1.md).
+- Pasta fixa para presets: [D-045](../decisoes/D-045-motion-composer-pasta-fixa-presets.md).
+
+Há dois documentos locais com ID D-042, sobre assuntos diferentes. Os links deste documento identificam o arquivo do Motion Composer. Nenhum foi renumerado. D-061/D-077 e a afirmação de leitura de 116 decisões do anexo não foram confirmados nesta cópia; não são usados como fundamento.
+
+### 19.2 Contrato de avaliação proposto
+
+Uma composição recebe tempo em segundos, duração explícita, semente, revisão dos parâmetros e uma função de contexto temporal. Essa função fornece origem, destino e transformação do emissor no instante solicitado, inclusive para tempos históricos.
+
+Cada amostra tem coordenada longitudinal normalizada, coordenadas transversais de repouso, identidade estável de elemento e caminho de ramo. Saídas contêm posição, base de orientação, largura, intensidade, opacidade e visibilidade. A intensidade neutra de um modificador deve preservar a entrada.
+
+Proposta de domínio: eixo longitudinal local +Z; eixos transversais X/Y; comprimentos em unidades Godot; tempo em segundos; ângulos apresentados em graus e convertidos na avaliação. Uma duração deve ser finita e positiva. Intervalos degenerados, valores não finitos, parâmetros desconhecidos e seleções de ramos inexistentes devem gerar diagnóstico explícito.
+
+A V1 propõe campos analíticos, sem acumular velocidades ou resolver física. A turbulência é função determinística da posição de referência, tempo e semente. Nenhuma chamada aleatória dependente da ordem de execução entra no avaliador.
+
+### 19.3 Semântica das camadas proposta
+
+Cada camada guarda ID, comportamento, habilitação, operação, seleção de ramos, espaço de coordenadas, parâmetros, curvas, máscara e intervalo temporal. Reordenar altera a sequência de avaliação, preservando IDs.
+
+Geradores substituem a trajetória de referência; modificadores deformam a saída anterior; envelopes modulam atributos. O catálogo informa quais operações cada comportamento aceita. Combinações inválidas são diagnosticadas, sem conversão silenciosa.
+
+Bifurcação cria caminhos estáveis derivados do ID da camada e do índice do ramo. Camadas posteriores selecionam todos os ramos ou ramos específicos. Recombinação aproxima os ramos selecionados de um destino comum; propõe-se manter suas identidades até o fim, evitando fusão destrutiva do histórico. A unificação visual ocorre pela coincidência e redução de largura/intensidade controladas.
+
+Máscaras são pesos de 0 a 1 combinando posição longitudinal, tempo e seleção de ramo/elemento. A identidade de um ramo não depende da quantidade de quadros renderizados.
+
+### 19.4 Tempo, edição e história propostos
+
+O laboratório avança apenas seu relógio local. Todos os shaders novos recebem tempo explícito; o avaliador não consulta TIME nem altera Engine.time_scale.
+
+Proposta inicial: ciclo de prévia de 3 segundos, avanço de inspeção de 1/60 segundo e velocidades 0,1x, 0,25x, 0,5x, 1x e 2x. Estes valores são ajustáveis e exclusivos do laboratório. Curvas padrão suaves para nascimento/dissipação; picos e variações próprios de cada comportamento permanecem editáveis.
+
+No modo atualizar, uma edição cria nova revisão, invalida resultados anteriores e reavalia o instante atual e sua janela histórica. No modo reiniciar, limpa o histórico e retorna ao tempo zero. Não combinar amostras de revisões diferentes. Propõe-se atualizar no instante atual como seleção inicial, sem persistir a preferência na primeira abertura.
+
+M19 constrói continuidade com amostras em intervalos temporais fixos; M20 cria cópias discretas. Ambos consultam o contexto de cada instante histórico. Retrocesso e seek reconstroem a janela a partir da mesma função temporal, sem depender dos quadros exibidos. Se houver movimento manual do emissor, sua trajetória precisa ser gravada; história anterior indisponível deve ser sinalizada, não inventada usando a transformação atual.
+
+Na repetição de um trecho, propõe-se reconstruir sua janela histórica dentro do ciclo correspondente, sem conectar a cauda ao ciclo anterior. Largura e intensidade são avaliadas na idade da amostra. Orientação de fitas deve usar uma base estável, com tratamento de tangentes quase nulas e mudanças abruptas de direção.
+
+### 19.5 Representações e interface propostas
+
+Pontos e fragmentos usam instâncias de malha; fitas usam ArrayMesh; fumaça usa billboards com transparência. Texturas existentes podem ser reutilizadas sem chamar construtores que iniciem timers próprios. CPUParticles3D não é requisito do compositor: posições por amostra e reconstrução temporal serão controladas pelo avaliador.
+
+A troca de representação conserva a composição. Um modo neutro permite reconhecer o movimento sem emissão luminosa. Fumaça deve permitir mistura alfa, evitando depender de adição luminosa para sua leitura. Ajustar limites de visibilidade das malhas à deformação; medir sobreposição transparente e ordenação das fitas na validação gráfica.
+
+Proposta de interface: catálogo pesquisável à esquerda, viewport central, lista de camadas e parâmetros à direita, reprodução e linha do tempo embaixo. Cada camada oferece ativação, reordenação e seleção de ramos. A/B mantém duas revisões imutáveis com o mesmo tempo e semente. Valores numéricos têm unidade visível e validação; limites técnicos não são regras artísticas do projeto.
+
+### 19.6 Presets propostos
+
+Pasta fixa sugerida: user://motion_composer/presets/. Formato sugerido: JSON UTF-8 versionado. Esta escolha permite escrita na execução sem depender de alterar recursos empacotados do jogo.
+
+Guardar versão do esquema, IDs/versionamento dos comportamentos, ordem e IDs das camadas, parâmetros, pontos das curvas, máscaras, seleções de ramos, semente, duração e configuração visual. Vetores e cores usam componentes numéricos explícitos.
+
+Validar todo o arquivo antes de substituir a composição aberta. Versões desconhecidas ou comportamentos ausentes geram mensagem, preservando a composição atual. Salvamento proposto por arquivo temporário seguido de substituição após sucesso; nomes devem permanecer dentro da pasta fixa. Nenhum carregamento executa código de presets.
+
+### 19.7 Receita e cobertura propostas
+
+A receita obrigatória usa somente os operadores do catálogo: M11/M17, M02/M08, M14 com três ramos, M03/M07, M15, M13/M16 e M18/M19. Proposta: progresso normalizado com preparação 0–0,15; avanço 0,15–0,35; separação 0,35–0,5; desenvolvimento 0,5–0,65; reunião 0,65–0,75; liberação 0,75–0,85; dissipação 0,85–1. Intervalos são dados editáveis da receita, nunca tempos de um Move.
+
+Cada M01–M20 recebe estudo individual com nascimento, desenvolvimento, transformação e dissipação. Envelopes auxiliares são identificados como apresentação do estudo e podem ser desativados para inspecionar apenas o comportamento. Os oito estudos helicoidais continuam como hipóteses de composição; não afirmar equivalência matemática com superfícies da imagem.
+
+Proposta de primeira entrega visual: os 20 estudos e a receita obrigatória, sem composições adicionais obrigatórias. A identidade é julgada também em movimento contínuo, não apenas em screenshots.
+
+### 19.8 Desempenho e validação propostos
+
+Medir na máquina disponível e registrar CPU, GPU, driver, versão exata do Godot e resolução utilizada. Não prometer desempenho em hardware não ensaiado. Proposta de cenários: estudo isolado, receita complexa e oito cópias simultâneas. Registrar tempos de avaliação/atualização, quadro completo, número de vértices/instâncias e memória de histórico.
+
+Pontos de partida experimentais: 128 amostras longitudinais por fluxo e histórico de até 1 segundo a 60 amostras por segundo. Não são limites de aceitação nem garantias de desempenho. Crescimento combinatório dos ramos deve ser contabilizado e diagnosticado antes de alocar; definir limites finais após medição.
+
+Os testes devem verificar contratos, não copiar fórmulas: invariância ao particionamento temporal; equivalência após seek/reinício; transformação histórica de emissor móvel; ordem de camadas; máscaras; IDs de ramos; invalidação de revisão; round-trip de presets; inputs inválidos e liberdade de representação. Capturas em GL Compatibility e observação contínua completam os testes numéricos. Aprovação artística permanece humana.
+
+### 19.9 Estado verificável desta entrega
+
+- Especificação consolidada a partir do anexo e das decisões posteriores.
+- Documentação local; sem implementação, cenas, shaders, commits ou push nesta entrega.
+- D-002: decisões expressas vinculadas e catálogo registrado separadamente.
+- D-003: propostas técnicas identificadas; nenhuma mudança de comportamento do jogo.
+- D-019: tempo externo por instância, sem autoridade lógica do VFX.
+- D-020: sistemas existentes preservados.
+- D-022: nenhuma publicação ou commit.
+- D-042 do Motion Composer: ambos os modos de edição preservados.
+- D-043: interface por camadas ordenadas.
+- D-044: quatro representações aprovadas contempladas.
+- D-045: política de pasta fixa preservada; caminho concreto apenas proposto.
+- Não verificado: funcionamento em Godot, aparência, desempenho, interoperabilidade de presets ou regressões em execução.

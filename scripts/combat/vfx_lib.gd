@@ -322,7 +322,7 @@ static func meshes_of(model: Node) -> Array[MeshInstance3D]:
 	return out
 
 
-## Adds an inverted-hull outline to every surface of a model's meshes.
+## Adds an inverted-hull outline and calibrates toon specular shading (D-038).
 static func outline_model(model: Node, width := 0.0016, color := Color(0.02, 0.04, 0.08)) -> void:
 	var line := shader_mat("outline", {"color": color, "width": width})
 	for mi in meshes_of(model):
@@ -332,6 +332,9 @@ static func outline_model(model: Node, width := 0.0016, color := Color(0.02, 0.0
 			var src := mi.get_active_material(i)
 			if src is BaseMaterial3D:
 				var mat := (src as BaseMaterial3D).duplicate() as BaseMaterial3D
+				mat.specular_mode = BaseMaterial3D.SPECULAR_TOON
+				mat.roughness = 0.9
+				mat.metallic_specular = 0.1
 				mat.next_pass = line
 				mi.set_surface_override_material(i, mat)
 

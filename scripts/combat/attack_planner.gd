@@ -30,6 +30,17 @@ func plan(inc: Incoming) -> float:
 		inc.fly = Battle.travel_seconds(0.30, a, t)
 		inc.plan = [[Phase.STRIKE, rage_hit], [Phase.TRAVEL, inc.fly], [Phase.RETURN, 0.16]]
 		inc.impact_phase = Phase.TRAVEL
+	elif inc.move_id == "teleporte_rapido":
+		var attack_dir := BattleSpace.flat_dir(a_home, t_home)
+		inc.motion = "cast"
+		inc.blink = true
+		inc.from = a_home
+		inc.aim = t_home
+		inc.dest = t_home + attack_dir * 1.35
+		var hit := 0.22 if inc.instant else clip_hit(a, "attack", 0.22)
+		inc.fly = 0.05
+		inc.plan = [[Phase.TRAVEL, 0.05], [Phase.STRIKE, hit], [Phase.RETURN, 0.35]]
+		inc.impact_phase = Phase.STRIKE
 	elif inc.kind == Skill.Kind.MELEE and a.engaged_with == t:
 		# Already standing next to it: no travel, no return.
 		var hit0 := clip_hit(a, "attack", BattleSpace.HIT_AT)
@@ -86,10 +97,6 @@ func plan(inc: Incoming) -> float:
 		elif inc.move_id == "onda_choque":
 			inc.fly = 0.24
 			inc.plan = [[Phase.TRAVEL, 0.24], [Phase.STRIKE, hit], [Phase.RETURN, 0.20]]
-			inc.impact_phase = Phase.STRIKE
-		elif inc.move_id == "teleporte_rapido":
-			inc.fly = 0.22
-			inc.plan = [[Phase.TRAVEL, 0.22], [Phase.STRIKE, hit], [Phase.RETURN, 0.30]]
 			inc.impact_phase = Phase.STRIKE
 		elif inc.kind == Skill.Kind.PROJECTILE:
 			inc.fly = Battle.travel_seconds(base_fly(a0, t0), a, t)

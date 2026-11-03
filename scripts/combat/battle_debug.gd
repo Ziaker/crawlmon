@@ -17,6 +17,8 @@ var _director: BattleCamera
 # UI
 var _label: Label
 var _bg: ColorRect
+var _test_label: Label  ## Visible line with the camera test state (only while a test toggle is on).
+var _overlay: CanvasLayer  ## Holds the test line so it shows even with the panel closed.
 
 # Estado de Simulação & Tempo
 var _god := false
@@ -25,6 +27,8 @@ var _speed_i := 0
 var _is_paused := false
 var _note := ""
 var _saved_policy := {}
+var _test_enemy_toggle := Callable()  ## Set by the battle scene: adds/removes the test enemies (H).
+var _test_enemy_push := Callable()  ## Set by the battle scene: slides a test enemy sideways (J).
 
 # Seleção de Teste
 var _attacker_idx := 0
@@ -55,6 +59,7 @@ func setup(battle: Battle, party: Array[Combatant], enemies: Array[Combatant], p
 	_director = p_director
 	layer = 60
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	visible = false
 
 	_bg = ColorRect.new()
 	_bg.color = Color(0.02, 0.04, 0.07, 0.82)
@@ -71,8 +76,32 @@ func setup(battle: Battle, party: Array[Combatant], enemies: Array[Combatant], p
 	_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_label)
 
+	_test_label = Label.new()
+	_test_label.position = Vector2(0, 684)
+	_test_label.size = Vector2(1280, 22)
+	_test_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_test_label.add_theme_font_size_override("font_size", 12)
+	_test_label.add_theme_color_override("font_color", Color("d7fd6a"))
+	_test_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_test_label.visible = false
+	# Own CanvasLayer: it must stay visible while the panel itself is closed.
+	_overlay = CanvasLayer.new()
+	_overlay.layer = layer + 1
+	add_child(_overlay)
+	_overlay.add_child(_test_label)
+
 	_setup_free_cam()
 	_setup_gizmos()
+
+
+## The battle scene owns the spawn: H asks it to add two standing test enemies.
+func set_test_enemy_toggle(cb: Callable) -> void:
+	_test_enemy_toggle = cb
+
+
+## J / Shift+J: the battle scene slides a test enemy to one side (D-015 test).
+func set_test_enemy_push(cb: Callable) -> void:
+	_test_enemy_push = cb
 
 
 func _setup_free_cam() -> void:
@@ -80,13 +109,19 @@ func _setup_free_cam() -> void:
 	_free_cam.name = "DebugFreeCam3D"
 	_free_cam.fov = 45.0
 	_free_cam.current = false
-	add_child(_free_cam)
+	if is_instance_valid(_fx):
+		_fx.add_child(_free_cam)
+	else:
+		add_child(_free_cam)
 
 
 func _setup_gizmos() -> void:
 	_gizmo_node = Node3D.new()
 	_gizmo_node.name = "DebugGizmos3D"
-	add_child(_gizmo_node)
+	if is_instance_valid(_fx):
+		_fx.add_child(_gizmo_node)
+	else:
+		add_child(_gizmo_node)
 
 
 func _input(event: InputEvent) -> void:
@@ -129,6 +164,16 @@ func _input(event: InputEvent) -> void:
 				_trigger_strike_vfx_only()
 			KEY_B:
 				_trigger_impact_vfx_only()
+			KEY_K:
+				_toggle_frame_mode()
+			KEY_L:
+				_toggle_react_in_tactica()
+			KEY_M:
+				_toggle_leader_priority()
+			KEY_H:
+				_toggle_test_enemies(event.shift_pressed)
+			KEY_J:
+				_push_test_enemy(event.shift_pressed)
 			KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8:
 				var idx: int = event.keycode - KEY_1
 				_select_skill(idx)
@@ -311,20 +356,81 @@ func _toggle_ai() -> void:
 	_note = "IA: %s" % ("PARADA (HOLD)" if _ai_off else "LIGADA")
 
 
+## D-015 test: cycle the enemy framing (fixed -> smooth follow -> deadzone).
+func _toggle_frame_mode() -> void:
+	if _director == null:
+		return
+	_director.set_frame_mode((_director.frame_mode + 1) % 3)
+	var names := ["OFF (enquadramento fixo de hoje)", "SUAVE (segue todos os inimigos)", "ZONA MORTA (só mexe quando sai do quadro)"]
+	_say("Câmera D-015: %s" % names[_director.frame_mode])
+
+
+## Test: should the camera lean toward a hit while the target menu is open?
+func _toggle_react_in_tactica() -> void:
+	if _director == null:
+		return
+	_director.react_in_tactica = not _director.react_in_tactica
+	_say("Câmera reage com o menu de alvo aberto: %s" % ("LIGADA" if _director.react_in_tactica else "desligada"))
+
+
+## Test: a hit on the leader outranks other camera intents until its framing ends.
+func _toggle_leader_priority() -> void:
+	if _director == null:
+		return
+	_director.leader_priority = not _director.leader_priority
+	_say("Prioridade da câmera para o líder: %s" % ("LIGADA" if _director.leader_priority else "desligada"))
+
+
+## Test (D-015): the battle scene adds/removes two standing test enemies.
+func _toggle_test_enemies(remove: bool) -> void:
+	if not _test_enemy_toggle.is_valid():
+		return
+	_say(String(_test_enemy_toggle.call(remove)))
+
+
+## Panel note plus a console line: the panel may be closed while a test key is pressed.
+func _say(text: String) -> void:
+	_note = text
+	print("[debug] ", text)
+
+
+## Test (D-015): slide the first test enemy sideways so the framing can be seen acting.
+func _push_test_enemy(left: bool) -> void:
+	if not _test_enemy_push.is_valid():
+		return
+	_say(String(_test_enemy_push.call(left)))
+
+
 func _process(delta: float) -> void:
 	if _battle == null:
 		return
 	if _god:
 		for c in _party:
-			c.hp = c.max_hp
+			c.set_hp_instant(c.max_hp)
 
 	_process_free_cam_motion(delta)
 	_update_gizmos()
+	_update_test_banner()
 
 	if not visible:
 		return
 
 	_update_hud_text()
+
+
+## Small always-visible line while a camera test toggle is on (the panel may be closed).
+func _update_test_banner() -> void:
+	if _test_label == null:
+		return
+	var on := _director != null and (_director.frame_mode != 0 or _director.react_in_tactica or _director.leader_priority)
+	_test_label.visible = on
+	if not on:
+		return
+	_test_label.text = "TESTE DE CÂMERA — enquadramento: %s   |   reage com menu de alvo: %s   |   prioridade do líder: %s   |   [K] [L] [M] trocam" % [
+		["OFF", "SUAVE", "ZONA MORTA"][_director.frame_mode],
+		"ON" if _director.react_in_tactica else "off",
+		"ON" if _director.leader_priority else "off",
+	]
 
 
 func _process_free_cam_motion(delta: float) -> void:
@@ -406,6 +512,13 @@ func _update_hud_text() -> void:
 	])
 	lines.append("CONTROLES: [P] Pausa | [N/.] Quadro a quadro (1/60s) | [V] Só Golpe VFX | [B] Só Impacto VFX | [Tab] Cicla Lutador | [1..8] Habilidade")
 	lines.append("ATALHOS: F2 ATB cheio | F3 Inimigo->Líder | F4 Inimigo->Aliado | F8 Aliado->Inimigo | F6 IA on/off")
+	if _director != null:
+		lines.append("CÂMERA (teste): [K] Enquadrar inimigos=%s | [L] Reage com menu de alvo=%s | [M] Prioridade do líder=%s" % [
+			["OFF", "SUAVE", "ZONA MORTA"][_director.frame_mode],
+			"ON" if _director.react_in_tactica else "off",
+			"ON" if _director.leader_priority else "off",
+		])
+		lines.append("CÂMERA (teste): [H] +2 inimigos parados | [Shift+H] remove | [J] empurra o 1º para o lado | [Shift+J] para o outro")
 
 	var cur_att := _current_attacker()
 	var cur_tgt := _current_target()

@@ -11,7 +11,8 @@ extends Node2D
 
 const TILE := 48
 const MAX_TORCHES := 12  ## Cap on shadow-casting lights for big procedural floors.
-const AMBIENT := Color(0.24, 0.24, 0.36)
+## Bright enough to read the floor, still tinted so torches keep the mood (D-033).
+const AMBIENT := Color(0.66, 0.66, 0.78)
 const TORCH_COLOR := Color(1.0, 0.68, 0.32)
 const FLOOR_BASE := Color(0.30, 0.28, 0.33)
 const CAP_BASE := Color(0.42, 0.42, 0.52)

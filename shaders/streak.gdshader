@@ -19,6 +19,10 @@ void fragment() {
 	float body = smoothstep(taper, taper * 0.15, x) * flick;
 	float core = pow(smoothstep(taper * 0.45, 0.0, x), 2.0);
 	float fade = 1.0 - smoothstep(0.1, 1.0, progress);
+	float a = clamp(body * fade * color.a, 0.0, 1.0);
+	if (a < 0.02) {
+		discard;
+	}
 	ALBEDO = mix(color.rgb, vec3(1.0), core) * energy;
-	ALPHA = clamp(body * fade, 0.0, 1.0);
+	ALPHA = a;
 }

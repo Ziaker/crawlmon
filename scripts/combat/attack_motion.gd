@@ -87,11 +87,11 @@ static func _blink_pos(inc: Incoming) -> Vector3:
 	var p := inc.progress()
 	match inc.phase:
 		Phase.TRAVEL:
-			return inc.from if p < BattleSpace.TELEPORT_PINCH else inc.dest
+			return inc.from
 		Phase.STRIKE:
 			return inc.dest
 		_:
-			return inc.dest if p < 1.0 - BattleSpace.TELEPORT_PINCH else inc.from
+			return inc.dest if p < 0.35 else inc.from
 
 
 ## While it still runs or swings at a target that will really be hit, the stand spot follows
@@ -149,9 +149,8 @@ static func start_projectile(inc: Incoming) -> void:
 	inc.proj_pos = inc.from
 	if inc.move_id == "teleporte_rapido":
 		var attack_dir := BattleSpace.flat_dir(inc.from, inc.aim)
-		var right := Vector3(attack_dir.z, 0.0, -attack_dir.x)
 		inc.blink = true
-		inc.dest = inc.from + right * 2.2 + attack_dir * 0.55
+		inc.dest = inc.aim + attack_dir * 1.35
 
 
 ## Each frame: the guided projectile follows the target until the attack is evaded (then it

@@ -138,8 +138,11 @@ func is_driven(c: Combatant) -> bool:
 	if fx.battle == null:
 		return false
 	for inc in fx.battle.attacks_in_flight():
-		if inc.attacker == c and inc.data.get("kind", "") == "melee":
-			return true
+		if inc.attacker == c:
+			var kind: String = inc.data.get("kind", "")
+			var move_id: String = inc.data.get("move_id", "")
+			if kind == "melee" or move_id == "teleporte_rapido":
+				return true
 	return false
 
 
@@ -148,16 +151,15 @@ func _is_tackle(inc) -> bool:
 	return move_id == "tackle" or move_id == "investida"
 
 
-func _should_emit_travel_dust(inc) -> bool:
-	var move_id := BattleFx.normalize_move_id(inc.label)
-	return not (move_id == "investida" or move_id == "tackle")
+func _should_emit_travel_dust(_inc) -> bool:
+	return true
 
 
 ## Return true when a move owns the phase's one-shot travel presentation.
 func _on_travel_move(inc, _data: Dictionary, _model: Node3D) -> bool:
 	match String(inc.data.get("move_id", "")):
 		"investida", "tackle":
-			return true  # Deliberately clean run: no dust, aura or afterimage.
+			return false
 		"soco_rapido":
 			if not inc.data.has("quick_cone"):
 				var cone := VfxLib.mesh_slash(fx, _model.position + Vector3(0, 0.9, 0), inc.data["dir"], Color("63d9ec"), 0.0, 1.35, inc.data["run_t"] + 0.12, "shock_cone", 3.2)
@@ -237,10 +239,13 @@ func _drive_travel_move(inc, data: Dictionary, model: Node3D, phase_time: float)
 				VfxLib.flash_star(fx, hand, Color("00f59b"), 1.8, 0.28)
 				VfxLib.burst(fx, hand, {"amount": 18, "life": 0.30, "speed": Vector2(0.3, 2.4), "radius": 0.45, "size": Vector2(0.16, 0.34), "ramp": VfxLib.ramp([Color.WHITE, Color("00f59b"), Color("63d9ec", 0.0)])})
 		"investida_subterranea", "investida_escavadora":
-			if k > 0.16:
-				var depth_k := clampf((k - 0.16) / 0.16, 0.0, 1.0)
-				var rise_k := clampf((k - 0.88) / 0.12, 0.0, 1.0)
-				model.position.y -= 1.45 * depth_k * (1.0 - rise_k)
+			if k <= 0.20:
+				var depth_k := clampf(k / 0.20, 0.0, 1.0)
+				model.position.y -= 1.8 * depth_k
+				model.visible = true
+			else:
+				model.visible = false
+				model.position.y = -2.5
 			for i in 8:
 				var threshold := 0.16 + float(i) * 0.095
 				var key := "dig_mound_%d" % i
@@ -266,9 +271,10 @@ func _drive_travel_move(inc, data: Dictionary, model: Node3D, phase_time: float)
 func _drive_strike_move(_inc, _data: Dictionary, _model: Node3D, _phase_time: float) -> void:
 	match String(_data.get("move_id", "")):
 		"investida_subterranea", "investida_escavadora":
+			_model.visible = true
 			var hit_dur: float = maxf(float(_data.get("hit", 0.35)), 0.05)
 			var k := clampf(_phase_time / hit_dur, 0.0, 1.0)
-			_model.position.y = sin(k * PI) * 1.55
+			_model.position.y = sin(k * PI) * 1.85
 
 
 ## Golpe A2: two co-planar curved blades plus a short tangential spark burst.
@@ -296,8 +302,10 @@ func on_phase(inc, phase: int) -> void:
 	if d.is_empty():
 		return
 	var m: Node3D = fx._models[a]
-	m.visible = true
-	fx._vanish_until.erase(a)
+	var is_teleport: bool = d.get("move_id", "") == "teleporte_rapido"
+	if not is_teleport:
+		m.visible = true
+		fx._vanish_until.erase(a)
 	var P := Battle.Phase
 	var melee: bool = d["kind"] == "melee"
 	match phase:
@@ -310,25 +318,36 @@ func on_phase(inc, phase: int) -> void:
 				d["from"] = Vector3(m.position.x, 0.0, m.position.z)
 				d["vis_off"] = (d["from"] as Vector3) - inc.from
 				_play(a, "run")
+				_spawn_takeoff_dust(d["from"], d.get("dir", Vector3.FORWARD))
 				if not move_owns_travel:
-					_dust_trail(m, d["run_t"] + 0.12)
+					_dust_trail(m, d["run_t"] + 0.12, d.get("dir", Vector3.FORWARD))
 			else:
-				if d.get("move_id", "") in ["onda_choque", "teleporte_rapido"]:
+				if d.get("move_id", "") == "onda_choque":
 					_play(a, "attack_special")
-				fx.fx_projectiles.spawn(inc)
+				if not is_teleport:
+					fx.fx_projectiles.spawn(inc)
 		P.STRIKE:
 			if melee:
 				_enter_strike_move(inc, d, m)
-				m.position.y = 0.0
 				var move_id := BattleFx.normalize_move_id(inc.label)
-				if d["antic"] > 0.0 and move_id != "tackle" and move_id != "investida":
+				if move_id in ["investida_subterranea", "investida_escavadora"]:
+					m.visible = true
+					m.position.y = 0.0
+					VfxLib.flipbook(fx, m.position + Vector3.UP * 0.45, "smoke", Color("5c4033"), 2.2, 0.55, 0.0, 1.8, false)
+					fx._shock(m.position, Color("f0c57e"), 2.6, 0.4)
+				else:
+					m.position.y = 0.0
+					_spawn_arrival_skid(d.get("stand", m.position), d.get("dir", Vector3.FORWARD))
+				if d["antic"] > 0.0 and move_id != "tackle" and move_id != "investida" and move_id not in ["investida_subterranea", "investida_escavadora"]:
 					fx._smoke(d["stand"] + Vector3(0, 0.15, 0), Color(0.82, 0.85, 0.88), 4, Vector2(0.7, 1.3), 0.35, 0.3)
 			else:
 				if d.get("move_id", "") not in ["onda_choque", "teleporte_rapido"]:
 					_play(a, "attack_special")
-				fx._ring((fx._home[a] as Vector3) + Vector3(0, 1, 0), fx.COLORS[inc.element], Vector3.ONE * 1.8, Vector3.ONE * 0.3, fx.CAST_AT, Vector3(90, 0, 0))
+				if not is_teleport:
+					fx._ring((fx._home[a] as Vector3) + Vector3(0, 1, 0), fx.COLORS[inc.element], Vector3.ONE * 1.8, Vector3.ONE * 0.3, fx.CAST_AT, Vector3(90, 0, 0))
 		P.RETURN:
 			if melee:
+				m.visible = true
 				m.position.y = 0.0
 			if d.get("move_id", "") not in ["teleporte_rapido", "raio_psiquico"]:
 				fx.fx_projectiles.finish(inc)
@@ -344,8 +363,12 @@ func on_phase(inc, phase: int) -> void:
 			if d.get("move_id", "") == "quebra_telha":
 				fx.fx_impacts.clear_brick_barrier(inc.target)
 			if d.get("move_id", "") == "teleporte_rapido":
+				m.visible = true
 				m.position = d.get("teleport_origin", fx._home[a])
+				m.rotation.y = fx._home_yaw[a]
 				m.scale = d.get("teleport_base_scale", fx._base_scale.get(a, Vector3.ONE))
+				fx._displaced[a] = false
+				_reset_idle(a)
 			if not a.is_alive():
 				m.position.y = 0.0  # A body stays where it fell.
 				fx.fx_projectiles.finish(inc)
@@ -514,6 +537,7 @@ func _hit_stop(attacker: Combatant, target: Combatant, heavy: bool, strike_dir :
 			_freeze(ap_c)
 	var mt: Node3D = fx._models.get(target)
 	var base_pos := Vector3(mt.position.x, 0.0, mt.position.z) if mt != null else Vector3.ZERO
+	var base_scale: Vector3 = fx._base_scale.get(target, mt.scale) if mt != null else Vector3.ONE
 	var perp := Vector3(strike_dir.z, 0.0, -strike_dir.x)
 	var amp := 0.22 if heavy else 0.12
 	var step := 0.016
@@ -525,6 +549,29 @@ func _hit_stop(attacker: Combatant, target: Combatant, heavy: bool, strike_dir :
 			var vib := (perp * sign_k * amp + strike_dir * (amp * 0.45)) * decay
 			vib.y = 0.0
 			mt.position = base_pos + vib
+			# Kinetic squash & stretch volume preservation on the target model
+			var t_norm := clampf(elapsed / stop_dur, 0.0, 1.0)
+			var squash_factor := 0.74 if heavy else 0.82
+			var stretch_factor := 1.16 if heavy else 1.10
+			if t_norm < 0.45:
+				var k_in := t_norm / 0.45
+				var s_squash := lerpf(1.0, squash_factor, k_in)
+				var s_stretch := lerpf(1.0, stretch_factor, k_in)
+				mt.scale = Vector3(
+					base_scale.x * (s_squash if absf(strike_dir.x) > absf(strike_dir.z) else s_stretch),
+					base_scale.y * s_stretch,
+					base_scale.z * (s_squash if absf(strike_dir.z) >= absf(strike_dir.x) else s_stretch)
+				)
+			else:
+				var k_out := (t_norm - 0.45) / 0.55
+				var bounce := sin(k_out * PI) * 0.08
+				var s_squash := lerpf(squash_factor, 1.0 + bounce, k_out)
+				var s_stretch := lerpf(stretch_factor, 1.0 - bounce * 0.5, k_out)
+				mt.scale = Vector3(
+					base_scale.x * (s_squash if absf(strike_dir.x) > absf(strike_dir.z) else s_stretch),
+					base_scale.y * s_stretch,
+					base_scale.z * (s_squash if absf(strike_dir.z) >= absf(strike_dir.x) else s_stretch)
+				)
 		for node in impact_fx:
 			if is_instance_valid(node):
 				node.position += perp * (sign_k * 0.06 * decay)
@@ -533,6 +580,7 @@ func _hit_stop(attacker: Combatant, target: Combatant, heavy: bool, strike_dir :
 		elapsed += step
 	if mt != null and is_instance_valid(mt) and not is_driven(target):
 		mt.position = base_pos
+		mt.scale = base_scale
 	for ap_c in frozen_aps:
 		_unfreeze(ap_c)
 
@@ -638,10 +686,131 @@ func knock(target: Combatant, from_pos: Vector3, mult := 1.0) -> void:
 	tw.tween_property(m, "position", origin_pos, 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
-## Short dust puffs along the floor while a character runs.
-func _dust_trail(m: Node3D, duration: float) -> void:
+## Cinematic ballistic K.O. launch for defeated enemies (D-049).
+## Arcs backward into the air with spin and smoke trail, landing away before dissipating.
+func launch_ko(target: Combatant, from_pos: Vector3, strike_dir: Vector3) -> void:
+	if not fx._models.has(target):
+		return
+	var m: Node3D = fx._models[target]
+	if m == null or not is_instance_valid(m):
+		return
+
+	var start_pos := m.position
+	var launch_dir := fx._flat_dir(from_pos, start_pos)
+	if launch_dir.length_squared() < 0.01:
+		launch_dir = strike_dir.normalized()
+	if launch_dir.length_squared() < 0.01:
+		launch_dir = Vector3.RIGHT
+
+	var launch_dist := 9.0
+	var peak_height := 3.0
+	var flight_dur := 0.85
+	var tumble_axis := launch_dir.cross(Vector3.UP).normalized()
+	if tumble_axis.length_squared() < 0.01:
+		tumble_axis = Vector3.FORWARD
+
+	# Initial burst at takeoff
+	_spawn_takeoff_dust(start_pos, -launch_dir)
+
+	var tw := fx._move(target)
+	tw.set_parallel(false)
+
+	var last_smoke_prog := [0.0]
+	tw.tween_method(func(prog: float) -> void:
+		if not is_instance_valid(m):
+			return
+		# Parabola: h(prog) = 4 * peak * prog * (1 - prog)
+		var h := 4.0 * peak_height * prog * (1.0 - prog)
+		var xz := start_pos + launch_dir * (launch_dist * prog)
+		m.position = Vector3(xz.x, h, xz.z)
+		m.rotate(tumble_axis, 0.18)
+
+		if prog - last_smoke_prog[0] >= 0.12:
+			last_smoke_prog[0] = prog
+			VfxLib.flipbook(fx, m.position + Vector3(0, 0.2, 0), "smoke", Color(0.85, 0.82, 0.78, 0.65), 1.6, 0.35, randf_range(-25.0, 25.0), 1.5, false)
+			VfxLib.burst(fx, m.position, {
+				"tex": VfxLib.smoke_tex(), "additive": false, "amount": 3, "life": 0.40,
+				"speed": Vector2(0.5, 1.8), "dir": Vector3.UP * 0.5 - launch_dir * 0.3, "spread": 35.0,
+				"size": Vector2(0.3, 0.6), "end_scale": 1.4, "gravity": Vector3(0, 0.3, 0),
+				"ramp": VfxLib.ramp([Color(0.85, 0.82, 0.78, 0.7), Color(0.85, 0.82, 0.78, 0.0)], [0.0, 1.0])
+			})
+	, 0.0, 1.0, flight_dur).set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
+
+	# Impact on landing
+	tw.tween_callback(func() -> void:
+		if not is_instance_valid(m):
+			return
+		var land_pos := m.position
+		land_pos.y = 0.0
+		m.position = land_pos
+		_spawn_takeoff_dust(land_pos, launch_dir)
+		fx._ring(land_pos + Vector3(0, 0.05, 0), Color(0.9, 0.85, 0.8, 0.8), Vector3.ONE * 0.3, Vector3.ONE * 2.8, 0.35, Vector3(90, 0, 0))
+		var ap: AnimationPlayer = m.get_meta("anim_player") if m.has_meta("anim_player") else null
+		if ap != null and ap.has_animation("down"):
+			ap.play("down")
+	)
+
+	# Dissipate into dust / scale to zero
+	tw.tween_interval(0.12)
+	tw.tween_property(m, "scale", Vector3.ZERO, 0.32).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	tw.tween_callback(func() -> void:
+		if is_instance_valid(m):
+			m.visible = false
+	)
+
+
+## Spawns an explosive directional dust kick when a character launches into a run.
+func _spawn_takeoff_dust(from_pos: Vector3, dir: Vector3) -> void:
+	var ground_pos := Vector3(from_pos.x, 0.08, from_pos.z)
+	var back_dir := -dir.normalized() if dir.length_squared() > 0.001 else Vector3.BACK
+	VfxLib.flipbook(fx, ground_pos + Vector3(0, 0.28, 0), "smoke", Color(0.80, 0.76, 0.70), 2.2, 0.40, randf_range(-18.0, 18.0), 1.6, false)
+	VfxLib.burst(fx, ground_pos, {
+		"tex": VfxLib.smoke_tex(), "additive": false, "amount": 8, "life": 0.45,
+		"speed": Vector2(1.8, 4.2), "dir": back_dir + Vector3.UP * 0.35, "spread": 42.0,
+		"size": Vector2(0.35, 0.70), "end_scale": 1.6, "gravity": Vector3(0, 0.4, 0),
+		"ramp": VfxLib.ramp([Color(0.82, 0.78, 0.72, 0.85), Color(0.82, 0.78, 0.72, 0.0)], [0.0, 1.0])
+	})
+	VfxLib.burst(fx, ground_pos, {
+		"amount": 7, "life": 0.30, "speed": Vector2(2.5, 6.0),
+		"dir": back_dir + Vector3.UP * 0.45, "spread": 35.0,
+		"size": Vector2(0.08, 0.18), "end_scale": 0.0,
+		"ramp": VfxLib.ramp([Color(0.9, 0.85, 0.75), Color(0.7, 0.65, 0.55, 0.0)])
+	})
+
+
+## Spawns two angled skid plumes from the feet as the attacker brakes into strike position.
+func _spawn_arrival_skid(stand_pos: Vector3, dir: Vector3) -> void:
+	var ground_pos := Vector3(stand_pos.x, 0.06, stand_pos.z)
+	var norm_dir := dir.normalized() if dir.length_squared() > 0.001 else Vector3.FORWARD
+	var side_vec := Vector3(-norm_dir.z, 0.0, norm_dir.x)
+	for side: float in [-0.28, 0.28]:
+		var foot_pos: Vector3 = ground_pos + side_vec * side
+		VfxLib.burst(fx, foot_pos, {
+			"tex": VfxLib.smoke_tex(), "additive": false, "amount": 6, "life": 0.38,
+			"speed": Vector2(1.5, 3.8), "dir": norm_dir * 0.4 + side_vec * (side * 0.8) + Vector3.UP * 0.25,
+			"spread": 35.0, "size": Vector2(0.3, 0.6), "end_scale": 1.4,
+			"ramp": VfxLib.ramp([Color(0.82, 0.78, 0.72, 0.8), Color(0.82, 0.78, 0.72, 0.0)], [0.0, 1.0])
+		})
+
+
+## Stylized multi-layer dust puffs and gravel along the floor while a character runs.
+func _dust_trail(m: Node3D, duration: float, dir := Vector3.FORWARD) -> void:
 	var t := 0.0
+	var step_idx := 0
+	var norm_dir := dir.normalized() if dir.length_squared() > 0.001 else Vector3.FORWARD
+	var side_vec := Vector3(-norm_dir.z, 0.0, norm_dir.x)
 	while t < duration:
-		fx._smoke(m.global_position + Vector3(0, 0.15, 0), Color(0.75, 0.82, 0.85), 3, Vector2(0.8, 1.5), 0.6, 0.4)
-		await fx.get_tree().create_timer(0.07, false).timeout
-		t += 0.07
+		if not is_instance_valid(m) or not is_instance_valid(fx) or not fx.is_inside_tree():
+			return
+		step_idx += 1
+		var foot_side: float = -0.22 if (step_idx % 2 == 0) else 0.22
+		var foot_pos: Vector3 = m.global_position + side_vec * foot_side + Vector3(0, 0.08, 0)
+		fx._smoke(foot_pos, Color(0.82, 0.78, 0.72), 4, Vector2(0.55, 1.15), 0.38, 0.25, false)
+		VfxLib.burst(fx, foot_pos, {
+			"amount": 3, "life": 0.22, "speed": Vector2(1.2, 3.2),
+			"dir": -norm_dir + Vector3.UP * 0.3, "spread": 30.0,
+			"size": Vector2(0.06, 0.14), "end_scale": 0.0,
+			"ramp": VfxLib.ramp([Color(0.88, 0.84, 0.76), Color(0.70, 0.65, 0.55, 0.0)])
+		})
+		await fx.get_tree().create_timer(0.055, false).timeout
+		t += 0.055

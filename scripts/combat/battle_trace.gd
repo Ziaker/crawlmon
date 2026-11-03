@@ -217,7 +217,7 @@ func _drive_leader() -> void:
 	var leader := party[0]
 	if not leader.is_alive():
 		return
-	leader.hp = maxi(leader.hp, leader.max_hp / 2)  # Test driver only: keep the fight going.
+	leader.set_hp_instant(maxi(leader.hp, leader.max_hp / 2))  # Test driver only: keep the fight going.
 	var evadable := battle.find_evadable(leader)
 	if evadable != null and evadable.can_evade_now() and evadable.progress() > 0.35:
 		battle.try_evade(leader, evadable)

@@ -90,7 +90,7 @@ static func move_hit_stop_duration(move_id: String) -> float:
 		"tiro_areia": return 0.085
 		"garra_dragao": return 0.105
 		"furia_dragao": return 0.115
-		"investida_escavadora": return 0.120
+		"investida_escavadora", "investida_subterranea": return 0.120
 		_: return -1.0
 
 
@@ -121,6 +121,26 @@ func register(c: Combatant, model: Node3D) -> void:
 	_add_ready_ring(model)
 
 
+## Debug aid: forget a combatant that left the field (test spawns only). Nothing is
+## freed here; the caller frees the model after this.
+func unregister(c: Combatant) -> void:
+	for d in [_models, _home, _home_yaw, _tweens, _hit_at, _slot, _busy_until, _ready_off,
+			_base_speed, _phase, _stepping, _base_scale, _displaced, _vanish_until]:
+		(d as Dictionary).erase(c)
+
+
+## Debug aid: move a standing test enemy and make the field accept the new spot (its
+## home, its wander slot and the drawn model). Real combatants never use this.
+func debug_move_home(c: Combatant, new_home: Vector3) -> void:
+	c.place(new_home, c.yaw)
+	_home[c] = new_home
+	_slot[c] = new_home
+	if _models.has(c):
+		var m: Node3D = _models[c]
+		if is_instance_valid(m):
+			m.position = new_home
+
+
 # --- Battle events ---------------------------------------------------------
 
 
@@ -135,6 +155,9 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 	var evaded: bool = info["evaded"]
 	var move_id := normalize_move_id(String(info.get("skill_name", "")))
 	if info.get("status", false):
+		if move_id in ["tarukaja", "rakunda", "sukunda"]:
+			# D-038: SMT buffs/debuffs are visually carried by D-037 stage VFX without blinding white flash
+			return
 		var before_status := get_child_count()
 		var handled := fx_impacts._status_impact_move(move_id, to)
 		if handled:
@@ -166,21 +189,46 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 	var power: float = info.get("power", 1.0)
 	var heavy := weak or crit or power >= 1.4
 	var strike_dir := _flat_dir(a_pos, t_pos)
-	if heavy and cam != null and (attacker == leader or target == leader):
+	var is_ko := not target.is_player and not target.is_alive()
+
+	if is_ko and cam != null:
+		# D-049: Epic K.O. directional trauma shake and FOV kick
+		cam.ko_shake(strike_dir, to, color)
+	elif heavy and cam != null and (attacker == leader or target == leader):
 		cam.speed_lines()
-	var impact_fx: Array[Node3D] = _impact(element, to, color, heavy, strike_dir, move_id)
+
+	var impact_fx: Array[Node3D] = _impact(element, to, color, heavy or is_ko, strike_dir, move_id)
 	if move_id == "quebra_telha":
 		impact_fx.append(fx_impacts.shatter_brick_barrier(target, to, strike_dir))
+
+	if is_ko:
+		# D-049: Epic K.O. VFX: expanding planar shockwaves and radial spark burst
+		_ring(to, Color.WHITE, Vector3.ONE * 0.3, Vector3.ONE * 4.8, 0.36, Vector3(90, 0, 0))
+		_ring(to, color, Vector3.ONE * 0.5, Vector3.ONE * 5.8, 0.44, Vector3(90, 0, 0))
+		VfxLib.burst(self, to, {
+			"amount": 26, "life": 0.45, "speed": Vector2(4.5, 11.0),
+			"dir": strike_dir + Vector3.UP * 0.4, "spread": 55.0,
+			"size": Vector2(0.12, 0.28), "end_scale": 0.0,
+			"ramp": VfxLib.ramp([Color.WHITE, color, Color(1, 1, 1, 0)], [0.0, 0.4, 1.0])
+		})
+
 	flash(target)
-	# Screen-space post-processing (chromatic aberration, radial blur, elemental tint) — ZERO camera shake
-	if cam != null:
+	# Screen-space post-processing (chromatic aberration, radial blur, elemental tint)
+	if cam != null and not is_ko:
 		var bw_pulse := move_uses_bw_pulse(move_id) or (heavy and move_id != "soco_rapido")
 		cam.impact_post(to, color, heavy, bw_pulse)
-	# Micro-freeze (Hit Stop) with high-frequency vibration strictly on the target and impact effect
-	await _hit_stop(attacker, target, heavy, strike_dir, impact_fx, move_hit_stop_duration(move_id))
-	var knock_mult := (1.55 if (weak or crit) else 1.0) * clampf(power, 0.85, 1.6)
-	knock(target, a_pos, knock_mult)
-	_hit_react(target)
+
+	# Micro-freeze (Hit Stop): 0.18s dramatic hold on K.O. (D-049)
+	var hit_stop_dur: float = 0.18 if is_ko else move_hit_stop_duration(move_id)
+	await _hit_stop(attacker, target, heavy or is_ko, strike_dir, impact_fx, hit_stop_dur)
+
+	if is_ko:
+		# D-049: Ballistic anime launch with parabolic trajectory, smoke trail and ground impact
+		fx_motion.launch_ko(target, a_pos, strike_dir)
+	else:
+		var knock_mult := (1.55 if (weak or crit) else 1.0) * clampf(power, 0.85, 1.6)
+		knock(target, a_pos, knock_mult)
+		_hit_react(target)
 	if crit:
 		float_text(to + Vector3(0, 2.4, 0), "CRÍTICO!", Color(1.0, 0.9, 0.2), 48)
 	if weak:
@@ -239,7 +287,7 @@ func _process(delta: float) -> void:
 				m.position.y = 0.0
 			continue
 		var yaw: float = _home_yaw[c]
-		var ready: bool = battle != null and battle.running and c.can_pay(Battle.SKILL_BLOCKS) and not battle.is_winding_up(c)
+		var ready: bool = battle != null and battle.running and c.can_pay(Battle.min_skill_cost(c)) and not battle.is_winding_up(c)
 		var want := Vector3(sin(yaw), 0.0, cos(yaw)) * READY_STEP if ready else Vector3.ZERO
 		var prev_off: Vector3 = _ready_off.get(c, Vector3.ZERO)
 		prev_off.y = 0.0
@@ -302,6 +350,7 @@ func _mat(color: Color) -> StandardMaterial3D:
 	m.albedo_color = color
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	return m
 
 
@@ -374,9 +423,17 @@ func _ring(pos: Vector3, color: Color, s0: Vector3, s1: Vector3, time: float, ro
 
 
 func _line(a: Vector3, b: Vector3, color: Color, thick: float) -> MeshInstance3D:
-	var node := _node(_box(Vector3(thick, thick, a.distance_to(b))), color, (a + b) * 0.5)
-	var up := Vector3.RIGHT if absf((b - a).normalized().dot(Vector3.UP)) > 0.99 else Vector3.UP
-	node.look_at(b, up)
+	var dist := maxf(a.distance_to(b), 0.001)
+	var c := CylinderMesh.new()
+	c.top_radius = thick * 0.5
+	c.bottom_radius = thick * 0.5
+	c.height = dist
+	c.radial_segments = 6
+	var node := _node(c, color, (a + b) * 0.5)
+	var dir := (b - a).normalized()
+	var up := Vector3.RIGHT if absf(dir.dot(Vector3.UP)) > 0.95 else Vector3.UP
+	node.look_at(node.position + dir, up)
+	node.rotate_object_local(Vector3.RIGHT, deg_to_rad(90))
 	return node
 
 
@@ -556,6 +613,38 @@ func _exit_tree() -> void:
 
 func on_phase(inc, phase: int) -> void:
 	fx_motion.on_phase(inc, phase)
+
+
+## D-031: while a status move pauses the engine, everyone caught in an attack animation is
+## frozen (idles keep breathing); the caster keeps animating and gets a burst of aura.
+var _status_frozen: Array[AnimationPlayer] = []
+
+
+func on_status_pause_started(inc) -> void:
+	var caster: Combatant = inc.attacker
+	for c in _models:
+		if c == caster:
+			continue
+		var ap := _anim_player(c)
+		if ap != null and ap.is_playing() and not (ap.current_animation in ["idle", "battle_idle"]):
+			fx_motion._freeze(ap)
+			_status_frozen.append(ap)
+	var m: Node3D = _models.get(caster)
+	if m == null:
+		return
+	var col: Color = COLORS.get(inc.element, Color.WHITE)
+	var at := Vector3(m.position.x, 0.0, m.position.z)
+	VfxLib.flash_star(self, at + Vector3(0, 1.2, 0), col.lightened(0.4), 4.2, 0.3)
+	_ring(at + Vector3(0, 0.06, 0), col, Vector3.ONE * 0.6, Vector3.ONE * 4.2, 0.55)
+	_ring(at + Vector3(0, 1.0, 0), Color.WHITE, Vector3.ONE * 0.4, Vector3.ONE * 3.0, 0.45, Vector3(90, 0, 0))
+	_glow(at + Vector3(0, 0.3, 0), col, 46, Vector2(0.35, 0.8), 0.9, Vector2(2.0, 6.0), Vector3(0, 6, 0), 0.3, 0.9)
+
+
+func on_status_pause_ended(_inc) -> void:
+	for ap in _status_frozen:
+		if is_instance_valid(ap):
+			fx_motion._unfreeze(ap)
+	_status_frozen.clear()
 
 
 func on_evade_returned(actor: Combatant, from: Vector3) -> void:

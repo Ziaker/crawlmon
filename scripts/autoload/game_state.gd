@@ -22,6 +22,15 @@ var dungeon_layout: Array[String] = []
 ## Fog of war: one byte per tile (1 = already explored). Kept here so the map
 ## memory survives the trip to a battle and back.
 var dungeon_explored := PackedByteArray()
+## Consumable pickups already collected on the current floor, keyed by "x,y".
+## Kept so leaving to a battle and coming back does not respawn them (D-033).
+var dungeon_items_collected: Array[String] = []
+
+## Mother 3 / EarthBound rolling HP odometer toggle (D-048).
+var rolling_hp_enabled: bool = true:
+	set(v):
+		rolling_hp_enabled = v
+		Combatant.rolling_hp_enabled = v
 
 
 func _ready() -> void:
@@ -64,6 +73,7 @@ func new_dungeon(seed_value := 0) -> void:
 	dungeon_seed = seed_value if seed_value != 0 else randi()
 	dungeon_layout = DungeonGen.generate(dungeon_seed)
 	dungeon_explored.clear()
+	dungeon_items_collected.clear()
 	defeated.clear()
 	player_pos = Vector2.INF
 
@@ -129,22 +139,22 @@ func _build_party() -> void:
 	abra.inventory = inventory  # The leader uses the shared party inventory.
 	abra.weaknesses.assign([Element.Type.TREVAS, Element.Type.SOM])
 	abra.skills.assign([
-		Skill.new("Confusão", 1.4, 2, Element.Type.PSIQUICO, Skill.Kind.PROJECTILE),
-		Skill.new("Raio Psíquico", 1.7, 3, Element.Type.PSIQUICO),
-		Skill.new("Onda de Choque", 1.3, 2, Element.Type.RAIO),
-		Skill.new("Teleporte Rápido", 1.1, 1, Element.Type.PSIQUICO),
-		Skill.new("Media", 0.0, 2, Element.Type.LUZ, Skill.Kind.STATUS, false, true, true),
-		Skill.new("Sukunda", 0.0, 1, Element.Type.VENTO, Skill.Kind.STATUS, false, false, false),
-		Skill.new("Megido", 1.6, 3, Element.Type.LUZ, Skill.Kind.PROJECTILE, false, true, false),
+		Skill.new("Confusion", 1.4, 2, Element.Type.PSIQUICO, Skill.Kind.PROJECTILE, false, false, false, 1.5),
+		Skill.new("Psybeam", 1.7, 3, Element.Type.PSIQUICO, Skill.Kind.PROJECTILE, false, false, false, 1.5),
+		Skill.new("Shock Wave", 1.3, 2, Element.Type.RAIO, Skill.Kind.CAST, false, false, false, 1.5),
+		Skill.new("Teleport", 0.7, 1, Element.Type.PSIQUICO, Skill.Kind.MELEE, false, false, false, 0.5),
+		Skill.new("Media", 0.0, 2, Element.Type.LUZ, Skill.Kind.STATUS, false, true, true, 0.5),
+		Skill.new("Sukunda", 0.0, 1, Element.Type.VENTO, Skill.Kind.STATUS, false, false, false, 0.5),
+		Skill.new("Megido", 1.6, 3, Element.Type.LUZ, Skill.Kind.PROJECTILE, false, true, false, 1.5),
 	])
 	var pancham := Combatant.new("Pancham", 45, 10, 0.45, true)
 	pancham.weaknesses.assign([Element.Type.PSIQUICO, Element.Type.VENTO])
 	pancham.skills.assign([
-		Skill.new("Soco Rápido", 1.2),
-		Skill.new("Golpe de Caratê", 1.5, 2, Element.Type.FISICO),
-		Skill.new("Quebra de Telha", 1.8, 3, Element.Type.FISICO),
-		Skill.new("Provocação", 0.0, 1, Element.Type.FISICO, Skill.Kind.STATUS),
-		Skill.new("Tarukaja", 0.0, 2, Element.Type.FOGO, Skill.Kind.STATUS, false, true, true),
-		Skill.new("Hassou Tobi", 1.4, 3, Element.Type.FISICO, Skill.Kind.MELEE, false, true, false),
+		Skill.new("Mach Punch", 0.5, 1, Element.Type.FISICO, Skill.Kind.MELEE, false, false, false, 0.2),
+		Skill.new("Karate Chop", 1.5, 2, Element.Type.FISICO, Skill.Kind.MELEE, false, false, false, 1.0),
+		Skill.new("Brick Break", 1.8, 3, Element.Type.FISICO, Skill.Kind.MELEE, false, false, false, 1.5),
+		Skill.new("Taunt", 0.0, 1, Element.Type.FISICO, Skill.Kind.STATUS, false, false, false, 0.5),
+		Skill.new("Tarukaja", 0.0, 2, Element.Type.FOGO, Skill.Kind.STATUS, false, true, true, 0.5),
+		Skill.new("Hassou Tobi", 1.4, 3, Element.Type.FISICO, Skill.Kind.MELEE, false, true, false, 1.5),
 	])
 	party.assign([abra, pancham])

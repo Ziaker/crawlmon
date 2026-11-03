@@ -28,12 +28,16 @@ func spawn(inc) -> void:
 
 
 func drive(inc) -> void:
+	var move_id := String(inc.data.get("move_id", ""))
+	if move_id == "teleporte_rapido":
+		_drive_rapid_teleport(inc, {}, null)
+		return
 	var p: Dictionary = inc.data.get("proj", {})
 	if p.is_empty() or not is_instance_valid(p["node"]):
 		return
 	var node := p["node"] as Node3D
 	var to: Vector3 = inc.aim + (p["lift"] as Vector3)  # The rules aim it (live target, or the spot it misses).
-	if _drive_move(inc, String(inc.data.get("move_id", "")), p, node, to):
+	if _drive_move(inc, move_id, p, node, to):
 		return
 	if inc.phase != Battle.Phase.TRAVEL:
 		return
@@ -156,33 +160,56 @@ func _teleport_scale(progress: float) -> Vector3:
 	return pinch.lerp(Vector3.ONE, clampf((progress - TELEPORT_PINCH_PROGRESS) / (1.0 - TELEPORT_PINCH_PROGRESS), 0.0, 1.0))
 
 
-func _drive_rapid_teleport(inc, _projectile: Dictionary, _node: Node3D) -> bool:
+func _drive_rapid_teleport(inc, _projectile: Dictionary = {}, _node: Node3D = null) -> bool:
 	var model: Node3D = fx._models.get(inc.attacker)
 	if model == null:
 		return true
-	# The rules move the caster (AttackMotion blink); this only draws the pinch and the flashes.
+	var a: Combatant = inc.attacker
 	var origin: Vector3 = inc.from
-	var dest: Vector3 = inc.dest
+	var target_pos: Vector3 = inc.target.pos
+	var attack_dir := BattleSpace.flat_dir(origin, target_pos)
+	var dest: Vector3 = target_pos + attack_dir * 1.35
+	inc.dest = dest
 	var base_scale: Vector3 = inc.data.get("teleport_base_scale", fx._base_scale.get(inc.attacker, Vector3.ONE))
 	inc.data["teleport_origin"] = origin
 	inc.data["teleport_base_scale"] = base_scale
-	var body: Vector3 = inc.attacker.pos
-	model.position = Vector3(body.x, 0.0, body.z)
+	fx._displaced[a] = true
+
 	if inc.phase == Battle.Phase.TRAVEL:
-		var p: float = inc.progress()
-		if not inc.data.get("teleport_ghost", false):
-			inc.data["teleport_ghost"] = true
-			VfxLib.spawn_ghost_snapshot(fx, model, Color("63d9ec"), 0.38)
-			VfxLib.flash_star(fx, origin + Vector3.UP, Color.WHITE, 2.4, 0.18)
-		model.scale = base_scale * _teleport_scale(p)
+		if not inc.data.get("teleport_vanish_flash", false):
+			inc.data["teleport_vanish_flash"] = true
+			VfxLib.flash_star(fx, origin + Vector3.UP, Color("63d9ec"), 2.2, 0.20)
+			fx._ring(origin + Vector3(0, 0.05, 0), Color("63d9ec"), Vector3(0.2, 1, 0.2), Vector3(1.5, 1, 1.5), 0.28, Vector3.ZERO, 0.0, false)
+		model.visible = false
 	elif inc.phase == Battle.Phase.STRIKE:
+		model.visible = true
+		model.position = dest
+		model.rotation.y = atan2(-attack_dir.x, -attack_dir.z)
 		model.scale = base_scale
+		if not inc.data.get("teleport_arrival_flash", false):
+			inc.data["teleport_arrival_flash"] = true
+			VfxLib.flash_star(fx, dest + Vector3.UP, Color("63d9ec"), 2.4, 0.20)
+			fx._ring(dest + Vector3(0, 0.05, 0), Color("63d9ec"), Vector3(0.2, 1, 0.2), Vector3(1.6, 1, 1.6), 0.28, Vector3.ZERO, 0.0, false)
+			fx._play(inc.attacker, "attack")
 	elif inc.phase == Battle.Phase.RETURN:
 		var p: float = inc.progress()
-		if not inc.data.get("teleport_return_flash", false) and p >= TELEPORT_PINCH_PROGRESS:
-			inc.data["teleport_return_flash"] = true
-			VfxLib.flash_star(fx, origin + Vector3.UP, Color("63d9ec"), 2.2, 0.18)
-		model.scale = base_scale * _teleport_scale(1.0 - p)
+		if p < 0.35:
+			if not inc.data.get("teleport_exit_flash", false):
+				inc.data["teleport_exit_flash"] = true
+				VfxLib.flash_star(fx, dest + Vector3.UP, Color("63d9ec"), 2.0, 0.18)
+				fx._ring(dest + Vector3(0, 0.05, 0), Color("63d9ec"), Vector3(0.2, 1, 0.2), Vector3(1.5, 1, 1.5), 0.28, Vector3.ZERO, 0.0, false)
+			model.visible = false
+		else:
+			model.visible = true
+			model.position = origin
+			model.rotation.y = fx._home_yaw[inc.attacker]
+			model.scale = base_scale
+			if not inc.data.get("teleport_home_flash", false):
+				inc.data["teleport_home_flash"] = true
+				VfxLib.flash_star(fx, origin + Vector3.UP, Color("63d9ec"), 2.2, 0.20)
+				fx._ring(origin + Vector3(0, 0.05, 0), Color("63d9ec"), Vector3(0.2, 1, 0.2), Vector3(1.5, 1, 1.5), 0.32, Vector3.ZERO, 0.0, false)
+				fx._displaced[a] = false
+				fx._reset_idle(inc.attacker)
 	return true
 
 
@@ -365,7 +392,12 @@ func _make_ground_shot(from: Vector3, to: Vector3, color: Color) -> Node3D:
 	var sand := Color(0.78, 0.62, 0.38)
 	for i in 5:
 		var size := randf_range(0.35, 0.7)
-		var rock := fx._node(fx._box(Vector3(size, size * 0.7, size)), sand.darkened(randf_range(0.0, 0.35)),
+		var sph := SphereMesh.new()
+		sph.radius = size * 0.38
+		sph.height = size * 0.76
+		sph.radial_segments = 5
+		sph.rings = 3
+		var rock := fx._node(sph, sand.darkened(randf_range(0.0, 0.35)),
 			Vector3(randf_range(-0.7, 0.7), size * 0.35, randf_range(-0.6, 0.6)))
 		rock.material_override.albedo_color.a = 1.0
 		rock.rotation = Vector3(randf() * TAU, randf() * TAU, randf() * TAU)
@@ -385,7 +417,13 @@ func _make_projectile(from: Vector3, to: Vector3, color: Color, element: Element
 	fx.add_child(node)
 	node.look_at_from_position(from, to)
 	if element == Element.Type.AGUA_GELO:
-		var shard := fx._node(fx._box(Vector3(0.28, 0.28, 1.3)), Color(0.7, 0.95, 1.0, 0.95), Vector3.ZERO)
+		var icicle := CylinderMesh.new()
+		icicle.top_radius = 0.02
+		icicle.bottom_radius = 0.20
+		icicle.height = 1.35
+		icicle.radial_segments = 4
+		var shard := fx._node(icicle, Color(0.7, 0.95, 1.0, 0.95), Vector3.ZERO)
+		shard.rotate_object_local(Vector3.RIGHT, deg_to_rad(90))
 		shard.material_override.emission_enabled = true
 		shard.material_override.emission = Color(0.4, 0.85, 1.0)
 		shard.material_override.emission_energy_multiplier = 2.5

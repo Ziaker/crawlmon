@@ -15,6 +15,11 @@ const SLOWMO_SECONDS := 2.0  ## Real seconds, or until the player's counter-acti
 const ENEMY_SCALE := 1.8  ## Extra scale on enemy models so they read at 30 units.
 const ACT_NAMES := ["Atacar", "Habilidades", "Segurar"]
 const REACT_NAMES := ["Nada", "Esquivar"]
+const BattleArena = preload("res://scripts/combat/battle_arena.gd")
+const BattleFx = preload("res://scripts/combat/battle_fx.gd")
+const BattleCamera = preload("res://scripts/combat/battle_camera.gd")
+const BattleHud = preload("res://scripts/ui/battle_hud.gd")
+const SmtBuffController = preload("res://scripts/vfx/smt/smt_buff_controller.gd")
 
 @onready var battle: Battle = $Battle
 @onready var ui: CanvasLayer = $UI
@@ -22,11 +27,19 @@ const REACT_NAMES := ["Nada", "Esquivar"]
 var models: Dictionary = {}  ## Combatant -> Node3D
 var fx: BattleFx
 var director: BattleCamera
+var smt_vfx: SmtBuffController
 var hud: BattleHud
 var state := S.MAIN
 var leader: Combatant
 
+const DECISION_SLOWMO_SCALE := 0.2
+const DECISION_SLOWMO_SECONDS := 3.0
+
 var _slow_token := 0
+var _decision_slowmo_available := true  ## Reset to true whenever the player performs an action (D-047).
+var _decision_slowmo_active := false
+var _decision_slowmo_time_left := 0.0
+var _decision_slowmo_token := 0
 var _status_unit: Combatant
 var _saved_anim: Dictionary = {}  ## AnimationPlayer -> [name, position]
 
@@ -41,6 +54,7 @@ var _item_list: Array[Item] = []
 var _targets: Array[Combatant] = []
 var _on_target: Callable
 var _back: Callable
+var _test_enemies: Array[Combatant] = []  ## Debug spawns (H): extra standing enemies for the camera test.
 
 
 func _ready() -> void:
@@ -51,21 +65,11 @@ func _ready() -> void:
 	add_child(director)
 	director.setup($Camera3D)
 	fx.cam = director
+	smt_vfx = SmtBuffController.new()
+	smt_vfx.name = "SmtBuffController"
+	add_child(smt_vfx)
 	var party := GameState.party
-	var enemies: Array[Combatant] = [
-		Combatant.new("Gible", 38, 9, 0.42, false),
-	]
-	enemies[0].weaknesses.assign([Element.Type.AGUA_GELO])
-	enemies[0].skills.assign([
-		Skill.new("Mordida", 1.2, 1, Element.Type.TREVAS, Skill.Kind.MELEE),
-		Skill.new("Tiro de Areia", 1.3, 2, Element.Type.TERRA, Skill.Kind.PROJECTILE, true),
-		Skill.new("Fúria do Dragão", 1.6, 3, Element.Type.FISICO, Skill.Kind.PROJECTILE),
-		Skill.new("Investida Subterrânea", 1.5, 2, Element.Type.TERRA, Skill.Kind.MELEE, true),
-		Skill.new("Rakunda", 0.0, 1, Element.Type.TREVAS, Skill.Kind.STATUS, false, false, false),
-		Skill.new("Mabufula", 1.35, 2, Element.Type.AGUA_GELO, Skill.Kind.PROJECTILE, false, true, false),
-		Skill.new("Titanomachia", 1.5, 3, Element.Type.TERRA, Skill.Kind.MELEE, false, true, false),
-	])
-	enemies[0].inventory = {"potion": 1}
+	var enemies: Array[Combatant] = [_new_gible()]
 	for e in enemies:  # Same Tactics the allies have: cast skills and evade when able.
 		e.act_policy = Combatant.Act.SKILL
 		e.react_policy = Combatant.React.EVADE
@@ -83,9 +87,11 @@ func _ready() -> void:
 	hud = BattleHud.new()
 	ui.add_child(hud)
 	hud.setup(battle, party, enemies, $Camera3D, models, director)
-	var debug_panel := BattleDebug.new()  # F1: quick-test panel (hotkeys F2..F11)
+	var debug_panel := BattleDebug.new()  # F1: quick-test panel (hotkeys F2..F8, C, G, H, J, K..M)
 	add_child(debug_panel)
 	debug_panel.setup(battle, party, enemies, fx, $Camera3D, director)
+	debug_panel.set_test_enemy_toggle(_debug_toggle_test_enemies)
+	debug_panel.set_test_enemy_push(_debug_shift_test_enemy)
 	_menu = hud.menu
 	hud.status_closed.connect(_close_status)
 	hud.status_unit_selected.connect(_on_status_unit)
@@ -96,6 +102,8 @@ func _ready() -> void:
 	battle.state_changed.connect(_refresh)
 	battle.battle_ended.connect(_on_battle_ended)
 	battle.attack_telegraphed.connect(fx.telegraph)
+	battle.status_pause_started.connect(fx.on_status_pause_started)
+	battle.status_pause_ended.connect(fx.on_status_pause_ended)
 	battle.attack_resolved.connect(fx.resolve_attack)
 	battle.attack_phase.connect(fx.on_phase)
 	battle.engaged.connect(fx.on_engaged)
@@ -114,6 +122,7 @@ func _ready() -> void:
 	battle.manual_evaded.connect(fx.manual_evade)
 	battle.evade_whiffed.connect(fx.evade_whiff)
 	battle.hit_resolved.connect(fx.play_hit)
+	battle.hit_resolved.connect(smt_vfx.on_hit_resolved)
 	battle.healed.connect(fx.heal_fx)
 	battle.manual_evaded.connect(_on_manual_evaded)
 	battle.attack_telegraphed.connect(func(inc) -> void:
@@ -132,6 +141,7 @@ func _ready() -> void:
 		await tr.revealed  # The run-in plays while the panels open.
 	await fx.intro()
 	battle.start(party, enemies)
+	director.watch_enemies(_enemy_frame_points)  # D-015 test: the living enemies the framing must keep in view.
 	_show_main()
 
 
@@ -159,6 +169,85 @@ func _unhandled_input(event: InputEvent) -> void:
 
 # --- Stage -----------------------------------------------------------------
 
+## The battle's enemy, exactly as it has always been. The debug spawns (H) copy it:
+## same stats, same moves, nothing new in the game.
+func _new_gible() -> Combatant:
+	var e := Combatant.new("Gible", 38, 9, 0.42, false)
+	e.weaknesses.assign([Element.Type.AGUA_GELO])
+	e.skills.assign([
+		Skill.new("Bite", 1.3, 2, Element.Type.TREVAS, Skill.Kind.MELEE, false, false, false, 1.2),
+		Skill.new("Sand Attack", 0.0, 1, Element.Type.TERRA, Skill.Kind.PROJECTILE, true, false, false, 0.75),
+		Skill.new("Dragon Rage", 1.6, 3, Element.Type.FISICO, Skill.Kind.PROJECTILE, false, false, false, 2.0, true),
+		Skill.new("Dig", 1.5, 2, Element.Type.TERRA, Skill.Kind.MELEE, true, false, false, 1.0),
+		Skill.new("Dragon Claw", 1.6, 3, Element.Type.FISICO, Skill.Kind.MELEE, false, false, false, 1.5),
+		Skill.new("Rakunda", 0.0, 1, Element.Type.TREVAS, Skill.Kind.STATUS, false, false, false, 0.5),
+		Skill.new("Mabufula", 1.35, 2, Element.Type.AGUA_GELO, Skill.Kind.PROJECTILE, false, true, false, 1.5),
+		Skill.new("Titanomachia", 1.5, 3, Element.Type.TERRA, Skill.Kind.MELEE, false, true, false, 1.5),
+	])
+	e.inventory = {"potion": 1}
+	return e
+
+
+## Debug panel (H adds two standing enemies, Shift+H removes them). Returns the note
+## shown in the panel. They are real combatants (take a slot, can be targeted), but
+## they only stand there: the test is about the camera, not about the fight.
+func _debug_toggle_test_enemies(remove: bool) -> String:
+	return _debug_remove_test_enemies() if remove else _debug_add_test_enemies()
+
+
+func _debug_add_test_enemies() -> String:
+	if not battle.running:
+		return "Inimigos de teste: a batalha não está rodando"
+	if not _test_enemies.is_empty():
+		return "Inimigos de teste: já estão em cena (Shift+H remove)"
+	for i in 2:
+		var c := _new_gible()
+		c.act_policy = Combatant.Act.HOLD
+		c.react_policy = Combatant.React.NONE
+		c.atb = 0.0
+		var slot := battle.enemies.size()
+		battle.enemies.append(c)
+		var one: Array[Combatant] = [c]
+		var spots: Array[Vector3] = [Vector3(8.0 + slot * 5.0, 0.0, -TEAM_DISTANCE - slot * 2.0)]
+		_spawn(one, spots, 0.0, Color(0.85, 0.3, 0.3))
+		hud.add_enemy(c)
+		_test_enemies.append(c)
+	return "Inimigos de teste: +2 parados (K liga o enquadramento | Shift+H remove)"
+
+
+## Debug (J / Shift+J): slide the first test enemy 5 units to one side so the framing
+## can be seen acting. Only touches the debug spawns, never a real combatant.
+func _debug_shift_test_enemy(left: bool) -> String:
+	if _test_enemies.is_empty():
+		return "Inimigos de teste: aperte H para criar os 2 primeiro"
+	var c: Combatant = _test_enemies[0]
+	var spot: Vector3 = c.home + Vector3(-5.0 if left else 5.0, 0.0, 0.0)
+	fx.debug_move_home(c, spot)
+	return "Inimigo de teste em x=%.0f (K liga o enquadramento | Shift+J vai para o outro lado)" % spot.x
+
+
+func _debug_remove_test_enemies() -> String:
+	if _test_enemies.is_empty():
+		return "Inimigos de teste: nenhum em cena"
+	if state == S.FIGHT and _fight_target in _test_enemies:
+		return "Inimigos de teste: saia da escolha de alvo antes de remover"
+	for c in _test_enemies:
+		if battle.is_in_action(c):
+			return "Inimigos de teste: espere o golpe atual terminar"
+	for c in _test_enemies:
+		battle.enemies.erase(c)
+		var m: Node3D = models.get(c)
+		models.erase(c)
+		fx.unregister(c)
+		if smt_vfx != null:
+			smt_vfx.unregister_model(c)
+		hud.remove_enemy(c)
+		if m != null:
+			m.queue_free()
+	_test_enemies.clear()
+	return "Inimigos de teste: removidos"
+
+
 func _spawn(list: Array[Combatant], slots: Array[Vector3], yaw: float, color: Color) -> void:
 	for i in list.size():
 		var c := list[i]
@@ -171,7 +260,21 @@ func _spawn(list: Array[Combatant], slots: Array[Vector3], yaw: float, color: Co
 		model.set_meta("head_y", _measure_head(model))
 		models[c] = model
 		fx.register(c, model)
+		if smt_vfx != null:
+			smt_vfx.register_model(c, model)
 		c.died.connect(_on_died)
+
+
+## D-015 test: where each living enemy's torso is drawn (the camera keeps these in view).
+func _enemy_frame_points() -> Array[Vector3]:
+	var points: Array[Vector3] = []
+	for c in battle.enemies:
+		var m: Node3D = models.get(c)
+		if m == null or not c.is_alive():
+			continue
+		var head_y: float = m.get_meta("head_y") if m.has_meta("head_y") else 1.8
+		points.append(m.global_position + Vector3(0, head_y * 0.5 * m.scale.y, 0))
+	return points
 
 
 func _make_model(c: Combatant, color: Color) -> Node3D:
@@ -273,6 +376,9 @@ func _find_anim_player(node: Node) -> AnimationPlayer:
 
 
 func _on_died(c: Combatant) -> void:
+	if not c.is_player:
+		# Inimigos são lançados balisticamente com VFX e shake épico via BattleFx (D-049)
+		return
 	var model: Node3D = models.get(c)
 	if model and model.has_meta("anim_player"):
 		var ap: AnimationPlayer = model.get_meta("anim_player")
@@ -301,13 +407,65 @@ func _end_slowmo() -> void:
 	Engine.time_scale = 1.0
 
 
+func _start_decision_slowmo() -> void:
+	if not _decision_slowmo_available or _decision_slowmo_active:
+		return
+	_decision_slowmo_available = false
+	_decision_slowmo_active = true
+	_decision_slowmo_time_left = DECISION_SLOWMO_SECONDS
+	_decision_slowmo_token += 1
+	var token := _decision_slowmo_token
+	Engine.time_scale = DECISION_SLOWMO_SCALE
+	if director != null:
+		director.set_decision_slowmo(true)
+	_tick_decision_slowmo(token)
+
+
+func _tick_decision_slowmo(token: int) -> void:
+	while _decision_slowmo_active and token == _decision_slowmo_token:
+		await get_tree().create_timer(0.05, true, false, true).timeout
+		if not _decision_slowmo_active or token != _decision_slowmo_token:
+			break
+		_decision_slowmo_time_left -= 0.05
+		if state == S.FIGHT:
+			_update_fight_header(_menu.index)
+		elif state == S.ITEMS:
+			_update_items_header()
+		if _decision_slowmo_time_left <= 0.0:
+			_end_decision_slowmo()
+			break
+
+
+func _end_decision_slowmo() -> void:
+	if not _decision_slowmo_active:
+		return
+	_decision_slowmo_active = false
+	_decision_slowmo_time_left = 0.0
+	_decision_slowmo_token += 1
+	if Engine.time_scale == DECISION_SLOWMO_SCALE:
+		Engine.time_scale = 1.0
+	if director != null:
+		director.set_decision_slowmo(false)
+	if state == S.FIGHT:
+		_update_fight_header(_menu.index)
+	elif state == S.ITEMS:
+		_update_items_header()
+
+
+func _on_player_action_executed() -> void:
+	_decision_slowmo_available = true
+	_end_decision_slowmo()
+
+
 func _exit_tree() -> void:
+	_end_decision_slowmo()
 	Engine.time_scale = 1.0
 	if is_inside_tree():
 		get_tree().paused = false
 
 
 func _on_battle_ended(player_won: bool) -> void:
+	_end_decision_slowmo()
 	_end_slowmo()
 	fx.finish(player_won)
 	_menu.hide()
@@ -345,7 +503,7 @@ func _show_main() -> void:
 	_set_state(S.MAIN)
 	hud.set_menu_style(FanMenu.Style.FAN, "01 / ESCOLHA SUA AÇÃO")
 	_menu.set_entries([
-		{"text": "Fight", "detail": "%d ATB" % int(Battle.SKILL_BLOCKS)},
+		{"text": "Fight", "detail": "%d ATB" % int(Battle.min_skill_cost(leader))},
 		{"text": "Itens", "detail": "%d ATB" % int(Battle.ITEM_BLOCKS)},
 		{"text": "Evade", "detail": "%d ATB" % int(battle.evade_cost(leader))},
 		{"text": "Tactics", "detail": "PAUSA"},
@@ -356,9 +514,11 @@ func _show_main() -> void:
 
 
 func _update_main_enabled() -> void:
-	var can_fight := leader.can_pay(Battle.SKILL_BLOCKS) and not battle.is_winding_up(leader)
+	var min_cost := Battle.min_skill_cost(leader)
+	var can_fight := not leader.is_stunned() and leader.can_pay(min_cost) and not battle.is_winding_up(leader)
 	_menu.set_enabled(0, can_fight)
-	_menu.set_detail(0, "%d ATB" % int(Battle.SKILL_BLOCKS) if can_fight else ("em ação" if battle.is_winding_up(leader) else "falta ATB"))
+	var fight_detail := ("GRÁTIS" if leader.burst > 0 else "%d ATB" % int(min_cost)) if can_fight else ("em ação" if battle.is_winding_up(leader) else ("atordoado" if leader.is_stunned() else "falta ATB"))
+	_menu.set_detail(0, fight_detail)
 	var can_item := leader.can_pay(Battle.ITEM_BLOCKS) and not _consumables().is_empty()
 	_menu.set_enabled(1, can_item)
 	_menu.set_detail(1, "%d ATB" % int(Battle.ITEM_BLOCKS) if can_item else ("sem itens" if _consumables().is_empty() else "falta ATB"))
@@ -379,6 +539,8 @@ func _show_fight() -> void:
 	for n in _fight_skills.size():
 		if _fight_skills[n].display_name == _last_skill:
 			_menu.select(n)
+	if _decision_slowmo_available:
+		_start_decision_slowmo()
 	_update_fight_header(_menu.index)
 
 
@@ -418,11 +580,14 @@ func _fill_fight(keep_index: bool) -> void:
 				best_dmg = dmg
 				best = n
 	var entries: Array = []
+	var is_stunned := leader.is_stunned()
 	for n in _fight_skills.size():
 		var sk := _fight_skills[n]
-		var affordable := leader.can_pay(sk.cost) and not battle.is_winding_up(leader)
+		var affordable := not is_stunned and leader.can_pay(sk.cost) and not battle.is_winding_up(leader)
 		var price := "GRÁTIS" if leader.burst > 0 else "%d ATB" % sk.cost
-		if not leader.can_pay(sk.cost):
+		if is_stunned:
+			price = "ATORDOADO (%.1fs)" % leader.stun_timer
+		elif not leader.can_pay(sk.cost):
 			price = "falta %d ATB" % int(ceilf(sk.cost - leader.blocks()))
 		elif battle.is_winding_up(leader):
 			price = "em ação"
@@ -460,6 +625,8 @@ func _update_fight_header(i: int) -> void:
 		text += " (SUPORTE)"
 	if _fight_target != null and (sk.kind == Skill.Kind.MELEE or sk.kind == Skill.Kind.PROJECTILE):
 		text += " %.2fs" % AttackPlanner.preview_travel(leader, _fight_target, sk.kind)
+	if _decision_slowmo_active:
+		text += " · ⏳ %.1fs" % maxf(_decision_slowmo_time_left, 0.0)
 	hud.set_menu_style(FanMenu.Style.DRAWER, text)
 
 
@@ -470,11 +637,14 @@ func _use_move(skill: Skill, target: Combatant) -> bool:
 			target = leader
 	elif target == null or not target.is_alive():
 		return false
-	if not (leader.can_pay(skill.cost) and not battle.is_winding_up(leader)):
+	if leader.is_stunned() or not (leader.can_pay(skill.cost) and not battle.is_winding_up(leader)):
 		return false
 	_last_skill = skill.display_name
 	_last_target = target.name
-	return battle.use_skill(leader, skill, target)
+	var ok := battle.use_skill(leader, skill, target)
+	if ok:
+		_on_player_action_executed()
+	return ok
 
 
 func _move_by_name(skill_name: String) -> Skill:
@@ -486,14 +656,27 @@ func _move_by_name(skill_name: String) -> Skill:
 
 func _show_items() -> void:
 	_set_state(S.ITEMS)
-	hud.set_menu_style(FanMenu.Style.DRAWER, "ITENS // 1 ATB")
 	_item_list = _consumables()
 	var entries: Array = []
+	var is_stunned := leader.is_stunned()
 	for item in _item_list:
-		entries.append({"text": item.display_name, "detail": "x%d" % leader.item_count(item.id)})
+		var price := "x%d" % leader.item_count(item.id)
+		if is_stunned:
+			price += " · ATORDOADO"
+		entries.append({"text": item.display_name, "detail": price, "enabled": not is_stunned and leader.can_pay(Battle.ITEM_BLOCKS)})
 	if entries.is_empty():
 		entries.append({"text": "(vazio)", "enabled": false})
 	_menu.set_entries(entries)
+	if _decision_slowmo_available:
+		_start_decision_slowmo()
+	_update_items_header()
+
+
+func _update_items_header() -> void:
+	var text := "ITENS // 1 ATB"
+	if _decision_slowmo_active:
+		text += " · ⏳ %.1fs" % maxf(_decision_slowmo_time_left, 0.0)
+	hud.set_menu_style(FanMenu.Style.DRAWER, text)
 
 
 func _show_status() -> void:
@@ -644,7 +827,11 @@ func _on_chosen(i: int) -> void:
 		S.ITEMS:
 			var item := _item_list[i]
 			_pick_target(battle.party,
-				func(t: Combatant) -> void: battle.use_item(leader, item, t), _show_items)
+				func(t: Combatant) -> void:
+					var ok := battle.use_item(leader, item, t)
+					if ok:
+						_on_player_action_executed(),
+				_show_items)
 		S.TARGET:
 			_last_target = _targets[i].name
 			_on_target.call(_targets[i])
@@ -661,6 +848,7 @@ func _on_chosen(i: int) -> void:
 
 
 func _on_cancel() -> void:
+	_end_decision_slowmo()
 	match state:
 		S.FIGHT, S.ITEMS, S.TACTICS:
 			_show_main()
@@ -671,6 +859,8 @@ func _on_cancel() -> void:
 func _on_moved(i: int) -> void:
 	if state == S.FIGHT:
 		_update_fight_header(i)
+	elif state == S.ITEMS:
+		_update_items_header()
 	if state == S.TARGET and i < _targets.size():
 		var target := _targets[i]
 		hud.set_target(target)

@@ -9,3 +9,9 @@ Godot_v*.exe
 
 # Extracted 3D models: local only
 assets/modelos/
+
+# Local scratch, captures and reference dumps
+scratch/
+test_captures/
+sugimori/
+sugimori_sem_modelo/

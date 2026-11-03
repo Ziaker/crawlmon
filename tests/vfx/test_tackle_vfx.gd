@@ -33,8 +33,8 @@ func _test_tackle_routing(motion: FxMotion) -> void:
 	_expect(motion._is_tackle(FakeIncoming.new("Tackle")), "Tackle must use its dedicated VFX")
 	_expect(motion._is_tackle(FakeIncoming.new("Investida")), "Investida must use its dedicated VFX")
 	_expect(not motion._is_tackle(FakeIncoming.new("Quick Attack")), "other melee attacks must keep generic VFX")
-	_expect(not motion._should_emit_travel_dust(FakeIncoming.new("Tackle")), "Tackle travel must stay clean")
-	_expect(motion._should_emit_travel_dust(FakeIncoming.new("Quick Attack")), "other melee travel must remain unchanged")
+	_expect(motion._should_emit_travel_dust(FakeIncoming.new("Tackle")), "Tackle travel must emit dust under D-041")
+	_expect(motion._should_emit_travel_dust(FakeIncoming.new("Quick Attack")), "other melee travel must emit dust")
 
 
 func _test_tackle_strike_timing(motion: FxMotion) -> void:
@@ -63,12 +63,12 @@ func _test_tackle_impact(impacts: FxImpacts) -> void:
 	var names: Array[String] = []
 	for node in nodes:
 		names.append(node.name)
-	_expect("TackleImpactB1" in names, "B1 must return its starburst root for hit-stop")
-	_expect("TacklePlasmaGold" in names, "B1 must return the gold plasma ring")
-	_expect("TacklePlasmaOrange" in names, "B1 must return the orange crossed plasma ring")
-	_expect(not ("TackleRefractionDome" in names), "Tackle must no longer use the B2 refraction dome")
-	var root_node := _named(nodes, "TackleImpactB1")
-	_expect(root_node != null and root_node.get_child_count() == 27, "B1 root must contain 8 cross spears, a plasma core and 18 shards")
+	_expect("TackleShockCone" in names, "D-041 must include 3D shock cone")
+	_expect("TackleSlashArcA" in names, "D-041 must include crossed slash arc A")
+	_expect("TackleSlashArcB" in names, "D-041 must include crossed slash arc B")
+	_expect("TackleFlipbookMain" in names, "D-041 must include main impact flipbook")
+	_expect("TackleFlipbookCore" in names, "D-041 must include core impact flipbook")
+	_expect("TackleGroundSmoke" in names, "D-041 must include ground radial smoke")
 
 
 func _shader_color(node: MeshInstance3D) -> Color:

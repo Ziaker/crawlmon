@@ -155,10 +155,14 @@ Fraquezas: %s" % [
 
 # --- Settings --------------------------------------------------------------
 
-func _build_settings(_keep_index: bool) -> void:
+func _build_settings(keep_index: bool) -> void:
 	mode = Mode.SETTINGS
 	_title.text = "Configurações  (X ou C fecha)"
-	_list.set_entries([{"text": "Debug: iniciar batalha agora  (F9 em qualquer tela)"}])
+	var rolling_label := "Vida Rolante (Mother 3): [LIGADO]" if GameState.rolling_hp_enabled else "Vida Rolante (Mother 3): [DESLIGADO]"
+	_list.set_entries([
+		{"text": rolling_label},
+		{"text": "Debug: iniciar batalha agora  (F9 em qualquer tela)"}
+	], keep_index)
 
 
 # --- Signals ---------------------------------------------------------------
@@ -167,6 +171,9 @@ func _on_chosen(i: int) -> void:
 	match mode:
 		Mode.SETTINGS:
 			if i == 0:
+				GameState.rolling_hp_enabled = not GameState.rolling_hp_enabled
+				_build_settings(true)
+			elif i == 1:
 				_close()
 				GameState._debug_battle()
 		Mode.TABS:

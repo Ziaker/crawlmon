@@ -61,5 +61,23 @@ static func move_id(skill_name: String) -> String:
 		"tiro_de_areia": "tiro_areia",
 		"garra_do_dragao": "garra_dragao",
 		"furia_do_dragao": "furia_dragao",
+		# Nomes oficiais em inglês (D-032)
+		"mach_punch": "soco_rapido",
+		"bullet_punch": "soco_rapido",
+		"karate_chop": "golpe_carate",
+		"brick_break": "quebra_telha",
+		"taunt": "provocacao",
+		"confusion": "confusao",
+		"psybeam": "raio_psiquico",
+		"shock_wave": "onda_choque",
+		"teleport": "teleporte_rapido",
+		"quick_teleport": "teleporte_rapido",
+		"bite": "mordida",
+		"sand_attack": "tiro_areia",
+		"dragon_claw": "garra_dragao",
+		"dragon_rage": "furia_dragao",
+		"dig": "investida_escavadora",
+		"bulldoze": "investida_escavadora",
+		"investida_subterranea": "investida_escavadora",
 	}
 	return aliases.get(move_id, move_id)

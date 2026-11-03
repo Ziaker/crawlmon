@@ -71,7 +71,10 @@ func progress() -> float:
 
 ## The manual Evade works only while the attack is on its way (the run or the projectile).
 func can_evade_now() -> bool:
-	# Only during the strike itself: the phase that ends with the hit (D-030).
+	# Only during the strike itself: the phase that ends with the hit (D-030). Status moves
+	# and friendly moves are never dodged (D-012).
+	if kind == Skill.Kind.STATUS or is_friendly:
+		return false
 	return resolved and not impacted and not interrupted and not ghost and phase == impact_phase
 
 

@@ -164,84 +164,63 @@ func _tackle_torus(name_: String, pos: Vector3, color: Color, energy: float, sca
 	return node
 
 
-## Impacto B1: four-axis starburst, central plasma and 18 high-contrast shards.
+## Impacto de Tackle / Investida (D-041):
+## Composição multicamada anime com cone de choque sônico 3D (shock_cone.glb),
+## arcos cinéticos cruzados (slash_arc.glb), explosão anime de impacto em flipbook
+## de 16 frames com núcleo quente, anel de choque e poeira radial no solo, e
+## faíscas direcionais em alta velocidade.
 func _tackle_impact(pos: Vector3, strike_dir: Vector3, big: bool) -> Array[Node3D]:
 	var k := 1.45 if big else 1.0
 	var dir := strike_dir.normalized() if strike_dir.length_squared() > 0.001 else Vector3.FORWARD
-	var root := Node3D.new()
-	root.name = "TackleImpactB1"
-	root.position = pos
-	root.quaternion = Quaternion(Vector3.FORWARD, dir)
-	fx.add_child(root)
-	var axes: Array[Vector3] = [
-		Vector3.UP, Vector3.DOWN, Vector3.FORWARD, Vector3.BACK,
-		Vector3(0.35, 0.75, 0.75).normalized(), Vector3(-0.35, -0.75, -0.75).normalized(),
-		Vector3(0.35, 0.75, -0.75).normalized(), Vector3(-0.35, -0.75, 0.75).normalized()]
-	for i in axes.size():
-		var axis := axes[i]
-		var length := (2.15 if i < 4 else 1.35) * k
-		var spear_mesh := CylinderMesh.new()
-		spear_mesh.top_radius = 0.0
-		spear_mesh.bottom_radius = 0.26 if i < 4 else 0.16
-		spear_mesh.height = length
-		spear_mesh.radial_segments = 4
-		var spear := MeshInstance3D.new()
-		spear.name = "CrossSpear%02d" % i
-		spear.mesh = spear_mesh
-		spear.material_override = _tackle_material(Color.WHITE if i < 4 else Color("ffbe0b"), 3.4)
-		spear.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		spear.position = axis * length * 0.5
-		spear.quaternion = Quaternion(Vector3.UP, axis)
-		spear.scale = Vector3.ONE * 0.35
-		root.add_child(spear)
-		var spear_mat := spear.material_override as StandardMaterial3D
-		var spear_tw := spear.create_tween().set_parallel(true)
-		spear_tw.tween_property(spear, "scale", Vector3.ONE, 0.44).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
-		spear_tw.tween_property(spear_mat, "albedo_color:a", 0.0, 0.24).set_delay(0.20)
+	var ground := Vector3(pos.x, 0.04, pos.z)
+	var nodes: Array[Node3D] = []
 
-	var core_mesh := SphereMesh.new()
-	core_mesh.radius = 0.48
-	core_mesh.height = 0.96
-	var core := MeshInstance3D.new()
-	core.name = "PlasmaCore"
-	core.mesh = core_mesh
-	core.material_override = _tackle_material(Color("ffbe0b", 0.95), 3.8)
-	core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	core.scale = Vector3.ONE * 0.35
-	root.add_child(core)
-	var core_mat := core.material_override as StandardMaterial3D
-	var core_tw := core.create_tween().set_parallel(true)
-	core_tw.tween_property(core, "scale", Vector3.ONE * 1.45 * k, 0.44).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
-	core_tw.tween_property(core_mat, "albedo_color:a", 0.0, 0.30).set_delay(0.14)
+	# 1. Flash star no ponto exato de contato
+	VfxLib.flash_star(fx, pos, Color.WHITE, 3.4 * k, 0.16)
 
-	for i in 18:
-		var angle := float(i) / 18.0 * TAU + sin(float(i) * 3.1) * 0.20
-		var shard_dir := Vector3(sin(angle) * 0.55, cos(angle), cos(angle * 1.7)).normalized()
-		var shard_mesh := CylinderMesh.new()
-		shard_mesh.top_radius = 0.0
-		shard_mesh.bottom_radius = 0.18 + float(i % 3) * 0.07
-		shard_mesh.height = 0.42 + float(i % 3) * 0.10
-		shard_mesh.radial_segments = 3
-		var shard := MeshInstance3D.new()
-		shard.name = "ErodedShard%02d" % i
-		shard.mesh = shard_mesh
-		var shard_color := Color("3d0814") if i % 2 == 0 else Color("ffbe0b")
-		shard.material_override = _tackle_material(shard_color, 1.6 if i % 2 == 0 else 2.8)
-		shard.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		shard.quaternion = Quaternion(Vector3.UP, shard_dir)
-		shard.scale = Vector3.ONE * 0.25
-		root.add_child(shard)
-		var shard_mat := shard.material_override as StandardMaterial3D
-		var shard_tw := shard.create_tween().set_parallel(true)
-		shard_tw.tween_property(shard, "position", shard_dir * (1.4 + float(i % 5) * 0.18) * k, 0.44).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
-		shard_tw.tween_property(shard, "scale", Vector3.ONE * (0.75 if i % 2 == 0 else 0.55), 0.44)
-		shard_tw.tween_property(shard_mat, "albedo_color:a", 0.0, 0.22).set_delay(0.22)
+	# 2. Cone de Pressão Sônica / Choque de Ar (3D mesh shock_cone.glb + mesh_slash.gdshader)
+	var cone := VfxLib.mesh_slash(fx, pos - dir * 0.25, dir, Color(1.0, 0.94, 0.78), 0.0, 1.45 * k, 0.28, "shock_cone", 3.2)
+	cone.name = "TackleShockCone"
+	nodes.append(cone)
 
-	VfxLib.flash_star(fx, pos, Color.WHITE, 3.6 * k, 0.18)
-	var gold_ring := _tackle_torus("TacklePlasmaGold", pos, Color("ffbe0b", 0.95), 3.2, 0.35, 1.60 * k, 0.44, dir)
-	var orange_ring := _tackle_torus("TacklePlasmaOrange", pos, Color("ff5400", 0.88), 2.8, 0.25, 1.30 * k, 0.44, (dir + Vector3.UP).normalized())
-	root.create_tween().tween_interval(0.44).finished.connect(root.queue_free)
-	var nodes: Array[Node3D] = [root, gold_ring, orange_ring]
+	# 3. Arcos Cinéticos Duplos de Deslocamento de Ar (slash_arc.glb cruzados)
+	var arc_a := VfxLib.mesh_slash(fx, pos, dir, Color(1.0, 0.98, 0.88), 35.0, 1.35 * k, 0.24, "slash_arc", 3.0)
+	arc_a.name = "TackleSlashArcA"
+	nodes.append(arc_a)
+	var arc_b := VfxLib.mesh_slash(fx, pos, dir, Color(1.0, 0.82, 0.45), -45.0, 1.20 * k, 0.22, "slash_arc", 2.6)
+	arc_b.name = "TackleSlashArcB"
+	nodes.append(arc_b)
+
+	# 4. Flipbook Anime de Impacto (16 frames) com núcleo quente
+	var fb_main := VfxLib.flipbook(fx, pos, "impact", Color(1.0, 0.95, 0.82), 4.6 * k, 0.32, randf_range(-15.0, 15.0), 3.4)
+	fb_main.name = "TackleFlipbookMain"
+	nodes.append(fb_main)
+
+	var fb_core := VfxLib.flipbook(fx, pos, "impact", Color.WHITE, 2.8 * k, 0.22, 45.0, 3.8)
+	fb_core.name = "TackleFlipbookCore"
+	nodes.append(fb_core)
+
+	# 5. Anel de Choque & Poeira Radial no Solo
+	fx._shock(ground, Color(1.0, 0.88, 0.65), 4.5 * k, 0.35)
+	var fb_dust := VfxLib.flipbook(fx, ground + Vector3(0, 0.45, 0), "smoke", Color(0.82, 0.78, 0.72), 3.8 * k, 0.48, 0.0, 1.5, false)
+	fb_dust.name = "TackleGroundSmoke"
+	nodes.append(fb_dust)
+
+	# 6. Faíscas Direcionais Esticadas e Estilhaços Cinéticos
+	VfxLib.burst(fx, pos, {
+		"tex": VfxLib.spark_tex(), "amount": int(28 * k), "life": 0.35,
+		"speed": Vector2(6.0, 14.0), "dir": dir + Vector3.UP * 0.35, "spread": 45.0,
+		"size": Vector2(0.12, 0.32), "end_scale": 0.0, "align_y": true,
+		"ramp": VfxLib.ramp([Color.WHITE, Color("ffbe0b"), Color("fb5607", 0.0)], [0.0, 0.35, 1.0])
+	})
+
+	VfxLib.burst(fx, pos, {
+		"tex": VfxLib.smoke_tex(), "amount": int(12 * k), "life": 0.42,
+		"speed": Vector2(3.0, 7.5), "dir": dir + Vector3.UP * 0.5, "spread": 60.0,
+		"gravity": Vector3(0, -9.8, 0), "size": Vector2(0.25, 0.5), "end_scale": 1.4,
+		"ramp": VfxLib.ramp([Color(0.72, 0.68, 0.62), Color(0.72, 0.68, 0.62, 0.0)], [0.0, 1.0])
+	})
+
 	return nodes
 
 
@@ -352,7 +331,13 @@ func _karate_impact(pos: Vector3, dir: Vector3, big: bool) -> Array[Node3D]:
 	cracks.position = Vector3(pos.x, 0.055, pos.z)
 	fx.add_child(cracks)
 	for i in 5:
-		var line := fx._node(fx._box(Vector3(0.055, 0.025, 1.1 + i * 0.18)), Color("ff624f", 0.82), Vector3.ZERO)
+		var crack_cyl := CylinderMesh.new()
+		crack_cyl.top_radius = 0.025
+		crack_cyl.bottom_radius = 0.025
+		crack_cyl.height = 1.1 + i * 0.18
+		crack_cyl.radial_segments = 4
+		var line := fx._node(crack_cyl, Color("ff624f", 0.82), Vector3.ZERO)
+		line.rotate_object_local(Vector3.RIGHT, deg_to_rad(90))
 		fx.remove_child(line)
 		line.rotation.y = float(i) * TAU / 5.0
 		line.position = Vector3(sin(line.rotation.y), 0, cos(line.rotation.y)) * 0.55
@@ -803,9 +788,12 @@ func _bite_impact(pos: Vector3, dir: Vector3) -> Array[Node3D]:
 	# Dark shadow gullet inside the jaw
 	var throat := MeshInstance3D.new()
 	throat.name = "BiteThroat"
-	var throat_box := BoxMesh.new()
-	throat_box.size = Vector3(2.5, 1.6, 0.35)
-	throat.mesh = throat_box
+	var throat_mesh := SphereMesh.new()
+	throat_mesh.radius = 1.1
+	throat_mesh.height = 1.4
+	throat_mesh.radial_segments = 8
+	throat_mesh.rings = 4
+	throat.mesh = throat_mesh
 	throat.material_override = _tackle_material(Color("16051f", 0.95), 1.2)
 	throat.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	throat.position = Vector3(0, 0, -0.15)
@@ -981,9 +969,12 @@ func _dig_rush_impact(pos: Vector3, big: bool) -> Array[Node3D]:
 		var height := 1.6 + float(i % 3) * 0.48
 		var monolith := MeshInstance3D.new()
 		monolith.name = "BasaltMonolith%d" % i
-		var box := BoxMesh.new()
-		box.size = Vector3(0.42 + float(i % 2) * 0.18, height, 0.52)
-		monolith.mesh = box
+		var pillar := CylinderMesh.new()
+		pillar.top_radius = 0.06
+		pillar.bottom_radius = 0.32 + float(i % 2) * 0.08
+		pillar.height = height
+		pillar.radial_segments = 5
+		monolith.mesh = pillar
 		monolith.material_override = _tackle_material(Color("5c4033"), 0.65)
 		monolith.position = Vector3(cos(angle) * 1.65, -height, sin(angle) * 1.65)
 		monolith.rotation = Vector3(sin(angle) * 0.30, -angle, -cos(angle) * 0.30)

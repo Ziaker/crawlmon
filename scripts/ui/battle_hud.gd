@@ -28,6 +28,7 @@ var _camera: Camera3D
 var _models: Dictionary = {}
 var _director: BattleCamera
 var _cards: Array[UnitCard] = []
+var _banner := {}  ## Status move being performed (D-031): {skill, who, t0}
 var _pops: Array = []  ## Damage numbers: {c, text, crit, weak, t0, dx}
 var _engage_marks: Array = []  ## {p, k, back} drawn by _draw()
 var _back_until: Dictionary = {}  ## Combatant -> msec: shows VOLTANDO until then
@@ -61,6 +62,11 @@ static func text_right(c: CanvasItem, font: Font, right_x: float, y: float, text
 func setup(battle: Battle, party: Array[Combatant], enemies: Array[Combatant], camera: Camera3D, models: Dictionary, director: BattleCamera) -> void:
 	_battle = battle
 	battle.hit_resolved.connect(_on_hit_pop)
+	battle.status_pause_started.connect(func(inc) -> void:
+		_banner = {"skill": String(inc.label), "who": inc.attacker.name, "t0": Time.get_ticks_msec(), "out": -1})
+	battle.status_pause_ended.connect(func(_inc) -> void:
+		if not _banner.is_empty():
+			_banner["out"] = Time.get_ticks_msec())
 	battle.engage_ended.connect(func(actor: Combatant, _o, _g, _s) -> void: _back_until[actor] = Time.get_ticks_msec() + 800)
 	_camera = camera
 	_models = models
@@ -70,6 +76,9 @@ func setup(battle: Battle, party: Array[Combatant], enemies: Array[Combatant], c
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_add_vignette()
 	for i in party.size():
+		var c := party[i]
+		if not c.odometer_ticked.is_connected(_on_combatant_odometer_ticked):
+			c.odometer_ticked.connect(_on_combatant_odometer_ticked)
 		var card := UnitCard.new()
 		card.combatant = party[i]
 		card.hud = self
@@ -155,13 +164,20 @@ func _make_label(pos: Vector2, size: int, color: Color) -> Label:
 
 
 ## HP as displayed: waits for the hit effect to land, then drains smoothly.
+## Under Mother 3 rolling HP (D-048), player units show real-time rolling values.
 func shown_hp(c: Combatant) -> float:
+	if c.is_player and Combatant.rolling_hp_enabled:
+		return c.rolling_hp
 	return _shown_hp.get(c, float(c.hp))
 
 
 func _track_hp() -> void:
 	var now := Time.get_ticks_msec()
 	for c in _models:
+		if c.is_player and Combatant.rolling_hp_enabled:
+			_shown_hp[c] = c.rolling_hp
+			_last_hp[c] = c.hp
+			continue
 		var last: int = _last_hp.get(c, c.hp)
 		if c.hp < last:
 			_hp_hold[c] = maxi(now + 450, c.get_meta("hp_hold_until", 0))
@@ -172,6 +188,35 @@ func _track_hp() -> void:
 		if now >= _hp_hold.get(c, 0):
 			shown = move_toward(shown, float(c.hp), maxf(absf(shown - c.hp) * 0.12, 0.35))
 		_shown_hp[c] = shown
+
+
+## Ponto de chamada de áudio estruturado para o clique/tique mecânico do odômetro (D-048).
+## Pronto para receber $AudioStreamPlayer.play() com arquivos .wav/.ogg customizados.
+func play_odometer_tick() -> void:
+	pass
+
+
+func _on_combatant_odometer_ticked(_c: Combatant, _new_val: int) -> void:
+	play_odometer_tick()
+
+
+## Debug aid: an enemy that enters the field mid-battle (test spawns).
+func add_enemy(c: Combatant) -> void:
+	var tag := EnemyTag.new()
+	tag.combatant = c
+	tag.hud = self
+	add_child(tag)
+	_tags[c] = tag
+
+
+## Debug aid: a test enemy left the field; drop its tag and selection.
+func remove_enemy(c: Combatant) -> void:
+	var tag: EnemyTag = _tags.get(c)
+	if tag != null:
+		tag.queue_free()
+		_tags.erase(c)
+	if _target == c:
+		_target = null
 
 
 ## Pause-screen with everyone's status; closing it emits status_closed.
@@ -241,6 +286,33 @@ func _on_hit_pop(_attacker: Combatant, target: Combatant, _element: Element.Type
 		return
 	_pops.append({"c": target, "value": int(info["dmg"]), "crit": bool(info["crit"]), "weak": bool(info["weak"]),
 		"t0": Time.get_ticks_msec(), "dx": float((_pops.size() % 3) - 1) * 84.0 + randf_range(-14.0, 14.0)})
+
+
+## The status move's name strip: slides in from the left, holds while the engine is
+## paused, slides out when it runs again.
+func _draw_banner() -> void:
+	if _banner.is_empty():
+		return
+	var now := Time.get_ticks_msec()
+	var t_in := (now - int(_banner["t0"])) / 1000.0
+	var k := clampf(t_in / 0.18, 0.0, 1.0)
+	if int(_banner["out"]) >= 0:
+		var t_out := (now - int(_banner["out"])) / 1000.0
+		if t_out > 0.22:
+			_banner = {}
+			return
+		k = 1.0 - clampf(t_out / 0.22, 0.0, 1.0)
+	var ease := 1.0 - pow(1.0 - k, 3.0)
+	var title := FanMenu.title_font()
+	var font := FanMenu.body_font()
+	var y := 58.0  # Up at the top of the screen, between the logo and the camera tabs.
+	var w := 560.0
+	var x := lerpf(-w, 360.0, ease)
+	BattleHud.slant(self, Rect2(Vector2(x + 8, y + 8), Vector2(w, 70)), 14.0, Color(0, 0, 0, 0.45 * ease))
+	BattleHud.slant(self, Rect2(Vector2(x, y), Vector2(w, 70)), 14.0, Color(INK, 0.96))
+	draw_rect(Rect2(x, y, 8, 70), CORAL)
+	draw_string(font, Vector2(x + 26, y + 22), "%s USA" % String(_banner["who"]).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(CREAM, 0.85))
+	draw_string(title, Vector2(x + 26, y + 58), String(_banner["skill"]).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, w - 40, 38, LIME)
 
 
 func _draw_pops() -> void:
@@ -460,6 +532,7 @@ func _draw() -> void:
 			draw_rect(bar, Color(0, 0, 0, 0.55))
 			draw_rect(Rect2(bar.position, Vector2(bar.size.x * float(m["k"]), bar.size.y)), LIME.lerp(CORAL, 1.0 - float(m["k"])))
 			draw_rect(bar, Color(1, 1, 1, 0.5), false, 1.0)
+	_draw_banner()
 	_draw_pops()
 	draw_rect(Rect2(0, 720 - FOOTER_H, 1280, FOOTER_H), Color(0.03, 0.07, 0.11, 0.95))
 	draw_line(Vector2(0, 720 - FOOTER_H), Vector2(1280, 720 - FOOTER_H), Color("2a3d47"), 1.0)
@@ -591,6 +664,35 @@ class UnitCard extends Control:
 		var shown := hud.shown_hp(c)
 		draw_rect(Rect2(bar_x, 52, bar_w * clampf(shown / c.max_hp, 0.0, 1.0), 7), hp_col)
 		draw_string(font, Vector2(bar_x + bar_w + 8, 59), "HP %d/%d" % [ceili(shown), c.max_hp], HORIZONTAL_ALIGNMENT_LEFT, -1, 10, fg)
+
+		# Status and Buff badges (D-032)
+		var badges: Array[Dictionary] = []
+		if c.is_stunned():
+			badges.append({"text": "⚡ STUN %.1fs" % c.stun_timer, "bg": Color("d32f2f"), "fg": Color.WHITE})
+		if c.is_blind():
+			badges.append({"text": "👁 CEGO %.1fs" % c.blind_timer, "bg": Color("c29b38"), "fg": Color.WHITE})
+		if c.taunted_by != null:
+			badges.append({"text": "💢 TAUNT", "bg": Color("c2185b"), "fg": Color.WHITE})
+		if c.is_invulnerable:
+			badges.append({"text": "🛡 INVULN", "bg": Color("00838f"), "fg": Color.WHITE})
+		if c.atk_buff != 0:
+			badges.append({"text": "ATK %+d" % c.atk_buff, "bg": Color("3d6600") if c.atk_buff > 0 else Color("c93022"), "fg": Color("#d7fd6a") if c.atk_buff > 0 else Color("#ffb4ab")})
+		if c.def_buff != 0:
+			badges.append({"text": "DEF %+d" % c.def_buff, "bg": Color("3d6600") if c.def_buff > 0 else Color("c93022"), "fg": Color("#d7fd6a") if c.def_buff > 0 else Color("#ffb4ab")})
+		if c.speed_buff != 0:
+			badges.append({"text": "VEL %+d" % c.speed_buff, "bg": Color("3d6600") if c.speed_buff > 0 else Color("8a6300"), "fg": Color("#d7fd6a") if c.speed_buff > 0 else Color("#f7cb78")})
+
+		var bx := bar_x
+		var by := 64.0
+		for b in badges:
+			var txt: String = b["text"]
+			var tw := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x + 8.0
+			if bx + tw > size.x - 10:
+				break
+			var br := Rect2(bx, by, tw, 11)
+			BattleHud.slant(self, br, 2.0, b["bg"])
+			draw_string(font, Vector2(bx + 4.0, by + 9.0), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, b["fg"])
+			bx += tw + 4.0
 
 		# ATB blocks + burst slot.
 		draw_string(font, Vector2(bar_x, 91), "ATB", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, fg)
@@ -727,6 +829,36 @@ class EnemyTag extends Control:
 		var box := Rect2(0, 0, size.x, 56)
 		BattleHud.slant(self, Rect2(box.position + Vector2(3, 4), box.size), 7.0, Color(0, 0, 0, 0.45))
 		BattleHud.slant(self, box, 7.0, Color("eae9d9") if active else Color(INK, 0.9))
+
+		# Status and Buff badges floating above enemy tag (D-032)
+		var e_badges: Array[Dictionary] = []
+		if c.is_stunned():
+			e_badges.append({"text": "⚡ STUN %.1fs" % c.stun_timer, "bg": Color("d32f2f"), "fg": Color.WHITE})
+		if c.is_blind():
+			e_badges.append({"text": "👁 CEGO %.1fs" % c.blind_timer, "bg": Color("c29b38"), "fg": Color.WHITE})
+		if c.taunted_by != null:
+			e_badges.append({"text": "💢 TAUNT", "bg": Color("c2185b"), "fg": Color.WHITE})
+		if c.is_invulnerable:
+			e_badges.append({"text": "🛡 INVULN", "bg": Color("00838f"), "fg": Color.WHITE})
+		if c.atk_buff != 0:
+			e_badges.append({"text": "ATK %+d" % c.atk_buff, "bg": Color("3d6600") if c.atk_buff > 0 else Color("c93022"), "fg": Color("#d7fd6a") if c.atk_buff > 0 else Color("#ffb4ab")})
+		if c.def_buff != 0:
+			e_badges.append({"text": "DEF %+d" % c.def_buff, "bg": Color("3d6600") if c.def_buff > 0 else Color("c93022"), "fg": Color("#d7fd6a") if c.def_buff > 0 else Color("#ffb4ab")})
+		if c.speed_buff != 0:
+			e_badges.append({"text": "VEL %+d" % c.speed_buff, "bg": Color("3d6600") if c.speed_buff > 0 else Color("8a6300"), "fg": Color("#d7fd6a") if c.speed_buff > 0 else Color("#f7cb78")})
+
+		var total_w := 0.0
+		for b in e_badges:
+			total_w += font.get_string_size(b["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x + 8.0
+		var e_bx := maxf((size.x - total_w) * 0.5, 0.0)
+		for b in e_badges:
+			var txt: String = b["text"]
+			var tw := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x + 7.0
+			var br := Rect2(e_bx, -14, tw, 11)
+			BattleHud.slant(self, br, 2.0, b["bg"])
+			draw_string(font, Vector2(e_bx + 3.0, -5.0), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, b["fg"])
+			e_bx += tw + 3.0
+
 		var name_col := Color("b74134") if active else CORAL
 		draw_string(font, Vector2(0, 15), c.name.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, size.x, 12, name_col)
 		draw_rect(Rect2(14, 20, size.x - 28, 5), Color("7b8c90") if active else Color("3a4756"))
