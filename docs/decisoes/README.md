@@ -151,3 +151,6 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-143](D-143-r58-q2-probabilidade-status-0-100.md) | Atributos / R58 | Q2A: Probabilidade final de status limitada ao intervalo 0–100% | Escolha expressa; documentação somente |
 | [D-144](D-144-r58-q3-sorteio-triangular-1-2-3-4-3-2-1.md) | Atributos / R58 | Q3A: Sorteio individual triangular com pesos 1:2:3:4:3:2:1 | Escolha expressa; documentação somente |
 | [D-145](D-145-r58-q4-referencias-agi-distintas-atb-trajeto.md) | Atributos / R58 | Q4B: Referências numéricas distintas para ATB e trajetos com AGI única | Escolha expressa; documentação somente |
+| [D-146](D-146-r59-q1-luk-um-ponto-percentual-por-ponto.md) | Atributos / R59 | Q1A: Aplicação de status: 1 ponto percentual por ponto da diferença de LUK | Aprovada expressamente; somente documentação |
+| [D-147](D-147-r59-q2-sorteios-independentes-seis-atributos.md) | Atributos / R59 | Q2A: Sorteios individuais independentes nos seis atributos | Aprovada expressamente; somente documentação |
+| [D-148](D-148-r59-q3-duracao-trajeto-fixa-ao-iniciar-ataque.md) | Atributos / R59 | Q3A: Duração de trajeto calculada no início do ataque e fixa até seu término | Aprovada expressamente; somente documentação |

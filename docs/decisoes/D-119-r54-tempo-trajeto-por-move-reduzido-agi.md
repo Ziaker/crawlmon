@@ -25,3 +25,7 @@
 ## Complemento posterior — Rodada 55 (2026-11-03)
 
 A decisão posterior **D-133 (R55-Q2, 2A)** especifica a **ordem**: (1) aplicar a redução decorrente de **AGI e efeitos que a aumentem** ao **tempo próprio da ficha do Move**; (2) aplicar a correção dos **passos posicionais D-018**; (3) respeitar o piso temporal de **0,25 s** já aprovado. Isso resolve apenas a ordem, **não** a função matemática de AGI ou sua calibração.
+
+## Complemento posterior — Rodada 59 (2026-11-03)
+
+**D-148 — Rodada 59, Q3A:** a duração do trajeto do Move, calculada com **AGI efetiva, buffs aplicáveis, tempo próprio do Move e passos táticos** conforme D-133/D-136/D-140, deve ser **determinada ao iniciar o ataque e preservada até o fim desse trajeto**. Uma mudança posterior de AGI durante esse trajeto **não recalcula a duração já fixada**. O usuário não definiu nesta resposta um novo instante técnico específico de gatilho entre declaração, WINDUP e início de TRAVEL; preservar a expressão 'ao iniciar o ataque' e não escolher um marco de implementação por suposição.

@@ -21,3 +21,7 @@
 
 - **Ainda não definido:** Independência entre os sorteios de cada atributo, geração de seeds e estrutura de persistência.
 - Esta atividade autoriza apenas atualizar documentos, não implementar código, testes, VFX ou fichas de Moves.
+
+## Complemento posterior — Rodada 59 (2026-11-03)
+
+**D-147 — Rodada 59, Q2A:** os sorteios das variações individuais dos **seis atributos** (STR, MAG, VIT, SPI, AGI, LUK) são **independentes entre si**. Cada atributo mantém o mesmo conjunto de resultados −3..+3, os pesos triangulares **1:2:3:4:3:2:1** e um sorteio individual único/persistente (D-132/D-144). Não impor correlação ou compensação entre atributos; a forma de seed e armazenamento permanece pendente.

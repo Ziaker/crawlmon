@@ -24,3 +24,7 @@
 ## Complemento posterior — Rodada 58 (2026-11-03)
 
 **Rodada 58, Q1D — esclarecimento pendente:** o criador escreveu literalmente: **“não entendi a 1, 50% + 7 luck = 57% - 10luck do oponente = 47% de chance no total”**. Esse cálculo equivale a **1 ponto percentual por 1 ponto de LUK** de cada participante, diferindo da taxa expressamente aprovada nesta D-142 (**1 ponto percentual a cada 10 pontos de diferença**), que daria **49,7%** no exemplo usando interpolação proporcional. **Não substituir esta D-142 por suposição**: confirmar se o novo exemplo é uma revisão intencional da taxa ou uma interpretação a esclarecer. A decisão R58-Q2A sobre limitar probabilidades a 0–100% permanece independente desta dúvida.
+
+## Complemento posterior — Rodada 59 (2026-11-03)
+
+**D-146 — Rodada 59, Q1A (decisão expressa e posterior):** a proporção desta D-142 de **1 ponto percentual por 10 pontos de diferença de LUK** fica **revogada** para a aplicação de status probabilístico. A nova regra é **1 ponto percentual por 1 ponto de diferença entre LUK do aplicador e LUK do alvo**. Exemplo expressamente aprovado: **50% + 7 − 10 = 47%**. Preservar o texto histórico da D-142 e o registro de conflito da Rodada 58, agora **resolvido**; a chance final permanece limitada a 0–100% pela D-143, e efeitos garantidos permanecem garantidos.

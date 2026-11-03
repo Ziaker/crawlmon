@@ -1096,3 +1096,38 @@ Quatro decisões novas (D-132 a D-135), cinco notas aditivas aos documentos anti
 - `scripts/combat/battle.gd` mantém chances atuais de crítico/esquiva e tempo de trajeto sem aplicação da AGI dos seis atributos.
 - `scripts/combat/combatant.gd` não implementa variações individuais persistentes de atributos; `scripts/data/skill.gd` não implementa chance de status declarada por efeito.
 - **Editados apenas documentos:** três novos D-143..D-145, notas aditivas em D-141, D-136 e D-142, índice e este consolidado. Nenhum código, asset, dado de Pokémon, configuração ou teste alterado.
+
+---
+
+## 39. Rodada 59 — LUK corrigida, variações independentes, duração de trajeto fixa
+
+> **2026-11-03.** Escolhas expressas do criador: **1A, 2A e 3A**. Três novas decisões individuais D-146 a D-148. As regras aprovadas não autorizam alterar código, fichas de Move, VFX, assets ou configurações.
+
+### 39.1 Matriz das decisões
+
+| Documento | Escolha | Regra aprovada |
+|---|---|---|
+| [D-146](decisoes/D-146-r59-q1-luk-um-ponto-percentual-por-ponto.md) | 1A | Aplicação de status: 1 ponto percentual por ponto da diferença de LUK |
+| [D-147](decisoes/D-147-r59-q2-sorteios-independentes-seis-atributos.md) | 2A | Sorteios individuais independentes nos seis atributos |
+| [D-148](decisoes/D-148-r59-q3-duracao-trajeto-fixa-ao-iniciar-ataque.md) | 3A | Duração de trajeto calculada no início do ataque e fixa até seu término |
+
+### 39.2 Conciliação expressa com decisões anteriores
+
+1. **D-146 substitui a taxa da D-142:** a D-142 dizia **1 ponto percentual por 10 pontos da diferença LUK**. A escolha expressa 1A desta Rodada 59 substitui essa escala por **1 ponto percentual por ponto de diferença LUK** entre aplicador e alvo. **Exemplo aprovado:** chance-base 50%, LUK 7 e LUK 10 => **50% + 7 pp − 10 pp = 47%**. O conflito apontado na seção 38.3 foi **resolvido nesta rodada**, sem alterar retroativamente o registro do conflito.
+2. **D-134/D-137/D-143 preservadas:** só efeitos de status com chance declarada na ficha do Move sofrem o ajuste por LUK. Efeitos garantidos continuam garantidos; a chance final de aplicação probabilística permanece **limitada a 0–100%**. Status não esquiváveis não ganham Evade por esta regra (D-012).
+3. **D-147 complementa D-132/D-144:** os seis atributos **STR, MAG, VIT, SPI, AGI e LUK** têm sorteios **independentes entre si**, todos com modificadores individuais −3..+3 e pesos triangulares **1:2:3:4:3:2:1**. Cada atributo é sorteado uma única vez por indivíduo e persistido. A variação de outro atributo não altera a probabilidade de um dado resultado.
+4. **D-148 complementa D-119/D-133/D-136/D-140/D-145:** a duração do trajeto é **calculada ao iniciar o ataque e mantida fixa até o fim do trajeto**. AGI e efeitos aplicáveis entram no cálculo, que mantém o ajuste posicional posterior e o mínimo de **0,25 s**. Mudanças posteriores de AGI durante o trajeto não recalculam sua duração. **Pendente:** determinar qual instante técnico do fluxo WINDUP/TRAVEL significa 'iniciar o ataque', quando essa distinção impactar implementação.
+
+### 39.3 Pendências restantes (não aprovadas automaticamente)
+
+- **LUK em crítico e esquiva automática:** D-127 diz que LUK influencia ambas, mas coeficientes e limites próprios não foram aprovados. A escala da D-146 aplica-se especificamente à **chance de status probabilístico**, não é uma tabela automática para todos os eventos.
+- **AGI:** valores numéricos de referência para ATB e trajetos (D-145), tratamento de buffs durante WINDUP antes do travamento do trajeto (D-148) e calibração concreta de velocidade.
+- **Sorteio/persistência:** quais dados persistentes e algoritmo de seed/ordem são necessários para reproduzir resultados (D-147); independência estatística foi definida, mas a implementação não.
+- **Mitigação VIT/SPI:** fórmulas quantitativas continuam por decidir, preservando a aplicação comum dos estágios de Defense (D-138).
+
+### 39.4 Estado verificado do código e escopo
+
+- `scripts/combat/attack_planner.gd`: as durações e cronogramas são planejados em torno da transição de fases após WINDUP; a lógica existente ainda não integra AGI efetiva ao tempo do trajeto nem contém os atributos permanentes do novo modelo.
+- `scripts/combat/battle.gd` mantém o ajuste por passos e o piso de 0,25 s, mas não aplica a redução inversa por AGI nem a fórmula LUK aprovada.
+- `scripts/data/skill.gd` ainda não declara chances de aplicação por efeito nem o tempo individual de deslocamento como campo próprio.
+- **Escopo desta alteração:** três D novos (D-146 a D-148), quatro notas complementares (D-119/D-142/D-143/D-144), índice e consolidado atualizados. **Somente documentação; nenhum código, teste, cena, VFX ou modelo alterado.**

@@ -21,3 +21,7 @@
 
 - **Ainda não definido:** Coeficiente efetivo de LUK em conflito R58-Q1D × D-142; tratamento de diferenças fracionárias e chances-base individuais.
 - Esta atividade autoriza apenas atualizar documentos, não implementar código, testes, VFX ou fichas de Moves.
+
+## Complemento posterior — Rodada 59 (2026-11-03)
+
+**D-146 — Rodada 59, Q1A:** o conflito registrado na Rodada 58 sobre o coeficiente de LUK foi **resolvido por escolha expressa**. O coeficiente vigente é **1 ponto percentual por 1 ponto de diferença de LUK** (aplicador − alvo), substituindo a taxa anterior de D-142. **Esta D-143 permanece integralmente válida**: limitar o resultado final da chance probabilística a **0–100%**; efeitos garantidos não ganham rolagem.
