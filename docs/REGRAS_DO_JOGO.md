@@ -427,3 +427,43 @@ A diretriz **[D-061](decisoes/D-061-registro-continuo-das-decisoes.md)** determi
 ### 18.4 Estado desta documentação
 
 As dez decisões estão registradas como **especificação de design**, não como funcionalidades implementadas. Nenhum arquivo de código, VFX, teste ou configuração do jogo foi alterado pela Rodada 42.
+
+---
+
+## 19. Rodada 43 — recomendações aceitas por delegação do usuário
+
+> **Fonte literal do usuário (2026-11-03):** “Sigo suas recomendações”. **Nota de proveniência:** as alternativas abaixo foram selecionadas e recomendadas pelo assistente após essa aceitação geral; o usuário **não escreveu individualmente** as letras 1A–10A. Os dez registros D-072 a D-081 preservam essa distinção e não representam implementação no Godot. Se houver dúvida sobre o alcance dessa delegação, confirmar com o criador antes de implementar mecânicas.
+
+### 19.1 Matriz de recomendações aceitas
+
+| Decisão | Alternativa recomendada | Regra registrada |
+|---|---|---|
+| [R43-Q1](decisoes/D-072-r43-q1-estorno-interrupcao.md) | 1A | Quando o contra-ataque extra já foi selecionado e pago, mas o ataque original é interrompido antes da execução, cancelar o extra (D-064) e **devolver integralmente o Burst ou o ATB que foi descontado por esse extra**. |
+| [R43-Q2](decisoes/D-073-r43-q2-estorno-alvo-morto.md) | 2A | Se o alvo do contra-ataque extra morrer antes de sua execução, cancelar o golpe extra sem redirecionar o alvo (D-065) e **devolver integralmente o recurso debitado na seleção**. |
+| [R43-Q3](decisoes/D-074-r43-q3-personagem-morre-estorno.md) | 3C | Se o personagem que selecionou e pagou o contra-ataque extra morrer antes de o golpe começar, **cancelar o Move extra**. Aplicar **a mesma regra de reembolso da interrupção do ataque original**: devolução integral do recurso pago (R43-Q1A / D-072), ainda que o personagem esteja derrotado. |
+| [R43-Q4](decisoes/D-075-r43-q4-janela-perfeita-primeiro-impacto.md) | 4A | Para a onda de projéteis AoE, a **única janela compartilhada de Evade perfeito dura 0,22 segundos e termina imediatamente antes do primeiro impacto da onda**. Todos os alvos participantes podem tentar o Evade perfeito nessa mesma janela, inclusive os que receberiam impacto depois. Preservar o Evade comum durante a janela geral de voo. |
+| [R43-Q5](decisoes/D-076-r43-q5-evade-visual-imediato.md) | 5A | Na onda AoE, quando um personagem aciona um Evade válido, **a esquiva visual acontece imediatamente ao apertar o botão**. O motor **registra o resultado desse Evade para a resolução do impacto posterior da mesma onda**, mesmo que a frente ainda não tenha alcançado o personagem. A resolução continua individual, sem cancelar danos dos outros alvos. |
+| [R43-Q6](decisoes/D-077-r43-q6-geometria-por-move.md) | 6D | **Não impor uma única geometria universal** às ondas de projéteis AoE. **Cada Move determina sua geometria**, respeitando as regras comuns: onda única para o Move, sem alvo principal, participantes vivos na declaração, Evade compartilhado com resoluções individuais, velocidade espacial constante, e consideração das posições atuais dos alvos. |
+| [R43-Q7](decisoes/D-078-r43-q7-velocidade-configuravel-move.md) | 7A | Cada Move de projétil AoE possui **sua própria velocidade de propagação configurável**, que se mantém **constante durante a onda** de sua execução, inclusive quando os alvos mudam de posição. |
+| [R43-Q8](decisoes/D-079-r43-q8-lancamento-fatal-oposto-atacante.md) | 8A | O personagem atingido por um hit fatal é lançado **para longe da posição de quem aplicou o golpe fatal**. Preservar intensidade visual padronizada para todos os Moves (D-069): inimigos caem e desaparecem; aliados caem e permanecem visíveis. |
+| [R43-Q9](decisoes/D-080-r43-q9-desaparecimento-particulas.md) | 9C | Após o lançamento e a queda fatal, **o inimigo desaparece em uma explosão visual estilizada de partículas e fumaça**. Esta regra não se aplica aos aliados derrotados, que permanecem visíveis no chão. |
+| [R43-Q10](decisoes/D-081-r43-q10-resultado-apos-fatal.md) | 10A | Quando a batalha terminar em consequência de um hit fatal, **mostrar a tela de vitória ou derrota somente depois da conclusão da sequência fatal do personagem derrotado**. Para inimigos inclui lançamento, queda e desaparecimento; para aliados inclui lançamento e queda, sem desaparecimento. |
+
+### 19.2 Compatibilidade e prioridades
+
+1. **Contra-ataque com pagamento antecipado (D-072/D-073/D-074):** manter desconto na seleção (D-062), Burst prioritário (D-063), cancelamento quando o original é interrompido ou o alvo morre (D-064/D-065). Nesses casos, o recurso pago pelo extra é restituído integralmente. Se o próprio ator morrer antes do golpe extra, cancelar e devolver conforme a mesma política; a restituição não revive o personagem.
+2. **Janela AoE e animação de Evade (D-075/D-076):** todos compartilham uma janela perfeita de 0,22 s imediatamente antes do **primeiro impacto** da onda; conserva-se a janela geral compartilhada. Cada personagem que desvia exibe imediatamente o efeito visual, e o resultado fica registrado para o impacto posterior dessa onda. A regra dos 0,22 s por alvo individual (D-030) permanece para golpes comuns, não para essa onda AoE.
+3. **Forma e propagação da onda (D-077/D-078):** a geometria e a velocidade configurável são determinadas **por Move**; dentro de cada execução a velocidade espacial permanece constante. Mantém-se onda única, alvos vivos na declaração, sem alvo principal, impacto por chegada e posição atual do alvo (D-007/D-009/D-037/D-057/D-067).
+4. **Derrota visual e tela final (D-079/D-080/D-081):** lançar a vítima fatal para longe do atacante com intensidade padronizada (D-069). Inimigos caem e desaparecem em partículas/fumaça; aliados caem sem sumir. Quando o hit fatal encerra a batalha, só apresentar a tela de resultado após concluir a sequência fatal aplicável.
+
+### 19.3 Pendências não decididas por esta rodada
+
+- Reembolso de recurso quando o medidor de ATB/Burst **já voltou ao máximo** antes do cancelamento: não há regra de capacidade/excesso aprovada para essa situação particular. Não presumir perda ou armazenamento extra sem esclarecimento.
+- O primeiro impacto **previsto** da onda não se realizar (por exemplo, o alvo morrer antes de ser alcançado): definir se o marco da janela perfeita de 0,22 s permanece no instante inicialmente previsto ou se muda. Não presumir novo alvo principal.
+- A geometria e os valores concretos de velocidade precisam ser definidos individualmente para cada Move AoE, conforme D-077/D-078; a categoria não fixa uma geometria universal.
+- Lançamento e desaparecimento fatal: faltam distância, altura, duração, parâmetros de colisão e características do efeito. Intensidade uniforme, direção relativa e tipo de desaparecimento já estão definidos.
+- Encerramentos que não sejam por hit fatal, múltiplos hits fatais e KO simultâneo: a D-081 não acrescenta uma regra nova para esses casos.
+
+### 19.4 Estado documental
+
+Essas escolhas foram aceitas **por delegação às recomendações** e estão registradas como requisitos. Nenhum código de combate, VFX, testes ou arquivo prévio foi modificado nesta rodada, além da inclusão dos dez registros e da atualização do índice/consolidado.

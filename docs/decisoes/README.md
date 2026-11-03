@@ -77,3 +77,13 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-069](D-069-r42-q8-intensidade-fatal-padronizada.md) | Combate / R42 | R42-Q8 (8A): Lançamento fatal de intensidade uniforme | Aprovada; implementação não declarada |
 | [D-070](D-070-r42-q9-apenas-idle-ja-existente.md) | Combate / R42 | R42-Q9 (9A): Somente idle existente durante FX de status | Aprovada; implementação não declarada |
 | [D-071](D-071-r42-q10-cronometro-pausado-hitstop-status.md) | Combate / R42 | R42-Q10 (10B): Pausar cronômetro do contra-ataque em hit-stop e status | Aprovada; implementação não declarada |
+| [D-072](D-072-r43-q1-estorno-interrupcao.md) | Combate / R43 | R43-Q1 (1A): Devolver custo do contra-ataque cancelado por interrupção | Recomendação aceita por delegação; implementação não declarada |
+| [D-073](D-073-r43-q2-estorno-alvo-morto.md) | Combate / R43 | R43-Q2 (2A): Devolver custo do contra-ataque cancelado por morte do alvo | Recomendação aceita por delegação; implementação não declarada |
+| [D-074](D-074-r43-q3-personagem-morre-estorno.md) | Combate / R43 | R43-Q3 (3C): Morte do executor cancela o golpe extra com estorno | Recomendação aceita por delegação; implementação não declarada |
+| [D-075](D-075-r43-q4-janela-perfeita-primeiro-impacto.md) | Combate / R43 | R43-Q4 (4A): Janela perfeita única antes do primeiro impacto da onda AoE | Recomendação aceita por delegação; implementação não declarada |
+| [D-076](D-076-r43-q5-evade-visual-imediato.md) | Combate / R43 | R43-Q5 (5A): Evade visual imediato e registro para impacto posterior | Recomendação aceita por delegação; implementação não declarada |
+| [D-077](D-077-r43-q6-geometria-por-move.md) | Combate / R43 | R43-Q6 (6D): Geometria da onda AoE definida por Move | Recomendação aceita por delegação; implementação não declarada |
+| [D-078](D-078-r43-q7-velocidade-configuravel-move.md) | Combate / R43 | R43-Q7 (7A): Velocidade de onda AoE configurável por Move | Recomendação aceita por delegação; implementação não declarada |
+| [D-079](D-079-r43-q8-lancamento-fatal-oposto-atacante.md) | Combate / R43 | R43-Q8 (8A): Lançamento fatal afastando do atacante | Recomendação aceita por delegação; implementação não declarada |
+| [D-080](D-080-r43-q9-desaparecimento-particulas.md) | Combate / R43 | R43-Q9 (9C): Desaparecimento fatal com partículas e fumaça | Recomendação aceita por delegação; implementação não declarada |
+| [D-081](D-081-r43-q10-resultado-apos-fatal.md) | Combate / R43 | R43-Q10 (10A): Resultado exibido somente após sequência fatal completa | Recomendação aceita por delegação; implementação não declarada |
