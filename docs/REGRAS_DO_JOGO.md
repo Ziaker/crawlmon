@@ -819,3 +819,29 @@ Novo documento **D-109**, índice e consolidado atualizados. **Nenhum arquivo de
 ### 30.4 Estado
 
 Três novos arquivos de decisão (D-114, D-115 e D-116); duas notas aditivas em decisões anteriores; índice e consolidado atualizados. **Nenhum código, teste, VFX, configuração ou asset alterado.**
+
+---
+
+## 31. Rodada 54 — esclarecimentos parciais sobre Agilidade e elementos
+
+> **2026-11-03.** O criador esclareceu duas regras enquanto a lista de dez perguntas da Rodada 54 ainda estava em discussão. **São esclarecimentos expressos, não a aprovação das dez recomendações pré-selecionadas**. Apenas D-117 e D-118 são registrados nesta seção. Não houve autorização para alterações no código.
+
+### 31.1 Declarações e regras registradas
+
+| Decisão | Declaração do criador | Regra |
+|---|---|---|
+| [D-117](decisoes/D-117-r54-esclarecimento-agi-atb-e-trajeto.md) | “AGI funciona diferente, afeta ambas a regeneração de ATB como também a velocidade de movimento do Pokémon durante seus trajetos de ataque” | **Agilidade** influencia **ambos**: regeneração natural de ATB e **velocidade de movimento do Pokémon em seus trajetos de ataque**. O efeito de posicionamento de D-018 continua; fórmula conjunta ainda não definida. |
+| [D-118](decisoes/D-118-r54-referencia-elementos-smt.md) | “Quanto aos elementos, são baseados mais em shin megami tensei que pokémon” | O sistema elemental usa **Shin Megami Tensei como inspiração principal**, mais do que Pokémon. Nenhuma conversão automática Pokémon → Crawlmon nem cópia literal de uma tabela de SMT foi aprovada. |
+
+### 31.2 Comparação com as implementações
+
+- **ATB:** `Combatant.tick()` já preenche ATB conforme `speed`, derivada de `base_speed`. Ainda não existe integração dos cinco atributos permanentes.
+- **Trajetos de ataque:** `Battle.travel_seconds()` varia por duração-base e passos táticos (D-018), sem dependência de Agilidade. `AttackMotion.update()` desenha o deslocamento no tempo de `TRAVEL`. D-117 acrescenta uma exigência que **não está implementada**.
+- **Elementos:** `Element.Type` inclui Físico, Fogo, Água/Gelo, Raio, Psíquico, Veneno, Som, Terra, Vento, Luz e Trevas. D-118 muda a **referência de design**, não aprova modificar o catálogo existente ou as fraquezas já cadastradas.
+
+### 31.3 Pendências e preservação
+
+- **AGI:** fórmula, limites de velocidade de trajeto, comportamento sob buffs/debuffs e sua combinação com o cálculo de passos táticos (D-018) continuam pendentes.
+- **Elementos:** falta especificar concretamente afinidades/fraquezas por espécie no sistema inspirado principalmente em SMT; não usar tabela Pokémon como substituto automático.
+- As outras oito perguntas da Rodada 54 e as opções previamente recomendadas continuam **não respondidas** pelo criador; a pergunta 7 e a pergunta 9 precisam ser reformuladas considerando as duas declarações acima.
+- Não houve modificação de código, testes, VFX, modelos, configurações nem valores de personagens.
