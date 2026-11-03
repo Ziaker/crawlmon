@@ -115,3 +115,5 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-107](D-107-r49-q1-derrota-definitiva-ultimo-aliado.md) | Combate / R49 | R49-Q1 (1A): derrota definitiva após último aliado; projéteis pendentes sem dano | Decisão expressa; complementa D-105; implementação não declarada |
 | [D-108](D-108-r49-q2-inimigo-vivo-mais-proximo-no-windup.md) | Combate / R49 | R49-Q2 (2B): troca automática para inimigo vivo mais próximo no wind-up | Decisão expressa; complementa D-103; implementação não declarada |
 | [D-109](D-109-r50-q1-projetil-alvo-morto-em-voo.md) | Combate / R50 | R50-Q1 (1A): projétil de alvo único termina sem dano se o alvo morrer durante o voo | Decisão expressa; R50-Q2 não definiu regra nova; implementação não declarada |
+| [D-110](D-110-r51-q1-manter-interceptacao-personagens.md) | Combate / R51 | R51-Q1 (1A): manter a interceptação existente de projéteis por personagens | Decisão expressa; sem implementação nova |
+| [D-111](D-111-r51-q2-alvo-aleatorio-ia.md) | Combate / IA / R51 | R51-Q2 (2C): IA escolhe adversário vivo aleatoriamente, respeitando engajamento | Decisão expressa; implementação não declarada |

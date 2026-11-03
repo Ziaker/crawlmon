@@ -730,3 +730,32 @@ Criados D-107 e D-108; seis documentos anteriores receberam **somente notas adit
 ### 27.4 Estado
 
 Novo documento **D-109**, índice e consolidado atualizados. **Nenhum arquivo de código, FX, teste ou configuração foi alterado**. As perguntas seguintes devem ser fundamentadas em código/mecânicas reais, com exemplos claros, sem pressupor sistemas inexistentes.
+
+---
+
+## 28. Rodada 51 — interceptação por personagens e seleção aleatória de alvos pela IA
+
+> **2026-11-03.** Duas respostas expressas: **1A** (manter interceptação existente de projéteis por personagens na linha do ataque) e **2C** (IA seleciona aleatoriamente um adversário vivo, exceto quando engajada). Ambas foram conferidas no código atual e registradas em **D-110** e **D-111**, sem mudança de arquivos de jogo.
+
+### 28.1 Matriz das decisões
+
+| Referência | Resposta | Regra aprovada |
+|---|---|---|
+| [R51-Q1](decisoes/D-110-r51-q1-manter-interceptacao-personagens.md) | 1A | Preservar a interceptação de projéteis de alvo único por **outro adversário que esteja na linha antes do alvo**, para os Moves em que a interceptação já se aplica. **Não** adicionar interceptação dinâmica durante o voo por esta resposta. |
+| [R51-Q2](decisoes/D-111-r51-q2-alvo-aleatorio-ia.md) | 2C | Personagens controlados pela **IA (aliados e inimigos)** escolhem **aleatoriamente entre adversários vivos elegíveis** quando não engajados. Se engajados com um adversário vivo, atacam esse adversário. Preservar Tactics, escolha de Move e simetria. |
+
+### 28.2 Código consultado e compatibilidade com decisões anteriores
+
+- **Interceptação real:** `scripts/combat/attack_planner.gd`, métodos `redirect_if_blocked()` e `interceptor()`, encontram um adversário na linha antes do alvo na **declaração do ataque**; `Battle.use_skill()` chama essa lógica. Existem exceções de Moves no código. A D-110 **mantém** a interceptação existente; não autoriza novas físicas, paredes ou interceptação em voo. Preservar D-047, D-108 e D-109.
+- **Seleção de alvos real:** `scripts/combat/battle.gd`, método `_run_ai()`, escolhe atualmente `c.engaged_with` se vivo, caso contrário `_first_alive(foes)`. A D-111 aprova a substituição **futura** do fallback por seleção aleatória entre vivos para personagens com IA. `use_skill()` impede escolher outro alvo se ainda engajado. Preservar D-021 e suas regras de simetria e Tactics.
+- **Separação de responsabilidades:** interceptação de projétil não é colisão de cenário. A decisão da R50-Q2D permaneceu sem regra nova; não a reutilizar como autorização para criar parede/oclusão de área.
+
+### 28.3 Limites não definidos por estas respostas
+
+- **D-110:** não acrescentar interceptação dinâmica durante o voo; a situação de personagens mudando de posição depois do disparo não foi alterada pela escolha de manter o comportamento atual.
+- **D-111:** nenhuma fórmula de pesos, prioridade de alvo por HP, proximidade ou inteligência preditiva foi escolhida. A resposta define aleatoriedade **respeitando engajamento**, não altera a escolha de Moves.
+- A documentação registra requisitos e estado do código consultado; não afirma que as regras da Rodada 51 estejam implementadas.
+
+### 28.4 Estado
+
+**Dois documentos novos, índice e regras consolidadas atualizados.** Nenhum arquivo de código, configuração, teste, animação ou VFX foi modificado. As próximas perguntas requerem aprovação separada.
