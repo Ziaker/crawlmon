@@ -545,3 +545,35 @@ As dez regras acima são **decisões documentais** aceitas por delegação. Nenh
 ### 21.4 Estado
 
 Cinco decisões **de design** documentadas (D-092–D-096), com atualização do índice e deste consolidado. **Nenhum arquivo de código, teste, VFX ou configuração de gameplay foi alterado.**
+
+---
+
+## 22. Rodada 46 — implementação por sistemas, escolha de alvo e projéteis pendentes
+
+> **Data: 2026-11-03.** O criador escreveu literalmente **“Crawlmon — Rodada 46: sigo suas recomendações 1B, 2A e 3A”** e ordenou registrar os documentos, preservar as decisões e **não modificar código**. As três alternativas foram recomendadas pelo assistente e **explicitamente aceitas por número e letra**, e não transcritas como se o criador tivesse redigido suas descrições. Registros: **D-097 a D-099**. Esta atualização é apenas documental.
+
+### 22.1 Matriz das decisões aprovadas
+
+| Decisão | Alternativa | Regra |
+|---|---|---|
+| [R46-Q1](decisoes/D-097-r46-q1-implementacao-por-sistemas-testados.md) | 1B | Adotar **implementação sequencial por sistemas completos e testados**, na ordem: **(1) ATB, Evade e contra-ataque; (2) AoE; (3) animações e câmera**. Concluir e validar cada sistema antes de avançar ao seguinte; preservar as regras já aprovadas nas Rodadas 39–45. Esta decisão **aprova o sequenciamento**, não autoriza editar código nesta atividade de registro. |
+| [R46-Q2](decisoes/D-098-r46-q2-alvo-contra-extra-multiplos.md) | 2A | Quando um personagem obtém **um único contra-ataque extra** ao evitar perfeitamente ataques de vários agressores (D-093), **o jogador escolhe manualmente um dos atacantes como alvo** se controlar o personagem; **a IA escolhe um dos atacantes** se controlar o personagem. Preservar escolha manual do Move, pagamento e enfileiramento já aprovados. |
+| [R46-Q3](decisoes/D-099-r46-q3-projetil-pendente-resultado.md) | 3A | Se a última unidade de uma equipe morrer **enquanto ainda houver projéteis previamente lançados em voo**, **adiar a determinação definitiva do resultado da batalha até a resolução dos projéteis já lançados**, que continuam ativos mesmo se o lançador morreu (D-094). Caso os projéteis pendentes eliminem também a outra equipe, **permitir empate sem vencedor**; não declarar vitória ou derrota antes de resolver esses ataques pendentes. A exibição da tela de resultado continua aguardando as sequências fatais pertinentes. |
+
+### 22.2 Compatibilidade e alcance
+
+1. **D-097 — plano de implementação:** o escopo foi aprovado **por sistemas completos e testados**, nesta ordem: ATB/Evade/contra-ataque → AoE → animações/câmera. A sequência é requisito de planejamento, **não** autorização para tocar no código agora. Preservar a documentação e as regras de simetria da IA (D-021).
+2. **D-098 — Evade perfeito múltiplo:** como previsto em D-093, só existe **um golpe extra**; se houver múltiplos atacantes, o jogador escolhe manualmente **um dos atacantes** como alvo, ou a IA escolhe quando controla o personagem. A escolha manual do Move (D-043), a fila, os custos e os cancelamentos continuam vigentes.
+3. **D-099 — projéteis após derrota da equipe:** um projétil lançado permanece válido após morte de seu dono (D-094). Se uma equipe ficar sem combatentes enquanto esses projéteis estiverem em voo, a decisão final **aguarda os projéteis lançados serem resolvidos**, inclusive para permitir empate se eliminarem a outra equipe. A regra de empate por **mesmo instante lógico** da D-095 segue válida como regra geral; D-099 estabelece **um caso adicional específico**, sem reinterpretar retroativamente outros golpes. A tela de resultado espera as sequências fatais (D-081, D-090).
+
+### 22.3 Pendências relevantes (sem decisão implícita)
+
+- **Fase 1 de implementação:** a D-097 aprova sequência, mas não define autorização de alteração de código neste turno. Testes de gameplay e critérios de aceitação precisam ser demonstrados quando a implementação for autorizada.
+- **Contra-ataque múltiplo:** não foi definido se o jogador deve escolher o alvo dentro da mesma janela de 2 segundos da seleção do Move ou se pode escolher depois. A lógica com que a IA prioriza atacantes também não foi especificada.
+- **Resultado aguardando projéteis:** falta decidir se os combatentes ainda vivos podem iniciar novas ações enquanto projéteis em voo mantêm o resultado pendente. A D-096 mantém combate entre vivos nas mortes não terminativas, mas D-099 cria um estado específico de resultado ainda não definitivo.
+- **Empate e resolução temporal:** D-099 permite empate causado por projéteis pendentes mesmo se o impacto posterior não coincidir exatamente com o primeiro KO; não estender esse comportamento a ataques futuros ou não lançados.
+- Pendências anteriores de geometria e velocidade AoE por Move, créditos de estorno e parâmetros cinematográficos permanecem como registradas, sem modificações silenciosas.
+
+### 22.4 Estado
+
+**3 documentos de decisão criados, índice e consolidado atualizados; nenhum código, teste ou VFX modificado.**
