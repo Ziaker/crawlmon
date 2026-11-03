@@ -701,3 +701,32 @@ Dois registros novos (D-105/D-106), seis documentos antigos com **notas aditivas
 ### 26.4 Escopo documental
 
 Criados D-107 e D-108; seis documentos anteriores receberam **somente notas aditivas** de compatibilidade. Índice e consolidado atualizados. **Nenhum código, FX, teste ou configuração alterado.**
+
+---
+
+## 27. Rodada 50 — alvo morto de projétil; pergunta sobre paredes sem regra aprovada
+
+> **2026-11-03.** O criador respondeu **1A** sobre projétil de alvo único e **2D — Outra regra**, mas não especificou uma nova regra sobre paredes/obstáculos na observação. A observação literal **“2????????????????????? vc ao menos ta lendo o github ao menos ta vendo alguma coisa ou so ta mentindo esse tempo todo?”** sinaliza objeção à pergunta, **não uma autorização para criar física de paredes**. Esta rodada registra apenas a regra **D-109**. Nenhuma alteração de código foi autorizada.
+
+### 27.1 Decisão aprovada
+
+| Referência | Resposta | Regra |
+|---|---|---|
+| [R50-Q1](decisoes/D-109-r50-q1-projetil-alvo-morto-em-voo.md) | 1A | Se o **alvo de um projétil de alvo único já disparado morrer** antes do impacto, o projétil **perde o alvo e termina sem causar dano nem escolher substituto**. |
+
+### 27.2 Compatibilidade e fonte de verdade
+
+1. **Wind-up versus voo:** D-108 permite selecionar automaticamente o inimigo vivo mais próximo apenas se o alvo morrer **durante o wind-up**. **D-109 não redireciona um projétil já lançado** cujo alvo morreu. D-004/D-047 continuam permitindo acompanhar um alvo vivo.
+2. **Lançador morto versus alvo morto:** D-094 determina que o projétil já disparado permanece ativo se o **lançador** morrer e a batalha continuar, o que é diferente de morrer o **alvo** do projétil (D-109). Finais de batalha seguem D-105/D-107.
+3. **Ondas AoE:** D-037/D-058/D-077 mantêm os alvos participantes fixados na declaração do Move e sem seleção de substitutos quando um deles morre. D-109 se refere somente ao **projétil de alvo único**.
+4. **Pergunta R50-Q2:** resposta **2D — Outra regra**, sem nova regra explícita. Ao conferir o código atual, `BattleSpace` usa posições planas do combate e `BattleArena` gera pilares e parede como geometria visual, sem estabelecer colisão física/oclusão deles para AoE. A pergunta anterior pressupunha uma mecânica não verificada e **não se converte em requisito**. A geometria de AoE segue definida por Move (D-077).
+
+### 27.3 Pendências sem decisão implícita
+
+- Os efeitos visuais de um projétil que perde seu alvo após disparo não foram definidos; a regra aprovada é **terminar sem dano e sem substituição de alvo**.
+- A pergunta R50-Q2 está **sem regra nova aprovada**. Não se deve presumir existência de paredes físicas no combate nem iniciar discussão de cobertura sem necessidade comprovada pelas mecânicas reais.
+- Diferenças entre o código Godot existente e as decisões documentadas exigem implementação em outra atividade autorizada, não nesta rodada.
+
+### 27.4 Estado
+
+Novo documento **D-109**, índice e consolidado atualizados. **Nenhum arquivo de código, FX, teste ou configuração foi alterado**. As perguntas seguintes devem ser fundamentadas em código/mecânicas reais, com exemplos claros, sem pressupor sistemas inexistentes.
