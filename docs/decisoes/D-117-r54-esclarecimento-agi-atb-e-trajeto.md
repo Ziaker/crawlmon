@@ -22,3 +22,6 @@
 - `Battle.travel_seconds()` em `scripts/combat/battle.gd` considera duração-base e passos posicionais, mas **não considera AGI**. O deslocamento visual de ataques corpo a corpo é calculado dentro da fase `TRAVEL` por `AttackMotion.update()`. Logo, o segundo efeito de AGI **ainda não está implementado**.
 - Nenhum código, VFX, dados, testes ou configuração foi alterado nesta atividade.
 
+## Complemento posterior — D-119 (2026-11-03)
+
+A declaração posterior do criador fixa que **cada Move possui seu próprio tempo de deslocamento declarado na ficha**, reduzido pela **AGI** e por **efeitos que aumentam AGI**. Preservar a relação ATB + movimento definida aqui e os passos de posicionamento da D-018. A fórmula de combinação e os coeficientes continuam pendentes; não inferir redução numérica nem mínimo novo.

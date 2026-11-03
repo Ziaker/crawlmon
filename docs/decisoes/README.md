@@ -124,3 +124,4 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-116](D-116-delegacao-recomendacoes-ia.md) | Processo / IA | Delegação das recomendações futuras sobre comportamento da IA | Autorização expressa limitada ao design de IA; sem implementação |
 | [D-117](D-117-r54-esclarecimento-agi-atb-e-trajeto.md) | Atributos / R54 | AGI acelera preenchimento de ATB e movimento nos trajetos de ataque | Correção expressa; fórmulas pendentes; somente documentação |
 | [D-118](D-118-r54-referencia-elementos-smt.md) | Elementos / R54 | Afinidades e elementos inspirados principalmente em SMT, não em Pokémon | Correção expressa; lista e afinidades existentes preservadas |
+| [D-119](D-119-r54-tempo-trajeto-por-move-reduzido-agi.md) | Atributos / R54 | Tempo de deslocamento individual por ficha de Move, reduzido por AGI e buffs de AGI | Esclarecimento expresso; fórmulas pendentes; sem código |

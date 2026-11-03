@@ -845,3 +845,25 @@ Três novos arquivos de decisão (D-114, D-115 e D-116); duas notas aditivas em 
 - **Elementos:** falta especificar concretamente afinidades/fraquezas por espécie no sistema inspirado principalmente em SMT; não usar tabela Pokémon como substituto automático.
 - As outras oito perguntas da Rodada 54 e as opções previamente recomendadas continuam **não respondidas** pelo criador; a pergunta 7 e a pergunta 9 precisam ser reformuladas considerando as duas declarações acima.
 - Não houve modificação de código, testes, VFX, modelos, configurações nem valores de personagens.
+
+---
+
+## 32. Rodada 54 — tempo de deslocamento individual por Move e retorno ao questionário
+
+> **2026-11-03.** Declaração literal do criador: “Tempo de deslocamento é uma variável própria dita na ficha dos moves também, ela é reduzida pela agi e efeitos que aumentam AGI. Voltamos as perguntas anteriores a minhas duas respostas”. Regra registrada como [D-119](decisoes/D-119-r54-tempo-trajeto-por-move-reduzido-agi.md). **Não equivale a aprovar as dez escolhas do questionário da Rodada 54**, que o criador pediu para retomar.
+
+### 32.1 Regra e compatibilidade
+
+- **Tempo de deslocamento por Move:** a ficha de cada Move deve declarar **sua própria variável de tempo de deslocamento**, não um valor global único. **AGI reduz esse tempo; efeitos que aumentam AGI também o reduzem**. D-117 mantém a segunda influência de AGI sobre ATB.
+- **Posicionamento tático D-018:** continua existindo, com ajuste de 0,10 s por soma de passos e mínimo histórico de 0,25 s. Não foi aprovada a fórmula que combina essa regra e a redução por AGI, nem um coeficiente de redução de AGI.
+- **Código verificado:** `Skill` ainda não declara `travel_time` por Move. `AttackPlanner` configura alguns tempos específicos em lógica por identificação de Move e chama `Battle.travel_seconds()`, que atualmente só usa tempo-base e posição, **sem AGI**. A documentação descreve requisito e lacuna, não implementação.
+- **Elementos D-118:** continuam prioritariamente inspirados em Shin Megami Tensei, não em conversão dos tipos de Pokémon.
+
+### 32.2 Questões pendentes
+
+- Coeficiente matemático e limites de redução de tempo por AGI e buffs; interação específica com os passos de D-018.
+- A Rodada 54 original continua aberta; apenas AGI e o referencial dos elementos receberam esclarecimentos expressos. As outras opções do questionário não foram escolhidas pelo criador.
+
+### 32.3 Escopo
+
+Um registro novo D-119, nota aditiva em D-117, índice e regras consolidadas atualizados. Nenhum código, configuração, arquivo de Move, teste, VFX ou modelo modificado.
