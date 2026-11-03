@@ -22,3 +22,7 @@
 - Não extrapolar automaticamente o tratamento do último inimigo derrotado para a **última unidade da equipe do jogador**.
 - A definição de como selecionar o próximo alvo no wind-up, se outros inimigos ainda existem, permanece aberta (D-103).
 - **Escopo:** somente documentação. Nenhum código ou VFX alterado.
+
+## Complemento posterior — Rodada 49
+
+D-107: a regra de término definitivo foi estendida expressamente ao KO da última unidade aliada. Projéteis pendentes não causam dano nem mudam a vitória ou derrota depois que o resultado é fixado. Empate no mesmo instante lógico permanece conforme D-095.

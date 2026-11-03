@@ -18,3 +18,7 @@ Se **as duas equipes forem totalmente eliminadas no mesmo instante lógico**, o 
 - **Decisões relacionadas:** D-019; D-081; D-090; D-091.
 - **Limite / pendência:** A granularidade técnica exata de mesmo instante lógico não foi especificada; não transformar uma eliminação simultânea em vitória por ordem arbitrária dos callbacks.
 - **Escopo:** registro documental somente; nenhum código, VFX, teste ou dado de jogo modificado.
+
+## Complemento posterior — Rodada 49
+
+D-107: o empate quando ambas as equipes são eliminadas no mesmo instante lógico permanece válido. Projétil que atinge apenas DEPOIS de vitória ou derrota já definitiva não altera o resultado (D-105/D-107).

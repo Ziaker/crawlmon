@@ -22,3 +22,7 @@ Quando uma equipe é eliminada e há projéteis já lançados em voo (D-099), **
 ## Conciliação posterior (2026-11-03)
 
 **Exceção posterior D-105:** a espera por projéteis pendentes **não ocorre quando se derrota o último inimigo presente**; nesse caso, a vitória é definitiva no instante do KO e nenhum projétil pendente pode causar dano ou alterar o resultado. O alcance desta decisão antiga fora desse caso não foi redefinido.
+
+## Complemento posterior — Rodada 49
+
+D-107: a fase de espera por projéteis após a eliminação da última unidade de uma equipe deixa de se aplicar, tanto na vitória quanto na derrota (D-105/D-107). Este texto antigo fica preservado como registro histórico, não como regra atual para o KO final.

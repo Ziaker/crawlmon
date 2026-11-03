@@ -22,3 +22,7 @@ Um projétil **já lançado** continua ativo após a morte de quem o lançou e *
 ## Conciliação posterior (2026-11-03)
 
 A persistência do projétil lançado após a morte do lançador continua válida **enquanto o combate puder prosseguir**. **Exceção explícita D-105:** quando o inimigo derrotado é o **último inimigo presente**, a vitória é definitiva imediatamente; qualquer projétil pendente **não causa dano nem altera o resultado**. Não foi decidido se o efeito visual do projétil desaparece ou completa sua trajetória.
+
+## Complemento posterior — Rodada 49
+
+D-107: a persistência do projétil vale enquanto o combate está em andamento. Após o KO da última unidade de qualquer equipe, o resultado é definitivo, e projéteis pendentes não causam mais dano nem alteram o resultado (D-105/D-107).

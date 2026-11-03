@@ -28,3 +28,7 @@
 ## Conciliação posterior (2026-11-03)
 
 **Conflito encerrado pela resposta expressa D-105:** a vitória ao derrotar o último inimigo é definitiva naquele instante; projéteis em voo não podem causar dano nem mudar o resultado. Isso prevalece especificamente sobre a espera de D-099/D-100 nesse caso. Permanece o cenário já documentado em que há outros inimigos, com combate normal, redirecionamento durante wind-up e possibilidade de ser atingido por projétil lançado.
+
+## Complemento posterior — Rodada 49
+
+D-107/D-108: a derrota da última unidade aliada também é definitiva, sem dano posterior de projéteis. Se ainda existem outros inimigos e o alvo morre durante wind-up, o jogo retargeta automaticamente para o inimigo vivo mais próximo (D-108). Nenhuma mudança adicional de custo, duração ou escolha manual foi aprovada.

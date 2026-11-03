@@ -670,3 +670,34 @@ Cinco decisões **de design** documentadas (D-092–D-096), com atualização do
 ### 25.4 Estado
 
 Dois registros novos (D-105/D-106), seis documentos antigos com **notas aditivas** de conciliação, índice e consolidado atualizados. **Sem alterações de código, VFX, testes ou configurações.**
+
+---
+
+## 26. Rodada 49 — derrota definitiva e seleção automática de alvo no wind-up
+
+> **2026-11-03.** O criador escolheu expressamente **1A** e **2B**. As decisões são exclusivamente documentais, preservam as anteriores e estão registradas em D-107 e D-108.
+
+### 26.1 Decisões
+
+| Pergunta | Escolha | Regra |
+|---|---|---|
+| [R49-Q1](decisoes/D-107-r49-q1-derrota-definitiva-ultimo-aliado.md) | 1A | A morte da **última unidade aliada** fixa a **derrota definitiva imediatamente**. Projéteis já lançados por essa equipe não podem causar dano nem alterar o resultado depois do KO. |
+| [R49-Q2](decisoes/D-108-r49-q2-inimigo-vivo-mais-proximo-no-windup.md) | 2B | Se o alvo do ataque morrer durante o **wind-up**, com outros inimigos vivos, o jogo **redireciona automaticamente para o inimigo vivo mais próximo**. |
+
+### 26.2 Compatibilidade e histórico
+
+1. **D-105/D-107 — KO final de qualquer equipe:** ao morrer o último inimigo, a vitória é definitiva; ao morrer o último aliado, a derrota é definitiva. **D-099/D-100 deixam de reger a espera por projéteis em ambos os KOs finais**, sem exclusão de seus textos históricos. Projéteis que atingiriam depois não causam dano nem mudam o resultado.
+2. **D-095 e D-091 — empate simultâneo preservado:** ambas as equipes eliminadas no **mesmo instante lógico** continuam empatadas. Esta regra não cria empate por projétil que atinge depois do resultado definitivo.
+3. **D-103/D-108 — novo alvo:** enquanto outros inimigos sobrevivem, o ataque cujo alvo morreu **no wind-up** passa automaticamente para o inimigo vivo mais próximo. Não implica redirecionamento de projéteis **já disparados**, nem refaz a lista de alvos da onda AoE (D-037, D-058).
+4. **D-081/D-090 — tela final:** vitória/derrota é fixada no KO, mas apresentação aguarda as sequências fatais já aprovadas. Não foi escolhida a apresentação visual de projéteis residuais sem dano.
+
+### 26.3 Pendências ainda não decididas
+
+- Projétil de alvo único **já disparado** cujo alvo morre antes do impacto, enquanto outros inimigos permanecem vivos: não foi decidido se procura novo alvo, desaparece ou conclui trajeto sem dano.
+- Obstáculos sólidos: não foi especificado nesta rodada o tratamento de ondas AoE que encontram paredes ou cobertura; preservar as geometrias específicas por Move (D-077).
+- Com a batalha já encerrada, não foi decidido se projéteis que perderam a capacidade de causar dano devem sumir visualmente ou concluir sua animação.
+- Empate em distâncias exatamente iguais entre alvos elegíveis não foi especificado.
+
+### 26.4 Escopo documental
+
+Criados D-107 e D-108; seis documentos anteriores receberam **somente notas aditivas** de compatibilidade. Índice e consolidado atualizados. **Nenhum código, FX, teste ou configuração alterado.**

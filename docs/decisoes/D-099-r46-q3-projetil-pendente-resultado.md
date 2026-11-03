@@ -27,3 +27,7 @@ Se a última unidade de uma equipe morrer **enquanto ainda houver projéteis pre
 ## Conciliação posterior (2026-11-03)
 
 **Exceção posterior D-105:** quando o inimigo derrotado é o **último inimigo presente**, a vitória é fixada imediatamente e projéteis pendentes não podem causar dano nem mudar o resultado. A regra histórica de aguardar projéteis não se aplica a essa vitória. Não generalizar silenciosamente para eliminação da equipe aliada.
+
+## Complemento posterior — Rodada 49
+
+D-107: a espera por projéteis pendentes após a eliminação da última unidade de uma equipe foi superada. Vitória ou derrota são definitivas no KO final e projéteis ainda em voo não causam dano nem mudam o resultado (D-105/D-107). A decisão original permanece como registro histórico; empates simultâneos ainda seguem D-095.
