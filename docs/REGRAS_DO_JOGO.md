@@ -867,3 +867,52 @@ Três novos arquivos de decisão (D-114, D-115 e D-116); duas notas aditivas em 
 ### 32.3 Escopo
 
 Um registro novo D-119, nota aditiva em D-117, índice e regras consolidadas atualizados. Nenhum código, configuração, arquivo de Move, teste, VFX ou modelo modificado.
+
+---
+
+## 33. Rodada 54 — dez decisões de atributos e identidade mecânica por espécie
+
+> **2026-11-03.** O criador respondeu expressamente as **dez perguntas**, escolhas **1C, 2B, 3A, 4B, 5B, 6A, 7A, 8C, 9A e 10A**. A formulação das alternativas tinha recomendações prévias do assistente, mas as **dez seleções foram enviadas diretamente pelo criador**, diferentemente da delegação apenas à IA (D-116). Preserve-se a íntegra do histórico D-001 a D-119. Registro documental, não implementação.
+
+### 33.1 Matriz consolidada das escolhas
+
+| Decisão | Escolha | Regra expressa do criador |
+|---|---|---|
+| [D-120](decisoes/D-120-r54-q1-atributos-base-especie-referencia-biologica.md) | 1C | Usar os atributos originais como referência biológica da espécie, ajustando os valores ao equilíbrio do Crawlmon. |
+| [D-121](decisoes/D-121-r54-q2-pequena-variacao-aleatoria-atributos-individuais.md) | 2B | Adicionar pequenas variações aleatórias individuais nos atributos-base. |
+| [D-122](decisoes/D-122-r54-q3-forca-dano-fisico-magia-dano-magico.md) | 3A | Força determina a base do dano físico; Magia determina a base do dano mágico/especial. |
+| [D-123](decisoes/D-123-r54-q4-magia-efeitos-por-move-escalaveis.md) | 4B | Magia aumenta dano mágico e somente os efeitos que cada Move definir como escaláveis. |
+| [D-124](decisoes/D-124-r54-q5-hp-vitalidade-nivel-coeficientes-especie.md) | 5B | Uma fórmula baseada em Vitalidade e nível, com coeficientes próprios de cada espécie. |
+| [D-125](decisoes/D-125-r54-q6-vitalidade-resistencia-base-defesa-estagios.md) | 6A | Vitalidade também influencia a resistência-base a dano, preservando os estágios de Defesa. |
+| [D-126](decisoes/D-126-r54-q7-calibrar-agi-atb-tempos-moves.md) | 7A | Calibrar AGI para preservar inicialmente os ritmos atuais de ATB e os tempos próprios dos Moves, introduzindo a redução por AGI sem alterar silenciosamente o equilíbrio. |
+| [D-127](decisoes/D-127-r54-q8-sorte-critico-esquiva-automatica-status.md) | 8C | Sorte modifica críticos, esquiva automática e aplicação de efeitos de status. |
+| [D-128](decisoes/D-128-r54-q9-afinidades-por-especie-referencia-smt.md) | 9A | Definir afinidades por espécie usando principalmente SMT como referência, preservando os elementos e as fraquezas existentes até revisão explícita. |
+| [D-129](decisoes/D-129-r54-q10-atributos-permanentes-1-a-100-buffs-separados.md) | 10A | Os atributos permanentes ficam entre 1 e 100 após progressão e Nature; buffs temporários atuam separadamente. |
+
+### 33.2 Prevalência e compatibilidade das regras
+
+1. **Referências das espécies versus elementos (D-120/D-128/D-118):** atributos biológicos originais são referência para o perfil de espécie, **não** conversão elementar Pokémon. Afinidades seguem design inspirado principalmente em SMT; os elementos/fraquezas já cadastrados continuam até revisão explícita.
+2. **Identidade e limite permanente (D-121/D-129):** pequenas variações aleatórias de atributos por indivíduo coexistem com Nature/progressão, mas os cinco atributos permanentes permanecem **entre 1 e 100**. Ainda faltam amplitude, distribuição, seed e resolução do teto.
+3. **Ofensiva e defesa (D-122 a D-125):** Força fornece dano físico; Magia fornece dano mágico e os efeitos **marcados por Move** como escaláveis. Vitalidade participa de HP máximo com coeficiente por espécie e também da resistência-base, preservando buffs de Defesa e multiplicadores já aprovados. Fórmulas ficam pendentes.
+4. **Agilidade, trajeto e posicionamento (D-126 + D-018/D-117/D-119):** AGI governa preenchimento ATB e reduz o **tempo de deslocamento definido em cada ficha de Move**, inclusive por efeitos que aumentam AGI. Calibrar valores inicialmente contra ritmo atual. Preservar a influência dos passos táticos e o piso da D-018; **a fórmula combinada, os coeficientes, a referência de ATB e o tratamento de limites ainda não foram definidos**.
+5. **Sorte versus esquiva fixa (D-127 × D-005):** a D-005 fixou esquiva automática em **10% por golpe** para todos, valor **ainda implementado**. A decisão posterior D-127 **aprova que Sorte altere essa probabilidade**, além de crítico e chances de aplicação de status. A universalidade da porcentagem fixa passa a ser histórica neste ponto, mas **não se estabelece novo valor/fórmula**. A reação de IA durante trajeto segue outra regra (D-021).
+6. **Sorte e status versus D-012:** um Move de debuff de alvo único **não ser esquivável** permanece verdadeiro. A probabilidade de um efeito de status ser aplicado é uma etapa distinta; a resposta 8C **não especifica quais efeitos são garantidos e quais possuem testes de aplicação**. Não converter todas as aplicações garantidas para chances de falha silenciosamente.
+7. **Crescimento do protagonista e teto (D-129 versus GDD R13-Q4/R14-Q4):** distribuir 1 ponto de atributo a cada nível continua obrigatório, mas o limite permanente 100 exige regra para quando não existe atributo elegível para receber o ponto. A decisão não autoriza perder, guardar ou redirecionar automaticamente o excedente.
+
+### 33.3 Diferenças verificadas no código atual
+
+- `scripts/combat/combatant.gd` ainda usa `base_attack`, `base_speed`, `max_hp`, fraquezas e buffs de ATK/DEF/Velocidade; os cinco atributos permanentes e suas fichas por espécie **não foram integrados**.
+- `scripts/combat/battle.gd` aplica chance fixa de crítico `0.10` e de esquiva automática `0.10`, e `travel_seconds()` considera a duração-base e a posição tática sem AGI; D-126/D-127 ainda não estão implementadas.
+- `scripts/data/skill.gd` não especifica tempo de deslocamento individual em campo de ficha nem escala de efeito mágico por Move; D-119/D-123 são requisitos documentais.
+- `scripts/data/element.gd` contém 11 elementos atuais e não foi modificado.
+
+### 33.4 Pormenores técnicos ainda não aprovados
+
+- Valores iniciais e curvas individuais de cada espécie, amplitude e distribuição das variações aleatórias; escalas das fórmulas físicas/mágicas, Vitalidade/HP/defesa, Magia/efeitos e impacto quantitativo das Natures.
+- Integração matemática entre AGI, duração individual por Move e posicionamento tático sem quebrar o piso histórico; calibração de ATB.
+- Probabilidades de crítico, esquiva automática e aplicação de status derivadas da Sorte, efeitos de status garantidos versus rolados, tratamento do limiar e do teto de atributos permanentes.
+- As dez respostas fecham **direções de design**, não os detalhes numéricos; não há autorização para inventar coeficientes ou implementar código.
+
+### 33.5 Escopo
+
+Dez arquivos individuais de decisões, índice e regras consolidadas atualizados. O documento histórico D-005 recebe somente nota aditiva sobre a regra posterior de Sorte; D-117/D-118/D-119 e outras decisões permanecem intactas. Nenhum código, dado de Move/personagem, VFX, teste ou configuração alterado.
