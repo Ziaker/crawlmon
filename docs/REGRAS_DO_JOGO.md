@@ -608,3 +608,34 @@ Cinco decisões **de design** documentadas (D-092–D-096), com atualização do
 ### 23.4 Estado e escopo
 
 **Somente cinco arquivos documentais**: novos D-100, D-101 e D-102; atualização do índice e do consolidado. Nenhum código, FX, configuração ou teste do jogo alterado. As perguntas da Rodada 48 são apresentadas separadamente ao usuário e não estão aprovadas por antecedência.
+
+---
+
+## 24. Rodada 48 — novas declarações e conflitos com regras anteriores
+
+> **2026-11-03.** Duas declarações foram recebidas literalmente sobre: (1) encerramento quando o último inimigo cai e troca de alvo durante wind-up; (2) Evade de múltiplos ataques como evasão, com ataques visualmente concluídos e sem animação de interrupção. Foram registradas como D-103 e D-104. **Conflitos com decisões anteriores estão mantidos sem atribuir prevalência automática a uma delas.** O código não foi alterado.
+
+### 24.1 Declarações registradas
+
+| Referência | Origem | Conteúdo |
+|---|---|---|
+| [R48-Q1](decisoes/D-103-r48-q1-fim-imediato-retarget-windup.md) | Declaração expressa | **Último inimigo:** se o inimigo derrotado era o último inimigo presente, o criador determina que a batalha **acaba no instante da derrota dele**. A interpretação técnica precisa (encerramento lógico, tela de resultado, projéteis em trânsito) está assinalada como **conflito pendente** abaixo, sem revogar silenciosamente regras anteriores. **Ainda existem outros inimigos:** o combate **continua normalmente**. Se Pikachu já estava no **wind-up de um ataque** e o alvo morre, Pikachu **troca de alvo para executar o ataque**; o criador não determinou um novo custo, reinício de wind-up nem política de seleção do novo alvo. **Projéteis lançados:** Pikachu **continua podendo ser atingido pelo projétil já disparado** nessa situação em que outros inimigos permanecem. Preserva-se D-094 para projéteis lançados após a morte do atirador, na medida em que não conflitante com o fim da batalha. |
+| [R48-Q2](decisoes/D-104-r48-q2-evade-termino-visual-sem-stagger.md) | Declaração expressa | **Ataques simultâneos:** ao realizar o Evade contra dois agressores, o criador diz que **ambos são interrompidos**, porém esclarece que o **Evade é evasão, não defesa perfeita/parry**: visualmente, **os ataques dos dois agressores devem terminar antes de serem tratados como interrompidos**, sem reproduzir uma animação de interrupção em razão somente da esquiva. **Animação de interrupção:** só ocorre se o atacante **receber um ataque durante o trajeto ou o wind-up de um ataque**. Apenas desviar de sua investida não deve produzir essa animação. **Contra-ataque extra:** conserva-se D-093 (somente um golpe extra quando vários ataques são evitados perfeitamente), enquanto o modo exato de encerrar logicamente os ataques desviados permanece pendente. |
+
+### 24.2 Conflitos que exigem conciliação
+
+1. **Último KO versus projéteis pendentes (D-103 × D-099/D-100):** a nova regra declara que a batalha acaba quando cai o último inimigo. D-099/D-100 determinam aguardar projéteis em voo para possível empate. **Não resolver por suposição se o projétil desaparece, ainda acerta, ou pode alterar o resultado**. O caso de ainda existirem outros inimigos é explícito: combate continua, Pikachu em wind-up troca de alvo e pode ser atingido pelo projétil já lançado.
+2. **Encerramento da batalha versus tela de resultado (D-103 × D-081/D-090):** a expressão 'batalha acaba no segundo' não estabelece automaticamente que a tela de resultado interrompe as animações fatais. Preservar a regra documental anterior da exibição tardia até que seja esclarecida.
+3. **Evade versus animação de interrupção (D-104 × D-017):** o criador diz que ambos os ataques são interrompidos, mas devem **terminar visualmente antes**, **sem animação de interrupção por causa do Evade**. A animação de interrupção ocorre quando o atacante é **atingido por ataque durante trajeto ou wind-up**. D-017 antes determinava interrupção/cambaleio por Evade. Preservar ambos os registros e não definir silenciosamente se o resultado lógico da esquiva é cancelamento ou falha normal.
+4. **Compatibilidade com Evade simultâneo (D-092/D-093):** a esquiva pode evitar ambos os ataques e um Evade perfeito contra vários agressores concede no máximo um golpe extra. A nova declaração não altera explicitamente esse limite.
+
+### 24.3 Pendências importantes, sem assumir resposta
+
+- Quando cai **o último inimigo**, projéteis lançados anteriormente devem ainda poder atingir alguém ou alterar o resultado, conforme D-099, ou o fim da batalha é definitivo mesmo com projéteis em voo?
+- Se os ataques terminam visualmente após o Evade, o que significa 'ambos interrompidos' no **motor**: marcar como falhas concluídas ou cancelá-los logicamente só após a animação?
+- O critério para selecionar novo alvo quando um alvo morre durante o **wind-up**, se outros inimigos seguem vivos, ainda não foi escolhido; o fato de trocar alvo está registrado.
+- Se 'o último inimigo' foi derrotado, a **tela de resultado** continua aguardando animações fatais conforme D-081/D-090? Não assumir que a frase suprimiu essa espera.
+
+### 24.4 Estado
+
+**Dois arquivos de decisão adicionados**, índice e consolidado atualizados, sem mexer no histórico, sem alterar código, configurações, FX ou testes. A publicação documental dos conflitos não representa aprovação de um comportamento técnico contraditório.
