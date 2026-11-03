@@ -148,3 +148,6 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-140](D-140-r57-q2-agi-minimo-1-formula.md) | Personagens / R57 | R57-Q2A: AGI efetiva mínima de 1 apenas para o cálculo inverso do Move | Aprovada expressamente; nenhuma alteração de código |
 | [D-141](D-141-r57-q3-sorteio-individual-central.md) | Personagens / R57 | R57-Q3B: Distribuição do sorteio individual favorece valores perto de zero | Aprovada expressamente; nenhuma alteração de código |
 | [D-142](D-142-r57-q4-luk-1pp-cada-10.md) | Personagens / R57 | R57-Q4B: Status probabilístico: 1 ponto percentual para cada 10 pontos de diferença LUK | Aprovada expressamente; nenhuma alteração de código |
+| [D-143](D-143-r58-q2-probabilidade-status-0-100.md) | Atributos / R58 | Q2A: Probabilidade final de status limitada ao intervalo 0–100% | Escolha expressa; documentação somente |
+| [D-144](D-144-r58-q3-sorteio-triangular-1-2-3-4-3-2-1.md) | Atributos / R58 | Q3A: Sorteio individual triangular com pesos 1:2:3:4:3:2:1 | Escolha expressa; documentação somente |
+| [D-145](D-145-r58-q4-referencias-agi-distintas-atb-trajeto.md) | Atributos / R58 | Q4B: Referências numéricas distintas para ATB e trajetos com AGI única | Escolha expressa; documentação somente |

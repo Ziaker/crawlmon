@@ -18,3 +18,7 @@
 ## Limitações
 
 - Detalhes quantitativos não contidos na declaração literal continuam pendentes. Sem alterações de código, dados, testes, VFX ou assets.
+
+## Complemento posterior — Rodada 58 (2026-11-03)
+
+**D-144 (R58-Q3A):** a distribuição do sorteio individual de −3 a +3 foi agora definida como **triangular discreta**, com pesos **1:2:3:4:3:2:1** na ordem −3, −2, −1, 0, +1, +2, +3. A soma de pesos é 16; a decisão mantém o sorteio individual persistente da D-132 e não muda a permissão de atributos superiores a 100 da D-139.

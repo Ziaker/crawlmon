@@ -20,3 +20,7 @@
 ## Limitações
 
 - Detalhes quantitativos não contidos na declaração literal continuam pendentes. Sem alterações de código, dados, testes, VFX ou assets.
+
+## Complemento posterior — Rodada 58 (2026-11-03)
+
+**Rodada 58, Q1D — esclarecimento pendente:** o criador escreveu literalmente: **“não entendi a 1, 50% + 7 luck = 57% - 10luck do oponente = 47% de chance no total”**. Esse cálculo equivale a **1 ponto percentual por 1 ponto de LUK** de cada participante, diferindo da taxa expressamente aprovada nesta D-142 (**1 ponto percentual a cada 10 pontos de diferença**), que daria **49,7%** no exemplo usando interpolação proporcional. **Não substituir esta D-142 por suposição**: confirmar se o novo exemplo é uma revisão intencional da taxa ou uma interpretação a esclarecer. A decisão R58-Q2A sobre limitar probabilidades a 0–100% permanece independente desta dúvida.

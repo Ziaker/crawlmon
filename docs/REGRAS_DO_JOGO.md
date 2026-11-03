@@ -1063,3 +1063,36 @@ Quatro decisões novas (D-132 a D-135), cinco notas aditivas aos documentos anti
 - `scripts/combat/battle.gd` ainda usa tempo de trajeto com passos e mínimo de 0,25 s, sem AGI; chances de crítico e esquiva permanecem fixas no código.
 - `scripts/combat/combatant.gd` ainda usa atributos simplificados, não os seis atributos permanentes e progressão; `scripts/data/skill.gd` não possui ficha de chance de status por efeito.
 - **Somente documentação:** quatro documentos D-139..D-142 criados, notas aditivas em D-129, D-135, D-132, D-136, D-137, índice e consolidado atualizados. Nenhum código, teste, cena, Move ou asset alterado.
+
+---
+
+## 38. Rodada 58 — probabilidades válidas, sorteio triangular e referências distintas de AGI
+
+> **2026-11-03.** O criador aprovou diretamente as alternativas **2A, 3A e 4B**. Também respondeu **1D — Outra regra**, acompanhada da observação literal: **“não entendi a 1, 50% + 7 luck = 57% - 10luck do oponente = 47% de chance no total”**. Como ela contradiz o fator da D-142 sem indicar expressamente se está revogando a regra, **a questão 1 permanece pendente de esclarecimento**; nenhuma fórmula nova de LUK foi consolidada como aprovada. D-143, D-144 e D-145 registram somente as três escolhas inequívocas.
+
+### 38.1 Regras expressamente aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-143](decisoes/D-143-r58-q2-probabilidade-status-0-100.md) | 2A | Probabilidade final de status limitada ao intervalo 0–100% |
+| [D-144](decisoes/D-144-r58-q3-sorteio-triangular-1-2-3-4-3-2-1.md) | 3A | Sorteio individual triangular com pesos 1:2:3:4:3:2:1 |
+| [D-145](decisoes/D-145-r58-q4-referencias-agi-distintas-atb-trajeto.md) | 4B | Referências numéricas distintas para ATB e trajetos com AGI única |
+
+### 38.2 Compatibilidade e restrições
+
+- **D-143 (Q2A):** a chance final de aplicação de status probabilístico deve ser limitada ao intervalo **0% a 100%**, inclusive, após os modificadores. Exemplo: 98% + 5 pp = 103% intermediários ⇒ **100% final**. Efeitos garantidos continuam garantidos (D-134). Este limite não restringe atributos acima de 100 (D-139).
+- **D-144 (Q3A):** sorteio individual persistente de −3 a +3 (D-132) segue a distribuição triangular discreta com pesos **1:2:3:4:3:2:1**, equivalentes a **6,25%, 12,5%, 18,75%, 25%, 18,75%, 12,5%, 6,25%**. Não redefinir os pontos-base ou adicionar teto numérico.
+- **D-145 (Q4B):** **AGI permanece atributo único** com referências numéricas **independentes para ATB e tempo de trajeto**, de modo a calibrar os subsistemas separadamente. A referência de trajeto permanece **comum a todos os Pokémon** (D-136); nenhuma das referências recebeu valor numérico. Preservar D-140 e D-018/D-133.
+
+### 38.3 Conflito pendente — Q1D × D-142
+
+- **Nova expressão literal:** “não entendi a 1, 50% + 7 luck = 57% - 10luck do oponente = 47% de chance no total”. Ela descreve adição de **7 pontos percentuais por LUK 7** e subtração de **10 pontos percentuais por LUK 10**.
+- **D-142, aprovada expressamente na Rodada 57:** chance de aplicação recebe **1 ponto percentual a cada 10 pontos de diferença LUK** entre aplicador e alvo. Com base 50%, LUK 7 contra LUK 10, uma aplicação proporcional contínua desse coeficiente teria **50% + (7 − 10)/10 pp = 49,7%**. O tratamento de diferenças não múltiplas de 10 continua não definido em D-142.
+- **Pergunta de esclarecimento obrigatória:** o novo exemplo pretende **substituir a proporção da D-142 por 1 ponto percentual por 1 ponto de LUK de diferença** (resultado 47%), ou a D-142 permanece com 1 ponto percentual por 10 LUK (49,7% caso interpolação proporcional)? Não optar silenciosamente.
+- **D-143 não depende da escolha da taxa:** qualquer chance calculada, conforme a regra final que o criador definir, deve ser limitada a **0%–100%**. O conflito da Q1 não invalida as escolhas 2A, 3A e 4B.
+
+### 38.4 Código verificado e escopo
+
+- `scripts/combat/battle.gd` mantém chances atuais de crítico/esquiva e tempo de trajeto sem aplicação da AGI dos seis atributos.
+- `scripts/combat/combatant.gd` não implementa variações individuais persistentes de atributos; `scripts/data/skill.gd` não implementa chance de status declarada por efeito.
+- **Editados apenas documentos:** três novos D-143..D-145, notas aditivas em D-141, D-136 e D-142, índice e este consolidado. Nenhum código, asset, dado de Pokémon, configuração ou teste alterado.

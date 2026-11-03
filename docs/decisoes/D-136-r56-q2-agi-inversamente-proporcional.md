@@ -27,3 +27,7 @@
 ## Complemento posterior — Rodada 57 (2026-11-03)
 
 **D-140 (R57-Q2A):** se AGI efetiva chegar a zero, utilizar o valor **mínimo 1 apenas para a entrada numérica no cálculo inverso do tempo de deslocamento do Move**, sem modificar o atributo permanente. A referência comum de AGI continua sem valor numérico definido; a regra não estende automaticamente o piso ao ATB.
+
+## Complemento posterior — Rodada 58 (2026-11-03)
+
+**D-145 (R58-Q4B):** o **atributo Agility (AGI) continua único**, mas os valores **numéricos de referência do ATB e do tempo de trajeto podem ser diferentes**, para calibragem independente. A referência do trajeto continua comum às espécies como previsto nesta D-136; 'distintas' não fixa nenhum dos valores nem muda a função inversa, o ajuste por passos ou a proteção AGI mínima de 1 para trajeto (D-140).
