@@ -20,6 +20,6 @@ Na onda AoE, quando um personagem aciona um Evade válido, **a esquiva visual ac
 
 ## Referências e limitações
 
-- **Decisões relacionadas:** D-007, D-059, D-066, D-074.
+- **Decisões relacionadas:** D-007, D-059, D-066, D-075.
 - **Pendência:** O registro vale para a onda pertinente, sem conceder invulnerabilidade genérica contra outras ações ou por duração não aprovada.
 - **Escopo:** documentação somente, sem mudança de código, FX, configurações ou testes.
