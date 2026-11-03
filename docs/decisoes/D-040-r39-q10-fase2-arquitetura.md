@@ -1,4 +1,4 @@
-# D-40 — R39-Q10 (10B): Arquitetura reintegrada da Fase 2
+# D-040 — R39-Q10 (10B): Arquitetura reintegrada da Fase 2
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R39; eventuais complementos posteriores estão reproduzidos abaixo.

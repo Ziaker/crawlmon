@@ -1,4 +1,4 @@
-# D-54 — R41-Q4 (4A): Ajuste espacial somente no impacto
+# D-054 — R41-Q4 (4A): Ajuste espacial somente no impacto
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R41; eventuais complementos posteriores estão reproduzidos abaixo.

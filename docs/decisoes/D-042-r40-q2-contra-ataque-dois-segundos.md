@@ -1,4 +1,4 @@
-# D-42 — R40-Q2 (2B): Janela de dois segundos após Evade perfeito
+# D-042 — R40-Q2 (2B): Janela de dois segundos após Evade perfeito
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R40; eventuais complementos posteriores estão reproduzidos abaixo.

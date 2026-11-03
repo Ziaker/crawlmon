@@ -1,4 +1,4 @@
-# D-53 — R41-Q3 (3A): Custo normal do golpe extra
+# D-053 — R41-Q3 (3A): Custo normal do golpe extra
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R41; eventuais complementos posteriores estão reproduzidos abaixo.

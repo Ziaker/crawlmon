@@ -1,4 +1,4 @@
-# D-35 — R39-Q5 (5B): Evade perfeito preserva ataque original
+# D-035 — R39-Q5 (5B): Evade perfeito preserva ataque original
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R39; eventuais complementos posteriores estão reproduzidos abaixo.

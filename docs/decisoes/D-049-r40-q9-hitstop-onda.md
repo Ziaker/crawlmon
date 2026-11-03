@@ -1,4 +1,4 @@
-# D-49 — R40-Q9 (9A): Hit-stop no primeiro impacto de onda AoE
+# D-049 — R40-Q9 (9A): Hit-stop no primeiro impacto de onda AoE
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R40; eventuais complementos posteriores estão reproduzidos abaixo.

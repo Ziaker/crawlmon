@@ -1,4 +1,4 @@
-# D-44 — R40-Q4 (4B): Perseguição na corrida, golpe com trajetória fixa
+# D-044 — R40-Q4 (4B): Perseguição na corrida, golpe com trajetória fixa
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R40; eventuais complementos posteriores estão reproduzidos abaixo.

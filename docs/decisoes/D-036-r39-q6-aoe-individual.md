@@ -1,4 +1,4 @@
-# D-36 — R39-Q6 (6A): AoE sem principal e com esquiva individual
+# D-036 — R39-Q6 (6A): AoE sem principal e com esquiva individual
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R39; eventuais complementos posteriores estão reproduzidos abaixo.

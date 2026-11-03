@@ -1,4 +1,4 @@
-# D-38 — R39-Q8 (8A): Pausa de Moves de status na ativação
+# D-038 — R39-Q8 (8A): Pausa de Moves de status na ativação
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R39; eventuais complementos posteriores estão reproduzidos abaixo.

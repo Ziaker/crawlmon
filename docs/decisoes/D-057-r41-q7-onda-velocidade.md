@@ -1,4 +1,4 @@
-# D-57 — R41-Q7 (7A): Onda AoE em velocidade espacial constante
+# D-057 — R41-Q7 (7A): Onda AoE em velocidade espacial constante
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R41; eventuais complementos posteriores estão reproduzidos abaixo.

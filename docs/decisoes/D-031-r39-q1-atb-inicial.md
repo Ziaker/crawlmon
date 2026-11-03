@@ -1,4 +1,4 @@
-# D-31 — R39-Q1 (1A): ATB inicial e autorização de ação
+# D-031 — R39-Q1 (1A): ATB inicial e autorização de ação
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R39; eventuais complementos posteriores estão reproduzidos abaixo.

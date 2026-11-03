@@ -1,4 +1,4 @@
-# D-39 — R39-Q9 (9A): Todos os inimigos enquadrados
+# D-039 — R39-Q9 (9A): Todos os inimigos enquadrados
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R39; eventuais complementos posteriores estão reproduzidos abaixo.

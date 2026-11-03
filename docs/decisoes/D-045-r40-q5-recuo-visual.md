@@ -1,4 +1,4 @@
-# D-45 — R40-Q5 (5B): Recuo visual em qualquer hit recebido
+# D-045 — R40-Q5 (5B): Recuo visual em qualquer hit recebido
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R40; eventuais complementos posteriores estão reproduzidos abaixo.

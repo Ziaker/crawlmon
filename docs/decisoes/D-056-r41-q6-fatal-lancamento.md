@@ -1,4 +1,4 @@
-# D-56 — R41-Q6 (6D): Lançamento fatal cinematográfico e desaparecimento
+# D-056 — R41-Q6 (6D): Lançamento fatal cinematográfico e desaparecimento
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R41; eventuais complementos posteriores estão reproduzidos abaixo.

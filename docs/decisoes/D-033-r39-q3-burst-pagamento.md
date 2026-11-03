@@ -1,4 +1,4 @@
-# D-33 — R39-Q3 (3A): Burst como pagamento completo
+# D-033 — R39-Q3 (3A): Burst como pagamento completo
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R39; eventuais complementos posteriores estão reproduzidos abaixo.

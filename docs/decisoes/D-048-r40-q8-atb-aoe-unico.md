@@ -1,4 +1,4 @@
-# D-48 — R40-Q8 (8A): Recompensas únicas por condição em AoE
+# D-048 — R40-Q8 (8A): Recompensas únicas por condição em AoE
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R40; eventuais complementos posteriores estão reproduzidos abaixo.

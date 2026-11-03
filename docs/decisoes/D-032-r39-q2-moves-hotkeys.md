@@ -1,4 +1,4 @@
-# D-32 — R39-Q2 (2A): Quantidade de Moves e controles
+# D-032 — R39-Q2 (2A): Quantidade de Moves e controles
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R39; eventuais complementos posteriores estão reproduzidos abaixo.

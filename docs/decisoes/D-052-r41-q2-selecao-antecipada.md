@@ -1,4 +1,4 @@
-# D-52 — R41-Q2 (2B): Seleção antecipada e execução enfileirada
+# D-052 — R41-Q2 (2B): Seleção antecipada e execução enfileirada
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R41; eventuais complementos posteriores estão reproduzidos abaixo.

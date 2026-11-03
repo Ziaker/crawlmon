@@ -1,4 +1,4 @@
-# D-60 — R41-Q10 (10B): Pausa seletiva de status com idle e câmera
+# D-060 — R41-Q10 (10B): Pausa seletiva de status com idle e câmera
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R41; eventuais complementos posteriores estão reproduzidos abaixo.

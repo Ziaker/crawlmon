@@ -1,4 +1,4 @@
-# D-34 — R39-Q4 (4A): Janela e custo do Evade manual
+# D-034 — R39-Q4 (4A): Janela e custo do Evade manual
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R39; eventuais complementos posteriores estão reproduzidos abaixo.

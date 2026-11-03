@@ -1,4 +1,4 @@
-# D-46 — R40-Q6 (6A): Contato espacial exato do motor
+# D-046 — R40-Q6 (6A): Contato espacial exato do motor
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R40; eventuais complementos posteriores estão reproduzidos abaixo.

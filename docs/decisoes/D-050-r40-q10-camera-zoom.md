@@ -1,4 +1,4 @@
-# D-50 — R40-Q10 (10A): Zoom e deslocamento sem tremor
+# D-050 — R40-Q10 (10A): Zoom e deslocamento sem tremor
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R40; eventuais complementos posteriores estão reproduzidos abaixo.

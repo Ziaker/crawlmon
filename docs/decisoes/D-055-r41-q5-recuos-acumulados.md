@@ -1,4 +1,4 @@
-# D-55 — R41-Q5 (5B): Acumulação temporária dos recuos visuais
+# D-055 — R41-Q5 (5B): Acumulação temporária dos recuos visuais
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R41; eventuais complementos posteriores estão reproduzidos abaixo.

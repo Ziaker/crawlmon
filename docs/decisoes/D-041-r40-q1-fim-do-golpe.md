@@ -1,4 +1,4 @@
-# D-41 — R40-Q1 (1A): Fim do golpe antes do retorno
+# D-041 — R40-Q1 (1A): Fim do golpe antes do retorno
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R40; eventuais complementos posteriores estão reproduzidos abaixo.

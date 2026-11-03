@@ -1,4 +1,4 @@
-# D-59 — R41-Q9 (9B): Janela compartilhada de Evade da onda AoE
+# D-059 — R41-Q9 (9B): Janela compartilhada de Evade da onda AoE
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R41; eventuais complementos posteriores estão reproduzidos abaixo.

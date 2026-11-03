@@ -1,4 +1,4 @@
-# D-51 — R41-Q1 (1B): Contra-ataque escolhido no prazo pode executar depois
+# D-051 — R41-Q1 (1B): Contra-ataque escolhido no prazo pode executar depois
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R41; eventuais complementos posteriores estão reproduzidos abaixo.

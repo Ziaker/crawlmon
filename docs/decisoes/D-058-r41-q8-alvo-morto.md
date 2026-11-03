@@ -1,4 +1,4 @@
-# D-58 — R41-Q8 (8A): Alvo morto antes da chegada da onda
+# D-058 — R41-Q8 (8A): Alvo morto antes da chegada da onda
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R41; eventuais complementos posteriores estão reproduzidos abaixo.

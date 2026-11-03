@@ -1,4 +1,4 @@
-# D-47 — R40-Q7 (7A): Alvo declarado e projétil guiado
+# D-047 — R40-Q7 (7A): Alvo declarado e projétil guiado
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R40; eventuais complementos posteriores estão reproduzidos abaixo.

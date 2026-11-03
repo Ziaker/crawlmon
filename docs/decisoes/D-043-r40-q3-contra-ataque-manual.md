@@ -1,4 +1,4 @@
-# D-43 — R40-Q3 (3A): Seleção manual do contra-ataque
+# D-043 — R40-Q3 (3A): Seleção manual do contra-ataque
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R40; eventuais complementos posteriores estão reproduzidos abaixo.

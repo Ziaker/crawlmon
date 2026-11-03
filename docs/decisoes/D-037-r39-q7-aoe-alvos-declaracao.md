@@ -1,4 +1,4 @@
-# D-37 — R39-Q7 (7A): Participantes do AoE na declaração
+# D-037 — R39-Q7 (7A): Participantes do AoE na declaração
 
 - **Data:** 2026-11-02
 - **Origem:** decisão direta do criador, R39; eventuais complementos posteriores estão reproduzidos abaixo.
