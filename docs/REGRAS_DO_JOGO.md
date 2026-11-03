@@ -1131,3 +1131,37 @@ Quatro decisões novas (D-132 a D-135), cinco notas aditivas aos documentos anti
 - `scripts/combat/battle.gd` mantém o ajuste por passos e o piso de 0,25 s, mas não aplica a redução inversa por AGI nem a fórmula LUK aprovada.
 - `scripts/data/skill.gd` ainda não declara chances de aplicação por efeito nem o tempo individual de deslocamento como campo próprio.
 - **Escopo desta alteração:** três D novos (D-146 a D-148), quatro notas complementares (D-119/D-142/D-143/D-144), índice e consolidado atualizados. **Somente documentação; nenhum código, teste, cena, VFX ou modelo alterado.**
+
+
+---
+
+## 40. Rodada 60 — recálculo excepcional do trajeto, crítico por LUK e limites
+
+> **2026-11-03.** O criador escolheu **1A, 2B, 3D e 4A**. As decisões **1A, 2B e 4A** estão determinadas sem ambiguidade e foram registradas em **D-149 a D-151**. A questão **3D** contém direção de design, mas não fórmula matemática inequívoca; sua escolha alternativa e observação literal foram preservadas como **pendência**, sem transformá-las em regra numérica.
+
+### 40.1 Matriz de decisões aprovadas
+
+| Documento | Questão | Regra aprovada |
+|---|---|---|
+| [D-149](decisoes/D-149-r60-q1-recalculo-unico-trajeto-na-troca-de-alvo.md) | 1A | Quando o alvo morre no wind-up, recalcular **uma vez no evento de troca automática** da D-108 e manter a nova duração fixa até o fim do trajeto |
+| [D-150](decisoes/D-150-r60-q2-critico-luk-um-ponto-percentual.md) | 2B | Crítico probabilístico com **10% de base + 1 pp por ponto de diferença de LUK (atacante − alvo)** |
+| [D-151](decisoes/D-151-r60-q4-limites-critico-esquiva-automatica.md) | 4A | Probabilidades finais de crítico e esquiva automática limitadas ao intervalo **0%–100%** |
+
+### 40.2 Conciliação e exemplos
+
+1. **D-108 × D-148 → D-149:** preservar o cálculo de duração fixo ao iniciar o ataque como regra geral da D-148; se houver morte do alvo e redirecionamento automático **durante wind-up**, fazer **uma exceção com um novo cálculo no momento da troca**. Exemplo: Gible muda o ataque de Pancham para Abra após a morte de Pancham no wind-up; a duração do trajeto é recalculada para essa troca, não continuamente durante TRAVEL. Não definir aqui uma política para múltiplas trocas subsequentes.
+2. **D-127 × D-150:** LUK modifica agora o crítico normal em **1 ponto percentual por ponto de diferença**. Com **LUK atacante 70** e **LUK alvo 40**, a chance é **10% + (70 − 40) pp = 40%**. A escala é própria de crítico e não autoriza copiá-la para esquiva automática.
+3. **D-151 × D-143 × D-139:** crítico e esquiva automática adotam limites finais **0–100%**, assim como aplicação probabilística de status (D-143); isso não cria teto para atributos LUK, que podem ultrapassar 100 (D-139).
+4. **D-005 e D-021:** **10%** continua como valor-base histórico/atual da esquiva automática por golpe; reação ativa da IA durante trajetória tem outra mecânica e não foi alterada.
+5. **D-134 e regras de crítico garantido:** não introduzir rolagem em efeitos de status garantidos nem converter críticos expressamente garantidos em eventos probabilísticos.
+
+### 40.3 R60-Q3D — observação preservada, fórmula pendente
+
+- **Escolha literal:** “3D — Como LUK deve modificar a esquiva automática? Outra regra.”
+- **Observação literal:** “3 - diferente de critico, a evasiva reduz quanto maior fica, dividindo pela metade”.
+- **Ambiguidade material:** “dividindo pela metade” pode se referir a um **ganho fixo pela metade em comparação com crítico**, ou a um **ganho que decai progressivamente conforme a LUK aumenta**, entre outras interpretações. Não aprovar nenhuma delas sem resposta do criador.
+- **Pendente:** coeficiente/função para esquiva automática, tratamento de diferenças negativas, instante técnico para congelar a duração em WINDUP/TRAVEL, e eventual política de trocas sucessivas de alvo.
+
+### 40.4 Escopo
+
+Apenas D-149, D-150 e D-151, índice, este consolidado e adendo de rastreabilidade no GDD foram modificados. **Nenhum código, teste de gameplay, cena, ficha de Move, asset ou VFX foi alterado.** A execução do design continua não verificada no jogo.

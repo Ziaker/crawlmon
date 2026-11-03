@@ -154,3 +154,6 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-146](D-146-r59-q1-luk-um-ponto-percentual-por-ponto.md) | Atributos / R59 | Q1A: Aplicação de status: 1 ponto percentual por ponto da diferença de LUK | Aprovada expressamente; somente documentação |
 | [D-147](D-147-r59-q2-sorteios-independentes-seis-atributos.md) | Atributos / R59 | Q2A: Sorteios individuais independentes nos seis atributos | Aprovada expressamente; somente documentação |
 | [D-148](D-148-r59-q3-duracao-trajeto-fixa-ao-iniciar-ataque.md) | Atributos / R59 | Q3A: Duração de trajeto calculada no início do ataque e fixa até seu término | Aprovada expressamente; somente documentação |
+| [D-149](D-149-r60-q1-recalculo-unico-trajeto-na-troca-de-alvo.md) | Combate / R60 | R60-Q1 (1A): recalcular duração uma vez ao trocar alvo morto no wind-up; nova duração fixa | Aprovada expressamente; complemento de D-108/D-148; sem código |
+| [D-150](D-150-r60-q2-critico-luk-um-ponto-percentual.md) | Combate / R60 | R60-Q2 (2B): crítico 10% base + 1 pp por ponto de diferença de LUK | Aprovada expressamente; sem código |
+| [D-151](D-151-r60-q4-limites-critico-esquiva-automatica.md) | Combate / R60 | R60-Q4 (4A): crítico e esquiva automática entre 0–100%; R60-Q3D continua pendente | Aprovada expressamente apenas para limites; sem código |
