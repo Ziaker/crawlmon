@@ -20,3 +20,7 @@
 - **Referências:** Combatant.gd; regras consolidadas §8; GDD R10-Q4.
 - **Ainda não definido:** Fórmula exata, limites de mitigação, ordem com fraquezas/críticos e balanceamento para evitar Vitalidade dominante.
 - **Sem implementação:** não alterar nem presumir alteração de código, recursos, dados de personagens ou testes.
+
+## Complemento posterior — D-130/D-131 (2026-11-03)
+
+**Substituição parcial posterior D-130:** a resistência-base derivada de **Vitality (VIT)** aplica-se **somente ao dano físico**. Para o **dano mágico**, acrescenta-se o novo atributo separado **Spirit (SPI)**, que cumpre papel defensivo análogo ao de Vitality para o tipo mágico. A frase original 'Não criar sexto atributo independente de Defesa' é histórica e cede à ordem expressa de criar Spirit, sem criar uma estatística genérica de Defesa adicional. Os estágios já aprovados de Defesa não são removidos; seu impacto em cada categoria e a fórmula permanecem pendentes.

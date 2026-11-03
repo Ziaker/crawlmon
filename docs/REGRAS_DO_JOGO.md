@@ -916,3 +916,40 @@ Um registro novo D-119, nota aditiva em D-117, índice e regras consolidadas atu
 ### 33.5 Escopo
 
 Dez arquivos individuais de decisões, índice e regras consolidadas atualizados. O documento histórico D-005 recebe somente nota aditiva sobre a regra posterior de Sorte; D-117/D-118/D-119 e outras decisões permanecem intactas. Nenhum código, dado de Move/personagem, VFX, teste ou configuração alterado.
+
+---
+
+## 34. Novo atributo Spirit e nomes de atributos em inglês
+
+> **2026-11-03.** O criador determinou a separação da defesa física e mágica, pediu um **novo atributo com nome inglês e sigla de três letras** e exigiu nomes de atributos em inglês. O assistente, autorizado a escolher o nome, selecionou **Spirit (SPI)**. A alteração do catálogo foi registrada em D-130 e D-131, sem modificar código. O questionário da Rodada 55 continua com as perguntas remanescentes.
+
+### 34.1 Catálogo atualizado — seis atributos permanentes
+
+| Attribute | Abbr. | Papel principal |
+|---|---|---|
+| **Strength** | **STR** | Base de dano físico |
+| **Magic** | **MAG** | Base de dano mágico/especial; efeitos escaláveis definidos por Move; MP máximo conforme regra existente |
+| **Vitality** | **VIT** | **Mitigação apenas de dano físico** e HP máximo derivado de Vitality+nível+espécie |
+| **Spirit** | **SPI** | **Mitigação de dano mágico/especial**, analogamente à mitigação física por Vitality |
+| **Agility** | **AGI** | Regeneração ATB e tempo individual de deslocamento dos Moves |
+| **Luck** | **LUK** | Crítico, esquiva automática e chance de aplicação de status |
+
+### 34.2 Conciliação com histórico e regras previamente aprovadas
+
+1. **D-120, D-125, D-129 e GDD R10-Q1:** o antigo conjunto de **cinco** atributos foi **expressamente ampliado para seis**. A antiga vedação a um segundo atributo de defesa natural dá lugar ao novo **Spirit**, com domínio exclusivo mágico. Preservar redações anteriores como histórico; seguir D-130/D-131 no design atual.
+2. **D-124:** Vitality mantém o cálculo do HP máximo; a restrição 'apenas para dano físico' descreve a **mitigação**, sem aprovar mudança de HP. Spirit **não** recebe função em HP ou MP por analogia.
+3. **D-122/D-123:** Strength e Magic continuam atributos **ofensivos**, distintos de Vitality e Spirit **defensivos**.
+4. **D-125:** os estágios de Defense atuais continuam existindo. A nova divisão VIT/SPI não especifica se os estágios de DEF se aplicam a ambos os tipos de dano, nem sua fórmula, sem decisão ulterior.
+5. **D-129:** faixa permanente **1–100** agora abrange seis atributos; buffs temporários continuam separados. A quantidade de **1 ponto obrigatório por nível** para o protagonista não foi aumentada.
+6. **D-131:** os nomes usados nos atributos da **ficha e UI** devem estar em inglês: STR/MAG/VIT/SPI/AGI/LUK. Não reescrever citações históricas e não presumir renomeação de Moves/efeitos de status fora da ficha.
+
+### 34.3 Pendências expressas
+
+- Fórmula, coeficiente, teto e interação dos estágios de Defesa com mitigação física (VIT) e mágica (SPI).
+- Crescimento/variação individual de Spirit e sua participação na distribuição obrigatória por nível; curva das espécies.
+- Se novos Moves/buffs de Spirit poderão alterar o atributo temporariamente; sem criar novo Move ou status automaticamente.
+- As perguntas da Rodada 55 sobre variação individual, AGI+passos, aplicação probabilística de status e teto da progressão continuam abertas. A antiga pergunta sobre se VIT reduz dano mágico foi respondida pela nova regra: **não**, quem reduz dano mágico é SPI.
+
+### 34.4 Escopo
+
+Dois documentos novos (D-130/D-131), quatro notas posteriores em decisões históricas, índice e consolidado atualizados. **Nenhum código, jogo, UI, VFX, dado ou teste foi modificado.**

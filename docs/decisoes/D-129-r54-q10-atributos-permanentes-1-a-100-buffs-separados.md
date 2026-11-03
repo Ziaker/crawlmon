@@ -20,3 +20,7 @@
 - **Referências:** GDD R10-Q2/R13-Q4/R14-Q4/R14-Q5; regras consolidadas §14.
 - **Ainda não definido:** O que fazer com ponto obrigatório quando todos atributos elegíveis já estão no teto; pontos automáticos que atingem limite; tratamento de mudanças de Nature no teto e excedentes.
 - **Sem implementação:** não alterar nem presumir alteração de código, recursos, dados de personagens ou testes.
+
+## Complemento posterior — D-130/D-131 (2026-11-03)
+
+**Ampliação posterior D-130/D-131:** o limite permanente **1–100** agora abrange **seis atributos**, incluindo o novo Spirit (SPI). A redação original de 'cinco' é histórica e substituída somente quanto ao catálogo. Os buffs temporários continuam separados; o protagonista mantém 1 ponto obrigatório por nível, sem nova quantidade concedida por esta decisão.

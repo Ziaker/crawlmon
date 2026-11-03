@@ -20,3 +20,7 @@
 - **Referências:** D-001; D-118; progressão GDD R10–R14.
 - **Ainda não definido:** Quais dados de referência usar, quais valores iniciais definir por espécie e qual método de conversão/equilíbrio; não fixados nesta resposta.
 - **Sem implementação:** não alterar nem presumir alteração de código, recursos, dados de personagens ou testes.
+
+## Complemento posterior — D-130/D-131 (2026-11-03)
+
+**Complemento posterior D-130/D-131:** a lista oficial passa a ter **seis atributos permanentes**, não cinco: Strength (STR), Magic (MAG), Vitality (VIT), Spirit (SPI), Agility (AGI) e Luck (LUK). A referência biológica por espécie continua válida. Esta nota preserva a declaração histórica de cinco atributos como definição anterior, substituída apenas quanto à quantidade e nomenclatura.

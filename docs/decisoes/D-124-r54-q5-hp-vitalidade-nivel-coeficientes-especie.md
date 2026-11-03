@@ -20,3 +20,7 @@
 - **Referências:** GDD R11-Q2; R14-Q3; D-001.
 - **Ainda não definido:** Função exata, coeficientes, limites, arredondamento e tratamento de alteração de máximo com HP atual.
 - **Sem implementação:** não alterar nem presumir alteração de código, recursos, dados de personagens ou testes.
+
+## Complemento posterior — D-130/D-131 (2026-11-03)
+
+**Compatibilidade D-130:** Vitality (VIT) continua responsável pelo HP máximo em função do nível e dos coeficientes da espécie, conforme esta decisão, e fica especificamente associada à **mitigação de dano físico**. O novo Spirit (SPI) atua na **mitigação de dano mágico**, sem regra aprovada de participação no HP ou MP. Isso não cria um sexto atributo chamado HP.
