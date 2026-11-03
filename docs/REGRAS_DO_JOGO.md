@@ -509,3 +509,39 @@ Essas escolhas foram aceitas **por delegação às recomendações** e estão re
 ### 20.4 Estado
 
 As dez regras acima são **decisões documentais** aceitas por delegação. Nenhum código, arte, VFX, parâmetro de Move ou teste do jogo foi alterado durante esta rodada.
+
+---
+
+## 21. Rodada 45 — cinco decisões expressas (Q2–Q6)
+
+> **Registradas em 2026-11-03.** O criador respondeu explicitamente **R45-Q2, Q3, Q4, Q5 e Q6**, todas com alternativa A. **R45-Q1 não recebeu resposta** e não foi aprovada. As cinco decisões estão em D-092 a D-096. Nenhuma regra anterior foi substituída além dos esclarecimentos expressos nesta rodada; o registro não equivale à implementação no código.
+
+### 21.1 Decisões aprovadas
+
+| Questão | Escolha | Regra |
+|---|---|---|
+| [R45-Q2](decisoes/D-092-r45-q2-evade-ataques-sobrepostos.md) | 2A | Um Evade bem-sucedido pode evitar **ambos os ataques de dois inimigos** quando os impactos dos dois coincidirem com a esquiva do personagem. Isso não exige dois Evades separados para esses impactos coincidentes. |
+| [R45-Q3](decisoes/D-093-r45-q3-contra-extra-unico-varios-atacantes.md) | 3A | Quando um personagem realiza Evade perfeito contra vários atacantes, ganha **um único contra-ataque extra**, direcionado a **um dos atacantes**. Não ganha automaticamente um golpe extra por atacante. |
+| [R45-Q4](decisoes/D-094-r45-q4-projetil-apos-morte-lancador.md) | 4A | Um projétil **já lançado** continua ativo após a morte de quem o lançou e **pode atingir normalmente seu alvo**. Não cancelar o projétil exclusivamente pela morte posterior do lançador. |
+| [R45-Q5](decisoes/D-095-r45-q5-empate-mesmo-instante-logico.md) | 5A | Se **as duas equipes forem totalmente eliminadas no mesmo instante lógico**, o resultado é **empate sem vencedor**, inclusive quando os golpes que provocaram a eliminação forem diferentes. A regra de empate por um único AoE (D-091) permanece. |
+| [R45-Q6](decisoes/D-096-r45-q6-combate-continua-durante-morte.md) | 6A | Enquanto uma sequência visual de morte cinematográfica é exibida, **o combate continua normalmente entre personagens vivos**, desde que a batalha ainda esteja logicamente em andamento. **Somente a exibição da tela de resultado aguarda** a conclusão das sequências fatais pertinentes. |
+
+### 21.2 Compatibilidade e restrições
+
+1. **D-092:** um Evade bem-sucedido pode evitar dois ataques de inimigos cujos impactos coincidam com a mesma esquiva. A definição de coincidência não concede invulnerabilidade ilimitada.
+2. **D-093:** Evade perfeito contra múltiplos atacantes concede **somente um contra-ataque extra**, com um dos atacantes como alvo. Preservar escolha manual do **Move** (D-043), seleção antecipada, custo, fila e cancelamento; não presumir o método de escolha do **alvo**.
+3. **D-094:** morte do lançador **depois que um projétil foi lançado** não extingue o projétil, que pode atingir o alvo conforme as regras do Move. Não aprova continuar ataques ainda em preparação.
+4. **D-095:** eliminação simultânea de ambas as equipes no **mesmo instante lógico** significa empate sem vencedor, mesmo com ataques diferentes. Generaliza o caso de único AoE já registrado em D-091, sem alterar os critérios de derrota de cada alvo.
+5. **D-096:** animações fatais **não congelam as ações dos sobreviventes** enquanto a batalha continua; apenas a apresentação do resultado aguarda as sequências fatais. Depois do encerramento lógico da batalha, não há autorização para novas ações; manter outras pausas aprovadas.
+
+### 21.3 Pergunta não respondida e pendências reais
+
+- **R45-Q1 — próximo escopo de implementação:** não respondida. As opções apresentadas foram implementação integral das Rodadas 39–44, implementação por sistemas completos ou testes de divergências antes das correções. **Nenhum método foi aprovado.**
+- **R45-Q3:** não está definido **quem escolhe entre os atacantes** o alvo do contra-ataque extra único.
+- **R45-Q2:** critério temporal preciso da sobreposição entre ataques e Evade; manter a condição aprovada sem criar janela numérica não solicitada.
+- **R45-Q5:** a granularidade técnica do instante lógico requer validação na arquitetura do motor; não premiar a ordem arbitrária de processamento.
+- As pendências das seções anteriores permanecem visíveis como histórico; nenhuma foi resolvida por omissão.
+
+### 21.4 Estado
+
+Cinco decisões **de design** documentadas (D-092–D-096), com atualização do índice e deste consolidado. **Nenhum arquivo de código, teste, VFX ou configuração de gameplay foi alterado.**

@@ -97,3 +97,8 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-089](D-089-r44-q8-colisao-fatal-obstaculos.md) | Combate / R44 | R44-Q8 (8A): Colisão fatal interrompe o voo e causa queda | Recomendação aceita por delegação; implementação não declarada |
 | [D-090](D-090-r44-q9-resultado-apos-multiplos-fatais.md) | Combate / R44 | R44-Q9 (9A): Resultado aguarda todas as sequências fatais de um AoE | Recomendação aceita por delegação; implementação não declarada |
 | [D-091](D-091-r44-q10-ko-simultaneo-empate.md) | Combate / R44 | R44-Q10 (10B): KO simultâneo de equipes encerra em empate sem vencedor | Recomendação aceita por delegação; implementação não declarada |
+| [D-092](D-092-r45-q2-evade-ataques-sobrepostos.md) | Combate / R45 | R45-Q2 (2A): Evade cobre impactos simultâneos | Decisão expressa; implementação não declarada |
+| [D-093](D-093-r45-q3-contra-extra-unico-varios-atacantes.md) | Combate / R45 | R45-Q3 (3A): Um único contra-ataque extra por múltiplos Evades perfeitos | Decisão expressa; implementação não declarada |
+| [D-094](D-094-r45-q4-projetil-apos-morte-lancador.md) | Combate / R45 | R45-Q4 (4A): Projétil lançado persiste após morte do lançador | Decisão expressa; implementação não declarada |
+| [D-095](D-095-r45-q5-empate-mesmo-instante-logico.md) | Combate / R45 | R45-Q5 (5A): Empate por eliminação simultânea mesmo com ataques diferentes | Decisão expressa; implementação não declarada |
+| [D-096](D-096-r45-q6-combate-continua-durante-morte.md) | Combate / R45 | R45-Q6 (6A): Sobreviventes continuam agindo durante animação de morte | Decisão expressa; implementação não declarada |
