@@ -22,3 +22,6 @@
 - `scripts/combat/attack_planner.gd` define tempos-base de corrida **por identificação de Move para alguns ataques** e chama `Battle.travel_seconds()`; `scripts/combat/battle.gd` aplica a correção posicional de D-018. Isso **não equivale ainda** à especificação uniforme do tempo na ficha de Move e não reduz duração com AGI.
 - **Ação autorizada:** documentação somente. Nenhum arquivo de código, teste, VFX, modelo ou dado do jogo foi alterado.
 
+## Complemento posterior — Rodada 55 (2026-11-03)
+
+A decisão posterior **D-133 (R55-Q2, 2A)** especifica a **ordem**: (1) aplicar a redução decorrente de **AGI e efeitos que a aumentem** ao **tempo próprio da ficha do Move**; (2) aplicar a correção dos **passos posicionais D-018**; (3) respeitar o piso temporal de **0,25 s** já aprovado. Isso resolve apenas a ordem, **não** a função matemática de AGI ou sua calibração.

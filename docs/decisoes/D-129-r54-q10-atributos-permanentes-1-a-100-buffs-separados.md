@@ -24,3 +24,7 @@
 ## Complemento posterior — D-130/D-131 (2026-11-03)
 
 **Ampliação posterior D-130/D-131:** o limite permanente **1–100** agora abrange **seis atributos**, incluindo o novo Spirit (SPI). A redação original de 'cinco' é histórica e substituída somente quanto ao catálogo. Os buffs temporários continuam separados; o protagonista mantém 1 ponto obrigatório por nível, sem nova quantidade concedida por esta decisão.
+
+## Complemento posterior — Rodada 55 (2026-11-03)
+
+A decisão posterior **D-135 (R55-Q5, 5A)** cria exceção à distribuição obrigatória de um ponto pelo protagonista ao subir de nível **somente quando todos os seis atributos permanentes (STR, MAG, VIT, SPI, AGI, LUK) estiverem em 100**: dispensar a distribuição e **permitir a subida de nível**. Enquanto existir algum atributo elegível, a obrigação anterior permanece. A resposta não define conversão ou armazenamento do ponto dispensado.

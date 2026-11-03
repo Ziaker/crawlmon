@@ -21,3 +21,7 @@
 - **Referências:** D-018; D-117; D-119; GDD R8-Q1/R10-Q5/R11-Q1; Battle.gd.
 - **Ainda não definido:** Função AGI → redução de tempo, valor de referência para ATB, ordem com passos, piso temporal, arredondamento e testes de paridade; preservação inicial é objetivo de calibração, não identidade matemática universal.
 - **Sem implementação:** não alterar nem presumir alteração de código, recursos, dados de personagens ou testes.
+
+## Complemento posterior — Rodada 55 (2026-11-03)
+
+A decisão posterior **D-133 (R55-Q2, 2A)** resolve a ordenação antes pendente: **redução por AGI primeiro**, depois **ajuste de passos**, com piso de **0,25 s** (D-018). Continuam pendentes o valor da referência de AGI e a curva de redução individual de tempo; a calibração inicial aprovada nesta decisão permanece.

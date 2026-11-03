@@ -20,3 +20,7 @@
 - **Referências:** D-129 (limite permanente 1–100); GDD R10–R17 (progressão, Natures e crescimento).
 - **Ainda não definido:** Amplitude considerada pequena, distribuição estatística, momento do sorteio, persistência, arredondamento e eventual relação com a Nature.
 - **Sem implementação:** não alterar nem presumir alteração de código, recursos, dados de personagens ou testes.
+
+## Complemento posterior — Rodada 55 (2026-11-03)
+
+A decisão posterior **D-132 (R55-Q1, 1A)** fixa **até ±3 pontos em cada atributo-base**, inclusive **Spirit (SPI)**, sorteados **uma única vez por indivíduo e persistentes**. Não define probabilidades dos deslocamentos, critério de correção nos limites 1–100 ou sementes; preserve a escolha original D-121.

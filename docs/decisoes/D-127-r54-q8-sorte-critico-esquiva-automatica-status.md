@@ -22,3 +22,7 @@
 - **Referências:** D-005; D-012; D-021; GDD R11-Q5; Battle.gd.
 - **Ainda não definido:** Curva e limites de Sorte, função de chance básica de crítico/esquiva, quais status rolam aplicação, valores e resistência, simultaneidade com efeitos garantidos; compatibilidade de D-005 delimitada.
 - **Sem implementação:** não alterar nem presumir alteração de código, recursos, dados de personagens ou testes.
+
+## Complemento posterior — Rodada 55 (2026-11-03)
+
+A decisão posterior **D-134 (R55-Q3, 3A)** delimita **Luck (LUK) na aplicação de status**: somente **efeitos cuja ficha do Move declare uma chance de aplicação** sofrem influência de LUK. **Efeitos garantidos permanecem garantidos**, sem rolagem adicional criada por essa regra. Não alterar D-012 (Moves de status não esquiváveis) nem a influência de LUK sobre crítico e esquiva automática, também aprovada nesta D-127.

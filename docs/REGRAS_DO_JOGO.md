@@ -955,3 +955,44 @@ Referências diretas: [D-130](decisoes/D-130-separacao-vitality-fisico-spirit-ma
 ### 34.4 Escopo
 
 Dois documentos novos (D-130/D-131), quatro notas posteriores em decisões históricas, índice e consolidado atualizados. **Nenhum código, jogo, UI, VFX, dado ou teste foi modificado.**
+
+---
+
+## 35. Rodada 55 — variação individual, AGI e posicionamento, LUK em status e teto de atributos
+
+> **2026-11-03.** Respostas expressas do criador: **1A, 2A, 3A, 5A**. A antiga questão **4** não foi reapresentada porque o criador já aprovou a separação defensiva: **Vitality (VIT) mitiga apenas dano físico; Spirit (SPI) mitiga dano mágico** (D-130/D-131). As quatro novas escolhas estão documentadas individualmente em D-132 a D-135. Apenas documentação foi atualizada; nenhuma implementação foi autorizada.
+
+### 35.1 Matriz de escolhas aprovadas
+
+| Referência | Escolha | Regra aprovada |
+|---|---|---|
+| [D-132](decisoes/D-132-r55-q1-variacao-individual-mais-menos-3.md) | 1A | Até ±3 pontos por atributo-base, sorteados uma vez e persistentes. |
+| [D-133](decisoes/D-133-r55-q2-agi-antes-passos-tempo-move.md) | 2A | Reduzir primeiro o tempo do Move por AGI; depois aplicar o ajuste dos passos, respeitando o mínimo aprovado. |
+| [D-134](decisoes/D-134-r55-q3-luk-somente-status-com-chance.md) | 3A | LUK modifica apenas efeitos cuja ficha declare chance de aplicação; efeitos garantidos continuam garantidos. |
+| [D-135](decisoes/D-135-r55-q5-seis-atributos-no-teto-sem-distribuicao.md) | 5A | Dispensar excepcionalmente a distribuição quando todos os atributos estiverem no limite. |
+
+### 35.2 Compatibilidade e limites concretos
+
+1. **Variação D-121/D-132:** sortear **uma única vez por indivíduo e persistir** modificadores de **até ±3 pontos por atributo-base**, agora para os seis atributos oficiais STR, MAG, VIT, SPI, AGI, LUK. A faixa final **1–100 (D-129)** permanece; escolha de *clamp* ou novo sorteio nos limites e distribuição de probabilidade não foram aprovadas.
+2. **AGI D-018/D-117/D-119/D-126/D-133:** primeiro reduzir **o tempo próprio da ficha de cada Move** pela AGI do Pokémon e pelos efeitos que a aumentam; depois aplicar o ajuste posicional **−0,10 s × (passo do atacante + passo do alvo)** da D-018; finalmente respeitar mínimo **0,25 s**. A curva quantitativa de AGI **não foi definida**; o valor de referência ATB e a calibração continuam pendentes.
+3. **LUK D-012/D-127/D-134:** LUK pode modificar **apenas efeitos de status com chance explicitamente declarada** na ficha. Efeitos garantidos continuam com aplicação garantida, sem nova rolagem por LUK. A decisão **não** elimina a influência de LUK em crítico e esquiva automática; **não** torna debuffs de alvo único esquiváveis.
+4. **Progressão D-129/D-130/D-131/D-135:** a distribuição obrigatória de 1 ponto pelo protagonista ao subir de nível é **dispensada somente quando todos os seis atributos permanentes estão em 100**. O nível continua avançando. Não inventar pontos compensatórios, conversão ou armazenamento dos pontos dispensados; o crescimento automático de aliados permanece conforme decisões anteriores.
+5. **Separação defensiva D-130/D-131 mantida:** VIT para mitigação física e HP máximo; SPI para mitigação mágica. A questão 4 da rodada anterior foi respondida por decisão própria e não recebeu documento repetido nesta rodada.
+
+### 35.3 Diferenças em relação ao código verificado
+
+- `scripts/combat/battle.gd` calcula duração de trajeto considerando tempo-base e passos (`TRAVEL_PER_STEP = 0.10`, `TRAVEL_MIN = 0.25`), **sem primeiro aplicar AGI** como D-133 exige.
+- `scripts/data/skill.gd` ainda não declara explicitamente um campo de tempo de deslocamento próprio de cada Move, nem chance de aplicação por efeito; essas especificações continuam requisitos não implementados.
+- `scripts/combat/combatant.gd` ainda não contém os seis atributos permanentes, suas variações individuais persistentes nem a lógica de progressão do protagonista.
+- Crítico e esquiva automática ainda usam probabilidades fixas no código de combate (D-127 e D-134 são decisões de design não implementadas).
+
+### 35.4 Decisões ainda pendentes, sem extrapolação
+
+- Formato da distribuição de probabilidade para ±3 e como preservar 1–100 quando o sorteio excederia o teto/piso; momento exato da geração do indivíduo.
+- Fórmula da redução do tempo do Move por AGI, valores de referência, arredondamento e interação detalhada com buffs; a **ordem** foi fixada nesta rodada.
+- Probabilidade-base dos efeitos de status não garantidos, contribuição de LUK e definição das fichas de Moves.
+- Tratamento de ganhos automáticos que ultrapassam 100 em aliados, além do caso especial de pontos do protagonista.
+
+### 35.5 Escopo
+
+Quatro decisões novas (D-132 a D-135), cinco notas aditivas aos documentos antigos (D-121, D-119, D-126, D-127 e D-129), índice e consolidado atualizados. **Sem edição de código, testes, VFX, fichas ou assets.**
