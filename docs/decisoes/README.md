@@ -87,3 +87,13 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-079](D-079-r43-q8-lancamento-fatal-oposto-atacante.md) | Combate / R43 | R43-Q8 (8A): Lançamento fatal afastando do atacante | Recomendação aceita por delegação; implementação não declarada |
 | [D-080](D-080-r43-q9-desaparecimento-particulas.md) | Combate / R43 | R43-Q9 (9C): Desaparecimento fatal com partículas e fumaça | Recomendação aceita por delegação; implementação não declarada |
 | [D-081](D-081-r43-q10-resultado-apos-fatal.md) | Combate / R43 | R43-Q10 (10A): Resultado exibido somente após sequência fatal completa | Recomendação aceita por delegação; implementação não declarada |
+| [D-082](D-082-r44-q1-credito-estorno-excedente.md) | Combate / R44 | R44-Q1 (1A): Crédito de restituição quando o medidor está cheio | Recomendação aceita por delegação; implementação não declarada |
+| [D-083](D-083-r44-q2-janela-aoe-primeiro-falha.md) | Combate / R44 | R44-Q2 (2A): Janela de AoE preservada quando o primeiro impacto falha | Recomendação aceita por delegação; implementação não declarada |
+| [D-084](D-084-r44-q3-onda-recalculo-primeiro-impacto.md) | Combate / R44 | R44-Q3 (3A): Recalcular previsão do primeiro impacto com alvos móveis | Recomendação aceita por delegação; implementação não declarada |
+| [D-085](D-085-r44-q4-onda-sem-alvos-vivos.md) | Combate / R44 | R44-Q4 (4B): Onda continua visualmente se todos os alvos morrerem | Recomendação aceita por delegação; implementação não declarada |
+| [D-086](D-086-r44-q5-burst-evade-onda.md) | Combate / R44 | R44-Q5 (5B): Burst por qualquer Evade bem-sucedido em onda AoE | Recomendação aceita por delegação; implementação não declarada |
+| [D-087](D-087-r44-q6-duracao-fatal-global.md) | Combate / R44 | R44-Q6 (6A): Duração global configurável do lançamento fatal | Recomendação aceita por delegação; implementação não declarada |
+| [D-088](D-088-r44-q7-arco-fatal-cinematografico.md) | Combate / R44 | R44-Q7 (7A): Trajetória fatal em arco aéreo exagerado | Recomendação aceita por delegação; implementação não declarada |
+| [D-089](D-089-r44-q8-colisao-fatal-obstaculos.md) | Combate / R44 | R44-Q8 (8A): Colisão fatal interrompe o voo e causa queda | Recomendação aceita por delegação; implementação não declarada |
+| [D-090](D-090-r44-q9-resultado-apos-multiplos-fatais.md) | Combate / R44 | R44-Q9 (9A): Resultado aguarda todas as sequências fatais de um AoE | Recomendação aceita por delegação; implementação não declarada |
+| [D-091](D-091-r44-q10-ko-simultaneo-empate.md) | Combate / R44 | R44-Q10 (10B): KO simultâneo de equipes encerra em empate sem vencedor | Recomendação aceita por delegação; implementação não declarada |

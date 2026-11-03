@@ -467,3 +467,45 @@ As dez decisões estão registradas como **especificação de design**, não com
 ### 19.4 Estado documental
 
 Essas escolhas foram aceitas **por delegação às recomendações** e estão registradas como requisitos. Nenhum código de combate, VFX, testes ou arquivo prévio foi modificado nesta rodada, além da inclusão dos dez registros e da atualização do índice/consolidado.
+
+---
+
+## 20. Rodada 44 — recomendações do assistente aceitas pelo criador
+
+> **Data: 2026-11-03.** Resposta literal do usuário: **“Sigo suas recomendações e já faça as próximas perguntas na próxima mensagem também”**. As escolhas R44-Q1 a Q10 foram **recomendadas pelo assistente e aceitas por delegação**, não escritas individualmente pelo usuário. Foram registradas nos documentos D-082 a D-091. Mantidas as regras e o histórico das Rodadas 39–43. Esta seção não afirma implementação no jogo.
+
+### 20.1 Matriz das dez decisões
+
+| Decisão | Escolha recomendada | Regra |
+|---|---|---|
+| [R44-Q1](decisoes/D-082-r44-q1-credito-estorno-excedente.md) | 1A | Se a restituição integral de Burst ou ATB decorrente do cancelamento de um contra-ataque extra exceder o limite normal do medidor (5), guardar a parcela excedente como **crédito separado daquele recurso**, sem elevar o valor mostrado da barra acima do limite. O crédito é **consumido antes do recurso normal correspondente** no pagamento de ações. Não descartar o excedente. |
+| [R44-Q2](decisoes/D-083-r44-q2-janela-aoe-primeiro-falha.md) | 2A | Se o primeiro impacto previsto de uma onda AoE não chegar a ocorrer, por exemplo devido à morte daquele alvo, a **única janela perfeita compartilhada** continua ligada ao **instante de impacto originalmente previsto**; a morte não desloca o marco temporal para outro alvo. Preservar 0,22 s de duração e ausência de dano/reação em alvos mortos. |
+| [R44-Q3](decisoes/D-084-r44-q3-onda-recalculo-primeiro-impacto.md) | 3A | Enquanto os alvos da onda AoE mudam de posição, recalcular continuamente a **previsão do primeiro impacto** para temporizar o Evade perfeito, respeitando posições atuais, velocidade espacial constante e **uma única janela compartilhada** de 0,22 s para toda a onda. Não criar janelas independentes por alvo. |
+| [R44-Q4](decisoes/D-085-r44-q4-onda-sem-alvos-vivos.md) | 4B | Mesmo que todos os alvos participantes de uma onda AoE morram antes de serem alcançados, a **propagação visual da onda continua até completar sua sequência**. Não aplicar dano adicional, nova reação ou redirecionamento para substitutos. |
+| [R44-Q5](decisoes/D-086-r44-q5-burst-evade-onda.md) | 5B | Cada personagem que tiver **Evade bem-sucedido** contra uma determinada onda AoE, **comum ou perfeito**, recebe **+1 Burst, uma única vez por onda**, individualmente. Não multiplicar o prêmio por cada impacto de uma mesma onda ou pelo número de alvos. |
+| [R44-Q6](decisoes/D-087-r44-q6-duracao-fatal-global.md) | 6A | A sequência de **lançamento fatal** utiliza uma **duração global configurável**, aplicada igualmente a todos os personagens, preservando a intensidade padronizada entre Moves. A duração é um parâmetro visual compartilhado; não modificar HP, posições lógicas ou condições de derrota por essa decisão. |
+| [R44-Q7](decisoes/D-088-r44-q7-arco-fatal-cinematografico.md) | 7A | O personagem atingido fatalmente segue uma trajetória visual de **arco aéreo exagerado**: sobe, desloca-se para longe de quem o atingiu e cai no chão. Preservar a intensidade e a duração compartilhadas; inimigos posteriormente desaparecem, enquanto aliados permanecem no chão. |
+| [R44-Q8](decisoes/D-089-r44-q8-colisao-fatal-obstaculos.md) | 8A | Se o personagem visualmente lançado por hit fatal atingir uma **parede ou obstáculo durante o voo**, **interromper o deslocamento aéreo na colisão e fazê-lo cair naquele local**. Preservar a sequência final: desaparecimento do inimigo após a queda ou permanência do aliado. |
+| [R44-Q9](decisoes/D-090-r44-q9-resultado-apos-multiplos-fatais.md) | 9A | Se o mesmo AoE derrotar vários personagens e a batalha terminar, **aguardar a conclusão de todas as sequências visuais fatais relevantes antes de exibir a tela de resultado**. Inimigos terminam após o desaparecimento com partículas e fumaça; aliados, após a queda, sem desaparecer. |
+| [R44-Q10](decisoes/D-091-r44-q10-ko-simultaneo-empate.md) | 10B | Se um mesmo AoE causar a derrota simultânea de **todas as unidades das duas equipes**, o resultado é **empate, sem vencedor**, com a batalha encerrada. Não estabelecer reinício automático ou um critério de desempate não aprovado. A tela de resultado aguarda as sequências fatais concluírem, conforme D-090. |
+
+### 20.2 Compatibilidade com regras anteriores
+
+1. **Ressarcimento e limite — D-082:** a restituição integral exigida por D-072 a D-074 preserva o limite visível de 5; eventuais excessos viram **créditos separados**, consumidos antes do recurso normal correspondente. A prioridade de Burst sobre ATB continua sendo D-063. A duração e a prioridade cruzada dos créditos ainda não foram decididas.
+2. **Janela perfeita AoE — D-083 e D-084:** se o primeiro impacto previsto deixar de ocorrer por morte do alvo, preservar o marco anteriormente previsto. Quando os alvos se movimentarem, recalcular continuamente a previsão do primeiro impacto, mantendo uma **única janela perfeita** de 0,22 s. Há casos-limite temporais ainda abertos quando a previsão muda durante/depois da janela, ou o alvo morre após um recálculo; nenhuma segunda janela foi autorizada.
+3. **AoE sem alvos e recompensa — D-085 e D-086:** se todos os alvos morrerem antes de a onda chegar, ela completa o seu efeito **visual**, sem aplicar novos hits ou reações. Cada personagem que executar Evade comum ou perfeito bem-sucedido contra uma onda recebe **+1 Burst, uma vez por onda**. Isso não concede invulnerabilidade adicional contra outros Moves.
+4. **Lançamento fatal — D-087 a D-089:** duração global configurável; arco aéreo exagerado com subida, deslocamento para longe do atacante e queda. Colisão contra obstáculo interrompe o voo e causa queda no ponto de contato visual. Inimigos continuam desaparecendo após cair; aliados permanecem visíveis. Nenhum dano ou mudança de posição lógica foi introduzido.
+5. **Resultados — D-090 e D-091:** se AoE derrubar vários personagens e encerrar a batalha, esperar todas as animações fatais terminarem para mostrar o resultado. Se **ambas as equipes** forem eliminadas simultaneamente por um AoE, declarar **empate sem vencedor**, encerrando a batalha; nenhuma repetição automática foi aprovada.
+
+### 20.3 Pendências remanescentes, sem aprovação implícita
+
+- **Créditos de estorno:** duração e persistência entre batalhas, prioridade relativa de créditos de Burst/ATB e apresentação na HUD.
+- **Janela única de Evade perfeito:** como proceder quando a previsão do primeiro impacto muda enquanto os 0,22 s estão correndo ou após o fim da janela, respeitando a impossibilidade de uma segunda janela.
+- **Primeiro alvo morto após movimento:** definir qual previsão fica congelada para D-083 após os recálculos de D-084, evitando escolher silenciosamente um marco de tempo.
+- **Movimentos cinematográficos:** valor da duração global, altura/distância do arco e efeitos físicos/cosméticos de colisões precisam de especificação. Nenhum movimento lógico permanente foi aprovado.
+- **Empate e término:** recompensas/progressão após empate ou AOEs com resultados múltiplos que não eliminem as duas equipes não receberam regras novas além das já documentadas.
+- **Moves AoE:** geometria e velocidade numéricas continuam a ser definidas individualmente por Move (D-077/D-078).
+
+### 20.4 Estado
+
+As dez regras acima são **decisões documentais** aceitas por delegação. Nenhum código, arte, VFX, parâmetro de Move ou teste do jogo foi alterado durante esta rodada.
