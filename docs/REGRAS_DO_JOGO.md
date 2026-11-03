@@ -759,3 +759,34 @@ Novo documento **D-109**, índice e consolidado atualizados. **Nenhum arquivo de
 ### 28.4 Estado
 
 **Dois documentos novos, índice e regras consolidadas atualizados.** Nenhum arquivo de código, configuração, teste, animação ou VFX foi modificado. As próximas perguntas requerem aprovação separada.
+
+---
+
+## 29. Rodada 52 — IA tática e retorno quando o alvo morre durante investida
+
+> **2026-11-03.** Duas decisões expressas **1C** e **2C**, documentadas em D-112 e D-113. O código foi consultado para verificar fases e escolha atual de habilidades, mas não alterado.
+
+### 29.1 Decisões
+
+| Referência | Alternativa | Regra |
+|---|---|---|
+| [R52-Q1](decisoes/D-112-r52-q1-escolha-tatica-de-moves-ia.md) | 1C | A IA escolhe o **Move** com avaliação **tática** de dano, fraqueza elemental, efeitos e situação do combate. A **seleção do alvo permanece aleatória**, respeitando engajamento, conforme D-111. |
+| [R52-Q2](decisoes/D-113-r52-q2-interromper-investida-alvo-morto.md) | 2C | Se o alvo de uma investida corpo a corpo **morrer durante o trajeto**, interromper essa investida e **retornar imediatamente à posição de origem**, sem redirecionar. |
+
+### 29.2 Regras coexistentes e distinção de fases
+
+- **IA (D-021, D-111, D-112):** tanto aliados quanto inimigos seguem as Tactics. `_run_ai()` e `_pick_skill()` em `scripts/combat/battle.gd` mostram que o código atual escolhe o primeiro alvo vivo, exceto engajamento, e percorre Skills pagáveis em sequência. As decisões D-111/D-112 especificam o comportamento futuro — **alvo aleatório** e **Move tático**, respectivamente — mas não foram implementadas.
+- **Morte no wind-up (D-108):** se houver outros inimigos vivos, redirecionar o ataque ao inimigo vivo mais próximo antes do começo da investida.
+- **Morte durante investida (D-113):** interromper a investida corpo a corpo e retornar imediatamente à origem, sem escolher outro alvo nessa fase. O motor já representa as fases WINDUP, TRAVEL, STRIKE e RETURN (D-019).
+- **Finais de batalha (D-105/D-107):** vitória e derrota são fixadas quando a última unidade adversária ou aliada morre; não criar impacto tardio que modifique resultado.
+
+### 29.3 Questões não definidas
+
+- **IA:** não foram aprovados pesos matemáticos ou prioridade rígida entre dano, fraqueza e buffs/debuffs. A exigência tática não permite inferir fórmulas.
+- **Retorno à origem:** a decisão não especifica se o retorno é visualmente instantâneo ou se inicia imediatamente uma animação, nem define duração ou efeito.
+- **Morte durante STRIKE:** a resposta cobre apenas o trajeto da investida, não o momento depois que a investida termina e antes de acertar.
+- Todas as outras decisões permanecem válidas, salvo exceções expressas das rodadas anteriores.
+
+### 29.4 Escopo
+
+**D-112 e D-113 criados; três documentos anteriores receberam notas aditivas; índice e consolidado atualizados. Nenhum código, teste, VFX ou configuração de gameplay foi modificado.**

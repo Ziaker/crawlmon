@@ -20,3 +20,6 @@
 - Os critérios geométricos detalhados de proximidade não foram especificados além de 'inimigo vivo mais próximo'.
 - Somente documentação; não alterou código, FX, dados nem testes.
 
+## Complemento posterior — Rodada 52
+
+**D-113 (R52):** a troca automática de alvo se restringe ao **wind-up**. Após iniciar a investida corpo a corpo, se o alvo morrer, interromper a investida e retornar imediatamente à origem, sem troca de alvo para este golpe.

@@ -32,3 +32,7 @@
 ## Complemento posterior — Rodada 49
 
 D-107/D-108: a derrota da última unidade aliada também é definitiva, sem dano posterior de projéteis. Se ainda existem outros inimigos e o alvo morre durante wind-up, o jogo retargeta automaticamente para o inimigo vivo mais próximo (D-108). Nenhuma mudança adicional de custo, duração ou escolha manual foi aprovada.
+
+## Complemento posterior — Rodada 52
+
+**D-113 (R52):** enquanto o alvo morre no **wind-up**, continua a regra D-108 de troca para inimigo vivo mais próximo; se morrer quando o atacante **já está em investida corpo a corpo**, interrompe-se a investida e o personagem retorna imediatamente à posição de origem, sem redirecionamento.

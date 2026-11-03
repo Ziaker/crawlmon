@@ -117,3 +117,5 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-109](D-109-r50-q1-projetil-alvo-morto-em-voo.md) | Combate / R50 | R50-Q1 (1A): projétil de alvo único termina sem dano se o alvo morrer durante o voo | Decisão expressa; R50-Q2 não definiu regra nova; implementação não declarada |
 | [D-110](D-110-r51-q1-manter-interceptacao-personagens.md) | Combate / R51 | R51-Q1 (1A): manter a interceptação existente de projéteis por personagens | Decisão expressa; sem implementação nova |
 | [D-111](D-111-r51-q2-alvo-aleatorio-ia.md) | Combate / IA / R51 | R51-Q2 (2C): IA escolhe adversário vivo aleatoriamente, respeitando engajamento | Decisão expressa; implementação não declarada |
+| [D-112](D-112-r52-q1-escolha-tatica-de-moves-ia.md) | Combate / IA / R52 | R52-Q1 (1C): escolha tática de Move, sem alterar alvo aleatório | Decisão expressa; implementação não declarada |
+| [D-113](D-113-r52-q2-interromper-investida-alvo-morto.md) | Combate / R52 | R52-Q2 (2C): alvo morre na investida; retorno imediato à origem | Decisão expressa; implementação não declarada |

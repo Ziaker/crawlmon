@@ -21,3 +21,7 @@
 - O criador não definiu uma política de pesos ou probabilidades diferentes entre alvos vivos; não impor preferência por HP baixo, proximidade, fraqueza ou outra avaliação estratégica não solicitada.
 - Não altera a política de escolha de Moves (`_pick_skill()`), de cura (`AI_HEAL_BELOW`), de passo tático ou de contra-ataque, que obedecem às decisões próprias.
 - **Escopo:** registro documental somente. Nenhum código, testes, VFX ou dados modificados.
+
+## Complemento posterior — Rodada 52
+
+**D-112 (R52):** selecionar aleatoriamente o **alvo vivo** respeitando engajamento continua válido (D-111). A seleção de **qual Move usar** passa a ser tática, considerando dano, fraqueza, efeitos e situação do combate. Não confundir alvo com Move.
