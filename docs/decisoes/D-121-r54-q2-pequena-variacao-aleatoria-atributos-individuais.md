@@ -17,6 +17,6 @@
 
 ## Referências, pendências e limitação
 
-- **Referências:** Q10/D-128? não usar; progressão GDD R10–R17.
+- **Referências:** D-129 (limite permanente 1–100); GDD R10–R17 (progressão, Natures e crescimento).
 - **Ainda não definido:** Amplitude considerada pequena, distribuição estatística, momento do sorteio, persistência, arredondamento e eventual relação com a Nature.
 - **Sem implementação:** não alterar nem presumir alteração de código, recursos, dados de personagens ou testes.
