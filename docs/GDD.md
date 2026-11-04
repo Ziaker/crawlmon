@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.43 — Rodada 72 registrada em adendo rastreável (2026-11-04); histórico preservado.  
+> **Revisão:** 1.44 — Rodada 73 registrada em adendo rastreável (2026-11-04); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1722,6 +1722,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.43 | 2026-11-04 | Rodada 72: método de K por atributo de referência e mitigação-alvo com aprovação futura; retorno do mesmo combatente conserva ID; uma tentativa por status distinto, alvo e execução; interrupção após acertos válidos usa último impacto efetivamente executado para resolver status elegível. D-208–D-211. | Rodada 72 fechada / Rodada 73 proposta |
 
+| 1.44 | 2026-11-04 | Rodada 73: levantamento rastreável de VIT/SPI nível 50 para proposta posterior; ordem de tentativas de status conforme ficha do Move; desempate de retarget simultâneo do mesmo atacante por ordem declarativa e índice estável; prioridade explícita para status declarados incompatíveis. D-212–D-215. | Rodada 73 fechada / Rodada 74 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2000,4 +2002,19 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos não normativos:** um `x_ref=50` e `R_alvo=25%` hipotéticos implicariam `K=150` pela curva racional, **sem aprovar nenhum desses números**; o mesmo Gible de ID 2 volta à mesma batalha com ID 2, enquanto um participante verdadeiramente novo recebe próximo ID nunca usado; Poison e Paralysis hipotéticos, ambos condicionados a acerto válido, podem receber **cada um** uma tentativa por alvo sobrevivente; um Move interrompido após dois dos três impactos planejados pode realizar a tentativa de status elegível após o **último impacto efetivamente executado**, não após um terceiro inexistente.
 
 **Preservação:** manter D-202/D-207 quanto ao teto e à ordem por alvo na execução normal; D-199 quanto à exigência de sobrevivência e dano antes de status; D-134/D-146/D-156 quanto à LUK; D-200/D-206 quanto aos IDs; D-203 quanto a **descartar completamente o odômetro no jogo principal**, sem removê-lo do código nesta atividade. Permanecem pendentes: números e validação para K, entrada/retorno como mecânica, ordem de status distintos e incompatibilidades, simultaneidade de impactos; a divergência de LUK **R60-Q2/Q3** da nota §12.13 permanece **sem resolução**. **Nenhum código, teste, asset, Move, VFX ou cena alterado; nenhum teste de gameplay executado.**
+
+### 12.19 Rodada 73 — VIT/SPI verificáveis, ordem de status, retarget do mesmo atacante e prioridades (revisão 1.44)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Decisões individuais **D-212 a D-215**, consolidadas em **§54 de `docs/REGRAS_DO_JOGO.md`**. Seção aditiva e estritamente documental; D-001 preserva que o GDD não é fonte normativa para combate.
+
+| Pergunta | Escolha | Regra aprovada | Registro |
+|---|---|---|---|
+| R73-Q1 | **1A** | Levantar **valores reais e verificáveis de VIT e SPI no nível 50** para propor um atributo de referência sujeito à **aprovação posterior**; nenhum valor ou amostra foi aprovado/levantado nesta rodada | [D-212](decisoes/D-212-r73-q1-levantar-vit-spi-reais-verificaveis-nivel50.md) |
+| R73-Q2 | **2A** | Resolver tentativas de status distintos **na ordem explicitamente declarada na ficha do Move**, preservando uma tentativa por efeito distinto, por alvo e execução | [D-213](decisoes/D-213-r73-q2-status-ordem-declarada-ficha-move.md) |
+| R73-Q3 | **3A** | Se eventos simultâneos de retarget tiverem **o mesmo atacante**, desempatar pela **ordem estável de declaração dos eventos** e por **índice estável da ocorrência da mesma declaração** | [D-214](decisoes/D-214-r73-q3-retarget-mesmo-atacante-ordem-declaracao-indice.md) |
+| R73-Q4 | **4A** | Quando **dois status forem expressamente declarados incompatíveis**, resolver precedência usando **prioridade explicitada na ficha do Move**, sem inventar incompatibilidades concretas | [D-215](decisoes/D-215-r73-q4-prioridade-ficha-para-status-incompativeis.md) |
+
+**Exemplos apenas ilustrativos:** atributos hipotéticos de nível 50 precisam de fontes verificadas antes de qualquer proposta e não são aqui apresentados como números reais; ordem declarada `Poison` depois `Paralysis` gera tentativas nessa sequência quando ambas elegíveis, sem mudar chances; eventos de retarget `A#1`, `A#2` e `B` do mesmo atacante seguem declaração/índice estáveis, sem trocar sorteio por preferência de alvo; prioridade `Efeito A > Efeito B` só valeria quando uma ficha futura declarasse **ambos incompatíveis**. Nenhum status real foi classificado como incompatível.
+
+**Preservações e pendências:** D-201/D-204/D-208 exigem K compartilhado positivo **ainda sem valor numérico**, com referência de atributo e percentual-alvo dependentes de aprovação; D-210/D-211 mantêm limites de tentativas e resolução após impacto efetivo em interrupções; D-188/D-192 mantêm as demais ordenações de RNG, D-095 mantém empate por KO simultâneo; D-203 mantém odômetro fora do jogo principal. A divergência das escalas de LUK da reapresentação da Rodada 60 (§12.13) continua em aberto. Não se aprovam hierarquia universal de status, política de fichas omissas, algoritmo de PRNG ou dados de espécie faltantes. **Somente documentação:** nenhum código, teste, Move, ficha, asset, cena ou VFX alterado; nenhuma bateria de testes ou coleta quantitativa de VIT/SPI executada.
 

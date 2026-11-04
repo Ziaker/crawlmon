@@ -254,6 +254,11 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-210](D-210-r72-q3-uma-tentativa-por-status-distinto-alvo-execucao.md) | Combate / R72 | Q3A: permitir no máximo uma tentativa por status distinto declarado na ficha, por alvo e execução | Aprovada; sem novas probabilidades; não implementada |
 | [D-211](D-211-r72-q4-status-apos-ultimo-impacto-efetivo-se-interrompido.md) | Combate / R72 | Q4A: se Move for interrompido após acertos válidos, usar último impacto efetivamente realizado por alvo para status elegível se sobreviver | Aprovada; não implementada |
 
+| [D-212](D-212-r73-q1-levantar-vit-spi-reais-verificaveis-nivel50.md) | Atributos / R73 | Q1A: levantar valores reais e verificáveis de VIT/SPI no nível 50 para propor referência sujeita à aprovação posterior | Aprovada; dados e referência numérica ainda pendentes |
+| [D-213](D-213-r73-q2-status-ordem-declarada-ficha-move.md) | Combate / R73 | Q2A: resolver tentativas de status distintos na ordem expressamente declarada na ficha do Move | Aprovada; não implementada |
+| [D-214](D-214-r73-q3-retarget-mesmo-atacante-ordem-declaracao-indice.md) | Combate / R73 | Q3A: desempatar retarget simultâneo do mesmo atacante por ordem estável de declaração e índice estável por ocorrência | Aprovada; não implementada |
+| [D-215](D-215-r73-q4-prioridade-ficha-para-status-incompativeis.md) | Combate / R73 | Q4A: usar prioridade expressa na ficha do Move para status declarados incompatíveis; sem criar incompatibilidades | Aprovada; não implementada |
+
 > **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.
 
 > **Histórico/precedência R70:** o arquivo [D-048 de HP rolante](D-048-rolling-hp-mother3-odometro.md) registra um **teste/protótipo histórico**, não uma regra vigente do jogo principal após [D-203](D-203-r70-q4d-odometro-descartado-jogo-principal.md). **Não confundir** com o outro arquivo [D-048 de recompensas AoE](D-048-r40-q8-atb-aoe-unico.md), que não foi revogado.

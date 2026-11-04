@@ -1670,3 +1670,33 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Divergência histórica R60 mantida:** reapresentação R60-Q2/Q3 vs D-150/D-152/D-153 no GDD §12.13 permanece sem decisão de precedência; as novas decisões não modificam a fórmula de LUK. O arredondamento final único e meio para cima permanecem conforme D-198/D-205.
 - **Escopo desta publicação:** quatro registros individuais, índice, este consolidado e adendo no GDD. Nenhum código, teste, Move, cena, asset ou VFX modificado; nenhum teste de gameplay executado.
 
+---
+
+## 54. Rodada 73 — referência verificável VIT/SPI, ordem de status, RNG simultâneo e incompatibilidades
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Registros individuais **D-212 a D-215**. Acréscimo documental, sem implementação nem reescrita do histórico das Rodadas 39–72.
+
+### 54.1 Decisões aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-212](decisoes/D-212-r73-q1-levantar-vit-spi-reais-verificaveis-nivel50.md) | **1A** | **Levantar VIT e SPI reais e verificáveis no nível 50** para fundamentar uma proposta de atributo defensivo de referência, **sujeita à aprovação posterior** |
+| [D-213](decisoes/D-213-r73-q2-status-ordem-declarada-ficha-move.md) | **2A** | Resolver as **tentativas de status distintos pela ordem explicitamente declarada na ficha do Move**, mantendo limites individuais |
+| [D-214](decisoes/D-214-r73-q3-retarget-mesmo-atacante-ordem-declaracao-indice.md) | **3A** | Desempatar eventos **simultâneos de retarget do mesmo atacante** pela **ordem estável de declaração**, depois **índice estável das ocorrências da mesma declaração** |
+| [D-215](decisoes/D-215-r73-q4-prioridade-ficha-para-status-incompativeis.md) | **4A** | **Somente quando dois status forem declarados incompatíveis**, usar **prioridade expressamente indicada na ficha do Move**; não criar incompatibilidades |
+
+### 54.2 Compatibilidades e exemplos estritamente ilustrativos
+
+- **D-212 / VIT-SPI nível 50:** dados precisam ser **reais, verificáveis e rastreáveis para o Crawlmon**, sem confundir valores de outros jogos com atributos oficiais daqui. A D-120 preserva referência biológica ajustada ao balanceamento próprio; a D-139 preserva ausência de teto superior. Esta rodada **não levantou estatísticas, não calculou medianas e não aprovou valores de VIT/SPI**. A D-208 exige aprovação posterior tanto do **atributo defensivo de referência** quanto da **mitigação percentual-alvo**, seguida da validação do K. A D-183 trata de AGI-base e **não aprova fórmula automática de VIT/SPI**.
+- **D-213 / ordem de status:** ficha hipotética com `Poison` declarado antes de `Paralysis` → tentativas de Poison antes das de Paralysis, quando elegíveis; **não** determina chances nem torna ambos garantidos. D-210 mantém **até uma tentativa por efeito distinto, alvo e execução**, D-202/D-207/D-211 mantêm condições de impacto/sobrevivência e interrupção. **Ordem de tentativas não é prioridade de incompatibilidade**.
+- **D-214 / mesmo atacante:** eventos fictícios `A#1`, `A#2` e `B`, todos simultâneos do atacante ID 2, seriam processados pela **ordem estável de declaração** e por **índice da ocorrência** em empates dessa declaração, antes dos consumos de RNG realmente necessários. **D-192 continua ordenando primeiro pelo ID do atacante**, D-188 ordena candidatos de cada evento, D-189 evita consumir RNG sem empate elegível, e D-095 mantém empate quando equipes morrem no mesmo instante lógico. Esta escolha não introduz preferência determinística por alvo.
+- **D-215 / incompatibilidade expressa:** se uma ficha hipotética **declarar** Efeito A e Efeito B incompatíveis e prioridade A sobre B, essa prioridade prevalece na incompatibilidade quando aplicável. **Nenhum par real de status é declarado incompatível por esta escolha**. A sequência de tentativas da ficha (D-213) e as chances previstas dos efeitos (D-134/D-146/D-156) continuam distintas da precedência em caso de conflito.
+
+### 54.3 Pendências, conflitos preservados e estado do projeto
+
+- **Dados de atributos e calibração:** levantar e verificar VIT/SPI no nível 50; definir critério de amostragem/proposta; apresentar para aprovação atributo de referência e mitigação-alvo; somente depois calcular e validar **K único compartilhado** (D-201/D-204/D-208). Não inventar fórmula, valor numérico ou espécie.
+- **Status:** não há regra nova para ficha sem ordem expressa, incompatibilidade sem prioridade, status já ativo, efeito de menor prioridade ou status de Moves distintos. **Não presumir quais status são incompatíveis.**
+- **RNG:** representação/atribuição técnica de índice estável, persistência para replay e granularidade exata de eventos simultâneos permanecem em aberto, sem alterar algoritmos de sorteio ou política de KO.
+- **Histórico:** a divergência textual da reapresentação R60-Q2/Q3 frente a D-150/D-152/D-153 permanece pendente (GDD §12.13); não escolher escala de LUK. D-203 mantém odômetro de HP **excluído do jogo principal**, sem remover código legado. D-198/D-205 mantêm arredondamento único final. A `main` inspecionada continua com código pré-VIT/SPI e sem esses requisitos implementados.
+- **Escopo:** quatro D individuais, índice, este consolidado e adendo do GDD. Nenhum código, ficha de Move, teste, cena, asset ou VFX alterado; nenhum teste de gameplay ou levantamento quantitativo de VIT/SPI realizado.
+
