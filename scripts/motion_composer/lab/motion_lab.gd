@@ -53,7 +53,9 @@ func _ready() -> void:
 	_parse_args()
 	_build_world()
 	_build_ui()
-	if not _load_startup_preset():
+	if _arg_text("--demo=") == "receita":
+		_recipe_composition()
+	elif not _load_startup_preset():
 		_default_composition()
 	_refresh_layers()
 	_refresh_presets()
@@ -69,6 +71,13 @@ func _parse_args() -> void:
 			_capture_path = a.substr(10)
 		elif a.begins_with("--frames="):
 			_capture_frames = int(a.substr(9))
+
+
+func _arg_text(prefix: String) -> String:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with(prefix):
+			return a.substr(prefix.length())
+	return ""
 
 
 func _arg_float(prefix: String, fallback: float) -> float:
@@ -105,6 +114,40 @@ func _default_composition() -> void:
 	trail.params = {"duration": 0.6}
 	c.add_layer(trail)
 	_selected = &"helice"
+
+
+## Receita de teste da §6 (sem M19, que é a Etapa 4): compressão → crescimento → zigue-zague + torção →
+## bifurcação em 3 → serpentina + turbulência → recombinação → onda radial + explosão → dissolução.
+## Não é um Move do Crawlmon; janelas em segundos por defasagem de camada (ciclo de 3 s).
+func _recipe_composition() -> void:
+	var c := session.composition
+	c.sample_count = 96
+	c.seed = 2026
+	var specs := [
+		[&"compressao", &"M11", MotionTypes.Op.DEFORM, {"strength": 0.8, "center": 0.5, "extent": 0.5, "softness": 0.2}, 0.0],
+		[&"crescimento", &"M17", MotionTypes.Op.MULTIPLY_ATTRIBUTE, {"t_duration": 0.45, "width": 0.1}, 0.0],
+		[&"zigzag", &"M02", MotionTypes.Op.OFFSET, {"amplitude": 0.06, "frequency": 6.0}, 0.45],
+		[&"torcao", &"M08", MotionTypes.Op.DEFORM, {"amount_deg": 120.0}, 0.45],
+		[&"bifurcacao", &"M14", MotionTypes.Op.BRANCH, {"branches": 3, "split_u": 0.3, "angle_deg": 35.0, "distance": 0.4}, 1.05],
+		[&"serpentina", &"M03", MotionTypes.Op.OFFSET, {"amplitude": 0.03, "wavelength": 0.3}, 1.5],
+		[&"turbulencia", &"M07", MotionTypes.Op.OFFSET, {"intensity": 0.02}, 1.5],
+		[&"recombinacao", &"M15", MotionTypes.Op.MERGE, {"merge_start": 0.6, "merge_end": 0.9, "t_duration": 0.3}, 1.95],
+		[&"onda", &"M13", MotionTypes.Op.OFFSET, {"speed": 1.5, "amplitude": 0.05}, 2.25],
+		[&"explosao", &"M16", MotionTypes.Op.OFFSET, {"distance": 0.3, "t_duration": 0.3}, 2.25],
+		[&"dissolucao", &"M18", MotionTypes.Op.MULTIPLY_ATTRIBUTE, {"t_duration": 0.45}, 2.55],
+	]
+	for sp in specs:
+		var l := MotionLayer.new()
+		l.id = sp[0]
+		l.behavior_id = sp[1]
+		l.op = sp[2]
+		l.params = sp[3]
+		l.time_offset = sp[4]
+		c.add_layer(l)
+	_selected = &"bifurcacao"
+	_target = Vector3(0.0, 0.0, 0.5)
+	_dist = 2.6
+	_apply_camera()
 
 
 # ------------------------------------------------------------------ mundo 3D

@@ -75,6 +75,16 @@ func _run() -> void:
 	s.composition.remove_layer(&"rastro")
 	lab._on_load_preset()
 	ok(s.composition.layer_ids().has(&"rastro") and lab._preset_status.text == "Carregado.", "carregar preset restaura a composição")
+	# cores por ramo distinguíveis (ramos irmãos diferem só no último caractere do caminho)
+	var hues: Array[float] = []
+	for b in ["root/bifurcacao.0", "root/bifurcacao.1", "root/bifurcacao.2"]:
+		hues.append(MotionPointsView.branch_color(b).h)
+	var min_gap := 1.0
+	for i in 3:
+		for j in range(i + 1, 3):
+			var d := absf(hues[i] - hues[j])
+			min_gap = minf(min_gap, minf(d, 1.0 - d))
+	ok(min_gap > 0.08, "ramos irmãos têm matizes bem distintos (menor distância %.3f)" % min_gap)
 	# pelo menos um quadro depois de tudo
 	await process_frame
 	ok(lab.points.shown_count > 0 and not s.last_result.has_errors(), "continua desenhando sem erros após as operações")

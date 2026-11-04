@@ -38,7 +38,14 @@ func _init() -> void:
 static func branch_color(branch: String) -> Color:
 	if branch == "root":
 		return Color(0.86, 0.92, 1.0)
-	return Color.from_hsv(float(branch.hash() & 0xFFFF) / 65535.0, 0.6, 1.0)
+	# Último trecho do caminho = "camada.índice". O índice avança o matiz pelo ângulo áureo (irmãos sempre
+	# bem separados); o nome da camada, embaralhado, dá a base (String.hash() sozinho muda pouco).
+	var last := branch.get_slice("/", branch.get_slice_count("/") - 1)
+	var dot := last.rfind(".")
+	var idx := int(last.substr(dot + 1)) if dot >= 0 else 0
+	var name := last.substr(0, dot) if dot >= 0 else last
+	var hue := fposmod(MotionHash.float01(0, name.hash() & 0xFFFFFFFF) + 0.381966 * float(idx), 1.0)
+	return Color.from_hsv(hue, 0.6, 1.0)
 
 
 func show_samples(samples: Array[MotionSample]) -> void:
