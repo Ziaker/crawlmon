@@ -2118,3 +2118,13 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Conflitos e história preservados:** D-263 M3 agora exige **MP em todo Move exceto Tackle**, prevalecendo na abrangência sobre a D-228, com histórico intacto. **Relação entre MP e Burst pagar ação inteira (D-033/D-063) ainda pendente**. D-235 mantém independência de Moves/VFX por espécie/lado; D-095 conserva KO simultâneo; D-203 mantém odômetro fora do jogo principal. A divergência sobre escala de LUK da Rodada 60 no GDD §12.13 permanece não resolvida.
 - **Escopo:** quatro novos D, índice, consolidado e adendo do GDD. **Nenhum código, teste, Move, ficha operacional, IA, HUD, cena, asset ou VFX modificado e nenhum teste de gameplay executado.**
 
+
+
+## Referência visual de HUD aprovada — 2026-11-04 (D-268)
+
+- **[CONVERSA]** O criador aprovou explicitamente a versão visual do protótipo HTML com “Está perfeito”. O artefato aprovado é `prototypes/crawlmon-hud-buffs-debuffs-aprovado.html`, acompanhado de captura PNG e de `docs/hud/Crawlmon_HUD_Visual_Aprovado_2026-11-04.docx`.
+- **[CONVERSA]** Buffs e debuffs são peças flat com preenchimento colorido, ícones e cortes diagonais, apresentadas junto aos cartões. Os cartões de jogador e aliado permanecem brancos, com HP/ATB. Preservam-se menu em leque e visibilidade do inimigo.
+- **[CONVERSA]** A cor roxa não é a cor-base do cartão do aliado; seu uso futuro adicional não foi definido.
+- **[ESCOPO]** HTML, captura e documentação são **referências de UI**, não implementação do Godot nem mudança de lógica de status/Move. A D-235 continua obrigatória para implementação real independente de personagem/lado/posição.
+- **[PENDENTE]** Overhaul do BattleLog será discutido posteriormente; o comportamento atual permanece sem aprovação de alterações.
+- **[RASTREABILIDADE]** D-268 registra a aprovação visual; decisões de mecânica e implementação continuam nas D-* respectivas.

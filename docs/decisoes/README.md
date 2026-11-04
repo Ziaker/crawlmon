@@ -324,6 +324,7 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-265](D-265-r82-q2-lista-textual-compacta-omissoes-selecao-aberta.md) | Combate / UX / R82 | Q2A: lista textual compacta das omissões detectadas ao tentar confirmar Move; manter seleção aberta e não consumir recursos/ação | Aprovada; não implementada |
 | [D-266](D-266-r82-q3-id-diagnostico-declaracao-sequencia-excedentes.md) | Combate / R82 | Q3A: ID diagnóstico de excedentes separado de índices válidos, derivado da declaração e de sequência determinística de solicitações rejeitadas | Aprovada; mecanismo técnico pendente |
 | [D-267](D-267-r82-q4-elegibilidade-chance-antes-matriz-status.md) | Combate / status / R82 | Q4A: resolver elegibilidade e chance de status primeiro; só após sucesso efetivo consultar matriz aprovada e eliminar perdedor | Aprovada; matriz concreta pendente |
+| [D-268](D-268-hud-visual-buffs-debuffs-aprovado.md) | HUD / visual | Referência aprovada: peças diagonais coloridas para buffs/debuffs, cartões brancos, arena visível; protótipo HTML, PNG e DOCX | Aprovada; jogo não alterado |
 
 > **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.
 
