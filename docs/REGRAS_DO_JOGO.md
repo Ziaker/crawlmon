@@ -2021,3 +2021,34 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Preservações:** D-228–D-230 e D-244–D-249 preservam MP, fichas técnicas e tooltips; D-235 preserva a independência dos Moves/VFX para qualquer personagem/lado; D-095 mantém KO simultâneo; D-203 exclui odômetro no jogo principal. Divergência histórica de LUK da R60 (GDD §12.13) permanece sem conciliação.
 - **Escopo:** quatro D individuais, índice, este consolidado e adendo GDD. **Nenhum código, IA, teste, Move, ficha operacional, cena, asset ou VFX modificado; nenhum teste de gameplay realizado.**
 
+---
+
+## 66. Rodada 81 — uma espécie por observação, validação completa, log estruturado e status perdedor eliminado
+
+> **2026-11-04.** O criador aprovou **1A, 2A, 3A e 4A**, sem observações. Registros individuais **D-254–D-257**, conforme D-061; somente documentação. Preservar D-235 e D-244–D-249 e histórico de decisões anterior.
+
+### 66.1 Regras aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-254](decisoes/D-254-r81-q1-uma-especie-por-observacao-vit-spi-nivel50.md) | **1A** | **Uma observação por espécie** em VIT/SPI no nível 50, com **valores oficiais de referência** e **variações individuais ±3 separadas** |
+| [D-255](decisoes/D-255-r81-q2-identificar-todas-omissoes-de-bloqueio-juntas.md) | **2A** | Para **múltiplas causas de bloqueio já aprovadas**, **indicar todas as omissões detectadas na mesma validação**, sem cobrar ação ou recursos |
+| [D-256](decisoes/D-256-r81-q3-log-estruturado-violacao-plano-identificadores-estaveis.md) | **3A** | **Registro estruturado** da violação do plano com **Move, atacante, declaração, máximo explícito aprovado e ocorrência excedente**, usando IDs estáveis |
+| [D-257](decisoes/D-257-r81-q4-eliminar-status-perdedor-sem-restauracao.md) | **4A** | Sob **prioridade concreta aprovada na matriz**, **eliminar status perdedor**: remover se ativo, impedir aplicação se novo, **nunca restaurar após o status vencedor terminar** |
+
+### 66.2 Compatibilidades e exemplos
+
+- **Distribuição defensiva (D-254):** se uma espécie hipotética tiver dez indivíduos de nível 50 com diferentes variações individuais de ±3 e outra espécie tiver apenas um indivíduo, cada espécie contribui com **uma única observação usando seu valor de referência oficial verificável**, não com dez observações para uma espécie e uma para outra. **Não foi verificado nenhum valor oficial de espécie nesta tarefa.** Preservar D-132 (variações individuais), D-224/D-236 (VIT e SPI e tercis separados), D-240/D-250 (iguais agrupados; igualdade ao limite aprovado na faixa superior) e D-212/D-216/D-220/D-231 (fontes verificadas e aprovações posteriores). K único ainda sem valor (D-208).
+- **Bloqueios de fichas (D-255):** uma ficha hipotética declara dois status incompatíveis **sem prioridade expressa** (D-221) e também omite o **máximo obrigatório de ocorrências condicionais variáveis** (D-238). A **mesma validação** indica **as duas causas** e bloqueia antes de consumir ATB, Burst, MP ou ação. A IA permanece sujeita à filtragem anterior à seleção (D-232/D-251), a Tackle elegível (D-237) e à reavaliação normal quando não houver opção (D-241). **Não há autorização para inventar terceira causa de bloqueio.**
+- **Violação estruturada (D-256):** quando um Move tentar uma ocorrência condicional que exceda o máximo aprovado, registrar de forma **estruturada** o **Move, atacante, declaração, máximo definido e ocorrência rejeitada**, com identificadores estáveis. Preservar D-218/D-222/D-226/D-233 (plano e índices desde a declaração), D-242 (rejeitar excedente e preservar eventos válidos anteriores) e D-252 (continuar eventos futuros válidos). **Não atribuir novo índice válido à solicitação excedente**. O formato do registro não foi escolhido.
+- **Status (D-257):** em par de status **expressamente incompatível e com precedência concretamente aprovada na matriz por pares** (D-239/D-243/D-253), o status **de menor prioridade é eliminado**: remover se ativo, impedir se novo, **sem suspensão ou retorno posterior**. Exemplo abstrato X/Y não define pares reais nem vencedores. A prioridade de uma ficha isolada não substitui matriz entre Moves; a ordem do RNG (D-219/D-223/D-227/D-234) não dá prioridade.
+
+### 66.3 Pendências, conflitos e escopo
+
+- **Dados:** nenhuma espécie, valor VIT/SPI de nível 50, distribuição, tercil, faixa, composição amostral, mitigação-alvo ou K foi aprovado ou levantado aqui. Ainda é necessário verificar **valores oficiais de referência** da espécie e manter a variação ±3 separada antes de qualquer cálculo.
+- **Validação:** formato, layout e ordem da apresentação de múltiplas causas, outras possíveis falhas e integração técnica do validador não foram definidos. Só causas de bloqueio expressamente aprovadas são cobertas.
+- **Eventos:** campos mínimos do registro estruturado aprovados, sem escolher transporte/armazenamento/serialização/IDs concretos; limite máximo de cada Move e eventual replay integral seguem pendentes. A rejeição do excedente não interrompe eventos futuros válidos.
+- **Status:** matriz ainda **sem pares incompatíveis concretos e sem entradas de prioridade aprovadas**, portanto não aplicar remoção a status reais por inferência. Não foram definidos a ordem exata entre sorteio de chance e resolução da incompatibilidade, comportamento para entrada ausente ou UI de remoção.
+- **Histórico preservado:** divergência textual da Rodada 60 sobre LUK frente a D-150/D-152/D-153 continua sem resolução (GDD §12.13). D-095 preserva KO simultâneo, D-203 exclui odômetro do jogo principal. D-228–D-230 e D-244–D-249 sobre fichas, custos e tooltips e D-235 sobre independência de Moves/VFX permanecem válidas, sem alteração.
+- **Escopo:** quatro novos registros D, índice, este consolidado e GDD em adendo. **Nenhum código, teste, ficha operacional, Move, IA, HUD, cena, asset ou VFX alterado e nenhum teste de gameplay executado.**
+

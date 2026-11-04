@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.55 — Rodada 80 registrada em adendo rastreável (2026-11-04); histórico preservado.  
+> **Revisão:** 1.56 — Rodada 81 registrada em adendo rastreável (2026-11-04); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1746,6 +1746,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.55 | 2026-11-04 | Rodada 80: valor VIT/SPI coincidente com limite aprovado recebe faixa superior; IA filtra Moves sem máximo condicional antes da escolha; excedente é rejeitado/registrado, continuando eventos válidos; matriz futura de prioridades entre Moves distintos vale também para conflito de status ativo e novo. D-250–D-253. | Rodada 80 fechada / Rodada 81 proposta |
 
+| 1.56 | 2026-11-04 | Rodada 81: cada espécie conta uma vez na distribuição VIT/SPI nível 50 com variações individuais ±3 separadas; validar e indicar conjuntamente todas as causas aprovadas de bloqueio; registrar violações com IDs estruturados de Move, atacante, declaração, máximo e excedente; eliminar status perdedor por matriz aprovada sem restaurar. D-254–D-257. | Rodada 81 fechada / Rodada 82 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2194,4 +2196,19 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos hipotéticos, sem decisões numéricas:** limite fictício entre defesa baixa/média em 50 classifica `VIT=50` na faixa média; IA exclui Move que não declare máximo condicional e ainda segue D-237/D-241 se faltar opção elegível; excedente fictício `#4` é rejeitado e registrado, mas ocorrência posterior `#3` já planejada e válida continua, preservando resoluções anteriores; se efeitos X/Y de Moves distintos forem futuramente aprovados como incompatíveis na matriz, essa mesma precedência vale também se X estiver ativo antes da tentativa de Y. **Nenhum par X/Y ou vencedor foi aprovado**.
 
 **Pendências e conflitos:** VIT/SPI de nível 50, tercis, limites, espécies, amostra e K permanecem não verificados/não aprovados (D-212/D-216/D-220/D-236/D-240); filtro IA limita-se às duas causas já decididas (D-232/D-251), sem mudar custos de ações válidas; faltam formato do registro de violação e limites por Move (D-233/D-242/D-252); matriz por pares segue sem entradas concretas (D-239/D-243/D-253), sem escolher remoções ou efeitos com menor prioridade. D-095 e D-203 preservados, assim como D-228–D-230, D-235 e D-244–D-249. A divergência histórica sobre LUK da Rodada 60 (§12.13) continua **sem resolução**. **Somente documentação:** nenhum código, teste, ficha, Move, IA, cena, asset ou VFX alterado; nenhum teste de gameplay executado.
+
+### 12.31 Rodada 81 — unidade de amostra, validação completa, violação estruturada e status perdedor (revisão 1.56)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Registros individuais **D-254 a D-257**, consolidados em **§66** de `docs/REGRAS_DO_JOGO.md`. Adendo histórico aditivo; **D-001 mantém o GDD não normativo para combate**. Preservar a série de fichas de Moves D-228–D-230/D-244–D-249 e D-235 sem reescrever seu conteúdo.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R81-Q1 | **1A** | **Uma observação por espécie** para distribuição de VIT/SPI **no nível 50**, baseada em **valores oficiais de referência** e **separada dos desvios individuais ±3** | [D-254](decisoes/D-254-r81-q1-uma-especie-por-observacao-vit-spi-nivel50.md) |
+| R81-Q2 | **2A** | Para Move com **múltiplas causas de bloqueio já aprovadas**, **identificar todas as omissões detectadas na mesma validação**, **sem debitar ação ou recursos** | [D-255](decisoes/D-255-r81-q2-identificar-todas-omissoes-de-bloqueio-juntas.md) |
+| R81-Q3 | **3A** | **Registrar violação do plano de forma estruturada** com identificação estável de **Move, atacante, declaração, máximo aprovado e ocorrência excedente** | [D-256](decisoes/D-256-r81-q3-log-estruturado-violacao-plano-identificadores-estaveis.md) |
+| R81-Q4 | **4A** | Sob prioridade por par concretamente aprovada, **eliminar status de menor prioridade**, **removendo se ativo ou impedindo sua aplicação se novo**, **sem restaurá-lo quando o vencedor terminar** | [D-257](decisoes/D-257-r81-q4-eliminar-status-perdedor-sem-restauracao.md) |
+
+**Exemplos meramente ilustrativos:** dez indivíduos de uma espécie e um indivíduo de outra representam **uma observação de referência por espécie**, sem contaminar os tercis com variação ±3; ficha com prioridade obrigatória de status incompatíveis ausente e máximo condicional obrigatório ausente **indica as duas omissões na mesma validação**, antes de qualquer ação/custo; violação hipotética de máximo registra os campos Move/atacante/declaração/máximo/ocorrência com IDs estáveis sem executar o excedente; se status X/Y **futuramente** tiverem incompatibilidade e precedência aprovadas, o perdedor será removido/bloqueado e **não retornará** depois do vencedor. **Nenhuma entrada X/Y concreta foi aprovada.**
+
+**Pendências e conflitos:** não foram verificados valores VIT/SPI no nível 50, dados oficiais por espécie, limites de tercis, amostra, mitigação ou K (D-208/D-216/D-220/D-236/D-250). A política de validação restringe-se às causas de bloqueio já aprovadas (D-221/D-238/D-255), sem novos erros ou interface fixada. O registro estruturado não define tecnologia nem formato de serialização (D-242/D-252/D-256). A matriz segue sem pares/precedências aprovados (D-239/D-243/D-253/D-257); permanece pendente quando conferir a incompatibilidade em relação ao RNG e como agir com entrada ausente. D-095 mantém KO simultâneo, D-203 mantém odômetro fora do jogo principal, D-235 mantém Moves e VFX independentes de personagem e lado. A divergência histórica da Rodada 60 sobre LUK (GDD §12.13) continua sem resolução. **Somente documentação:** nenhum código, teste, ficha, Move, IA, cena, HUD, asset ou VFX alterado; nenhum teste de gameplay realizado.
 
