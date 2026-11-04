@@ -734,6 +734,10 @@ Definir formalmente entradas, saídas, tipos de operação, espaços de coordena
 
 Implementar e validar trajetórias, campos, deformações e propagação.
 
+**Etapa 2b — Impacto e envelopes** (acrescentada por [D-232](../decisoes/D-232-motion-composer-etapa-2b-m16-m18.md))
+
+M16 explosão direcional, M17 crescimento progressivo e M18 dissolução progressiva, que esta seção não atribuía a nenhuma etapa.
+
 **Etapa 3 — Composição espacial**
 
 Adicionar bifurcação, recombinação, ordem de composição, máscaras e defasagens.
@@ -783,7 +787,7 @@ As escolhas confirmadas e propostas técnicas do adendo permitem concluir esta e
 
 **Ainda proposto:** detalhes técnicos e artísticos não resolvidos pelas decisões D-042–D-045, incluindo os valores sugeridos no adendo.
 
-**Não executado:** implementação, criação de cenas, criação de shaders, atualização dos VFX existentes, publicação no GitHub, commits, push e testes em execução. A documentação foi consolidada localmente nesta entrega.
+(Situação da consolidação de 2026-11-03; atualizada nas seções 20 a 24.) **Não executado nessa data:** implementação, criação de cenas, criação de shaders, atualização dos VFX existentes, publicação no GitHub, commits, push e testes em execução. A documentação foi consolidada localmente nesta entrega.
 
 Esta especificação deverá ser revista contra a versão atual do repositório antes de qualquer implementação autorizada.
 
@@ -880,3 +884,122 @@ Os testes devem verificar contratos, não copiar fórmulas: invariância ao part
 - D-044: quatro representações aprovadas contempladas.
 - D-045: política de pasta fixa preservada; caminho concreto apenas proposto.
 - Não verificado: funcionamento em Godot, aparência, desempenho, interoperabilidade de presets ou regressões em execução.
+## 20. Etapa 1 implementada — 2026-11-04 (D-230)
+
+Escopo: **somente** a Etapa 1 (contratos e avaliação). Os 20 comportamentos (Etapa 2), bifurcação/recombinação reais, histórico, laboratório visual, presets e renderizadores **não** existem. Nada do combate, de `VfxLib` ou dos VFX atuais foi tocado.
+
+Código em `scripts/motion_composer/` (nomes de pasta e de classe são escolha técnica, não do criador); testes em `tests/motion_composer/test_etapa1_contratos.gd`:
+
+```bash
+godot --headless --path . --script res://tests/motion_composer/test_etapa1_contratos.gd
+```
+
+| Contrato | Classe | Resumo |
+|---|---|---|
+| Enums | `MotionTypes` | `Kind` (§4.4), `Op` (§5.2), `Space` (§5.3), `Severity` |
+| Amostra | `MotionSample` | dado puro: u, rest, `element_id`, `branch`, posição, base, largura, intensidade, opacidade, visibilidade; `branch_path` e `derive_id` determinísticos |
+| Contexto | `MotionContext` | tempo (s) ≠ progresso (`progress()` saturado), duração finita > 0, semente, revisão, referência, `emitter_at(t)` válido em instantes passados |
+| Parâmetro | `MotionParam` | tipo, unidade, domínio; recusa NaN/infinito/tipo errado |
+| Comportamento | `MotionBehavior` | id, versão, tipo, operações aceitas, parâmetros, `needs_history`, `output_count` (conferido antes de alocar), `apply` pura |
+| Catálogo | `MotionCatalog` | registro; conjunto fechado `V1_IDS` (M01–M20) e `missing_v1()` |
+| Camada | `MotionLayer` | id estável, operação, seleção de ramos, espaço, parâmetros, máscara, intensidade 0–1, defasagem, janela de atividade |
+| Máscara | `MotionMask` | peso 0–1 por posição, tempo, elemento; degradê para fora da faixa; inversão |
+| Composição | `MotionComposition` | camadas ordenadas, revisão por edição, `validate`, `evaluate` sem estado |
+| Saída | `MotionResult`, `MotionDiagnostic` | amostras + diagnósticos + revisão; erro ⇒ nenhuma amostra, sem correção silenciosa |
+| Espaços | `MotionSpace` | LOCAL, GLOBAL, EMITTER, TRAJECTORY (referencial por amostra; proibido para topologia/persistência) |
+| Determinismo | `MotionHash` | hash de 32 bits no lugar de qualquer aleatoriedade |
+
+Semântica adotada (proposta do agente, não aprovada pelo criador): REPLACE interpola todos os campos; OFFSET soma um deslocamento; DEFORM só geometria; MULTIPLY_ATTRIBUTE multiplica atributos; MASK só visibilidade (limiar 0,5); BRANCH/MERGE exigem TOPOLOGY e substituem as amostras selecionadas; PERSIST exige HISTORICAL e acrescenta amostras. Intensidade 0 é neutra. O comportamento sempre recebe cópias das amostras: se alterar a entrada, o fluxo anterior permanece íntegro. Camada que produziria saída não finita, ids duplicados, contagem divergente ou mais amostras que `max_samples` é ignorada com diagnóstico. Ramo inexistente na seleção gera diagnóstico e a camada é ignorada.
+
+Valores experimentais (ajustáveis, sem valor de aceitação): `sample_count` 128, `base_length` 1,0, `max_samples` 100000, `duration` 3,0 s.
+
+**Verificado (Godot 4.7.2, headless):** 133 verificações, 0 falhas; 4 mutações no código (peso do OFFSET, limiar do MASK, inversão de espaço, checagem de ramo inexistente) derrubaram os testes correspondentes; log sem erro/aviso. **Medido:** 9 camadas, 128→384 amostras, ≈14 ms por avaliação em GDScript puro (≈0,8 ms por camada só de compositor, mesmo com comportamento vazio), sem renderização; sem orçamento aprovado, não é requisito nem garantia. **Não verificado:** renderer GL Compatibility, qualquer aparência, desempenho em outro hardware, os comportamentos reais (dublês de teste foram usados), regressão da suíte de combate (nenhum arquivo do combate foi alterado por esta etapa).
+
+## 21. Etapa 2 implementada — 2026-11-04 (D-231)
+
+Escopo: **M01–M13** (trajetórias, campos, deformações, propagação). M14–M15 (Etapa 3), M19–M20 (Etapa 4) e **M16–M18 (sem etapa definida na §16; aguardam o criador)** não foram implementados. Contratos da Etapa 1 inalterados. Código em `scripts/motion_composer/behaviors/` (um arquivo por comportamento), auxiliares em `motion_profile.gd`, registro em `MotionBehaviors.register_all(catalog)`. Testes: `tests/motion_composer/test_etapa2_comportamentos.gd`.
+
+```bash
+godot --headless --path . --script res://tests/motion_composer/test_etapa2_comportamentos.gd
+```
+
+Todas as fórmulas, nomes, unidades, padrões e limites abaixo são **propostas do agente** (não aprovadas pelo criador). `u` = coordenada longitudinal de repouso (0..1); ângulos em graus; "região" = [centro ± extensão/2] em `u` com borda suave `softness`.
+
+| ID | Comportamento | Operação | Fórmula resumida (parâmetros principais) |
+|---|---|---|---|
+| M01 | Espiral helicoidal | REPLACE | `(r·cosθ, r·sinθ, u·passo·voltas)`, `r = raio + evolução·u`, `θ = ±2π·voltas·u + fase + giro·t` |
+| M02 | Zigue-zague | OFFSET | `amplitude · mistura(triangular, seno)(frequência·z + fase − velocidade·t)` na direção lateral `axis_deg` |
+| M03 | Serpentina | OFFSET | `amplitude·sen(2π(z − v·t)/λ + fase) + ½·curvatura·z²` |
+| M04 | Bézier dinâmica | REPLACE | cúbica `p0..p3`; `p1` e `p2` derivam `drift·sen(2π·Hz·t)`; `progress` limita o trecho |
+| M05 | Vórtice | OFFSET | gira o componente perpendicular ao eixo por `ângulo·(1 − d/R)^decaimento` |
+| M06 | Convergência | OFFSET | `(alvo − p)·atração·(1 − d/alcance)^curva·rampa_temporal` |
+| M07 | Turbulência | OFFSET | ruído de valor 3D+tempo por hash inteiro; cada componente em ±intensidade |
+| M08 | Torção progressiva | DEFORM/REPLACE | gira (x,y) por `ângulo·janela(u)·rampa_temporal·frente(u,t)` |
+| M09 | Curvatura | DEFORM/REPLACE | gira o ponto em torno de eixo no plano XY por `ângulo·rampa(u)` |
+| M10 | Alongamento | DEFORM/REPLACE | `z += (f−1)·extensão·L·rampa(u)`; monotônico (fator ≥ 1) |
+| M11 | Compressão | DEFORM/REPLACE | `z = zc + (z − zc)(1 − k·janela)`; `radial` estreita x,y; monotônico (k ≤ 0,95) |
+| M12 | Pulso viajante | OFFSET / MULTIPLY_ATTRIBUTE | gaussiana assimétrica (frente curta, cauda `tail`×) em `c(t) = início + v·t`; laço opcional |
+| M13 | Onda radial | OFFSET / MULTIPLY_ATTRIBUTE | `exp(−((d − v·t)/largura)²)·(1 − R/alcance)^dissipação` no plano da normal |
+
+Convenções do contrato aplicadas: OFFSET devolve deslocamento em `position`; MULTIPLY_ATTRIBUTE devolve multiplicadores (M12/M13 fixam opacidade em 1); geradores ignoram a posição anterior e preservam atributos; nada decide dano, colisão ou câmera; nenhum usa `TIME`, relógio próprio ou aleatoriedade externa.
+
+**Verificado (Godot 4.7.2, headless):** 124 verificações, 0 falhas no teste da Etapa 2 e 133 no da Etapa 1. Cada comportamento: parâmetros padrão, todo o domínio no mínimo e no máximo (em dois instantes) sem valores não finitos, repetibilidade, intensidade 0,5 = ponto médio, pausa, ids independentes do tempo, assinaturas espaciais distintas nos 78 pares e nenhum nó criado. Fórmulas conferidas por valores analíticos. 13 mutações no código (uma por comportamento); uma sobreviveu (M11, borda suave), o teste foi reforçado e a mutação passou a falhar. **Medido:** de 1,9 a 4,1 ms por avaliação de 1 camada com 128 amostras, exceto M07 (≈8 ms), em GDScript puro e máquina ocupada; sem orçamento aprovado, não é requisito. **Não verificado:** aparência (nenhuma representação visual existe), GL Compatibility, hardware-alvo, qualidade artística das curvas e dos padrões, e a equivalência com os oito estudos helicoidais.
+
+## 22. Etapa 2b implementada — 2026-11-04 (D-232)
+
+Escopo: **M16, M17 e M18**, que a §16 não atribuía a nenhuma etapa; por escolha do criador ("Etapa 2b agora", [D-232](../decisoes/D-232-motion-composer-etapa-2b-m16-m18.md)) formam a **Etapa 2b**, entre as Etapas 2 e 3. Contratos das Etapas 1 e 2 inalterados (adição de três comportamentos e de dois auxiliares em `motion_profile.gd`). Código em `scripts/motion_composer/behaviors/` (`m16_…`, `m17_…`, `m18_…`); testes em `tests/motion_composer/test_etapa2b_impacto_envelopes.gd`.
+
+```bash
+godot --headless --path . --script res://tests/motion_composer/test_etapa2b_impacto_envelopes.gd
+```
+
+Todas as fórmulas, nomes, unidades, padrões e limites abaixo são **propostas do agente** (não aprovadas pelo criador).
+
+| ID | Comportamento | Operações | Fórmula resumida (parâmetros principais) |
+|---|---|---|---|
+| M16 | Explosão direcional | OFFSET / MULTIPLY_ATTRIBUTE | por elemento (hash do id + semente): direção dentro de um cone (`cone_deg`, `distribution`), alcance de 50% a 100% de `distance`; `radial` mistura afastamento de `origin`; progresso `1 − (1 − p)^curva`; opacidade cai a `1 − dissipate` |
+| M17 | Crescimento progressivo | MASK / MULTIPLY_ATTRIBUTE | cobertura 0..1 por varredura em `u` (`direction` 0 início→fim, 1 fim→início, 2 centro→bordas), frente em `progresso^curva × (1 + largura)`, `jitter` determinístico; canais `affect_visibility/width/intensity/opacity` |
+| M18 | Dissolução progressiva | MASK / MULTIPLY_ATTRIBUTE | complemento exato de M17 com os mesmos parâmetros (crescimento + dissolução = 1) |
+
+Garantias do contrato: no instante inicial M17 não mostra nada e M18 mostra tudo; no final, o inverso, mesmo com transição larga; a região de M17 nunca encolhe com o tempo; M16 depende só do id do elemento (o elemento 5 recebe o mesmo deslocamento com 33 ou 65 amostras); M16 não cria impactos nem altera resultado lógico; nenhum dos três usa `TIME` ou relógio próprio.
+
+**Verificado (Godot 4.7.2, headless):** 57 verificações, 0 falhas no teste da Etapa 2b; 124 na Etapa 2 e 133 na Etapa 1, todas sem falhas (o teste da Etapa 2 foi atualizado só para refletir que agora faltam apenas M14, M15, M19 e M20). 14 mutações no código; 4 sobreviveram (alcance variável, componente radial, semente no azimute e largura da transição), os testes foram reforçados e as 4 passaram a falhar. **Não verificado:** aparência (nenhuma representação visual existe), GL Compatibility, desempenho em hardware-alvo, qualidade artística dos perfis e a escolha de canal que cada representação usará.
+
+**Estado do catálogo:** implementados M01–M13 e M16–M18 (16 de 20). Faltam M14, M15 (Etapa 3) e M19, M20 (Etapa 4).
+
+## 23. Etapa 3 implementada — 2026-11-04 (D-233)
+
+Escopo ([D-233](../decisoes/D-233-motion-composer-etapa-3-composicao-espacial.md)): **M14 Bifurcação** e **M15 Recombinação**, mais a validação, com comportamentos reais, de ordem de camadas, máscaras e defasagens (que existem desde a Etapa 1), e a receita da §6 **sem M19** (Etapa 4). Código em `scripts/motion_composer/behaviors/m14_bifurcation.gd` e `m15_recombination.gd`; testes em `tests/motion_composer/test_etapa3_composicao_espacial.gd`.
+
+```bash
+godot --headless --path . --script res://tests/motion_composer/test_etapa3_composicao_espacial.gd
+```
+
+Fórmulas, nomes, unidades, padrões e limites são **propostas do agente** (não aprovadas pelo criador), seguindo a semântica proposta na §19.3.
+
+| ID | Comportamento | Operação | Fórmula resumida |
+|---|---|---|---|
+| M14 | Bifurcação | BRANCH | N ramos (1–16) com caminho `pai/camada.índice` e id derivado; afastamento lateral `distância·tanh(tan(ângulo)·Δz/distância)·intensidade·rampa_temporal` a partir de `split_u`, distribuído a 360°/N desde `phase_deg` |
+| M15 | Recombinação | MERGE | amostras com o mesmo `(u, rest)` formam um grupo; posição = `lerp(ramo, centroide, smoothstep(merge_start, merge_end, u)·força·rampa_temporal)`; intensidade/largura divididas entre os ramos do grupo (soma preservada com redução 1); ids, caminhos e ordem preservados |
+
+**Refinamento do compositor (aditivo):** operação de topologia que devolve a mesma quantidade de amostras (M15; M14 com um ramo) substitui as selecionadas no lugar, preservando a ordem; quantidades diferentes seguem agrupadas na posição da primeira amostra selecionada. Operações de topologia ignoram a máscara por amostra; a intensidade da camada vale só como liga/desliga (0 = ignorada).
+
+**Receita de teste (§6, sem M19)**, janelas por defasagem de camada com `duration` 3 s (derivadas dos intervalos propostos na §19.7): compressão (M11) e crescimento (M17) de 0 a 0,45 s; zigue-zague e torção (M02, M08) desde 0,45 s; bifurcação em 3 (M14) desde 1,05 s; serpentina e turbulência (M03, M07) desde 1,5 s; recombinação (M15) desde 1,95 s por 0,3 s; onda radial e explosão (M13, M16) desde 2,25 s; dissolução (M18) desde 2,55 s por 0,45 s. É receita de teste do compositor, não um Move do Crawlmon.
+
+**Verificado (Godot 4.7.2, headless):** 71 verificações no teste da Etapa 3, todas sem falhas: 65 amostras até 1,05 s e 195 depois; 61 instantes sem valores inválidos; fluxos coincidentes após a reunião e afastados antes; tudo dissolvido em 3 s; receita reproduzível e independente de buscas anteriores. 10 mutações no código (M14, M15 e o refinamento do compositor) derrubam os testes. **Medido:** ≈8–9 ms por avaliação da receita completa (11 camadas, 65→195 amostras), GDScript puro, sem renderização, sem orçamento aprovado. **Não verificado:** aparência (nenhuma representação visual existe), GL Compatibility, hardware-alvo.
+
+## 24. Auditoria das etapas 1 a 3 — 2026-11-04
+
+Revisão feita a pedido do criador. Achados e correções:
+
+| # | Achado | Correção |
+|---|---|---|
+| 1 | **IDs de decisão colidiam** com D-171 a D-174 já existentes na `main` do GitHub (outros assuntos). | Renumerados para **D-230 a D-233** (maior ID remoto: D-229). |
+| 2 | Comportamento que alterasse a entrada corrompia o fluxo no espaço LOCAL (introduzido por otimização). | Corrigido na Etapa 1 (cópias sempre) com 2 testes. |
+| 3 | Testes de catálogo das Etapas 2 e 2b ainda esperavam M14 e M15 ausentes. | Atualizados (faltam apenas M19 e M20). |
+| 4 | Verificações vazias ou frouxas nos testes (`or true`, variável sem uso, condição que não distinguia M11, M16, M17, M15). | Removidas ou reforçadas; 4 + 1 mutantes sobreviventes passaram a falhar. |
+| 5 | Três testes errados da Etapa 3 (Δz numérico, ids comparados entre camadas de nomes distintos, limite de ramos acima do domínio). | Corrigidos; o código estava certo. |
+| 6 | Texto da especificação desatualizado (§16 sem Etapa 2b; §18 afirmava que nada fora executado). | Atualizado. |
+| 7 | Regressão do combate nunca havia sido rodada. | `test_d040_1atb`, `test_battle_load` e `test_attack_motion` rodam sem falha (árvore local com alterações de terceiros; nenhum arquivo de combate foi alterado por estas etapas). |
+
+**Continua pendente (não esquecido, não autorizado):** M19 e M20 e o histórico (Etapa 4); laboratório visual, presets e representações (Etapa 5); validação completa, GL Compatibility, orçamento de desempenho e aprovação artística (Etapa 6). 18 dos 20 comportamentos existem.
