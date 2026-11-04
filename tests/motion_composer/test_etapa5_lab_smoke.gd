@@ -110,6 +110,34 @@ func _run() -> void:
 	ok(lab.smoke.visible and not lab.points.visible and not lab.fragments.visible and not lab.ribbons.visible and lab.smoke.shown_count > 0, "Fumaça: só a vista de fumaça aparece e desenha")
 	ok(s.composition.revision == rev and is_equal_approx(s.clock.time, time_before), "a troca para Fumaça também conserva composição, revisão e relógio")
 	lab.set_representation(0)
+	# comparação A/B no laboratório
+	s.clock.pause()
+	s.clock.seek(1.2)
+	lab.set_ab_mode(MotionLabSession.AbMode.BEFORE_AFTER)
+	await process_frame
+	ok(not lab.view_a.visible and lab._ab_status.text.begins_with("Fixe A"), "antes × depois sem A fixado: nada à esquerda e a mensagem pede para fixar A")
+	lab.capture_a()
+	await process_frame
+	ok(lab.view_a.visible and lab._label_a.visible and lab._label_b.visible, "com A fixado aparecem os dois lados e os rótulos")
+	ok(lab.view_a.position.x < 0.0 and lab.view_set.position.x > 0.0 and is_equal_approx(lab.view_a.position.x, -lab.view_set.position.x), "A à esquerda, B à direita, simétricos")
+	ok(lab._label_a.text.begins_with("A:") and lab._label_b.text.begins_with("B:"), "rótulos A e B")
+	ok(lab.view_a.points.shown_count == lab.view_set.points.shown_count and lab.view_a.points.shown_count > 0, "logo após fixar, os dois lados desenham o mesmo número de pontos")
+	s.composition.set_param(&"helice", &"radius", 0.5)
+	lab._after_edit()
+	await process_frame
+	ok(lab._ab_status.text.contains("diferentes") and not lab._ab_status.text.contains("0 diferentes"), "depois de editar, a diferença aparece na leitura (%s)" % lab._ab_status.text.left(60))
+	ok(s.snapshot_a.find_layer(&"helice").params["radius"] != 0.5, "A não mudou com a edição")
+	lab.set_ab_mode(MotionLabSession.AbMode.NEUTRAL)
+	lab.set_representation(1)
+	await process_frame
+	ok(lab.view_a.representation == 0 and lab.view_set.representation == 1 and lab.view_a.points.visible and lab.view_set.ribbons.visible, "neutra × escolhida: A em pontos, B na representação escolhida")
+	lab.set_ab_mode(MotionLabSession.AbMode.ISOLATED)
+	await process_frame
+	ok(lab.view_a.visible and lab._label_a.text.begins_with("A: só"), "isolada × combinada: rótulo cita a camada")
+	lab.set_ab_mode(MotionLabSession.AbMode.OFF)
+	await process_frame
+	ok(not lab.view_a.visible and lab.view_set.position == Vector3.ZERO and not lab._label_b.visible, "desligar a comparação volta B ao centro e esconde A e os rótulos")
+	lab.set_representation(0)
 	# pelo menos um quadro depois de tudo
 	await process_frame
 	ok(lab.points.shown_count > 0 and not s.last_result.has_errors(), "continua desenhando sem erros após as operações")

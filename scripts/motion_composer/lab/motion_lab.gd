@@ -15,6 +15,14 @@ var points: MotionPointsView
 var ribbons: MotionRibbonsView
 var fragments: MotionFragmentsView
 var smoke: MotionSmokeView
+## Conjunto de B (composição viva) e de A (comparação A/B); A fica à esquerda e B à direita.
+var view_set: MotionViewSet
+var view_a: MotionViewSet
+const AB_OFFSET := 1.1
+var _label_a: Label3D
+var _label_b: Label3D
+var _ab_opt: OptionButton
+var _ab_status: Label
 ## 0 = pontos, 1 = fitas, 2 = pontos + fitas, 3 = fragmentos, 4 = fumaça/billboards (a troca conserva a composição).
 var representation: int = 0
 
@@ -73,10 +81,36 @@ func _ready() -> void:
 	_refresh_layers()
 	_refresh_presets()
 	set_representation(representation)
+	_setup_ab_demo()
 	session.clock.playing = _capture_path == ""
 	if _capture_path != "":
 		session.clock.seek(_arg_float("--t=", 1.2))
 	_dirty = true
+
+
+## Demonstrações da comparação (para captura): --ab=antes | isolada | neutra
+func _setup_ab_demo() -> void:
+	var mode := _arg_text("--ab=")
+	if mode == "":
+		return
+	if mode == "antes":
+		session.capture_a()
+		session.composition.set_param(&"helice", &"radius", 0.42)
+		var tw := MotionLayer.new()
+		tw.id = &"torcao"
+		tw.behavior_id = &"M08"
+		tw.op = MotionTypes.Op.DEFORM
+		tw.params = {"amount_deg": 140.0}
+		session.composition.add_layer(tw, 1)
+		_ab_opt.select(MotionLabSession.AbMode.BEFORE_AFTER)
+		set_ab_mode(MotionLabSession.AbMode.BEFORE_AFTER)
+	elif mode == "isolada":
+		_selected = &"helice"
+		_ab_opt.select(MotionLabSession.AbMode.ISOLATED)
+		set_ab_mode(MotionLabSession.AbMode.ISOLATED)
+	elif mode == "neutra":
+		_ab_opt.select(MotionLabSession.AbMode.NEUTRAL)
+		set_ab_mode(MotionLabSession.AbMode.NEUTRAL)
 
 
 func _parse_args() -> void:
@@ -250,14 +284,19 @@ func _build_world() -> void:
 	add_child(_cam)
 	_apply_camera()
 
-	points = MotionPointsView.new()
-	add_child(points)
-	ribbons = MotionRibbonsView.new()
-	add_child(ribbons)
-	fragments = MotionFragmentsView.new()
-	add_child(fragments)
-	smoke = MotionSmokeView.new()
-	add_child(smoke)
+	view_set = MotionViewSet.new()
+	add_child(view_set)
+	points = view_set.points
+	ribbons = view_set.ribbons
+	fragments = view_set.fragments
+	smoke = view_set.smoke
+	view_a = MotionViewSet.new()
+	view_a.visible = false
+	add_child(view_a)
+	_label_a = _make_label3d()
+	_label_b = _make_label3d()
+	view_a.add_child(_label_a)
+	view_set.add_child(_label_b)
 
 	_floor = MeshInstance3D.new()
 	var plane := PlaneMesh.new()
@@ -457,8 +496,21 @@ func _build_ui() -> void:
 	_params_box = VBoxContainer.new()
 	box.add_child(_params_box)
 
-	# --- representação (painel da esquerda)
+	# --- comparação A/B (painel da esquerda)
 	box = left
+	box.add_child(_section("Comparação A/B (§10.4)"))
+	_ab_opt = OptionButton.new()
+	for n in ["Desligada", "Antes × depois (A = instantâneo fixado)", "Camada isolada × composição inteira", "Representação neutra × escolhida"]:
+		_ab_opt.add_item(n)
+	_ab_opt.item_selected.connect(func(i: int) -> void: set_ab_mode(i))
+	box.add_child(_ab_opt)
+	var row_ab := HBoxContainer.new()
+	box.add_child(row_ab)
+	row_ab.add_child(_btn("Fixar A agora", capture_a))
+	row_ab.add_child(_btn("Descartar A", func() -> void: session.clear_a(); _ab_status.text = "A descartado."; _dirty = true))
+	_ab_status = _small("")
+	box.add_child(_ab_status)
+	# --- representação (painel da esquerda)
 	box.add_child(_section("Representação (D-044)"))
 	var row6 := HBoxContainer.new()
 	box.add_child(row6)
@@ -659,11 +711,34 @@ func _on_add_layer() -> void:
 ## Troca de representação: só muda o desenho; a composição, a revisão e o relógio não são tocados.
 func set_representation(i: int) -> void:
 	representation = clampi(i, 0, 4)
-	points.visible = representation == 0 or representation == 2
-	ribbons.visible = representation == 1 or representation == 2
-	fragments.visible = representation == 3
-	smoke.visible = representation == 4
+	view_set.set_representation(representation)
 	_dirty = true
+
+
+## Modo da comparação A/B (D-305, §10.4). Ao ligar, afasta a câmera para caberem os dois lados.
+func set_ab_mode(m: int) -> void:
+	session.ab_mode = m
+	if m != MotionLabSession.AbMode.OFF:
+		_dist = maxf(_dist, 6.4)
+		_apply_camera()
+	_dirty = true
+
+
+func capture_a() -> void:
+	var diags := session.capture_a()
+	_ab_status.text = "A fixado (revisão %d)." % session.snapshot_a.revision if diags.is_empty() else "Erro ao fixar A: %s" % diags[0].message
+	_dirty = true
+
+
+func _make_label3d() -> Label3D:
+	var l := Label3D.new()
+	l.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	l.font_size = 30
+	l.pixel_size = 0.0035
+	l.outline_size = 8
+	l.position = Vector3(0.0, 0.62, 0.9)
+	l.no_depth_test = true
+	return l
 
 
 func _selected_index() -> int:
@@ -861,21 +936,56 @@ func _process(delta: float) -> void:
 	if _dirty:
 		_dirty = false
 		_last_time = session.clock.time
-		var r := session.evaluate()
-		if representation == 0 or representation == 2:
-			points.show_samples(r.samples)
-		if representation == 1 or representation == 2:
-			ribbons.show_samples(r.samples)
-		if representation == 3:
-			fragments.show_samples(r.samples)
-		if representation == 4:
-			smoke.show_samples(r.samples, _cam.global_position)
+		var r := _draw()
 		_update_readouts(r)
 	_play_btn.text = "Pausar" if session.clock.playing else "Reproduzir"
 	if _capture_path != "":
 		_capture_frames -= 1
 		if _capture_frames <= 0:
 			_save_capture()
+
+
+## Avalia e desenha. Sem comparação: só B, no centro. Com comparação: A à esquerda e B à direita, mesmo tempo.
+func _draw() -> MotionResult:
+	var cam := _cam.global_position
+	if session.ab_mode == MotionLabSession.AbMode.OFF:
+		view_set.position = Vector3.ZERO
+		view_a.visible = false
+		_label_a.visible = false
+		_label_b.visible = false
+		var r := session.evaluate()
+		view_set.draw_samples(r.samples, cam)
+		return r
+	session.ab_layer = _selected
+	var res := session.evaluate_ab()
+	var b: MotionResult = res["b"]
+	view_set.position = Vector3(AB_OFFSET, 0.0, 0.0)
+	view_set.draw_samples(b.samples, cam)
+	var a_res: Variant = res["a"]
+	view_a.visible = a_res != null
+	_label_a.visible = a_res != null
+	_label_b.visible = a_res != null
+	if a_res != null:
+		view_a.position = Vector3(-AB_OFFSET, 0.0, 0.0)
+		view_a.apply_settings(view_set)
+		view_a.set_representation(0 if session.ab_mode == MotionLabSession.AbMode.NEUTRAL else representation)
+		view_a.draw_samples((a_res as MotionResult).samples, cam)
+		match session.ab_mode:
+			MotionLabSession.AbMode.BEFORE_AFTER:
+				_label_a.text = "A: antes (instantâneo)"
+				_label_b.text = "B: depois (ao vivo)"
+			MotionLabSession.AbMode.ISOLATED:
+				_label_a.text = "A: só %s" % session.ab_layer
+				_label_b.text = "B: composição inteira"
+			_:
+				_label_a.text = "A: pontos (neutro)"
+				_label_b.text = "B: %s" % _rep_opt.get_item_text(_rep_opt.selected)
+		var d: Dictionary = res["diff"]
+		_ab_status.text = "A × B: %d elementos em comum, %d diferentes | só em A %d, só em B %d | diferença máx. %.3f m, média %.3f m, atributo máx. %.2f" % [
+			d["matched"], d["changed"], d["only_a"], d["only_b"], d["max_distance"], d["mean_distance"], d["max_attribute"]]
+	else:
+		_ab_status.text = res["error"]
+	return b
 
 
 func _update_readouts(r: MotionResult) -> void:

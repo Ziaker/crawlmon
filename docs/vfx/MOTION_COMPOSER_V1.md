@@ -1122,3 +1122,23 @@ Objetos e shader do Godot: `MultiMeshInstance3D` de `QuadMesh` com cor e dados p
 **Verificado:** 64 verificações da fumaça (as 48 anteriores e 16 do jogo da opacidade: densidade entre 0,35 e 1 espalhada pela faixa, oscilação entre 1 − quantidade e 1 com fase própria, curva, opacidade final variando entre baforadas da mesma idade): determinismo; giro, tamanho (0,55–1,15 m) e variação do atlas por elemento sem piscar com a idade; crescimento 1,8× e teto; rampa de opacidade (0,375 aos 10 %, 0,75 aos 20 %, 0 no fim); atrito, subida (½·g·t²) e esfera de origem; direções cobrindo a esfera; atlas de 128 px com 4 variações diferentes, cantos transparentes e miolo denso; ordenação do mais distante ao mais próximo e permutação completa; a vista desenha nessa ordem; descarte de invisíveis, transparentes e mais velhas que a vida; `blend_mix` sem `blend_add`. 11 mutações no código derrubam os testes (uma sobrevivia, a esfera de origem, e foi coberta). As dez suítes somam 739 verificações, todas sem falhas. Execução em janela com GL Compatibility sem erros. **Medido:** preencher e ordenar 1088 baforadas ≈ 7 ms por quadro (GDScript, headless).
 
 **Não verificado:** a aprovação visual do criador da versão atual; o cascalho brilhante (partículas pequenas e claras) que a poeira do jogo também tem; fumaça com profundidade suave nas interseções; a ordenação entre representações mostradas juntas; desempenho em outro hardware. **Faltam:** comparação A/B, estudos individuais dos 20 comportamentos, seleção de ramos e máscaras na interface.
+
+## 30. Etapa 5, fatia 5 — comparação A/B — 2026-11-04 (D-305)
+
+Aprovação da fatia anterior, literal: "Muito melhor" (poeira, quarta versão), tratada como aprovação para seguir; se a intenção era só elogiar e pedir mais ajustes, a fatia 4 volta a ser retomada. Esta fatia acrescenta a **comparação A/B** (§10.4) com as regras da §19.5: "A/B mantém duas revisões imutáveis com o mesmo tempo e semente". Tudo com objetos do Godot (dois conjuntos de representações lado a lado, `Label3D` com billboard); nada de HTML.
+
+| Modo | A | B |
+|---|---|---|
+| Antes × depois | instantâneo fixado pelo botão "Fixar A agora" | composição viva (editável) |
+| Camada isolada × composição inteira | só a camada selecionada | composição inteira |
+| Representação neutra × escolhida | pontos (neutro) | a representação escolhida (os dados são os mesmos) |
+
+| Parte | Arquivo | Resumo |
+|---|---|---|
+| Lógica | `lab/motion_lab_session.gd` | `capture_a` (cópia profunda pela ida e volta do formato de presets, guarda a revisão do momento), `evaluate_snapshot`, `evaluate_ab` (mesmo instante, mesmo emissor, semente de cada lado; erro explícito se faltar A ou a camada), `diff` (elementos em comum, só em A, só em B, alterados, distância máxima e média, atributo máximo) |
+| Vistas | `lab/motion_view_set.gd` | as quatro representações como um conjunto; um para B e outro para A, cópia dos ajustes de desenho |
+| Laboratório | `lab/motion_lab.gd` | seletor de modo, "Fixar A agora", "Descartar A", leitura da diferença; A à esquerda e B à direita (±1,1 m) com rótulos; `--ab=antes|isolada|neutra` |
+
+**Verificado:** 35 verificações da lógica (instantâneo imutável diante de edição, adição e remoção de camadas, troca de semente e de revisão da composição viva; no momento da fixação A = B; mesmo instante; diferença só de posição, só de atributo e só de visibilidade; isolada coincide com a camada dentro da composição; erros explícitos) e 37 do laboratório (A à esquerda e B à direita simétricos, rótulos, A não muda com a edição, desligar volta B ao centro). 10 mutações no código; 3 sobreviveram (revisão de A, atributo e visibilidade na diferença) e foram cobertas. As onze suítes somam 777 verificações, todas sem falhas. Execução em janela com GL Compatibility sem erros; quadros e vídeos conferidos antes de mostrar.
+
+**Não verificado:** aprovação visual do criador; comparar mais de duas versões; sobreposição (fantasma) de A sobre B em vez de lado a lado; desempenho em outro hardware (dois conjuntos desenham o dobro). **Faltam:** estudos individuais dos 20 comportamentos e seleção de ramos e máscaras na interface.
