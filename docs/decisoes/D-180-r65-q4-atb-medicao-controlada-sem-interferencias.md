@@ -23,3 +23,7 @@
 - A instrumentação, seleção de combatente, escala de velocidade de referência, repetição de medições, tolerâncias de medição e método de obter barra com 0 sem alterar regras permanentes ainda precisam ser definidos/verificados.
 - **Nenhuma medição, script de teste ou execução de gameplay foi realizada nesta atividade**.
 - Apenas documentação; nenhum código, cena, teste ou configuração alterado.
+
+## Complemento posterior — Rodada 66 / D-184 e D-185 (2026-11-03)
+
+**D-184 (R66-Q3B):** usar **combatentes representativos das faixas baixa, intermediária e alta de velocidade existentes no código**, para medir os dois intervalos já aprovados, **sob as mesmas condições controladas desta D-180**. **D-185 (R66-Q4B):** coletar **cinco medições para cada intervalo e cada combatente** e utilizar a **mediana dos tempos observados** por combinação. Os perfis concretos e resultados ainda exigem inspeção e execução reais; nenhuma referência numérica de ATB foi aprovada/implementada.

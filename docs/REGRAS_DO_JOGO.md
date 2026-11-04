@@ -1430,3 +1430,52 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 
 - Criar somente **D-177–D-181**, notas históricas aditivas em **D-173/D-174/D-175/D-176**, índice de decisões, este consolidado e adendo histórico do GDD.
 - **Não** alterar código, testes, arquivos de dados, VFX, cenas ou configurações. **Não** inventar resultado numérico de AGI ou de ATB; ambas referências numéricas continuam sem homologação pelo criador.
+
+
+---
+
+## 47. Rodada 66 — deduplicação intrasespécie, AGI verificável, amostragem e medição ATB, RNG próprio
+
+> **2026-11-03.** O criador aprovou expressamente as escolhas **1A, 2B, 3B, 4B e 5A**, sem observações adicionais. Novas decisões **D-182 a D-186**. Esta consolidação é **aditiva**, preserva integralmente as seções anteriores, as decisões D-162 a D-181 e os registros históricos da Rodada 62. **Somente documentação, sem alterar código.**
+
+### 47.1 Matriz das cinco decisões
+
+| Documento | Escolha | Regra expressa |
+|---|---|---|
+| [D-182](decisoes/D-182-r66-q1-formas-um-valor-distinto-agi-por-especie.md) | **1A** | **Uma observação por valor distinto de AGI-base dentro de cada espécie**; formas com valor igual não duplicam observação |
+| [D-183](decisoes/D-183-r66-q2-agi-nivel50-por-formula-oficial-verificavel.md) | **2B** | Aceitar AGI-base calculada por **fórmula oficialmente aprovada e verificável, com entradas documentadas**; sem fórmula válida, **manter pendência** |
+| [D-184](decisoes/D-184-r66-q3-atb-perfis-velocidade-baixa-media-alta.md) | **3B** | Medir combatentes representativos das **faixas baixa, intermediária e alta de velocidade efetivamente existentes no código**, em condições controladas |
+| [D-185](decisoes/D-185-r66-q4-atb-cinco-medicoes-mediana-por-intervalo.md) | **4B** | Realizar **cinco medições por intervalo e combatente**; utilizar a **mediana dos tempos observados** |
+| [D-186](decisoes/D-186-r66-q5-fluxo-rng-exclusivo-desempate-retarget.md) | **5A** | Utilizar **um fluxo de números pseudoaleatórios reproduzível exclusivo para desempates de retarget**, separado dos demais sorteios do combate |
+
+### 47.2 Composição de AGI-base no nível 50 (D-162/D-167/D-168/D-172/D-174/D-177/D-178/D-179/D-182/D-183)
+
+- **Universo:** espécies controláveis diretamente pelo jogador, incluindo evoluções elegíveis e espécies oficialmente previstas na documentação vigente para controle direto, ainda não implementadas. Não acrescentar criaturas exclusivas da IA sem previsão oficial de controle pelo jogador.
+- **Valores:** AGI-base de cada entrada elegível **no nível 50**, sem Nature, variação individual nem buffs, somente para compor a referência estatística dos trajetos.
+- **Formas alternativas (D-182):** para cada espécie, **uma observação por valor distinto de AGI-base**. Uma forma alternativa controlável com AGI-base própria diferente acrescenta observação; **formas com o mesmo valor dentro da mesma espécie não duplicam**. AGIs iguais de **espécies diferentes continuam como observações próprias**. **Exemplo hipotético:** espécie A, forma-base AGI 40, formas Alfa/Beta ambas com AGI própria 60 → `[40, 60]` para essa espécie, não `[40, 60, 60]`; espécie B com AGI 60 contribui seu próprio 60. Nenhum dado do exemplo é oficial.
+- **Verificação (D-178/D-183):** AGI-base é verificável se consta diretamente de fonte oficial, ou se é **calculada com fórmula já oficialmente aprovada e verificável, utilizando entradas documentadas**. Caso não haja fórmula válida ou entradas suficientes, **não substituir por estimativa**: entrada e mediana permanecem pendentes. **Não finalizar** a mediana se faltar dado verificável para qualquer espécie/entrada elegível.
+- **Cálculo e aprovação (D-173/D-179/D-162):** ordenar todos os valores; se amostra par, usar **média dos dois centrais**, preservando **exatamente frações sem arredondar**. O valor real calculado a partir da amostra completa ainda deve ser **apresentado e validado expressamente pelo criador antes de implementar**. A decisão 2B **não aprova uma fórmula nova por si só**.
+- **Não realizado:** nenhuma enumeração completa de espécies e formas elegíveis nem derivação de AGI no nível 50 foi feita nesta atividade; nenhum valor oficial de referência foi obtido ou validado.
+
+### 47.3 Protocolo comparativo de ATB (D-031/D-126/D-163/D-164/D-169/D-170/D-175/D-180/D-184/D-185)
+
+- **Faixas de velocidade (D-184):** identificar, no **código real**, combatentes representativos de **velocidade baixa, intermediária e alta**. Usar as **mesmas condições controladas** para todos; sem inventar faixas ou perfis não existentes.
+- **Intervalos (D-175):** medir a regeneração natural de **3 para 5 blocos ATB** e de **0 para 5 blocos ATB**, preservando ATB inicial de 3/5 (D-031) e a capacidade de cinco blocos; a preparação do teste de 0 não modifica a regra permanente.
+- **Condições (D-180):** regeneração natural ativa, **sem buffs, ações, ganhos instantâneos ou pausas**.
+- **Repetição (D-185):** em **cada perfil/combatente** e **cada intervalo**, executar **cinco medições** e tomar a **mediana dos cinco tempos** daquele par. **Exemplo ilustrativo, não resultado:** cinco medições fictícias `2,00; 2,01; 2,00; 2,18; 2,01 s` → ordenadas `2,00; 2,00; 2,01; 2,01; 2,18` → mediana **2,01 s**.
+- **Base de calibração (D-169):** a referência numérica de AGI para ATB será proposta **a partir do ritmo realmente existente**, sem assumir que `base_speed` já corresponda à AGI permanente ou que a referência ATB seja igual à mediana de AGI dos trajetos (D-145). **Apresentar o número para aprovação antes de implementar.**
+- **Mantido:** D-163 (tempo inversamente proporcional à AGI efetiva), D-164 (piso 1 só na fórmula) e D-170 (releitura da AGI a cada atualização natural). Os resultados medidos do ritmo antigo **não constituem automaticamente parâmetros aprovados do novo sistema**.
+- **Não medido:** perfis reais, tempos, repetibilidade e coeficientes não foram aferidos. Também não foi aprovada metodologia de agregação final entre perfis além da mediana por perfil e intervalo.
+
+### 47.4 Sorteio reproduzível isolado para retarget durante WINDUP (D-108/D-155/D-166/D-171/D-176/D-181/D-186)
+
+- Se o alvo morrer ainda em WINDUP, redirecionar para o **inimigo vivo mais próximo**, medindo a distância **entre as posições lógicas projetadas no plano horizontal da arena**, sem diferença de altura (D-108/D-176/D-181).
+- Tratar candidatos com diferença **até 0,01 unidade da arena, inclusive**, em relação ao mais próximo, como empatados (D-171). Sortear **apenas entre os empatados**, e recalcular duração **uma vez por troca efetiva** ainda em WINDUP (D-155).
+- **D-186:** os desempates devem consumir um **fluxo de RNG reproduzível exclusivo**, **separado dos demais sorteios**. Rolagens de crítico, esquiva, status e IA não devem consumir nem avançar esse fluxo de desempate.
+- **Exemplo hipotético:** uma rolagem de crítico antes do retarget não altera a posição da sequência própria de sorteios de retarget por si; o resultado do desempate ainda depende da sequência, dos candidatos e do estado válidos.
+- **Pendentes:** origem e política da seed exclusiva, ordem dos candidatos elegíveis, algoritmo de RNG, consumo em casos sem empate/um só candidato, ordem de múltiplos desempates e critérios de replay. **Não** reintroduzir ID fixo da D-158, regra histórica substituída pela D-166.
+
+### 47.5 Escopo e limites
+
+- Documentação somente: **cinco novos D-182–D-186**, notas aditivas em **D-177/D-178/D-180/D-166**, atualização do índice, deste consolidado e do GDD em adendo.
+- **Nenhum** código, teste, VFX, cena, asset, dado de espécie ou configuração alterado; **nenhuma medição de ATB ou cálculo de mediana numérica** executado. Referências de AGI de trajetos e de ATB continuam sem validação numérica; não há seed nem gerador de retarget implementado por esta documentação.

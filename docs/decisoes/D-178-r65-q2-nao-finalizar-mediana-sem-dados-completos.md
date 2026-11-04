@@ -21,3 +21,7 @@
 
 - Verificar elenco elegível, AGI-base no nível 50 de cada entrada, documentação que confirme controle direto e variantes. Não foram calculadas ou aprovadas AGIs reais.
 - Somente documentação; sem mudanças de código, fichas de espécies ou testes.
+
+## Complemento posterior — Rodada 66 / D-183 (2026-11-03)
+
+**D-183 (R66-Q2B)** permite considerar verificável a **AGI-base no nível 50 calculada por uma fórmula oficialmente aprovada e verificável, com todas as entradas documentadas**, mesmo se o número não estiver escrito diretamente na ficha. **Sem fórmula oficial válida ou entradas suficientes, o dado permanece pendente** e esta D-178 segue impedindo finalizar a mediana. Não foi aprovada fórmula concreta, nem calculado/validado valor numérico. D-162 continua exigindo validação do criador antes de implementar.

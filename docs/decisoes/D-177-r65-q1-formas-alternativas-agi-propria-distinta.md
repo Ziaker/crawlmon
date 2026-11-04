@@ -22,3 +22,7 @@
 - Verificar na documentação vigente a elegibilidade de cada forma, se dispõe de AGI-base própria e se é distinta; não presumir valores de formas não documentadas. Critérios sobre múltiplas formas com valores iguais entre si não são definidos além da regra literal acima.
 - D-162 continua exigindo validação expressa do valor da mediana real antes de implementar.
 - Apenas documentação; nenhum código, dado de espécies, teste ou recurso modificado.
+
+## Complemento posterior — Rodada 66 / D-182 (2026-11-03)
+
+**D-182 (R66-Q1A)** esclarece a contagem de formas alternativas: **apenas uma observação por valor distinto de AGI-base no nível 50 dentro de cada espécie**. Se duas formas controláveis da mesma espécie possuírem o mesmo valor AGI-base, não duplicar a observação; AGI igual entre **espécies diferentes** continua contando separadamente. Preservar elegibilidade da D-174 e exigência de dados completos da D-178, sem calcular referência ou modificar código.

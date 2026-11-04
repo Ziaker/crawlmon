@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.36 — Rodada 65 registrada em adendo rastreável (2026-11-03); histórico preservado.  
+> **Revisão:** 1.37 — Rodada 66 registrada em adendo rastreável (2026-11-03); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1708,6 +1708,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.36 | 2026-11-03 | Rodada 65: formas alternativas só com AGI-base própria distinta; mediana apenas com dados completos; precisão fracionária; medição ATB controlada 3→5 e 0→5; distância horizontal entre posições lógicas; D-177–D-181. | Rodada 65 fechada / Rodada 66 proposta |
 
+| 1.37 | 2026-11-03 | Rodada 66: deduplicação de formas por AGI distinta intrasespécie; derivação por fórmula oficial verificável; medição ATB baixa/intermediária/alta com cinco repetições e mediana; RNG próprio de retarget; D-182–D-186. | Rodada 66 fechada / Rodada 67 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -1860,3 +1862,20 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos ilustrativos, não parâmetros aprovados:** forma-base controlável com AGI-base hipotética 40 e forma alternativa também controlável com AGI-base própria 65 → duas entradas; variante cosmética com AGI-base idêntica não aumenta automaticamente a amostra. Se os dois valores centrais forem 42 e 43, a mediana é **42,5** e permanece fracionária. Sob regeneração fictícia de 1 bloco/s, 3→5 demoraria 2 s e 0→5, 5 s; isso **não foi medido**. Com distâncias lógicas horizontais 4,000 e 4,006, há empate segundo a tolerância inclusiva 0,01 de D-171.
 
 **Não resolvido:** lista real e AGI-base nível 50 de todas as espécies/formas elegíveis, completude da amostra, validação do valor da mediana para trajetos (D-162); medição real dos intervalos naturais de ATB e validação da referência ATB (D-169); identificação dos pontos lógicos de posição no código e política de RNG reproduzível. **Nenhum código, ficha, cena, teste ou VFX modificado; nenhuma medição executada.**
+
+
+### 12.11 Rodada 66 — valores distintos por espécie, AGI oficial verificável, medição estratificada e RNG isolado (revisão 1.37)
+
+> **2026-11-03.** Decisões expressas **1A, 2B, 3B, 4B e 5A**, sem observações adicionais; **D-182–D-186** e seção **47** de `docs/REGRAS_DO_JOGO.md`. Registro aditivo e de rastreabilidade; as revisões e conflitos históricos anteriores permanecem intactos. O GDD continua **não normativo para combate** por D-001.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R66-Q1 | **1A** | **Uma observação por AGI-base distinta dentro da mesma espécie**: não duplicar formas com valor igual, mas preservar observações de espécies diferentes | [D-182](decisoes/D-182-r66-q1-formas-um-valor-distinto-agi-por-especie.md) |
+| R66-Q2 | **2B** | Valor AGI-base nível 50 pode ser **calculado por fórmula oficialmente aprovada e verificável, com entradas documentadas**; sem fórmula válida, manter pendência | [D-183](decisoes/D-183-r66-q2-agi-nivel50-por-formula-oficial-verificavel.md) |
+| R66-Q3 | **3B** | Medir representantes das **faixas baixa, intermediária e alta de velocidade realmente presentes no código**, sob as mesmas condições controladas | [D-184](decisoes/D-184-r66-q3-atb-perfis-velocidade-baixa-media-alta.md) |
+| R66-Q4 | **4B** | **Cinco medições para cada intervalo e combatente**, usando **mediana dos cinco tempos observados** | [D-185](decisoes/D-185-r66-q4-atb-cinco-medicoes-mediana-por-intervalo.md) |
+| R66-Q5 | **5A** | Desempates de retarget usam **fluxo próprio de RNG reproduzível**, isolado dos demais sorteios do combate | [D-186](decisoes/D-186-r66-q5-fluxo-rng-exclusivo-desempate-retarget.md) |
+
+**Exemplos exclusivamente ilustrativos:** espécie A com AGI-base 40 e duas formas controláveis com AGI própria 60 produz duas observações (`40, 60`), não três; espécie B de AGI 60 continua contribuindo separadamente. Se cinco observações de tempo forem `2,00; 2,01; 2,00; 2,18; 2,01 s`, sua mediana é **2,01 s** (não medido no jogo). Uma rolagem de crítico não deve avançar o fluxo exclusivo de RNG de retarget.
+
+**Pendências e garantias:** identificar fontes oficiais de espécies e fórmulas de AGI-base no nível 50, formar amostra completa e **validar mediana real com o criador antes de implementar (D-162)**; selecionar perfis reais, medir 3→5 e 0→5 controladamente cinco vezes por perfil, consolidar tempos e **submeter referência ATB à validação (D-169)**; definir seed, algoritmo, ordenação e consumo de RNG. **Nenhum código ou teste alterado, nenhuma medição ou cálculo real executado nesta rodada.**

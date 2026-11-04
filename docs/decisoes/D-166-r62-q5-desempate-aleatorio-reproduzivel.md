@@ -25,3 +25,7 @@
 ## Complemento posterior — Rodada 63 / D-171 (2026-11-03)
 
 **D-171 (R63-Q5B):** considerar empate de proximidade quando a **diferença de distâncias for até 0,01 unidade da arena, inclusive o limite**. O grupo sorteável continua sendo o conjunto de **inimigos vivos mais próximos dentro dessa tolerância**, mantendo **sorteio reproduzível**, não desempate por ID. Critério geométrico concreto de distância, seed e ordem de sorteios permanecem por definir. Preservado o histórico; sem código.
+
+## Complemento posterior — Rodada 66 / D-186 (2026-11-03)
+
+**D-186 (R66-Q5A)** define que o sorteio reproduzível de desempates em **retarget durante WINDUP** usa **um fluxo próprio de números pseudoaleatórios, separado dos demais sorteios do combate**. Rolagens de crítico, esquiva, status e outras mecânicas não avançam esse fluxo de retarget. Permanecem pendentes seed, algoritmo e ordem de consumo do fluxo; não declarar RNG implementado. Preservar a D-171 (tolerância 0,01), D-176/D-181 (distância horizontal entre posições lógicas) e o histórico de substituição da D-158.

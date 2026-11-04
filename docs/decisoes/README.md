@@ -217,4 +217,10 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-180](D-180-r65-q4-atb-medicao-controlada-sem-interferencias.md) | ATB / R65 | Q4A: medir 3→5 e 0→5 em condições controladas, regeneração natural ativa, sem buffs, ações, ganhos instantâneos ou pausas | Aprovada; medições não executadas |
 | [D-181](D-181-r65-q5-distancia-posicoes-logicas-plano-horizontal.md) | Combate / R65 | Q5A: medir distância horizontal entre posições lógicas de referência dos combatentes | Aprovada; sem implementação |
 
+| [D-182](D-182-r66-q1-formas-um-valor-distinto-agi-por-especie.md) | AGI / R66 | Q1A: uma observação por valor distinto de AGI-base dentro de cada espécie, sem duplicar formas iguais | Aprovada; sem mediana calculada |
+| [D-183](D-183-r66-q2-agi-nivel50-por-formula-oficial-verificavel.md) | AGI / R66 | Q2B: aceitar AGI-base nível 50 derivada de fórmula oficialmente aprovada e verificável com entradas documentadas; sem fórmula, pendente | Aprovada; nenhuma fórmula nova |
+| [D-184](D-184-r66-q3-atb-perfis-velocidade-baixa-media-alta.md) | ATB / R66 | Q3B: medir representantes reais de velocidade baixa, intermediária e alta do código, em condições controladas | Aprovada; perfis/medições pendentes |
+| [D-185](D-185-r66-q4-atb-cinco-medicoes-mediana-por-intervalo.md) | ATB / R66 | Q4B: cinco medições por intervalo e combatente, consolidar pela mediana dos tempos | Aprovada; medições não executadas |
+| [D-186](D-186-r66-q5-fluxo-rng-exclusivo-desempate-retarget.md) | Combate / R66 | Q5A: fluxo de RNG reproduzível exclusivo dos desempates de retarget, separado dos demais sorteios | Aprovada; seed/algoritmo pendentes |
+
 > **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.
