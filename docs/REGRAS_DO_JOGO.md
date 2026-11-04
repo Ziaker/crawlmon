@@ -1955,3 +1955,37 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Conflitos preservados:** não conciliar unilateralmente a divergência R60-Q2/Q3 de LUK frente a D-150/D-152/D-153 (GDD §12.13); D-203 mantém odômetro fora do jogo principal, sem remover protótipo. A D-235 segue obrigatória para Moves/VFX de qualquer personagem, lado ou protótipo.
 - **Escopo:** quatro arquivos D novos, índice, consolidação e adendo GDD. **Nenhum código, IA, teste, Move, ficha, cena, asset ou VFX alterado; nenhum teste de gameplay ou coleta de atributos realizado.**
 
+---
+
+## 64. Fichas de Moves — Rodada M2: parâmetros técnicos separados, efeitos individuais e visual fora de combate
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A, 4A, 5A e 6A**; **observações: nenhuma**. Decisões individuais **D-244 a D-249**. Série específica de fichas de Moves, independente da numeração das rodadas gerais. Registro aditivo pela D-061, sem implementação.
+
+### 64.1 Escolhas registradas
+
+| Decisão | Escolha | Regra aprovada |
+|---|---|---|
+| [D-244](decisoes/D-244-m2-q1-dano-base-categoria-escalas-separadas.md) | **1A** | Q1A: separar dano-base, categoria físico/mágico e escalas STR/MAG na ficha técnica; tooltip com dano numérico calculado |
+| [D-245](decisoes/D-245-m2-q2-windup-trajeto-velocidade-projetil-independentes.md) | **2A** | Q2A: windup, tempo-base de deslocamento e velocidade de projétil separados; usar só modificadores aprovados |
+| [D-246](decisoes/D-246-m2-q3-selecao-faccao-abrangencia-alvos-separadas.md) | **3A** | Q3A: seleção Self/One/Two/All, facção ally/enemy/both e abrangência condicional dos efeitos como dimensões distintas |
+| [D-247](decisoes/D-247-m2-q4-cura-buffs-status-dispel-efeitos-individuais.md) | **4A** | Q4A: cura, buffs/debuffs, status e Dispel como efeitos individuais com magnitude, condição, chance, duração e ordem aplicáveis |
+| [D-248](decisoes/D-248-m2-q5-visual-preparo-emissao-impacto-dissipacao-ficha-fora-combate.md) | **5A** | Q5A: descrição visual somente fora do combate, separada por preparação, movimento/emissão, impacto e dissipação quando aplicável |
+| [D-249](decisoes/D-249-m2-q6-dispel-lista-explicita-removiveis-excecoes.md) | **6A** | Q6A: Move com Dispel deve listar expressamente efeitos removíveis e exceções aplicáveis |
+
+### 64.2 Aplicação às fichas e relação com as regras anteriores
+
+- **Dano e escala (D-244):** registrar separadamente **dano-base, categoria física/mágica e escalas STR/MAG** na ficha técnica; no texto integrado da **tooltip em combate**, exibir **dano numérico calculado em pontos**, não multiplicadores ou fórmulas isolados (D-229/D-230). STR serve de referência a dano físico e MAG a dano mágico/especial (D-122). Somente efeitos explicitamente declarados escaláveis pela ficha recebem escala MAG (D-123). **Nenhuma fórmula, coeficiente, valor-base ou categoria individual de Move foi escolhida**.
+- **Tempos (D-245):** **windup**, **tempo-base de deslocamento próprio de cada Move** e **velocidade individual de projétil** são parâmetros separados quando aplicáveis. Preservar D-119/D-133/D-136 para AGI e passos nos trajetos e D-057/D-067/D-077/D-078 para ondas AoE com geometria e velocidade constante por Move. **Não deduzir que a AGI altera o projétil** ou que há duração para um deslocamento inexistente.
+- **Alvos (D-246):** separar **seleção** (`Self/One/Two/All`), **facção elegível** (`ally/enemy/both`) e **abrangência de cada efeito**, inclusive condições especiais. Exemplo existente: **Dragon Rage** é alvo único com impacto em área condicional (D-032); não transformar todo AoE em alvo principal, preservando D-007/D-037. **Não inventar regras de alvos ou combinações** não definidas nas fichas.
+- **Efeitos (D-247):** registrar individualmente **cura, buff/debuff, status e Dispel**, com **magnitude, condições, chance, duração e ordem quando aplicáveis**; não impor chance ou duração inexistentes. Preservar D-210/D-213/D-215 para tentativas, ordem e incompatibilidades, D-199/D-202/D-207/D-211 para condições e D-227/D-234 para RNG. Matriz entre Moves (D-243) ainda não aprovada concretamente. **Não importar efeitos adicionais** para Moves existentes.
+- **Visual (D-248):** dividir a **descrição visual da ficha fora do combate** em **preparação, movimento/emissão, impacto e dissipação** quando aplicáveis; no combate manter o **texto mecânico integrado** sem descrição artística (D-229). Não introduzir VFX, câmera, movimentos ou fases que não estejam aprovados; D-235 exige o mesmo Move independente de personagem, lado e posição.
+- **Dispel (D-249):** Move que possuir Dispel lista **expressamente os efeitos removíveis e as exceções aplicáveis**; não declarar qualquer par/status como removível ou imune sem decisão. Não atribuir Dispel a Media nem a qualquer outra habilidade sem sua ficha declarar o efeito.
+
+### 64.3 Limites e histórico preservados
+
+- O formato de **tooltip estilo LoL** (custos/windup acima, texto integrado em combate, valores numéricos de dano/cura) é vigente por **D-229/D-230**. **A ficha técnica** é distinta da tooltip; a M2 não a converte em painéis de gameplay, nem aprova cálculos STR/MAG, efeitos concretos, números de MP ou um novo modelo de runtime.
+- **D-228:** Moves mágicos/especiais têm MP adicional aos recursos aplicáveis, com custos **individuais pendentes**; prevalece somente no conflito de MP com a D-032. Não decidir automaticamente quais Moves individuais são mágicos/especiais a partir do tipo de execução.
+- **D-235:** todo Move/VFX funciona independentemente de personagem, equipe, lado, posições fixas e câmera. **Sem teste** de lados/atacantes/alvos; esta é documentação.
+- **Pendências:** fórmulas-base e coeficientes, valores individuais, tempos/velocidades, regras de mistura de alvos, herança de campos entre efeitos, critérios de Dispel e efeitos removíveis, detalhes estéticos, validação de runtime e números numéricos de preview sem alvo identificado.
+- **Conflitos históricos preservados:** divergência de LUK da Rodada 60 frente a D-150/D-152/D-153 (GDD §12.13) não resolvida; D-203 mantém odômetro fora do jogo principal. D-215/D-217/D-221/D-225/D-238 mantêm validações de fichas incompletas em situações aprovadas.
+- **Escopo:** seis novos documentos de decisão (D-244 a D-249), índice, este consolidado e adendo do GDD. **Nenhum código, ficha operacional, teste, HUD, cena, asset, animação, câmera ou VFX modificado. Nenhum teste de gameplay executado.**

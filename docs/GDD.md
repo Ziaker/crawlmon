@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.53 — Rodada 79 registrada em adendo rastreável (2026-11-04); histórico preservado.  
+> **Revisão:** 1.54 — Fichas de Moves M2: seis decisões de estrutura técnica e visual (2026-11-04); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1742,6 +1742,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.53 | 2026-11-04 | Rodada 79: VIT/SPI idênticos na mesma faixa mesmo com tercis desiguais; IA sem Move/Tackle elegíveis reavalia na próxima oportunidade normal sem agir/gastar; excedente condicional rejeitado e violação registrada preservando eventos válidos; matriz de prioridades por pares de status incompatíveis entre Moves sujeita à aprovação. D-240–D-243. | Rodada 79 fechada / Rodada 80 proposta |
 
+| 1.54 | 2026-11-04 | Fichas de Moves M2: dano-base/categoria/escalas separados com tooltip numérica; windup/trajeto/projétil separados; seleção/facção/abrangência independentes; efeitos individuais parametrizados; visual por fases apenas fora de combate; Dispel lista remoções e exceções. D-244–D-249. | M2 fechada / M3 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2158,4 +2160,21 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos não normativos:** espécies hipotéticas com VIT 50 exatamente em um tercil fronteiriço devem receber **uma mesma classificação em VIT**, mantendo pendente qual faixa será homologada; a IA sem qualquer ação elegível **não inicia ação nem consome recursos** e consulta novamente na próxima oportunidade normal; Move com máximo fictício três que solicite uma quarta ocorrência deve **rejeitar a quarta** e registrar violação, sem desfazer eventos válidos resolvidos; a matriz por pares de status ainda **não contém pares concretos nem vencedores aprovados**, apesar de seu formato estar agora aprovado.
 
 **Preservação e pendências:** D-212/D-216/D-220/D-224/D-231/D-236 mantêm verificação de valores VIT/SPI nível 50, tercis separados e aprovação de cortes e amostra antes de qualquer K (D-208); D-225/D-232/D-237 continuam controlando filtragem de Moves e consideração separada de Tackle pela IA. D-218/D-222/D-226/D-233/D-238 preservam o plano na declaração, índices reservados e máximo exigido; a nova D-242 não aprova como lidar com eventos posteriores ao excedente nem canal de log. D-213/D-215/D-219/D-223/D-227/D-234/D-239 mantêm tentativas, probabilidades e ordenação RNG, sem escolher vencedores de pares incompatíveis. D-095 mantém empate por KO simultâneo; D-203 exclui odômetro do jogo principal; D-235 mantém independência de Moves/VFX. A divergência de LUK da Rodada 60 (§12.13) continua **não resolvida**. **Somente documentação, sem editar código, testes, IA, fichas, Moves, cenas, assets ou VFX, sem testar gameplay ou levantar valores defensivos.**
+
+### 12.29 Fichas de Moves — Rodada M2: dano, tempos, alvos, efeitos, visual e Dispel (revisão 1.54)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A, 4A, 5A e 6A**; **sem observações próprias**. Registros individuais **D-244–D-249** consolidados em **§64** de `docs/REGRAS_DO_JOGO.md`. A D-061 exige registro individual e preservação histórica; o GDD permanece **não normativo para o combate** (D-001). Nenhum código ou ficha operacional foi modificado.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| M2-Q1 | **1A** | Q1A: separar dano-base, categoria físico/mágico e escalas STR/MAG na ficha técnica; tooltip com dano numérico calculado | [D-244](decisoes/D-244-m2-q1-dano-base-categoria-escalas-separadas.md) |
+| M2-Q2 | **2A** | Q2A: windup, tempo-base de deslocamento e velocidade de projétil separados; usar só modificadores aprovados | [D-245](decisoes/D-245-m2-q2-windup-trajeto-velocidade-projetil-independentes.md) |
+| M2-Q3 | **3A** | Q3A: seleção Self/One/Two/All, facção ally/enemy/both e abrangência condicional dos efeitos como dimensões distintas | [D-246](decisoes/D-246-m2-q3-selecao-faccao-abrangencia-alvos-separadas.md) |
+| M2-Q4 | **4A** | Q4A: cura, buffs/debuffs, status e Dispel como efeitos individuais com magnitude, condição, chance, duração e ordem aplicáveis | [D-247](decisoes/D-247-m2-q4-cura-buffs-status-dispel-efeitos-individuais.md) |
+| M2-Q5 | **5A** | Q5A: descrição visual somente fora do combate, separada por preparação, movimento/emissão, impacto e dissipação quando aplicável | [D-248](decisoes/D-248-m2-q5-visual-preparo-emissao-impacto-dissipacao-ficha-fora-combate.md) |
+| M2-Q6 | **6A** | Q6A: Move com Dispel deve listar expressamente efeitos removíveis e exceções aplicáveis | [D-249](decisoes/D-249-m2-q6-dispel-lista-explicita-removiveis-excecoes.md) |
+
+**Aplicação e exemplos ilustrativos:** uma ficha de Bite pode manter dano-base/categoria/escalas em campos técnicos separados, enquanto sua tooltip apresenta **número calculado** do contexto (D-230), sem inventar fórmula. Dragon Rage pode selecionar um inimigo e só produzir dano em área após contato válido; isso é **separação de seleção e abrangência**, não revogação das regras gerais de AoE (D-007/D-032). Um Move com projétil possui campos distintos para windup e velocidade de voo, sem presumir como AGI influencia o projétil (D-119/D-133/D-078). Efeitos distintos são descritos individualmente conforme suas condições e ordem, sem importar status incompatíveis ou Dispel concreto (D-210/D-213/D-215/D-243). As descrições artísticas por **preparação, movimento/emissão, impacto e dissipação** ficam **somente fora de combate** (D-229/D-248).
+
+**Proteções e pendências:** preservar **D-228** para MP adicional dos Moves mágicos/especiais, com custos específicos em aberto; preservar **D-229/D-230** para tooltip estilo LoL com dano/cura expressos em **pontos numéricos**, e **D-235** para independência de Moves/VFX de personagem, time, lado e coordenadas fixas. Não foi definida fórmula STR/MAG, valor numérico oficial por Move, escala de projétil por AGI, alcance concreto de Dispel, herança de seleção de alvo, cena ou visual específico. Divergência histórica de LUK na R60 (GDD §12.13) preservada; D-203 mantém odômetro fora do jogo principal. **Somente documentação: nenhum código, teste, ficha, Move, HUD, cena, asset, animação ou VFX alterado; nenhum teste de gameplay executado.**
 
