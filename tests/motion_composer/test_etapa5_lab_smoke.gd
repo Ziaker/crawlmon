@@ -85,6 +85,19 @@ func _run() -> void:
 			var d := absf(hues[i] - hues[j])
 			min_gap = minf(min_gap, minf(d, 1.0 - d))
 	ok(min_gap > 0.08, "ramos irmãos têm matizes bem distintos (menor distância %.3f)" % min_gap)
+	# representação: pontos ↔ fitas conservam a composição
+	var rev := s.composition.revision
+	var time_before := s.clock.time
+	lab.set_representation(1)
+	await process_frame
+	ok(lab.ribbons.visible and not lab.points.visible and lab.ribbons.triangle_count > 0, "Fitas: a vista de fitas desenha e a de pontos some")
+	var rmat := (lab.ribbons.get_child(0) as MeshInstance3D).material_override as ShaderMaterial
+	ok(rmat != null and rmat.shader.resource_path.ends_with(".gdshader"), "as fitas usam ShaderMaterial com .gdshader")
+	lab.set_representation(2)
+	await process_frame
+	ok(lab.ribbons.visible and lab.points.visible and lab.points.shown_count > 0 and lab.ribbons.triangle_count > 0, "Pontos + fitas desenha as duas")
+	lab.set_representation(0)
+	ok(s.composition.revision == rev and is_equal_approx(s.clock.time, time_before), "trocar a representação não altera a composição, a revisão nem o relógio")
 	# pelo menos um quadro depois de tudo
 	await process_frame
 	ok(lab.points.shown_count > 0 and not s.last_result.has_errors(), "continua desenhando sem erros após as operações")

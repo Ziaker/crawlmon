@@ -35,4 +35,4 @@ P-07 (orçamento), P-08 (aparência e disposição da interface), P-09 (composi�
 
 ## Estado
 
-Fatia 1 entregue e mostrada ao criador (relógio, toggle D-042, presets D-045, representação Pontos com shader, laboratório mínimo; 96 verificações novas, 553 no total). **Aguardando a aprovação visual do criador** antes da fatia seguinte (ver §26 da especificação).
+Fatia 1 **aprovada pelo criador** ("estao otimos"). Fatia 2 (Fitas) entregue e mostrada em vídeo; **aguarda a aprovação visual** antes da fatia seguinte (ver §27). Histórico: fatia 1 entregue e mostrada ao criador (relógio, toggle D-042, presets D-045, representação Pontos com shader, laboratório mínimo; 96 verificações novas, 553 no total). **Aguardando a aprovação visual do criador** antes da fatia seguinte (ver §26 da especificação).

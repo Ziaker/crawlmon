@@ -1062,3 +1062,22 @@ godot --path . res://scenes/motion_lab/motion_lab.tscn -- --capture=C:/pasta/sai
 **Verificado:** 79 verificações do relógio, da sessão e dos presets (ida e volta idêntica em 4 instantes; 17 formas de preset inválido recusadas; nenhum arquivo temporário sobra) e 17 do laboratório instanciado (adicionar, reordenar, ligar, isolar, remover, editar nos dois modos, salvar e carregar presets pela interface; o material é `ShaderMaterial` com `.gdshader`); execução em janela com GL Compatibility (NVIDIA GeForce RTX 2050) sem erros, com a captura mostrada ao criador. As sete suítes somam 553 verificações, todas sem falhas. **Medido:** avaliação ≈ 28–36 ms por quadro na demonstração (832 amostras, rastro de 12 idades), o que limita a prévia a cerca de 30 quadros/s; sem orçamento aprovado.
 
 **Não feito nesta fatia (aguarda aprovação visual):** Fitas, Fragmentos e Fumaça/billboards (D-044); comparação A/B; estudos individuais dos 20 comportamentos e a receita da §6 como demonstração; seleção de ramos e máscaras na interface; reprodução do trecho em laço pela interface. **Não verificado:** aparência aprovada pelo criador, desempenho em outro hardware, comportamento da interface em resoluções pequenas.
+
+## 27. Etapa 5, fatia 2 — representação Fitas — 2026-11-04 (D-305)
+
+Aprovação da fatia anterior pelo criador, literal: "estao otimos" (aparência dos Pontos, vídeos da §26). Esta fatia acrescenta **uma** representação: **Fitas**. Objetos e shader do Godot: `ArrayMesh` reconstruído por quadro num `MeshInstance3D`, `ShaderMaterial` com `shaders/motion_lab/motion_ribbon.gdshader` (spatial, `unshaded`, `cull_disabled`, GL Compatibility); nada de HTML.
+
+| Parte | Arquivo | Resumo |
+|---|---|---|
+| Geometria (dado puro) | `lab/motion_ribbon_builder.gd` | agrupa as amostras em fitas e gera vértices, cores, UVs, índices e AABB |
+| Vista | `lab/motion_ribbons_view.gd` | uma superfície de `ArrayMesh` por quadro, `custom_aabb` própria |
+| Shader | `shaders/motion_lab/motion_ribbon.gdshader` | cor e alfa dos vértices; borda suavizada por `UV.y` |
+| Laboratório | `lab/motion_lab.gd` | seletor Pontos / Fitas / Pontos + fitas; largura da fita; `--rep=pontos|fitas|ambos` |
+
+**Agrupamento (genérico, sem saber qual comportamento gerou as amostras):** por ramo. Se todas as amostras do ramo têm a mesma idade, é uma fita de *estado* ordenada por `u` (fluxo atual, cada ramo de bifurcação, cada pós-imagem). Se as idades variam (rastro M19), cada elemento é uma fita de *história* ordenada por idade, começando na amostra atual do mesmo elemento (sem vão).
+
+**Orientação (§19.4):** base de rotação mínima (transporte paralelo) a partir da base da primeira amostra; tangente nula reaproveita a anterior; inversão de 180° não gira a fita. Segmentos só são omitidos quando as **duas** pontas estão ocultas, para o rastro sumir por alfa e não ser cortado. Largura = largura-base × largura da amostra; alfa do vértice = opacidade (0 se invisível); brilho = intensidade; matiz por ramo (ângulo áureo por índice, nome da camada embaralhado). Trocar a representação não altera a composição, a revisão nem o relógio (testado).
+
+**Verificado:** 43 verificações da geometria (agrupamento de fluxo, rastro, bifurcação e pós-imagem; ordem mesmo com entrada invertida; cabeça do rastro; base estável em reta, inversão de 180°, pontos coincidentes e hélice; atributos por ponto; AABB; determinismo) e 22 do laboratório (incluindo a troca de representação); as oito suítes somam 601 verificações, todas sem falhas. 10 mutações no construtor derrubam os testes (uma, a de tangente nula, é equivalente: o resultado geométrico não muda). Execução em janela com GL Compatibility sem erros; vídeos mostrados ao criador. **Medido:** construção das fitas ≈ 5 ms por quadro com 704 amostras (GDScript, headless).
+
+**Não verificado:** aparência aprovada pelo criador; a ordenação de fitas translúcidas sobrepostas (o shader não escreve profundidade, §19.5 pede medição); fitas viradas de lado (fitas planas somem quando vistas de perfil, sem versão voltada para a câmera); desempenho em outro hardware. **Faltam:** Fragmentos e Fumaça/billboards (D-044), comparação A/B, estudos individuais dos 20, seleção de ramos e máscaras na interface.

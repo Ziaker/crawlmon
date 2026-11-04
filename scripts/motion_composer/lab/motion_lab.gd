@@ -12,6 +12,9 @@ const PANEL_WIDTH := 372.0
 
 var session: MotionLabSession = MotionLabSession.new()
 var points: MotionPointsView
+var ribbons: MotionRibbonsView
+## 0 = pontos, 1 = fitas, 2 = pontos + fitas (a troca conserva a composição).
+var representation: int = 0
 
 var _cam: Camera3D
 var _yaw: float = 0.6
@@ -46,6 +49,8 @@ var _preset_name: LineEdit
 var _preset_opt: OptionButton
 var _preset_status: Label
 var _size_slider: HSlider
+var _width_slider: HSlider
+var _rep_opt: OptionButton
 var _catalog_ids: Array[StringName] = []
 
 
@@ -59,6 +64,7 @@ func _ready() -> void:
 		_default_composition()
 	_refresh_layers()
 	_refresh_presets()
+	set_representation(representation)
 	session.clock.playing = _capture_path == ""
 	if _capture_path != "":
 		session.clock.seek(_arg_float("--t=", 1.2))
@@ -71,6 +77,8 @@ func _parse_args() -> void:
 			_capture_path = a.substr(10)
 		elif a.begins_with("--frames="):
 			_capture_frames = int(a.substr(9))
+		elif a.begins_with("--rep="):
+			representation = {"pontos": 0, "fitas": 1, "ambos": 2}.get(a.substr(6), 0)
 
 
 func _arg_text(prefix: String) -> String:
@@ -167,6 +175,8 @@ func _build_world() -> void:
 
 	points = MotionPointsView.new()
 	add_child(points)
+	ribbons = MotionRibbonsView.new()
+	add_child(ribbons)
 
 	add_child(_make_lines(_grid_lines(), true))
 	add_child(_make_lines(_axis_lines(), true))
@@ -360,15 +370,17 @@ func _build_ui() -> void:
 	box.add_child(_section("Representação (D-044)"))
 	var row6 := HBoxContainer.new()
 	box.add_child(row6)
-	var rep := OptionButton.new()
-	rep.add_item("Pontos (neutro, shader)")
-	rep.add_item("Fitas — próxima fatia")
-	rep.add_item("Fragmentos — próxima fatia")
-	rep.add_item("Fumaça/billboards — próxima fatia")
-	rep.set_item_disabled(1, true)
-	rep.set_item_disabled(2, true)
-	rep.set_item_disabled(3, true)
-	row6.add_child(rep)
+	_rep_opt = OptionButton.new()
+	_rep_opt.add_item("Pontos (neutro, shader)")
+	_rep_opt.add_item("Fitas (neutro, shader)")
+	_rep_opt.add_item("Pontos + fitas")
+	_rep_opt.add_item("Fragmentos — próxima fatia")
+	_rep_opt.add_item("Fumaça/billboards — próxima fatia")
+	_rep_opt.set_item_disabled(3, true)
+	_rep_opt.set_item_disabled(4, true)
+	_rep_opt.select(representation)
+	_rep_opt.item_selected.connect(func(i: int) -> void: set_representation(i))
+	row6.add_child(_rep_opt)
 	box.add_child(_small("Tamanho do ponto (m)"))
 	_size_slider = HSlider.new()
 	_size_slider.min_value = 0.005
@@ -377,6 +389,14 @@ func _build_ui() -> void:
 	_size_slider.value = points.point_size
 	_size_slider.value_changed.connect(func(v: float) -> void: points.point_size = v; _dirty = true)
 	box.add_child(_size_slider)
+	box.add_child(_small("Largura da fita (m)"))
+	_width_slider = HSlider.new()
+	_width_slider.min_value = 0.005
+	_width_slider.max_value = 0.15
+	_width_slider.step = 0.001
+	_width_slider.value = ribbons.ribbon_width
+	_width_slider.value_changed.connect(func(v: float) -> void: ribbons.ribbon_width = v; _dirty = true)
+	box.add_child(_width_slider)
 
 	# --- presets
 	box.add_child(_section("Presets (pasta fixa)"))
@@ -508,6 +528,14 @@ func _on_add_layer() -> void:
 	_selected = l.id
 	_after_edit()
 	_refresh_layers()
+
+
+## Troca de representação: só muda o desenho; a composição, a revisão e o relógio não são tocados.
+func set_representation(i: int) -> void:
+	representation = clampi(i, 0, 2)
+	points.visible = representation != 1
+	ribbons.visible = representation != 0
+	_dirty = true
 
 
 func _selected_index() -> int:
@@ -706,7 +734,10 @@ func _process(delta: float) -> void:
 		_dirty = false
 		_last_time = session.clock.time
 		var r := session.evaluate()
-		points.show_samples(r.samples)
+		if representation != 1:
+			points.show_samples(r.samples)
+		if representation != 0:
+			ribbons.show_samples(r.samples)
 		_update_readouts(r)
 	_play_btn.text = "Pausar" if session.clock.playing else "Reproduzir"
 	if _capture_path != "":
@@ -716,8 +747,8 @@ func _process(delta: float) -> void:
 
 
 func _update_readouts(r: MotionResult) -> void:
-	_stats.text = "amostras %d | históricas %d | pontos %d | camadas ativas %d | avaliação %.1f ms | revisão %d" % [
-		r.stats.get("samples", 0), r.stats.get("history_samples", 0), points.shown_count,
+	_stats.text = "amostras %d | históricas %d | pontos %d | fitas %d (%d tri) | camadas ativas %d | avaliação %.1f ms | revisão %d" % [
+		r.stats.get("samples", 0), r.stats.get("history_samples", 0), points.shown_count, ribbons.strip_count, ribbons.triangle_count,
 		r.stats.get("layers_active", 0), float(r.stats.get("eval_usec", 0)) / 1000.0, r.revision]
 	var lines: Array[String] = []
 	for d in r.diagnostics:
