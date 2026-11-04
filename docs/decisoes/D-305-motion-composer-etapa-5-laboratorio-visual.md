@@ -33,6 +33,11 @@ Disposição da interface (P-08), pasta `user://motion_composer/presets/` e form
 
 P-07 (orçamento), P-08 (aparência e disposição da interface), P-09 (composições demonstrativas adicionais) e a aparência dos estudos individuais continuam abertas.
 
+## Aprovações do criador (literais)
+
+- Fatia 1 (Pontos): "estao otimos".
+- Fatia 2 (Fitas): "ok, oque deve prosseguir agora, aprovo ambos" (os dois vídeos de Fitas; a ordem prevista é Fragmentos, Fumaça/billboards, A/B, estudos individuais).
+
 ## Estado
 
-Fatia 1 **aprovada pelo criador** ("estao otimos"). Fatia 2 (Fitas) entregue e mostrada em vídeo; **aguarda a aprovação visual** antes da fatia seguinte (ver §27). Histórico: fatia 1 entregue e mostrada ao criador (relógio, toggle D-042, presets D-045, representação Pontos com shader, laboratório mínimo; 96 verificações novas, 553 no total). **Aguardando a aprovação visual do criador** antes da fatia seguinte (ver §26 da especificação).
+Fatia 1 **aprovada pelo criador** ("estao otimos"). Fatia 2 (Fitas) **aprovada**. Fatia 3 (Fragmentos) entregue e mostrada em vídeo; **aguarda a aprovação visual** antes da fatia seguinte (ver §28). Histórico: fatia 1 entregue e mostrada ao criador (relógio, toggle D-042, presets D-045, representação Pontos com shader, laboratório mínimo; 96 verificações novas, 553 no total). **Aguardando a aprovação visual do criador** antes da fatia seguinte (ver §26 da especificação).

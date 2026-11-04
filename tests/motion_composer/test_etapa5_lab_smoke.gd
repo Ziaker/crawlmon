@@ -98,6 +98,13 @@ func _run() -> void:
 	ok(lab.ribbons.visible and lab.points.visible and lab.points.shown_count > 0 and lab.ribbons.triangle_count > 0, "Pontos + fitas desenha as duas")
 	lab.set_representation(0)
 	ok(s.composition.revision == rev and is_equal_approx(s.clock.time, time_before), "trocar a representação não altera a composição, a revisão nem o relógio")
+	lab.set_representation(3)
+	await process_frame
+	ok(lab.fragments.visible and not lab.points.visible and not lab.ribbons.visible and lab.fragments.shown_count > 0, "Fragmentos: só a vista de fragmentos aparece e desenha")
+	var fmat := ((lab.fragments.get_child(0) as MultiMeshInstance3D).multimesh.mesh.surface_get_material(0)) as ShaderMaterial
+	ok(fmat != null and fmat.shader.resource_path.ends_with(".gdshader"), "os fragmentos usam ShaderMaterial com .gdshader")
+	ok(s.composition.revision == rev and is_equal_approx(s.clock.time, time_before), "a troca para Fragmentos também conserva composição, revisão e relógio")
+	lab.set_representation(0)
 	# pelo menos um quadro depois de tudo
 	await process_frame
 	ok(lab.points.shown_count > 0 and not s.last_result.has_errors(), "continua desenhando sem erros após as operações")

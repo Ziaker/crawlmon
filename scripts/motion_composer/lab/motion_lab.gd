@@ -13,7 +13,8 @@ const PANEL_WIDTH := 372.0
 var session: MotionLabSession = MotionLabSession.new()
 var points: MotionPointsView
 var ribbons: MotionRibbonsView
-## 0 = pontos, 1 = fitas, 2 = pontos + fitas (a troca conserva a composição).
+var fragments: MotionFragmentsView
+## 0 = pontos, 1 = fitas, 2 = pontos + fitas, 3 = fragmentos (a troca conserva a composição).
 var representation: int = 0
 
 var _cam: Camera3D
@@ -60,6 +61,8 @@ func _ready() -> void:
 	_build_ui()
 	if _arg_text("--demo=") == "receita":
 		_recipe_composition()
+	elif _arg_text("--demo=") == "estilhacos":
+		_shards_composition()
 	elif not _load_startup_preset():
 		_default_composition()
 	_refresh_layers()
@@ -78,7 +81,7 @@ func _parse_args() -> void:
 		elif a.begins_with("--frames="):
 			_capture_frames = int(a.substr(9))
 		elif a.begins_with("--rep="):
-			representation = {"pontos": 0, "fitas": 1, "ambos": 2}.get(a.substr(6), 0)
+			representation = {"pontos": 0, "fitas": 1, "ambos": 2, "fragmentos": 3}.get(a.substr(6), 0)
 
 
 func _arg_text(prefix: String) -> String:
@@ -122,6 +125,34 @@ func _default_composition() -> void:
 	trail.params = {"duration": 0.6}
 	c.add_layer(trail)
 	_selected = &"helice"
+
+
+## Demonstração para Fragmentos: uma hélice que nasce, explode para fora e se dissolve (ciclo de 2,4 s).
+## Camadas reais da biblioteca (M01, M17, M16 duas vezes: deslocamento e dissipação); não é um Move.
+func _shards_composition() -> void:
+	var c := session.composition
+	c.sample_count = 128
+	c.duration = 2.4
+	c.seed = 77
+	session.clock.duration = 2.4
+	var burst := {"radial": 1.0, "origin": Vector3(0, 0, 0.75), "cone_deg": 70.0, "distance": 1.1, "t_start": 0.8, "t_duration": 0.9, "curve": 2.0}
+	var specs := [
+		[&"helice", &"M01", MotionTypes.Op.REPLACE, {"radius": 0.3, "pitch": 0.5, "turns": 3.0, "spin_deg_s": 90.0}],
+		[&"nasce", &"M17", MotionTypes.Op.MULTIPLY_ATTRIBUTE, {"t_duration": 0.6, "width": 0.15, "affect_opacity": true, "affect_width": false, "affect_visibility": false}],
+		[&"explosao", &"M16", MotionTypes.Op.OFFSET, burst],
+		[&"dissipa", &"M16", MotionTypes.Op.MULTIPLY_ATTRIBUTE, {"t_start": 0.8, "t_duration": 0.9, "curve": 0.5, "dissipate": 1.0}],
+	]
+	for sp in specs:
+		var l := MotionLayer.new()
+		l.id = sp[0]
+		l.behavior_id = sp[1]
+		l.op = sp[2]
+		l.params = sp[3]
+		c.add_layer(l)
+	_selected = &"explosao"
+	_target = Vector3(0.0, 0.0, 0.75)
+	_dist = 3.0
+	_apply_camera()
 
 
 ## Receita de teste da §6 (sem M19, que é a Etapa 4): compressão → crescimento → zigue-zague + torção →
@@ -177,6 +208,8 @@ func _build_world() -> void:
 	add_child(points)
 	ribbons = MotionRibbonsView.new()
 	add_child(ribbons)
+	fragments = MotionFragmentsView.new()
+	add_child(fragments)
 
 	add_child(_make_lines(_grid_lines(), true))
 	add_child(_make_lines(_axis_lines(), true))
@@ -374,9 +407,8 @@ func _build_ui() -> void:
 	_rep_opt.add_item("Pontos (neutro, shader)")
 	_rep_opt.add_item("Fitas (neutro, shader)")
 	_rep_opt.add_item("Pontos + fitas")
-	_rep_opt.add_item("Fragmentos — próxima fatia")
+	_rep_opt.add_item("Fragmentos (neutro, shader)")
 	_rep_opt.add_item("Fumaça/billboards — próxima fatia")
-	_rep_opt.set_item_disabled(3, true)
 	_rep_opt.set_item_disabled(4, true)
 	_rep_opt.select(representation)
 	_rep_opt.item_selected.connect(func(i: int) -> void: set_representation(i))
@@ -389,6 +421,14 @@ func _build_ui() -> void:
 	_size_slider.value = points.point_size
 	_size_slider.value_changed.connect(func(v: float) -> void: points.point_size = v; _dirty = true)
 	box.add_child(_size_slider)
+	box.add_child(_small("Tamanho do fragmento (m)"))
+	var frag_slider := HSlider.new()
+	frag_slider.min_value = 0.01
+	frag_slider.max_value = 0.2
+	frag_slider.step = 0.001
+	frag_slider.value = fragments.fragment_size
+	frag_slider.value_changed.connect(func(v: float) -> void: fragments.fragment_size = v; _dirty = true)
+	box.add_child(frag_slider)
 	box.add_child(_small("Largura da fita (m)"))
 	_width_slider = HSlider.new()
 	_width_slider.min_value = 0.005
@@ -532,9 +572,10 @@ func _on_add_layer() -> void:
 
 ## Troca de representação: só muda o desenho; a composição, a revisão e o relógio não são tocados.
 func set_representation(i: int) -> void:
-	representation = clampi(i, 0, 2)
-	points.visible = representation != 1
-	ribbons.visible = representation != 0
+	representation = clampi(i, 0, 3)
+	points.visible = representation == 0 or representation == 2
+	ribbons.visible = representation == 1 or representation == 2
+	fragments.visible = representation == 3
 	_dirty = true
 
 
@@ -734,10 +775,12 @@ func _process(delta: float) -> void:
 		_dirty = false
 		_last_time = session.clock.time
 		var r := session.evaluate()
-		if representation != 1:
+		if representation == 0 or representation == 2:
 			points.show_samples(r.samples)
-		if representation != 0:
+		if representation == 1 or representation == 2:
 			ribbons.show_samples(r.samples)
+		if representation == 3:
+			fragments.show_samples(r.samples)
 		_update_readouts(r)
 	_play_btn.text = "Pausar" if session.clock.playing else "Reproduzir"
 	if _capture_path != "":
@@ -747,8 +790,8 @@ func _process(delta: float) -> void:
 
 
 func _update_readouts(r: MotionResult) -> void:
-	_stats.text = "amostras %d | históricas %d | pontos %d | fitas %d (%d tri) | camadas ativas %d | avaliação %.1f ms | revisão %d" % [
-		r.stats.get("samples", 0), r.stats.get("history_samples", 0), points.shown_count, ribbons.strip_count, ribbons.triangle_count,
+	_stats.text = "amostras %d | históricas %d | pontos %d | fitas %d (%d tri) | fragmentos %d | camadas ativas %d | avaliação %.1f ms | revisão %d" % [
+		r.stats.get("samples", 0), r.stats.get("history_samples", 0), points.shown_count, ribbons.strip_count, ribbons.triangle_count, fragments.shown_count,
 		r.stats.get("layers_active", 0), float(r.stats.get("eval_usec", 0)) / 1000.0, r.revision]
 	var lines: Array[String] = []
 	for d in r.diagnostics:
