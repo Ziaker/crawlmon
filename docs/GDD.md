@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.50 — Fichas de Moves: números concretos de dano e cura nas tooltips, sem substituição por fórmulas (2026-11-04); histórico preservado.  
+> **Revisão:** 1.51 — Rodada 77 registrada em adendo rastreável (2026-11-04); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1736,6 +1736,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.50 | 2026-11-04 | Correção de tooltip dos Moves: exibir dano e cura com valores numéricos em pontos, não somente multiplicadores de dano-base ou fórmulas; preservar texto integrado da D-229, custos/windup acima e visual exclusivamente fora de combate. Valores exemplificativos contextualizados não são dano-base aprovado. D-230. | Diretriz numérica de apresentação aprovada / fórmulas e valores-base pendentes |
 
+| 1.51 | 2026-11-04 | Rodada 77: propor faixas VIT/SPI por distribuição verificável e aprovar cortes antes da amostra; IA filtra Moves incompletos antes da escolha e sem custo; máximo explícito para ocorrências condicionais variáveis; chance final status 0%/100% sem RNG. D-231–D-234. | Rodada 77 fechada / Rodada 78 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2107,4 +2109,19 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos verificáveis na implementação atual, não fichas definitivas:** Gible do código tem ataque 9. Com alvo neutro, sem crítico, fraqueza, buff, defesa ou diferença de passos, **Bite = 12 pontos de dano** e **Dragon Rage = 14 pontos de dano**; **Sand Attack = 0 pontos**; para **Media**, um aliado vivo com **32 HP máximo** e pelo menos 13 HP faltantes recupera **13 pontos de HP** conforme a rotina atual. Esses números **não definem um dano-base fixo oficial por Move**, não homologam o futuro sistema STR/MAG nem a natureza física/mágica dos Moves. A aprovação numérica da apresentação **não determina como obter valores quando o contexto de atacante/alvo não estiver disponível**, nem atualiza o sistema de HUD.
 
 **Histórico:** a D-229 continua válida sobre o bloco textual e a separação de VFX, mas seus exemplos antigos apresentados unicamente como `1,3×` e `1,6×` devem ser considerados **insuficientes para a tooltip**. D-032 continua preservada como fonte histórica dos multiplicadores; D-228 mantém MP adicional para mágicos/especiais, valores individuais pendentes. D-198/D-205 preservam regras novas de arredondamento ainda não implementadas no código; M1-Q3 ainda não define modelagem técnica de alvos. Preservar o conflito histórico de LUK da Rodada 60 sem escolher prevalência. **Somente documentação:** nenhum código, ficha, teste, HUD, cena, asset ou VFX modificado; nenhum teste de gameplay executado.
+
+### 12.26 Rodada 77 — faixas defensivas, IA, máximo de ocorrências e consumo RNG em chance extrema (revisão 1.51)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Registros individuais **D-231–D-234**, consolidados em **§61** de `docs/REGRAS_DO_JOGO.md`. Adendo aditivo, sem alterar documentação das séries anteriores; **D-001 mantém o GDD não normativo para combate**. Os adendos das fichas M1 (D-228–D-230) permanecem integralmente preservados.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R77-Q1 | **1A** | **Propor** limites de defesa **baixa, média, alta** a partir da distribuição verificável de **VIT e SPI no nível 50**, **separadamente**, e **submeter os limites à aprovação antes de classificar a amostra** | [D-231](decisoes/D-231-r77-q1-propor-faixas-vit-spi-por-distribuicao-verificavel.md) |
+| R77-Q2 | **2A** | **Excluir Moves com configuração incompleta** da lista de candidatos da IA **antes da seleção tática**, **sem consumo de ação ou recursos**, restringindo-se à falta já normatizada de prioridade para status incompatíveis | [D-232](decisoes/D-232-r77-q2-ia-excluir-moves-incompletos-antes-selecao.md) |
+| R77-Q3 | **3A** | Para Move com número variável de eventos condicionais, **exigir limite máximo explícito** e **reservar os índices de todas as ocorrências possíveis na declaração**; sem máximo, **plano incompleto** | [D-233](decisoes/D-233-r77-q3-limite-maximo-explicito-ocorrencias-condicionais.md) |
+| R77-Q4 | **4A** | Para **chance final de status exatamente 0% ou 100%**, **determinar falha/sucesso sem consumir RNG**, preservando demais condições de aplicação | [D-234](decisoes/D-234-r77-q4-chance-status-extrema-sem-consumir-rng.md) |
+
+**Exemplos hipotéticos, não valores aprovados:** faixas baixa/média/alta de VIT e SPI exigem dados de nível 50 **reais e verificáveis**, com limiares aprovados antes da classificação; ficha com `Status A` e `Status B` incompatíveis sem prioridade não é elegível à escolha tática da IA; limite **hipotético** de três ocorrências condicionais permite reservar três índices na declaração, sem executar eventos que não ocorrerem; chance final de Poison 100% após modificadores só tem sucesso **se o alvo continuar elegível**, sem consumir RNG.
+
+**Compatibilidades e pendências:** D-212/D-216/D-220/D-224 preservam verificação de dados, amostra representativa física/mágica/mista e aprovação posterior; o K compartilhado de VIT/SPI continua sem número (D-201/D-204/D-208). D-215/D-217/D-221/D-225 exigem prioridade de status expressa e bloqueio sem gastar ação; D-232 filtra apenas esse caso na IA, sem criar fallback quando não houver Move válido. D-218/D-222/D-226 mantêm índices fixos e reservados, e D-233 declara plano incompleto sem máximo **sem aprovar bloqueio automático do Move por essa nova causa**. D-143/D-227/D-219/D-223 mantêm chance 0–100%, RNG exclusivo de status e sua ordem, com extremos 0%/100% sem sorteio (D-234). D-095 mantém empate por KO simultâneo e D-203 mantém odômetro fora do jogo principal. O conflito textual de escalas de LUK da Rodada 60 (§12.13) permanece **não resolvido**. A série M1 D-228–D-230 sobre MP e tooltips está **inalterada**. **Nenhum código, teste, ficha, Move, cena, asset ou VFX alterado; nenhum teste de gameplay realizado.**
 

@@ -280,6 +280,11 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 
 | [D-230](D-230-moves-tooltip-dano-cura-numericos-sem-formulas.md) | Fichas de Moves / correção numérica posterior | Mostrar valores concretos de dano/cura em pontos no texto da tooltip; não substituir por multiplicadores ou fórmulas; números de contexto não são dano-base universal | Aprovada; dano-base oficial e exibição sem contexto pendentes; não implementada |
 
+| [D-231](D-231-r77-q1-propor-faixas-vit-spi-por-distribuicao-verificavel.md) | Atributos / R77 | Q1A: propor faixas baixo/médio/alto separadas para VIT e SPI pela distribuição verificada no nível 50, aprovando limites antes de classificar amostra | Aprovada; limites e amostra ainda não homologados |
+| [D-232](D-232-r77-q2-ia-excluir-moves-incompletos-antes-selecao.md) | Combate / R77 | Q2A: excluir Moves com incompatibilidade sem prioridade da lista de candidatos da IA antes da seleção tática, sem consumir ação ou recursos | Aprovada; não implementada |
+| [D-233](D-233-r77-q3-limite-maximo-explicito-ocorrencias-condicionais.md) | Combate / R77 | Q3A: Move de ocorrências condicionais variáveis exige máximo explícito para reservar índices na declaração; plano fica incompleto sem limite | Aprovada; máximos específicos pendentes |
+| [D-234](D-234-r77-q4-chance-status-extrema-sem-consumir-rng.md) | Combate / R77 | Q4A: chance final de status exatamente 0% falha e 100% tem sucesso, sem consumir RNG; demais condições preservadas | Aprovada; não implementada |
+
 > **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.
 
 > **Histórico/precedência R70:** o arquivo [D-048 de HP rolante](D-048-rolling-hp-mother3-odometro.md) registra um **teste/protótipo histórico**, não uma regra vigente do jogo principal após [D-203](D-203-r70-q4d-odometro-descartado-jogo-principal.md). **Não confundir** com o outro arquivo [D-048 de recompensas AoE](D-048-r40-q8-atb-aoe-unico.md), que não foi revogado.

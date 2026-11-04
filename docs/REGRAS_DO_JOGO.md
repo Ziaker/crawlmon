@@ -1862,3 +1862,34 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Faltam decisões** para valores-base de design e fórmulas de STR/MAG por Move e sobre como apresentar valor numérico quando o contexto do atacante/alvo ainda não existe ou muda. Não fixar números exemplificados como atributos permanentes dos Moves. D-198/D-205 mantêm suas regras de arredondamento; código atual ainda não implementa integralmente o combate consolidado.
 - **Escopo executado:** criar D-230 e atualizar índice, este consolidado e adendo GDD. **Não alterar nenhuma linha de código, teste, cena, HUD, ficha oficial, asset ou VFX; não executar testes de gameplay.**
 
+---
+
+## 61. Rodada 77 — limites VIT/SPI a aprovar, filtragem IA, máximo de eventos e chances extremas sem RNG
+
+> **2026-11-04.** O criador aprovou **1A, 2A, 3A e 4A**, sem observações adicionais. Registros individuais **D-231–D-234**. Aditivo à documentação conforme D-061. **Preservar integralmente §58–§60 e D-228–D-230** sobre fichas e tooltips, incluídos na main antes desta rodada. Não altera código.
+
+### 61.1 Regras aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-231](decisoes/D-231-r77-q1-propor-faixas-vit-spi-por-distribuicao-verificavel.md) | **1A** | Propor **faixas defensivas baixas, médias e altas** com base na **distribuição verificável de VIT e SPI no nível 50**, com **aprovação dos limites antes de classificar a amostra** |
+| [D-232](decisoes/D-232-r77-q2-ia-excluir-moves-incompletos-antes-selecao.md) | **2A** | **Excluir Moves com configuração de incompatibilidade incompleta** da lista de candidatos da **IA antes da seleção tática**, **sem gastar ação ou recursos** |
+| [D-233](decisoes/D-233-r77-q3-limite-maximo-explicito-ocorrencias-condicionais.md) | **3A** | Move com **quantidade variável de ocorrências condicionais** precisa de **máximo explícito**, reservando índices possíveis na declaração; **sem máximo, o plano está incompleto** |
+| [D-234](decisoes/D-234-r77-q4-chance-status-extrema-sem-consumir-rng.md) | **4A** | Para chance final de status **exatamente 0% ou 100%**, determinar **falha ou sucesso sem consumir RNG**, mantendo acerto, sobrevivência e outras condições |
+
+### 61.2 Exemplos e compatibilidade
+
+- **VIT/SPI (D-231):** propor cortes entre baixo/médio/alto fundamentados **separadamente** nas distribuições de valores de VIT e SPI **reais e verificáveis no nível 50** (D-224). **Pedir aprovação dos limiares antes de utilizá-los** na classificação e posteriormente submeter a composição concreta da amostra à aprovação (D-220). **Nenhum corte, percentil, dado de espécie, amostra, parâmetro de referência, mitigação-alvo ou K foi escolhido nesta rodada**. D-216 impede fechar referência quantitativa na falta dos dados necessários.
+- **IA (D-232):** se uma ficha hipotética declarar `Status A` e `Status B` incompatíveis **sem prioridade explícita**, excluir esse Move **antes da escolha tática** (D-215/D-217/D-221); não consumir ação nem ATB/Burst/MP só por tentar considerá-lo (D-225). **Não determinar automaticamente Tackle ou outra saída caso não reste candidato válido**. Preservar a regra independente de MP adicional para Moves mágicos/especiais **D-228**, com valores ainda pendentes.
+- **Ocorrências (D-233):** se um Move hipotético pode criar de zero até **três** ocorrências condicionais e tiver **máximo explicitamente definido como três**, reservar todos os índices na declaração; eventos não realizados **não consomem RNG** nem liberam índices. **Três é apenas um valor ilustrativo**, não um limite de Move real. Preservar D-218/D-222/D-226 e as ordenações de retarget. **O plano sem máximo está incompleto**; esta decisão **não autoriza por si só bloqueio em combate por esse motivo** (o bloqueio D-221/D-225 é específico da incompatibilidade de status).
+- **Status/RNG (D-234):** chance final probabilística de status 0% **falha** e 100% **tem sucesso**, **sem consumo da seed/fluxo exclusivo de RNG de status (D-227)**. Exemplo: 103% intermediários limitados a 100% conforme D-143 geram sucesso **apenas se a tentativa for elegível**; se alvo foi esquivado ou derrotado, não há tentativa (D-195/D-199). Para 0% < chance < 100%, seguir a ordenação determinística de D-219/D-223 e a ordem da ficha D-213. Efeitos declarados garantidos continuam garantidos (D-134).
+
+### 61.3 Pendências e histórico preservados
+
+- **Amostragem:** valores verificáveis de VIT/SPI no nível 50, tamanho da amostra, estratégia de distribuição e cortes concretos permanecem pendentes; não escolher K ou fórmula nova.
+- **IA e fichas:** reação caso **nenhum Move válido** permaneça na lista e tratamento de outras causas de incompletude não foram definidos. D-228–D-230 continuam aprovando MP e apresentação numérica da tooltip, sem alterar custos ou descrever VFX em combate.
+- **Plano de eventos:** máximos individuais de ocorrências condicionais, representação do plano, como tratar evento além do máximo e decisão específica para plano incompleto permanecem abertos. Não escolher política de bloqueio para essa causa por analogia.
+- **RNG de status:** algoritmo, sementes concretas, formato de registros/replay e tolerância para valores *próximos*, mas não iguais, a 0%/100% permanecem abertos; preservar simultaneidade lógica e KO simultâneo D-095.
+- **Conflitos históricos:** a diferença de escala de LUK na reapresentação R60-Q2/Q3 frente às D-150/D-152/D-153 continua registrada em GDD §12.13, **sem nova decisão**. D-203 mantém o odômetro fora do jogo principal, sem remover código.
+- **Escopo:** quatro novos D individuais, índice, seção consolidada e adendo histórico GDD. **Nenhum código, teste, Move, ficha, cena, asset ou VFX modificado; nenhum teste de gameplay realizado.**
+
