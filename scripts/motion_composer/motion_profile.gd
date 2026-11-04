@@ -1,7 +1,7 @@
 class_name MotionProfile
 extends RefCounted
 ## Auxiliares compartilhados pelos comportamentos: regiões de influência, rampas temporais e bases locais.
-## Convenções (propostas do agente, D-172): `u` é a coordenada longitudinal de repouso (0..1);
+## Convenções (propostas do agente, D-231): `u` é a coordenada longitudinal de repouso (0..1);
 ## regiões são [centro ± extensão/2] em `u`, com borda suave de largura `softness`.
 
 

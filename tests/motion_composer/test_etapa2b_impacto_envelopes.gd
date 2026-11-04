@@ -1,5 +1,5 @@
 extends SceneTree
-## Motion Composer V1 — Etapa 2b: testes de M16, M17 e M18 (D-173).
+## Motion Composer V1 — Etapa 2b: testes de M16, M17 e M18 (D-232).
 ## Rodar: godot --headless --path . --script res://tests/motion_composer/test_etapa2b_impacto_envelopes.gd
 
 const Op := MotionTypes.Op
@@ -83,7 +83,7 @@ func visible_count(r: MotionResult) -> int:
 
 func _init() -> void:
 	print("\n=================================================================")
-	print("   MOTION COMPOSER V1 — ETAPA 2b: M16, M17, M18 (D-173)")
+	print("   MOTION COMPOSER V1 — ETAPA 2b: M16, M17, M18 (D-232)")
 	print("=================================================================")
 	var nodes_before := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
 	_cat = MotionCatalog.new()
@@ -111,8 +111,8 @@ func t_catalog() -> void:
 			all_ok = false
 	ok(all_ok, "M16, M17 e M18 registrados com metadados")
 	var miss := _cat.missing_v1()
-	ok(miss == [&"M14", &"M15", &"M19", &"M20"], "faltam exatamente M14, M15, M19 e M20 (%s)" % [miss])
-	ok(MotionBehaviors.all().size() == 16, "16 comportamentos implementados")
+	ok(miss == [&"M19", &"M20"], "faltam exatamente M19 e M20 (%s)" % [miss])
+	ok(MotionBehaviors.all().size() == 18, "18 comportamentos implementados")
 	var c := MotionComposition.new()
 	var l := MotionLayer.new()
 	l.id = &"A"
@@ -216,13 +216,12 @@ func t_m16() -> void:
 			parallel = false
 	ok(parallel, "cone 0: todos exatamente na direção")
 
-	var rb := run(&"M16", Op.OFFSET, p, 0.2, 257)
 	var rb_before := run(&"M16", Op.OFFSET, {"direction": Vector3(0, 0, 1), "t_start": 0.5}, 0.2, 257)
 	var zero := true
 	for i in 257:
 		if disp(rb_before, base, i) != Vector3.ZERO:
 			zero = false
-	ok(zero and rb != null, "antes do início temporal: nenhum deslocamento")
+	ok(zero, "antes do início temporal: nenhum deslocamento")
 
 	var rh := run(&"M16", Op.OFFSET, p, 0.5, 257)
 	ok(near(disp(rh, base, 10).length(), 0.5 * disp(r, base, 10).length(), 1e-4), "curva linear: meio da duração = metade do deslocamento")

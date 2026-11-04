@@ -1,4 +1,4 @@
-# D-173 — Motion Composer V1: Etapa 2b (M16, M17, M18)
+# D-232 — Motion Composer V1: Etapa 2b (M16, M17, M18)
 
 - **Data:** 2026-11-04
 - **Área:** Motion Composer / implementação isolada
@@ -12,7 +12,7 @@ Resposta à pergunta sobre em qual etapa entram M16 (explosão direcional), M17 
 
 ## Decisão
 
-Criar a **Etapa 2b**, imediatamente após a Etapa 2 ([D-172](D-172-motion-composer-etapa-2-autorizada.md)), contendo exatamente M16, M17 e M18. A seção 16 passa a ter, entre as etapas 2 e 3, esta etapa 2b. As Etapas 3 (M14, M15), 4 (M19, M20), 5 e 6 continuam como estavam e não foram autorizadas por esta decisão.
+Criar a **Etapa 2b**, imediatamente após a Etapa 2 ([D-231](D-231-motion-composer-etapa-2-autorizada.md)), contendo exatamente M16, M17 e M18. A seção 16 passa a ter, entre as etapas 2 e 3, esta etapa 2b. As Etapas 3 (M14, M15), 4 (M19, M20), 5 e 6 continuam como estavam e não foram autorizadas por esta decisão.
 
 Limites: contratos das Etapas 1 e 2 inalterados (apenas adição de comportamentos e de auxiliares); sem integração ao combate; M16 não cria impactos nem altera resultado lógico de ataque (§3 grupo F); sem push (D-022).
 

@@ -1,5 +1,5 @@
 extends SceneTree
-## Motion Composer V1 — Etapa 2: testes de M01–M13 (D-172).
+## Motion Composer V1 — Etapa 2: testes de M01–M13 (D-231).
 ## Rodar: godot --headless --path . --script res://tests/motion_composer/test_etapa2_comportamentos.gd
 ## Cada comportamento: parâmetros válidos, limites do domínio, ausência de NaN, repetibilidade,
 ## resposta à intensidade, pausa, independência da representação e identidade distinguível.
@@ -112,7 +112,7 @@ func extreme_params(b: MotionBehavior, high: bool) -> Dictionary:
 # --------------------------------------------------------------------------------------
 func _init() -> void:
 	print("\n=================================================================")
-	print("   MOTION COMPOSER V1 — ETAPA 2: M01–M13 (D-172)")
+	print("   MOTION COMPOSER V1 — ETAPA 2: M01–M13 (D-231)")
 	print("=================================================================")
 	var nodes_before := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
 	_cat = MotionCatalog.new()
@@ -160,7 +160,7 @@ func t_catalog() -> void:
 	ok(present == 13, "M01–M13 registrados")
 	ok(meta_ok, "id, versão, nome, descrição, grupo, parâmetros e operação declarados")
 	var miss := _cat.missing_v1()
-	ok(miss == [&"M14", &"M15", &"M19", &"M20"], "faltam exatamente M14, M15, M19 e M20 (M16–M18 vieram na Etapa 2b)")
+	ok(miss == [&"M19", &"M20"], "faltam exatamente M19 e M20 (M14–M18 vieram nas Etapas 2b e 3)")
 	ok(not _cat.register(MotionM01Helix.new()).is_empty(), "registrar M01 duas vezes é recusado")
 
 
