@@ -51,6 +51,8 @@ var _preset_name: LineEdit
 var _preset_opt: OptionButton
 var _preset_status: Label
 var _size_slider: HSlider
+var _floor: MeshInstance3D
+var _floor_check: CheckBox
 var _width_slider: HSlider
 var _rep_opt: OptionButton
 var _catalog_ids: Array[StringName] = []
@@ -130,33 +132,37 @@ func _default_composition() -> void:
 	_selected = &"helice"
 
 
-## Demonstração para Fumaça: uma cabeça pequena (hélice curta) e, atrás dela, o rastro M19 preso ao MUNDO
-## (world_space) com o emissor andando em linha: as baforadas ficam para trás, crescem (largura do rastro)
-## e se dissipam, com um tremor de turbulência (M07). Não é um Move.
+## Demonstração para Poeira: o mesmo arranjo da poeira de corrida do jogo (D-041): dois "pés" (z = 0 e 0,44 m)
+## deixando baforadas atrás de si enquanto o emissor corre a 8 m/s; o rastro M19 fica preso ao mundo
+## (world_space) e quase não esmaece sozinho (a vida da baforada é a rampa da vista, como no jogo). A vista aplica
+## as regras de poeira do jogo; o chão oculta o que passa de y = 0. Não é um Move.
 func _smoke_composition() -> void:
 	var c := session.composition
-	c.sample_count = 6
+	c.sample_count = 2
+	c.base_length = 0.44
 	c.duration = 3.0
 	c.seed = 31
-	var specs := [
-		[&"cabeca", &"M01", MotionTypes.Op.REPLACE, {"radius": 0.06, "pitch": 0.05, "turns": 1.0, "spin_deg_s": 240.0}],
-		[&"fumaca", &"M19", MotionTypes.Op.PERSIST, {"duration": 1.0, "sample_interval": 0.05, "world_space": true, "fade_curve": 1.2, "width_start": 1.0, "width_end": 1.0}],
-		[&"tremor", &"M07", MotionTypes.Op.OFFSET, {"intensity": 0.04, "scale": 0.6, "time_hz": 1.0}],
-	]
-	for sp in specs:
-		var l := MotionLayer.new()
-		l.id = sp[0]
-		l.behavior_id = sp[1]
-		l.op = sp[2]
-		l.params = sp[3]
-		c.add_layer(l)
-	session.emitter_mode = MotionLabSession.Emitter.LINE
-	_emitter_opt.select(MotionLabSession.Emitter.LINE)
-	_selected = &"fumaca"
-	_target = Vector3(-0.8, 0.3, 0.0)
-	_dist = 3.6
-	_yaw = 0.35
-	_pitch = 0.1
+	var l := MotionLayer.new()
+	l.id = &"pes"
+	l.behavior_id = &"M01"
+	l.op = MotionTypes.Op.REPLACE
+	l.params = {"radius": 0.0, "pitch": 0.44, "turns": 1.0}
+	c.add_layer(l)
+	var t := MotionLayer.new()
+	t.id = &"poeira"
+	t.behavior_id = &"M19"
+	t.op = MotionTypes.Op.PERSIST
+	t.params = {"duration": 0.385, "sample_interval": 0.0275, "world_space": true, "fade_curve": 0.1, "width_start": 1.0, "width_end": 1.0}
+	c.add_layer(t)
+	session.emitter_mode = MotionLabSession.Emitter.RUN
+	_emitter_opt.select(MotionLabSession.Emitter.RUN)
+	_floor.visible = true
+	_floor_check.button_pressed = true
+	_selected = &"poeira"
+	_target = Vector3(-1.6, 0.45, 0.0)
+	_dist = 6.0
+	_yaw = 0.0
+	_pitch = 0.08
 	_apply_camera()
 
 
@@ -182,10 +188,13 @@ func _shards_composition() -> void:
 		l.op = sp[2]
 		l.params = sp[3]
 		c.add_layer(l)
-	smoke.puff_size = 0.22
+	smoke.puff_size = 0.16
 	smoke.puff_growth = 1.5
-	smoke.puff_rise = 0.2
-	smoke.puff_spread = 0.0
+	smoke.puff_life = 1.0
+	smoke.puff_speed_max = 0.0
+	smoke.puff_speed_min = 0.0
+	smoke.puff_rise = 0.0
+	smoke.puff_radius = 0.0
 	_selected = &"explosao"
 	_target = Vector3(0.0, 0.0, 0.75)
 	_dist = 3.0
@@ -250,6 +259,17 @@ func _build_world() -> void:
 	smoke = MotionSmokeView.new()
 	add_child(smoke)
 
+	_floor = MeshInstance3D.new()
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(60, 60)
+	_floor.mesh = plane
+	var fmat := StandardMaterial3D.new()
+	fmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	fmat.albedo_color = Color(0.13, 0.14, 0.17)
+	_floor.material_override = fmat
+	_floor.position.y = -0.004
+	_floor.visible = false
+	add_child(_floor)
 	add_child(_make_lines(_grid_lines(), true))
 	add_child(_make_lines(_axis_lines(), true))
 
@@ -389,7 +409,7 @@ func _build_ui() -> void:
 	box.add_child(row3)
 	row3.add_child(_small("Emissor "))
 	_emitter_opt = OptionButton.new()
-	for n in ["Parado", "Em linha", "Em órbita"]:
+	for n in ["Parado", "Em linha", "Em órbita", "Corrida (8 m/s)"]:
 		_emitter_opt.add_item(n)
 	_emitter_opt.item_selected.connect(func(i: int) -> void: session.emitter_mode = i; _dirty = true)
 	row3.add_child(_emitter_opt)
@@ -467,11 +487,18 @@ func _build_ui() -> void:
 	frag_slider.value = fragments.fragment_size
 	frag_slider.value_changed.connect(func(v: float) -> void: fragments.fragment_size = v; _dirty = true)
 	box.add_child(frag_slider)
-	_prop_slider(box, "Fumaça: tamanho da baforada (m)", 0.1, 0.8, 0.01, smoke.puff_size, func(v: float) -> void: smoke.puff_size = v)
-	_prop_slider(box, "Fumaça: vida (s) até o tamanho final", 0.1, 3.0, 0.05, smoke.puff_life, func(v: float) -> void: smoke.puff_life = v)
-	_prop_slider(box, "Fumaça: crescimento ao fim da vida (×)", 1.0, 3.0, 0.05, smoke.puff_growth, func(v: float) -> void: smoke.puff_growth = v)
-	_prop_slider(box, "Fumaça: subida (m/s)", 0.0, 2.0, 0.05, smoke.puff_rise, func(v: float) -> void: smoke.puff_rise = v)
-	_prop_slider(box, "Fumaça: abertura (m/s)", 0.0, 2.0, 0.05, smoke.puff_spread, func(v: float) -> void: smoke.puff_spread = v)
+	_prop_slider(box, "Poeira: tamanho médio (m)", 0.2, 2.0, 0.01, smoke.puff_size, func(v: float) -> void: smoke.puff_size = v)
+	_prop_slider(box, "Poeira: vida (s)", 0.1, 2.0, 0.01, smoke.puff_life, func(v: float) -> void: smoke.puff_life = v)
+	_prop_slider(box, "Poeira: crescimento ao fim da vida (×)", 1.0, 3.0, 0.05, smoke.puff_growth, func(v: float) -> void: smoke.puff_growth = v)
+	_prop_slider(box, "Poeira: velocidade máxima (m/s)", 0.0, 6.0, 0.1, smoke.puff_speed_max, func(v: float) -> void: smoke.puff_speed_max = v)
+	_prop_slider(box, "Poeira: atrito (1/s)", 0.0, 4.0, 0.1, smoke.puff_damping, func(v: float) -> void: smoke.puff_damping = v)
+	_prop_slider(box, "Poeira: subida (m/s²)", 0.0, 3.0, 0.05, smoke.puff_rise, func(v: float) -> void: smoke.puff_rise = v)
+	_prop_slider(box, "Poeira: raio de origem (m)", 0.0, 1.0, 0.01, smoke.puff_radius, func(v: float) -> void: smoke.puff_radius = v)
+	var floor_check := CheckBox.new()
+	floor_check.text = "Chão que oculta o que passa de y = 0"
+	floor_check.toggled.connect(func(on: bool) -> void: _floor.visible = on)
+	box.add_child(floor_check)
+	_floor_check = floor_check
 	box.add_child(_small("Largura da fita (m)"))
 	_width_slider = HSlider.new()
 	_width_slider.min_value = 0.005

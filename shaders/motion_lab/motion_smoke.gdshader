@@ -1,6 +1,6 @@
 shader_type spatial;
 // Motion Composer — representação "Fumaça/billboards" (D-044), modo neutro (§8.3). Baforada de ruído suave
-// (atlas 2 x 2 gerado por MotionSmokeView.make_puff_atlas, o mesmo método do VfxLib.smoke_tex do jogo).
+// (atlas 2 x 2 gerado por MotionSmokeView.make_puff_atlas, o mesmo cálculo do VfxLib.smoke_tex do jogo).
 // Mistura por alfa, sem somar luz (§19.5). Por instância (MultiMesh): COLOR = cor/brilho/opacidade;
 // INSTANCE_CUSTOM.x = giro (rad), INSTANCE_CUSTOM.y = variação 0..3 do atlas. Sem tempo próprio.
 render_mode unshaded, blend_mix, cull_disabled, depth_draw_never;
@@ -8,8 +8,8 @@ render_mode unshaded, blend_mix, cull_disabled, depth_draw_never;
 uniform sampler2D puff_tex : source_color, filter_linear, repeat_disable;
 uniform int h_frames = 2;
 uniform int v_frames = 2;
-// Opacidade máxima de uma baforada: várias se acumulam e dão volume.
-uniform float max_alpha : hint_range(0.0, 1.0) = 0.5;
+// Opacidade máxima da textura; o pico real (0,75) vem da rampa de vida calculada em MotionSmokeView.
+uniform float max_alpha : hint_range(0.0, 1.0) = 1.0;
 
 varying float v_frame;
 
@@ -38,7 +38,6 @@ void fragment() {
 	if (a < 0.005) {
 		discard;
 	}
-	// Centro mais claro, borda mais escura: dá corpo à baforada sem iluminação da cena.
-	ALBEDO = COLOR.rgb * (0.72 + 0.34 * t);
+	ALBEDO = COLOR.rgb;
 	ALPHA = a;
 }

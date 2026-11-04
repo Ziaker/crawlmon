@@ -6,7 +6,7 @@ extends RefCounted
 ## D-042: o que fazer quando um parâmetro é editado durante a reprodução.
 enum EditMode { UPDATE_NOW, RESTART }
 ## Emissor de demonstração para inspecionar world_space (rastros que preservam a história do emissor).
-enum Emitter { STATIC, LINE, ORBIT }
+enum Emitter { STATIC, LINE, ORBIT, RUN }
 
 var catalog: MotionCatalog = MotionCatalog.new()
 var composition: MotionComposition = MotionComposition.new()
@@ -31,6 +31,8 @@ static func emitter_transform(mode: int, t: float) -> Transform3D:
 	match mode:
 		Emitter.LINE:
 			return Transform3D(Basis.IDENTITY, Vector3(1.5 * t, 0.0, 0.0))
+		Emitter.RUN:
+			return Transform3D(Basis.IDENTITY, Vector3(8.0 * t, 0.0, 0.0))
 		Emitter.ORBIT:
 			var a := TAU * 0.25 * t
 			return Transform3D(Basis(Vector3.BACK, a), Vector3(cos(a), sin(a), 0.0) * 1.2)

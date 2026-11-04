@@ -58,69 +58,97 @@ func _init() -> void:
 
 func t_puffs() -> void:
 	print("
--- Parâmetros de cada baforada --")
+-- Parâmetros de cada baforada (regras da poeira do jogo) --")
 	var s := MotionSample.make_rest(0.5, 21, 1.0)
-	var a := MotionSmokeView.puff_params(s, 0.35, 0.9, 1.6)
-	ok(a == MotionSmokeView.puff_params(s, 0.35, 0.9, 1.6), "determinístico por elemento")
+	var a := MotionSmokeView.puff_params(s, 0.85, 0.38, 1.8)
+	ok(a == MotionSmokeView.puff_params(s, 0.85, 0.38, 1.8), "determinístico por elemento")
 	var rolls := {}
 	var min_size := 9.0
 	var max_size := 0.0
 	var seen_frames := {}
 	for id in 300:
 		var sm := MotionSample.make_rest(0.0, id, 1.0)
-		var p := MotionSmokeView.puff_params(sm, 0.35, 0.9, 1.6)
+		var p := MotionSmokeView.puff_params(sm, 0.85, 0.38, 1.8)
 		rolls[snappedf(p["roll"], 0.01)] = true
 		min_size = minf(min_size, p["size"])
 		max_size = maxf(max_size, p["size"])
 		seen_frames[p["frame"]] = true
 	ok(rolls.size() > 150, "giro (roll) varia de elemento para elemento (%d valores distintos em 300)" % rolls.size())
-	ok(min_size >= 0.35 * 0.8 - 1e-6 and max_size <= 0.35 * 1.2 + 1e-6 and max_size - min_size > 0.04, "tamanho entre 80 %% e 120 %% do base (%.3f a %.3f)" % [min_size, max_size])
+	ok(min_size >= 0.85 * 0.65 - 1e-6 and max_size <= 0.85 * 1.35 + 1e-6 and min_size < 0.6 and max_size > 1.1, "tamanho de 0,55 a 1,15 m como a poeira do jogo (%.2f a %.2f)" % [min_size, max_size])
 	ok(seen_frames.size() == 4 and seen_frames.has(0) and seen_frames.has(3), "as 4 variações do atlas são usadas, todas entre 0 e 3")
 	var aged := MotionSample.make_rest(0.5, 21, 1.0)
-	aged.age = 0.5
-	ok(MotionSmokeView.puff_params(aged, 0.35, 0.9, 1.6)["frame"] == a["frame"] and MotionSmokeView.puff_params(aged, 0.35, 0.9, 1.6)["roll"] == a["roll"], "variação e giro não mudam com a idade (a baforada não pisca)")
-	# crescimento com a idade (o jogo usa 1,4 a 1,6 ao fim da vida)
-	var g0: float = MotionSmokeView.puff_params(s, 0.35, 0.9, 1.6)["size"]
-	aged.age = 0.9
-	ok(near(MotionSmokeView.puff_params(aged, 0.35, 0.9, 1.6)["size"], g0 * 1.6), "ao fim da vida a baforada tem 1,6× o tamanho inicial")
-	aged.age = 0.45
-	ok(near(MotionSmokeView.puff_params(aged, 0.35, 0.9, 1.6)["size"], g0 * 1.3), "no meio da vida, 1,3×")
+	aged.age = 0.2
+	ok(MotionSmokeView.puff_params(aged, 0.85, 0.38, 1.8)["frame"] == a["frame"] and MotionSmokeView.puff_params(aged, 0.85, 0.38, 1.8)["roll"] == a["roll"], "variação e giro não mudam com a idade (a baforada não pisca)")
+	var g0: float = MotionSmokeView.puff_params(s, 0.85, 0.38, 1.8)["size"]
+	aged.age = 0.38
+	ok(near(MotionSmokeView.puff_params(aged, 0.85, 0.38, 1.8)["size"], g0 * 1.8), "ao fim da vida a baforada tem 1,8× o tamanho inicial (end_scale do jogo)")
+	aged.age = 0.19
+	ok(near(MotionSmokeView.puff_params(aged, 0.85, 0.38, 1.8)["size"], g0 * 1.4), "no meio da vida, 1,4×")
 	aged.age = 5.0
-	ok(near(MotionSmokeView.puff_params(aged, 0.35, 0.9, 1.6)["size"], g0 * 1.6), "além da vida o tamanho fica no final")
-	ok(near(MotionSmokeView.puff_params(aged, 0.35, 0.9, 1.0)["size"], g0), "crescimento 1: tamanho constante")
+	ok(near(MotionSmokeView.puff_params(aged, 0.85, 0.38, 1.8)["size"], g0 * 1.8), "além da vida o tamanho fica no final")
+	ok(near(MotionSmokeView.puff_params(aged, 0.85, 0.38, 1.0)["size"], g0), "crescimento 1: tamanho constante")
 	var w := MotionSample.make_rest(0.5, 21, 1.0)
 	w.width = 2.0
-	ok(near(MotionSmokeView.puff_params(w, 0.35, 0.9, 1.6)["size"], g0 * 2.0), "a largura da amostra multiplica o tamanho")
+	ok(near(MotionSmokeView.puff_params(w, 0.85, 0.38, 1.8)["size"], g0 * 2.0), "a largura da amostra multiplica o tamanho")
 	w.width = 0.0
-	ok(MotionSmokeView.puff_params(w, 0.35, 0.9, 1.6)["size"] == 0.0, "largura 0: tamanho 0")
+	ok(MotionSmokeView.puff_params(w, 0.85, 0.38, 1.8)["size"] == 0.0, "largura 0: tamanho 0")
 
 	print("
--- Subida e abertura pela idade --")
+-- Rampa de opacidade pela vida (jogo: 0 → 0,75 aos 20 % → 0) --")
+	ok(MotionSmokeView.puff_alpha(0.0, 0.38) == 1.0, "amostra atual (idade 0), sem vida: opacidade plena")
+	ok(near(MotionSmokeView.puff_alpha(0.038, 0.38), 0.375), "aos 10 % da vida: 0,375 (subindo)")
+	ok(near(MotionSmokeView.puff_alpha(0.076, 0.38), 0.75), "aos 20 %: pico de 0,75")
+	ok(near(MotionSmokeView.puff_alpha(0.228, 0.38), 0.375), "aos 60 %: 0,375 (descendo)")
+	ok(MotionSmokeView.puff_alpha(0.38, 0.38) == 0.0 and MotionSmokeView.puff_alpha(1.0, 0.38) == 0.0, "no fim da vida e depois: some")
+	var mono := true
+	var prev := 0.0
+	for k in range(1, 20):
+		var v := MotionSmokeView.puff_alpha(0.019 * k, 0.38)
+		if k > 4 and v > prev + 1e-6:
+			mono = false
+		prev = v
+	ok(mono, "depois do pico a opacidade só cai")
+
+	print("
+-- Movimento da poeira (atrito, subida, esfera de origem) --")
 	var o := MotionSample.make_rest(0.5, 21, 1.0)
-	ok(MotionSmokeView.puff_offset(o, 0.5, 0.5) == Vector3.ZERO, "amostra atual (idade 0): sem deslocamento")
-	o.age = 0.4
-	var o1 := MotionSmokeView.puff_offset(o, 0.5, 0.5)
-	o.age = 0.8
-	var o2 := MotionSmokeView.puff_offset(o, 0.5, 0.5)
-	ok(o2.distance_to(o1 * 2.0) < 1e-5, "proporcional à idade (linear)")
-	var only_rise := MotionSmokeView.puff_offset(o, 0.5, 0.0)
-	ok(only_rise.is_equal_approx(Vector3(0, 0.4, 0)), "sem abertura, só sobe (rise × idade)")
-	ok(near((o2 - only_rise).length(), 0.5 * 0.8), "a abertura tem comprimento abertura × idade")
-	ok(MotionSmokeView.puff_offset(o, 0.0, 0.0) == Vector3.ZERO, "subida 0 e abertura 0: a vista é fiel às posições")
-	var dirs := {}
-	var up_ok := true
-	for id in 200:
+	ok(MotionSmokeView.puff_offset(o, 0.5, 3.0, 1.5, 0.25, 0.0) == Vector3.ZERO, "amostra atual sem raio de origem: sem deslocamento")
+	o.age = 0.3
+	var free := MotionSmokeView.puff_offset(o, 1.0, 1.0, 0.0, 0.0, 0.0)
+	ok(near(free.length(), 0.3, 1e-4), "sem atrito: velocidade × idade")
+	var damped := MotionSmokeView.puff_offset(o, 1.0, 1.0, 1.5, 0.0, 0.0)
+	ok(near(damped.length(), (1.0 - exp(-1.5 * 0.3)) / 1.5, 1e-4) and damped.length() < free.length(), "com atrito 1,5: (1 − e^(−1,5·t)) / 1,5, menos que sem atrito")
+	var up := MotionSmokeView.puff_offset(o, 0.0, 0.0, 1.5, 0.25, 0.0)
+	ok(up.is_equal_approx(Vector3(0, 0.5 * 0.25 * 0.09, 0)), "sem velocidade, só a subida: ½·g·t²")
+	var rr := MotionSmokeView.puff_offset(o, 0.0, 0.0, 1.5, 0.0, 0.4)
+	ok(rr.length() <= 0.4 + 1e-5, "o ponto de partida fica dentro da esfera de origem (raio 0,4)")
+	var reach := 0.0
+	var inside_all := true
+	for id in 400:
+		var sm0 := MotionSample.make_rest(0.0, id, 1.0)
+		var st := MotionSmokeView.puff_offset(sm0, 0.0, 0.0, 1.5, 0.0, 0.4)
+		reach = maxf(reach, st.length())
+		if st.length() > 0.4 + 1e-5:
+			inside_all = false
+	ok(inside_all and reach > 0.34, "o ponto de partida preenche a esfera de origem (alcance máximo %.2f de 0,4 m)" % reach)
+	var mean := Vector3.ZERO
+	var far := 0.0
+	var spread_y_neg := 0
+	var n := 400
+	for id in n:
 		var sm := MotionSample.make_rest(0.0, id, 1.0)
-		sm.age = 1.0
-		var d := MotionSmokeView.puff_offset(sm, 0.0, 1.0)
-		dirs[snappedf(d.x, 0.05)] = true
-		if d.y < cos(deg_to_rad(70.0)) - 1e-4 or not near(d.length(), 1.0, 1e-4):
-			up_ok = false
-	ok(up_ok, "direção de abertura unitária, dentro de um cone de 70° em torno da vertical")
-	ok(dirs.size() > 15, "a direção varia por elemento (%d valores distintos de x em 200)" % dirs.size())
-	var rep := MotionSample.make_rest(0.0, 5, 1.0)
-	rep.age = 0.7
-	ok(MotionSmokeView.puff_offset(rep, 0.5, 0.5) == MotionSmokeView.puff_offset(rep, 0.5, 0.5), "determinístico")
+		sm.age = 0.2
+		var d := MotionSmokeView.puff_offset(sm, 0.5, 3.0, 1.5, 0.0, 0.4)
+		mean += d
+		far = maxf(far, d.length())
+		if d.y < 0.0:
+			spread_y_neg += 1
+	mean /= float(n)
+	ok(mean.length() < 0.1, "direções cobrem a esfera toda (deslocamento médio %.3f ≈ 0)" % mean.length())
+	ok(spread_y_neg > 120 and spread_y_neg < 280, "metade das baforadas sai para baixo (o chão do laboratório oculta essa metade)")
+	ok(far > 0.35 and far < 1.0, "alcance de abertura em 0,2 s entre 0,35 e 1 m (%.2f)" % far)
+	o.age = 0.2
+	ok(MotionSmokeView.puff_offset(o, 0.5, 3.0, 1.5, 0.25, 0.4) == MotionSmokeView.puff_offset(o, 0.5, 3.0, 1.5, 0.25, 0.4), "determinístico")
 
 
 func t_order() -> void:
@@ -148,7 +176,7 @@ func t_view() -> void:
 	view.show_samples(s, Vector3(0, 0, 4))
 	var visible_count := 0
 	for smp in s:
-		if smp.visible and smp.opacity > 0.001 and smp.width > 0.0:
+		if smp.visible and smp.opacity * MotionSmokeView.puff_alpha(smp.age, view.puff_life) > 0.001 and smp.width > 0.0:
 			visible_count += 1
 	ok(view.shown_count == visible_count and view.shown_count > 0, "um puff por amostra visível (%d)" % view.shown_count)
 	var mmi := view.get_child(0) as MultiMeshInstance3D
@@ -183,14 +211,15 @@ func t_view() -> void:
 	hidden[0].visible = false
 	hidden[1].opacity = 0.0
 	hidden[2].width = 0.0
+	ok(s.size() > 0 and visible_count < s.size(), "baforadas mais velhas que a vida (%.2f s) e amostras sem opacidade não são desenhadas (%d de %d)" % [view.puff_life, visible_count, s.size()])
 	view.show_samples(hidden, Vector3(0, 0, 4))
 	ok(view.shown_count == visible_count - 3, "invisíveis, transparentes e de tamanho 0 não são desenhados")
 	view.show_samples([] as Array[MotionSample], Vector3.ZERO)
 	ok(view.shown_count == 0, "sem amostras, nada desenhado")
 	var drawn_pos := PackedVector3Array()
 	for smp in s:
-		if smp.visible and smp.opacity > 0.001 and smp.width > 0.0:
-			drawn_pos.append(smp.position + MotionSmokeView.puff_offset(smp, view.puff_rise, view.puff_spread))
+		if smp.visible and smp.opacity * MotionSmokeView.puff_alpha(smp.age, view.puff_life) > 0.001 and smp.width > 0.0:
+			drawn_pos.append(smp.position + MotionSmokeView.puff_offset(smp, view.puff_speed_min, view.puff_speed_max, view.puff_damping, view.puff_rise, view.puff_radius))
 	view.show_samples(s, Vector3(0, 0, 4))
 	ok(view.last_order == MotionSmokeView.back_to_front(drawn_pos, Vector3(0, 0, 4)), "a vista desenha na ordem do mais distante ao mais próximo da câmera")
 	view.show_samples(s, Vector3.INF)
