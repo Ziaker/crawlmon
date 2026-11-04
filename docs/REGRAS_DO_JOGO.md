@@ -1792,3 +1792,26 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Conflitos anteriores:** a divergência textual da Rodada 60 sobre escalas de LUK frente às D-150/D-152/D-153 permanece registrada no GDD §12.13 **sem nova resolução**. D-203 continua excluindo odômetro do jogo principal; D-095 mantém empate por KO simultâneo.
 - **Escopo:** quatro decisões novas, índice, este consolidado e adendo GDD. **Nenhum código, teste, Move, ficha, cena, asset ou VFX modificado. Nenhum teste de gameplay ou levantamento quantitativo de atributos executado.**
 
+---
+
+## 58. Fichas de Moves — Rodada M1: custo de MP aprovado, estruturas aguardam quatro exemplos
+
+> **2026-11-04.** O criador iniciou uma **série própria de decisões de fichas de Moves**, distinta das rodadas gerais de combate. Respostas recebidas: **1D, 2D, 3D e 4A**, com observação: **“Quero exemplos de 4 moves antes de definir suas ideias”**. **Apenas M1-Q4A contém regra suficientemente expressa para registro**, documentada em **D-228**. A escolha D sem redação de regra não autoriza adotar alternativas anteriores nem nova arquitetura.
+
+### 58.1 Decisão aprovada
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-228](decisoes/D-228-m1-q4a-mp-adicional-moves-magicos-especiais.md) | **M1-Q4A** | **Adotar custo adicional de MP no gameplay dos Moves mágicos/especiais**, **além** dos custos de ATB/Burst aplicáveis pelas decisões anteriores, com **valores individuais a definir**. **Substituir expressamente somente a regra de ausência de MP de D-032**, preservando todo o resto daquela decisão e a seção histórica §14.6 deste consolidado. |
+
+### 58.2 Respostas pendentes, conflito histórico e delimitação
+
+- **M1-Q1 = 1D:** não foi escolhida a organização das descrições; **em aberto**, aguardando os quatro exemplos solicitados pelo criador.
+- **M1-Q2 = 2D:** não foi escolhida uma notação/estrutura de modificadores; **em aberto**, aguardando os quatro exemplos.
+- **M1-Q3 = 3D:** não foi escolhida modelagem de seleção/abrangência/facção de alvos; **em aberto**, aguardando os quatro exemplos.
+- **Conflito MP resolvido por precedência expressa apenas neste ponto:** D-032 registra retirada histórica de custos MP dos Moves; a **nova D-228 revoga essa retirada** para Moves mágicos/especiais. **Não editar nem apagar D-032** e **não presumir revogação** de outras regras históricas. Este consolidado já descreve MP adicional em §14.6; isso agora está alinhado quanto à existência de MP adicional, **sem homologar custos por Move, momento exato de débito ou todas as regras econômicas históricas daquela seção**.
+- **Divergência com a implementação:** `scripts/data/skill.gd` ainda não possui `mp_cost` nem custo MP próprio; a cobrança adicional em gameplay **não foi implementada**. D-122 mantém categoria física/mágica distinta de movimento `MELEE / PROJECTILE / CAST / STATUS`. Nenhum valor individual ou classificação nova foi atribuído.
+- **Exemplos de quatro Moves** apresentados ao criador na conversa são **propostas de visualização**, não fichas definitivas; podem reutilizar parâmetros efetivamente descritos em D-032 e `scripts/data/skill.gd`, deixando **desconhecido/pendente** onde não houver definição verificável.
+- **Histórico não afetado:** permanecem a divergência de LUK da Rodada 60 (GDD §12.13), o descarte do odômetro do jogo principal (D-203), a política de status distintos/RNG (D-199/D-210/D-213/D-215/D-227), as regras de tempo próprio do Move (D-119/D-133) e o bloqueio pré-confirmação de Move incompleto (D-225).
+- **Escopo da atualização:** apenas D-228, índice, este consolidado e adendo do GDD. **Nenhum código, teste, ficha de Move, cena, asset ou VFX alterado; nenhum teste de gameplay executado.**
+

@@ -274,6 +274,8 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-226](D-226-r76-q3-reservar-indices-ocorrencias-condicionais-na-declaracao.md) | Combate / R76 | Q3A: prever ocorrências condicionais possíveis no plano inicial e reservar índices na declaração do ataque | Aprovada; não implementada |
 | [D-227](D-227-r76-q4-rng-exclusivo-status-seed-inicio-combate-registrada.md) | Combate / R76 | Q4A: fluxo RNG próprio de status com seed criada no início do combate e registrada para reprodução, separado do retarget | Aprovada; algoritmo e formato pendentes |
 
+| [D-228](D-228-m1-q4a-mp-adicional-moves-magicos-especiais.md) | Fichas de Moves / M1 | Q4A: MP adicional para Moves mágicos/especiais, cumulativo com ATB/Burst aplicável; custos individuais pendentes; supera exclusivamente regra sem MP da D-032 | Aprovada; M1-Q1/Q2/Q3 sem resposta material; não implementada |
+
 > **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.
 
 > **Histórico/precedência R70:** o arquivo [D-048 de HP rolante](D-048-rolling-hp-mother3-odometro.md) registra um **teste/protótipo histórico**, não uma regra vigente do jogo principal após [D-203](D-203-r70-q4d-odometro-descartado-jogo-principal.md). **Não confundir** com o outro arquivo [D-048 de recompensas AoE](D-048-r40-q8-atb-aoe-unico.md), que não foi revogado.

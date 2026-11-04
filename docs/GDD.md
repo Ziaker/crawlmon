@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.47 — Rodada 76 registrada em adendo rastreável (2026-11-04); histórico preservado.  
+> **Revisão:** 1.48 — Fichas de Moves M1: custo adicional de MP registrado (2026-11-04); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1730,6 +1730,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.47 | 2026-11-04 | Rodada 76: classificação separada dos perfis VIT/SPI para amostra física/mágica/mista; validação de Move antes de confirmar sem consumir ATB/Burst ou ação; ocorrências condicionais previstas e indexadas na declaração; RNG próprio de status com seed inicial registrada, separado do retarget. D-224–D-227. | Rodada 76 fechada / Rodada 77 proposta |
 
+| 1.48 | 2026-11-04 | Nova série Fichas de Moves M1: somente Q4A aprovada — MP adicional para mágicos/especiais com custos individuais a definir e superação expressa da regra sem MP da D-032; Q1D/Q2D/Q3D sem nova regra, aguardando quatro exemplos. D-228. | M1-Q4 registrada / M1-Q1–Q3 abertas / M2 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2068,4 +2070,17 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos apenas ilustrativos:** uma espécie de VIT alta e SPI baixa poderia representar especialização física sem ser classificada por média dos atributos; Move hipotético com prioridade de incompatibilidade ausente não confirma ação nem debita ATB/Burst; evento condicional `A#2` é indexado desde a declaração mesmo quando não acontecer, sem consumo fictício de RNG; sementes de status e retarget são geradas/registradas em fluxos separados, sem homologar números ou algoritmo PRNG.
 
 **Limitações, decisões preservadas e conflitos:** a amostra concreta e os valores VIT/SPI nível 50 **não foram levantados** e os parâmetros de K único continuam pendentes de aprovação (D-208/D-216/D-220/D-224). A política de bloqueio de Move continua limitada à falta expressa de prioridade de status incompatíveis (D-215/D-217/D-221), sem definir visual do aviso ou mecanismo de editor. Índices fixos e sem reuso continuam regidos por D-218/D-222; novas exceções para ocorrências impossíveis de antecipar não foram aprovadas. D-219/D-223 continuam ordenando consumo RNG de status sem quebrar simultaneidade lógica (D-095). Algoritmo de RNG, formato de seed, consumo de chances 0%/100% e protocolo de replay não foram determinados. A divergência de LUK da Rodada 60 (GDD §12.13) permanece **não resolvida**. D-203 mantém odômetro fora do jogo principal. **Nenhum código, teste, ficha, Move, cena, asset ou VFX alterado; nenhum teste de gameplay executado.**
+
+### 12.23 Fichas de Moves — Rodada M1: MP adicional e três decisões aguardando exemplos (revisão 1.48)
+
+> **2026-11-04.** O criador abriu uma série independente, **Fichas de Moves**, com respostas: **1D, 2D, 3D e 4A** e observação expressa **“Quero exemplos de 4 moves antes de definir suas ideias”**. Conforme D-061, **somente Q4A** tem conteúdo decisório completo e foi registrada como [D-228](decisoes/D-228-m1-q4a-mp-adicional-moves-magicos-especiais.md), consolidada em **§58** de `docs/REGRAS_DO_JOGO.md`. O GDD continua não normativo para combate (D-001).
+
+| Questão | Resposta | Estado real |
+|---|---|---|
+| **M1-Q1** | **1D** | **Nenhum formato de descrições aprovado**; o criador pediu quatro exemplos antes de escolher. |
+| **M1-Q2** | **2D** | **Nenhuma notação de modificadores aprovada**; o criador pediu quatro exemplos antes de escolher. |
+| **M1-Q3** | **3D** | **Nenhuma estrutura nova de alvos aprovada**; o criador pediu quatro exemplos antes de escolher. |
+| **M1-Q4** | **4A** | **D-228 aprovada:** Moves **mágicos/especiais** gastarão **MP adicional em gameplay**, além dos recursos **ATB/Burst aplicáveis**; **cada custo individual continua pendente**. A regra **sem MP** de D-032 fica **expressamente superada somente quanto a esse ponto**. |
+
+**Precedência, limites e exemplos:** preservar o conteúdo integral de `docs/decisoes/D-032-balanceamento-moves-ingles-e-status.md`, registrando a superação histórica do trecho “MP descartado” exclusivamente pelo novo D-228. §14.6 de `docs/REGRAS_DO_JOGO.md` já descrevia MP adicional, mas esta nova aprovação **não fixa custos, não altera outras regras de MP, nem implementa a funcionalidade**. `scripts/data/skill.gd` ainda carece de campo MP; classificação de dano físico/mágico não é automaticamente dada por `Skill.Kind` conforme D-122. Exemplos demonstrativos de quatro Moves são **somente referência visual/editorial**, sem escolher fichas definitivas, valores de MP, fórmulas, efeitos, alvos ou descrição padrão. D-119/D-123/D-210/D-213/D-215/D-225 permanecem em vigor. A divergência de LUK da Rodada 60 (§12.13) e demais decisões históricas são preservadas. **Nenhum código, teste, Move, ficha, VFX, cena ou asset alterado; nenhum teste de gameplay executado.**
 
