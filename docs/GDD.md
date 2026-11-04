@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.39 — Rodada 68 registrada em adendo rastreável (2026-11-04); histórico preservado.  
+> **Revisão:** 1.40 — Rodada 69 registrada em adendo rastreável (2026-11-04); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1714,6 +1714,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.39 | 2026-11-04 | Rodada 68: ordem de eventos simultâneos de retarget por ID do atacante; resistência natural VIT/SPI antes dos estágios de DEF; dano mínimo 1 para acerto válido salvo imunidade/bloqueio; esquiva automática antes de crítico/status dependentes do acerto; D-192–D-195. | Rodada 68 fechada / Rodada 69 proposta |
 
+| 1.40 | 2026-11-04 | Rodada 69: IDs únicos estáveis ao iniciar combate; mitigação percentual de retornos decrescentes com estrutura comum VIT/SPI; arredondamento único final e mínimo posterior; crítico e dano antes de status condicionado ao acerto quando alvo sobreviver; D-196–D-199. | Rodada 69 fechada / Rodada 70 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -1930,4 +1932,19 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos não normativos:** (i) retarget simultâneo dos atacantes ID 2 e 5, com empate real em ambos: sorteio do 2 precede sorteio do 5; dentro de cada evento continuam válidos D-188/D-189. (ii) Dano hipotético 100, resistência fictícia de 20 pontos e estágio fictício ×0,8 produziria 64, **sem aprovar uma fórmula subtrativa**. (iii) Dano hipotético pós-mitigação 0,4 de golpe válido resulta em mínimo **1** sem imunidade/bloqueio. (iv) Esquiva automática bem-sucedida impede rolagens de crítico/status **que dependam do acerto**, preservando debuffs não esquiváveis da D-012.
 
 **Preservações e pendências:** D-095 mantém **empate por eliminações no mesmo instante lógico**, independente da ordem de RNG; D-130/D-138 mantêm separação VIT/SPI e estágios de DEF; D-134/D-146/D-150–D-153/D-156 mantêm suas regras e o conflito textual **R60-Q2/Q3 do §12.13 permanece aberto**, sem resolução implícita nesta rodada. Fórmulas/coeficientes de resistência, arredondamento e relação com outros fatores de dano, granularidade dos eventos simultâneos e dois retargets do mesmo atacante ainda dependem de escolhas futuras. **Nenhum código, teste, Move, asset, VFX ou cenário modificado; nenhum teste de gameplay executado.**
+
+### 12.15 Rodada 69 — IDs únicos, mitigação VIT/SPI, arredondamento final e status após dano (revisão 1.40)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem regras próprias adicionais. Decisões individuais **D-196 a D-199**, consolidadas na **seção 50** de `docs/REGRAS_DO_JOGO.md`. Atualização exclusivamente documental e **aditiva**: mantém a origem normativa de combate em D-001, a divergência da Rodada 60 no §12.13 e o histórico integral das Rodadas 39–68.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R69-Q1 | **1A** | Atribuir **identificadores únicos ao iniciar o combate**, conforme ordem estável/documentada ainda a especificar, e **não renumerar participantes durante a batalha** | [D-196](decisoes/D-196-r69-q1-ids-unicos-estaveis-por-combate.md) |
+| R69-Q2 | **2A** | Defesa natural VIT e SPI deve usar **mitigação percentual com retornos decrescentes e mesma estrutura de curva**, VIT para físico e SPI para mágico | [D-197](decisoes/D-197-r69-q2-mitigacao-percentual-retornos-decrescentes-vit-spi.md) |
+| R69-Q3 | **3A** | Preservar **decimais até terminar os modificadores**, arredondar **uma vez ao final**, depois aplicar mínimo cabível segundo D-194 | [D-198](decisoes/D-198-r69-q3-arredondamento-unico-final-dano.md) |
+| R69-Q4 | **4A** | Após acerto válido, resolver **crítico e dano primeiro**; aplicar **status condicionado ao acerto somente se o alvo sobreviver** | [D-199](decisoes/D-199-r69-q4-critico-dano-antes-status-alvo-sobrevive.md) |
+
+**Exemplos estritamente ilustrativos:** (i) combatentes recebem IDs diferentes ao começar a batalha e não mudam de ID ao perder companheiros; o exemplo não aprova uma ordem de atribuição. (ii) SPI 40→50 e 90→100 oferece benefício percentual marginal cada vez menor, sem fixar valores de porcentagem. (iii) 9,4×0,7×0,8 = 5,264 → **5** após um único arredondamento; números hipotéticos, não parâmetros oficiais. (iv) um golpe crítico que derrota Abra não aplica Stun **dependente desse acerto**; se Abra sobreviver, a aplicação segue a ficha e a LUK vigente.
+
+**Limites e rastreabilidade:** a ordem **VIT/SPI antes de DEF** (D-193), o **dano mínimo 1 salvo imunidade/bloqueio completo** (D-194) e a **esquiva automática antes do crítico/status** (D-195) permanecem. O código atual contém arredondamentos separados em `battle.gd` e `combatant.gd`, portanto a D-198 ainda **não está implementada**, e as fórmulas novas de VIT/SPI também não foram integradas. Permanecem sem aprovação: ordem concreta para atribuir IDs, coeficientes/equação de mitigação, tratamento do exato x,5, fatores restantes da cadeia de dano, condições de multi-hit e sobrevivência com HP rolante. A **divergência de LUK R60-Q2/Q3 (§12.13) continua sem resolução**. **Nenhum código, teste, dado, Move, asset, cena ou VFX alterado; nenhum teste de gameplay executado.**
 

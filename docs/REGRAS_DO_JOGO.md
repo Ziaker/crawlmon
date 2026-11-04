@@ -1552,3 +1552,32 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Código observado na `main` antes desta publicação:** `battle.gd` já verifica `auto_dodged` antes do crítico em `_hit()`; `combatant.gd` já tem `def_buff` e piso de dano, porém ainda não integra resistência natural baseada em VIT/SPI. **A documentação não comprova implementação futura do conjunto de regras.**
 - **Escopo:** quatro D individuais, índice, este consolidado e adendo GDD. **Nenhum código, teste, Move, cenário, recurso, asset ou VFX alterado; nenhum teste de gameplay executado.**
 
+---
+
+## 50. Rodada 69 — IDs estáveis no combate, mitigação percentual VIT/SPI, arredondamento único e status pós-dano
+
+> **2026-11-04.** Respostas expressamente aprovadas: **1A, 2A, 3A, 4A**, sem observações adicionais. Registros individuais **D-196 a D-199**. Esta seção é aditiva e preserva integralmente as decisões anteriores, inclusive o conflito textual de R60 no GDD §12.13 e a conciliação histórica de R62. Não representa implementação.
+
+### 50.1 Decisões aprovadas
+
+| Registro | Escolha | Regra |
+|---|---|---|
+| [D-196](decisoes/D-196-r69-q1-ids-unicos-estaveis-por-combate.md) | **1A** | Atribuir **IDs únicos no início do combate**, numa **ordem estável e documentada**, sem renumerar durante a batalha; complementa D-188/D-192 |
+| [D-197](decisoes/D-197-r69-q2-mitigacao-percentual-retornos-decrescentes-vit-spi.md) | **2A** | **Mitigação percentual de retornos decrescentes** com a **mesma estrutura de curva para VIT e SPI**, preservando defesa física/mágica separada |
+| [D-198](decisoes/D-198-r69-q3-arredondamento-unico-final-dano.md) | **3A** | Conservar **precisão fracionária** em todos os modificadores; **arredondar uma única vez ao inteiro mais próximo no fim**, depois aplicar mínimo quando cabível |
+| [D-199](decisoes/D-199-r69-q4-critico-dano-antes-status-alvo-sobrevive.md) | **4A** | Após acerto válido, resolver **crítico e dano antes**; somente aplicar **status condicionado ao acerto se o alvo sobreviver** |
+
+### 50.2 Esclarecimentos de escopo e exemplos
+
+- **IDs D-196:** a batalha atribui IDs distintos a combatentes ao começar, e não renumera os que permanecem após uma derrota. **A sequência concreta de atribuição ainda não foi aprovada**; a ordem por ID dos atacantes ao consumir RNG simultâneo (D-192) e ordenação dos candidatos empatados (D-188) continuam regras distintas. Nenhuma preferência fixa de alvo por ID é introduzida. **D-095** preserva empate por eliminações no mesmo instante lógico.
+- **Defesa D-197:** VIT reduz dano físico e SPI reduz dano mágico, ambas com **redução percentual que apresenta retornos decrescentes** sob uma mesma estrutura matemática, sem aprovar equação numérica, constantes ou limites. D-193 fixa a ordem **resistência natural → estágios de DEF** para ambos. Exemplo apenas conceitual: aumento de SPI 40→50 e depois 90→100 continua favorecendo a proteção, mas com ganho marginal decrescente; **os valores não são percentuais de defesa**.
+- **Precisão D-198:** um cálculo **inteiramente fictício** 9,4×0,7×0,8 = 5,264 arredonda **uma única vez** para **5**; os coeficientes não são de Moves ou atributos oficiais. Só depois incide o mínimo de **1 em acerto danoso válido sem imunidade/bloqueio completo** (D-194). O tratamento de empate exato em x,5, a equação natural e a ordem relativa de fatores ofensivos ainda não foram escolhidos.
+- **Status D-199:** após a esquiva automática (D-195) falhar, o acerto resolve **crítico e dano**. Se o alvo sobreviver, pode ocorrer aplicação de status **dependente do acerto** de acordo com ficha e LUK efetiva no evento (D-134/D-146/D-156); se o dano causar KO, **não aplicar nem rolar** esse status naquele alvo. Não altera Moves de debuff não esquiváveis da D-012 nem efeitos independentes do acerto. O tratamento de multi-hit e do HP visual/rolante não é decidido aqui.
+
+### 50.3 Relações, conflitos preservados e estado observado
+
+- **R60 ainda divergente:** permanece pendente a conciliação das escolhas 2A e 3A reapresentadas em 2026-11-04 com os documentos anteriores D-150 e D-152/D-153, descrita no GDD §12.13. Nenhuma fórmula de LUK foi silenciosamente substituída.
+- **Código da main inspecionado:** `scripts/combat/battle.gd` calcula e arredonda dano usando `roundi` antes de `take_damage`; `scripts/combat/combatant.gd` aplica `def_buff` e outro `roundi`. A nova regra D-198 de arredondamento único global **não está implementada**; as resistências VIT/SPI e sua curva percentual tampouco foram implementadas nesta atividade. **Nenhum teste de gameplay executado.**
+- **Pendentes:** ordem exata de atribuição e casos de entrada posterior de combatentes (D-196), família matemática e parâmetros de VIT/SPI (D-197), desempate de arredondamento x,5 e cadeia completa de fatores de dano (D-198), checkpoints de sobrevivência com HP rolante e eventos multi-hit (D-199); PRNG/seed de replay e AGI/ATB permanecem sujeitos às decisões próprias anteriores.
+- **Escopo:** quatro registros novos, índice, consolidado e adendo GDD. Nenhum código, cena, asset, ficha de Move, VFX ou teste modificado.
+

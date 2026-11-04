@@ -234,4 +234,9 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-194](D-194-r68-q3-dano-minimo-um-golpe-valido.md) | Combate / R68 | Q3A: mínimo de 1 para golpe danoso que acertou validamente, exceto imunidades e bloqueios completos | Aprovada; não implementada |
 | [D-195](D-195-r68-q4-esquiva-antes-critico-status.md) | Combate / R68 | Q4A: resolver esquiva automática primeiro; se funcionar, não rolar crítico/status condicionados ao acerto | Aprovada; não implementada |
 
+| [D-196](D-196-r69-q1-ids-unicos-estaveis-por-combate.md) | Combate / R69 | Q1A: atribuir IDs únicos no início de cada combate, por ordem estável documentada, sem renumerar durante a batalha | Aprovada; ordem concreta e implementação pendentes |
+| [D-197](D-197-r69-q2-mitigacao-percentual-retornos-decrescentes-vit-spi.md) | Combate / R69 | Q2A: mitigação percentual com retornos decrescentes e mesma estrutura de curva para VIT e SPI | Aprovada; equação e coeficientes pendentes |
+| [D-198](D-198-r69-q3-arredondamento-unico-final-dano.md) | Combate / R69 | Q3A: manter decimais durante modificadores, arredondar uma vez ao final e só então aplicar mínimo cabível | Aprovada; código atual divergente; sem implementação |
+| [D-199](D-199-r69-q4-critico-dano-antes-status-alvo-sobrevive.md) | Combate / R69 | Q4A: após acerto, resolver crítico e dano antes do status dependente de acerto; status apenas se o alvo sobreviver | Aprovada; sem implementação |
+
 > **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.
