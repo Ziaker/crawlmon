@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.44 — Rodada 73 registrada em adendo rastreável (2026-11-04); histórico preservado.  
+> **Revisão:** 1.45 — Rodada 74 registrada em adendo rastreável (2026-11-04); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1724,6 +1724,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.44 | 2026-11-04 | Rodada 73: levantamento rastreável de VIT/SPI nível 50 para proposta posterior; ordem de tentativas de status conforme ficha do Move; desempate de retarget simultâneo do mesmo atacante por ordem declarativa e índice estável; prioridade explícita para status declarados incompatíveis. D-212–D-215. | Rodada 73 fechada / Rodada 74 proposta |
 
+| 1.45 | 2026-11-04 | Rodada 74: registrar lacunas VIT/SPI nível 50 sem finalizar referência sem dados verificáveis; ficha incompleta se incompatibilidade não tiver prioridade; índices de retarget definidos no plano determinístico ao declarar ataque; consumo simultâneo de RNG de status por ID do alvo, preservando instante lógico. D-216–D-219. | Rodada 74 fechada / Rodada 75 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2017,4 +2019,19 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos apenas ilustrativos:** atributos hipotéticos de nível 50 precisam de fontes verificadas antes de qualquer proposta e não são aqui apresentados como números reais; ordem declarada `Poison` depois `Paralysis` gera tentativas nessa sequência quando ambas elegíveis, sem mudar chances; eventos de retarget `A#1`, `A#2` e `B` do mesmo atacante seguem declaração/índice estáveis, sem trocar sorteio por preferência de alvo; prioridade `Efeito A > Efeito B` só valeria quando uma ficha futura declarasse **ambos incompatíveis**. Nenhum status real foi classificado como incompatível.
 
 **Preservações e pendências:** D-201/D-204/D-208 exigem K compartilhado positivo **ainda sem valor numérico**, com referência de atributo e percentual-alvo dependentes de aprovação; D-210/D-211 mantêm limites de tentativas e resolução após impacto efetivo em interrupções; D-188/D-192 mantêm as demais ordenações de RNG, D-095 mantém empate por KO simultâneo; D-203 mantém odômetro fora do jogo principal. A divergência das escalas de LUK da reapresentação da Rodada 60 (§12.13) continua em aberto. Não se aprovam hierarquia universal de status, política de fichas omissas, algoritmo de PRNG ou dados de espécie faltantes. **Somente documentação:** nenhum código, teste, Move, ficha, asset, cena ou VFX alterado; nenhuma bateria de testes ou coleta quantitativa de VIT/SPI executada.
+
+### 12.20 Rodada 74 — lacunas de VIT/SPI, fichas incompletas, índices de retarget e rolagens simultâneas de status (revisão 1.45)
+
+> **2026-11-04.** Respostas expressamente aprovadas pelo criador: **1A, 2A, 3A, 4A**, sem observações adicionais. Registros individuais **D-216 a D-219**, consolidados em **§55** de `docs/REGRAS_DO_JOGO.md`. O GDD mantém função de **adendo histórico, não de fonte normativa de combate** conforme D-001. Nenhum texto de rodadas anteriores foi substituído.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R74-Q1 | **1A** | **Registrar lacunas de VIT/SPI no nível 50** e **não finalizar referência quantitativa sem dados necessários verificáveis**, sem impor amostra/estatística não aprovadas | [D-216](decisoes/D-216-r74-q1-lacunas-vit-spi-nivel50-sem-referencia-prematura.md) |
+| R74-Q2 | **2A** | **Ficha do Move incompleta** enquanto faltarem prioridades expressas para **status declarados incompatíveis**; **não escolher vencedor automaticamente** | [D-217](decisoes/D-217-r74-q2-ficha-incompleta-sem-prioridade-incompatibilidade.md) |
+| R74-Q3 | **3A** | **Índice estável** de ocorrência obtido a partir de **plano determinístico de eventos no instante da declaração do ataque**, mantido fixo até sua resolução | [D-218](decisoes/D-218-r74-q3-indice-retarget-plano-deterministico-na-declaracao.md) |
+| R74-Q4 | **4A** | **Ordenar rolagens simultâneas de status pelo ID estável do alvo para consumir RNG**, sem **mudar a simultaneidade lógica dos efeitos** | [D-219](decisoes/D-219-r74-q4-status-rng-simultaneo-por-id-do-alvo.md) |
+
+**Exemplos não normativos:** (i) se faltar SPI nível 50 verificável, registrar a ausência e não completar lacunas por suposição; (ii) ficha abstrata com A e B incompatíveis, mas sem prioridade definida, permanece incompleta sem vencedor automático; (iii) ocorrência `A#2` preserva o índice estabelecido no plano declarativo do ataque até sua resolução, sem ordenar pelo callback; (iv) se alvos hipotéticos ID 2 e 5 tiverem sorteios de status simultâneos, RNG do alvo 2 é consumido antes do 5, sem atribuir-lhe precedência lógica de aplicação.
+
+**Relações e pendências:** a D-212 exige valores reais/verificáveis de VIT/SPI para futura proposta; a D-208 exige aprovação dos parâmetros de referência e mitigação-alvo antes de validar K compartilhado; D-213/D-215 continuam separando ordem das tentativas de prioridade de incompatibilidade; D-192/D-214 preservam ordenação do retarget com RNG exclusivo; D-210/D-211 preservam limites e condições de status; D-095 preserva empate por KO simultâneo. **Permanece não definido** desempate de rolagens simultâneas de status para **o mesmo alvo**, reação técnica a ficha incompleta, política de índices cancelados e dados numéricos de VIT/SPI. O conflito textual da Rodada 60 sobre LUK (§12.13) permanece **sem resolução**; D-203 continua excluindo odômetro do jogo principal. **Somente documentação:** nenhum código, teste, Move, VFX, asset ou cena modificado, nenhum teste de gameplay ou levantamento quantitativo executado.
 

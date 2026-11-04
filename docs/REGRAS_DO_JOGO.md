@@ -1700,3 +1700,33 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Histórico:** a divergência textual da reapresentação R60-Q2/Q3 frente a D-150/D-152/D-153 permanece pendente (GDD §12.13); não escolher escala de LUK. D-203 mantém odômetro de HP **excluído do jogo principal**, sem remover código legado. D-198/D-205 mantêm arredondamento único final. A `main` inspecionada continua com código pré-VIT/SPI e sem esses requisitos implementados.
 - **Escopo:** quatro D individuais, índice, este consolidado e adendo do GDD. Nenhum código, ficha de Move, teste, cena, asset ou VFX alterado; nenhum teste de gameplay ou levantamento quantitativo de VIT/SPI realizado.
 
+---
+
+## 55. Rodada 74 — lacunas de VIT/SPI, completude de fichas, índices de retarget e RNG de status
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Registros individuais **D-216 a D-219**. Aditivo documental conforme D-061; não altera código nem substitui decisões históricas por suposições.
+
+### 55.1 Respostas aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-216](decisoes/D-216-r74-q1-lacunas-vit-spi-nivel50-sem-referencia-prematura.md) | **1A** | **Registrar lacunas** no levantamento de VIT/SPI **no nível 50** e **não finalizar uma referência quantitativa** até que os **dados necessários** sejam verificáveis |
+| [D-217](decisoes/D-217-r74-q2-ficha-incompleta-sem-prioridade-incompatibilidade.md) | **2A** | Considerar **incompleta** a configuração da ficha quando status forem declarados **incompatíveis sem prioridade expressa**, **sem escolher vencedor automaticamente** |
+| [D-218](decisoes/D-218-r74-q3-indice-retarget-plano-deterministico-na-declaracao.md) | **3A** | Atribuir índice de cada ocorrência do plano **determinístico de eventos na declaração do ataque**, **preservando o índice até a resolução** |
+| [D-219](decisoes/D-219-r74-q4-status-rng-simultaneo-por-id-do-alvo.md) | **4A** | Ordenar o **consumo do RNG nas rolagens simultâneas de status por ID estável do alvo**, **sem alterar simultaneidade lógica** dos efeitos |
+
+### 55.2 Exemplos e salvaguardas
+
+- **VIT/SPI (D-216):** se faltar SPI verificável de uma espécie no nível 50, documentar essa lacuna; não substituir o valor por estimativa nem apresentar referência quantitativa como concluída sem os dados necessários. A D-212 pede valores reais e verificáveis, mas **não aprova uma amostra específica** nem estatística; D-208 exige aprovação posterior do **atributo de referência**, da **mitigação-alvo** e validação de **K único** (D-201/D-204). **Nenhum levantamento quantitativo ou K foi calculado nesta rodada.**
+- **Incompatibilidade (D-217):** ficha hipotética declara `Status A` incompatível com `Status B` mas omite prioridade. **A ficha está incompleta** quanto à incompatibilidade, sem autorizar aplicação automática da ordem de tentativas. **D-213** governa ordem de rolagens conforme declaração; **D-215** governa prioridade expressa. **Nenhum status real é declarado incompatível por esta decisão**, e não foi escolhida a reação do editor/runtime a fichas incompletas.
+- **Índice de ocorrência (D-218):** um ataque hipotético declara eventos `A#1` e `A#2` por plano determinístico; ambos **mantêm os índices originais até sua resolução**. Complementa a ordenação por ID de **atacante (D-192)**, por declaração/índice no **mesmo atacante (D-214)** e a lista de candidatos (D-188). **D-189** conserva consumo de RNG exclusivo somente com empate real, **D-095** conserva KO simultâneo. Não define formatos, política de cancelamento ou reuso de índices cancelados.
+- **Rolagens de status (D-219):** se Abra ID 2 e Pancham ID 5 tiverem rolagens **simultâneas** de um efeito probabilístico, usar ordem ID 2, depois ID 5 **somente para consumir RNG**, sem converter isso em prioridade temporal da aplicação de status. **D-213** segue definindo a ordem de efeitos distintos na ficha, **D-210** mantém limite por efeito/alvo/execução e **D-199** impede status condicionado ao acerto em alvo derrotado. A regra **não muda o fluxo exclusivo de retarget** (D-186–D-189) nem resolve rolagens concorrentes para **o mesmo alvo**.
+
+### 55.3 Pendências, histórico e estado técnico
+
+- **Calibração:** dados rastreáveis de VIT/SPI nível 50, critério de suficiência/amostra e eventual fórmula oficial de progressão continuam pendentes; nenhum atributo de referência, percentual-alvo nem K numérico foi homologado.
+- **Fichas:** não estão definidos prioridade ou incompatibilidade para qualquer par real de status nem procedimento de validação/bloqueio para ficha incompleta. Não transformar configuração incompleta em escolha implícita de status.
+- **RNG e ordenação:** ainda faltam política de índices para eventos cancelados, serialização/replay, definição de eventos simultâneos, desempate entre **duas rolagens simultâneas de status para o mesmo alvo** e algoritmo/seed do RNG de status. O fluxo exclusivo de retarget permanece separado.
+- **Conflitos históricos:** a divergência de LUK da reapresentação R60-Q2/Q3 frente a D-150/D-152/D-153 segue explícita no GDD §12.13; nenhuma fórmula de LUK foi escolhida aqui. A D-203 mantém **odômetro fora do jogo principal** mesmo que código histórico ainda exista. As D-198/D-205 preservam arredondamento único final e meia unidade para cima.
+- **Escopo:** quatro registros individuais, índice, esta seção do consolidado e adendo histórico no GDD. Nenhum código, teste, Move, ficha, VFX, asset ou cena alterado; nenhum teste de gameplay executado.
+
