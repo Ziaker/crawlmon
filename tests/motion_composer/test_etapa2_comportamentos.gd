@@ -160,7 +160,7 @@ func t_catalog() -> void:
 	ok(present == 13, "M01–M13 registrados")
 	ok(meta_ok, "id, versão, nome, descrição, grupo, parâmetros e operação declarados")
 	var miss := _cat.missing_v1()
-	ok(miss.size() == 7 and miss[0] == &"M14" and miss[6] == &"M20", "faltam exatamente M14–M20 (sete)")
+	ok(miss == [&"M14", &"M15", &"M19", &"M20"], "faltam exatamente M14, M15, M19 e M20 (M16–M18 vieram na Etapa 2b)")
 	ok(not _cat.register(MotionM01Helix.new()).is_empty(), "registrar M01 duas vezes é recusado")
 
 

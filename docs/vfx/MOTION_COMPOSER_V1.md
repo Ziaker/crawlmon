@@ -940,3 +940,25 @@ Todas as fórmulas, nomes, unidades, padrões e limites abaixo são **propostas 
 Convenções do contrato aplicadas: OFFSET devolve deslocamento em `position`; MULTIPLY_ATTRIBUTE devolve multiplicadores (M12/M13 fixam opacidade em 1); geradores ignoram a posição anterior e preservam atributos; nada decide dano, colisão ou câmera; nenhum usa `TIME`, relógio próprio ou aleatoriedade externa.
 
 **Verificado (Godot 4.7.2, headless):** 124 verificações, 0 falhas no teste da Etapa 2 e 133 no da Etapa 1. Cada comportamento: parâmetros padrão, todo o domínio no mínimo e no máximo (em dois instantes) sem valores não finitos, repetibilidade, intensidade 0,5 = ponto médio, pausa, ids independentes do tempo, assinaturas espaciais distintas nos 78 pares e nenhum nó criado. Fórmulas conferidas por valores analíticos. 13 mutações no código (uma por comportamento); uma sobreviveu (M11, borda suave), o teste foi reforçado e a mutação passou a falhar. **Medido:** de 1,9 a 4,1 ms por avaliação de 1 camada com 128 amostras, exceto M07 (≈8 ms), em GDScript puro e máquina ocupada; sem orçamento aprovado, não é requisito. **Não verificado:** aparência (nenhuma representação visual existe), GL Compatibility, hardware-alvo, qualidade artística das curvas e dos padrões, e a equivalência com os oito estudos helicoidais.
+
+## 22. Etapa 2b implementada — 2026-11-04 (D-173)
+
+Escopo: **M16, M17 e M18**, que a §16 não atribuía a nenhuma etapa; por escolha do criador ("Etapa 2b agora", [D-173](../decisoes/D-173-motion-composer-etapa-2b-m16-m18.md)) formam a **Etapa 2b**, entre as Etapas 2 e 3. Contratos das Etapas 1 e 2 inalterados (adição de três comportamentos e de dois auxiliares em `motion_profile.gd`). Código em `scripts/motion_composer/behaviors/` (`m16_…`, `m17_…`, `m18_…`); testes em `tests/motion_composer/test_etapa2b_impacto_envelopes.gd`.
+
+```bash
+godot --headless --path . --script res://tests/motion_composer/test_etapa2b_impacto_envelopes.gd
+```
+
+Todas as fórmulas, nomes, unidades, padrões e limites abaixo são **propostas do agente** (não aprovadas pelo criador).
+
+| ID | Comportamento | Operações | Fórmula resumida (parâmetros principais) |
+|---|---|---|---|
+| M16 | Explosão direcional | OFFSET / MULTIPLY_ATTRIBUTE | por elemento (hash do id + semente): direção dentro de um cone (`cone_deg`, `distribution`), alcance de 50% a 100% de `distance`; `radial` mistura afastamento de `origin`; progresso `1 − (1 − p)^curva`; opacidade cai a `1 − dissipate` |
+| M17 | Crescimento progressivo | MASK / MULTIPLY_ATTRIBUTE | cobertura 0..1 por varredura em `u` (`direction` 0 início→fim, 1 fim→início, 2 centro→bordas), frente em `progresso^curva × (1 + largura)`, `jitter` determinístico; canais `affect_visibility/width/intensity/opacity` |
+| M18 | Dissolução progressiva | MASK / MULTIPLY_ATTRIBUTE | complemento exato de M17 com os mesmos parâmetros (crescimento + dissolução = 1) |
+
+Garantias do contrato: no instante inicial M17 não mostra nada e M18 mostra tudo; no final, o inverso, mesmo com transição larga; a região de M17 nunca encolhe com o tempo; M16 depende só do id do elemento (o elemento 5 recebe o mesmo deslocamento com 33 ou 65 amostras); M16 não cria impactos nem altera resultado lógico; nenhum dos três usa `TIME` ou relógio próprio.
+
+**Verificado (Godot 4.7.2, headless):** 57 verificações, 0 falhas no teste da Etapa 2b; 124 na Etapa 2 e 133 na Etapa 1, todas sem falhas (o teste da Etapa 2 foi atualizado só para refletir que agora faltam apenas M14, M15, M19 e M20). 14 mutações no código; 4 sobreviveram (alcance variável, componente radial, semente no azimute e largura da transição), os testes foram reforçados e as 4 passaram a falhar. **Não verificado:** aparência (nenhuma representação visual existe), GL Compatibility, desempenho em hardware-alvo, qualidade artística dos perfis e a escolha de canal que cada representação usará.
+
+**Estado do catálogo:** implementados M01–M13 e M16–M18 (16 de 20). Faltam M14, M15 (Etapa 3) e M19, M20 (Etapa 4).
