@@ -24,3 +24,7 @@
 ## Complemento posterior — Rodada 64 / D-175 (2026-11-03)
 
 **D-175 (R64-Q4C)** estabelece medir, para a calibração pelo ritmo atual, **ambos os intervalos de regeneração natural de ATB: de 3 a 5 e de 0 a 5 blocos**, comparando os resultados. O ATB inicial de 3 blocos continua conforme D-031. **Ainda não houve medição nem escolha de referência numérica**; apresentar o valor resultante ao criador antes de implementar, como exige esta D-169. Apenas documentação.
+
+## Complemento posterior — Rodada 67 / D-190 (2026-11-03)
+
+**D-190 (R67-Q4A):** antes de determinar uma referência numérica de AGI para ATB, **obter conversão verificável entre a velocidade atualmente utilizada no jogo e AGI**. As **seis medianas de medição** (três perfis de velocidade × dois intervalos 3→5 e 0→5) devem ser **apresentadas separadamente**, sem presumir referência numérica a partir de tempos isolados. **D-191** requer distinguir tempo simulado e tempo real. Permanecem obrigatórias a calibração pelo ritmo real e a submissão do número ao criador antes de implementar. Nenhuma medição, conversão ou referência foi obtida nesta atividade.

@@ -223,4 +223,10 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-185](D-185-r66-q4-atb-cinco-medicoes-mediana-por-intervalo.md) | ATB / R66 | Q4B: cinco medições por intervalo e combatente, consolidar pela mediana dos tempos | Aprovada; medições não executadas |
 | [D-186](D-186-r66-q5-fluxo-rng-exclusivo-desempate-retarget.md) | Combate / R66 | Q5A: fluxo de RNG reproduzível exclusivo dos desempates de retarget, separado dos demais sorteios | Aprovada; seed/algoritmo pendentes |
 
+| [D-187](D-187-r67-q1-seed-propria-retarget-inicio-combate.md) | Combate / R67 | Q1B: gerar seed própria do RNG de retarget ao iniciar combate e registrar para reprodução | Aprovada; não implementada |
+| [D-188](D-188-r67-q2-ordenacao-candidatos-id-estavel-antes-rng.md) | Combate / R67 | Q2A: ordenar candidatos empatados pelo ID estável de combatente antes de sortear; sem escolha fixa por ID | Aprovada; não implementada |
+| [D-189](D-189-r67-q3-rng-so-consumir-em-empate-real.md) | Combate / R67 | Q3A: consumir RNG exclusivo somente com pelo menos dois candidatos empatados elegíveis | Aprovada; não implementada |
+| [D-190](D-190-r67-q4-seis-medianas-atb-antes-conversao-agi.md) | ATB / R67 | Q4A: apresentar seis medianas separadas; não definir referência AGI/ATB sem conversão verificável de velocidade atual em AGI | Aprovada; dados/conversão pendentes |
+| [D-191](D-191-r67-q5-tempo-simulado-real-medições-atb-separados.md) | ATB / R67 | Q5C: registrar tempos simulado e real em separado em cada medição, para diagnosticar discrepâncias | Aprovada; medições não realizadas |
+
 > **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.

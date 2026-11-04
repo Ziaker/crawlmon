@@ -21,3 +21,7 @@
 
 - Definir método operacional para coletar tempos, candidatos reais e regras para falha de medição; executar e registrar as observações, e submeter referência derivada à aprovação do criador antes de implementar.
 - Somente documentação; nenhum script, código, teste ou medição executado.
+
+## Complemento posterior — Rodada 67 / D-190 e D-191 (2026-11-03)
+
+**D-190 (R67-Q4A)** obriga apresentar **separadamente as seis medianas de tempo** correspondentes a três faixas de velocidade e dois intervalos ATB; **não determinar a referência numérica de AGI para ATB sem conversão verificável entre velocidade atual e AGI**. **D-191 (R67-Q5C)** obriga registrar **tempo simulado e tempo real separadamente** em cada observação; conservar a distinção também nos resultados consolidados por combinação, sem misturá-los. Esta D-185 ainda exige **cinco medições por intervalo e combatente** e mediana dos tempos. Nada medido nem implementado.

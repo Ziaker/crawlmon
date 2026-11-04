@@ -1479,3 +1479,45 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 
 - Documentação somente: **cinco novos D-182–D-186**, notas aditivas em **D-177/D-178/D-180/D-166**, atualização do índice, deste consolidado e do GDD em adendo.
 - **Nenhum** código, teste, VFX, cena, asset, dado de espécie ou configuração alterado; **nenhuma medição de ATB ou cálculo de mediana numérica** executado. Referências de AGI de trajetos e de ATB continuam sem validação numérica; não há seed nem gerador de retarget implementado por esta documentação.
+
+
+---
+
+## 48. Rodada 67 — seed própria, ordem estável, consumo seletivo de RNG e duas escalas de tempo de ATB
+
+> **2026-11-03.** Escolhas expressamente aprovadas pelo criador: **1B, 2A, 3A, 4A e 5C**, sem observações adicionais. Decisões individuais **D-187 a D-191**. Esta atualização é **aditiva**, preserva as decisões vigentes D-162–D-186 e os históricos divergentes da Rodada 62. **Somente documentação; nenhuma implementação autorizada.**
+
+### 48.1 Regras aprovadas e vínculos
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-187](decisoes/D-187-r67-q1-seed-propria-retarget-inicio-combate.md) | **1B** | **Gerar seed própria de retarget no início do combate e registrá-la para reprodução** |
+| [D-188](decisoes/D-188-r67-q2-ordenacao-candidatos-id-estavel-antes-rng.md) | **2A** | **Ordenar candidatos empatados por ID estável de combatente dentro da batalha antes do sorteio** |
+| [D-189](decisoes/D-189-r67-q3-rng-so-consumir-em-empate-real.md) | **3A** | **Consumir RNG exclusivo somente quando houver ao menos dois candidatos elegíveis empatados** |
+| [D-190](decisoes/D-190-r67-q4-seis-medianas-atb-antes-conversao-agi.md) | **4A** | **Apresentar seis medianas ATB separadas; não determinar referência numérica de AGI/ATB sem conversão verificável da velocidade atual em AGI** |
+| [D-191](decisoes/D-191-r67-q5-tempo-simulado-real-medições-atb-separados.md) | **5C** | **Registrar tempo simulado e tempo real separadamente para diagnosticar discrepâncias** |
+
+### 48.2 Reprodutibilidade de retarget (D-108/D-155/D-166/D-171/D-176/D-181/D-186–D-189)
+
+1. **Seed própria (D-187):** ao **iniciar cada combate**, gerar **uma seed específica do RNG de desempates de retarget** e **registrá-la para reprodução**. O fluxo continua **isolado de crítico, esquiva, status e demais sorteios** (D-186); a seed não é uma referência à AGI nem um valor fixo universal.
+2. **Conjunto e geometria:** quando o alvo morrer durante **WINDUP**, considerar somente **inimigos vivos elegíveis**, selecionar o menor valor de distância horizontal **entre as posições lógicas de referência** e admitir empate de distâncias até **0,01 unidade da arena, inclusive**, relativamente à menor distância (D-108/D-171/D-176/D-181).
+3. **Ordenação (D-188):** **ordenar candidatos empatados por identificador estável do combatente dentro da batalha antes do sorteio**. Isso **não** escolhe automaticamente o menor ID: **D-158 (escolha por ID) continua registro histórico superado por D-166 (sorteio)**. **Exemplo hipotético:** candidatos empatados de IDs `8, 3, 5` são fornecidos ao RNG na ordem `3, 5, 8`; a seleção permanece aleatória.
+4. **Consumo (D-189):** **consumir o RNG exclusivo somente quando há ao menos dois candidatos vivos elegíveis empatados**. Sem candidato ou com um único candidato, **não avançar esse fluxo**. Exemplo: se somente Abra estiver disponível, selecionar Abra pelo retarget permitido, sem rolagem; um empate posterior consome um número do fluxo.
+5. **Preservar:** D-155 — um recálculo de duração por cada troca efetiva ainda em WINDUP; D-113 — sem troca após início da investida; D-105/D-107 — encerramento definitivo no último sobrevivente.
+6. **Ainda por decidir/verificar:** algoritmo de RNG, formato e persistência da seed, política de ordem temporal para desempates simultâneos, identificação estável dos combatentes no repositório e integração com replay. **Seed numérica do exemplo de D-187 (`84271`) é fictícia**, não padrão nem observação do jogo.
+
+### 48.3 ATB — seis combinações, dois relógios, referência AGI bloqueada (D-126/D-145/D-163/D-164/D-169/D-170/D-175/D-180/D-184/D-185/D-190/D-191)
+
+- **Amostra controlada:** selecionar combatentes representativos das **faixas baixa, intermediária e alta** de velocidades **realmente existentes no código** (D-184). Medir, para cada um, ambos os intervalos de regeneração natural **3→5 e 0→5 blocos** (D-175), **sem buffs, ações, recompensas instantâneas ou pausas** (D-180); preservar início normal em 3/5 (D-031).
+- **Repetições e medianas:** realizar **cinco medições por combinação de combatente × intervalo**, usando a **mediana dos cinco tempos** (D-185). Manter **separadas as seis combinações de três perfis × dois intervalos** (D-190), sem fundi-las em uma referência automática.
+- **Relógios (D-191):** registrar em **cada medição tanto tempo simulado quanto tempo real transcorrido, separadamente**. Para fins de consolidação, não misturar os relógios: registrar as **seis medianas por tipo de tempo** (até doze resultados distinguíveis, decorrentes das mesmas seis combinações e cinco repetições cada). **A regra não aprova qual relógio servirá de base numérica final para a conversão AGI**, nem uma tolerância de discrepância.
+- **Exemplo hipotético, não medido:** um intervalo leva **2,00 s simulados** e **2,08 s reais**; são dois resultados distintos da mesma observação. Se três perfis fictícios tiverem medianas simuladas de 3→5 e 0→5, apresentar os seis números individualmente, e os equivalentes reais também em separado; **não declarar valores de exemplo como dados do jogo**.
+- **Bloqueio expresso (D-190):** **não determinar a referência numérica de AGI para ATB sem estabelecer conversão verificável entre a velocidade atual do código e a AGI**. O código consultado ainda utiliza `base_speed` na taxa natural de ATB: não tratar `base_speed` como AGI-base por presunção. Após conversão verificada, calibração e proposta, **apresentar o número de referência ATB ao criador antes de implementar** (D-169).
+- **Mantidos:** AGI efetiva única com referências numéricas potencialmente distintas para trajeto e ATB (D-145); tempo natural de preenchimento inversamente proporcional à AGI efetiva (D-163); piso 1 somente no cálculo de ATB (D-164); reavaliação de AGI a cada atualização habilitada da regeneração natural (D-170). Não modificar valores acumulados retroativamente.
+
+### 48.4 Estado, preservação e pendências
+
+- **AGI dos trajetos:** permanece a metodologia D-162/D-167/D-168/D-172–D-174/D-177–D-179/D-182–D-183: amostra verificável completa de espécies elegíveis, formas sem duplicação de AGI dentro da espécie, AGI-base no nível 50, mediana fracionária exata, e **aprovação expressa do número antes de implementar**. Esta rodada não substitui nem calcula essa referência.
+- **ATB:** ainda faltam representantes reais, medições controladas, conversão atual→AGI e aprovação do número. Nenhuma medição de gameplay foi realizada nem foi proposta referência numérica nesta documentação.
+- **RNG:** ainda faltam definição técnica de gerador, seed, ordem de eventos simultâneos, IDs estáveis e integração real com replay; não afirmar comportamento já implementado.
+- **Escopo documental:** cinco novos registros D-187–D-191, notas históricas aditivas em D-166/D-169/D-185/D-186, índice, este consolidado e GDD em adendo. **Nenhum código, teste, recurso, cena, espécie ou VFX alterado**.

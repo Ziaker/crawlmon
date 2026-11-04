@@ -29,3 +29,7 @@
 ## Complemento posterior — Rodada 66 / D-186 (2026-11-03)
 
 **D-186 (R66-Q5A)** define que o sorteio reproduzível de desempates em **retarget durante WINDUP** usa **um fluxo próprio de números pseudoaleatórios, separado dos demais sorteios do combate**. Rolagens de crítico, esquiva, status e outras mecânicas não avançam esse fluxo de retarget. Permanecem pendentes seed, algoritmo e ordem de consumo do fluxo; não declarar RNG implementado. Preservar a D-171 (tolerância 0,01), D-176/D-181 (distância horizontal entre posições lógicas) e o histórico de substituição da D-158.
+
+## Complemento posterior — Rodada 67 / D-187 a D-189 (2026-11-03)
+
+**D-187:** gerar uma **seed própria de retarget no início do combate e registrá-la** para reprodução; **D-188:** **ordenar candidatos empatados por ID estável de combatente dentro da batalha antes do sorteio**, sem usar o menor ID como desempate determinístico; **D-189:** **consumir RNG de retarget somente se houver pelo menos dois empatados elegíveis**. O desempate continua sendo **pseudoaleatório e reproduzível** com o fluxo exclusivo de D-186; o método histórico da D-158 permanece superado. Nenhum código ou RNG implementado.

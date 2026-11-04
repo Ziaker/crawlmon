@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.37 — Rodada 66 registrada em adendo rastreável (2026-11-03); histórico preservado.  
+> **Revisão:** 1.38 — Rodada 67 registrada em adendo rastreável (2026-11-03); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1710,6 +1710,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.37 | 2026-11-03 | Rodada 66: deduplicação de formas por AGI distinta intrasespécie; derivação por fórmula oficial verificável; medição ATB baixa/intermediária/alta com cinco repetições e mediana; RNG próprio de retarget; D-182–D-186. | Rodada 66 fechada / Rodada 67 proposta |
 
+| 1.38 | 2026-11-03 | Rodada 67: seed própria registrada para retarget; candidatos ordenados por ID antes do sorteio; RNG consumido só em empate real; seis medianas ATB separadas, conversão velocidade→AGI exigida; tempo simulado e real distintos; D-187–D-191. | Rodada 67 fechada / Rodada 68 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -1879,3 +1881,20 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos exclusivamente ilustrativos:** espécie A com AGI-base 40 e duas formas controláveis com AGI própria 60 produz duas observações (`40, 60`), não três; espécie B de AGI 60 continua contribuindo separadamente. Se cinco observações de tempo forem `2,00; 2,01; 2,00; 2,18; 2,01 s`, sua mediana é **2,01 s** (não medido no jogo). Uma rolagem de crítico não deve avançar o fluxo exclusivo de RNG de retarget.
 
 **Pendências e garantias:** identificar fontes oficiais de espécies e fórmulas de AGI-base no nível 50, formar amostra completa e **validar mediana real com o criador antes de implementar (D-162)**; selecionar perfis reais, medir 3→5 e 0→5 controladamente cinco vezes por perfil, consolidar tempos e **submeter referência ATB à validação (D-169)**; definir seed, algoritmo, ordenação e consumo de RNG. **Nenhum código ou teste alterado, nenhuma medição ou cálculo real executado nesta rodada.**
+
+
+### 12.12 Rodada 67 — seed e consumo de RNG, seis medianas ATB e relógios separados (revisão 1.38)
+
+> **2026-11-03.** O criador aprovou expressamente **1B, 2A, 3A, 4A e 5C**, sem observações adicionais. Novas decisões **D-187 a D-191** e seção **48** de `docs/REGRAS_DO_JOGO.md`. Registro **aditivo**, preservando os históricos anteriores, inclusive a divergência da Rodada 62. **D-001:** GDD não é fonte normativa de combate.
+
+| Questão | Escolha | Regra aprovada | Decisão |
+|---|---|---|---|
+| R67-Q1 | **1B** | Gerar **seed exclusiva do RNG de retarget ao iniciar o combate**, registrá-la para reprodução | [D-187](decisoes/D-187-r67-q1-seed-propria-retarget-inicio-combate.md) |
+| R67-Q2 | **2A** | Ordenar **candidatos empatados por identificador estável de combatente na batalha antes de sortear**, sem selecionar automaticamente o menor ID | [D-188](decisoes/D-188-r67-q2-ordenacao-candidatos-id-estavel-antes-rng.md) |
+| R67-Q3 | **3A** | Consumir RNG de retarget **somente com dois ou mais candidatos empatados elegíveis** | [D-189](decisoes/D-189-r67-q3-rng-so-consumir-em-empate-real.md) |
+| R67-Q4 | **4A** | Apresentar **as seis medianas de tempo ATB separadamente**; **não definir referência de AGI/ATB sem conversão verificável entre velocidade atual e AGI** | [D-190](decisoes/D-190-r67-q4-seis-medianas-atb-antes-conversao-agi.md) |
+| R67-Q5 | **5C** | Registrar **tempo simulado e tempo real separadamente** por medição para diagnosticar discrepâncias | [D-191](decisoes/D-191-r67-q5-tempo-simulado-real-medições-atb-separados.md) |
+
+**Exemplos ilustrativos, não dados reais:** IDs empatados `8, 3, 5` são ordenados `3, 5, 8` **antes do sorteio**, não selecionados deterministamente. Quando só Abra é elegível ao retarget, o fluxo isolado não consome RNG; dois empatados exigem sorteio. Uma medição hipotética de ATB com **2,00 s simulados** e **2,08 s reais** mantém os dois valores distintos. A análise dos três perfis × dois intervalos fornece **seis combinações** por tipo de relógio, sem agregá-las em referência numérica presumida.
+
+**Pendências e limites:** seed registrada mas ainda sem algoritmo, representação, serialização ou rotina de replay escolhidos; identificadores estáveis e concorrência de sorteios ainda por verificar. ATB: obter perfis reais, executar medições, definir **conversão verificável velocidade atual→AGI**, apresentar seis medianas por tipo de relógio e **validar a referência numérica com o criador antes de implementar (D-169)**. A mediana de AGI-base dos trajetos (D-162) também continua sem resultado real homologado. **Nenhum código, teste, dado de espécie, cena ou VFX modificado; nenhuma medição executada nesta rodada.**

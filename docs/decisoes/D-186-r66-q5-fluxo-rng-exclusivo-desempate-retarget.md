@@ -21,3 +21,7 @@
 
 - Definir mecanismo de inicialização do RNG de retarget, ordem estável de candidatos e eventos para replay, e detalhes de consumo sem alterar outras mecânicas. Essas definições exigem decisões adicionais.
 - Documentação apenas; nenhum código, RNG, cena ou teste alterado.
+
+## Complemento posterior — Rodada 67 / D-187, D-188 e D-189 (2026-11-03)
+
+**D-187 (R67-Q1B):** gerar **seed própria para retarget no início de cada combate** e **registrá-la para reprodução**. **D-188 (R67-Q2A):** ordenar **os candidatos empatados pelo identificador estável do combatente dentro da batalha antes de sortear**, sem escolher o menor ID como resultado fixo. **D-189 (R67-Q3A):** **consumir o fluxo de RNG exclusivo somente quando houver pelo menos dois candidatos vivos elegíveis empatados**. Seed, ordenação e consumo são requisitos documentais, não implementação do gerador ou do replay. Algoritmo, formato do registro e ordenação de eventos simultâneos ainda pendem. Histórico preservado.
