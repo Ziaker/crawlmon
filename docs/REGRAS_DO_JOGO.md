@@ -1521,3 +1521,34 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **ATB:** ainda faltam representantes reais, medições controladas, conversão atual→AGI e aprovação do número. Nenhuma medição de gameplay foi realizada nem foi proposta referência numérica nesta documentação.
 - **RNG:** ainda faltam definição técnica de gerador, seed, ordem de eventos simultâneos, IDs estáveis e integração real com replay; não afirmar comportamento já implementado.
 - **Escopo documental:** cinco novos registros D-187–D-191, notas históricas aditivas em D-166/D-169/D-185/D-186, índice, este consolidado e GDD em adendo. **Nenhum código, teste, recurso, cena, espécie ou VFX alterado**.
+
+---
+
+## 49. Rodada 68 — RNG simultâneo, ordem VIT/SPI→DEF, mínimo de dano e esquiva antes de rolagens condicionadas
+
+> **2026-11-04.** Escolhas expressas **1A, 2A, 3A e 4A**; **nenhuma observação própria**. Novos documentos **D-192 a D-195**, com registros literais. Consolidação estritamente documental, sem alteração de código. Preserva D-001/D-003/D-061 e as decisões anteriores, inclusive os conflitos históricos e a ressalva de R60 transcrita no GDD §12.13.
+
+### 49.1 Matriz das escolhas aprovadas
+
+| Decisão | Escolha | Regra |
+|---|---|---|
+| [D-192](decisoes/D-192-r68-q1-ordem-retarget-simultaneo-id-atacante.md) | **1A** | Ordenar **eventos simultâneos de retarget que consumirão RNG exclusivo** pelo ID estável do **atacante**, antes de consumir o fluxo; sem substituir sorteio por desempate fixo |
+| [D-193](decisoes/D-193-r68-q2-resistencia-natural-antes-def.md) | **2A** | Aplicar **resistência natural VIT (físico) / SPI (mágico)** **antes** do modificador por estágios comuns de **DEF** |
+| [D-194](decisoes/D-194-r68-q3-dano-minimo-um-golpe-valido.md) | **3A** | **Dano mínimo 1** para golpes danosos que acertaram validamente, **exceto** imunidades e bloqueios completos |
+| [D-195](decisoes/D-195-r68-q4-esquiva-antes-critico-status.md) | **4A** | Resolver **esquiva automática primeiro**; quando funciona, **não rolar crítico** nem **status que dependa do acerto** |
+
+### 49.2 Escopo exato e exemplos
+
+- **RNG concorrente (D-192):** atacantes ID 2 e ID 5 têm **eventos de retarget no mesmo instante lógico**, cada qual com ao menos dois candidatos empatados. Ordenar primeiro o evento do **ID 2** e em seguida o de **ID 5** para os consumos do fluxo exclusivo de RNG. **D-188** continua ordenando os candidatos **dentro** de cada evento, **D-189** impede consumo quando não há empate real, e **D-166** mantém o sorteio reproduzível. Esta ordem **não** altera D-095 (KO simultâneo = empate), nem define desempate entre dois eventos do mesmo atacante.
+- **DEF após resistência natural (D-193):** o primeiro fator de mitigação natural é VIT para físico ou SPI para mágico; só **depois** entra o modificador comum dos estágios de DEF (D-130/D-138). Exemplo **hipotético, não fórmula homologada**: 100 de dano, resistência natural subtrativa fictícia 20 e modificador fictício 0,8 → (100−20)×0,8 = **64**. Coeficientes, operações, ordem com crítico/fraqueza e arredondamento **continuam pendentes**.
+- **Mínimo de dano (D-194):** se um golpe danoso válido alcança 0,4 após mitigação, o dano efetivo mínimo é **1**, desde que **não haja imunidade/bloqueio completo aplicável**; uma imunidade total continua impedindo dano. A regra não converte esquiva, erro ou Move exclusivamente de status em dano de 1.
+- **Ordem das rolagens (D-195):** golpe elegível à esquiva automática, com possibilidade de crítico e status condicionado ao acerto, é esquivado automaticamente → **não rolar crítico nem status condicionado a esse acerto**. Preservar D-012 para debuffs de alvo único não esquiváveis e D-134 para efeitos garantidos. **Não foi escolhida aqui toda a ordem posterior de rolagens em golpes acertados.**
+
+### 49.3 Preservação, conflito histórico e pendências
+
+- **R60 reapresentada:** as diferenças entre o texto reenviado (2A e 3A) e o registro mais recente D-150/D-152/D-153 **continuam explicitamente pendentes de confirmação** conforme o GDD §12.13. D-195 não escolhe ou altera fórmulas de LUK.
+- **RNG:** criar/verificar IDs estáveis e definir algoritmo/serialização da seed, granularidade de eventos simultâneos e critério adicional se um mesmo atacante produzir mais de um retarget simultâneo. Não estender ordenação dos sorteios a eliminações simultâneas (D-095).
+- **Mitigação:** determinar fórmula numérica de resistência VIT/SPI, limites, ordem com outros fatores, arredondamento, interação com imunidades e efeitos sem dano; nenhum coeficiente aprovado por esta rodada.
+- **Código observado na `main` antes desta publicação:** `battle.gd` já verifica `auto_dodged` antes do crítico em `_hit()`; `combatant.gd` já tem `def_buff` e piso de dano, porém ainda não integra resistência natural baseada em VIT/SPI. **A documentação não comprova implementação futura do conjunto de regras.**
+- **Escopo:** quatro D individuais, índice, este consolidado e adendo GDD. **Nenhum código, teste, Move, cenário, recurso, asset ou VFX alterado; nenhum teste de gameplay executado.**
+

@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.38 — Rodada 67 registrada em adendo rastreável (2026-11-03); histórico preservado.  
+> **Revisão:** 1.39 — Rodada 68 registrada em adendo rastreável (2026-11-04); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1712,6 +1712,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.38 | 2026-11-03 | Rodada 67: seed própria registrada para retarget; candidatos ordenados por ID antes do sorteio; RNG consumido só em empate real; seis medianas ATB separadas, conversão velocidade→AGI exigida; tempo simulado e real distintos; D-187–D-191. | Rodada 67 fechada / Rodada 68 proposta |
 
+| 1.39 | 2026-11-04 | Rodada 68: ordem de eventos simultâneos de retarget por ID do atacante; resistência natural VIT/SPI antes dos estágios de DEF; dano mínimo 1 para acerto válido salvo imunidade/bloqueio; esquiva automática antes de crítico/status dependentes do acerto; D-192–D-195. | Rodada 68 fechada / Rodada 69 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -1913,3 +1915,19 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Confirmação necessária, sem inferência:** determinar se as escolhas **2A e 3A reapresentadas** pretendem **substituir expressamente** as regras posteriormente registradas em **D-150** e **D-152/D-153**, respectivamente, ou se foram incluídas apenas como transcrição de uma versão anterior da Rodada 60. **Nenhuma precedência é escolhida nesta nota.** Até essa resposta, as decisões publicadas continuam documentadas integralmente, sem alteração silenciosa da regra vigente nem criação de novos D-*. A D-001 permanece: para combate, a fonte normativa é o histórico de decisões do criador e `docs/REGRAS_DO_JOGO.md`, **não** o GDD.
 
 **Escopo:** somente acréscimo desta nota de rastreabilidade no GDD. Não foram editados o índice, os documentos de decisão, as regras consolidadas, o código, os testes, assets, VFX nem as fichas de Moves. **A Rodada 68 será apresentada como questionário; nenhuma resposta futura é considerada aprovada.**
+
+### 12.14 Rodada 68 — retarget simultâneo, defesa natural, dano mínimo e ordem das rolagens (revisão 1.39)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Decisões individuais **D-192 a D-195**, consolidadas na **seção 49** de `docs/REGRAS_DO_JOGO.md`. Esta seção é **aditiva**, sem reescrever as Rodadas 39–67 nem a **conferência divergente da Rodada 60 (§12.13)**. Conforme **D-001**, o GDD **não se torna fonte normativa de combate**.
+
+| Questão | Escolha | Regra aprovada | Registro |
+|---|---|---|---|
+| R68-Q1 | **1A** | Ordenar eventos de retarget **simultâneos que requerem RNG exclusivo** pelo **ID estável do atacante** antes de consumir sorteios; **não** escolher automaticamente o menor ID entre alvos | [D-192](decisoes/D-192-r68-q1-ordem-retarget-simultaneo-id-atacante.md) |
+| R68-Q2 | **2A** | Aplicar **resistência natural de VIT/SPI antes dos estágios de DEF**, conservando VIT para físico e SPI para mágico | [D-193](decisoes/D-193-r68-q2-resistencia-natural-antes-def.md) |
+| R68-Q3 | **3A** | Golpes danosos com **acerto válido** causam **mínimo 1** após mitigação, **exceto imunidade ou bloqueio completo** | [D-194](decisoes/D-194-r68-q3-dano-minimo-um-golpe-valido.md) |
+| R68-Q4 | **4A** | Resolver **esquiva automática antes** de crítico/status dependentes do acerto; se esquivar, **não rolar** esses efeitos | [D-195](decisoes/D-195-r68-q4-esquiva-antes-critico-status.md) |
+
+**Exemplos não normativos:** (i) retarget simultâneo dos atacantes ID 2 e 5, com empate real em ambos: sorteio do 2 precede sorteio do 5; dentro de cada evento continuam válidos D-188/D-189. (ii) Dano hipotético 100, resistência fictícia de 20 pontos e estágio fictício ×0,8 produziria 64, **sem aprovar uma fórmula subtrativa**. (iii) Dano hipotético pós-mitigação 0,4 de golpe válido resulta em mínimo **1** sem imunidade/bloqueio. (iv) Esquiva automática bem-sucedida impede rolagens de crítico/status **que dependam do acerto**, preservando debuffs não esquiváveis da D-012.
+
+**Preservações e pendências:** D-095 mantém **empate por eliminações no mesmo instante lógico**, independente da ordem de RNG; D-130/D-138 mantêm separação VIT/SPI e estágios de DEF; D-134/D-146/D-150–D-153/D-156 mantêm suas regras e o conflito textual **R60-Q2/Q3 do §12.13 permanece aberto**, sem resolução implícita nesta rodada. Fórmulas/coeficientes de resistência, arredondamento e relação com outros fatores de dano, granularidade dos eventos simultâneos e dois retargets do mesmo atacante ainda dependem de escolhas futuras. **Nenhum código, teste, Move, asset, VFX ou cenário modificado; nenhum teste de gameplay executado.**
+

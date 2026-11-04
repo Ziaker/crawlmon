@@ -229,4 +229,9 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-190](D-190-r67-q4-seis-medianas-atb-antes-conversao-agi.md) | ATB / R67 | Q4A: apresentar seis medianas separadas; não definir referência AGI/ATB sem conversão verificável de velocidade atual em AGI | Aprovada; dados/conversão pendentes |
 | [D-191](D-191-r67-q5-tempo-simulado-real-medições-atb-separados.md) | ATB / R67 | Q5C: registrar tempos simulado e real em separado em cada medição, para diagnosticar discrepâncias | Aprovada; medições não realizadas |
 
+| [D-192](D-192-r68-q1-ordem-retarget-simultaneo-id-atacante.md) | Combate / R68 | Q1A: ordenar eventos simultâneos de sorteio de retarget pelo ID estável do atacante antes de consumir o RNG exclusivo | Aprovada; não implementada |
+| [D-193](D-193-r68-q2-resistencia-natural-antes-def.md) | Combate / R68 | Q2A: aplicar resistência natural VIT/SPI antes do modificador dos estágios de DEF | Aprovada; não implementada |
+| [D-194](D-194-r68-q3-dano-minimo-um-golpe-valido.md) | Combate / R68 | Q3A: mínimo de 1 para golpe danoso que acertou validamente, exceto imunidades e bloqueios completos | Aprovada; não implementada |
+| [D-195](D-195-r68-q4-esquiva-antes-critico-status.md) | Combate / R68 | Q4A: resolver esquiva automática primeiro; se funcionar, não rolar crítico/status condicionados ao acerto | Aprovada; não implementada |
+
 > **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.
