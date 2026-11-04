@@ -20,3 +20,7 @@
 
 - Fonte da equivalência entre o sistema de velocidade atual e AGI, cenário de medição, dados reais, referências/coeficientes, critérios de tolerância, testes de calibração e **aprovação do número**.
 - **Não foi realizada medição, calibração ou execução de gameplay** nesta atividade; apenas registro documental. Não alterar código, cenas ou testes.
+
+## Complemento posterior — Rodada 64 / D-175 (2026-11-03)
+
+**D-175 (R64-Q4C)** estabelece medir, para a calibração pelo ritmo atual, **ambos os intervalos de regeneração natural de ATB: de 3 a 5 e de 0 a 5 blocos**, comparando os resultados. O ATB inicial de 3 blocos continua conforme D-031. **Ainda não houve medição nem escolha de referência numérica**; apresentar o valor resultante ao criador antes de implementar, como exige esta D-169. Apenas documentação.

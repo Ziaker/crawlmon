@@ -21,3 +21,7 @@
 
 - Determinar a partir de fontes atuais do projeto quais espécies e evoluções são efetivamente elegíveis, qual a representação de cada forma e os valores de AGI no nível de referência ainda a definir.
 - Somente documentação; nenhum arquivo de código, teste, recurso ou ficha foi alterado.
+
+## Complemento posterior — Rodada 64 / D-172 e D-174 (2026-11-03)
+
+**D-172 (R64-Q1C):** comparar AGI-base das espécies elegíveis no **nível comum 50**. **D-174 (R64-Q3B):** incluir também espécies **oficialmente previstas na documentação vigente** para controle direto pelo jogador, **mesmo se ainda não implementadas**, inclusive evoluções que cumpram o critério. Nenhuma lista ou AGI de espécies foi deduzida; preservar a exigência de validação numérica da D-162. Esta nota é aditiva e não modifica código.

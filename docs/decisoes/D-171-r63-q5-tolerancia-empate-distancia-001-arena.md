@@ -21,3 +21,7 @@
 
 - A unidade citada é a **unidade espacial da arena**; não converter automaticamente para metros reais sem fonte aprovada. A definição técnica da distância e o desempate por sorteio reproduzível ainda dependem de detalhes futuros.
 - Somente documentação, sem código, testes ou mudanças de mecânicas adjacentes.
+
+## Complemento posterior — Rodada 64 / D-176 (2026-11-03)
+
+**D-176 (R64-Q5B)** define que a distância para escolher o adversário mais próximo durante retarget no WINDUP é **horizontal, medida no plano da arena, ignorando diferenças de altura**. Preservar a tolerância **inclusiva de 0,01 unidade da arena** desta D-171 e o sorteio reproduzível entre empatados (D-166). Ponto geométrico de referência e convenção de eixos da cena não foram escolhidos; não supor implementações de RNG nem converter unidade para metros reais. Somente documentação.

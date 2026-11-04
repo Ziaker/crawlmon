@@ -205,4 +205,10 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-170](D-170-r63-q4-agi-atualizada-a-cada-tick-regeneracao-atb.md) | ATB / R63 | Q4A: reler AGI efetiva a cada atualização da regeneração natural do ATB | Aprovada; sem código |
 | [D-171](D-171-r63-q5-tolerancia-empate-distancia-001-arena.md) | Combate / R63 | Q5B: tolerância inclusiva de 0,01 unidade da arena para empate entre alvos mais próximos no sorteio reproduzível | Aprovada; sem código |
 
+| [D-172](D-172-r64-q1-nivel-50-mediana-agi.md) | AGI / R64 | Q1C: comparar AGI-base de todas as espécies elegíveis no nível 50 | Aprovada; sem mediana calculada nem código |
+| [D-173](D-173-r64-q2-mediana-par-media-dois-centrais.md) | AGI / R64 | Q2A: mediana par = média aritmética dos dois valores centrais ordenados | Aprovada; arredondamento e valor efetivo pendentes |
+| [D-174](D-174-r64-q3-especies-controlaveis-planejadas-documentadas.md) | AGI / R64 | Q3B: espécies previstas oficialmente na documentação vigente para controle direto entram na mediana mesmo não implementadas | Aprovada; sem lista inventada nem código |
+| [D-175](D-175-r64-q4-calibracao-atb-intervalos-3a5-e-0a5.md) | ATB / R64 | Q4C: medir regeneração natural ATB nos intervalos 3→5 e 0→5 blocos e comparar com ritmo atual | Aprovada; medições e referência numérica pendentes |
+| [D-176](D-176-r64-q5-distancia-horizontal-plano-arena.md) | Combate / R64 | Q5B: proximidade do retarget calculada pela distância horizontal na arena, ignorando diferença de altura | Aprovada; origem geométrica pendente |
+
 > **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.

@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.34 — Rodada 63 registrada em adendo rastreável (2026-11-03); histórico preservado.  
+> **Revisão:** 1.35 — Rodada 64 registrada em adendo rastreável (2026-11-03); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1704,6 +1704,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.34 | 2026-11-03 | Rodada 63: amostra de espécies controláveis e AGI-base em nível comum para mediana, calibração de ATB pelo ritmo existente, AGI dinâmica por atualização de ATB e tolerância 0,01 da arena no desempate; D-167–D-171. | Rodada 63 fechada / Rodada 64 proposta |
 
+| 1.35 | 2026-11-03 | Rodada 64: AGI-base ao nível 50, média dos dois centrais na mediana par, espécies controláveis oficialmente planejadas, comparação ATB 3→5 e 0→5, proximidade horizontal; D-172–D-176. | Rodada 64 fechada / Rodada 65 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -1822,3 +1824,20 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos ilustrativos, não novas especificações:** se uma espécie inicial e sua evolução forem ambas controláveis, entram ambas na mediana; AGI-base hipotética 35 em um nível comum ainda não aprovado continua 35 para a mediana, mesmo que Nature/variação alterem um indivíduo. ATB com 2 blocos já acumulados usa AGI 20 nas atualizações anteriores e AGI 40 nas seguintes após um buff válido, sem modificar os blocos anteriores. Alvos a 4,000 e 4,006 unidades são considerados empatados para o sorteio; outro a 4,020 não é.
 
 **Pendências expressas:** o **nível comum de comparação**, a identificação das espécies controláveis e suas AGIs-base efetivas, o cálculo da mediana, a **validação do valor numérico de referência de trajetos antes de implementar**, a medição/calibração e **validação da referência ATB**, além da métrica geométrica concreta, seed e ordem de consumo de RNG. O exemplo de 0,01 usa unidades espaciais da arena, não metros físicos por suposição. **Nenhum código ou teste de gameplay foi alterado ou executado nesta atualização.**
+
+
+### 12.9 Rodada 64 — nível 50, mediana par, espécies planejadas, calibração ATB e proximidade horizontal (revisão 1.35)
+
+> **2026-11-03.** Aprovações expressas **1C, 2A, 3B, 4C e 5B**, sem observações adicionais. Decisões individuais **D-172 a D-176** e consolidação em **docs/REGRAS_DO_JOGO.md, seção 45**. Adendo estritamente documental e aditivo; **preserva** o histórico e a conciliação anteriores. O GDD não é fonte normativa de combate por D-001.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R64-Q1 | **1C** | AGI-base das espécies elegíveis comparada no **nível 50**, com Nature, variações e buffs excluídos só da amostra da mediana | [D-172](decisoes/D-172-r64-q1-nivel-50-mediana-agi.md) |
+| R64-Q2 | **2A** | Mediana de quantidade par de espécies: **média dos dois valores centrais** ordenados | [D-173](decisoes/D-173-r64-q2-mediana-par-media-dois-centrais.md) |
+| R64-Q3 | **3B** | A amostra inclui espécies **oficialmente previstas na documentação vigente para controle direto**, mesmo não implementadas | [D-174](decisoes/D-174-r64-q3-especies-controlaveis-planejadas-documentadas.md) |
+| R64-Q4 | **4C** | Calibrar referência ATB medindo **ambos os intervalos de regeneração natural: 3→5 e 0→5 blocos**, comparando com o ritmo vigente | [D-175](decisoes/D-175-r64-q4-calibracao-atb-intervalos-3a5-e-0a5.md) |
+| R64-Q5 | **5B** | Distância de proximidade para retarget em WINDUP: **horizontal no plano da arena**, ignorando altura | [D-176](decisoes/D-176-r64-q5-distancia-horizontal-plano-arena.md) |
+
+**Exemplos apenas ilustrativos:** AGIs ordenadas fictícias `20, 30, 50, 60` → mediana 40 (não é referência real aprovada). Se a regeneração hipotética for 1 bloco/s, de 3→5 levaria 2 s e de 0→5 levaria 5 s (não são medições do jogo). Um inimigo a 5 unidades horizontais e 3 unidades acima é avaliado por **5 unidades** de distância para seleção de alvo (não 5,83 em 3D). A tolerância 0,01 de D-171 e o sorteio reproduzível D-166 permanecem vigentes.
+
+**Pendentes:** verificar as espécies controláveis e oficialmente previstas, obter valores reais de AGI-base no nível 50, calcular mediana e **solicitar validação do número antes de implementar** (D-162); realizar duas medições de ATB e **submeter valor de referência à aprovação** (D-169); definir referência geométrica horizontal e detalhes de RNG; política para fichas/AGI ausentes e mediana fracionária. **Nenhum código ou teste de gameplay modificado ou executado nesta atualização.**

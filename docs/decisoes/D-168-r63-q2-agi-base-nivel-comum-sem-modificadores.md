@@ -21,3 +21,7 @@
 
 - Definir o **nível de referência comum**, a fonte e escala da AGI-base por espécie nesse nível, a lista exata de espécies controláveis, e o tratamento de variantes e quantidade par de espécies.
 - Apenas documentação; nenhum código, dado ou teste alterado.
+
+## Complemento posterior — Rodada 64 / D-172 e D-173 (2026-11-03)
+
+**D-172 (R64-Q1C)** define expressamente o **nível 50** como nível comum da comparação da **AGI-base**. A exclusão de Nature, variação individual e buffs da amostra desta D-168 continua válida. **D-173 (R64-Q2A)** escolhe **média aritmética dos dois valores centrais** para a mediana com número par de espécies. Nenhuma amostra real, arredondamento ou número de referência foi aprovado; é obrigatória a validação do resultado antes de implementar (D-162). Nenhum código alterado.

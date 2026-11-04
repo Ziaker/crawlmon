@@ -1337,3 +1337,48 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - Fechar detalhes técnicos do desempate espacial e RNG reproduzível; arredondamento, concorrência de eventos e outras lacunas não escolhidas nesta rodada.
 - **Consulta de código pré-publicação:** `scripts/combat/combatant.gd` ainda usa `base_speed` e `speed_buff` para a regeneração; o novo conjunto de atributos AGI e a referência numérica ainda não estão integrados. Registros novos não implicam implementação.
 - **Escopo desta rodada:** cinco D novos, notas aditivas em D-162/D-163/D-166, índice, este consolidado e adendo do GDD. **Nenhum código, teste, cena, asset, VFX ou ficha alterado**.
+
+
+---
+
+## 45. Rodada 64 — nível 50, mediana par, espécies planejadas, calibração ATB e distância horizontal
+
+> **2026-11-03.** Escolhas expressamente aprovadas pelo criador: **1C, 2A, 3B, 4C e 5B**, sem observações adicionais. Documentos individuais **D-172 a D-176**. Esta seção é aditiva: preserva as seções 42–44, a conciliação das duas versões da Rodada 62, e as decisões vigentes D-162 a D-171. **Nenhuma implementação autorizada.**
+
+### 45.1 Quadro das regras aprovadas
+
+| Registro | Escolha | Regra atual |
+|---|---|---|
+| [D-172](decisoes/D-172-r64-q1-nivel-50-mediana-agi.md) | **1C** | Comparar **AGI-base no nível 50** para todas as espécies elegíveis da amostra dos trajetos |
+| [D-173](decisoes/D-173-r64-q2-mediana-par-media-dois-centrais.md) | **2A** | Se houver quantidade **par** de espécies elegíveis, mediana é a **média aritmética dos dois valores centrais** |
+| [D-174](decisoes/D-174-r64-q3-especies-controlaveis-planejadas-documentadas.md) | **3B** | Incluir também espécies **oficialmente previstas na documentação vigente para controle direto**, mesmo **não implementadas** |
+| [D-175](decisoes/D-175-r64-q4-calibracao-atb-intervalos-3a5-e-0a5.md) | **4C** | Medir e comparar **ambos os intervalos de regeneração natural ATB: 3→5 e 0→5 blocos** |
+| [D-176](decisoes/D-176-r64-q5-distancia-horizontal-plano-arena.md) | **5B** | Calcular proximidade do retarget como **distância horizontal no plano da arena**, sem considerar altura |
+
+### 45.2 Referência de AGI para tempo de trajeto — D-162/D-167/D-168/D-172/D-173/D-174
+
+1. **Amostra:** espécies **diretamente controláveis** pelo jogador, **incluindo evoluções elegíveis** e aquelas **oficialmente previstas na documentação vigente** para controle direto, ainda que não implementadas. **Não** incluir espécies exclusivamente inimigas, exclusivamente da IA ou apenas especulativas.
+2. **Comparabilidade:** para cada espécie elegível, utilizar a **AGI-base no nível 50**, sem Nature, variação individual ou buffs. Esta exclusão se refere **apenas à amostra estatística da referência**, não à mecânica efetiva de AGI de combatentes.
+3. **Mediana:** ordenar os dados. Para amostra com quantidade **par**, usar a **média aritmética dos dois valores centrais**; para quantidade ímpar, o valor central. **Exemplo hipotético:** AGIs `20, 30, 50, 60` → mediana `(30 + 50) / 2 = 40`. **40 não é valor aprovado para o Crawlmon**.
+4. **Obrigação pendente:** identificar a lista real de espécies elegíveis e sua evidência documental, obter os valores comparáveis de AGI-base no nível 50, calcular a mediana real e **apresentar o número para validação expressa do criador antes de qualquer implementação**, conforme D-162. Ainda **não se calcularam esses dados**.
+5. **Pormenores não definidos:** fontes e fórmulas de AGI-base de espécies sem ficha no nível 50, duplicatas/variantes/formas, política para amostra incompleta e eventual arredondamento de mediana fracionária. Não escolher números por suposição.
+
+### 45.3 Protocolo de calibração do ATB — D-031/D-126/D-163/D-164/D-169/D-170/D-175
+
+- Para calibrar a **referência numérica de AGI para ATB** pelo ritmo já existente, medir **os dois intervalos** de regeneração natural: **3 para 5 blocos** e **0 para 5 blocos**, comparando os tempos observados. Preservar a barra normal de 5 blocos, o ATB inicial de 3 blocos (**D-031**) e os demais custos, ganhos e pausas.
+- **Exemplo hipotético, não medição:** a 1 bloco/s constante, 3→5 levaria 2 segundos e 0→5 levaria 5 segundos. **Nenhuma dessas durações foi verificada ou aprovada para o jogo**.
+- Preservar **D-163**: tempo natural de preenchimento inversamente proporcional à AGI efetiva; **D-164**: AGI de cálculo mínima 1 no ATB; **D-170**: reler AGI efetiva em **cada atualização de regeneração natural**, sem alterar retroativamente ATB acumulado.
+- O valor de referência ATB precisa ser **calculado a partir de dados atuais e apresentado ao criador antes de implementar** (D-169). Nenhuma calibração ou teste de gameplay foi executado nesta rodada; não presumir resultado nem equiparar a referência ATB à de trajetos (D-145).
+
+### 45.4 Retarget — proximidade horizontal e sorteio reproduzível (D-108/D-155/D-166/D-171/D-176)
+
+- Durante a troca automática de alvo no **WINDUP** por morte do alvo original, escolher entre inimigos vivos com **menor distância horizontal no plano da arena**, desconsiderando diferenças de **altura**. Não usar distância euclidiana 3D para selecionar candidato por essa regra.
+- Considerar **empatados com o menor valor de distância** os inimigos vivos que distam até **0,01 unidade da arena além da menor distância**, incluindo exatamente o limite. Sortear **reproduzivelmente somente entre os empatados**, não por ID estável (D-166; D-158 é histórico).
+- **Exemplo hipotético:** um adversário a 5 unidades horizontais e 3 unidades acima continua a **5 unidades** no critério de proximidade, não ~5,83. Dois candidatos a 4,000 e 4,006 unidades horizontais participam do desempate por sorteio; um a 4,020 não.
+- **Pendente:** origem geométrica usada em cada combatente (centro, pivô ou outro), eixos concretos do plano da arena no Godot, seed e consumo de RNG; não alterar alcance, colisão, altura de golpes ou comportamento dos projetéis por interpretação.
+- Preservar D-155: **um recálculo de duração por troca efetiva ainda em WINDUP**, não durante TRAVEL.
+
+### 45.5 Estado e limites
+
+- **Somente documentação:** criados D-172–D-176; complementadas aditivamente D-167/D-168/D-169/D-171; atualizados índice, este consolidado e adendo do GDD.
+- **Sem alterações de código, teste, cena, arquivo de espécie, Move, asset ou VFX**. Nenhuma mediana real de AGI foi calculada, nenhuma medição real do ATB foi realizada e nenhuma referência numérica foi validada para implementação.
