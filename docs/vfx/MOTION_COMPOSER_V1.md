@@ -880,3 +880,33 @@ Os testes devem verificar contratos, não copiar fórmulas: invariância ao part
 - D-044: quatro representações aprovadas contempladas.
 - D-045: política de pasta fixa preservada; caminho concreto apenas proposto.
 - Não verificado: funcionamento em Godot, aparência, desempenho, interoperabilidade de presets ou regressões em execução.
+## 20. Etapa 1 implementada — 2026-11-04 (D-171)
+
+Escopo: **somente** a Etapa 1 (contratos e avaliação). Os 20 comportamentos (Etapa 2), bifurcação/recombinação reais, histórico, laboratório visual, presets e renderizadores **não** existem. Nada do combate, de `VfxLib` ou dos VFX atuais foi tocado.
+
+Código em `scripts/motion_composer/` (nomes de pasta e de classe são escolha técnica, não do criador); testes em `tests/motion_composer/test_etapa1_contratos.gd`:
+
+```bash
+godot --headless --path . --script res://tests/motion_composer/test_etapa1_contratos.gd
+```
+
+| Contrato | Classe | Resumo |
+|---|---|---|
+| Enums | `MotionTypes` | `Kind` (§4.4), `Op` (§5.2), `Space` (§5.3), `Severity` |
+| Amostra | `MotionSample` | dado puro: u, rest, `element_id`, `branch`, posição, base, largura, intensidade, opacidade, visibilidade; `branch_path` e `derive_id` determinísticos |
+| Contexto | `MotionContext` | tempo (s) ≠ progresso (`progress()` saturado), duração finita > 0, semente, revisão, referência, `emitter_at(t)` válido em instantes passados |
+| Parâmetro | `MotionParam` | tipo, unidade, domínio; recusa NaN/infinito/tipo errado |
+| Comportamento | `MotionBehavior` | id, versão, tipo, operações aceitas, parâmetros, `needs_history`, `output_count` (conferido antes de alocar), `apply` pura |
+| Catálogo | `MotionCatalog` | registro; conjunto fechado `V1_IDS` (M01–M20) e `missing_v1()` |
+| Camada | `MotionLayer` | id estável, operação, seleção de ramos, espaço, parâmetros, máscara, intensidade 0–1, defasagem, janela de atividade |
+| Máscara | `MotionMask` | peso 0–1 por posição, tempo, elemento; degradê para fora da faixa; inversão |
+| Composição | `MotionComposition` | camadas ordenadas, revisão por edição, `validate`, `evaluate` sem estado |
+| Saída | `MotionResult`, `MotionDiagnostic` | amostras + diagnósticos + revisão; erro ⇒ nenhuma amostra, sem correção silenciosa |
+| Espaços | `MotionSpace` | LOCAL, GLOBAL, EMITTER, TRAJECTORY (referencial por amostra; proibido para topologia/persistência) |
+| Determinismo | `MotionHash` | hash de 32 bits no lugar de qualquer aleatoriedade |
+
+Semântica adotada (proposta do agente, não aprovada pelo criador): REPLACE interpola todos os campos; OFFSET soma um deslocamento; DEFORM só geometria; MULTIPLY_ATTRIBUTE multiplica atributos; MASK só visibilidade (limiar 0,5); BRANCH/MERGE exigem TOPOLOGY e substituem as amostras selecionadas; PERSIST exige HISTORICAL e acrescenta amostras. Intensidade 0 é neutra. Camada que produziria saída não finita, ids duplicados, contagem divergente ou mais amostras que `max_samples` é ignorada com diagnóstico. Ramo inexistente na seleção gera diagnóstico e a camada é ignorada.
+
+Valores experimentais (ajustáveis, sem valor de aceitação): `sample_count` 128, `base_length` 1,0, `max_samples` 100000, `duration` 3,0 s.
+
+**Verificado (Godot 4.7.2, headless):** 130 verificações, 0 falhas; 4 mutações no código (peso do OFFSET, limiar do MASK, inversão de espaço, checagem de ramo inexistente) derrubaram os testes correspondentes; log sem erro/aviso. **Medido:** 9 camadas, 128→384 amostras, ≈12 ms por avaliação em GDScript puro, sem renderização; sem orçamento aprovado, não é requisito nem garantia. **Não verificado:** renderer GL Compatibility, qualquer aparência, desempenho em outro hardware, os comportamentos reais (dublês de teste foram usados), regressão da suíte de combate (nenhum arquivo do combate foi alterado por esta etapa).
