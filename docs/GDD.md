@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.48 — Fichas de Moves M1: custo adicional de MP registrado (2026-11-04); histórico preservado.  
+> **Revisão:** 1.49 — Fichas de Moves: tooltip textual estilo LoL e visual somente fora de combate (2026-11-04); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1732,6 +1732,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.48 | 2026-11-04 | Nova série Fichas de Moves M1: somente Q4A aprovada — MP adicional para mágicos/especiais com custos individuais a definir e superação expressa da regra sem MP da D-032; Q1D/Q2D/Q3D sem nova regra, aguardando quatro exemplos. D-228. | M1-Q4 registrada / M1-Q1–Q3 abertas / M2 proposta |
 
+| 1.49 | 2026-11-04 | Fichas de Moves: orientação posterior aprova custos/windup acima do texto, descrição mecânica de dano/efeitos/modificadores integrada estilo LoL e descrição visual apenas em ficha fora de combate. Esquema técnico de alvos, fórmulas e custos MP continuam pendentes. D-229. | Apresentação de ficha aprovada / detalhes técnicos pendentes |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2083,4 +2085,14 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 | **M1-Q4** | **4A** | **D-228 aprovada:** Moves **mágicos/especiais** gastarão **MP adicional em gameplay**, além dos recursos **ATB/Burst aplicáveis**; **cada custo individual continua pendente**. A regra **sem MP** de D-032 fica **expressamente superada somente quanto a esse ponto**. |
 
 **Precedência, limites e exemplos:** preservar o conteúdo integral de `docs/decisoes/D-032-balanceamento-moves-ingles-e-status.md`, registrando a superação histórica do trecho “MP descartado” exclusivamente pelo novo D-228. §14.6 de `docs/REGRAS_DO_JOGO.md` já descrevia MP adicional, mas esta nova aprovação **não fixa custos, não altera outras regras de MP, nem implementa a funcionalidade**. `scripts/data/skill.gd` ainda carece de campo MP; classificação de dano físico/mágico não é automaticamente dada por `Skill.Kind` conforme D-122. Exemplos demonstrativos de quatro Moves são **somente referência visual/editorial**, sem escolher fichas definitivas, valores de MP, fórmulas, efeitos, alvos ou descrição padrão. D-119/D-123/D-210/D-213/D-215/D-225 permanecem em vigor. A divergência de LUK da Rodada 60 (§12.13) e demais decisões históricas são preservadas. **Nenhum código, teste, Move, ficha, VFX, cena ou asset alterado; nenhum teste de gameplay executado.**
+
+### 12.24 Fichas de Moves — Tooltip textual integrada ao estilo LoL e descrição visual fora de combate (revisão 1.49)
+
+> **2026-11-04.** Em resposta aos quatro exemplos da série M1, o criador determinou: **“Não, está péssimo, seja mais similar a como lol descreve suas habilidades, com toda descrição, dano e efeitos em blocos de texto junto com seus modificadores e o restante como custos e wind up acima, deixa a parte do efeito visual pra descrição na ficha fora de combate”**. Regra registrada em **[D-229](decisoes/D-229-moves-tooltip-texto-integrado-visual-fora-combate.md)** e consolidada em **§59 de `docs/REGRAS_DO_JOGO.md`**.
+
+**Formato de combate aprovado:** custos e windup em cabeçalho acima; **texto completo em prosa**, com descrição, valores de dano/cura, status, modificadores, chances, duração, condições e exceções **integrados na mesma explicação**, de modo semelhante aos tooltips de League of Legends. **Não** criar cartões independentes de dano, status e modificadores. **Descrição de efeito visual** (animação, partículas, trajetória estética e dissipação) deve aparecer **somente na ficha consultada fora do combate**, não na tooltip de combate. Termos de trajetória mecanicamente relevantes continuam permitidos na explicação da habilidade quando necessários ao funcionamento.
+
+**Exemplos não homologados:** Bite (2 ATB, windup 1,2 s, 1,3× dano, Stun 30% por 2 s), Sand Attack (1 ATB, windup 0,75 s, sem dano, Blind por 4 s, 35% de erro de ações ofensivas enquanto cego), Dragon Rage (3 ATB, windup 2 s, 1,6× dano, explosão em área condicionada ao impacto no alvo principal) e Media (2 ATB, windup 0,5 s, cura 40% HP máximo, mínimo 12 HP por aliado vivo) ilustram **como redigir**, não aprovam novas fichas, categorias de dano, custos MP ou efeitos. Preservar suas fontes atuais, D-032 e `scripts/combat/battle.gd`.
+
+**Precedência e limites:** esta instrução posterior **resolve M1-Q1 e M1-Q2 no aspecto da apresentação da descrição e dos modificadores**, mas **não especifica o esquema técnico de dados para alvos (M1-Q3)** nem fórmulas internas ou categorias individuais; não escolher arquitetura por inferência. **D-228** mantém MP adicional para mágicos/especiais, custo individual ainda pendente, superando apenas a regra histórica sem MP de D-032. D-203 mantém o odômetro fora do jogo principal; o conflito de LUK da Rodada 60 (§12.13) permanece. **Atualização apenas documental: nenhum código, teste, VFX, ficha oficial, cena ou asset alterado; testes de gameplay não executados.**
 

@@ -1815,3 +1815,30 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Histórico não afetado:** permanecem a divergência de LUK da Rodada 60 (GDD §12.13), o descarte do odômetro do jogo principal (D-203), a política de status distintos/RNG (D-199/D-210/D-213/D-215/D-227), as regras de tempo próprio do Move (D-119/D-133) e o bloqueio pré-confirmação de Move incompleto (D-225).
 - **Escopo da atualização:** apenas D-228, índice, este consolidado e adendo do GDD. **Nenhum código, teste, ficha de Move, cena, asset ou VFX alterado; nenhum teste de gameplay executado.**
 
+---
+
+## 59. Fichas de Moves — Correção do formato de tooltip e separação da descrição visual
+
+> **2026-11-04.** Após analisar quatro exemplos da Rodada M1, o criador determinou expressamente: **“Não, está péssimo, seja mais similar a como lol descreve suas habilidades, com toda descrição, dano e efeitos em blocos de texto junto com seus modificadores e o restante como custos e wind up acima, deixa a parte do efeito visual pra descrição na ficha fora de combate”**. Regra registrada em **[D-229](decisoes/D-229-moves-tooltip-texto-integrado-visual-fora-combate.md)**. Atualização documental conforme D-061, sem implementação.
+
+### 59.1 Regra de apresentação aprovada
+
+- **Tooltip/descrição em combate:** manter **custos e windup acima**, como informações rápidas; apresentar abaixo **texto corrido completo** descrevendo **dano, cura, status, duração, condições de acerto, probabilidades, exceções e modificadores junto ao efeito a que pertencem**. Seguir o modo de redação de tooltips de **League of Legends** como **referência de apresentação**, não importar suas regras de gameplay.
+- **Não separar** dano-base, escalas e efeitos negativos em painéis gráficos independentes, caixas numéricas ou descrições soltas que desassociem a operação do efeito.
+- **Descrição visual:** somente na **ficha fora de combate**, em seção própria. Não colocar descrição estética de partículas, preparação, impacto ou dissipação visual na tooltip de combate; permitir linguagem mecânica como “projétil esquivável” ou “detona ao acertar”, porque determina o comportamento do Move.
+- **Dados pendentes são pendentes:** não inventar fórmulas, escalas de STR/MAG, custo MP, velocidade, classificação de dano ou status. D-228 ainda exige custos MP individuais apenas para Moves classificados mágicos/especiais; seu valor permanece não aprovado.
+
+### 59.2 Quatro exemplos demonstrativos (não fichas oficiais)
+
+- **Bite — 2 ATB; windup 1,2 s:** “Morde um inimigo, causando **1,3× o dano-base** e tendo **30% de chance de aplicar Stun por 2 segundos** ao acertar. O atordoamento suspende a regeneração de ATB [...]”. Dados existentes na D-032.
+- **Sand Attack — 1 ATB; windup 0,75 s:** “Dispara um projétil esquivável que **não causa dano** e, ao acertar, aplica **Blind durante 4 segundos**, fazendo cada ação ofensiva do alvo ter **35% de chance de errar**”. Os 35% são **chance de erro enquanto cego**, não chance de aplicação do efeito (D-032).
+- **Dragon Rage — 3 ATB; windup 2 s:** “Dispara um projétil contra um inimigo, causando **1,6× o dano-base** e, ao acertá-lo, explode, causando o mesmo dano aos aliados desse alvo. Se errar, **não explode**”. D-032 preservada.
+- **Media — 2 ATB; windup 0,5 s:** “Restaura **40% do HP máximo** de todos os aliados vivos, incluindo o usuário, com **mínimo de 12 HP por alvo**”. Regra encontrada no código atual `scripts/combat/battle.gd`, com arredondamento individual, sem assumir escala de MAG adicional.
+
+### 59.3 Distinção entre requisitos decididos e pendências
+
+- **M1-Q1/Q2:** a orientação textual direta posterior substitui a indefinição **apenas quanto ao formato das descrições em combate e à integração textual dos modificadores**. Não pressupõe duas descrições separadas, campos obrigatórios de cálculo ou nova linguagem técnica para os modificadores.
+- **M1-Q3 permanece em aberto:** a escolha de estrutura interna para seleção, facção e abrangência de alvos **não** foi resolvida por esta correção visual. Os exemplos de alvos no texto não criam arquitetura de dados.
+- **Relações preservadas:** D-032 (exceto MP superado por D-228), D-119, D-122/D-123, D-199/D-210/D-213, D-215/D-225, D-203 e demais decisões históricas. O conflito textual de LUK na R60 (§12.13 do GDD) permanece sem resolução. O uso da referência League of Legends **não aprova novas mecânicas ou valores de balanceamento**.
+- **Escopo:** novo documento D-229, índice, este consolidado e adendo do GDD. Nenhum código, ficha de Move, HUD, teste, asset, cena ou VFX alterado; nenhuma validação de gameplay executada.
+
