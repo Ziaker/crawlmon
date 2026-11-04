@@ -145,15 +145,28 @@ func evaluate(catalog: MotionCatalog, ctx: MotionContext) -> MotionResult:
 	if res.has_errors():
 		return res  # sem correção silenciosa: erros e nenhuma amostra
 
+	res.samples = _run_layers(layers.size(), catalog, ctx, res.diagnostics)
+	return res
+
+
+## Avalia as primeiras `count` camadas. Camadas PERSIST recebem `history_fn`: o fluxo das camadas
+## anteriores em qualquer instante, reavaliado do zero (sem estado, sem depender de quadros anteriores).
+func _run_layers(count: int, catalog: MotionCatalog, ctx: MotionContext, diags: Array[MotionDiagnostic]) -> Array[MotionSample]:
 	var samples := _rest_samples()
-	for l in layers:
+	for idx in count:
+		var l := layers[idx]
 		if not l.is_active(ctx) or l.intensity <= 0.0:
 			continue
-		var next: Variant = _apply_layer(l, catalog.get_behavior(l.behavior_id), samples, ctx, res.diagnostics)
+		var lctx := ctx
+		if l.op == Op.PERSIST:
+			lctx = ctx.with_time(ctx.time)
+			lctx.history_fn = func(t: float) -> Array[MotionSample]:
+				var scratch: Array[MotionDiagnostic] = []
+				return _run_layers(idx, catalog, ctx.with_time(t), scratch)
+		var next: Variant = _apply_layer(l, catalog.get_behavior(l.behavior_id), samples, lctx, diags)
 		if next != null:
 			samples = next
-	res.samples = samples
-	return res
+	return samples
 
 
 func _rest_samples() -> Array[MotionSample]:

@@ -1,6 +1,6 @@
 class_name MotionBehaviors
 extends RefCounted
-## Registro dos comportamentos implementados da V1. Etapa 2: M01–M13 (D-301). Etapa 2b: M16–M18 (D-302).
+## Registro dos comportamentos implementados da V1. Etapa 2: M01–M13 (D-301). Etapa 2b: M16–M18 (D-302). Etapa 4: M19–M20 (D-304).
 
 
 static func all() -> Array[MotionBehavior]:
@@ -11,6 +11,7 @@ static func all() -> Array[MotionBehavior]:
 		MotionM12TravelingPulse.new(), MotionM13RadialWave.new(),
 		MotionM14Bifurcation.new(), MotionM15Recombination.new(),
 		MotionM16DirectionalBurst.new(), MotionM17ProgressiveGrowth.new(), MotionM18ProgressiveDissolve.new(),
+		MotionM19TemporalTrail.new(), MotionM20Afterimage.new(),
 	]
 
 

@@ -16,6 +16,10 @@ var reference_transform: Transform3D = Transform3D.IDENTITY
 var emitter_fn: Callable = Callable()
 var origin: Vector3 = Vector3.ZERO
 var target: Vector3 = Vector3.ZERO
+## Fluxo produzido pelas camadas ANTERIORES em um instante qualquer (float -> Array[MotionSample]).
+## Preenchida pelo compositor só ao avaliar camadas PERSIST (M19, M20); é função pura do tempo, logo
+## o histórico se reconstrói igual após seek, retrocesso ou reinício. `with_time` não a copia.
+var history_fn: Callable = Callable()
 
 
 ## Progresso normalizado em [0, 1] = tempo / duração (saturado).

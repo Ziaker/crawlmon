@@ -120,7 +120,7 @@ func t_catalog() -> void:
 	var b := _cat.get_behavior(&"M15")
 	ok(a != null and b != null and a.kind == MotionTypes.Kind.TOPOLOGY and b.kind == MotionTypes.Kind.TOPOLOGY, "M14 e M15 registrados como TOPOLOGY")
 	ok(a.accepted_operations == [Op.BRANCH] and b.accepted_operations == [Op.MERGE], "M14 aceita BRANCH; M15 aceita MERGE")
-	ok(_cat.missing_v1() == [&"M19", &"M20"], "faltam exatamente M19 e M20 (%s)" % [_cat.missing_v1()])
+	ok(_cat.missing_v1().is_empty(), "catálogo V1 completo (%s)" % [_cat.missing_v1()])
 	ok(a.output_count(10, a.resolve_params({})) == 30 and b.output_count(10, b.resolve_params({})) == 10, "output_count: M14 multiplica pela quantidade; M15 preserva")
 	var c := MotionComposition.new()
 	c.add_layer(make_layer(&"X", &"M14", Op.REPLACE))

@@ -1002,4 +1002,27 @@ Revisão feita a pedido do criador. Achados e correções:
 | 6 | Texto da especificação desatualizado (§16 sem Etapa 2b; §18 afirmava que nada fora executado). | Atualizado. |
 | 7 | Regressão do combate nunca havia sido rodada. | `test_d040_1atb`, `test_battle_load` e `test_attack_motion` rodam sem falha (árvore local com alterações de terceiros; nenhum arquivo de combate foi alterado por estas etapas). |
 
-**Continua pendente (não esquecido, não autorizado):** M19 e M20 e o histórico (Etapa 4); laboratório visual, presets e representações (Etapa 5); validação completa, GL Compatibility, orçamento de desempenho e aprovação artística (Etapa 6). 18 dos 20 comportamentos existem.
+**Continua pendente (não esquecido, não autorizado):** M19 e M20 e o histórico (feitos depois, na Etapa 4: §25); laboratório visual, presets e representações (Etapa 5); validação completa, GL Compatibility, orçamento de desempenho e aprovação artística (Etapa 6). 18 dos 20 comportamentos existiam nesta auditoria; com a Etapa 4 (§25) são 20 de 20.
+
+## 25. Etapa 4 implementada — 2026-11-04 (D-304)
+
+Escopo ([D-304](../decisoes/D-304-motion-composer-etapa-4-persistencia-temporal.md)): **M19 Rastro temporal**, **M20 Pós-imagem** e a **reconstrução determinística do histórico**. Com isso os 20 comportamentos M01–M20 existem (`MotionCatalog.missing_v1()` vazio). Código em `scripts/motion_composer/behaviors/m19_temporal_trail.gd`, `m20_afterimage.gd` e `motion_history.gd`; testes em `tests/motion_composer/test_etapa4_persistencia.gd`.
+
+```bash
+godot --headless --path . --script res://tests/motion_composer/test_etapa4_persistencia.gd
+```
+
+**Como o histórico é reconstruído (§9.3, §19.4):** o compositor entrega às camadas PERSIST uma função `MotionContext.history_fn(t)` que reavalia, do zero, as camadas **anteriores** no instante `t` (com as suas janelas, defasagens e parâmetros daquele instante). Não há estado entre avaliações, nem dependência de quadros exibidos: seek, retrocesso e reinício produzem o mesmo resultado, e mudar um parâmetro reconstrói tudo com a nova revisão. O histórico do emissor vem de `emitter_at(t)` em instantes passados. Adições aditivas aos contratos: `MotionContext.history_fn` e `MotionSample.age`.
+
+Fórmulas, nomes, unidades, padrões e limites são **propostas do agente** (não aprovadas pelo criador).
+
+| ID | Comportamento | Operação | Resumo |
+|---|---|---|---|
+| M19 | Rastro temporal | PERSIST | por elemento, `N = round(duration / sample_interval)` (1–256) amostras do **próprio estado** em `t − j·dt`, formando **um ramo contínuo** ordenável por `age`; largura `lerp(width_start, width_end, idade/duração)`, opacidade `(1 − idade/duração)^fade_curve` |
+| M20 | Pós-imagem | PERSIST | `count` (1–16) cópias do estado em `t − k·interval`, **cada uma um ramo** (`pai/camada.k−1`); opacidade em degraus `1 − fade·k/(count+1)`; largura × `scale^k` |
+
+`world_space` (ambos): desligado, o efeito acompanha o emissor (coordenadas locais do instante passado); ligado, a história fica no mundo, `E(t)⁻¹·E(t − idade)·p`, preservando posição e direção do emissor. Amostras anteriores ao instante 0 (ou sem histórico) são mantidas **invisíveis**, para que contagem e ids não mudem. A **diferença obrigatória** do grupo H vale: rastro = fluxo contínuo que afina e some; pós-imagem = estados discretos em ramos separados que preservam os atributos do estado.
+
+**Verificado (Godot 4.7.2, headless):** 60 verificações no teste da Etapa 4 e todas as anteriores (133 + 124 + 57 + 71), todas sem falhas: 445 no total. Cada amostra histórica confere com o fluxo avaliado de forma independente em `t − idade`; seek/retrocesso/reinício idênticos; emissor em linha e em giro conferidos pela fórmula; histórico de histórico (M20 sobre M19); janelas de atividade das camadas anteriores respeitadas em cada instante passado; domínio no mínimo e no máximo sem valores inválidos. 14 mutações no código (M19, M20, histórico e compositor) derrubam os testes. **Medido:** M19 padrão com 128 amostras de entrada (1408 de saída, 11 reavaliações do fluxo) ≈ 40 ms por avaliação em GDScript puro e máquina ocupada; o custo cresce com a quantidade de amostras históricas e com o custo das camadas anteriores, e não há orçamento aprovado (§12.3). **Não verificado:** aparência (nenhuma representação visual existe), GL Compatibility, hardware-alvo, orçamento de desempenho, qualidade artística, e o comportamento ao repetir um trecho em laço (depende do laboratório, Etapa 5).
+
+**Pendente (não autorizado):** laboratório visual, presets e representações (Etapa 5); validação completa, desempenho, GL Compatibility e aprovação artística (Etapa 6).

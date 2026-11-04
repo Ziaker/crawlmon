@@ -111,8 +111,8 @@ func t_catalog() -> void:
 			all_ok = false
 	ok(all_ok, "M16, M17 e M18 registrados com metadados")
 	var miss := _cat.missing_v1()
-	ok(miss == [&"M19", &"M20"], "faltam exatamente M19 e M20 (%s)" % [miss])
-	ok(MotionBehaviors.all().size() == 18, "18 comportamentos implementados")
+	ok(miss.is_empty(), "catálogo V1 completo (%s)" % [miss])
+	ok(MotionBehaviors.all().size() == 20, "20 comportamentos implementados")
 	var c := MotionComposition.new()
 	var l := MotionLayer.new()
 	l.id = &"A"
@@ -330,14 +330,14 @@ func t_m17() -> void:
 		if s.width > 0.02 and s.width < 0.98:
 			has_partial = true
 	ok(has_partial and near(rw.samples[0].width, 1.0, 0.02) and near(rw.samples[64].width, 0.0, 0.02), "largura de transição produz borda gradual")
-	ok(near(rw.samples[32].width, 0.5, 1e-3), "a frente avança até progresso × (1 + largura): u=0,5 fica em 50% (obtido %.3f)" % rw.samples[32].width)
+	ok(near(rw.samples[32].width, 0.5, 1e-3), "a frente avança até progresso × (1 + largura): u=0,5 fica em 50 %% (obtido %.3f)" % rw.samples[32].width)
 	ok(near(run(&"M17", Op.MULTIPLY_ATTRIBUTE, pw, 1.0).samples[64].width, 1.0, 1e-6), "no fim, mesmo com transição larga, tudo em 1")
 	ok(near(run(&"M17", Op.MULTIPLY_ATTRIBUTE, pw, 0.0).samples[0].width, 0.0, 1e-6), "no início, mesmo com transição larga, tudo em 0")
 
 	var pcurve := p.duplicate()
 	pcurve["curve"] = 2.0
 	var rcv := run(&"M17", Op.MASK, pcurve, 0.5)
-	ok(visible_count(rcv) < visible_count(rh) and abs(visible_count(rcv) - 16) <= 2, "curva 2: a 50% do tempo cresceu 25% (visíveis=%d)" % visible_count(rcv))
+	ok(visible_count(rcv) < visible_count(rh) and abs(visible_count(rcv) - 16) <= 2, "curva 2: a 50 %% do tempo cresceu 25 %% (visíveis=%d)" % visible_count(rcv))
 
 	var pf := {"t_duration": 1.0, "width": 0.0, "affect_width": false, "affect_intensity": true, "affect_opacity": true, "affect_visibility": false}
 	var rf := run(&"M17", Op.MULTIPLY_ATTRIBUTE, pf, 0.5)

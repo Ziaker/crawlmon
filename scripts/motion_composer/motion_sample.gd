@@ -19,6 +19,8 @@ var width: float = 1.0
 var intensity: float = 1.0
 var opacity: float = 1.0
 var visible: bool = true
+## Idade em segundos de uma amostra histórica (rastro, pós-imagem); 0 nas amostras atuais.
+var age: float = 0.0
 
 
 static func make_rest(p_u: float, p_element_id: int, length: float, p_rest: Vector2 = Vector2.ZERO) -> MotionSample:
@@ -42,6 +44,7 @@ func duplicate_sample() -> MotionSample:
 	c.intensity = intensity
 	c.opacity = opacity
 	c.visible = visible
+	c.age = age
 	return c
 
 
@@ -52,7 +55,7 @@ func tangent() -> Vector3:
 func is_finite_sample() -> bool:
 	return position.is_finite() and basis.x.is_finite() and basis.y.is_finite() and basis.z.is_finite() \
 		and is_finite(width) and is_finite(intensity) and is_finite(opacity) and is_finite(u) \
-		and rest.is_finite()
+		and rest.is_finite() and is_finite(age)
 
 
 ## Caminho de ramo derivado do ramo-pai, do id da camada e do índice (§19.3).

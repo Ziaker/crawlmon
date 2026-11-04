@@ -56,6 +56,7 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-301](D-301-motion-composer-etapa-2-autorizada.md) | Motion Composer / implementação | Etapa 2 (M01–M13) autorizada | M01–M13 implementados e testados |
 | [D-302](D-302-motion-composer-etapa-2b-m16-m18.md) | Motion Composer / implementação | Etapa 2b: M16, M17 e M18 | M16–M18 implementados e testados |
 | [D-303](D-303-motion-composer-etapa-3-composicao-espacial.md) | Motion Composer / implementação | Etapa 3: M14 Bifurcação e M15 Recombinação; ordem, máscaras e defasagens validadas | M14–M15 implementados e testados; Etapas 4–6 não autorizadas |
+| [D-304](D-304-motion-composer-etapa-4-persistencia-temporal.md) | Motion Composer / implementação | Etapa 4: M19 Rastro temporal, M20 Pós-imagem e reconstrução determinística do histórico | M19–M20 implementados e testados; Etapas 5–6 não autorizadas |
 | [D-047](D-047-camera-lenta-3s-decisao-menu.md) | Combate / UI / Game Feel | Câmera Lenta de 3 Segundos para Decisão nos Menus Fight e Itens | Implementado |
 | [D-048](D-048-rolling-hp-mother3-odometro.md) | Combate / UI / Game Feel / Configurações | Mecânica de Vida Rolante (Rolling HP / Odômetro estilo Mother 3 / EarthBound) | Implementado |
 | [D-049](D-049-knockback-final-e-screen-shake-ko.md) | Combate / Visual / Game Feel / Câmera | Impacto de K.O.: Lançamento Balístico do Inimigo, Shake Épico e VFX de Derrota | Implementado |
