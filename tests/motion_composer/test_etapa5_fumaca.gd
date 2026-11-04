@@ -48,6 +48,7 @@ func _init() -> void:
 	MotionBehaviors.register_all(_cat)
 	var nodes_before := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
 	t_puffs()
+	t_opacity()
 	t_order()
 	t_view()
 	print("\n-- Independência de representação --")
@@ -151,6 +152,92 @@ func t_puffs() -> void:
 	ok(MotionSmokeView.puff_offset(o, 0.5, 3.0, 1.5, 0.25, 0.4) == MotionSmokeView.puff_offset(o, 0.5, 3.0, 1.5, 0.25, 0.4), "determinístico")
 
 
+func t_opacity() -> void:
+	print("\n-- Jogo da opacidade: densidade, oscilação e curva --")
+	var dens := []
+	var lo := 9.0
+	var hi := 0.0
+	for id in 400:
+		var sm := MotionSample.make_rest(0.0, id, 1.0)
+		var d := MotionSmokeView.puff_density(sm, 0.65)
+		dens.append(d)
+		lo = minf(lo, d)
+		hi = maxf(hi, d)
+	ok(lo >= 0.35 - 1e-6 and hi <= 1.0 and lo < 0.4 and hi > 0.97, "densidade de cada baforada entre 0,35 e 1 (%.2f a %.2f)" % [lo, hi])
+	var buckets := {}
+	for d in dens:
+		buckets[int(d * 10.0)] = true
+	ok(buckets.size() >= 6, "a densidade se espalha por toda a faixa (%d faixas de 0,1 usadas)" % buckets.size())
+	var sm7 := MotionSample.make_rest(0.0, 7, 1.0)
+	ok(MotionSmokeView.puff_density(sm7, 0.0) == 1.0, "variação 0: todas iguais")
+	ok(MotionSmokeView.puff_density(sm7, 0.65) == MotionSmokeView.puff_density(sm7, 0.65), "determinístico")
+
+	var fl := MotionSample.make_rest(0.0, 9, 1.0)
+	ok(MotionSmokeView.puff_flicker_factor(fl, 0.35) == 1.0, "amostra atual não oscila")
+	var fmin := 9.0
+	var fmax := 0.0
+	var moves := 0
+	var prev := -1.0
+	for k in range(1, 61):
+		fl.age = 0.01 * float(k)
+		var f := MotionSmokeView.puff_flicker_factor(fl, 0.35)
+		fmin = minf(fmin, f)
+		fmax = maxf(fmax, f)
+		if prev >= 0.0 and absf(f - prev) > 1e-6:
+			moves += 1
+		prev = f
+	ok(fmin >= 0.65 - 1e-6 and fmax <= 1.0 + 1e-9 and fmax - fmin > 0.2, "a oscilação fica entre 1 − quantidade e 1 e é bem visível (%.2f a %.2f)" % [fmin, fmax])
+	ok(moves > 50, "a opacidade muda a cada instante da vida")
+	var phases := {}
+	for id in 200:
+		var pf := MotionSample.make_rest(0.0, id, 1.0)
+		pf.age = 0.2
+		phases[snappedf(MotionSmokeView.puff_flicker_factor(pf, 0.35), 0.02)] = true
+	ok(phases.size() > 8, "cada baforada oscila em fase própria (%d valores distintos na mesma idade)" % phases.size())
+	ok(MotionSmokeView.puff_flicker_factor(fl, 0.0) == 1.0, "oscilação 0: opacidade fiel à rampa")
+	var start_phases := {}
+	for id in 200:
+		var pf2 := MotionSample.make_rest(0.0, id, 1.0)
+		pf2.age = 0.001
+		start_phases[snappedf(MotionSmokeView.puff_flicker_factor(pf2, 0.35), 0.02)] = true
+	ok(start_phases.size() > 8, "logo no início da vida cada baforada já está em fase própria (%d valores distintos)" % start_phases.size())
+
+	ok(near(MotionSmokeView.puff_alpha(0.3, 0.5, 1.0), MotionSmokeView.puff_alpha(0.3, 0.5)), "expoente 1 é a rampa reta do jogo")
+	var linear := MotionSmokeView.puff_alpha(0.3, 0.5, 1.0)
+	var soft := MotionSmokeView.puff_alpha(0.3, 0.5, 2.0)
+	ok(soft < linear and soft > 0.0, "expoente maior esmaece mais logo depois do pico (%.3f < %.3f)" % [soft, linear])
+	ok(near(MotionSmokeView.puff_alpha(0.1, 0.5, 3.0), 0.75) and MotionSmokeView.puff_alpha(0.5, 0.5, 3.0) == 0.0, "o pico e o fim não dependem do expoente")
+	ok(MotionSmokeView.puff_alpha(0.3, 0.5, 0.5) > linear, "expoente menor que 1 mantém mais opacidade (cauda longa)")
+
+	var view := MotionSmokeView.new()
+	var s0 := MotionSample.make_rest(0.0, 3, 1.0)
+	s0.age = 0.2
+	var a_full := view.puff_final_alpha(s0)
+	s0.opacity = 0.5
+	ok(near(view.puff_final_alpha(s0), a_full * 0.5), "a opacidade da amostra multiplica a final")
+	var s_ex := MotionSample.make_rest(0.0, 3, 1.0)
+	s_ex.age = 0.2
+	var expected := MotionSmokeView.puff_alpha(0.2, view.puff_life, view.puff_fade_pow) * MotionSmokeView.puff_density(s_ex, view.puff_density_var) * MotionSmokeView.puff_flicker_factor(s_ex, view.puff_flicker)
+	ok(near(view.puff_final_alpha(s_ex), expected) and MotionSmokeView.puff_flicker_factor(s_ex, view.puff_flicker) < 0.999, "a opacidade final é rampa × densidade × oscilação (a oscilação conta de fato)")
+	view.puff_density_var = 0.0
+	view.puff_flicker = 0.0
+	view.puff_fade_pow = 1.0
+	s0.opacity = 1.0
+	ok(near(view.puff_final_alpha(s0), MotionSmokeView.puff_alpha(0.2, view.puff_life)), "sem densidade, oscilação nem curva, a opacidade final é a rampa do jogo")
+	view.free()
+	var v2 := MotionSmokeView.new()
+	var vmin := 9.0
+	var vmax := 0.0
+	for id in 300:
+		var sx := MotionSample.make_rest(0.0, id, 1.0)
+		sx.age = 0.2
+		var af := v2.puff_final_alpha(sx)
+		vmin = minf(vmin, af)
+		vmax = maxf(vmax, af)
+	ok(vmax - vmin > 0.25, "a opacidade final varia muito entre baforadas da mesma idade (%.2f a %.2f)" % [vmin, vmax])
+	v2.free()
+
+
 func t_order() -> void:
 	print("\n-- Ordenação de translúcidos (§19.5) --")
 	var pos := PackedVector3Array([Vector3(0, 0, 1), Vector3(0, 0, 5), Vector3(0, 0, 3), Vector3(0, 0, -2)])
@@ -176,7 +263,7 @@ func t_view() -> void:
 	view.show_samples(s, Vector3(0, 0, 4))
 	var visible_count := 0
 	for smp in s:
-		if smp.visible and smp.opacity * MotionSmokeView.puff_alpha(smp.age, view.puff_life) > 0.001 and smp.width > 0.0:
+		if smp.visible and view.puff_final_alpha(smp) > 0.001 and smp.width > 0.0:
 			visible_count += 1
 	ok(view.shown_count == visible_count and view.shown_count > 0, "um puff por amostra visível (%d)" % view.shown_count)
 	var mmi := view.get_child(0) as MultiMeshInstance3D
@@ -218,7 +305,7 @@ func t_view() -> void:
 	ok(view.shown_count == 0, "sem amostras, nada desenhado")
 	var drawn_pos := PackedVector3Array()
 	for smp in s:
-		if smp.visible and smp.opacity * MotionSmokeView.puff_alpha(smp.age, view.puff_life) > 0.001 and smp.width > 0.0:
+		if smp.visible and view.puff_final_alpha(smp) > 0.001 and smp.width > 0.0:
 			drawn_pos.append(smp.position + MotionSmokeView.puff_offset(smp, view.puff_speed_min, view.puff_speed_max, view.puff_damping, view.puff_rise, view.puff_radius))
 	view.show_samples(s, Vector3(0, 0, 4))
 	ok(view.last_order == MotionSmokeView.back_to_front(drawn_pos, Vector3(0, 0, 4)), "a vista desenha na ordem do mais distante ao mais próximo da câmera")

@@ -40,6 +40,7 @@ P-07 (orçamento), P-08 (aparência e disposição da interface), P-09 (composi�
 - Fatia 3 (Fragmentos): "prossiga".
 - Fatia 4 (Fumaça/billboards), primeira versão: "Não gostei n parece fumaça nem dust" (**rejeitada**; refeita no estilo de fumaça e poeira do jogo, D-041).
 - Fatia 4, segunda versão: "Não estou satisfeito ainda". Respostas à pergunta feita: problemas "Borrada/mole demais, Formato de nuvem/algodão, Cor ou luz, Movimento"; referência "Poeira do jogo (D-041)". Terceira versão feita medindo a poeira real do jogo (ver §29).
+- Fatia 4, terceira versão: "Tá melhor, mas poeira mexe muito com opacidade, não estou vendo tanta". Quarta versão com densidade por baforada, oscilação da opacidade e curva de esmaecimento (ver §29).
 
 ## Estado
 

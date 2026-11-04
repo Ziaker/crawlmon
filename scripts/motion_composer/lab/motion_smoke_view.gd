@@ -24,7 +24,7 @@ const PEAK_AT := 0.2
 ## Diâmetro médio de uma baforada com largura de amostra 1, em metros (o jogo varia de 0,55 a 1,15).
 var puff_size: float = 0.85
 ## Vida em segundos: crescimento e rampa de opacidade acontecem nela; mais velha que isso, a baforada some.
-var puff_life: float = 0.38
+var puff_life: float = 0.55
 ## Fator de tamanho ao fim da vida (o jogo usa 1,8).
 var puff_growth: float = 1.8
 ## Velocidade inicial mínima e máxima (m/s), atrito (1/s), subida (m/s²) e raio da esfera de origem (m).
@@ -33,6 +33,11 @@ var puff_speed_max: float = 3.0
 var puff_damping: float = 1.5
 var puff_rise: float = 0.25
 var puff_radius: float = 0.4
+## Jogo da opacidade (a poeira "mexe" muito com ela): variação de densidade entre baforadas (0 = todas iguais),
+## oscilação da opacidade com a idade (0 = sem) e expoente da queda depois do pico (1 = reta, como o jogo).
+var puff_density_var: float = 0.65
+var puff_flicker: float = 0.35
+var puff_fade_pow: float = 1.5
 var shown_count: int = 0
 ## Ordem de desenho usada no último quadro (índices dos puffs desenhados); para inspeção e testes.
 var last_order: PackedInt32Array = PackedInt32Array()
@@ -103,7 +108,7 @@ static func puff_params(s: MotionSample, size: float, life: float, growth: float
 
 
 ## Rampa de opacidade pela vida (jogo: 0 → 0,75 aos 20 % → 0). Amostras atuais (idade 0) não têm vida: 1.
-static func puff_alpha(age: float, life: float) -> float:
+static func puff_alpha(age: float, life: float, fade_pow: float = 1.0) -> float:
 	if age <= 0.0:
 		return 1.0
 	var f := age / maxf(life, 1e-6)
@@ -111,7 +116,29 @@ static func puff_alpha(age: float, life: float) -> float:
 		return 0.0
 	if f <= PEAK_AT:
 		return PEAK_ALPHA * f / PEAK_AT
-	return PEAK_ALPHA * (1.0 - (f - PEAK_AT) / (1.0 - PEAK_AT))
+	return PEAK_ALPHA * pow(1.0 - (f - PEAK_AT) / (1.0 - PEAK_AT), fade_pow)
+
+
+## Densidade própria da baforada, em [1 − variação, 1]: umas são véus finos, outras são densas.
+static func puff_density(s: MotionSample, variation: float) -> float:
+	return 1.0 - variation * MotionHash.float01(0, s.element_id & 0xFFFFFFFF, s.element_id >> 32, 40)
+
+
+## Oscilação da opacidade com a idade: multiplicador em [1 − quantidade, 1], com fase e frequência (3 a 7 Hz)
+## próprias de cada baforada. Amostras atuais (idade 0) não oscilam.
+static func puff_flicker_factor(s: MotionSample, amount: float) -> float:
+	if s.age <= 0.0 or amount <= 0.0:
+		return 1.0
+	var lo := s.element_id & 0xFFFFFFFF
+	var hi := s.element_id >> 32
+	var freq := 3.0 + 4.0 * MotionHash.float01(0, lo, hi, 41)
+	var phase := TAU * MotionHash.float01(0, lo, hi, 42)
+	return 1.0 - amount * (0.5 - 0.5 * cos(TAU * freq * s.age + phase))
+
+
+## Opacidade final de uma baforada: opacidade da amostra × rampa de vida × densidade × oscilação.
+func puff_final_alpha(s: MotionSample) -> float:
+	return clampf(s.opacity, 0.0, 1.0) * puff_alpha(s.age, puff_life, puff_fade_pow) * puff_density(s, puff_density_var) * puff_flicker_factor(s, puff_flicker)
 
 
 ## Deslocamento decorativo: ponto de partida dentro da esfera de origem + velocidade em direção qualquer
@@ -159,7 +186,7 @@ func show_samples(samples: Array[MotionSample], cam: Vector3 = Vector3.INF) -> v
 	for s in samples:
 		if not s.visible or s.width * puff_size <= 1e-5:
 			continue
-		var a := clampf(s.opacity, 0.0, 1.0) * puff_alpha(s.age, puff_life)
+		var a := puff_final_alpha(s)
 		if a <= 0.001:
 			continue
 		drawn.append(s)

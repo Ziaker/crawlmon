@@ -152,7 +152,7 @@ func _smoke_composition() -> void:
 	t.id = &"poeira"
 	t.behavior_id = &"M19"
 	t.op = MotionTypes.Op.PERSIST
-	t.params = {"duration": 0.385, "sample_interval": 0.0275, "world_space": true, "fade_curve": 0.1, "width_start": 1.0, "width_end": 1.0}
+	t.params = {"duration": 0.55, "sample_interval": 0.0275, "world_space": true, "fade_curve": 0.1, "width_start": 1.0, "width_end": 1.0}
 	c.add_layer(t)
 	session.emitter_mode = MotionLabSession.Emitter.RUN
 	_emitter_opt.select(MotionLabSession.Emitter.RUN)
@@ -489,6 +489,9 @@ func _build_ui() -> void:
 	box.add_child(frag_slider)
 	_prop_slider(box, "Poeira: tamanho médio (m)", 0.2, 2.0, 0.01, smoke.puff_size, func(v: float) -> void: smoke.puff_size = v)
 	_prop_slider(box, "Poeira: vida (s)", 0.1, 2.0, 0.01, smoke.puff_life, func(v: float) -> void: smoke.puff_life = v)
+	_prop_slider(box, "Poeira: variação de densidade (0 = todas iguais)", 0.0, 1.0, 0.01, smoke.puff_density_var, func(v: float) -> void: smoke.puff_density_var = v)
+	_prop_slider(box, "Poeira: oscilação da opacidade", 0.0, 1.0, 0.01, smoke.puff_flicker, func(v: float) -> void: smoke.puff_flicker = v)
+	_prop_slider(box, "Poeira: curva de esmaecimento (1 = reta)", 0.5, 4.0, 0.05, smoke.puff_fade_pow, func(v: float) -> void: smoke.puff_fade_pow = v)
 	_prop_slider(box, "Poeira: crescimento ao fim da vida (×)", 1.0, 3.0, 0.05, smoke.puff_growth, func(v: float) -> void: smoke.puff_growth = v)
 	_prop_slider(box, "Poeira: velocidade máxima (m/s)", 0.0, 6.0, 0.1, smoke.puff_speed_max, func(v: float) -> void: smoke.puff_speed_max = v)
 	_prop_slider(box, "Poeira: atrito (1/s)", 0.0, 4.0, 0.1, smoke.puff_damping, func(v: float) -> void: smoke.puff_damping = v)
