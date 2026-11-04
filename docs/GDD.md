@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.40 — Rodada 69 registrada em adendo rastreável (2026-11-04); histórico preservado.  
+> **Revisão:** 1.41 — Rodada 70 registrada em adendo rastreável (2026-11-04); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1716,6 +1716,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.40 | 2026-11-04 | Rodada 69: IDs únicos estáveis ao iniciar combate; mitigação percentual de retornos decrescentes com estrutura comum VIT/SPI; arredondamento único final e mínimo posterior; crítico e dano antes de status condicionado ao acerto quando alvo sobreviver; D-196–D-199. | Rodada 69 fechada / Rodada 70 proposta |
 
+| 1.41 | 2026-11-04 | Rodada 70: IDs por slots aliados depois inimigos; mitigação racional R(x)=x/(x+K) com K ainda a validar; status multi-hit máximo uma tentativa por alvo/execução após último impacto; Q4D define descarte integral do odômetro no jogo principal, sem aprovar nova aferição de sobrevivência. D-200–D-203. | Rodada 70 fechada / Rodada 71 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -1947,4 +1949,21 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos estritamente ilustrativos:** (i) combatentes recebem IDs diferentes ao começar a batalha e não mudam de ID ao perder companheiros; o exemplo não aprova uma ordem de atribuição. (ii) SPI 40→50 e 90→100 oferece benefício percentual marginal cada vez menor, sem fixar valores de porcentagem. (iii) 9,4×0,7×0,8 = 5,264 → **5** após um único arredondamento; números hipotéticos, não parâmetros oficiais. (iv) um golpe crítico que derrota Abra não aplica Stun **dependente desse acerto**; se Abra sobreviver, a aplicação segue a ficha e a LUK vigente.
 
 **Limites e rastreabilidade:** a ordem **VIT/SPI antes de DEF** (D-193), o **dano mínimo 1 salvo imunidade/bloqueio completo** (D-194) e a **esquiva automática antes do crítico/status** (D-195) permanecem. O código atual contém arredondamentos separados em `battle.gd` e `combatant.gd`, portanto a D-198 ainda **não está implementada**, e as fórmulas novas de VIT/SPI também não foram integradas. Permanecem sem aprovação: ordem concreta para atribuir IDs, coeficientes/equação de mitigação, tratamento do exato x,5, fatores restantes da cadeia de dano, condições de multi-hit e sobrevivência com HP rolante. A **divergência de LUK R60-Q2/Q3 (§12.13) continua sem resolução**. **Nenhum código, teste, dado, Move, asset, cena ou VFX alterado; nenhum teste de gameplay executado.**
+
+### 12.16 Rodada 70 — IDs por slots, defesa racional, status por execução e descarte do odômetro (revisão 1.41)
+
+> **2026-11-04.** Respostas do criador: **1A, 2A, 3A e 4D**, com a observação literal **“o odometro era só um teste, não usaremos ele no jogo principal, descarte toda e qualquer ideia que o envolva”**. Registros **D-200–D-203**, consolidados em **§51** de `docs/REGRAS_DO_JOGO.md`. Conforme D-001, o GDD permanece **não normativo para combate**. Este adendo não apaga decisões, trechos antigos ou arquivos de código.
+
+| Questão | Resposta | Registro aprovado |
+|---|---|---|
+| R70-Q1 | **1A** | **D-200:** IDs estáveis únicos, atribuídos sequencialmente na composição inicial pelos slots da equipe do protagonista e depois pelos slots inimigos, sem renumeração durante o combate. |
+| R70-Q2 | **2A** | **D-201:** mitigação natural percentual para VIT/SPI pela **função racional R(x) = x/(x+K)**, **K positivo a calibrar e validar depois**. Mesma estrutura funcional, parâmetros ainda indefinidos. |
+| R70-Q3 | **3A** | **D-202:** Move multi-hit com status condicionado ao acerto permite **no máximo uma tentativa por alvo e execução**, **após último impacto** e **somente quando o alvo sobreviver** e tiver recebido acerto válido. |
+| R70-Q4 | **4D + regra própria** | **D-203:** odômetro de HP pertenceu a **teste/protótipo** e está **descartado de qualquer requisito ou ideia do jogo principal**. **Não foi escolhida uma nova lógica de sobrevivência** entre 4A/4B/4C. |
+
+**Exemplos somente ilustrativos:** slots aliados Gible/Abra e inimigos Pancham/outro → IDs em ordem sequencial ilustrativa, sem fixar número inicial; `x=50` e `K=100` fictício → `R=1/3 ≈ 33,33%`, sem homologar K; três impactos com possibilidade de Poison contra um alvo sobrevivente geram no máximo uma tentativa desse status após o último impacto, não uma por hit.
+
+**Preservação e precedência:** a decisão histórica `docs/decisoes/D-048-rolling-hp-mother3-odometro.md` continua no repositório como evidência de **teste antigo**, **superada exclusivamente para o jogo principal** por D-203. Não confundir com a distinta `D-048-r40-q8-atb-aoe-unico.md`, relativa a recompensas AoE. Código atual ainda contém `rolling_hp_enabled`, `target_hp`, `tick_rolling_hp` e o teste correspondente, **sem qualquer autorização nesta rodada para excluir, desligar ou refatorar esses recursos**. D-199 conserva status após dano somente para sobreviventes; a origem lógica dessa sobrevivência **não foi definida na escolha 4D**. As fórmulas de LUK divergentes na reapresentação da Rodada 60 (§12.13) continuam sem precedência nova, e as demais decisões anteriores são preservadas.
+
+**Pendências e escopo:** K e critério de calibração; entrada tardia de combatentes e número inicial dos IDs; multi-status e instantes lógicos dos impactos; meia unidade no arredondamento e desempates de retarget do mesmo atacante. **Somente documentação:** nenhum código, teste, Move, VFX, cena ou asset modificado; nenhum teste de gameplay executado.
 

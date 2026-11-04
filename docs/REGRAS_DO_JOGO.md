@@ -1581,3 +1581,32 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Pendentes:** ordem exata de atribuição e casos de entrada posterior de combatentes (D-196), família matemática e parâmetros de VIT/SPI (D-197), desempate de arredondamento x,5 e cadeia completa de fatores de dano (D-198), checkpoints de sobrevivência com HP rolante e eventos multi-hit (D-199); PRNG/seed de replay e AGI/ATB permanecem sujeitos às decisões próprias anteriores.
 - **Escopo:** quatro registros novos, índice, consolidado e adendo GDD. Nenhum código, cena, asset, ficha de Move, VFX ou teste modificado.
 
+---
+
+## 51. Rodada 70 — ordem de IDs, curva racional VIT/SPI, status multi-hit e descarte do odômetro
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A**. Na **4D**, a única regra nova determinada textualmente foi: **“o odometro era só um teste, não usaremos ele no jogo principal, descarte toda e qualquer ideia que o envolva”**. Registro rastreável em **D-200 a D-203**. **Não** atribuir à resposta 4D qualquer escolha técnica não fornecida. D-061 exige documentação sem alterar código.
+
+### 51.1 Regras aprovadas
+
+| Documento | Escolha | Regra e limitação |
+|---|---|---|
+| [D-200](decisoes/D-200-r70-q1-ids-por-slots-equipe-depois-inimigos.md) | **1A** | Atribuir IDs estáveis **sequencialmente** pelos slots da **equipe do protagonista** e **depois** pelos slots **inimigos**, considerando a composição inicial de cada combate. Sem renumeração posterior (D-196). O valor inicial e a entrada de novos participantes seguem pendentes. |
+| [D-201](decisoes/D-201-r70-q2-curva-racional-vit-spi-k-positivo.md) | **2A** | Mitigação percentual natural de VIT/SPI pela **curva racional R(x) = x/(x+K)**, com **K estritamente positivo**, **a calibrar e validar posteriormente**, sem assumir K=100 nem parâmetros iguais para VIT/SPI. |
+| [D-202](decisoes/D-202-r70-q3-status-uma-tentativa-por-alvo-move-apos-ultimo-hit.md) | **3A** | Em Move **multi-hit** com status dependente do acerto, permitir **no máximo uma tentativa do status por alvo por execução**, **após o último impacto**, **somente se o alvo tiver sobrevivido** e ao menos um hit o tiver atingido validamente. |
+| [D-203](decisoes/D-203-r70-q4d-odometro-descartado-jogo-principal.md) | **4D + regra expressa** | O **odômetro de HP era só um teste e está excluído do jogo principal**; descartar todas as ideias que o envolvam. Esta resposta **não define outra mecânica de sobrevivência** para a pergunta 4D. |
+
+### 51.2 Exemplos e salvaguardas
+
+- **D-200 / IDs:** slots iniciais aliados Gible e Abra, seguidos por inimigos Pancham e outro: IDs sequenciais exemplificativos `1, 2, 3, 4`, respectivamente. **Os números são didáticos, não uma aprovação do primeiro ID.** D-188 e D-192 seguem organizando os sorteios de retarget, sem substituir o RNG por escolha fixa de alvo. D-095 mantém empate por eliminação simultânea.
+- **D-201 / defesa:** com `x=50` e **K fictício 100**, `R=1/3 ≈ 33,33%` de mitigação natural. Esse exemplo **não valida K=100**. Preservar VIT para físico, SPI para mágico (D-130), estágios comuns DEF aplicados **depois** (D-193), mínimo de dano salvo imunidade/bloqueio (D-194) e precisão até arredondamento final (D-198).
+- **D-202 / multi-hit:** três impactos do mesmo Move elegíveis a Poison não provocam três sorteios desse status contra o mesmo alvo. Após o **último impacto**, se o alvo **sobreviver** e recebeu acerto válido, é permitida **uma tentativa** segundo a ficha/LUK (D-134/D-146/D-156). Alvo derrotado ou sem acerto válido não recebe essa rolagem. Aplicações de status independentes de acerto e regras próprias de certos Moves permanecem distintas.
+- **D-203 / odômetro:** a antiga [D-048](decisoes/D-048-rolling-hp-mother3-odometro.md) descrevia um teste com Rolling HP, toggle, rolamento de dano/cura e SFX. **Essa proposta está superada no escopo do jogo principal**, por ordem expressa mais recente. Preservar o documento histórico, sem implementar, adaptar ou usar o odômetro como base para decisões de gameplay. **A outra D-048 de recompensas ATB de AoE não foi afetada**. A questão 4D não aprova automaticamente uso de `hp`, `target_hp` ou qualquer nova rotina de aferição de sobrevivência.
+
+### 51.3 Divergências técnicas, conflitos históricos e pendências
+
+- **Odômetro no código:** `scripts/combat/combatant.gd` contém `rolling_hp_enabled`, `target_hp` e `tick_rolling_hp`, e há o teste `tests/battle/test_d048_rolling_hp.gd`. **Esses componentes permanecem tecnicamente presentes**, mas **não são requisitos aprovados para o jogo principal**. **Não remover nem alterar código nesta rodada.**
+- **Crítico/dano/status:** D-199 exige crítico e dano primeiro e status dependente de acerto só se sobreviver. D-202 fixa a frequência após o último impacto multi-hit. **A resposta R70-Q4D não definiu novo referencial de sobrevivência além de descartar o odômetro**, sem escolher 4A, 4B ou 4C anteriores.
+- **Pendências novas:** critério de entrada posterior de combatente e valor inicial do ID; **parâmetro K positivo** e se será igual para VIT/SPI; múltiplos efeitos de status na mesma ficha e hit assíncrono; arredondamento exato `x,5`; desempate de eventos simultâneos do mesmo atacante. Preservar conflito de LUK **R60-Q2/Q3** no GDD §12.13 e demais pendências históricas.
+- **Escopo efetivo:** quatro novos registros individuais, adendo de superação histórica na D-048 de HP rolante, índice, este consolidado e GDD. **Nenhum código, teste, asset, Move, cena ou VFX alterado; nenhum teste de gameplay executado.**
+

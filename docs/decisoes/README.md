@@ -239,4 +239,12 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-198](D-198-r69-q3-arredondamento-unico-final-dano.md) | Combate / R69 | Q3A: manter decimais durante modificadores, arredondar uma vez ao final e só então aplicar mínimo cabível | Aprovada; código atual divergente; sem implementação |
 | [D-199](D-199-r69-q4-critico-dano-antes-status-alvo-sobrevive.md) | Combate / R69 | Q4A: após acerto, resolver crítico e dano antes do status dependente de acerto; status apenas se o alvo sobreviver | Aprovada; sem implementação |
 
+| [D-200](D-200-r70-q1-ids-por-slots-equipe-depois-inimigos.md) | Combate / R70 | Q1A: IDs sequenciais por slots da equipe do protagonista e depois slots inimigos na composição inicial | Aprovada; não implementada |
+| [D-201](D-201-r70-q2-curva-racional-vit-spi-k-positivo.md) | Combate / R70 | Q2A: mitigação VIT/SPI pela curva racional R(x)=x/(x+K), K>0, calibração posterior | Aprovada; K pendente; não implementada |
+| [D-202](D-202-r70-q3-status-uma-tentativa-por-alvo-move-apos-ultimo-hit.md) | Combate / R70 | Q3A: em multi-hit, no máximo uma tentativa de status por alvo/execução, após o último impacto e se sobreviver | Aprovada; não implementada |
+| [D-203](D-203-r70-q4d-odometro-descartado-jogo-principal.md) | Combate / R70 | Q4D + regra própria: odômetro de HP era teste e está descartado do jogo principal; referência antiga preservada | Aprovada; código do teste permanece no repositório |
+
 > **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.
+
+> **Histórico/precedência R70:** o arquivo [D-048 de HP rolante](D-048-rolling-hp-mother3-odometro.md) registra um **teste/protótipo histórico**, não uma regra vigente do jogo principal após [D-203](D-203-r70-q4d-odometro-descartado-jogo-principal.md). **Não confundir** com o outro arquivo [D-048 de recompensas AoE](D-048-r40-q8-atb-aoe-unico.md), que não foi revogado.
+
