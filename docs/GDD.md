@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.42 — Rodada 71 registrada em adendo rastreável (2026-11-04); histórico preservado.  
+> **Revisão:** 1.43 — Rodada 72 registrada em adendo rastreável (2026-11-04); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1720,6 +1720,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.42 | 2026-11-04 | Rodada 71: K único compartilhado por VIT/SPI, sem valor homologado; arredondamento final exatamente em 0,5 para cima; ID crescente sem reuso em eventual entrada posterior; status após último impacto destinado a cada alvo. D-204–D-207. | Rodada 71 fechada / Rodada 72 proposta |
 
+| 1.43 | 2026-11-04 | Rodada 72: método de K por atributo de referência e mitigação-alvo com aprovação futura; retorno do mesmo combatente conserva ID; uma tentativa por status distinto, alvo e execução; interrupção após acertos válidos usa último impacto efetivamente executado para resolver status elegível. D-208–D-211. | Rodada 72 fechada / Rodada 73 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -1983,4 +1985,19 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos não normativos:** com `VIT=SPI=50` e **K hipotético 100**, cada categoria teria `R=1/3`; **K=100 não foi aprovado**. O desempate exato `4,5 → 5` e `5,5 → 6` esclarece D-198. Com IDs fictícios `1,2,3`, a saída do participante 2 não libera ID 2: o **novo** participante recebe o próximo número `4`. Uma onda que conclua os impactos destinados a Gible antes de atingir Abra/Pancham pode resolver o status **de Gible** após seu próprio último impacto, se ele sobreviveu a acerto válido; não antecipar ou multiplicar rolagens.
 
 **Pendências e preservações:** não definir K numérico, efeitos de reentrada do **mesmo** combatente, duas entradas perfeitamente simultâneas, múltiplos status diferentes de um Move, ordem de impactos simultâneos ou precisão/tolerância de ponto flutuante. D-203 mantém **odômetro fora do jogo principal**; D-095 mantém empate de KO simultâneo; a divergência de LUK da reapresentação R60 (§12.13) permanece **sem nova precedência**. **Somente documentação**: nenhum código, teste, ficha, cena, asset ou VFX modificado; nenhum teste de gameplay realizado.
+
+### 12.18 Rodada 72 — calibração de K, identidade no retorno e status sob múltiplos efeitos/interrupção (revisão 1.43)
+
+> **2026-11-04.** Respostas expressas do criador: **1A, 2A, 3A, 4A**; observações adicionais: nenhuma. Novas decisões individuais **D-208 a D-211**, consolidadas em **§53** de `docs/REGRAS_DO_JOGO.md`. Adendo estritamente documental; D-001 mantém o GDD não normativo para combate e o histórico integral das Rodadas 39–71 não é reescrito.
+
+| Pergunta | Escolha | Decisão aprovada | Registro |
+|---|---|---|---|
+| R72-Q1 | **1A** | **Calibrar K** a partir de atributo defensivo de referência e porcentagem de mitigação-alvo, **ambos submetidos posteriormente a aprovação**; não há referência, alvo nem valor numérico de K aprovados | [D-208](decisoes/D-208-r72-q1-calibrar-k-por-atributo-referencia-e-mitigacao-alvo.md) |
+| R72-Q2 | **2A** | **O mesmo combatente** que retorna **à mesma batalha** mantém seu ID original; novo participante continua recebendo próximo ID não usado (D-206) | [D-209](decisoes/D-209-r72-q2-mesmo-combatente-mantem-id-no-retorno.md) |
+| R72-Q3 | **3A** | Permitir **uma tentativa por status distinto declarado na ficha**, por alvo e execução, sem multiplicação de tentativas por quantidade de hits | [D-210](decisoes/D-210-r72-q3-uma-tentativa-por-status-distinto-alvo-execucao.md) |
+| R72-Q4 | **4A** | Quando o Move for **interrompido depois de acertos válidos**, usar para cada alvo seu **último impacto efetivamente executado** e resolver status elegível se sobreviver; não aguardar impactos cancelados | [D-211](decisoes/D-211-r72-q4-status-apos-ultimo-impacto-efetivo-se-interrompido.md) |
+
+**Exemplos não normativos:** um `x_ref=50` e `R_alvo=25%` hipotéticos implicariam `K=150` pela curva racional, **sem aprovar nenhum desses números**; o mesmo Gible de ID 2 volta à mesma batalha com ID 2, enquanto um participante verdadeiramente novo recebe próximo ID nunca usado; Poison e Paralysis hipotéticos, ambos condicionados a acerto válido, podem receber **cada um** uma tentativa por alvo sobrevivente; um Move interrompido após dois dos três impactos planejados pode realizar a tentativa de status elegível após o **último impacto efetivamente executado**, não após um terceiro inexistente.
+
+**Preservação:** manter D-202/D-207 quanto ao teto e à ordem por alvo na execução normal; D-199 quanto à exigência de sobrevivência e dano antes de status; D-134/D-146/D-156 quanto à LUK; D-200/D-206 quanto aos IDs; D-203 quanto a **descartar completamente o odômetro no jogo principal**, sem removê-lo do código nesta atividade. Permanecem pendentes: números e validação para K, entrada/retorno como mecânica, ordem de status distintos e incompatibilidades, simultaneidade de impactos; a divergência de LUK **R60-Q2/Q3** da nota §12.13 permanece **sem resolução**. **Nenhum código, teste, asset, Move, VFX ou cena alterado; nenhum teste de gameplay executado.**
 

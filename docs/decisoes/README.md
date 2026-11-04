@@ -249,6 +249,11 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-206](D-206-r71-q3-proximo-id-sem-reuso-entradas-posteriores.md) | Combate / R71 | Q3A: novo participante após início recebe próximo ID não utilizado; sem renumerar ou reutilizar | Aprovada; não aprova reforços; sem implementação |
 | [D-207](D-207-r71-q4-status-apos-ultimo-impacto-por-alvo.md) | Combate / R71 | Q4A: resolver status de cada alvo após o último impacto destinado àquele alvo | Aprovada; não implementada |
 
+| [D-208](D-208-r72-q1-calibrar-k-por-atributo-referencia-e-mitigacao-alvo.md) | Combate / R72 | Q1A: calibrar K a partir de atributo defensivo de referência e mitigação-alvo, submetidos a aprovação futura | Aprovada; referências e K pendentes; não implementada |
+| [D-209](D-209-r72-q2-mesmo-combatente-mantem-id-no-retorno.md) | Combate / R72 | Q2A: mesmo combatente conserva seu ID original se voltar à mesma batalha | Aprovada; não autoriza reentrada; não implementada |
+| [D-210](D-210-r72-q3-uma-tentativa-por-status-distinto-alvo-execucao.md) | Combate / R72 | Q3A: permitir no máximo uma tentativa por status distinto declarado na ficha, por alvo e execução | Aprovada; sem novas probabilidades; não implementada |
+| [D-211](D-211-r72-q4-status-apos-ultimo-impacto-efetivo-se-interrompido.md) | Combate / R72 | Q4A: se Move for interrompido após acertos válidos, usar último impacto efetivamente realizado por alvo para status elegível se sobreviver | Aprovada; não implementada |
+
 > **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.
 
 > **Histórico/precedência R70:** o arquivo [D-048 de HP rolante](D-048-rolling-hp-mother3-odometro.md) registra um **teste/protótipo histórico**, não uma regra vigente do jogo principal após [D-203](D-203-r70-q4d-odometro-descartado-jogo-principal.md). **Não confundir** com o outro arquivo [D-048 de recompensas AoE](D-048-r40-q8-atb-aoe-unico.md), que não foi revogado.

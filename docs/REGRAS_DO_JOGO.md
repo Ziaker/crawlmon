@@ -1639,3 +1639,34 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **D-203 mantida:** odômetro de HP excluído do jogo principal; código legado continua presente, sem alteração.
 - **Código consultado na `main`:** `scripts/combat/battle.gd` e `scripts/combat/combatant.gd` ainda apresentam arredondamentos distintos e lógica pré-VIT/SPI; os requisitos novos são documentais, não um atestado de implementação. **Nenhum código, teste, recurso, Move, asset, cena ou VFX modificado e nenhum teste de gameplay executado.**
 
+---
+
+## 53. Rodada 72 — método de calibração de K, ID de retorno, status distintos e interrupções
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Novos registros **D-208 a D-211**, com frases literais. Documentação somente, sem implementar ou alterar regras anteriores não afetadas.
+
+### 53.1 Respostas aprovadas
+
+| Registro | Escolha | Regra |
+|---|---|---|
+| [D-208](decisoes/D-208-r72-q1-calibrar-k-por-atributo-referencia-e-mitigacao-alvo.md) | **1A** | Calibrar o **K único de VIT/SPI** por um **atributo defensivo de referência** e uma **mitigação percentual-alvo**, **ambos sujeitos a aprovação futura** |
+| [D-209](decisoes/D-209-r72-q2-mesmo-combatente-mantem-id-no-retorno.md) | **2A** | **O mesmo combatente conserva o mesmo ID original** se retornar à **mesma batalha** |
+| [D-210](decisoes/D-210-r72-q3-uma-tentativa-por-status-distinto-alvo-execucao.md) | **3A** | Permitir **uma tentativa de aplicação para cada status distinto** declarado na ficha, **por alvo e execução**, respeitando condições de acerto e sobrevivência |
+| [D-211](decisoes/D-211-r72-q4-status-apos-ultimo-impacto-efetivo-se-interrompido.md) | **4A** | Se Move for **interrompido após acertos válidos**, usar o **último impacto realmente executado** contra cada alvo para resolver status elegível **se o alvo sobreviver** |
+
+### 53.2 Exemplos, delimitações e compatibilidades
+
+- **K (D-208):** o método requer aprovar depois tanto `x_ref` quanto `R_alvo`. Com os valores **estritamente fictícios** `x_ref=50`, `R_alvo=25%`, a equação `R(x)=x/(x+K)` leva a `K=150`. **Nem 50, nem 25%, nem K=150 foram aprovados**. Preservar um **único K positivo compartilhado** por VIT e SPI (D-201/D-204), a separação físico/mágico (D-130) e a defesa natural antes dos estágios DEF (D-193). O parâmetro real necessita proposta e validação **antes de adoção/implementação**.
+- **Identidade (D-209):** em uma batalha hipotética, Gible tinha ID 2, sai temporariamente e volta: **permanece ID 2**. Um **novo** combatente que ingresse recebe o próximo ID ainda não usado, conforme D-206. Preservar a ordem inicial pelos slots do protagonista, depois inimigos (D-200). **Esta regra não cria/autoriza mecânica de retirada ou reentrada.**
+- **Vários status (D-210):** um Move hipotético declara Poison 30% e Paralysis 20%, ambos condicionados ao acerto. Alvo atingido validamente e sobrevivente pode receber **uma tentativa de cada efeito distinto** por execução; vários hits não multiplicam tentativas do mesmo efeito (D-202), e a resolução por alvo segue o último impacto destinado a ele (D-207). **Probabilidades fictícias, não ficha aprovada.** LUK e efeitos garantidos seguem D-134/D-146/D-156. **Não foi definida ordem de rolagens entre efeitos distintos nem novas interações/incompatibilidades.**
+- **Interrupção (D-211):** Move com três impactos previstos é interrompido após dois efetivamente executados contra um alvo. Havendo acerto válido e sobrevivência, o **segundo impacto efetivo** serve de referência para resolver a tentativa elegível, **sem exigir o terceiro que não aconteceu**. Se todos os impactos erraram ou o alvo morreu, **não rolar status dependente do acerto**. Preservar limites individuais da D-210, regra temporal da D-207 para execução normal, regras de interrupção existentes e empate por KO simultâneo (D-095).
+
+### 53.3 Preservação e pendências
+
+- **Nenhum número de K foi aprovado:** faltam valores de atributo de referência e mitigação-alvo, procedimento de verificação e homologação do K calculado. Não tratar exemplos como dados do jogo.
+- **Identidade:** não foi definida a disponibilidade de mecânicas de reentrada/reforços, nem o método de verificar identidade de Pokémon ou a ordem de entradas exatamente simultâneas; D-206 e D-209 cobrem somente a atribuição de IDs **condicionalmente**.
+- **Status:** ainda faltam regras de ordenação entre status distintos, interação de efeitos incompatíveis, resolução de impactos simultâneos e casos especiais definidos por fichas.
+- **D-203 vigente:** odômetro de HP / HP rolante **excluído do jogo principal**, apesar do código antigo do teste permanecer na `main`. A D-199 não deve ser aplicada por contagem visual de odômetro.
+- **Divergência histórica R60 mantida:** reapresentação R60-Q2/Q3 vs D-150/D-152/D-153 no GDD §12.13 permanece sem decisão de precedência; as novas decisões não modificam a fórmula de LUK. O arredondamento final único e meio para cima permanecem conforme D-198/D-205.
+- **Escopo desta publicação:** quatro registros individuais, índice, este consolidado e adendo no GDD. Nenhum código, teste, Move, cena, asset ou VFX modificado; nenhum teste de gameplay executado.
+
