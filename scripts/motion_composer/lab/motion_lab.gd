@@ -14,7 +14,8 @@ var session: MotionLabSession = MotionLabSession.new()
 var points: MotionPointsView
 var ribbons: MotionRibbonsView
 var fragments: MotionFragmentsView
-## 0 = pontos, 1 = fitas, 2 = pontos + fitas, 3 = fragmentos (a troca conserva a composição).
+var smoke: MotionSmokeView
+## 0 = pontos, 1 = fitas, 2 = pontos + fitas, 3 = fragmentos, 4 = fumaça/billboards (a troca conserva a composição).
 var representation: int = 0
 
 var _cam: Camera3D
@@ -63,6 +64,8 @@ func _ready() -> void:
 		_recipe_composition()
 	elif _arg_text("--demo=") == "estilhacos":
 		_shards_composition()
+	elif _arg_text("--demo=") == "fumaca":
+		_smoke_composition()
 	elif not _load_startup_preset():
 		_default_composition()
 	_refresh_layers()
@@ -81,7 +84,7 @@ func _parse_args() -> void:
 		elif a.begins_with("--frames="):
 			_capture_frames = int(a.substr(9))
 		elif a.begins_with("--rep="):
-			representation = {"pontos": 0, "fitas": 1, "ambos": 2, "fragmentos": 3}.get(a.substr(6), 0)
+			representation = {"pontos": 0, "fitas": 1, "ambos": 2, "fragmentos": 3, "fumaca": 4}.get(a.substr(6), 0)
 
 
 func _arg_text(prefix: String) -> String:
@@ -125,6 +128,38 @@ func _default_composition() -> void:
 	trail.params = {"duration": 0.6}
 	c.add_layer(trail)
 	_selected = &"helice"
+
+
+## Demonstração para Fumaça: uma cabeça pequena (hélice curta) e, atrás dela, o rastro M19 preso ao MUNDO
+## (world_space) com o emissor andando em linha: as baforadas ficam para trás, crescem (largura do rastro)
+## e se dissipam, com um tremor de turbulência (M07). Não é um Move.
+func _smoke_composition() -> void:
+	var c := session.composition
+	c.sample_count = 10
+	c.duration = 3.0
+	c.seed = 31
+	var specs := [
+		[&"cabeca", &"M01", MotionTypes.Op.REPLACE, {"radius": 0.05, "pitch": 0.04, "turns": 1.0, "spin_deg_s": 240.0}],
+		[&"fumaca", &"M19", MotionTypes.Op.PERSIST, {"duration": 1.3, "sample_interval": 0.065, "world_space": true, "fade_curve": 1.4, "width_start": 0.6, "width_end": 2.6}],
+		[&"tremor", &"M07", MotionTypes.Op.OFFSET, {"intensity": 0.05, "scale": 0.5, "time_hz": 1.2}],
+	]
+	for sp in specs:
+		var l := MotionLayer.new()
+		l.id = sp[0]
+		l.behavior_id = sp[1]
+		l.op = sp[2]
+		l.params = sp[3]
+		c.add_layer(l)
+	session.emitter_mode = MotionLabSession.Emitter.LINE
+	_emitter_opt.select(MotionLabSession.Emitter.LINE)
+	smoke.puff_size = 0.2
+	smoke.puff_life = 1.3
+	_selected = &"fumaca"
+	_target = Vector3(-1.0, 0.0, 0.0)
+	_dist = 3.4
+	_yaw = 1.2
+	_pitch = 0.25
+	_apply_camera()
 
 
 ## Demonstração para Fragmentos: uma hélice que nasce, explode para fora e se dissolve (ciclo de 2,4 s).
@@ -210,6 +245,8 @@ func _build_world() -> void:
 	add_child(ribbons)
 	fragments = MotionFragmentsView.new()
 	add_child(fragments)
+	smoke = MotionSmokeView.new()
+	add_child(smoke)
 
 	add_child(_make_lines(_grid_lines(), true))
 	add_child(_make_lines(_axis_lines(), true))
@@ -408,8 +445,7 @@ func _build_ui() -> void:
 	_rep_opt.add_item("Fitas (neutro, shader)")
 	_rep_opt.add_item("Pontos + fitas")
 	_rep_opt.add_item("Fragmentos (neutro, shader)")
-	_rep_opt.add_item("Fumaça/billboards — próxima fatia")
-	_rep_opt.set_item_disabled(4, true)
+	_rep_opt.add_item("Fumaça/billboards (neutro, shader)")
 	_rep_opt.select(representation)
 	_rep_opt.item_selected.connect(func(i: int) -> void: set_representation(i))
 	row6.add_child(_rep_opt)
@@ -429,6 +465,22 @@ func _build_ui() -> void:
 	frag_slider.value = fragments.fragment_size
 	frag_slider.value_changed.connect(func(v: float) -> void: fragments.fragment_size = v; _dirty = true)
 	box.add_child(frag_slider)
+	box.add_child(_small("Tamanho do puff de fumaça (m)"))
+	var puff_slider := HSlider.new()
+	puff_slider.min_value = 0.03
+	puff_slider.max_value = 0.5
+	puff_slider.step = 0.005
+	puff_slider.value = smoke.puff_size
+	puff_slider.value_changed.connect(func(v: float) -> void: smoke.puff_size = v; _dirty = true)
+	box.add_child(puff_slider)
+	box.add_child(_small("Vida do puff (s): idade em que chega ao último quadro"))
+	var life_slider := HSlider.new()
+	life_slider.min_value = 0.1
+	life_slider.max_value = 3.0
+	life_slider.step = 0.05
+	life_slider.value = smoke.puff_life
+	life_slider.value_changed.connect(func(v: float) -> void: smoke.puff_life = v; _dirty = true)
+	box.add_child(life_slider)
 	box.add_child(_small("Largura da fita (m)"))
 	_width_slider = HSlider.new()
 	_width_slider.min_value = 0.005
@@ -572,10 +624,11 @@ func _on_add_layer() -> void:
 
 ## Troca de representação: só muda o desenho; a composição, a revisão e o relógio não são tocados.
 func set_representation(i: int) -> void:
-	representation = clampi(i, 0, 3)
+	representation = clampi(i, 0, 4)
 	points.visible = representation == 0 or representation == 2
 	ribbons.visible = representation == 1 or representation == 2
 	fragments.visible = representation == 3
+	smoke.visible = representation == 4
 	_dirty = true
 
 
@@ -781,6 +834,8 @@ func _process(delta: float) -> void:
 			ribbons.show_samples(r.samples)
 		if representation == 3:
 			fragments.show_samples(r.samples)
+		if representation == 4:
+			smoke.show_samples(r.samples, _cam.global_position)
 		_update_readouts(r)
 	_play_btn.text = "Pausar" if session.clock.playing else "Reproduzir"
 	if _capture_path != "":
@@ -790,8 +845,8 @@ func _process(delta: float) -> void:
 
 
 func _update_readouts(r: MotionResult) -> void:
-	_stats.text = "amostras %d | históricas %d | pontos %d | fitas %d (%d tri) | fragmentos %d | camadas ativas %d | avaliação %.1f ms | revisão %d" % [
-		r.stats.get("samples", 0), r.stats.get("history_samples", 0), points.shown_count, ribbons.strip_count, ribbons.triangle_count, fragments.shown_count,
+	_stats.text = "amostras %d | históricas %d | pontos %d | fitas %d (%d tri) | fragmentos %d | fumaça %d | camadas ativas %d | avaliação %.1f ms | revisão %d" % [
+		r.stats.get("samples", 0), r.stats.get("history_samples", 0), points.shown_count, ribbons.strip_count, ribbons.triangle_count, fragments.shown_count, smoke.shown_count,
 		r.stats.get("layers_active", 0), float(r.stats.get("eval_usec", 0)) / 1000.0, r.revision]
 	var lines: Array[String] = []
 	for d in r.diagnostics:

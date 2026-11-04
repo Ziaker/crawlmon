@@ -105,6 +105,11 @@ func _run() -> void:
 	ok(fmat != null and fmat.shader.resource_path.ends_with(".gdshader"), "os fragmentos usam ShaderMaterial com .gdshader")
 	ok(s.composition.revision == rev and is_equal_approx(s.clock.time, time_before), "a troca para Fragmentos também conserva composição, revisão e relógio")
 	lab.set_representation(0)
+	lab.set_representation(4)
+	await process_frame
+	ok(lab.smoke.visible and not lab.points.visible and not lab.fragments.visible and not lab.ribbons.visible and lab.smoke.shown_count > 0, "Fumaça: só a vista de fumaça aparece e desenha")
+	ok(s.composition.revision == rev and is_equal_approx(s.clock.time, time_before), "a troca para Fumaça também conserva composição, revisão e relógio")
+	lab.set_representation(0)
 	# pelo menos um quadro depois de tudo
 	await process_frame
 	ok(lab.points.shown_count > 0 and not s.last_result.has_errors(), "continua desenhando sem erros após as operações")
