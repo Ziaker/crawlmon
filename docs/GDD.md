@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.49 — Fichas de Moves: tooltip textual estilo LoL e visual somente fora de combate (2026-11-04); histórico preservado.  
+> **Revisão:** 1.50 — Fichas de Moves: números concretos de dano e cura nas tooltips, sem substituição por fórmulas (2026-11-04); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1734,6 +1734,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.49 | 2026-11-04 | Fichas de Moves: orientação posterior aprova custos/windup acima do texto, descrição mecânica de dano/efeitos/modificadores integrada estilo LoL e descrição visual apenas em ficha fora de combate. Esquema técnico de alvos, fórmulas e custos MP continuam pendentes. D-229. | Apresentação de ficha aprovada / detalhes técnicos pendentes |
 
+| 1.50 | 2026-11-04 | Correção de tooltip dos Moves: exibir dano e cura com valores numéricos em pontos, não somente multiplicadores de dano-base ou fórmulas; preservar texto integrado da D-229, custos/windup acima e visual exclusivamente fora de combate. Valores exemplificativos contextualizados não são dano-base aprovado. D-230. | Diretriz numérica de apresentação aprovada / fórmulas e valores-base pendentes |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2095,4 +2097,14 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos não homologados:** Bite (2 ATB, windup 1,2 s, 1,3× dano, Stun 30% por 2 s), Sand Attack (1 ATB, windup 0,75 s, sem dano, Blind por 4 s, 35% de erro de ações ofensivas enquanto cego), Dragon Rage (3 ATB, windup 2 s, 1,6× dano, explosão em área condicionada ao impacto no alvo principal) e Media (2 ATB, windup 0,5 s, cura 40% HP máximo, mínimo 12 HP por aliado vivo) ilustram **como redigir**, não aprovam novas fichas, categorias de dano, custos MP ou efeitos. Preservar suas fontes atuais, D-032 e `scripts/combat/battle.gd`.
 
 **Precedência e limites:** esta instrução posterior **resolve M1-Q1 e M1-Q2 no aspecto da apresentação da descrição e dos modificadores**, mas **não especifica o esquema técnico de dados para alvos (M1-Q3)** nem fórmulas internas ou categorias individuais; não escolher arquitetura por inferência. **D-228** mantém MP adicional para mágicos/especiais, custo individual ainda pendente, superando apenas a regra histórica sem MP de D-032. D-203 mantém o odômetro fora do jogo principal; o conflito de LUK da Rodada 60 (§12.13) permanece. **Atualização apenas documental: nenhum código, teste, VFX, ficha oficial, cena ou asset alterado; testes de gameplay não executados.**
+
+### 12.25 Fichas de Moves — Valor numérico de dano/cura obrigatório nas tooltips (revisão 1.50)
+
+> **2026-11-04.** O criador corrigiu os exemplos que apresentavam “1,3× dano-base”: **“TÁ PÉSSIMO VOU SABER OQ É 1X3 O DANO BASE?? É PRA TER NÚMEROS NÚMEROS NÃO FORMULAS”**. Nova decisão individual **[D-230](decisoes/D-230-moves-tooltip-dano-cura-numericos-sem-formulas.md)**, consolidada em **§60** de `docs/REGRAS_DO_JOGO.md`. A D-001 mantém o GDD não normativo para o combate.
+
+**Apresentação aprovada:** uma tooltip de Move em combate deve informar **dano ou cura como quantidades numéricas em pontos**, sem forçar o jogador a fazer contas. **Multiplicadores e expressões de STR/MAG não substituem a quantidade real exibida.** Manter os metadados de **custos/windup acima**, a explicação integrada em texto com efeitos, valores de chance e duração e a **descrição visual apenas na ficha consultada fora de combate** (D-229).
+
+**Exemplos verificáveis na implementação atual, não fichas definitivas:** Gible do código tem ataque 9. Com alvo neutro, sem crítico, fraqueza, buff, defesa ou diferença de passos, **Bite = 12 pontos de dano** e **Dragon Rage = 14 pontos de dano**; **Sand Attack = 0 pontos**; para **Media**, um aliado vivo com **32 HP máximo** e pelo menos 13 HP faltantes recupera **13 pontos de HP** conforme a rotina atual. Esses números **não definem um dano-base fixo oficial por Move**, não homologam o futuro sistema STR/MAG nem a natureza física/mágica dos Moves. A aprovação numérica da apresentação **não determina como obter valores quando o contexto de atacante/alvo não estiver disponível**, nem atualiza o sistema de HUD.
+
+**Histórico:** a D-229 continua válida sobre o bloco textual e a separação de VFX, mas seus exemplos antigos apresentados unicamente como `1,3×` e `1,6×` devem ser considerados **insuficientes para a tooltip**. D-032 continua preservada como fonte histórica dos multiplicadores; D-228 mantém MP adicional para mágicos/especiais, valores individuais pendentes. D-198/D-205 preservam regras novas de arredondamento ainda não implementadas no código; M1-Q3 ainda não define modelagem técnica de alvos. Preservar o conflito histórico de LUK da Rodada 60 sem escolher prevalência. **Somente documentação:** nenhum código, ficha, teste, HUD, cena, asset ou VFX modificado; nenhum teste de gameplay executado.
 

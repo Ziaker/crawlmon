@@ -1842,3 +1842,23 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Relações preservadas:** D-032 (exceto MP superado por D-228), D-119, D-122/D-123, D-199/D-210/D-213, D-215/D-225, D-203 e demais decisões históricas. O conflito textual de LUK na R60 (§12.13 do GDD) permanece sem resolução. O uso da referência League of Legends **não aprova novas mecânicas ou valores de balanceamento**.
 - **Escopo:** novo documento D-229, índice, este consolidado e adendo do GDD. Nenhum código, ficha de Move, HUD, teste, asset, cena ou VFX alterado; nenhuma validação de gameplay executada.
 
+---
+
+## 60. Fichas de Moves — Dano e cura numéricos nas tooltips (correção posterior à D-229)
+
+> **2026-11-04.** O criador corrigiu os exemplos anteriores com a declaração literal: **“TÁ PÉSSIMO VOU SABER OQ É 1X3 O DANO BASE?? É PRA TER NÚMEROS NÚMEROS NÃO FORMULAS”**. Regra registrada em **[D-230](decisoes/D-230-moves-tooltip-dano-cura-numericos-sem-formulas.md)**, sem alterar código nem reescrever registros históricos.
+
+### 60.1 Regra de apresentação aprovada
+
+- **Mostrar valores concretos de dano e cura em pontos** na descrição em combate, legíveis imediatamente. **Não usar “1,3× dano-base”, “1,6× dano-base”, cálculos com STR/MAG ou fórmulas como substitutos do número de dano** na tooltip.
+- Integrar o **número de dano/cura** na frase que explica seu efeito, junto com os **valores de status, chance, duração, modificadores e condições**, sem cards técnicos separados; manter **custos e windup acima** (D-229) e **descrição visual estética somente na ficha fora de combate**.
+- **Os números exibidos precisam ser fundamentados nos parâmetros verificados que se apliquem ao contexto.** A exigência de números **não aprova dano-base absoluto, coeficientes de STR/MAG, valores de MP, regras de arredondamento novas ou um mecanismo de atualização dinâmica da tooltip**. Se um número ainda não puder ser obtido com fidelidade, registrar a pendência em vez de inventá-lo.
+- **Exemplos de cálculo no código atual** com o Gible existente (`attack=9`), sem crítico, fraqueza ou modificadores de ATK/DEF/posição: **Bite causa 12 pontos** e **Dragon Rage causa 14 pontos** por inimigo com defesas neutras; **Sand Attack causa 0**; **Media pode restaurar 13 pontos de HP para um aliado com HP máximo de 32**, sendo uma cura dependente do HP máximo e do HP faltante. **Todos são resultados de cenários delimitados, não danos-base nem curas universais homologados**.
+- **D-229 fica esclarecida, não apagada**: seus exemplos antigos que trazem somente `1,3×` ou `1,6×` **não são texto de tooltip suficiente**. As razões de potência continuam nos parâmetros de motor e na documentação histórica da D-032 até que os valores-base finais sejam definidos.
+
+### 60.2 Pendências e compatibilidades
+
+- **M1-Q3** (estrutura técnica da seleção/facção/abrangência dos alvos) continua em aberto. **D-228** aprovou MP adicional para Moves mágicos/especiais, mas os custos individuais estão pendentes.
+- **Faltam decisões** para valores-base de design e fórmulas de STR/MAG por Move e sobre como apresentar valor numérico quando o contexto do atacante/alvo ainda não existe ou muda. Não fixar números exemplificados como atributos permanentes dos Moves. D-198/D-205 mantêm suas regras de arredondamento; código atual ainda não implementa integralmente o combate consolidado.
+- **Escopo executado:** criar D-230 e atualizar índice, este consolidado e adendo GDD. **Não alterar nenhuma linha de código, teste, cena, HUD, ficha oficial, asset ou VFX; não executar testes de gameplay.**
+

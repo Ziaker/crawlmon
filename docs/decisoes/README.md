@@ -278,6 +278,8 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 
 | [D-229](D-229-moves-tooltip-texto-integrado-visual-fora-combate.md) | Fichas de Moves / correção de M1 | Tooltip em combate estilo LoL: custos/windup acima; descrição, dano, efeitos, condições e modificadores juntos no texto; descrição visual só fora de combate | Aprovada; modelo técnico de alvos e fórmulas pendentes; não implementada |
 
+| [D-230](D-230-moves-tooltip-dano-cura-numericos-sem-formulas.md) | Fichas de Moves / correção numérica posterior | Mostrar valores concretos de dano/cura em pontos no texto da tooltip; não substituir por multiplicadores ou fórmulas; números de contexto não são dano-base universal | Aprovada; dano-base oficial e exibição sem contexto pendentes; não implementada |
+
 > **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.
 
 > **Histórico/precedência R70:** o arquivo [D-048 de HP rolante](D-048-rolling-hp-mother3-odometro.md) registra um **teste/protótipo histórico**, não uma regra vigente do jogo principal após [D-203](D-203-r70-q4d-odometro-descartado-jogo-principal.md). **Não confundir** com o outro arquivo [D-048 de recompensas AoE](D-048-r40-q8-atb-aoe-unico.md), que não foi revogado.
