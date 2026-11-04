@@ -303,6 +303,11 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-248](D-248-m2-q5-visual-preparo-emissao-impacto-dissipacao-ficha-fora-combate.md) | Fichas de Moves / M2 | Q5A: descrição visual somente fora do combate, separada por preparação, movimento/emissão, impacto e dissipação quando aplicável | Aprovada; documentação apenas; dados concretos pendentes |
 | [D-249](D-249-m2-q6-dispel-lista-explicita-removiveis-excecoes.md) | Fichas de Moves / M2 | Q6A: Move com Dispel deve listar expressamente efeitos removíveis e exceções aplicáveis | Aprovada; documentação apenas; dados concretos pendentes |
 
+| [D-250](D-250-r80-q1-valor-igual-limite-tercil-faixa-superior.md) | Atributos / R80 | Q1A: VIT/SPI exatamente igual a limite aprovado entra na faixa superior; todos os empatados juntos | Aprovada; limites quantitativos pendentes |
+| [D-251](D-251-r80-q2-ia-filtrar-moves-sem-maximo-condicional.md) | Combate / IA / R80 | Q2A: filtrar também Moves sem máximo condicional obrigatório antes da escolha tática, sem consumir recursos/ação | Aprovada; não implementada |
+| [D-252](D-252-r80-q3-continuar-eventos-validos-apos-excedente.md) | Combate / R80 | Q3A: rejeitar e registrar só ocorrência excedente, continuar eventos futuros validamente previstos e preservar anteriores | Aprovada; não implementada |
+| [D-253](D-253-r80-q4-matriz-incompatibilidade-simultaneos-e-ativos.md) | Combate / status / R80 | Q4A: matriz aprovada por pares de status vale para conflitos simultâneos e para status já ativo versus novo de Move distinto | Aprovada; entradas e prioridades concretas pendentes |
+
 > **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.
 
 > **Histórico/precedência R70:** o arquivo [D-048 de HP rolante](D-048-rolling-hp-mother3-odometro.md) registra um **teste/protótipo histórico**, não uma regra vigente do jogo principal após [D-203](D-203-r70-q4d-odometro-descartado-jogo-principal.md). **Não confundir** com o outro arquivo [D-048 de recompensas AoE](D-048-r40-q8-atb-aoe-unico.md), que não foi revogado.

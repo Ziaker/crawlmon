@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.54 — Fichas de Moves M2: seis decisões de estrutura técnica e visual (2026-11-04); histórico preservado.  
+> **Revisão:** 1.55 — Rodada 80 registrada em adendo rastreável (2026-11-04); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1744,6 +1744,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.54 | 2026-11-04 | Fichas de Moves M2: dano-base/categoria/escalas separados com tooltip numérica; windup/trajeto/projétil separados; seleção/facção/abrangência independentes; efeitos individuais parametrizados; visual por fases apenas fora de combate; Dispel lista remoções e exceções. D-244–D-249. | M2 fechada / M3 proposta |
 
+| 1.55 | 2026-11-04 | Rodada 80: valor VIT/SPI coincidente com limite aprovado recebe faixa superior; IA filtra Moves sem máximo condicional antes da escolha; excedente é rejeitado/registrado, continuando eventos válidos; matriz futura de prioridades entre Moves distintos vale também para conflito de status ativo e novo. D-250–D-253. | Rodada 80 fechada / Rodada 81 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2177,4 +2179,19 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Aplicação e exemplos ilustrativos:** uma ficha de Bite pode manter dano-base/categoria/escalas em campos técnicos separados, enquanto sua tooltip apresenta **número calculado** do contexto (D-230), sem inventar fórmula. Dragon Rage pode selecionar um inimigo e só produzir dano em área após contato válido; isso é **separação de seleção e abrangência**, não revogação das regras gerais de AoE (D-007/D-032). Um Move com projétil possui campos distintos para windup e velocidade de voo, sem presumir como AGI influencia o projétil (D-119/D-133/D-078). Efeitos distintos são descritos individualmente conforme suas condições e ordem, sem importar status incompatíveis ou Dispel concreto (D-210/D-213/D-215/D-243). As descrições artísticas por **preparação, movimento/emissão, impacto e dissipação** ficam **somente fora de combate** (D-229/D-248).
 
 **Proteções e pendências:** preservar **D-228** para MP adicional dos Moves mágicos/especiais, com custos específicos em aberto; preservar **D-229/D-230** para tooltip estilo LoL com dano/cura expressos em **pontos numéricos**, e **D-235** para independência de Moves/VFX de personagem, time, lado e coordenadas fixas. Não foi definida fórmula STR/MAG, valor numérico oficial por Move, escala de projétil por AGI, alcance concreto de Dispel, herança de seleção de alvo, cena ou visual específico. Divergência histórica de LUK na R60 (GDD §12.13) preservada; D-203 mantém odômetro fora do jogo principal. **Somente documentação: nenhum código, teste, ficha, Move, HUD, cena, asset, animação ou VFX alterado; nenhum teste de gameplay executado.**
+
+### 12.30 Rodada 80 — limite de tercil na faixa superior, filtro IA, continuidade após excedente e abrangência da matriz (revisão 1.55)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações adicionais. Decisões individuais **D-250–D-253**, consolidadas em **§65** de `docs/REGRAS_DO_JOGO.md`. Aditivo histórico: **D-001 mantém o GDD não normativo para o combate**. Preservar adendos anteriores, inclusive M2 (D-244–D-249), e D-235.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R80-Q1 | **1A** | Valor de VIT/SPI **exatamente igual a limite aprovado** recebe a **faixa superior**, sem separar espécies com o mesmo valor | [D-250](decisoes/D-250-r80-q1-valor-igual-limite-tercil-faixa-superior.md) |
+| R80-Q2 | **2A** | Excluir também Moves sem máximo obrigatório de ocorrências condicionais **antes da seleção tática da IA**, **sem consumir ação ou recursos** | [D-251](decisoes/D-251-r80-q2-ia-filtrar-moves-sem-maximo-condicional.md) |
+| R80-Q3 | **3A** | **Rejeitar e registrar somente a ocorrência excedente**; continuar eventos posteriores **validamente previstos** e preservar os eventos anteriores | [D-252](decisoes/D-252-r80-q3-continuar-eventos-validos-apos-excedente.md) |
+| R80-Q4 | **4A** | Matriz por pares de status incompatíveis **aprovada futuramente** vale tanto para conflitos **simultâneos** entre Moves distintos quanto para conflito de **status ativo** com outro **aplicado depois por Move diferente** | [D-253](decisoes/D-253-r80-q4-matriz-incompatibilidade-simultaneos-e-ativos.md) |
+
+**Exemplos hipotéticos, sem decisões numéricas:** limite fictício entre defesa baixa/média em 50 classifica `VIT=50` na faixa média; IA exclui Move que não declare máximo condicional e ainda segue D-237/D-241 se faltar opção elegível; excedente fictício `#4` é rejeitado e registrado, mas ocorrência posterior `#3` já planejada e válida continua, preservando resoluções anteriores; se efeitos X/Y de Moves distintos forem futuramente aprovados como incompatíveis na matriz, essa mesma precedência vale também se X estiver ativo antes da tentativa de Y. **Nenhum par X/Y ou vencedor foi aprovado**.
+
+**Pendências e conflitos:** VIT/SPI de nível 50, tercis, limites, espécies, amostra e K permanecem não verificados/não aprovados (D-212/D-216/D-220/D-236/D-240); filtro IA limita-se às duas causas já decididas (D-232/D-251), sem mudar custos de ações válidas; faltam formato do registro de violação e limites por Move (D-233/D-242/D-252); matriz por pares segue sem entradas concretas (D-239/D-243/D-253), sem escolher remoções ou efeitos com menor prioridade. D-095 e D-203 preservados, assim como D-228–D-230, D-235 e D-244–D-249. A divergência histórica sobre LUK da Rodada 60 (§12.13) continua **sem resolução**. **Somente documentação:** nenhum código, teste, ficha, Move, IA, cena, asset ou VFX alterado; nenhum teste de gameplay executado.
 

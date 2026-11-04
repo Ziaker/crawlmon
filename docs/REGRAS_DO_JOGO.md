@@ -1989,3 +1989,35 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Pendências:** fórmulas-base e coeficientes, valores individuais, tempos/velocidades, regras de mistura de alvos, herança de campos entre efeitos, critérios de Dispel e efeitos removíveis, detalhes estéticos, validação de runtime e números numéricos de preview sem alvo identificado.
 - **Conflitos históricos preservados:** divergência de LUK da Rodada 60 frente a D-150/D-152/D-153 (GDD §12.13) não resolvida; D-203 mantém odômetro fora do jogo principal. D-215/D-217/D-221/D-225/D-238 mantêm validações de fichas incompletas em situações aprovadas.
 - **Escopo:** seis novos documentos de decisão (D-244 a D-249), índice, este consolidado e adendo do GDD. **Nenhum código, ficha operacional, teste, HUD, cena, asset, animação, câmera ou VFX modificado. Nenhum teste de gameplay executado.**
+
+---
+
+## 65. Rodada 80 — fronteiras de tercis, filtro da IA, continuidade do plano e status já ativos
+
+> **2026-11-04.** O criador aprovou **1A, 2A, 3A e 4A**, sem observações adicionais. Decisões individuais **D-250 a D-253**, adicionadas conforme D-061. **Preservadas integralmente a série M2 (D-244 a D-249, §64), D-235 e demais regras históricas.** Nenhum código modificado.
+
+### 65.1 Decisões aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-250](decisoes/D-250-r80-q1-valor-igual-limite-tercil-faixa-superior.md) | **1A** | Valor de **VIT ou SPI exatamente igual a limite aprovado** entra na **faixa superior**; todos os valores iguais recebem a mesma categoria |
+| [D-251](decisoes/D-251-r80-q2-ia-filtrar-moves-sem-maximo-condicional.md) | **2A** | **Excluir antes da escolha tática da IA** Moves com **máximo condicional obrigatório ausente**, sem consumir recurso ou ação |
+| [D-252](decisoes/D-252-r80-q3-continuar-eventos-validos-apos-excedente.md) | **3A** | **Rejeitar e registrar apenas a ocorrência excedente**, **continuar eventos posteriores válidos previstos** no plano e preservar os anteriores |
+| [D-253](decisoes/D-253-r80-q4-matriz-incompatibilidade-simultaneos-e-ativos.md) | **4A** | **Aplicar matriz aprovada** de prioridades por pares de status incompatíveis **entre Moves diferentes**, tanto quando simultâneos quanto quando um status já ativo conflita com novo status de outro Move |
+
+### 65.2 Exemplos e compatibilidades
+
+- **Tercis (D-250):** com **limite hipotético, não aprovado, de VIT=50** entre defesa baixa e média, **todas** as espécies com VIT 50 ficam na **faixa média**. No limite aprovado entre média e alta, os valores iguais ficam na alta. Preservar D-240 (valores iguais nunca separados), D-224/D-236 (tercis e classificação separados para VIT/SPI) e D-212/D-216/D-220/D-231 (valores reais nível 50, cortes e composição sujeitos a aprovação). **Não existem cortes, amostra ou K numérico aprovados** (D-208).
+- **IA (D-251):** antes da seleção tática, **filtrar tanto Moves sem prioridade obrigatória entre status incompatíveis (D-232)** quanto **Moves sem máximo obrigatório de eventos condicionais (D-233/D-238)**. Essa exclusão não debita **ATB/Burst/MP nem ação**. Se não restar Move válido, preservar **D-237** (Tackle separadamente se elegível), e **D-241** (se tampouco Tackle for elegível, não agir/gastar e reavaliar na próxima oportunidade normal). Não introduzir novas causas de filtro.
+- **Ocorrências (D-252):** com máximo **fictício** de três, a tentativa de ocorrência `#4` é **rejeitada e registrada**, sem desfazer os eventos válidos `#1`/`#2`. Uma ocorrência `#3` que esteja **validamente planejada e ainda elegível** pode continuar **depois**, sem permitir índices novos ou excedentes. Preservar D-218/D-222/D-226/D-233/D-238/D-242, demais cancelamentos válidos e D-095 para resultados simultâneos.
+- **Status incompatíveis (D-253):** a futura **matriz aprovada por pares (D-239/D-243)** aplica a mesma precedência a dois efeitos de **Moves distintos** que sejam simultâneos ou a **status já ativo e novo status proveniente de outro Move**. **Não há nenhum par real aprovado, nenhuma linha de matriz preenchida, nem vencedor definido.** Preservar D-215/D-217 para a mesma ficha; D-210/D-213/D-219/D-223/D-227/D-234 para tentativas e RNG. Não inferir remoções, durações, supressões ou prioridade via ordem de RNG.
+
+### 65.3 Pendências e histórico preservados
+
+- **Atributos:** não foram levantados VIT/SPI nível 50 nem calculados tercis; continuam pendentes cortes, fonte/distribuição, amostra, referência, mitigação e K único. A escolha de faixa superior só se aplica quando um limite tiver sido aprovado.
+- **IA:** não foram aprovadas novas regras de frequência da decisão, elegibilidade de Tackle, modo de informar erro ou filtros além das duas causas específicas já declaradas; nenhuma implementação foi autorizada.
+- **Eventos:** o formato do registro de violação, limites concretos de cada Move e demais falhas do plano continuam em aberto. D-252 mantém apenas eventos futuros **válidos/elegíveis**.
+- **Status:** a matriz ainda depende de **pares concretos e precedências aprovadas**; não há política de remoção/reaplicação/duração nem procedimento para entrada inexistente. A nova abrangência **não** cria incompatibilidades.
+- **Preservações:** D-228–D-230 e D-244–D-249 preservam MP, fichas técnicas e tooltips; D-235 preserva a independência dos Moves/VFX para qualquer personagem/lado; D-095 mantém KO simultâneo; D-203 exclui odômetro no jogo principal. Divergência histórica de LUK da R60 (GDD §12.13) permanece sem conciliação.
+- **Escopo:** quatro D individuais, índice, este consolidado e adendo GDD. **Nenhum código, IA, teste, Move, ficha operacional, cena, asset ou VFX modificado; nenhum teste de gameplay realizado.**
+
