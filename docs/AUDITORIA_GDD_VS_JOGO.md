@@ -63,7 +63,7 @@ O jogo é **uma fase única de exploração + um combate 3D avançado**. Quase t
 | **D-072 – D-074 / D-082** estorno de custo do contra-ataque cancelado; crédito de excedente | Não achei lógica de estorno nem de crédito separado. |
 | **D-032** até 8 Moves, 4 hotkeys, Tackle separado | Cada personagem tem 7 Moves; o Tackle existe em `Skill`. |
 | **D-089** lançamento fatal que bate em parede e cai | Não achei detecção de colisão no lançamento. |
-| **D-111 / D-114** alvo aleatório da IA; **D-115** cura situacional | `battle_ai.gd` não sorteia alvo; a cura usa limite fixo de 50% (`AI_HEAL_BELOW`). |
+| **D-115** cura situacional da IA | A cura usa limite fixo de 50% (`AI_HEAL_BELOW`). **Correção (2026-11-04):** a versão anterior deste relatório dizia que a IA não sorteia alvo; isso estava errado. `battle_ai.gd` `_pick_target()` usa `pick_random()` entre os adversários vivos, então D-111 está implementada. |
 | **D-117 – D-156** atributos, AGI no ATB e no trajeto, LUK em status, crítico e esquiva | Não existem atributos no código. Crítico e esquiva automática são fixos em 10%. |
 
 ### Não verificado
