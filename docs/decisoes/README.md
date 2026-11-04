@@ -269,6 +269,11 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-222](D-222-r75-q3-indices-cancelados-reservados-sem-reuso.md) | Combate / R75 | Q3A: índices cancelados permanecem reservados e os restantes não são renumerados na mesma declaração | Aprovada; não implementada |
 | [D-223](D-223-r75-q4-status-mesmo-alvo-rng-id-atacante-declaracao-indice.md) | Combate / R75 | Q4A: RNG simultâneo de status para mesmo alvo: desempatar por ID do atacante, declaração e ocorrência; sem precedência lógica | Aprovada; não implementada |
 
+| [D-224](D-224-r76-q1-perfis-defensivos-separados-vit-spi-amostra.md) | Atributos / R76 | Q1A: classificar perfis baixos/médios/altos separadamente para VIT e SPI, incluindo defesa física, mágica e mista na proposta de amostra | Aprovada; classificação e amostra concretas pendentes |
+| [D-225](D-225-r76-q2-validar-bloqueio-antes-confirmacao-sem-custos.md) | Combate / R76 | Q2A: validar Move incompleto antes da confirmação e de debitar ATB/Burst; bloqueio não consome ação nem recursos | Aprovada; não implementada |
+| [D-226](D-226-r76-q3-reservar-indices-ocorrencias-condicionais-na-declaracao.md) | Combate / R76 | Q3A: prever ocorrências condicionais possíveis no plano inicial e reservar índices na declaração do ataque | Aprovada; não implementada |
+| [D-227](D-227-r76-q4-rng-exclusivo-status-seed-inicio-combate-registrada.md) | Combate / R76 | Q4A: fluxo RNG próprio de status com seed criada no início do combate e registrada para reprodução, separado do retarget | Aprovada; algoritmo e formato pendentes |
+
 > **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.
 
 > **Histórico/precedência R70:** o arquivo [D-048 de HP rolante](D-048-rolling-hp-mother3-odometro.md) registra um **teste/protótipo histórico**, não uma regra vigente do jogo principal após [D-203](D-203-r70-q4d-odometro-descartado-jogo-principal.md). **Não confundir** com o outro arquivo [D-048 de recompensas AoE](D-048-r40-q8-atb-aoe-unico.md), que não foi revogado.

@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.46 — Rodada 75 registrada em adendo rastreável (2026-11-04); histórico preservado.  
+> **Revisão:** 1.47 — Rodada 76 registrada em adendo rastreável (2026-11-04); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1728,6 +1728,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.46 | 2026-11-04 | Rodada 75: proposta de amostra verificável de defesa baixa/média/alta sujeita à aprovação; Move com prioridade de status incompatíveis ausente bloqueado em combate com indicação precisa; índices cancelados reservados sem reuso; desempate de RNG de status para mesmo alvo por atacante, declaração e índice. D-220–D-223. | Rodada 75 fechada / Rodada 76 proposta |
 
+| 1.47 | 2026-11-04 | Rodada 76: classificação separada dos perfis VIT/SPI para amostra física/mágica/mista; validação de Move antes de confirmar sem consumir ATB/Burst ou ação; ocorrências condicionais previstas e indexadas na declaração; RNG próprio de status com seed inicial registrada, separado do retarget. D-224–D-227. | Rodada 76 fechada / Rodada 77 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2051,4 +2053,19 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos não normativos:** uma amostra futura pode ser proposta com perfis defensivos baixos/médios/altos, mas sem dados verificáveis do nível 50 nenhuma composição ou valor de K é homologado; Move hipotético com `Status A` e `Status B` incompatíveis sem prioridade **fica bloqueado**, com indicação da prioridade ausente; ocorrências fictícias `#1,#2,#3` não devem ser renumeradas ou reaproveitar `#2` se essa ocorrência for cancelada; para mesmo alvo fictício ID 3 e ataques simultâneos de IDs 2 e 5, consumir RNG da tentativa do atacante 2 antes da 5, **sem mudar simultaneidade lógica**.
 
 **Relações e pendências:** D-212/D-216 exigem dados reais/verificáveis de VIT/SPI nível 50; D-208 exige aprovação do atributo de referência e da mitigação-alvo antes de validar K compartilhado (D-201/D-204). D-215/D-217 mantêm prioridade **expressa** e ficha incompleta quando faltar; não há status concretos declarados incompatíveis. D-218 mantém índice determinado na declaração; D-219 ordena RNG simultâneo entre alvos diferentes por ID do **alvo**, e D-223 resolve o empate quando **o alvo é o mesmo**. D-213 conserva ordem dos efeitos dentro da ficha, sem criar novo fluxo de RNG. D-095 mantém KO simultâneo como empate; D-203 exclui odômetro do jogo principal. Divergência histórica R60-Q2/Q3 sobre LUK (§12.13) permanece **sem conciliação**. Não escolher automaticamente amostras, UI do bloqueio, custos/ATB/Burst, estruturas do plano de eventos ou seeds/algoritmos novos. **Nenhum código, teste, Move, ficha, cena, asset ou VFX modificado; nenhum teste de gameplay realizado.**
+
+### 12.22 Rodada 76 — amostragem VIT/SPI separada, validação pré-custo, índices condicionais e seed de status (revisão 1.47)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Registros individuais **D-224–D-227** consolidados em **§57** de `docs/REGRAS_DO_JOGO.md`. Este adendo preserva histórico e conflitos; D-001 mantém o GDD **não normativo para combate**. Atualização apenas documental.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R76-Q1 | **1A** | **Classificar os perfis defensivos de VIT e SPI separadamente**, garantindo representatividade **física, mágica e mista** na proposta de amostra; **composição e dados ainda sem aprovação** | [D-224](decisoes/D-224-r76-q1-perfis-defensivos-separados-vit-spi-amostra.md) |
+| R76-Q2 | **2A** | **Validar Move incompleto antes de confirmar a ação e debitar ATB/Burst**; bloqueio não consome recursos nem oportunidade de ação, preservando indicação de prioridade ausente | [D-225](decisoes/D-225-r76-q2-validar-bloqueio-antes-confirmacao-sem-custos.md) |
+| R76-Q3 | **3A** | O **plano determinístico inicial do ataque** deve **prever ocorrências condicionais possíveis e reservar índices na declaração**, preservando D-218/D-222 | [D-226](decisoes/D-226-r76-q3-reservar-indices-ocorrencias-condicionais-na-declaracao.md) |
+| R76-Q4 | **4A** | Usar **fluxo RNG próprio para status**, com **seed gerada no início do combate e registrada para reprodução**, separado do RNG exclusivo de retarget | [D-227](decisoes/D-227-r76-q4-rng-exclusivo-status-seed-inicio-combate-registrada.md) |
+
+**Exemplos apenas ilustrativos:** uma espécie de VIT alta e SPI baixa poderia representar especialização física sem ser classificada por média dos atributos; Move hipotético com prioridade de incompatibilidade ausente não confirma ação nem debita ATB/Burst; evento condicional `A#2` é indexado desde a declaração mesmo quando não acontecer, sem consumo fictício de RNG; sementes de status e retarget são geradas/registradas em fluxos separados, sem homologar números ou algoritmo PRNG.
+
+**Limitações, decisões preservadas e conflitos:** a amostra concreta e os valores VIT/SPI nível 50 **não foram levantados** e os parâmetros de K único continuam pendentes de aprovação (D-208/D-216/D-220/D-224). A política de bloqueio de Move continua limitada à falta expressa de prioridade de status incompatíveis (D-215/D-217/D-221), sem definir visual do aviso ou mecanismo de editor. Índices fixos e sem reuso continuam regidos por D-218/D-222; novas exceções para ocorrências impossíveis de antecipar não foram aprovadas. D-219/D-223 continuam ordenando consumo RNG de status sem quebrar simultaneidade lógica (D-095). Algoritmo de RNG, formato de seed, consumo de chances 0%/100% e protocolo de replay não foram determinados. A divergência de LUK da Rodada 60 (GDD §12.13) permanece **não resolvida**. D-203 mantém odômetro fora do jogo principal. **Nenhum código, teste, ficha, Move, cena, asset ou VFX alterado; nenhum teste de gameplay executado.**
 
