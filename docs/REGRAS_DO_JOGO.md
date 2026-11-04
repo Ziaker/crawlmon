@@ -1252,3 +1252,42 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - Valor e função quantitativa da referência de ATB, parâmetros de avaliação do ritmo e de calibração (D-161); **não atribuir 50 automaticamente**.
 - Precisão/forma de arredondamento do cálculo de duração, e outras lacunas anteriores não respondidas.
 - **Somente documentação:** cinco decisões novas, índice, consolidado e adendo do GDD. Nenhum arquivo de código, Move, teste, cena, VFX, asset ou configuração alterado.
+
+
+---
+
+## 43. Rodada 62 — versão prevalente confirmada e conciliação histórica
+
+> **2026-11-03:** a seção 42 e os arquivos **D-157 a D-161** documentavam uma versão diferente da Rodada 62 (1A, 2A, 3A, 4A, 5B). O criador enviou as escolhas **1C, 2A, 3B, 4A, 5A**, sem observações próprias, e respondeu expressamente **“ok, sim”** à pergunta sobre **suas cinco escolhas prevalecerem sobre a outra versão já publicada**. Assim, **D-162 a D-166 contêm as regras vigentes**, preservando seção 42 e D-157–D-161 como histórico. Não alterar código.
+
+### 43.1 Registro vigente
+
+| Decisão | Escolha | Regra |
+|---|---|---|
+| [D-162](decisoes/D-162-r62-q1-trajeto-referencia-agi-mediana-jogaveis.md) | **1C** | Referência AGI de **trajeto baseada na mediana da AGI das espécies jogáveis**; **validar o número antes de implementar**. AGI 50 da D-160 **substituída**, não é referência vigente. |
+| [D-163](decisoes/D-163-r62-q2-atb-tempo-inverso-agi.md) | **2A** | **Tempo de regeneração natural ATB inversamente proporcional à AGI efetiva**; taxa natural diretamente proporcional à AGI. |
+| [D-164](decisoes/D-164-r62-q3-piso-agi-um-na-regeneracao-atb.md) | **3B** | Usar **AGI mínima de 1 exclusivamente no cálculo de regeneração natural ATB**, sem mudar o atributo. Complementa D-140 (piso de trajeto). |
+| [D-165](decisoes/D-165-r62-q4-sem-windup-calculo-entrada-travel.md) | **4A** | Quando o Move tem TRAVEL e **não tem WINDUP**, calcular a duração ao **entrar efetivamente em TRAVEL**; esclarecer/substituir o marco genérico da D-157. |
+| [D-166](decisoes/D-166-r62-q5-desempate-aleatorio-reproduzivel.md) | **5A** | Em empate de distâncias entre **inimigos vivos mais próximos** durante retarget de WINDUP, **sortear entre empatados com aleatoriedade reproduzível**, substituindo o desempate fixo por ID da D-158. |
+
+### 43.2 Comparação expressa com a versão divergente
+
+- **D-157 → D-165:** o marco genérico “início da execução efetiva” não prevalece sobre **entrada em TRAVEL** para Move com trajeto e sem WINDUP. **D-154/D-155 preservadas** para WINDUP e trocas.
+- **D-158 → D-166:** o desempate por **ID estável sem sorteio foi substituído por sorteio reproduzível** entre empatados. D-108 continua escolhendo primeiro o inimigo vivo mais próximo; D-155 continua recalculando uma vez por troca.
+- **D-159:** pertence à pergunta 3 de outra versão da Rodada 62; **não foi ratificada** como parte da versão vigente, que trata do piso AGI para ATB em D-164. Preservar regras previamente válidas em D-019, D-095 e D-156, sem inferir uma precedência específica para eventos simultâneos.
+- **D-160 → D-162:** o valor numérico **50** do tempo de trajeto deixa de ser regra aprovada; definir a referência com base na **mediana das espécies jogáveis**, que ainda depende de dados e **validação do criador antes de implementar**.
+- **D-161:** o adiamento da referência numérica de ATB pertence à outra versão da Rodada 62. O **número para ATB continua sem escolha**, mas **D-163** já aprova a **relação inversa do tempo com AGI**. Não dizer que o coeficiente quantitativo está inteiramente indefinido.
+
+### 43.3 Exemplos e limites
+
+1. **Referência de trajeto:** amostra fictícia de AGI 20, 30, 40, 50, 60 tem mediana **40**, mas isso **não é referência aprovada** no Crawlmon. Precisam ser especificados conjunto de espécies jogáveis, nível e valores comparáveis.
+2. **ATB:** para a mesma quantidade de ATB preenchida naturalmente, dobrar AGI efetiva positiva reduz o tempo à metade. Exemplo puramente ilustrativo: 5 segundos tornam-se 2,5 segundos; **não** cria um novo tempo-base oficial. Se AGI efetiva for 0 ou negativa, usar **1 só no cálculo**, conforme D-164, sem eliminar pausas e bloqueios.
+3. **Sem WINDUP:** AGI 45 na confirmação do Move e AGI 60 ao entrar efetivamente em TRAVEL → **usar 60** no cálculo inicial do trajeto, cuja referência numérica ainda deve ser validada (D-162).
+4. **Empate de alvos:** Abra e Pancham vivos a 4 m do atacante, ambos mais próximos, participam de um **sorteio reproduzível**, não de desempate fixo por ID.
+
+### 43.4 Pendências ainda abertas
+
+- Quais espécies/estágios entram na mediana de AGI do trajeto, tratamento de Nature, atributos individuais, número par de espécies e validação do resultado;
+- Valor numérico de referência da AGI para ATB, calibração do ritmo, precisão/arredondamento e amostragem de AGI durante regeneração;
+- Tolerância geométrica para empate, seed e consumo reproduzível de RNG; precedências finas de eventos simultâneos;
+- D-001 mantida: **o GDD não é fonte normativa de combate**. Escopo documental: cinco novos D, cinco notas históricas, índice, consolidado e GDD. **Nenhum código, Move, asset, cena, VFX ou teste alterado.**

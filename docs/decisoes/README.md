@@ -192,3 +192,10 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-159](D-159-r62-q3-ordem-deterministica-luk.md) | Combate / R62 | Q3A: linha do tempo com ordem determinística; mudanças de LUK anteriores à rolagem valem | Aprovada; preserva D-095; sem código |
 | [D-160](D-160-r62-q4-referencia-agi-50-trajetos.md) | Combate / R62 | Q4A: referência AGI = 50 exclusivamente para tempo dos trajetos | Aprovada; não fixa ATB; sem código |
 | [D-161](D-161-r62-q5-referencia-atb-pendente-avaliacao.md) | Combate / R62 | Q5B: referência numérica de AGI para ATB permanece pendente até avaliação do ritmo | Adiamento aprovado; não é fórmula; sem código |
+| [D-162](D-162-r62-q1-trajeto-referencia-agi-mediana-jogaveis.md) | Combate / R62 confirmada | **1C** — Referência AGI do trajeto por mediana das espécies jogáveis, valor sujeito à validação antes de implementar; supera D-160 | Vigente; sem número nem código |
+| [D-163](D-163-r62-q2-atb-tempo-inverso-agi.md) | Combate / R62 confirmada | **2A** — Tempo natural de ATB inversamente proporcional à AGI efetiva | Vigente; referência numérica ainda pendente |
+| [D-164](D-164-r62-q3-piso-agi-um-na-regeneracao-atb.md) | Combate / R62 confirmada | **3B** — Usar AGI mínima 1 exclusivamente no cálculo de regeneração ATB, sem mudar atributo | Vigente; sem código |
+| [D-165](D-165-r62-q4-sem-windup-calculo-entrada-travel.md) | Combate / R62 confirmada | **4A** — Sem WINDUP, duração do trajeto calculada ao entrar em TRAVEL, em vez de marco genérico da D-157 | Vigente; sem código |
+| [D-166](D-166-r62-q5-desempate-aleatorio-reproduzivel.md) | Combate / R62 confirmada | **5A** — Sorteio reproduzível entre alvos igualmente próximos no retarget, em vez de desempate por ID da D-158 | Vigente; sem código |
+
+> **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.

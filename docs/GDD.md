@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.32 — Rodada 62 adicionada ao adendo de combate em 2026-11-03; revisões históricas preservadas.  
+> **Revisão:** 1.33 — Rodada 62 conciliada por escolha expressa prevalente do criador (2026-11-03); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1700,6 +1700,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.32 | 2026-11-03 | Rodada 62: decisões D-157 a D-161; Moves sem WINDUP, desempate por ID estável, ordem determinística para LUK, AGI de referência 50 para trajetos e referência ATB pendente. | Rodada 62 encerrada / Rodada 63 proposta |
 
+| 1.33 | 2026-11-03 | Rodada 62 conciliada: D-162–D-166 prevalecem sobre D-157–D-161, com referências históricas preservadas. Mediana AGI sujeita a validação, ATB inverso, piso 1, TRAVEL sem WINDUP e desempate por sorteio reproduzível. | Rodada 62 conciliada / Rodada 63 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -1782,3 +1784,22 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Ainda pendente:** comparação/atribuição dos IDs estáveis; ordenação concreta de eventos simultâneos; eventual recaptura de AGI alterada no WINDUP durante o retarget; fórmula e referência de ATB; calibração e arredondamento. Não converter essas pendências em escolhas automáticas.
 
 **Validação de fonte antes desta atualização:** `main` em `af42a7d608c7eb7aaa20adf16e86d41d4a276c3b`; a consulta ao código atual mostrou tempos e probabilidades fixas, sem comprovação de implementação das novas regras. **Nenhum código ou teste de gameplay alterado ou executado nesta atividade.**
+
+
+### 12.7 Rodada 62 — versão prevalente confirmada (revisão 1.33)
+
+> **2026-11-03.** A versão de Rodada 62 registrada na seção **12.6**, com D-157–D-161, divergira da resposta enviada pelo criador nesta conversa. Ele confirmou expressamente que as suas escolhas **1C, 2A, 3B, 4A e 5A prevalecem** sobre aquela versão já publicada. Por isso, **D-162 a D-166 são vigentes** e **D-157 a D-161 e a seção 12.6 permanecem íntegros como histórico**, com conciliações posteriores. Para combate, preservar D-001: este GDD é adendo rastreável, não fonte superior às decisões individuais e ao consolidado.
+
+| Questão | Escolha vigente | Regra aprovada | Decisão |
+|---|---|---|---|
+| R62-Q1 | **1C** | Referência AGI do **trajeto** por **mediana das espécies jogáveis**, com **número sujeito a validação antes da implementação**; referência 50 histórica da D-160 não prevalece | [D-162](decisoes/D-162-r62-q1-trajeto-referencia-agi-mediana-jogaveis.md) |
+| R62-Q2 | **2A** | Tempo natural de preenchimento **ATB inversamente proporcional à AGI efetiva**, mantendo referência ATB numérica pendente | [D-163](decisoes/D-163-r62-q2-atb-tempo-inverso-agi.md) |
+| R62-Q3 | **3B** | **AGI mínima 1 só no cálculo da regeneração ATB**, sem alterar atributo; aplicação adicional distinta do piso de trajeto D-140 | [D-164](decisoes/D-164-r62-q3-piso-agi-um-na-regeneracao-atb.md) |
+| R62-Q4 | **4A** | Move com TRAVEL e sem WINDUP calcula duração **ao entrar efetivamente em TRAVEL** | [D-165](decisoes/D-165-r62-q4-sem-windup-calculo-entrada-travel.md) |
+| R62-Q5 | **5A** | Entre inimigos vivos igualmente próximos no retarget de WINDUP, **sortear com aleatoriedade reproduzível**, em vez de desempate por ID | [D-166](decisoes/D-166-r62-q5-desempate-aleatorio-reproduzivel.md) |
+
+**Conciliação:** D-157 (marco genérico) foi especificada pela D-165 (TRAVEL); D-158 (ID estável) foi substituída por D-166 (sorteio); D-159 (ordem fina dos eventos) **não foi ratificada por esta versão** e permanece histórico, sem revogar D-019/D-095/D-156; D-160 (AGI 50) foi substituída por D-162 (mediana sujeita a validação); D-161 (adiar referência numérica ATB) não é a resposta vigente Q5, embora a referência ainda não tenha número, agora coexistindo com a fórmula aprovada D-163.
+
+**Exemplos apenas explicativos:** uma lista fictícia de AGIs 20, 30, 40, 50, 60 tem mediana 40, **não aprovada**; dobrar AGI positiva reduz à metade o tempo de preenchimento da mesma quantidade natural de ATB; AGI 45 na confirmação e 60 na entrada TRAVEL sem WINDUP usa 60 para calcular duração; alvos igualmente próximos participam de sorteio reproduzível. **Sem código ou testes de gameplay.**
+
+**Pendências:** composição da mediana e sua validação, referência numérica ATB, detalhes de calibração, igualdade geométrica de distâncias, seed/ordem de RNG e ordenação fina de eventos simultâneos.

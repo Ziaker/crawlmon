@@ -28,3 +28,7 @@
 ## Escopo
 
 Somente documentação. Nenhum código, ficha de Move, cena, VFX, asset ou teste alterado.
+
+## Conciliação posterior — Rodada 62, versão prevalente confirmada (2026-11-03)
+
+**Estado atual: histórico; valor de referência 50 não vigente.** O criador confirmou expressamente que a versão vigente da Rodada 62 é **Q1C / D-162**, segundo a qual a referência comum de AGI do trajeto deve ser definida **com base na mediana da AGI das espécies jogáveis**, e o **número encontrado deve ser validado antes da implementação**. Portanto, **AGI 50 e a fórmula com constante 50 documentadas acima foram substituídas**, não podendo ser aplicadas por presunção. A mediana real não foi calculada nem aprovada. Texto histórico preservado. Nenhum código alterado.

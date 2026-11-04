@@ -28,3 +28,7 @@
 ## Escopo
 
 Registro documental apenas; nenhum código, teste, Move, cena, VFX ou asset alterado.
+
+## Conciliação posterior — Rodada 62, versão prevalente confirmada (2026-11-03)
+
+**Estado atual: histórico da versão divergente.** A resposta **Q5B** desta D-161 não é a escolha vigente Q5 da Rodada 62; o criador confirmou **Q5A / D-166** para o desempate por sorteio reproduzível. Na mesma versão vigente, **D-163 (Q2A)** aprovou tempo de preenchimento natural de ATB inversamente proporcional à AGI efetiva, e **D-164 (Q3B)** estabeleceu piso de cálculo 1 para ATB. **O número de referência AGI do ATB continua pendente**, mas sua relação matemática agora está aprovada. Preservado histórico, sem implementação.

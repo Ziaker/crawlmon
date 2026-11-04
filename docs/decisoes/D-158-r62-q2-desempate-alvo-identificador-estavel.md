@@ -25,3 +25,7 @@
 ## Escopo
 
 Somente documentação; nenhum código, teste, dado, cena ou VFX alterado.
+
+## Conciliação posterior — Rodada 62, versão prevalente confirmada (2026-11-03)
+
+**Estado atual: histórico, desempate por ID substituído.** Após a publicação desta D-158, o criador confirmou expressamente que a versão prevalente da Rodada 62 exige **R62-Q5A / D-166: sorteio entre alvos vivos igualmente próximos, usando aleatoriedade reproduzível do combate**. Portanto, a regra histórica de **desempatar por identificador estável sem sorteio não está vigente**. Preservado texto anterior, nenhum código alterado.

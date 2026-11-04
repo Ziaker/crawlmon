@@ -25,3 +25,7 @@
 ## Escopo
 
 Registro documental apenas. Nenhuma alteração de código, timeline, VFX ou testes.
+
+## Conciliação posterior — Rodada 62, versão prevalente confirmada (2026-11-03)
+
+**Estado atual: registro histórico da versão divergente, não ratificado como escolha vigente da Rodada 62.** O criador confirmou que, na Rodada 62 prevalente, **Q3B** determina **AGI mínima 1 exclusivamente no cálculo da regeneração ATB** (D-164). Esta confirmação **não aprova automaticamente** a regra distinta de ordenação fina de eventos descrita nesta D-159, cuja eventual adoção continua pendente. Regras aprovadas independentemente em D-019, D-095 e D-156 permanecem preservadas. Nenhum código foi alterado.

@@ -25,3 +25,7 @@
 ## Escopo
 
 Registro documental somente, sem código, cenas, testes, assets ou VFX.
+
+## Conciliação posterior — Rodada 62, versão prevalente confirmada (2026-11-03)
+
+**Estado atual: registro histórico da versão divergente.** Após a publicação desta D-157, o criador confirmou expressamente que **as cinco escolhas da outra versão da Rodada 62 prevalecem**. Para Moves **sem WINDUP e com TRAVEL**, a regra vigente agora é **D-165 (R62-Q4A)**: calcular a duração ao **entrar efetivamente em TRAVEL**, não fixar um marco diferente apenas por interpretação de “início da execução”. Esta nota não apaga a declaração histórica acima e não altera código.
