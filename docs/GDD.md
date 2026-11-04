@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.31 — Rodada 61 adicionada ao adendo de combate em 2026-11-03; seções históricas das revisões 1.29 e 1.30 preservadas.  
+> **Revisão:** 1.32 — Rodada 62 adicionada ao adendo de combate em 2026-11-03; revisões históricas preservadas.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1698,6 +1698,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.31 | 2026-11-03 | Rodada 61: cinco escolhas aprovadas e documentadas em D-152 a D-156; curva de esquiva simétrica e decrescente, captura de duração no WINDUP, recálculo por troca de alvo e LUK por evento. | Rodada 61 fechada / Rodada 62 proposta |
 
+| 1.32 | 2026-11-03 | Rodada 62: decisões D-157 a D-161; Moves sem WINDUP, desempate por ID estável, ordem determinística para LUK, AGI de referência 50 para trajetos e referência ATB pendente. | Rodada 62 encerrada / Rodada 63 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -1759,3 +1761,24 @@ As cinco escolhas da Rodada 61 foram expressamente aprovadas: **1B, 2A, 3A, 4A, 
 **Exemplo de captura de LUK:** LUK atacante varia 40 → 50 → 60 entre declaração, início de TRAVEL e resolução do impacto; LUK alvo 40 na resolução. Se ocorrer rolagem de crítico probabilístico no impacto, a chance é **30%** pela D-150, usando o valor de LUK do momento da rolagem.
 
 **Hierarquia de fontes:** preservar D-001; o GDD permanece não normativo para combate e os registros anteriores não são reescritos. **Pendentes:** Moves sem WINDUP, desempate de alvos igualmente próximos, ordem de eventos simultâneos e referências numéricas de AGI. **Sem implementação de código ou testes de gameplay.**
+
+
+### 12.6 Rodada 62 — cinco escolhas expressas (2026-11-03; revisão 1.32)
+
+A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As decisões estão nos documentos individuais D-157–D-161 e no consolidado `docs/REGRAS_DO_JOGO.md`, seção 42. Esta atualização é **aditiva**: registros e pendências históricos do GDD permanecem no estado em que foram documentados, incluindo conflitos resolvidos posteriormente. Conforme D-001, este GDD continua **não normativo para combate**.
+
+| Questão | Escolha | Regra ou adiamento aprovado | Registro |
+|---|---|---|---|
+| R62-Q1 | **1A** | Para Move instantâneo sem WINDUP, calcular duração de eventual trajeto ao **iniciar efetivamente a execução**, sem inventar WINDUP | [D-157](decisoes/D-157-r62-q1-trajeto-instantaneo-inicio-execucao.md) |
+| R62-Q2 | **2A** | Empate de distância entre alvos no redirecionamento de WINDUP: usar **identificador estável de combate** e resultado determinístico no mesmo estado | [D-158](decisoes/D-158-r62-q2-desempate-alvo-identificador-estavel.md) |
+| R62-Q3 | **3A** | Eventos com a mesma posição temporal seguem uma **ordem determinística única**; mudanças de LUK antes da rolagem valem, depois não | [D-159](decisoes/D-159-r62-q3-ordem-deterministica-luk.md) |
+| R62-Q4 | **4A** | AGI de referência **50** para duração dos trajetos, comum às espécies; não fixar ATB | [D-160](decisoes/D-160-r62-q4-referencia-agi-50-trajetos.md) |
+| R62-Q5 | **5B** | Manter **referência numérica de AGI para ATB pendente** até avaliação do ritmo; nenhum valor aprovado | [D-161](decisoes/D-161-r62-q5-referencia-atb-pendente-avaliacao.md) |
+
+**Exemplos ilustrativos vinculados às escolhas:** ataque instantâneo sem WINDUP captura o tempo no início da execução; retarget entre Abra e Gible à mesma distância usa o ID de combate estável, sem sorteio; um buff de LUK resolvido antes de uma rolagem no mesmo instante lógico influencia essa rolagem, enquanto um buff posterior não; Move de tempo-base 1,0 s com AGI efetiva 50 mantém 1,0 s antes dos passos, e com AGI efetiva 100 fica em 0,5 s antes dos passos, usando referência **50 apenas para trajetos**.
+
+**Compatibilidades preservadas:** D-019 (única linha do tempo), D-095 (eliminação de ambas as equipes no mesmo instante lógico permanece empate), D-108/D-155 (retarget e recálculo durante WINDUP), D-133/D-136/D-140/D-145 (fórmula de trajeto e referências separadas), D-156 (LUK no momento do evento).
+
+**Ainda pendente:** comparação/atribuição dos IDs estáveis; ordenação concreta de eventos simultâneos; eventual recaptura de AGI alterada no WINDUP durante o retarget; fórmula e referência de ATB; calibração e arredondamento. Não converter essas pendências em escolhas automáticas.
+
+**Validação de fonte antes desta atualização:** `main` em `af42a7d608c7eb7aaa20adf16e86d41d4a276c3b`; a consulta ao código atual mostrou tempos e probabilidades fixas, sem comprovação de implementação das novas regras. **Nenhum código ou teste de gameplay alterado ou executado nesta atividade.**

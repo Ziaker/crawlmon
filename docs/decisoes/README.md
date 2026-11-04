@@ -187,3 +187,8 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-154](D-154-r61-q3-trajeto-calculo-inicio-windup.md) | Combate / R61 | Q3A: capturar duração do trajeto ao entrar efetivamente em WINDUP | Aprovada expressamente; sem código |
 | [D-155](D-155-r61-q4-trajeto-recalculo-cada-troca-windup.md) | Combate / R61 | Q4A: recálculo uma vez em cada troca automática de alvo no WINDUP | Aprovada expressamente; sem código |
 | [D-156](D-156-r61-q5-luk-no-instante-da-rolagem.md) | Combate / R61 | Q5A: consultar LUK efetiva na resolução de cada evento probabilístico | Aprovada expressamente; sem código |
+| [D-157](D-157-r62-q1-trajeto-instantaneo-inicio-execucao.md) | Combate / R62 | Q1A: Move instantâneo sem WINDUP calcula duração ao iniciar execução efetiva | Aprovada; documentação apenas |
+| [D-158](D-158-r62-q2-desempate-alvo-identificador-estavel.md) | Combate / R62 | Q2A: empate de distâncias no retarget do WINDUP desempatado deterministicamente por ID estável de combate | Aprovada; ordenação detalhada pendente; sem código |
+| [D-159](D-159-r62-q3-ordem-deterministica-luk.md) | Combate / R62 | Q3A: linha do tempo com ordem determinística; mudanças de LUK anteriores à rolagem valem | Aprovada; preserva D-095; sem código |
+| [D-160](D-160-r62-q4-referencia-agi-50-trajetos.md) | Combate / R62 | Q4A: referência AGI = 50 exclusivamente para tempo dos trajetos | Aprovada; não fixa ATB; sem código |
+| [D-161](D-161-r62-q5-referencia-atb-pendente-avaliacao.md) | Combate / R62 | Q5B: referência numérica de AGI para ATB permanece pendente até avaliação do ritmo | Adiamento aprovado; não é fórmula; sem código |

@@ -1218,3 +1218,37 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - As pendências históricas **R60-Q3D, diferenças negativas, instante WINDUP e múltiplas trocas sucessivas** receberam respostas nas D-152 a D-155, preservando os registros originais como histórico.
 - Permanecem sem definição: regra para ataque sem WINDUP; empate na escolha do alvo vivo mais próximo; ordem de resolução para eventos simultâneos; referências numéricas de AGI para ATB e trajeto (D-145); calibração de fórmulas quantitativas ainda não aprovadas.
 - **Somente documentação**: novos arquivos D-152–D-156, índice, este consolidado e adendo do GDD. Sem mudanças de código, testes, modelos, recursos ou VFX.
+
+
+---
+
+## 42. Rodada 62 — Moves instantâneos, desempate determinístico, ordenação de LUK e calibração AGI
+
+> **2026-11-03.** O criador escolheu expressamente **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. Decisões individuais [D-157 a D-161](decisoes/README.md). **A escolha 5B registra um adiamento explícito**: a referência de ATB continua não especificada. Os históricos das seções 40 e 41 permanecem intocados.
+
+### 42.1 Registro por questão
+
+| Documento | Escolha | Conteúdo aprovado |
+|---|---|---|
+| [D-157](decisoes/D-157-r62-q1-trajeto-instantaneo-inicio-execucao.md) | 1A | Move instantâneo **sem WINDUP**: se houver trajeto, calcular sua duração **no início da execução efetiva do Move**, sem criar WINDUP |
+| [D-158](decisoes/D-158-r62-q2-desempate-alvo-identificador-estavel.md) | 2A | Empate entre inimigos vivos igualmente próximos no redirecionamento da D-108: desempate pelo **identificador estável de combate**, reproduzível no mesmo estado |
+| [D-159](decisoes/D-159-r62-q3-ordem-deterministica-luk.md) | 3A | Resolver eventos numa **ordem determinística única da linha do tempo**; modificações de LUK anteriores à rolagem entram, posteriores não |
+| [D-160](decisoes/D-160-r62-q4-referencia-agi-50-trajetos.md) | 4A | Adotar **AGI de referência 50** para duração dos **trajetos**, comum às espécies |
+| [D-161](decisoes/D-161-r62-q5-referencia-atb-pendente-avaliacao.md) | 5B | **Adiar** valor numérico de referência para regeneração ATB até avaliar o ritmo de combate; nenhum número escolhido |
+
+### 42.2 Exemplos e limites operacionais
+
+1. **D-157 × D-154:** Move com WINDUP captura o tempo ao entrar efetivamente em WINDUP; Move instantâneo **sem essa fase**, se precisar calcular trajeto, captura no **início de execução efetiva**. Não criar fase oculta nem estender automaticamente regras de retarget do WINDUP a ações sem WINDUP.
+2. **D-158 × D-108 × D-155:** se Pancham morre durante WINDUP e Abra/Gible estão igualmente próximos (exemplo: 4 m de distância), o desempate depende **do identificador estável de combate**, não de RNG. O recálculo de duração segue ocorrendo **uma vez por troca**. **Ainda não definidos:** regra de ordenação do ID e sua atribuição/persistência; não escolher entre menor e maior ID por suposição.
+3. **D-159 × D-156 × D-019 × D-095:** buff de LUK processado **antes** de uma rolagem no mesmo instante lógico altera a LUK lida por ela; processado **depois**, não. A ordem precisa ser determinística, mas as prioridades concretas entre tipos de evento ainda não foram aprovadas. **Empate por eliminação simultânea no mesmo instante lógico (D-095) permanece obrigatório**; não usar ordem interna de processamento para convertê-lo em vitória.
+4. **D-160 × D-136 × D-140 × D-133 × D-018:** a referência comum de AGI para tempo de trajeto agora é **50**. A expressão documental é `T_final = max(0,25 s, T_base_do_Move × 50 / max(1, AGI_efetiva) − 0,10 s × (passo_atacante + passo_alvo))`. Exemplo: Move 1,0 s, AGI efetiva 50 → 1,0 s antes dos passos; AGI efetiva 100 → 0,5 s antes dos passos. Preservar cálculo no WINDUP, exceção de recálculo no retarget e cálculo na execução efetiva sem WINDUP (D-154/D-155/D-157).
+5. **D-161 × D-145 × D-126:** referência **ATB permanece sem número** para avaliação futura do ritmo; **50 não é referência ATB**. Preservar ritmo de combate e economia de ATB previamente aprovados. Não declarar avaliação realizada ou fórmula ATB implementada.
+
+### 42.3 Pendências remanescentes e escopo
+
+- Ordenação concreta e identidade estável do desempate (D-158).
+- Prioridades para eventos de mesmo instante lógico e preservação de empate simultâneo (D-159/D-095).
+- AGI efetiva usada nos recálculos de WINDUP se buffs ocorrerem entre o cálculo original e o retarget (D-155/D-160); os exemplos aprovados não fixaram todos esses detalhes.
+- Valor e função quantitativa da referência de ATB, parâmetros de avaliação do ritmo e de calibração (D-161); **não atribuir 50 automaticamente**.
+- Precisão/forma de arredondamento do cálculo de duração, e outras lacunas anteriores não respondidas.
+- **Somente documentação:** cinco decisões novas, índice, consolidado e adendo do GDD. Nenhum arquivo de código, Move, teste, cena, VFX, asset ou configuração alterado.
