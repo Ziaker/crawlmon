@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.52 — Rodada 78 registrada em adendo rastreável (2026-11-04); histórico preservado.  
+> **Revisão:** 1.53 — Rodada 79 registrada em adendo rastreável (2026-11-04); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1740,6 +1740,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.52 | 2026-11-04 | Rodada 78: propor tercis de VIT/SPI nível 50 separadamente, aprovando cortes concretos; IA pode considerar Tackle se nenhum Move válido e se elegível; bloquear confirmação de Move com plano sem máximo antes de debitar recursos/ação; exigir política aprovada para incompatibilidades entre status de Moves diferentes. D-236–D-239. | Rodada 78 fechada / Rodada 79 proposta |
 
+| 1.53 | 2026-11-04 | Rodada 79: VIT/SPI idênticos na mesma faixa mesmo com tercis desiguais; IA sem Move/Tackle elegíveis reavalia na próxima oportunidade normal sem agir/gastar; excedente condicional rejeitado e violação registrada preservando eventos válidos; matriz de prioridades por pares de status incompatíveis entre Moves sujeita à aprovação. D-240–D-243. | Rodada 79 fechada / Rodada 80 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2141,4 +2143,19 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos ilustrativos, não regras extras:** se as distribuições VIT/SPI nível 50 verificadas forem disponíveis, propor os respectivos cortes por tercis e **aguardar aprovação numérica**; se a IA não possuir Moves válidos, poderá considerar **Tackle elegível**, sem que isso determine a reação quando Tackle também não estiver disponível; Move com máximo de ocorrências condicionais ausente não confirma ação nem debita ATB/Burst/MP; quando dois Moves hipotéticos produzirem status X/Y declarados incompatíveis, **não determinar vencedor** sem política de precedência **entre Moves** previamente aprovada.
 
 **Preservação e pendências:** D-216/D-220/D-224/D-231 continuam exigindo dados, cortes e amostra aprovados; valor numérico K permanece pendente (D-208). D-225/D-232 exigem filtragem/bloqueio sem custo, mas **não autorizam comportamento específico da IA sem Move/Tackle elegíveis**. D-218/D-222/D-226/D-233 mantêm plano inicial e índices reservados; exceder máximo não foi regulado. D-213/D-215/D-219/D-223/D-227/D-234 continuam válidas para status e RNG; a política entre Moves não tem forma nem prioridade concreta, e **nenhum par real de status foi declarado incompatível**. D-095 mantém empate por KO simultâneo, D-203 mantém odômetro fora do jogo principal, **D-235** mantém independência de Moves/VFX em relação a personagens e lados. A divergência histórica de LUK da Rodada 60 (§12.13) permanece **não resolvida**. **Somente documentação: nenhum código, teste, ficha, Move, IA, cena, asset ou VFX modificado; nenhum teste de gameplay realizado.**
+
+### 12.28 Rodada 79 — valores empatados em tercis, reavaliação da IA, ocorrências excedentes e matriz de incompatibilidades (revisão 1.53)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Registros individuais **D-240 a D-243**, consolidados em **§63** de `docs/REGRAS_DO_JOGO.md`. Aditivo histórico; D-001 mantém o GDD não normativo para combate. Preservar integralmente D-228–D-230 sobre MP/tooltips e D-235 sobre independência de Moves/VFX de personagem, lado e posição.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R79-Q1 | **1A** | Espécies com **mesmo valor de VIT ou SPI** permanecem na **mesma faixa daquele atributo** mesmo se os tercis tiverem **quantidades diferentes** | [D-240](decisoes/D-240-r79-q1-igualdade-atributo-mesma-faixa-tercis.md) |
+| R79-Q2 | **2A** | Se **não houver Move válido nem Tackle elegível**, IA **não inicia ação nem consome recursos**; **reavalia na próxima oportunidade normal** de decisão | [D-241](decisoes/D-241-r79-q2-ia-sem-opcoes-reavaliar-proxima-oportunidade.md) |
+| R79-Q3 | **3A** | **Impedir ocorrência condicional excedente**, **registrar violação do plano** e **preservar eventos válidos previamente resolvidos** | [D-242](decisoes/D-242-r79-q3-ocorrencia-excedente-rejeitar-e-registrar-violacao.md) |
+| R79-Q4 | **4A** | **Matriz explícita de prioridades por pares de status declarados incompatíveis vindos de Moves diferentes**, **sujeita à aprovação**, sem atribuir prioridade a pares não aprovados | [D-243](decisoes/D-243-r79-q4-matriz-pares-status-incompativeis-aprovacao.md) |
+
+**Exemplos não normativos:** espécies hipotéticas com VIT 50 exatamente em um tercil fronteiriço devem receber **uma mesma classificação em VIT**, mantendo pendente qual faixa será homologada; a IA sem qualquer ação elegível **não inicia ação nem consome recursos** e consulta novamente na próxima oportunidade normal; Move com máximo fictício três que solicite uma quarta ocorrência deve **rejeitar a quarta** e registrar violação, sem desfazer eventos válidos resolvidos; a matriz por pares de status ainda **não contém pares concretos nem vencedores aprovados**, apesar de seu formato estar agora aprovado.
+
+**Preservação e pendências:** D-212/D-216/D-220/D-224/D-231/D-236 mantêm verificação de valores VIT/SPI nível 50, tercis separados e aprovação de cortes e amostra antes de qualquer K (D-208); D-225/D-232/D-237 continuam controlando filtragem de Moves e consideração separada de Tackle pela IA. D-218/D-222/D-226/D-233/D-238 preservam o plano na declaração, índices reservados e máximo exigido; a nova D-242 não aprova como lidar com eventos posteriores ao excedente nem canal de log. D-213/D-215/D-219/D-223/D-227/D-234/D-239 mantêm tentativas, probabilidades e ordenação RNG, sem escolher vencedores de pares incompatíveis. D-095 mantém empate por KO simultâneo; D-203 exclui odômetro do jogo principal; D-235 mantém independência de Moves/VFX. A divergência de LUK da Rodada 60 (§12.13) continua **não resolvida**. **Somente documentação, sem editar código, testes, IA, fichas, Moves, cenas, assets ou VFX, sem testar gameplay ou levantar valores defensivos.**
 

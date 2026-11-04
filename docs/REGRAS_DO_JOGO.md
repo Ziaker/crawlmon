@@ -1924,3 +1924,34 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Conflitos históricos:** preservar a divergência textual da reapresentação R60-Q2/Q3 frente a D-150/D-152/D-153 no GDD §12.13; não mudar LUK. D-203 mantém odômetro fora do jogo principal, sem remover protótipo. **D-235 permanece em vigor** como regra de independência de Moves/VFX, inclusive protótipos, sem qualquer alteração nesta rodada.
 - **Somente documentação:** quatro documentos D novos, índice, consolidado e adendo histórico GDD. **Nenhum código, teste, ficha de Move, IA, cena, asset ou VFX modificado; nenhum teste de gameplay executado.**
 
+---
+
+## 63. Rodada 79 — valores empatados em tercis, espera da IA, excedentes do plano e matriz entre status
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações adicionais. Registros individuais **D-240 a D-243**. Atualização documental aditiva conforme D-061, sem implementação. Preservar D-235 sobre independência de Moves/VFX e D-228–D-230 sobre MP e tooltips.
+
+### 63.1 Regras aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-240](decisoes/D-240-r79-q1-igualdade-atributo-mesma-faixa-tercis.md) | **1A** | Espécies com **igual valor de VIT ou SPI** ficam na **mesma faixa do atributo** mesmo que os três grupos resultem em **quantidades diferentes** |
+| [D-241](decisoes/D-241-r79-q2-ia-sem-opcoes-reavaliar-proxima-oportunidade.md) | **2A** | Se **nenhum Move válido nem Tackle elegível** existir, a IA **não inicia ação nem consome recursos**, **reavaliando na próxima oportunidade normal de decisão** |
+| [D-242](decisoes/D-242-r79-q3-ocorrencia-excedente-rejeitar-e-registrar-violacao.md) | **3A** | **Impedir a execução** de ocorrência condicional **acima do máximo** e **registrar violação do plano**, **preservando eventos válidos já resolvidos** |
+| [D-243](decisoes/D-243-r79-q4-matriz-pares-status-incompativeis-aprovacao.md) | **4A** | Elaborar **matriz explícita de prioridades por pares de status declarados incompatíveis entre Moves distintos**, **sujeita à aprovação**; **nenhuma entrada concreta aprovada** |
+
+### 63.2 Exemplos e compatibilidades
+
+- **Tercis VIT/SPI (D-240):** se valores **hipotéticos** de VIT iguais a `50` estiverem em uma fronteira proposta, **todas as espécies com VIT 50 ficam no mesmo grupo de VIT**, ainda que a contagem do grupo fique desigual. A faixa exata do valor fronteiriço ainda depende de limites aprovados (D-236). VIT e SPI são classificados separadamente (D-224), utilizando **dados verificáveis no nível 50** (D-212/D-216), com cortes e amostra sujeitos à aprovação (D-220/D-231). **Nenhum número, espécie, limiar ou K foi homologado.**
+- **IA (D-241):** quando a lista de Moves válidos ficar vazia (D-232) e Tackle **não estiver elegível** (D-237), a IA **não começa ação, não consome ATB/Burst/MP e reavalia na próxima oportunidade normal**, sem novo temporizador nem escolha de fallback forçada. A regra não inventa o instante/frequência exata de decisão ou perda da oportunidade.
+- **Plano (D-242):** Move com máximo **hipotético** de três ocorrências tenta executar uma quarta; a **quarta é rejeitada**, a **violação é registrada**, e eventos anteriores já validamente resolvidos são **preservados**, sem criar novos índices ou consumir RNG para evento inválido. D-218/D-222/D-226/D-233/D-238 permanecem: plano e índices reservados na declaração, máximo obrigatório, bloqueio pré-ação quando máximo não foi definido. Não há política aprovada para prosseguimento/cancelamento de eventos **posteriores** à violação, nem formato do registro.
+- **Matriz de incompatibilidades (D-243):** a política exigida por D-239 para conflitos **entre Moves distintos** deverá usar **matriz explícita por pares de status** e ser aprovada pelo criador antes de definir vencedores. **Nenhum par real nem precedência foi declarado**. Prioridades existentes **dentro da mesma ficha** (D-215/D-217) não são automaticamente transferidas. A ordem do RNG de status (D-219/D-223/D-227/D-234) não define prioridade entre efeitos. Preservar a simultaneidade de KO (D-095).
+
+### 63.3 Pendências e história
+
+- **Atributos:** permanecem faltando valores de nível 50 verificáveis, cortes por tercis e a convenção específica para faixa fronteiriça empatada, aprovação da amostra e parâmetros de mitigação/K.
+- **IA:** a frequência exata da oportunidade normal, a semântica operacional enquanto não há opções e os filtros de IA para outras causas de Move incompleto não estão especificados nesta rodada.
+- **Eventos:** o **formato do registro de violação**, reação a novas ocorrências válidas após o excedente e limites concretos por Move continuam abertos; nenhuma implementação de logging ou rollback foi autorizada.
+- **Status:** a **estrutura geral em matriz está aprovada**, mas pares incompatíveis e prioridades **não**; falta aprovar entradas concretas e procedimento para políticas ausentes. Não inferir incompatibilidades de status nem árbitro por atacante, Move ou RNG.
+- **Conflitos preservados:** não conciliar unilateralmente a divergência R60-Q2/Q3 de LUK frente a D-150/D-152/D-153 (GDD §12.13); D-203 mantém odômetro fora do jogo principal, sem remover protótipo. A D-235 segue obrigatória para Moves/VFX de qualquer personagem, lado ou protótipo.
+- **Escopo:** quatro arquivos D novos, índice, consolidação e adendo GDD. **Nenhum código, IA, teste, Move, ficha, cena, asset ou VFX alterado; nenhum teste de gameplay ou coleta de atributos realizado.**
+
