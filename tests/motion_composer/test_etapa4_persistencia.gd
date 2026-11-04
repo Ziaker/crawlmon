@@ -125,6 +125,7 @@ func _init() -> void:
 	t_m20()
 	t_distinct()
 	t_emitter()
+	t_audit()
 	t_robustness()
 
 	print("\n-- Independência de representação --")
@@ -359,6 +360,70 @@ func t_emitter() -> void:
 	var gg := copies_of(eval_at(g20, t, emitter_line), pu, 8)
 	ok(vnear(gg[1].position, eval_at(base, t - gg[1].age).samples[3].position + Vector3(-10.0 * gg[1].age, 0, 0), 1e-4), "M20 também respeita world_space")
 	ok(eval_at(cf, t).samples.size() == 8 * 6, "sem emissor definido (identidade) o rastro continua válido (8 × (1 + 5))")
+
+
+func t_audit() -> void:
+	print("
+-- Auditoria da Etapa 4: lacunas fechadas --")
+	var base := build([])
+	var pu := eval_at(base, 1.0).samples[3].u
+	# 1. intensidade em função da idade (§3 grupo H, §19.4)
+	var ci := build([[&"M19", Op.PERSIST, {"duration": 0.5, "sample_interval": 0.05, "intensity_end": 0.0}]])
+	var ti := copies_of(eval_at(ci, 1.0), pu, 8)
+	ok(near(ti[4].intensity, 0.5, 1e-5) and near(ti[9].intensity, 0.0, 1e-6), "M19: intensidade decai com a idade (intensity_end)")
+	var cj := build([[&"M20", Op.PERSIST, {"count": 4, "interval": 0.1, "intensity_fade": 0.5}]])
+	var tj := copies_of(eval_at(cj, 1.0), pu, 8)
+	ok(near(tj[0].intensity, 1.0 - 0.5 * 1.0 / 5.0, 1e-5) and near(tj[3].intensity, 1.0 - 0.5 * 4.0 / 5.0, 1e-5), "M20: intensidade em degraus (intensity_fade)")
+	ok(near(copies_of(eval_at(build([[&"M19", Op.PERSIST, {}]]), 1.0), pu, 8)[4].intensity, 1.0), "intensidade neutra por padrão (comportamento anterior preservado)")
+	# 2. janela de histórico ao repetir um trecho (§19.4)
+	var cl := build([[&"M19", Op.PERSIST, {"duration": 0.5, "sample_interval": 0.05}]])
+	cl.history_start = 0.88
+	var tl := copies_of(eval_at(cl, 1.0), pu, 8)
+	var vis := 0
+	for g in tl:
+		if g.visible:
+			vis += 1
+	ok(vis == 2 and tl.size() == 10, "history_start 0,88 s: só as amostras com t − idade ≥ 0,88 existem (2 de 10); a contagem não muda")
+	var cx := build([[&"M20", Op.PERSIST, {"count": 4, "interval": 0.1}]])
+	cx.history_start = 0.85
+	var tx := copies_of(eval_at(cx, 1.0), pu, 8)
+	ok(tx[0].visible and not tx[1].visible and not tx[3].visible, "M20 também respeita history_start 0,85 s (só a pós-imagem de 0,9 s existe; a cauda não cruza o início do trecho)")
+	ok(cx.make_context(1.0).history_start == 0.85, "a composição repassa history_start ao contexto")
+	# 3. limite de amostras configurável (§12.2)
+	var cm := build([[&"M19", Op.PERSIST, {"duration": 1.0, "sample_interval": 0.01, "max_samples": 20}]])
+	ok(eval_at(cm, 1.5).samples.size() == 8 * 21, "max_samples limita as amostras de rastro por elemento (20)")
+	# 4. história do emissor indisponível é sinalizada, não inventada (§19.4)
+	var cw := build([[&"M19", Op.PERSIST, {"world_space": true}]])
+	var rw := eval_at(cw, 1.0)
+	var warned := false
+	for d in rw.diagnostics:
+		if d.code == &"layer_emitter_history_missing" and d.severity == MotionTypes.Severity.WARNING:
+			warned = true
+	ok(warned and not rw.has_errors(), "world_space sem emitter_fn gera aviso (não erro) e não inventa movimento")
+	var warned2 := false
+	for d in eval_at(cw, 1.0, emitter_line).diagnostics:
+		if d.code == &"layer_emitter_history_missing":
+			warned2 = true
+	ok(not warned2, "com emitter_fn não há aviso")
+	var cn := build([[&"M19", Op.PERSIST, {"world_space": false}]])
+	var warned3 := false
+	for d in eval_at(cn, 1.0).diagnostics:
+		if d.code == &"layer_emitter_history_missing":
+			warned3 = true
+	ok(not warned3, "world_space desligado não exige emissor")
+	# 5. métricas de inspeção (§12.1)
+	var cs := build([[&"M19", Op.PERSIST, {}], [&"M07", Op.OFFSET, {}]])
+	var rs := eval_at(cs, 1.0)
+	ok(rs.stats["samples"] == 88 and rs.stats["history_samples"] == 80 and rs.stats["layers_active"] == 3 and rs.stats["eval_usec"] > 0, "estatísticas: amostras, amostras históricas, camadas ativas e tempo de avaliação")
+	# 6. emissor consultado uma vez por idade, não por amostra
+	var counter := [0]
+	var cc := build([[&"M19", Op.PERSIST, {"world_space": true}]], 64)
+	var ctx := cc.make_context(1.0)
+	ctx.emitter_fn = func(t: float) -> Transform3D:
+		counter[0] += 1
+		return emitter_line(t)
+	cc.evaluate(_cat, ctx)
+	ok(counter[0] <= 2 * 10 + 4, "emitter_at é chamado por idade, não por amostra (%d chamadas para 64 amostras × 10 idades)" % counter[0])
 
 
 func t_robustness() -> void:

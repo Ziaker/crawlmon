@@ -28,4 +28,4 @@ Mesmas da §17. Em particular: limites finais de amostragem e persistência (§1
 
 ## Estado
 
-M19 e M20 implementados e testados em execução headless (60 verificações, 0 falhas; 14 mutações; 445 no total das cinco suítes); ver [§25 da especificação](../vfx/MOTION_COMPOSER_V1.md). Aparência e desempenho não avaliados.
+M19 e M20 implementados e testados em execução headless (72 verificações, 0 falhas; 21 mutações; 457 no total das cinco suítes; 6 lacunas fechadas na auditoria); ver [§25 da especificação](../vfx/MOTION_COMPOSER_V1.md). Aparência e desempenho não avaliados.

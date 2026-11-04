@@ -20,6 +20,9 @@ var target: Vector3 = Vector3.ZERO
 ## Preenchida pelo compositor só ao avaliar camadas PERSIST (M19, M20); é função pura do tempo, logo
 ## o histórico se reconstrói igual após seek, retrocesso ou reinício. `with_time` não a copia.
 var history_fn: Callable = Callable()
+## Início da janela de histórico, em segundos. Instantes anteriores a ele não têm histórico (ficam
+## invisíveis): o laboratório o move para o início do trecho ao repeti-lo em laço (§19.4).
+var history_start: float = 0.0
 
 
 ## Progresso normalizado em [0, 1] = tempo / duração (saturado).
@@ -42,6 +45,7 @@ func with_time(t: float) -> MotionContext:
 	c.seed = seed
 	c.revision = revision
 	c.reference_transform = reference_transform
+	c.history_start = history_start
 	c.emitter_fn = emitter_fn
 	c.origin = origin
 	c.target = target

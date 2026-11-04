@@ -13,6 +13,8 @@ var base_length: float = 1.0
 var sample_count: int = 128
 var duration: float = 3.0
 var seed: int = 0
+## Início da janela de histórico (ver MotionContext.history_start).
+var history_start: float = 0.0
 ## Limite de amostras ativas; verificado ANTES de alocar (valor experimental, não aprovado).
 var max_samples: int = 100000
 var layers: Array[MotionLayer] = []
@@ -93,6 +95,7 @@ func make_context(t: float) -> MotionContext:
 	c.duration = duration
 	c.seed = seed
 	c.revision = revision
+	c.history_start = history_start
 	return c
 
 
@@ -145,7 +148,17 @@ func evaluate(catalog: MotionCatalog, ctx: MotionContext) -> MotionResult:
 	if res.has_errors():
 		return res  # sem correção silenciosa: erros e nenhuma amostra
 
+	var t0 := Time.get_ticks_usec()
 	res.samples = _run_layers(layers.size(), catalog, ctx, res.diagnostics)
+	var hist := 0
+	for s in res.samples:
+		if s.age > 0.0:
+			hist += 1
+	var active := 0
+	for l in layers:
+		if l.is_active(ctx) and l.intensity > 0.0:
+			active += 1
+	res.stats = {"samples": res.samples.size(), "history_samples": hist, "layers_active": active, "eval_usec": Time.get_ticks_usec() - t0}
 	return res
 
 
@@ -159,6 +172,10 @@ func _run_layers(count: int, catalog: MotionCatalog, ctx: MotionContext, diags: 
 			continue
 		var lctx := ctx
 		if l.op == Op.PERSIST:
+			var pb := catalog.get_behavior(l.behavior_id)
+			if pb.needs_history and bool(pb.resolve_params(l.params).get("world_space", false)) and not ctx.emitter_fn.is_valid():
+				diags.append(MotionDiagnostic.warning(&"layer_emitter_history_missing",
+					"world_space pede a história do emissor, mas o contexto não a fornece (emitter_fn); o rastro usa o emissor parado, sem inventar movimento", l.id))
 			lctx = ctx.with_time(ctx.time)
 			lctx.history_fn = func(t: float) -> Array[MotionSample]:
 				var scratch: Array[MotionDiagnostic] = []

@@ -11,7 +11,7 @@ const Op := MotionTypes.Op
 func _init() -> void:
 	id = &"M20"
 	display_name = "Pós-imagem"
-	description = "Representa estados visuais anteriores em instantes discretos, com defasagem temporal e desaparecimento progressivo (quantidade, intervalo, intensidade, tamanho, referência espacial)."
+	description = "Representa estados visuais anteriores em instantes discretos, com defasagem temporal e desaparecimento progressivo (quantidade, intervalo, intensidade, tamanho, transparência, referência espacial)."
 	group = &"persistencia"
 	kind = MotionTypes.Kind.HISTORICAL
 	needs_history = true
@@ -20,6 +20,7 @@ func _init() -> void:
 		MotionParam.make_int(&"count", 4, 1, 16, ""),
 		MotionParam.make_float(&"interval", 0.1, 0.01, 2.0, "s"),
 		MotionParam.make_float(&"fade", 0.8, 0.0, 1.0, ""),
+		MotionParam.make_float(&"intensity_fade", 0.0, 0.0, 1.0, ""),
 		MotionParam.make_float(&"scale", 1.0, 0.1, 2.0, ""),
 		MotionParam.make_bool(&"world_space", false),
 	]
@@ -33,12 +34,15 @@ func apply(samples: Array[MotionSample], p: Dictionary, ctx: MotionContext, _lt:
 	var n := int(p["count"])
 	var interval := float(p["interval"])
 	var fade := float(p["fade"])
+	var ifade := float(p["intensity_fade"])
 	var scl := float(p["scale"])
 	var world := bool(p["world_space"])
 	var streams := {}
+	var rels := {}
 	for k in range(1, n + 1):
 		var tp := ctx.time - interval * float(k)
-		streams[k] = MotionHistory.stream_at(ctx, tp) if tp >= 0.0 else {}
+		streams[k] = MotionHistory.stream_at(ctx, tp)
+		rels[k] = MotionHistory.relative(ctx, tp, world)
 	var out: Array[MotionSample] = []
 	for s in samples:
 		for k in range(1, n + 1):
@@ -48,9 +52,11 @@ func apply(samples: Array[MotionSample], p: Dictionary, ctx: MotionContext, _lt:
 			if hs == null:
 				c = MotionHistory.hidden_copy(s)
 			else:
-				c = MotionHistory.place(hs, ctx, ctx.time - age, world)
+				c = MotionHistory.place(hs, rels[k], world)
+				var step := float(k) / float(n + 1)
 				c.width = hs.width * pow(scl, float(k))
-				c.opacity = hs.opacity * (1.0 - fade * float(k) / float(n + 1))
+				c.intensity = hs.intensity * (1.0 - ifade * step)
+				c.opacity = hs.opacity * (1.0 - fade * step)
 			c.element_id = MotionSample.derive_id(s.element_id, lid, k, ctx.seed)
 			c.branch = MotionSample.branch_path(s.branch, lid, k - 1)
 			c.age = age
