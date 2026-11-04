@@ -1039,3 +1039,26 @@ Fórmulas, nomes, unidades, padrões e limites são **propostas do agente** (nã
 **Ainda não coberto (não é esquecimento, depende de etapas não autorizadas):** orientação estável de fitas e tratamento de tangentes quase nulas (§19.4) são do renderizador de fitas (Etapa 5); a repetição de trecho em laço só pode ser exercitada com o relógio do laboratório (Etapa 5); orçamento e medições em hardware-alvo (Etapa 6).
 
 **Pendente (não autorizado):** laboratório visual, presets e representações (Etapa 5); validação completa, desempenho, GL Compatibility e aprovação artística (Etapa 6).
+
+## 26. Etapa 5, fatia 1 — laboratório e representação Pontos — 2026-11-04 (D-305)
+
+Escopo ([D-305](../decisoes/D-305-motion-composer-etapa-5-laboratorio-visual.md)): a Etapa 5 é entregue **em fatias, uma mudança visual por vez, com aprovação do criador entre elas**. Esta fatia traz a base testável e **uma** representação. Tudo usa objetos e shaders do Godot (nenhum HTML): `MultiMeshInstance3D`, `SphereMesh`, `ShaderMaterial` com `shaders/motion_lab/motion_point.gdshader` (spatial, `unshaded`, GL Compatibility), `ImmediateMesh` para eixos e grade, `Camera3D`, controles de UI do Godot.
+
+```bash
+godot --path . res://scenes/motion_lab/motion_lab.tscn
+godot --path . res://scenes/motion_lab/motion_lab.tscn -- --capture=C:/pasta/saida.png --t=1.2 --frames=8
+```
+
+| Parte | Arquivo | Resumo |
+|---|---|---|
+| Relógio | `lab/motion_clock.gd` | reproduzir, pausar, reiniciar, ±1 quadro (1/60 s), seek, velocidades 0,1x–2x, laço e trecho repetido; `history_start` = início do trecho (§19.4) |
+| Sessão | `lab/motion_lab_session.gd` | composição, catálogo, relógio, **toggle D-042** (atualizar no instante atual ↔ reiniciar), isolamento de camada, emissor de demonstração (parado, linha, órbita) |
+| Presets | `lab/motion_presets.gd` | JSON UTF-8 versionado em `user://motion_composer/presets/` (D-045): vetores como x/y/z, validação completa antes de substituir, versão desconhecida recusada, gravação atômica, nomes restritos; nunca executa código |
+| Pontos | `lab/motion_points_view.gd` + shader | um ponto por amostra visível, cor por ramo, alfa = opacidade, brilho = intensidade; neutro (§8.3) |
+| Laboratório | `lab/motion_lab.gd` + `scenes/motion_lab/motion_lab.tscn` | viewport 3D (botão direito gira, meio move, roda aproxima), catálogo M01–M20 com busca, camadas ordenadas (adicionar, subir/descer, ligar/desligar, isolar, remover), parâmetros gerados dos descritores (com unidades), linha do tempo, presets, estatísticas e diagnósticos |
+
+**Propostas do agente (não aprovadas):** disposição em dois painéis (P-08), pasta e formato dos presets, modo inicial "atualizar no instante atual" sem persistir a preferência, cores por ramo, ciclo de 3 s, 64 amostras na demonstração.
+
+**Verificado:** 79 verificações do relógio, da sessão e dos presets (ida e volta idêntica em 4 instantes; 17 formas de preset inválido recusadas; nenhum arquivo temporário sobra) e 17 do laboratório instanciado (adicionar, reordenar, ligar, isolar, remover, editar nos dois modos, salvar e carregar presets pela interface; o material é `ShaderMaterial` com `.gdshader`); execução em janela com GL Compatibility (NVIDIA GeForce RTX 2050) sem erros, com a captura mostrada ao criador. As sete suítes somam 553 verificações, todas sem falhas. **Medido:** avaliação ≈ 28–36 ms por quadro na demonstração (832 amostras, rastro de 12 idades), o que limita a prévia a cerca de 30 quadros/s; sem orçamento aprovado.
+
+**Não feito nesta fatia (aguarda aprovação visual):** Fitas, Fragmentos e Fumaça/billboards (D-044); comparação A/B; estudos individuais dos 20 comportamentos e a receita da §6 como demonstração; seleção de ramos e máscaras na interface; reprodução do trecho em laço pela interface. **Não verificado:** aparência aprovada pelo criador, desempenho em outro hardware, comportamento da interface em resoluções pequenas.
