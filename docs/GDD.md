@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.41 — Rodada 70 registrada em adendo rastreável (2026-11-04); histórico preservado.  
+> **Revisão:** 1.42 — Rodada 71 registrada em adendo rastreável (2026-11-04); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1718,6 +1718,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.41 | 2026-11-04 | Rodada 70: IDs por slots aliados depois inimigos; mitigação racional R(x)=x/(x+K) com K ainda a validar; status multi-hit máximo uma tentativa por alvo/execução após último impacto; Q4D define descarte integral do odômetro no jogo principal, sem aprovar nova aferição de sobrevivência. D-200–D-203. | Rodada 70 fechada / Rodada 71 proposta |
 
+| 1.42 | 2026-11-04 | Rodada 71: K único compartilhado por VIT/SPI, sem valor homologado; arredondamento final exatamente em 0,5 para cima; ID crescente sem reuso em eventual entrada posterior; status após último impacto destinado a cada alvo. D-204–D-207. | Rodada 71 fechada / Rodada 72 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -1966,4 +1968,19 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Preservação e precedência:** a decisão histórica `docs/decisoes/D-048-rolling-hp-mother3-odometro.md` continua no repositório como evidência de **teste antigo**, **superada exclusivamente para o jogo principal** por D-203. Não confundir com a distinta `D-048-r40-q8-atb-aoe-unico.md`, relativa a recompensas AoE. Código atual ainda contém `rolling_hp_enabled`, `target_hp`, `tick_rolling_hp` e o teste correspondente, **sem qualquer autorização nesta rodada para excluir, desligar ou refatorar esses recursos**. D-199 conserva status após dano somente para sobreviventes; a origem lógica dessa sobrevivência **não foi definida na escolha 4D**. As fórmulas de LUK divergentes na reapresentação da Rodada 60 (§12.13) continuam sem precedência nova, e as demais decisões anteriores são preservadas.
 
 **Pendências e escopo:** K e critério de calibração; entrada tardia de combatentes e número inicial dos IDs; multi-status e instantes lógicos dos impactos; meia unidade no arredondamento e desempates de retarget do mesmo atacante. **Somente documentação:** nenhum código, teste, Move, VFX, cena ou asset modificado; nenhum teste de gameplay executado.
+
+### 12.17 Rodada 71 — K compartilhado, arredondamento exato, novos IDs e resolução de status por alvo (revisão 1.42)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A** e declarou não haver observações próprias. Regras novas **D-204 a D-207**, consolidadas em **§52 de `docs/REGRAS_DO_JOGO.md`**. Esta seção é **aditiva**, sem revogar qualquer decisão histórica. Como determinado por D-001, o GDD não é fonte normativa para as regras de combate.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R71-Q1 | **1A** | **Um único valor numérico positivo de K**, compartilhado pela curva racional `R(x)=x/(x+K)` de VIT e SPI; **K concreto permanece pendente de calibração e validação** | [D-204](decisoes/D-204-r71-q1-k-unico-compartilhado-vit-spi.md) |
+| R71-Q2 | **2A** | Em valor final de dano com parte fracionária **exatamente 0,5**, **arredondar para o inteiro superior**, após concluir todos os modificadores e antes do piso cabível | [D-205](decisoes/D-205-r71-q2-arredondamento-metade-para-cima.md) |
+| R71-Q3 | **3A** | Se houver **novo participante após o início**, atribuir o **próximo ID não usado**, **sem renumerar ou reutilizar IDs anteriores**; não aprova reforços por si só | [D-206](decisoes/D-206-r71-q3-proximo-id-sem-reuso-entradas-posteriores.md) |
+| R71-Q4 | **4A** | Em Move multi-alvo/multi-hit, tentar status elegível de **cada alvo após seu último impacto próprio**, sem aguardar os impactos contra os demais alvos; teto de **uma tentativa por alvo/execução** (D-202) | [D-207](decisoes/D-207-r71-q4-status-apos-ultimo-impacto-por-alvo.md) |
+
+**Exemplos não normativos:** com `VIT=SPI=50` e **K hipotético 100**, cada categoria teria `R=1/3`; **K=100 não foi aprovado**. O desempate exato `4,5 → 5` e `5,5 → 6` esclarece D-198. Com IDs fictícios `1,2,3`, a saída do participante 2 não libera ID 2: o **novo** participante recebe o próximo número `4`. Uma onda que conclua os impactos destinados a Gible antes de atingir Abra/Pancham pode resolver o status **de Gible** após seu próprio último impacto, se ele sobreviveu a acerto válido; não antecipar ou multiplicar rolagens.
+
+**Pendências e preservações:** não definir K numérico, efeitos de reentrada do **mesmo** combatente, duas entradas perfeitamente simultâneas, múltiplos status diferentes de um Move, ordem de impactos simultâneos ou precisão/tolerância de ponto flutuante. D-203 mantém **odômetro fora do jogo principal**; D-095 mantém empate de KO simultâneo; a divergência de LUK da reapresentação R60 (§12.13) permanece **sem nova precedência**. **Somente documentação**: nenhum código, teste, ficha, cena, asset ou VFX modificado; nenhum teste de gameplay realizado.
 

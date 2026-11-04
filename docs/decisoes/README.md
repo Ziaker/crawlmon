@@ -244,6 +244,11 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-202](D-202-r70-q3-status-uma-tentativa-por-alvo-move-apos-ultimo-hit.md) | Combate / R70 | Q3A: em multi-hit, no máximo uma tentativa de status por alvo/execução, após o último impacto e se sobreviver | Aprovada; não implementada |
 | [D-203](D-203-r70-q4d-odometro-descartado-jogo-principal.md) | Combate / R70 | Q4D + regra própria: odômetro de HP era teste e está descartado do jogo principal; referência antiga preservada | Aprovada; código do teste permanece no repositório |
 
+| [D-204](D-204-r71-q1-k-unico-compartilhado-vit-spi.md) | Combate / R71 | Q1A: único valor K compartilhado por VIT e SPI na curva racional; número ainda pendente | Aprovada; K não calibrado; sem implementação |
+| [D-205](D-205-r71-q2-arredondamento-metade-para-cima.md) | Combate / R71 | Q2A: em empate exato de fração 0,5, arredondar o dano final ao inteiro superior | Aprovada; não implementada |
+| [D-206](D-206-r71-q3-proximo-id-sem-reuso-entradas-posteriores.md) | Combate / R71 | Q3A: novo participante após início recebe próximo ID não utilizado; sem renumerar ou reutilizar | Aprovada; não aprova reforços; sem implementação |
+| [D-207](D-207-r71-q4-status-apos-ultimo-impacto-por-alvo.md) | Combate / R71 | Q4A: resolver status de cada alvo após o último impacto destinado àquele alvo | Aprovada; não implementada |
+
 > **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.
 
 > **Histórico/precedência R70:** o arquivo [D-048 de HP rolante](D-048-rolling-hp-mother3-odometro.md) registra um **teste/protótipo histórico**, não uma regra vigente do jogo principal após [D-203](D-203-r70-q4d-odometro-descartado-jogo-principal.md). **Não confundir** com o outro arquivo [D-048 de recompensas AoE](D-048-r40-q8-atb-aoe-unico.md), que não foi revogado.

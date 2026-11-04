@@ -1610,3 +1610,32 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Pendências novas:** critério de entrada posterior de combatente e valor inicial do ID; **parâmetro K positivo** e se será igual para VIT/SPI; múltiplos efeitos de status na mesma ficha e hit assíncrono; arredondamento exato `x,5`; desempate de eventos simultâneos do mesmo atacante. Preservar conflito de LUK **R60-Q2/Q3** no GDD §12.13 e demais pendências históricas.
 - **Escopo efetivo:** quatro novos registros individuais, adendo de superação histórica na D-048 de HP rolante, índice, este consolidado e GDD. **Nenhum código, teste, asset, Move, cena ou VFX alterado; nenhum teste de gameplay executado.**
 
+---
+
+## 52. Rodada 71 — K compartilhado, desempate 0,5, IDs de novas entradas e status por alvo
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Documentos individuais **D-204 a D-207**. Complementos estritos às decisões anteriores, sem modificar código nem reescrever registros históricos.
+
+### 52.1 Regras aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-204](decisoes/D-204-r71-q1-k-unico-compartilhado-vit-spi.md) | **1A** | Um **único K numérico** compartilhado pelas curvas racionais de mitigação de **VIT e SPI**; **valor de K continua a calibrar e validar** |
+| [D-205](decisoes/D-205-r71-q2-arredondamento-metade-para-cima.md) | **2A** | No **arredondamento único final do dano**, valor com parte fracionária **exatamente 0,5** vai ao **inteiro superior** |
+| [D-206](decisoes/D-206-r71-q3-proximo-id-sem-reuso-entradas-posteriores.md) | **3A** | Um **novo participante** que ingresse após o início da batalha, se essa situação ocorrer, recebe o **próximo ID não utilizado**, sem renumeração nem reutilização |
+| [D-207](decisoes/D-207-r71-q4-status-apos-ultimo-impacto-por-alvo.md) | **4A** | Resolver status de cada alvo depois do **último impacto destinado a ele**, sem esperar os impactos destinados aos outros alvos |
+
+### 52.2 Exemplos e compatibilidade
+
+- **K único (D-204):** VIT 50 e SPI 50 usam o **mesmo** `K > 0` na função `R(x)=x/(x+K)` da D-201. **Exemplo numérico apenas hipotético**, com K fictício igual a 100: ambas as resistências naturais seriam `50/150 = 33,33%` em suas categorias. **Não foi aprovado K=100** nem qualquer outro número. Preservar VIT físico / SPI mágico (D-130), ordem resistência antes de DEF (D-193) e o mínimo 1 salvo imunidade/bloqueio (D-194).
+- **Meio exato (D-205):** dano final `4,5 → 5` e `5,5 → 6`, enquanto `4,49 → 4`; arredondamento **uma vez ao fim de todos os modificadores**, preservando D-198. Tolerância/precisão de ponto flutuante seguem não especificadas.
+- **IDs de entrada posterior (D-206):** composição inicial hipotética IDs 1, 2, 3; o combatente 2 sai e entra um **novo** combatente, que receberia ID **4**, não 2. Preservar D-200 (atribuição inicial por slots do protagonista, depois inimigos), D-196 (estabilidade) e D-188/D-192 (ordenação de retarget). **Não se aprova por isso o sistema de reforços, substituições ou novos participantes**; o que acontece ao retornar o *mesmo* combatente permanece pendente.
+- **Status multi-hit (D-207):** se uma onda completa os impactos de Gible antes dos de Abra e Pancham, tentar o status elegível de Gible **após seu próprio último impacto**, se houve acerto válido e ele sobreviveu. **Uma tentativa máxima por alvo e execução** (D-202), crítico e dano antes (D-199), sem alterar limite de recompensas ATB, KO simultâneo (D-095) ou Moves de status não esquiváveis (D-012).
+
+### 52.3 Pendências e escopo
+
+- **Em aberto:** número e critério de calibração/validação do K único; política de entradas simultâneas e de reentrada do mesmo combatente; efeitos de vários status no mesmo Move; interrupções antes do último hit e como resolver simultaneidade de impactos; tolerância numérica no arredondamento; demais detalhes de replay/RNG e conversão AGI/ATB.
+- **Conflito histórico R60:** a divergência textual entre a reapresentação de R60-Q2/Q3 e D-150/D-152/D-153 segue pendente (GDD §12.13). Nenhuma fórmula de LUK foi substituída por esta rodada.
+- **D-203 mantida:** odômetro de HP excluído do jogo principal; código legado continua presente, sem alteração.
+- **Código consultado na `main`:** `scripts/combat/battle.gd` e `scripts/combat/combatant.gd` ainda apresentam arredondamentos distintos e lógica pré-VIT/SPI; os requisitos novos são documentais, não um atestado de implementação. **Nenhum código, teste, recurso, Move, asset, cena ou VFX modificado e nenhum teste de gameplay executado.**
+
