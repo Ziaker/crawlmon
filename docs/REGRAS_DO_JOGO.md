@@ -2052,3 +2052,38 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Histórico preservado:** divergência textual da Rodada 60 sobre LUK frente a D-150/D-152/D-153 continua sem resolução (GDD §12.13). D-095 preserva KO simultâneo, D-203 exclui odômetro do jogo principal. D-228–D-230 e D-244–D-249 sobre fichas, custos e tooltips e D-235 sobre independência de Moves/VFX permanecem válidas, sem alteração.
 - **Escopo:** quatro novos registros D, índice, este consolidado e GDD em adendo. **Nenhum código, teste, ficha operacional, Move, IA, HUD, cena, asset ou VFX alterado e nenhum teste de gameplay executado.**
 
+---
+
+## 67. Fichas de Moves — Rodada M3: fórmula inicial, proibição de prévia, herança de alvos, projéteis, Dispel e MP
+
+> **2026-11-04.** O criador aprovou as escolhas **1A, 2D, 3A, 4A, 5A e 6D**, com observação literal: **“Tudo q não é tackle consome MP , não existe previa de dano em seleção e não deve existir, pare de inventar coisa que eu não pedi”**. As respostas **2D e 6D** são esclarecidas **somente** pelo conteúdo expressamente escrito nessa observação, sem adotar qualquer alternativa A/B/C anterior. Decisões individuais **D-258 a D-263**. Registro conforme D-061; sem alteração de código.
+
+### 67.1 Regras aprovadas
+
+| Decisão | Escolha | Regra |
+|---|---|---|
+| [D-258](decisoes/D-258-m3-q1-formula-dano-base-escala-vezes-potencia.md) | **1A** | Q1A: aplicar (base + coeficiente STR/MAG × atributo) × potência antes de outros modificadores |
+| [D-259](decisoes/D-259-m3-q2-sem-previa-dano-na-selecao-alvos.md) | **2D** | Q2D: não existe nem deve existir prévia de dano durante a seleção de alvos; tooltip numérica D-230 preservada |
+| [D-260](decisoes/D-260-m3-q3-efeitos-herdam-selecao-faccao-salvo-excecao.md) | **3A** | Q3A: efeitos herdam seleção e facção padrão, salvo abrangência ou condição diferente expressamente declarada |
+| [D-261](decisoes/D-261-m3-q4-agi-nao-altera-velocidade-projeteis-sem-excecao.md) | **4A** | Q4A: AGI não altera automaticamente velocidade de projétil; velocidade própria do Move, exceções só expressas |
+| [D-262](decisoes/D-262-m3-q5-dispel-remove-todos-efeitos-elegiveis.md) | **5A** | Q5A: Dispel remove todos os efeitos elegíveis declarados na ficha, respeitando exceções |
+| [D-263](decisoes/D-263-m3-q6-todos-moves-exceto-tackle-consomem-mp.md) | **6D** | Q6D: todo Move exceto Tackle consome MP; amplia a D-228 histórica, valores por Move pendentes |
+
+### 67.2 Compatibilidades e exemplos
+
+- **Dano (D-258):** a **parcela ofensiva inicial** usa **(dano-base + coeficiente STR/MAG × atributo aplicável) × potência individual do Move**, antes de **outros modificadores já aprovados**. Preservar D-122/D-123/D-244 e o arredondamento global único D-198/D-205. **Exemplo puramente matemático:** `(40 + 0,5×20)×1,3 = 65`, sem homologar qualquer valor para Move real.
+- **Sem prévia na seleção (D-259):** **não existe nem deve existir prévia de dano durante a seleção de alvos**. Não mostrar previsão, projeção por alvo ou valor calculado ao selecionar/alternar o alvo. **Preservar D-229/D-230:** tooltips de habilidade em seu contexto continuam exigindo **dano/cura numéricos no texto mecânico**, sem converter a interface de seleção de alvos em uma tooltip preditiva. A regra não escolhe mecanismos alternativos de atualização numérica.
+- **Alvos (D-260):** cada efeito herda **seleção e facção padrão da ficha**, exceto quando a ficha **declarar abrangência ou condição distinta** naquele efeito. Manter dimensões de D-246 e regras específicas de AoE/Dragon Rage D-007/D-032 sem inferir novas interações, facções ou alcance.
+- **Velocidade (D-261):** AGI não modifica **automaticamente** a velocidade de nenhum projétil; cada Move usa sua velocidade própria, ressalvados somente **modificadores de projétil expressamente aprovados**. Não confundir com redução por AGI do deslocamento **do combatente** D-119/D-133; preservar ondas AoE D-057/D-067/D-077/D-078.
+- **Dispel (D-262):** para os efeitos e alvos elegíveis segundo a ficha, remover **todos os efeitos declarados removíveis**, **respeitando exceções** D-249. Não há efeito real removível homologado, nem Dispel automaticamente atribuído a Media ou a outros Moves; não inventar limites.
+- **MP (D-263):** **todos os Moves diferentes de Tackle consomem MP; Tackle não consome MP**. Esta escolha **amplia e supera expressamente a limitação de elegibilidade a Moves mágicos/especiais da D-228**, mantendo a D-228 e a D-032 **como história documental**. Não atribuir **custos numéricos de MP** a Bite, Sand Attack, Dragon Rage, Media ou qualquer Move nem modificar custos de ATB/Burst. **Relação entre MP adicional e pagamento da ação inteira por Burst (D-033/D-063) ainda requer decisão de conciliação**, sem escolher um lado. Não estender essa cobrança para comandos que não sejam Moves.
+
+### 67.3 Restrições, conflitos e pendências preservados
+
+- **D-228 (M1-Q4A) versus M3-Q6D:** a regra anterior exigia MP apenas para Moves mágicos/especiais; **a regra posterior (D-263) prevalece no escopo**, abrangendo todos os Moves **exceto Tackle**, sem alterar por isso a natureza física/mágica de cada Move. Preservar integralmente os arquivos históricos sem apagá-los.
+- **D-229/D-230 (tooltip)** continuam válidas. D-259 **proíbe** adicionar uma **prévia numérica na seleção de alvos**; não interpretar isso como rejeição de números na tooltip de habilidade nem inventar um sistema alternativo de prévias.
+- **D-235:** nenhum comportamento de Move, VFX ou ficha pode depender de espécie/personagem, equipe, lado ou coordenadas fixas. **D-244–D-249:** estruturas de dano, tempos, alvos, efeitos, visual e Dispel permanecem aprovadas e complementadas, não revogadas.
+- **Dados pendentes:** dano-base, coeficientes STR/MAG, potência de fichas ainda não homologadas, custos de MP individual, classificação de Moves, velocidade de projétil, listas de Dispel, condições específicas e casos de combinação de efeitos; não inventar valores ou dados de espécie.
+- **Conflitos históricos gerais:** manter a divergência da reapresentação R60 sobre LUK frente às D-150/D-152/D-153 (GDD §12.13), D-203 sobre exclusão do odômetro do jogo principal, e a matriz ainda sem pares concretos de status incompatíveis das D-239/D-243/D-253/D-257.
+- **Escopo:** seis D individuais, índice, consolidado e GDD. **Nenhum código, ficha operacional, HUD, teste, IA, cena, asset ou VFX alterado; nenhum teste de gameplay executado.**
+

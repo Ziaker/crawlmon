@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.56 — Rodada 81 registrada em adendo rastreável (2026-11-04); histórico preservado.  
+> **Revisão:** 1.57 — Fichas de Moves M3: fórmula inicial, nenhuma prévia na seleção e MP obrigatório exceto Tackle (2026-11-04); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1748,6 +1748,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.56 | 2026-11-04 | Rodada 81: cada espécie conta uma vez na distribuição VIT/SPI nível 50 com variações individuais ±3 separadas; validar e indicar conjuntamente todas as causas aprovadas de bloqueio; registrar violações com IDs estruturados de Move, atacante, declaração, máximo e excedente; eliminar status perdedor por matriz aprovada sem restaurar. D-254–D-257. | Rodada 81 fechada / Rodada 82 proposta |
 
+| 1.57 | 2026-11-04 | Fichas de Moves M3: (base + escala STR/MAG) × potência; proibir prévia de dano em seleção; efeitos herdam alvos/facção salvo exceção; AGI não acelera automaticamente projéteis; Dispel remove todos elegíveis; todo Move exceto Tackle consome MP. D-258–D-263. | M3 fechada / M4 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2211,4 +2213,21 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos meramente ilustrativos:** dez indivíduos de uma espécie e um indivíduo de outra representam **uma observação de referência por espécie**, sem contaminar os tercis com variação ±3; ficha com prioridade obrigatória de status incompatíveis ausente e máximo condicional obrigatório ausente **indica as duas omissões na mesma validação**, antes de qualquer ação/custo; violação hipotética de máximo registra os campos Move/atacante/declaração/máximo/ocorrência com IDs estáveis sem executar o excedente; se status X/Y **futuramente** tiverem incompatibilidade e precedência aprovadas, o perdedor será removido/bloqueado e **não retornará** depois do vencedor. **Nenhuma entrada X/Y concreta foi aprovada.**
 
 **Pendências e conflitos:** não foram verificados valores VIT/SPI no nível 50, dados oficiais por espécie, limites de tercis, amostra, mitigação ou K (D-208/D-216/D-220/D-236/D-250). A política de validação restringe-se às causas de bloqueio já aprovadas (D-221/D-238/D-255), sem novos erros ou interface fixada. O registro estruturado não define tecnologia nem formato de serialização (D-242/D-252/D-256). A matriz segue sem pares/precedências aprovados (D-239/D-243/D-253/D-257); permanece pendente quando conferir a incompatibilidade em relação ao RNG e como agir com entrada ausente. D-095 mantém KO simultâneo, D-203 mantém odômetro fora do jogo principal, D-235 mantém Moves e VFX independentes de personagem e lado. A divergência histórica da Rodada 60 sobre LUK (GDD §12.13) continua sem resolução. **Somente documentação:** nenhum código, teste, ficha, Move, IA, cena, HUD, asset ou VFX alterado; nenhum teste de gameplay realizado.
+
+### 12.32 Fichas de Moves — Rodada M3: fórmula, alvos, projéteis, Dispel e abrangência de MP (revisão 1.57)
+
+> **2026-11-04.** O criador respondeu expressamente **1A, 2D, 3A, 4A, 5A e 6D**. As alternativas D são especificadas apenas pela sua observação literal: **“Tudo q não é tackle consome MP , não existe previa de dano em seleção e não deve existir, pare de inventar coisa que eu não pedi”**. Registros **D-258–D-263**, consolidados em **§67** de `docs/REGRAS_DO_JOGO.md`. D-001 mantém o GDD não normativo para combate; adendo histórico sem implementação.
+
+| Questão | Escolha | Regra aprovada | Decisão |
+|---|---|---|---|
+| M3-Q1 | **1A** | Q1A: aplicar (base + coeficiente STR/MAG × atributo) × potência antes de outros modificadores | [D-258](decisoes/D-258-m3-q1-formula-dano-base-escala-vezes-potencia.md) |
+| M3-Q2 | **2D** | Q2D: não existe nem deve existir prévia de dano durante a seleção de alvos; tooltip numérica D-230 preservada | [D-259](decisoes/D-259-m3-q2-sem-previa-dano-na-selecao-alvos.md) |
+| M3-Q3 | **3A** | Q3A: efeitos herdam seleção e facção padrão, salvo abrangência ou condição diferente expressamente declarada | [D-260](decisoes/D-260-m3-q3-efeitos-herdam-selecao-faccao-salvo-excecao.md) |
+| M3-Q4 | **4A** | Q4A: AGI não altera automaticamente velocidade de projétil; velocidade própria do Move, exceções só expressas | [D-261](decisoes/D-261-m3-q4-agi-nao-altera-velocidade-projeteis-sem-excecao.md) |
+| M3-Q5 | **5A** | Q5A: Dispel remove todos os efeitos elegíveis declarados na ficha, respeitando exceções | [D-262](decisoes/D-262-m3-q5-dispel-remove-todos-efeitos-elegiveis.md) |
+| M3-Q6 | **6D** | Q6D: todo Move exceto Tackle consome MP; amplia a D-228 histórica, valores por Move pendentes | [D-263](decisoes/D-263-m3-q6-todos-moves-exceto-tackle-consomem-mp.md) |
+
+**Delimitação e precedência:** a fórmula da D-258 define a parcela inicial ofensiva antes dos demais modificadores, preservando D-122/D-123/D-198/D-205; **não estabelece valores-base ou coeficientes oficiais**. D-259 veta **qualquer prévia de dano durante seleção de alvos**, mas não revoga a tooltip numérica e textual D-229/D-230 em seu contexto próprio. D-260 complementa a seleção/facção/abrangência de D-246 com **herança e exceções declaradas**; D-261 separa AGI de velocidade dos projéteis, preservando D-119/D-078 e exceções que venham a ser expressamente aprovadas. D-262 exige remover **todos os efeitos elegíveis que a ficha listar**, preservando exclusões da D-249; **não há Move concreto de Dispel definido**. D-263 estabelece **MP em todo Move exceto Tackle** e, neste aspecto, **supera expressamente a restrição a Moves mágicos/especiais de D-228**, preservando os registros históricos D-228/D-032. Os custos **individuais de MP não foram aprovados**, e a relação entre MP adicional e Burst pagar ação inteira (D-033/D-063) continua exigindo decisão específica; não escolher resposta tácita.
+
+**Limitações e histórico:** D-235 permanece obrigatória para independência de Move/VFX de personagem, equipe, lado e câmera fixa. D-244–D-249 permanecem intactas. Não assumir categorias de dano, números de MP, velocidades, faixas de STR/MAG, listas concretas de Dispel ou estruturas de código. D-203 mantém odômetro fora do jogo principal; divergência histórica de LUK da R60 (GDD §12.13) permanece sem conciliação; D-243/D-257 não homologam pares de status concretos. **Somente documentação: nenhum código, ficha, teste, HUD, IA, cena, asset, animação ou VFX modificado; nenhum teste de gameplay executado.**
 
