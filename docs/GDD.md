@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.51 — Rodada 77 registrada em adendo rastreável (2026-11-04); histórico preservado.  
+> **Revisão:** 1.52 — Rodada 78 registrada em adendo rastreável (2026-11-04); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1738,6 +1738,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.51 | 2026-11-04 | Rodada 77: propor faixas VIT/SPI por distribuição verificável e aprovar cortes antes da amostra; IA filtra Moves incompletos antes da escolha e sem custo; máximo explícito para ocorrências condicionais variáveis; chance final status 0%/100% sem RNG. D-231–D-234. | Rodada 77 fechada / Rodada 78 proposta |
 
+| 1.52 | 2026-11-04 | Rodada 78: propor tercis de VIT/SPI nível 50 separadamente, aprovando cortes concretos; IA pode considerar Tackle se nenhum Move válido e se elegível; bloquear confirmação de Move com plano sem máximo antes de debitar recursos/ação; exigir política aprovada para incompatibilidades entre status de Moves diferentes. D-236–D-239. | Rodada 78 fechada / Rodada 79 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2124,4 +2126,19 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos hipotéticos, não valores aprovados:** faixas baixa/média/alta de VIT e SPI exigem dados de nível 50 **reais e verificáveis**, com limiares aprovados antes da classificação; ficha com `Status A` e `Status B` incompatíveis sem prioridade não é elegível à escolha tática da IA; limite **hipotético** de três ocorrências condicionais permite reservar três índices na declaração, sem executar eventos que não ocorrerem; chance final de Poison 100% após modificadores só tem sucesso **se o alvo continuar elegível**, sem consumir RNG.
 
 **Compatibilidades e pendências:** D-212/D-216/D-220/D-224 preservam verificação de dados, amostra representativa física/mágica/mista e aprovação posterior; o K compartilhado de VIT/SPI continua sem número (D-201/D-204/D-208). D-215/D-217/D-221/D-225 exigem prioridade de status expressa e bloqueio sem gastar ação; D-232 filtra apenas esse caso na IA, sem criar fallback quando não houver Move válido. D-218/D-222/D-226 mantêm índices fixos e reservados, e D-233 declara plano incompleto sem máximo **sem aprovar bloqueio automático do Move por essa nova causa**. D-143/D-227/D-219/D-223 mantêm chance 0–100%, RNG exclusivo de status e sua ordem, com extremos 0%/100% sem sorteio (D-234). D-095 mantém empate por KO simultâneo e D-203 mantém odômetro fora do jogo principal. O conflito textual de escalas de LUK da Rodada 60 (§12.13) permanece **não resolvido**. A série M1 D-228–D-230 sobre MP e tooltips está **inalterada**. **Nenhum código, teste, ficha, Move, cena, asset ou VFX alterado; nenhum teste de gameplay realizado.**
+
+### 12.27 Rodada 78 — tercis defensivos, Tackle da IA, plano incompleto e prioridades entre Moves (revisão 1.52)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Decisões individuais **D-236 a D-239**, consolidadas em **§62** de `docs/REGRAS_DO_JOGO.md`. Registro histórico aditivo; **D-001 mantém o GDD não normativo para combate**. Preservar a série M1 D-228–D-230 e a regra posterior D-235 sobre independência de Moves e VFX, sem reescrevê-las.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R78-Q1 | **1A** | **Propor faixas baixas/médias/altas por tercis**, separadamente para **VIT e SPI no nível 50**, usando **distribuições verificadas**, e **submeter limites concretos à aprovação** antes de classificar a amostra | [D-236](decisoes/D-236-r78-q1-tercis-separados-vit-spi-faixas-para-aprovacao.md) |
+| R78-Q2 | **2A** | Se **nenhum Move válido da lista da IA** permanecer, **permitir considerar Tackle separadamente apenas se elegível**; caso contrário, reação permanece **pendente de outra regra** | [D-237](decisoes/D-237-r78-q2-ia-considerar-tackle-se-sem-moves-validos.md) |
+| R78-Q3 | **3A** | **Bloquear confirmação** de Move com plano de ocorrências condicionais incompleto por **falta de máximo explícito**, **antes de consumir ação ou recursos**, **identificando a omissão** | [D-238](decisoes/D-238-r78-q3-bloquear-move-plano-sem-maximo-antes-custos.md) |
+| R78-Q4 | **4A** | Exigir **política explícita de prioridade entre status declarados incompatíveis oriundos de Moves diferentes**, definida e **aprovada antes da resolução**, sem inferir prioridade das fichas isoladas | [D-239](decisoes/D-239-r78-q4-politica-explicita-status-incompativeis-moves-distintos.md) |
+
+**Exemplos ilustrativos, não regras extras:** se as distribuições VIT/SPI nível 50 verificadas forem disponíveis, propor os respectivos cortes por tercis e **aguardar aprovação numérica**; se a IA não possuir Moves válidos, poderá considerar **Tackle elegível**, sem que isso determine a reação quando Tackle também não estiver disponível; Move com máximo de ocorrências condicionais ausente não confirma ação nem debita ATB/Burst/MP; quando dois Moves hipotéticos produzirem status X/Y declarados incompatíveis, **não determinar vencedor** sem política de precedência **entre Moves** previamente aprovada.
+
+**Preservação e pendências:** D-216/D-220/D-224/D-231 continuam exigindo dados, cortes e amostra aprovados; valor numérico K permanece pendente (D-208). D-225/D-232 exigem filtragem/bloqueio sem custo, mas **não autorizam comportamento específico da IA sem Move/Tackle elegíveis**. D-218/D-222/D-226/D-233 mantêm plano inicial e índices reservados; exceder máximo não foi regulado. D-213/D-215/D-219/D-223/D-227/D-234 continuam válidas para status e RNG; a política entre Moves não tem forma nem prioridade concreta, e **nenhum par real de status foi declarado incompatível**. D-095 mantém empate por KO simultâneo, D-203 mantém odômetro fora do jogo principal, **D-235** mantém independência de Moves/VFX em relação a personagens e lados. A divergência histórica de LUK da Rodada 60 (§12.13) permanece **não resolvida**. **Somente documentação: nenhum código, teste, ficha, Move, IA, cena, asset ou VFX modificado; nenhum teste de gameplay realizado.**
 

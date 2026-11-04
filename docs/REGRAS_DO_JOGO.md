@@ -1893,3 +1893,34 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Conflitos históricos:** a diferença de escala de LUK na reapresentação R60-Q2/Q3 frente às D-150/D-152/D-153 continua registrada em GDD §12.13, **sem nova decisão**. D-203 mantém o odômetro fora do jogo principal, sem remover código.
 - **Escopo:** quatro novos D individuais, índice, seção consolidada e adendo histórico GDD. **Nenhum código, teste, Move, ficha, cena, asset ou VFX modificado; nenhum teste de gameplay realizado.**
 
+---
+
+## 62. Rodada 78 — tercis VIT/SPI, alternativa Tackle da IA, plano sem máximo e status entre Moves
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Novos registros **D-236 a D-239**. Adendo documental, sem alterar o histórico ou código. Preservar **D-235** (Moves/VFX independentes de personagem e lado) e D-228–D-230 (MP e tooltips).
+
+### 62.1 Regras aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-236](decisoes/D-236-r78-q1-tercis-separados-vit-spi-faixas-para-aprovacao.md) | **1A** | **Propor limites baixo/médio/alto por tercis** de distribuições **verificáveis de VIT e SPI no nível 50**, **separadamente**, submetendo os **números concretos à aprovação** antes de classificar a amostra |
+| [D-237](decisoes/D-237-r78-q2-ia-considerar-tackle-se-sem-moves-validos.md) | **2A** | Se não houver Move válido na lista da IA, **permitir considerar Tackle separadamente somente se estiver elegível**; caso contrário, **reação permanece pendente** |
+| [D-238](decisoes/D-238-r78-q3-bloquear-move-plano-sem-maximo-antes-custos.md) | **3A** | **Bloquear a confirmação** do Move com plano de ocorrências condicionais **sem máximo explícito**, **antes de consumir ação ou recursos**, identificando a **omissão exata** |
+| [D-239](decisoes/D-239-r78-q4-politica-explicita-status-incompativeis-moves-distintos.md) | **4A** | Exigir **política explícita de prioridade, aprovada pelo criador**, para resolver **status declarados incompatíveis oriundos de Moves distintos**, **sem inferir prioridade das fichas isoladas** |
+
+### 62.2 Exemplos, limites e compatibilidades
+
+- **Tercis de VIT/SPI (D-236):** após obter **dados reais e verificáveis no nível 50** (D-212/D-216), propor **separadamente** tercis e cortes de VIT e SPI, apresentando **limites numéricos para aprovação antes de classificar espécies** (D-231). **Não existe ainda proposta de valores, universo amostral, cortes aprovados ou classificação concluída.** A composição da amostra precisa de aprovação posterior (D-220), e K único/mitigação-alvo seguem pendentes (D-201/D-204/D-208).
+- **IA/Tackle (D-237):** quatro Moves abstratos da IA são excluídos por prioridade de status incompatíveis ausente (D-232); quando **nenhum candidato válido** restar, a IA **pode considerar Tackle como ação separada**, **somente se Tackle estiver elegível**. Se não estiver, a reação **não foi decidida** — não presumir espera ou perda da ação. A simples exclusão não gasta ação/ATB/Burst/MP, conforme D-225.
+- **Plano condicional (D-238):** Move hipotético prevê número variável de ocorrências mas **não define máximo** (D-233). A **confirmação é bloqueada antes do débito de ação, ATB, Burst ou MP**, com indicação precisa de **qual máximo obrigatório está faltando**. D-218/D-222/D-226 mantêm o plano determinístico e índices reservados na declaração. A decisão **não** define o filtro da IA para essa segunda causa de incompletude nem a mensagem/UI do aviso.
+- **Incompatibilidade entre Moves (D-239):** um Move hipotético aplica X, outro aplica Y, e **uma regra futura** declara X/Y incompatíveis. **Não escolher vencedor** sem política de precedência entre Moves **expressa e aprovada**. Não usar como política implícita ID do atacante, ordem de declaração da ficha ou consumo de RNG. Preservar D-213/D-215/D-217 para os casos já definidos, D-219/D-223/D-227/D-234 para RNG de status e D-095 para KO simultâneo.
+
+### 62.3 Pendências, conflitos e escopo
+
+- **Atributos:** faltam dados VIT/SPI nível 50, seleção/verificação das distribuições, convenção de empates nos tercis, números dos limites e aprovação da amostra. Não homologar valores defensivos ou K nesta etapa.
+- **IA:** quando **nenhum Move válido nem Tackle elegível** existir, **não há reação aprovada**. O filtro de IA para Move com plano condicional sem máximo continua pendente.
+- **Eventos:** valores de máximos por Move, comportamento ao ultrapassá-los e formato do plano permanecem abertos; o bloqueio sem máximo é novo requisito documental, não implementação técnica.
+- **Status:** política concreta para incompatibilidades **entre Moves diferentes**, sua configuração e reação diante de ausência da política **não foram aprovadas**. Não assumir incompatibilidades específicas. Probabilidades finais exatas de 0%/100% seguem D-234.
+- **Conflitos históricos:** preservar a divergência textual da reapresentação R60-Q2/Q3 frente a D-150/D-152/D-153 no GDD §12.13; não mudar LUK. D-203 mantém odômetro fora do jogo principal, sem remover protótipo. **D-235 permanece em vigor** como regra de independência de Moves/VFX, inclusive protótipos, sem qualquer alteração nesta rodada.
+- **Somente documentação:** quatro documentos D novos, índice, consolidado e adendo histórico GDD. **Nenhum código, teste, ficha de Move, IA, cena, asset ou VFX modificado; nenhum teste de gameplay executado.**
+

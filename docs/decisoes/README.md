@@ -286,6 +286,11 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-234](D-234-r77-q4-chance-status-extrema-sem-consumir-rng.md) | Combate / R77 | Q4A: chance final de status exatamente 0% falha e 100% tem sucesso, sem consumir RNG; demais condições preservadas | Aprovada; não implementada |
 | [D-235](D-235-moves-e-vfx-independentes-de-personagem-e-lado.md) | Processo / Combate / VFX | Moves e efeitos independentes de personagem, de lado e de posição (obrigatório, inclusive em protótipos) | Em vigor; regra também em `AGENTS.md` (seção 7) |
 
+| [D-236](D-236-r78-q1-tercis-separados-vit-spi-faixas-para-aprovacao.md) | Atributos / R78 | Q1A: propor faixas baixa/média/alta por tercis das distribuições verificáveis de VIT/SPI nível 50, separadamente; cortes sujeitos à aprovação | Aprovada; valores concretos não homologados |
+| [D-237](D-237-r78-q2-ia-considerar-tackle-se-sem-moves-validos.md) | Combate / IA / R78 | Q2A: sem Move válido após filtragem, IA pode considerar Tackle separadamente se elegível; caso contrário, reação pendente | Aprovada; não implementada |
+| [D-238](D-238-r78-q3-bloquear-move-plano-sem-maximo-antes-custos.md) | Combate / R78 | Q3A: bloquear confirmação de Move com plano condicional sem máximo explícito; indicar omissão antes de consumir ação ou recursos | Aprovada; não implementada |
+| [D-239](D-239-r78-q4-politica-explicita-status-incompativeis-moves-distintos.md) | Combate / status / R78 | Q4A: exigir política expressa e aprovada antes de resolver status incompatíveis provenientes de Moves diferentes; sem inferir prioridades isoladas | Aprovada; política concreta pendente |
+
 > **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.
 
 > **Histórico/precedência R70:** o arquivo [D-048 de HP rolante](D-048-rolling-hp-mother3-odometro.md) registra um **teste/protótipo histórico**, não uma regra vigente do jogo principal após [D-203](D-203-r70-q4d-odometro-descartado-jogo-principal.md). **Não confundir** com o outro arquivo [D-048 de recompensas AoE](D-048-r40-q8-atb-aoe-unico.md), que não foi revogado.
