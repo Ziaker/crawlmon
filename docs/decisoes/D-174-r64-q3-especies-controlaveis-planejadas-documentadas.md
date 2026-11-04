@@ -21,3 +21,7 @@
 
 - Identificar evidência documental das espécies planejadas, espécies implementadas, tratamento de formas/variantes e disponibilidade de valores confiáveis de AGI-base no nível 50. Caso faltem dados, expor a lacuna, sem inventar números.
 - Apenas documentação; sem mudanças em arquivos de espécies, fichas, código ou testes.
+
+## Complemento posterior — Rodada 65 / D-177 e D-178 (2026-11-03)
+
+**D-177 (R65-Q1C):** contar formas alternativas separadamente **somente quando diretamente controláveis e possuidoras de AGI-base própria distinta**, sem duplicar automaticamente variantes cosméticas idênticas. **D-178 (R65-Q2A):** **não finalizar a mediana** se faltar AGI-base **verificável no nível 50** para alguma entrada elegível, incluindo espécies planejadas oficialmente documentadas. Não suprimir entradas por falta de dados nem inventar AGIs. D-162 continua exigindo validação do resultado antes de implementar. Histórico preservado; sem código.

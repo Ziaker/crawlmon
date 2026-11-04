@@ -1382,3 +1382,51 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 
 - **Somente documentação:** criados D-172–D-176; complementadas aditivamente D-167/D-168/D-169/D-171; atualizados índice, este consolidado e adendo do GDD.
 - **Sem alterações de código, teste, cena, arquivo de espécie, Move, asset ou VFX**. Nenhuma mediana real de AGI foi calculada, nenhuma medição real do ATB foi realizada e nenhuma referência numérica foi validada para implementação.
+
+
+---
+
+## 46. Rodada 65 — formas alternativas, dados completos de AGI, mediana exata, medições controladas e posições lógicas
+
+> **2026-11-03.** O criador aprovou expressamente **1C, 2A, 3A, 4A e 5A**, sem observações adicionais. Registros individuais **D-177 a D-181**. Este complemento é aditivo: **mantém os históricos** das rodadas anteriores, inclusive a versão divergente da Rodada 62 e sua conciliação na seção 43, sem reescrever suas declarações originais. D-061: registrar decisões antes de implementar; **nenhum código está autorizado nesta atividade**.
+
+### 46.1 Regras expressamente aprovadas
+
+| Registro | Escolha | Regra |
+|---|---|---|
+| [D-177](decisoes/D-177-r65-q1-formas-alternativas-agi-propria-distinta.md) | **1C** | **Contar formas alternativas separadamente somente se controláveis e com AGI-base própria distinta** |
+| [D-178](decisoes/D-178-r65-q2-nao-finalizar-mediana-sem-dados-completos.md) | **2A** | **Não finalizar a mediana** enquanto faltar AGI-base **verificável no nível 50** para alguma espécie ou entrada elegível |
+| [D-179](decisoes/D-179-r65-q3-mediana-fracionaria-exata-sem-arredondar.md) | **3A** | **Preservar a mediana fracionária exata**, sem arredondamento ou truncamento |
+| [D-180](decisoes/D-180-r65-q4-atb-medicao-controlada-sem-interferencias.md) | **4A** | **Medir os dois intervalos de ATB 3→5 e 0→5 em condições controladas**, com regeneração natural ativa e **sem buffs, ações, recompensas instantâneas ou pausas** |
+| [D-181](decisoes/D-181-r65-q5-distancia-posicoes-logicas-plano-horizontal.md) | **5A** | **Medir proximidade entre as posições lógicas de referência dos combatentes projetadas no plano horizontal** |
+
+### 46.2 Mediana de AGI dos trajetos — critérios cumulativos
+
+1. **Universo** (D-167/D-174): todas as espécies diretamente controláveis pelo jogador, incluindo as evoluções elegíveis e as espécies **oficialmente previstas na documentação vigente** para controle direto, ainda que não implementadas.
+2. **Formas alternativas** (D-177): só acrescentar uma observação separada quando a forma alternativa **puder ser controlada e tiver AGI-base própria distinta**. Não duplicar uma aparência alternativa meramente cosmética com o mesmo valor de AGI-base. Não remover a espécie-base elegível.
+3. **Valor comparado** (D-168/D-172): **AGI-base no nível 50**, sem Nature, variação individual ou buffs **somente para a amostra estatística**. Os modificadores existentes do jogo não são removidos.
+4. **Completude** (D-178): se **qualquer entrada elegível** não tiver AGI-base **verificável no nível 50**, **não finalizar a mediana** nem declarar uma mediana de subconjunto como se fosse a de todas as espécies elegíveis.
+5. **Mediana** (D-173/D-179): ordenar AGIs, tomar o valor central para amostra ímpar ou **a média dos dois centrais para amostra par**; **preservar exatamente o resultado fracionário sem arredondar**. **Exemplo puramente hipotético:** valores centrais `42` e `43` → `42,5`, nunca `42` ou `43`. **42,5 não foi aprovado como parâmetro de jogo**.
+6. **Homologação obrigatória** (D-162): após obter dados completos e calcular o valor real, **apresentar a referência numérica ao criador para validação expressa antes de qualquer implementação**. Completar amostra não substitui sua aprovação.
+
+**Pendentes:** identificar a lista real de espécies e formas elegíveis e as AGIs-base do nível 50 a partir dos dados atuais; resolver lacunas documentais sem suposição. Não foi calculada mediana real nesta rodada.
+
+### 46.3 Calibração da regeneração natural ATB — comparação controlada
+
+- **D-169/D-175/D-180:** medir **3→5 e 0→5 blocos** sob **condições controladas**, mantendo regeneração natural habilitada, **sem buffs, ações, ganhos instantâneos ou pausas** que contaminem a medição.
+- Os dois intervalos servem à **calibração com o ritmo atual** de ATB, preservando D-031 (início 3/5), D-126 e D-145 (calibração sem mudança silenciosa, referências ATB e trajetória potencialmente distintas). Preparar cenário com ATB 0 não aprova mudar o início da batalha.
+- **D-163/D-164/D-170:** o tempo de preenchimento natural é inversamente proporcional à AGI efetiva, com piso numérico 1 **apenas no cálculo**; AGI efetiva é relida em cada atualização de regeneração, sem alterar retroativamente a barra preenchida.
+- **Exemplo ilustrativo, não medição:** a 1 bloco/s de regeneração natural hipotética, 3→5 levaria 2 segundos e 0→5 levaria 5 segundos. Nenhum desses tempos foi observado no jogo.
+- **D-169:** a **referência ATB numérica só poderá ser proposta** após avaliar dados reais e **deverá ser apresentada ao criador antes de implementar**. Não foi realizada nenhuma medição ou calibração nesta documentação.
+
+### 46.4 Proximidade de retarget durante WINDUP
+
+- **D-108/D-176/D-181:** para escolher o novo inimigo vivo mais próximo em WINDUP, medir a **distância entre as posições lógicas de referência do atacante e dos candidatos, projetadas no plano horizontal da arena**. Diferenças de altura e extensão das colisões não mudam o critério geométrico aprovado.
+- **D-171:** são empatados com a **menor distância horizontal** os candidatos dentro da tolerância **inclusiva de até 0,01 unidade da arena**; **D-166:** sortear **reproduzivelmente entre os empatados**, não usar ID fixo.
+- **Exemplo hipotético:** posições lógicas projetadas a 4,000 e 4,006 unidades horizontais participam do sorteio; a 4,020 unidade não participa quando a menor é 4,000. Preservar **D-155** (um recálculo da duração por cada troca efetiva ainda em WINDUP) e **D-113** (sem redirecionamento depois de iniciada a investida).
+- **Pendente:** verificar no código onde reside a posição lógica e quais eixos são usados no plano horizontal; definir seed e consumo reproduzível do RNG. A decisão **não** altera colisão física, projéteis ou alcance dos Moves.
+
+### 46.5 Validação e limites desta rodada
+
+- Criar somente **D-177–D-181**, notas históricas aditivas em **D-173/D-174/D-175/D-176**, índice de decisões, este consolidado e adendo histórico do GDD.
+- **Não** alterar código, testes, arquivos de dados, VFX, cenas ou configurações. **Não** inventar resultado numérico de AGI ou de ATB; ambas referências numéricas continuam sem homologação pelo criador.

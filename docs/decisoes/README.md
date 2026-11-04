@@ -211,4 +211,10 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-175](D-175-r64-q4-calibracao-atb-intervalos-3a5-e-0a5.md) | ATB / R64 | Q4C: medir regeneração natural ATB nos intervalos 3→5 e 0→5 blocos e comparar com ritmo atual | Aprovada; medições e referência numérica pendentes |
 | [D-176](D-176-r64-q5-distancia-horizontal-plano-arena.md) | Combate / R64 | Q5B: proximidade do retarget calculada pela distância horizontal na arena, ignorando diferença de altura | Aprovada; origem geométrica pendente |
 
+| [D-177](D-177-r65-q1-formas-alternativas-agi-propria-distinta.md) | AGI / R65 | Q1C: formas alternativas só entram separadamente quando controláveis e com AGI-base própria distinta | Aprovada; sem amostra calculada ou código |
+| [D-178](D-178-r65-q2-nao-finalizar-mediana-sem-dados-completos.md) | AGI / R65 | Q2A: não finalizar mediana enquanto faltar AGI-base verificável no nível 50 para qualquer espécie elegível | Aprovada; sem mediana validada |
+| [D-179](D-179-r65-q3-mediana-fracionaria-exata-sem-arredondar.md) | AGI / R65 | Q3A: preservar valor fracionário exato da mediana, sem arredondamento | Aprovada; resultado real pendente |
+| [D-180](D-180-r65-q4-atb-medicao-controlada-sem-interferencias.md) | ATB / R65 | Q4A: medir 3→5 e 0→5 em condições controladas, regeneração natural ativa, sem buffs, ações, ganhos instantâneos ou pausas | Aprovada; medições não executadas |
+| [D-181](D-181-r65-q5-distancia-posicoes-logicas-plano-horizontal.md) | Combate / R65 | Q5A: medir distância horizontal entre posições lógicas de referência dos combatentes | Aprovada; sem implementação |
+
 > **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.

@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.35 — Rodada 64 registrada em adendo rastreável (2026-11-03); histórico preservado.  
+> **Revisão:** 1.36 — Rodada 65 registrada em adendo rastreável (2026-11-03); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1706,6 +1706,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.35 | 2026-11-03 | Rodada 64: AGI-base ao nível 50, média dos dois centrais na mediana par, espécies controláveis oficialmente planejadas, comparação ATB 3→5 e 0→5, proximidade horizontal; D-172–D-176. | Rodada 64 fechada / Rodada 65 proposta |
 
+| 1.36 | 2026-11-03 | Rodada 65: formas alternativas só com AGI-base própria distinta; mediana apenas com dados completos; precisão fracionária; medição ATB controlada 3→5 e 0→5; distância horizontal entre posições lógicas; D-177–D-181. | Rodada 65 fechada / Rodada 66 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -1841,3 +1843,20 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos apenas ilustrativos:** AGIs ordenadas fictícias `20, 30, 50, 60` → mediana 40 (não é referência real aprovada). Se a regeneração hipotética for 1 bloco/s, de 3→5 levaria 2 s e de 0→5 levaria 5 s (não são medições do jogo). Um inimigo a 5 unidades horizontais e 3 unidades acima é avaliado por **5 unidades** de distância para seleção de alvo (não 5,83 em 3D). A tolerância 0,01 de D-171 e o sorteio reproduzível D-166 permanecem vigentes.
 
 **Pendentes:** verificar as espécies controláveis e oficialmente previstas, obter valores reais de AGI-base no nível 50, calcular mediana e **solicitar validação do número antes de implementar** (D-162); realizar duas medições de ATB e **submeter valor de referência à aprovação** (D-169); definir referência geométrica horizontal e detalhes de RNG; política para fichas/AGI ausentes e mediana fracionária. **Nenhum código ou teste de gameplay modificado ou executado nesta atualização.**
+
+
+### 12.10 Rodada 65 — formas alternativas, mediana exata, completude, ATB controlado e posições lógicas (revisão 1.36)
+
+> **2026-11-03.** As escolhas **1C, 2A, 3A, 4A e 5A** foram expressamente aprovadas, sem observações. Registros **D-177 a D-181** e consolidação na **seção 46** de `docs/REGRAS_DO_JOGO.md`. Esta é uma atualização **aditiva**, preservando todas as seções anteriores e a divergência histórica da Rodada 62. Por **D-001**, este adendo não torna o GDD fonte normativa para combate.
+
+| Questão | Escolha | Regra documentada | Decisão |
+|---|---|---|---|
+| R65-Q1 | **1C** | Contar formas alternativas separadamente **somente quando forem controláveis e possuírem AGI-base própria distinta** | [D-177](decisoes/D-177-r65-q1-formas-alternativas-agi-propria-distinta.md) |
+| R65-Q2 | **2A** | **Não finalizar mediana** se faltar AGI-base verificável **no nível 50** para qualquer espécie elegível | [D-178](decisoes/D-178-r65-q2-nao-finalizar-mediana-sem-dados-completos.md) |
+| R65-Q3 | **3A** | **Preservar valor fracionário exato da mediana**, sem arredondamento | [D-179](decisoes/D-179-r65-q3-mediana-fracionaria-exata-sem-arredondar.md) |
+| R65-Q4 | **4A** | Medir **3→5 e 0→5 blocos de ATB em condições controladas**, regeneração natural ativa, **sem buffs, ações, recompensas instantâneas ou pausas** | [D-180](decisoes/D-180-r65-q4-atb-medicao-controlada-sem-interferencias.md) |
+| R65-Q5 | **5A** | Medir a **distância horizontal entre posições lógicas de referência dos combatentes**, não centros ou superfícies de colisão | [D-181](decisoes/D-181-r65-q5-distancia-posicoes-logicas-plano-horizontal.md) |
+
+**Exemplos ilustrativos, não parâmetros aprovados:** forma-base controlável com AGI-base hipotética 40 e forma alternativa também controlável com AGI-base própria 65 → duas entradas; variante cosmética com AGI-base idêntica não aumenta automaticamente a amostra. Se os dois valores centrais forem 42 e 43, a mediana é **42,5** e permanece fracionária. Sob regeneração fictícia de 1 bloco/s, 3→5 demoraria 2 s e 0→5, 5 s; isso **não foi medido**. Com distâncias lógicas horizontais 4,000 e 4,006, há empate segundo a tolerância inclusiva 0,01 de D-171.
+
+**Não resolvido:** lista real e AGI-base nível 50 de todas as espécies/formas elegíveis, completude da amostra, validação do valor da mediana para trajetos (D-162); medição real dos intervalos naturais de ATB e validação da referência ATB (D-169); identificação dos pontos lógicos de posição no código e política de RNG reproduzível. **Nenhum código, ficha, cena, teste ou VFX modificado; nenhuma medição executada.**

@@ -21,3 +21,7 @@
 
 - Definir condições reproduzíveis da medição, fontes e equivalência de velocidade atual com AGI, interrupções/pausas, repetição e análise das medições; **nenhuma medição foi realizada nesta atividade**.
 - Somente documentação; não criar testes, scripts ou alterações de código sem autorização específica.
+
+## Complemento posterior — Rodada 65 / D-180 (2026-11-03)
+
+**D-180 (R65-Q4A):** medir **ambos os intervalos 3→5 e 0→5** sob **condições controladas**, com regeneração natural ativa e **sem buffs, ações, recompensas instantâneas ou pausas**. O protocolo não autoriza alterar permanentemente o ATB inicial de 3/5 nem inventar resultados de medição. Valor de referência numérica de ATB só poderá ser implementado após avaliação e apresentação ao criador (D-169). Histórico preservado; sem código ou testes.

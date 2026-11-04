@@ -21,3 +21,7 @@
 
 - Estabelecer pontos de referência por combatente e inspecionar o plano horizontal efetivo no Godot, além de algoritmo/seed e ordem dos sorteios reproduzíveis.
 - Somente documentação; nenhum código, cena, teste ou VFX alterado.
+
+## Complemento posterior — Rodada 65 / D-181 (2026-11-03)
+
+**D-181 (R65-Q5A)** fixa o ponto de referência de proximidade: medir **entre posições lógicas de referência dos combatentes projetadas no plano horizontal**, **não** entre centros ou superfícies de colisão. Permanecem a tolerância de empate **até 0,01 unidade da arena, inclusive** (D-171) e o sorteio reproduzível entre empatados (D-166). Os eixos e propriedades concretas da posição lógica precisam ser conferidos no código, sem alterar arquitetura por presunção. Histórico preservado; sem código.
