@@ -36,3 +36,13 @@
 ## 6. Antes de dizer "pronto"
 
 Releia as decisões aplicáveis e confirme, uma a uma, que nenhuma foi violada. Diga o que **não** foi verificado.
+
+## 7. Moves e efeitos são independentes de personagem, de lado e de posição (OBRIGATÓRIO, inclusive em protótipos)
+
+Fonte: D-235. Esta regra vale para **qualquer** trabalho com Moves, VFX, animação, câmera, UI e testes, e também para protótipos, laboratórios e salas de debug.
+
+1. **Todo Move pode ser usado por qualquer personagem**, de qualquer time (aliado ou inimigo), em qualquer lado do campo (perto ou longe da câmera) e contra qualquer alvo. O mesmo Move equipado em dois personagens tem de funcionar igual. Não existe "move de um personagem só".
+2. **Nada pode depender de um personagem, de um time ou de um lado**: nome, espécie, modelo, `is_player`, "o jogador fica aqui e o inimigo ali", direção fixa da câmera, posições ou coordenadas fixas (inclusive as de protótipos HTML) são proibidos. Derive tudo do atacante e do alvo reais: eixo atacante→alvo, altura, raio e centro medidos do modelo, distância e escala da câmera.
+3. **O comportamento é por `move_id`**, nunca por personagem. Nomes e arquivos com o nome de um personagem (por exemplo "Abra") são só rótulos históricos.
+4. **O inimigo distante também usa o mesmo Move** e o efeito tem de aparecer certo do lado dele, com o alvo perto da câmera ou longe dela.
+5. **Antes de dizer "pronto"**, teste o Move com: (a) outro atacante que o tenha ou possa tê-lo, (b) o lado espelhado (atacante inimigo e distante, alvo aliado e próximo), (c) alvos de tamanhos diferentes. Diga o que **não** foi testado.

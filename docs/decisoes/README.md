@@ -284,6 +284,7 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-232](D-232-r77-q2-ia-excluir-moves-incompletos-antes-selecao.md) | Combate / R77 | Q2A: excluir Moves com incompatibilidade sem prioridade da lista de candidatos da IA antes da seleção tática, sem consumir ação ou recursos | Aprovada; não implementada |
 | [D-233](D-233-r77-q3-limite-maximo-explicito-ocorrencias-condicionais.md) | Combate / R77 | Q3A: Move de ocorrências condicionais variáveis exige máximo explícito para reservar índices na declaração; plano fica incompleto sem limite | Aprovada; máximos específicos pendentes |
 | [D-234](D-234-r77-q4-chance-status-extrema-sem-consumir-rng.md) | Combate / R77 | Q4A: chance final de status exatamente 0% falha e 100% tem sucesso, sem consumir RNG; demais condições preservadas | Aprovada; não implementada |
+| [D-235](D-235-moves-e-vfx-independentes-de-personagem-e-lado.md) | Processo / Combate / VFX | Moves e efeitos independentes de personagem, de lado e de posição (obrigatório, inclusive em protótipos) | Em vigor; regra também em `AGENTS.md` (seção 7) |
 
 > **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.
 
