@@ -910,3 +910,33 @@ Semântica adotada (proposta do agente, não aprovada pelo criador): REPLACE int
 Valores experimentais (ajustáveis, sem valor de aceitação): `sample_count` 128, `base_length` 1,0, `max_samples` 100000, `duration` 3,0 s.
 
 **Verificado (Godot 4.7.2, headless):** 133 verificações, 0 falhas; 4 mutações no código (peso do OFFSET, limiar do MASK, inversão de espaço, checagem de ramo inexistente) derrubaram os testes correspondentes; log sem erro/aviso. **Medido:** 9 camadas, 128→384 amostras, ≈14 ms por avaliação em GDScript puro (≈0,8 ms por camada só de compositor, mesmo com comportamento vazio), sem renderização; sem orçamento aprovado, não é requisito nem garantia. **Não verificado:** renderer GL Compatibility, qualquer aparência, desempenho em outro hardware, os comportamentos reais (dublês de teste foram usados), regressão da suíte de combate (nenhum arquivo do combate foi alterado por esta etapa).
+
+## 21. Etapa 2 implementada — 2026-11-04 (D-172)
+
+Escopo: **M01–M13** (trajetórias, campos, deformações, propagação). M14–M15 (Etapa 3), M19–M20 (Etapa 4) e **M16–M18 (sem etapa definida na §16; aguardam o criador)** não foram implementados. Contratos da Etapa 1 inalterados. Código em `scripts/motion_composer/behaviors/` (um arquivo por comportamento), auxiliares em `motion_profile.gd`, registro em `MotionBehaviors.register_all(catalog)`. Testes: `tests/motion_composer/test_etapa2_comportamentos.gd`.
+
+```bash
+godot --headless --path . --script res://tests/motion_composer/test_etapa2_comportamentos.gd
+```
+
+Todas as fórmulas, nomes, unidades, padrões e limites abaixo são **propostas do agente** (não aprovadas pelo criador). `u` = coordenada longitudinal de repouso (0..1); ângulos em graus; "região" = [centro ± extensão/2] em `u` com borda suave `softness`.
+
+| ID | Comportamento | Operação | Fórmula resumida (parâmetros principais) |
+|---|---|---|---|
+| M01 | Espiral helicoidal | REPLACE | `(r·cosθ, r·sinθ, u·passo·voltas)`, `r = raio + evolução·u`, `θ = ±2π·voltas·u + fase + giro·t` |
+| M02 | Zigue-zague | OFFSET | `amplitude · mistura(triangular, seno)(frequência·z + fase − velocidade·t)` na direção lateral `axis_deg` |
+| M03 | Serpentina | OFFSET | `amplitude·sen(2π(z − v·t)/λ + fase) + ½·curvatura·z²` |
+| M04 | Bézier dinâmica | REPLACE | cúbica `p0..p3`; `p1` e `p2` derivam `drift·sen(2π·Hz·t)`; `progress` limita o trecho |
+| M05 | Vórtice | OFFSET | gira o componente perpendicular ao eixo por `ângulo·(1 − d/R)^decaimento` |
+| M06 | Convergência | OFFSET | `(alvo − p)·atração·(1 − d/alcance)^curva·rampa_temporal` |
+| M07 | Turbulência | OFFSET | ruído de valor 3D+tempo por hash inteiro; cada componente em ±intensidade |
+| M08 | Torção progressiva | DEFORM/REPLACE | gira (x,y) por `ângulo·janela(u)·rampa_temporal·frente(u,t)` |
+| M09 | Curvatura | DEFORM/REPLACE | gira o ponto em torno de eixo no plano XY por `ângulo·rampa(u)` |
+| M10 | Alongamento | DEFORM/REPLACE | `z += (f−1)·extensão·L·rampa(u)`; monotônico (fator ≥ 1) |
+| M11 | Compressão | DEFORM/REPLACE | `z = zc + (z − zc)(1 − k·janela)`; `radial` estreita x,y; monotônico (k ≤ 0,95) |
+| M12 | Pulso viajante | OFFSET / MULTIPLY_ATTRIBUTE | gaussiana assimétrica (frente curta, cauda `tail`×) em `c(t) = início + v·t`; laço opcional |
+| M13 | Onda radial | OFFSET / MULTIPLY_ATTRIBUTE | `exp(−((d − v·t)/largura)²)·(1 − R/alcance)^dissipação` no plano da normal |
+
+Convenções do contrato aplicadas: OFFSET devolve deslocamento em `position`; MULTIPLY_ATTRIBUTE devolve multiplicadores (M12/M13 fixam opacidade em 1); geradores ignoram a posição anterior e preservam atributos; nada decide dano, colisão ou câmera; nenhum usa `TIME`, relógio próprio ou aleatoriedade externa.
+
+**Verificado (Godot 4.7.2, headless):** 124 verificações, 0 falhas no teste da Etapa 2 e 133 no da Etapa 1. Cada comportamento: parâmetros padrão, todo o domínio no mínimo e no máximo (em dois instantes) sem valores não finitos, repetibilidade, intensidade 0,5 = ponto médio, pausa, ids independentes do tempo, assinaturas espaciais distintas nos 78 pares e nenhum nó criado. Fórmulas conferidas por valores analíticos. 13 mutações no código (uma por comportamento); uma sobreviveu (M11, borda suave), o teste foi reforçado e a mutação passou a falhar. **Medido:** de 1,9 a 4,1 ms por avaliação de 1 camada com 128 amostras, exceto M07 (≈8 ms), em GDScript puro e máquina ocupada; sem orçamento aprovado, não é requisito. **Não verificado:** aparência (nenhuma representação visual existe), GL Compatibility, hardware-alvo, qualidade artística das curvas e dos padrões, e a equivalência com os oito estudos helicoidais.
