@@ -33,4 +33,4 @@ Mesmas da especificação (§17): durações, curvas padrão, limites de interfa
 
 ## Estado
 
-Etapa 1 implementada e testada em execução headless (130 verificações, 0 falhas); ver [§20 da especificação](../vfx/MOTION_COMPOSER_V1.md). Aparência e desempenho não avaliados. Sem commit nem push.
+Etapa 1 implementada e testada em execução headless (133 verificações, 0 falhas); ver [§20 da especificação](../vfx/MOTION_COMPOSER_V1.md). Aparência e desempenho não avaliados. Sem commit nem push.

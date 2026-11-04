@@ -194,14 +194,16 @@ func _apply_layer(l: MotionLayer, b: MotionBehavior, samples: Array[MotionSample
 			"a camada produziria %d amostras (limite %d)" % [projected, max_samples], l.id))
 		return null
 
-	# Espaço LOCAL é a identidade: evita as cópias de ida e volta (a entrada nunca é alterada pelo contrato).
+	# O comportamento sempre recebe CÓPIAS: se violar o contrato e alterar a entrada, o fluxo anterior
+	# continua íntegro e a camada pode ser descartada sem contaminar o resultado. No espaço LOCAL
+	# (identidade) só é preciso copiar, sem a conversão de ida e volta.
 	var local_space := l.space == Space.LOCAL
 	var frames: Array[Transform3D] = []
 	var subset: Array[MotionSample] = []
 	for i in sel:
 		if local_space:
 			frames.append(Transform3D.IDENTITY)
-			subset.append(samples[i])
+			subset.append(samples[i].duplicate_sample())
 		else:
 			var f := MotionSpace.frame(l.space, ctx, samples[i])
 			frames.append(f)

@@ -178,6 +178,37 @@ class FakeGhost extends MotionBehavior:
 		return out
 
 
+## Viola o contrato: altera a ENTRADA e devolve valores não finitos.
+class FakeMutNaN extends MotionBehavior:
+	func _init() -> void:
+		id = &"T_MUTNAN"
+		kind = Kind.MODIFIER
+		accepted_operations = [Op.REPLACE]
+		params = []
+
+	func apply(samples: Array[MotionSample], _p: Dictionary, _ctx: MotionContext, _lt: float, _lid: StringName) -> Array[MotionSample]:
+		for s in samples:
+			s.position.x = 99.0
+			s.width = NAN
+		return samples
+
+
+## Viola o contrato: altera a ENTRADA mas devolve cópias válidas (anteriores à mutação).
+class FakeMutSilent extends MotionBehavior:
+	func _init() -> void:
+		id = &"T_MUTSILENT"
+		kind = Kind.ENVELOPE
+		accepted_operations = [Op.MULTIPLY_ATTRIBUTE]
+		params = []
+
+	func apply(samples: Array[MotionSample], _p: Dictionary, _ctx: MotionContext, _lt: float, _lid: StringName) -> Array[MotionSample]:
+		var out: Array[MotionSample] = []
+		for s in samples:
+			out.append(s.duplicate_sample())
+			s.position.x = 99.0
+		return out
+
+
 class FakeDupId extends MotionBehavior:
 	func _init() -> void:
 		id = &"T_DUPID"
@@ -219,7 +250,8 @@ func vnear(a: Vector3, b: Vector3, eps: float = 1e-4) -> bool:
 func make_catalog() -> MotionCatalog:
 	var cat := MotionCatalog.new()
 	for b in [FakeShift.new(), FakeSwirl.new(), FakeWave.new(), FakeWidth.new(), FakeHide.new(),
-			FakeNoise.new(), FakeSplit.new(), FakeBad.new(), FakeGhost.new(), FakeDupId.new()]:
+			FakeNoise.new(), FakeSplit.new(), FakeBad.new(), FakeGhost.new(), FakeDupId.new(),
+			FakeMutNaN.new(), FakeMutSilent.new()]:
 		var d := cat.register(b)
 		if not d.is_empty():
 			print("  catálogo de teste falhou: ", d[0].message)
@@ -850,6 +882,19 @@ func t_guards() -> void:
 	var ca := make_comp()
 	ca.add_layer(layer(&"A", &"T_SHIFT", Op.REPLACE, {"amount": 1.0}))
 	ok(same_positions(positions(rb), positions(ca.evaluate(cat, ctx_at(ca, 0.0)))), "camada com saída inválida não contamina o resultado")
+
+	# Comportamento que viola "não alterar a entrada" não pode corromper o fluxo (nem no espaço LOCAL).
+	var cm := make_comp()
+	cm.add_layer(layer(&"A", &"T_SHIFT", Op.REPLACE, {"amount": 1.0}))
+	cm.add_layer(layer(&"M", &"T_MUTNAN", Op.REPLACE))
+	var rm := cm.evaluate(cat, ctx_at(cm, 0.0))
+	ok(has_code(rm.diagnostics, &"layer_nonfinite"), "mutação + saída inválida: camada diagnosticada")
+	ok(same_positions(positions(rm), positions(ca.evaluate(cat, ctx_at(ca, 0.0)))) and near(rm.samples[2].width, 1.0),
+		"mutação da entrada não corrompe o fluxo quando a camada é ignorada")
+	var cs := make_comp()
+	cs.add_layer(layer(&"S", &"T_MUTSILENT", Op.MULTIPLY_ATTRIBUTE))
+	ok(same_positions(positions(cs.evaluate(cat, ctx_at(cs, 0.0))), positions(make_comp().evaluate(cat, ctx_at(cs, 0.0)))),
+		"mutação silenciosa da entrada não vaza para o resultado")
 
 	var cd := make_comp(4)
 	cd.add_layer(layer(&"D", &"T_DUPID", Op.BRANCH))
