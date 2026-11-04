@@ -38,7 +38,8 @@ P-07 (orçamento), P-08 (aparência e disposição da interface), P-09 (composi�
 - Fatia 1 (Pontos): "estao otimos".
 - Fatia 2 (Fitas): "ok, oque deve prosseguir agora, aprovo ambos" (os dois vídeos de Fitas; a ordem prevista é Fragmentos, Fumaça/billboards, A/B, estudos individuais).
 - Fatia 3 (Fragmentos): "prossiga".
+- Fatia 4 (Fumaça/billboards), primeira versão: "Não gostei n parece fumaça nem dust" (**rejeitada**; refeita no estilo de fumaça e poeira do jogo, D-041).
 
 ## Estado
 
-Fatia 1 **aprovada pelo criador** ("estao otimos"). Fatia 2 (Fitas) **aprovada**. Fatia 3 (Fragmentos) **aprovada**. Fatia 4 (Fumaça/billboards) entregue e mostrada em vídeo; **aguarda a aprovação visual** antes da fatia seguinte (ver §29). Histórico: fatia 1 entregue e mostrada ao criador (relógio, toggle D-042, presets D-045, representação Pontos com shader, laboratório mínimo; 96 verificações novas, 553 no total). **Aguardando a aprovação visual do criador** antes da fatia seguinte (ver §26 da especificação).
+Fatia 1 **aprovada pelo criador** ("estao otimos"). Fatia 2 (Fitas) **aprovada**. Fatia 3 (Fragmentos) **aprovada**. Fatia 4 (Fumaça/billboards): primeira versão rejeitada; segunda versão (poeira bege, baforadas grandes que crescem, sobem e se abrem) entregue e mostrada em vídeo; **aguarda a aprovação visual** antes da fatia seguinte (ver §29). Histórico: fatia 1 entregue e mostrada ao criador (relógio, toggle D-042, presets D-045, representação Pontos com shader, laboratório mínimo; 96 verificações novas, 553 no total). **Aguardando a aprovação visual do criador** antes da fatia seguinte (ver §26 da especificação).

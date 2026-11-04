@@ -57,48 +57,70 @@ func _init() -> void:
 
 
 func t_puffs() -> void:
-	print("\n-- Parâmetros de cada puff --")
+	print("
+-- Parâmetros de cada baforada --")
 	var s := MotionSample.make_rest(0.5, 21, 1.0)
-	var a := MotionSmokeView.puff_params(s, 0.12, 0.8)
-	ok(a == MotionSmokeView.puff_params(s, 0.12, 0.8), "determinístico por elemento")
+	var a := MotionSmokeView.puff_params(s, 0.35, 0.9, 1.6)
+	ok(a == MotionSmokeView.puff_params(s, 0.35, 0.9, 1.6), "determinístico por elemento")
 	var rolls := {}
 	var min_size := 9.0
 	var max_size := 0.0
-	var frames_ok := true
+	var seen_frames := {}
 	for id in 300:
 		var sm := MotionSample.make_rest(0.0, id, 1.0)
-		var p := MotionSmokeView.puff_params(sm, 0.12, 0.8)
+		var p := MotionSmokeView.puff_params(sm, 0.35, 0.9, 1.6)
 		rolls[snappedf(p["roll"], 0.01)] = true
 		min_size = minf(min_size, p["size"])
 		max_size = maxf(max_size, p["size"])
-		if p["frame"] < 3 or p["frame"] > 6:
-			frames_ok = false
+		seen_frames[p["frame"]] = true
 	ok(rolls.size() > 150, "giro (roll) varia de elemento para elemento (%d valores distintos em 300)" % rolls.size())
-	ok(min_size >= 0.12 * 0.8 - 1e-6 and max_size <= 0.12 * 1.2 + 1e-6 and max_size - min_size > 0.015, "tamanho entre 80 %% e 120 %% do base (%.3f a %.3f)" % [min_size, max_size])
-	ok(frames_ok, "amostras atuais usam um quadro de corpo da fumaça (3 a 6)")
+	ok(min_size >= 0.35 * 0.8 - 1e-6 and max_size <= 0.35 * 1.2 + 1e-6 and max_size - min_size > 0.04, "tamanho entre 80 %% e 120 %% do base (%.3f a %.3f)" % [min_size, max_size])
+	ok(seen_frames.size() == 4 and seen_frames.has(0) and seen_frames.has(3), "as 4 variações do atlas são usadas, todas entre 0 e 3")
+	var aged := MotionSample.make_rest(0.5, 21, 1.0)
+	aged.age = 0.5
+	ok(MotionSmokeView.puff_params(aged, 0.35, 0.9, 1.6)["frame"] == a["frame"] and MotionSmokeView.puff_params(aged, 0.35, 0.9, 1.6)["roll"] == a["roll"], "variação e giro não mudam com a idade (a baforada não pisca)")
+	# crescimento com a idade (o jogo usa 1,4 a 1,6 ao fim da vida)
+	var g0: float = MotionSmokeView.puff_params(s, 0.35, 0.9, 1.6)["size"]
+	aged.age = 0.9
+	ok(near(MotionSmokeView.puff_params(aged, 0.35, 0.9, 1.6)["size"], g0 * 1.6), "ao fim da vida a baforada tem 1,6× o tamanho inicial")
+	aged.age = 0.45
+	ok(near(MotionSmokeView.puff_params(aged, 0.35, 0.9, 1.6)["size"], g0 * 1.3), "no meio da vida, 1,3×")
+	aged.age = 5.0
+	ok(near(MotionSmokeView.puff_params(aged, 0.35, 0.9, 1.6)["size"], g0 * 1.6), "além da vida o tamanho fica no final")
+	ok(near(MotionSmokeView.puff_params(aged, 0.35, 0.9, 1.0)["size"], g0), "crescimento 1: tamanho constante")
 	var w := MotionSample.make_rest(0.5, 21, 1.0)
 	w.width = 2.0
-	ok(near(MotionSmokeView.puff_params(w, 0.12, 0.8)["size"], a["size"] * 2.0), "a largura da amostra multiplica o tamanho")
+	ok(near(MotionSmokeView.puff_params(w, 0.35, 0.9, 1.6)["size"], g0 * 2.0), "a largura da amostra multiplica o tamanho")
 	w.width = 0.0
-	ok(MotionSmokeView.puff_params(w, 0.12, 0.8)["size"] == 0.0, "largura 0: tamanho 0")
-	# o quadro acompanha a idade: nasce pequeno, enche e dissipa (a folha tem o ciclo de vida de uma baforada)
-	var frames: Array[int] = []
-	for age in [0.05, 0.2, 0.4, 0.6, 0.8, 2.0]:
-		var sm := MotionSample.make_rest(0.5, 21, 1.0)
-		sm.age = age
-		frames.append(MotionSmokeView.puff_params(sm, 0.12, 0.8)["frame"])
-	ok(frames == [1, 4, 8, 11, 15, 15], "quadro pela idade: 0,05 s → 1, 0,2 → 4, 0,4 → 8, 0,6 → 11, 0,8 → 15, além da vida fica no último (%s)" % [frames])
-	var mono := true
-	for i in range(1, frames.size()):
-		if frames[i] < frames[i - 1]:
-			mono = false
-	ok(mono, "o quadro nunca recua com a idade")
-	var sm0 := MotionSample.make_rest(0.5, 21, 1.0)
-	sm0.age = 0.3
-	var other := MotionSample.make_rest(0.5, 99, 1.0)
-	other.age = 0.3
-	ok(MotionSmokeView.puff_params(sm0, 0.12, 0.8)["frame"] == MotionSmokeView.puff_params(other, 0.12, 0.8)["frame"], "o quadro de uma baforada em andamento depende só da idade")
-	ok(MotionSmokeView.puff_params(sm0, 0.12, 0.4)["frame"] > MotionSmokeView.puff_params(sm0, 0.12, 0.8)["frame"], "vida menor, quadro mais adiantado")
+	ok(MotionSmokeView.puff_params(w, 0.35, 0.9, 1.6)["size"] == 0.0, "largura 0: tamanho 0")
+
+	print("
+-- Subida e abertura pela idade --")
+	var o := MotionSample.make_rest(0.5, 21, 1.0)
+	ok(MotionSmokeView.puff_offset(o, 0.5, 0.5) == Vector3.ZERO, "amostra atual (idade 0): sem deslocamento")
+	o.age = 0.4
+	var o1 := MotionSmokeView.puff_offset(o, 0.5, 0.5)
+	o.age = 0.8
+	var o2 := MotionSmokeView.puff_offset(o, 0.5, 0.5)
+	ok(o2.distance_to(o1 * 2.0) < 1e-5, "proporcional à idade (linear)")
+	var only_rise := MotionSmokeView.puff_offset(o, 0.5, 0.0)
+	ok(only_rise.is_equal_approx(Vector3(0, 0.4, 0)), "sem abertura, só sobe (rise × idade)")
+	ok(near((o2 - only_rise).length(), 0.5 * 0.8), "a abertura tem comprimento abertura × idade")
+	ok(MotionSmokeView.puff_offset(o, 0.0, 0.0) == Vector3.ZERO, "subida 0 e abertura 0: a vista é fiel às posições")
+	var dirs := {}
+	var up_ok := true
+	for id in 200:
+		var sm := MotionSample.make_rest(0.0, id, 1.0)
+		sm.age = 1.0
+		var d := MotionSmokeView.puff_offset(sm, 0.0, 1.0)
+		dirs[snappedf(d.x, 0.05)] = true
+		if d.y < cos(deg_to_rad(70.0)) - 1e-4 or not near(d.length(), 1.0, 1e-4):
+			up_ok = false
+	ok(up_ok, "direção de abertura unitária, dentro de um cone de 70° em torno da vertical")
+	ok(dirs.size() > 15, "a direção varia por elemento (%d valores distintos de x em 200)" % dirs.size())
+	var rep := MotionSample.make_rest(0.0, 5, 1.0)
+	rep.age = 0.7
+	ok(MotionSmokeView.puff_offset(rep, 0.5, 0.5) == MotionSmokeView.puff_offset(rep, 0.5, 0.5), "determinístico")
 
 
 func t_order() -> void:
@@ -134,9 +156,29 @@ func t_view() -> void:
 	var mat := (mmi.multimesh.mesh as QuadMesh).material as ShaderMaterial
 	ok(mat != null and mat.shader.resource_path.ends_with(".gdshader") and mat.shader.code.contains("shader_type spatial"), "ShaderMaterial com .gdshader (spatial), sem HTML")
 	ok(mat.shader.code.contains("blend_mix") and not mat.shader.code.contains("blend_add"), "mistura alfa (blend_mix), sem depender de adição luminosa (§19.5)")
-	var tex := mat.get_shader_parameter("sheet_tex") as Texture2D
-	ok(tex != null and tex.resource_path == "res://assets/vfx/flipbook_smoke.png", "reaproveita a folha de fumaça que o jogo já tem (assets/vfx/flipbook_smoke.png), sem construtores com temporizador")
-	ok(mat.get_shader_parameter("h_frames") == 4 and mat.get_shader_parameter("v_frames") == 4, "folha 4 × 4 (16 quadros)")
+	var tex := mat.get_shader_parameter("puff_tex") as Texture2D
+	ok(tex != null and tex == MotionSmokeView.make_puff_atlas() and tex.get_width() == 128 and tex.get_height() == 128, "atlas de baforadas 2 × 2 (128 px) gerado por ruído suave, no estilo do jogo, sem temporizadores")
+	ok(mat.get_shader_parameter("h_frames") == 2 and mat.get_shader_parameter("v_frames") == 2, "atlas 2 × 2 (4 variações)")
+	var img := tex.get_image()
+	var cell_sum := []
+	for v in 4:
+		var acc := 0.0
+		for y in 64:
+			for x in 64:
+				acc += img.get_pixel((v % 2) * 64 + x, (v / 2) * 64 + y).a
+		cell_sum.append(acc)
+	var distinct := true
+	for i in 4:
+		for j in range(i + 1, 4):
+			if absf(cell_sum[i] - cell_sum[j]) < 1.0:
+				distinct = false
+	ok(distinct, "as 4 variações do atlas são diferentes entre si")
+	ok(img.get_pixel(0, 0).a == 0.0 and img.get_pixel(127, 0).a == 0.0 and img.get_pixel(0, 127).a == 0.0, "cantos transparentes: a baforada não tem borda dura nem sangra no vizinho")
+	var peak := 0.0
+	for y in range(20, 44):
+		for x in range(20, 44):
+			peak = maxf(peak, img.get_pixel(x, y).a)
+	ok(peak > 0.5, "o miolo da baforada é denso (alfa máximo %.2f)" % peak)
 	var hidden := trail_samples(1.0)
 	hidden[0].visible = false
 	hidden[1].opacity = 0.0
@@ -148,7 +190,7 @@ func t_view() -> void:
 	var drawn_pos := PackedVector3Array()
 	for smp in s:
 		if smp.visible and smp.opacity > 0.001 and smp.width > 0.0:
-			drawn_pos.append(smp.position)
+			drawn_pos.append(smp.position + MotionSmokeView.puff_offset(smp, view.puff_rise, view.puff_spread))
 	view.show_samples(s, Vector3(0, 0, 4))
 	ok(view.last_order == MotionSmokeView.back_to_front(drawn_pos, Vector3(0, 0, 4)), "a vista desenha na ordem do mais distante ao mais próximo da câmera")
 	view.show_samples(s, Vector3.INF)

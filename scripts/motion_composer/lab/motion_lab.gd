@@ -135,13 +135,13 @@ func _default_composition() -> void:
 ## e se dissipam, com um tremor de turbulência (M07). Não é um Move.
 func _smoke_composition() -> void:
 	var c := session.composition
-	c.sample_count = 10
+	c.sample_count = 6
 	c.duration = 3.0
 	c.seed = 31
 	var specs := [
-		[&"cabeca", &"M01", MotionTypes.Op.REPLACE, {"radius": 0.05, "pitch": 0.04, "turns": 1.0, "spin_deg_s": 240.0}],
-		[&"fumaca", &"M19", MotionTypes.Op.PERSIST, {"duration": 1.3, "sample_interval": 0.065, "world_space": true, "fade_curve": 1.4, "width_start": 0.6, "width_end": 2.6}],
-		[&"tremor", &"M07", MotionTypes.Op.OFFSET, {"intensity": 0.05, "scale": 0.5, "time_hz": 1.2}],
+		[&"cabeca", &"M01", MotionTypes.Op.REPLACE, {"radius": 0.06, "pitch": 0.05, "turns": 1.0, "spin_deg_s": 240.0}],
+		[&"fumaca", &"M19", MotionTypes.Op.PERSIST, {"duration": 1.0, "sample_interval": 0.05, "world_space": true, "fade_curve": 1.2, "width_start": 1.0, "width_end": 1.0}],
+		[&"tremor", &"M07", MotionTypes.Op.OFFSET, {"intensity": 0.04, "scale": 0.6, "time_hz": 1.0}],
 	]
 	for sp in specs:
 		var l := MotionLayer.new()
@@ -152,13 +152,11 @@ func _smoke_composition() -> void:
 		c.add_layer(l)
 	session.emitter_mode = MotionLabSession.Emitter.LINE
 	_emitter_opt.select(MotionLabSession.Emitter.LINE)
-	smoke.puff_size = 0.2
-	smoke.puff_life = 1.3
 	_selected = &"fumaca"
-	_target = Vector3(-1.0, 0.0, 0.0)
-	_dist = 3.4
-	_yaw = 1.2
-	_pitch = 0.25
+	_target = Vector3(-0.8, 0.3, 0.0)
+	_dist = 3.6
+	_yaw = 0.35
+	_pitch = 0.1
 	_apply_camera()
 
 
@@ -184,6 +182,10 @@ func _shards_composition() -> void:
 		l.op = sp[2]
 		l.params = sp[3]
 		c.add_layer(l)
+	smoke.puff_size = 0.22
+	smoke.puff_growth = 1.5
+	smoke.puff_rise = 0.2
+	smoke.puff_spread = 0.0
 	_selected = &"explosao"
 	_target = Vector3(0.0, 0.0, 0.75)
 	_dist = 3.0
@@ -465,22 +467,11 @@ func _build_ui() -> void:
 	frag_slider.value = fragments.fragment_size
 	frag_slider.value_changed.connect(func(v: float) -> void: fragments.fragment_size = v; _dirty = true)
 	box.add_child(frag_slider)
-	box.add_child(_small("Tamanho do puff de fumaça (m)"))
-	var puff_slider := HSlider.new()
-	puff_slider.min_value = 0.03
-	puff_slider.max_value = 0.5
-	puff_slider.step = 0.005
-	puff_slider.value = smoke.puff_size
-	puff_slider.value_changed.connect(func(v: float) -> void: smoke.puff_size = v; _dirty = true)
-	box.add_child(puff_slider)
-	box.add_child(_small("Vida do puff (s): idade em que chega ao último quadro"))
-	var life_slider := HSlider.new()
-	life_slider.min_value = 0.1
-	life_slider.max_value = 3.0
-	life_slider.step = 0.05
-	life_slider.value = smoke.puff_life
-	life_slider.value_changed.connect(func(v: float) -> void: smoke.puff_life = v; _dirty = true)
-	box.add_child(life_slider)
+	_prop_slider(box, "Fumaça: tamanho da baforada (m)", 0.1, 0.8, 0.01, smoke.puff_size, func(v: float) -> void: smoke.puff_size = v)
+	_prop_slider(box, "Fumaça: vida (s) até o tamanho final", 0.1, 3.0, 0.05, smoke.puff_life, func(v: float) -> void: smoke.puff_life = v)
+	_prop_slider(box, "Fumaça: crescimento ao fim da vida (×)", 1.0, 3.0, 0.05, smoke.puff_growth, func(v: float) -> void: smoke.puff_growth = v)
+	_prop_slider(box, "Fumaça: subida (m/s)", 0.0, 2.0, 0.05, smoke.puff_rise, func(v: float) -> void: smoke.puff_rise = v)
+	_prop_slider(box, "Fumaça: abertura (m/s)", 0.0, 2.0, 0.05, smoke.puff_spread, func(v: float) -> void: smoke.puff_spread = v)
 	box.add_child(_small("Largura da fita (m)"))
 	_width_slider = HSlider.new()
 	_width_slider.min_value = 0.005
@@ -537,6 +528,19 @@ func _make_panel(layer: CanvasLayer, on_left: bool) -> VBoxContainer:
 	box.add_theme_constant_override("separation", 5)
 	scroll.add_child(box)
 	return box
+
+
+func _prop_slider(box: VBoxContainer, label: String, lo: float, hi: float, step: float, value: float, setter: Callable) -> void:
+	box.add_child(_small(label))
+	var sl := HSlider.new()
+	sl.min_value = lo
+	sl.max_value = hi
+	sl.step = step
+	sl.value = value
+	sl.value_changed.connect(func(v: float) -> void:
+		setter.call(v)
+		_dirty = true)
+	box.add_child(sl)
 
 
 func _title(t: String) -> Label:

@@ -1,16 +1,15 @@
 shader_type spatial;
-// Motion Composer — representação "Fumaça/billboards" (D-044), modo neutro (§8.3). Usa a folha de fumaça
-// do jogo (assets/vfx/flipbook_smoke.png, 4 x 4). Diferente de shaders/flipbook.gdshader, que soma luz aditiva
-// no render, esta mistura por alfa (blend_mix): a fumaça se lê sem depender de adição luminosa (§19.5).
-// Por instância (MultiMesh): COLOR = matiz/brilho/opacidade; INSTANCE_CUSTOM.x = giro (rad),
-// INSTANCE_CUSTOM.y = quadro da folha. Sem tempo próprio: o quadro vem da idade da amostra.
+// Motion Composer — representação "Fumaça/billboards" (D-044), modo neutro (§8.3). Baforada de ruído suave
+// (atlas 2 x 2 gerado por MotionSmokeView.make_puff_atlas, o mesmo método do VfxLib.smoke_tex do jogo).
+// Mistura por alfa, sem somar luz (§19.5). Por instância (MultiMesh): COLOR = cor/brilho/opacidade;
+// INSTANCE_CUSTOM.x = giro (rad), INSTANCE_CUSTOM.y = variação 0..3 do atlas. Sem tempo próprio.
 render_mode unshaded, blend_mix, cull_disabled, depth_draw_never;
 
-uniform sampler2D sheet_tex : source_color, filter_linear_mipmap, repeat_disable;
-uniform int h_frames = 4;
-uniform int v_frames = 4;
-// Opacidade máxima de um puff (a folha já é translúcida).
-uniform float max_alpha : hint_range(0.0, 1.0) = 0.9;
+uniform sampler2D puff_tex : source_color, filter_linear, repeat_disable;
+uniform int h_frames = 2;
+uniform int v_frames = 2;
+// Opacidade máxima de uma baforada: várias se acumulam e dão volume.
+uniform float max_alpha : hint_range(0.0, 1.0) = 0.5;
 
 varying float v_frame;
 
@@ -31,12 +30,15 @@ void fragment() {
 	int total = max(h_frames * v_frames, 1);
 	int frame = clamp(int(floor(v_frame + 0.5)), 0, total - 1);
 	vec2 cell = vec2(1.0 / float(h_frames), 1.0 / float(v_frames));
-	vec2 uv = (UV + vec2(float(frame % h_frames), float(frame / h_frames))) * cell;
-	vec4 tex = texture(sheet_tex, uv);
-	float a = tex.a * COLOR.a * max_alpha;
-	if (a < 0.01) {
+	// Recuo de meio texel por borda: o filtro linear não sangra para a baforada vizinha do atlas.
+	vec2 inner = clamp(UV, vec2(0.01), vec2(0.99));
+	vec2 uv = (inner + vec2(float(frame % h_frames), float(frame / h_frames))) * cell;
+	float t = texture(puff_tex, uv).a;
+	float a = t * COLOR.a * max_alpha;
+	if (a < 0.005) {
 		discard;
 	}
-	ALBEDO = COLOR.rgb * (0.45 + 0.9 * tex.r);
+	// Centro mais claro, borda mais escura: dá corpo à baforada sem iluminação da cena.
+	ALBEDO = COLOR.rgb * (0.72 + 0.34 * t);
 	ALPHA = a;
 }
