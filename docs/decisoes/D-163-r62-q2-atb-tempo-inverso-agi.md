@@ -21,3 +21,7 @@
 
 - Ainda não foi escolhido valor de AGI de referência ATB, política exata de leitura/atualização da AGI durante preenchimento, precisão ou arredondamento.
 - A D-161 da versão divergente permanece histórica; nenhum código, teste ou recurso foi alterado.
+
+## Complemento posterior — Rodada 63 / D-169 e D-170 (2026-11-03)
+
+**D-169 (R63-Q3A):** obter a **referência numérica de AGI para ATB** pela **calibração do ritmo existente** do jogo e **apresentar o valor ao criador antes de implementar**; ainda não houve medição ou validação. **D-170 (R63-Q4A):** **reavaliar a AGI efetiva a cada atualização da regeneração natural ATB**, sem recálculo retroativo do progresso já acumulado, mantendo a proporcionalidade inversa de tempo desta D-163 e o piso numérico da D-164. Nenhum código ou teste alterado.

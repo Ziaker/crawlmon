@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.33 — Rodada 62 conciliada por escolha expressa prevalente do criador (2026-11-03); histórico preservado.  
+> **Revisão:** 1.34 — Rodada 63 registrada em adendo rastreável (2026-11-03); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1702,6 +1702,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.33 | 2026-11-03 | Rodada 62 conciliada: D-162–D-166 prevalecem sobre D-157–D-161, com referências históricas preservadas. Mediana AGI sujeita a validação, ATB inverso, piso 1, TRAVEL sem WINDUP e desempate por sorteio reproduzível. | Rodada 62 conciliada / Rodada 63 proposta |
 
+| 1.34 | 2026-11-03 | Rodada 63: amostra de espécies controláveis e AGI-base em nível comum para mediana, calibração de ATB pelo ritmo existente, AGI dinâmica por atualização de ATB e tolerância 0,01 da arena no desempate; D-167–D-171. | Rodada 63 fechada / Rodada 64 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -1803,3 +1805,20 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos apenas explicativos:** uma lista fictícia de AGIs 20, 30, 40, 50, 60 tem mediana 40, **não aprovada**; dobrar AGI positiva reduz à metade o tempo de preenchimento da mesma quantidade natural de ATB; AGI 45 na confirmação e 60 na entrada TRAVEL sem WINDUP usa 60 para calcular duração; alvos igualmente próximos participam de sorteio reproduzível. **Sem código ou testes de gameplay.**
 
 **Pendências:** composição da mediana e sua validação, referência numérica ATB, detalhes de calibração, igualdade geométrica de distâncias, seed/ordem de RNG e ordenação fina de eventos simultâneos.
+
+
+### 12.8 Rodada 63 — definição da amostra AGI, calibração ATB e tolerância de empate (revisão 1.34)
+
+> **2026-11-03.** O criador aprovou expressamente **1B, 2A, 3A, 4A e 5B**, sem observações adicionais. Decisões individuais **D-167 a D-171** e consolidação em **docs/REGRAS_DO_JOGO.md, seção 44**. Esta atualização é aditiva e preserva integralmente o histórico da versão divergente da Rodada 62 nas seções 12.6/12.7; em combate, D-001 mantém a precedência das decisões do criador e do consolidado.
+
+| Questão | Escolha | Regra vigente | Registro |
+|---|---|---|---|
+| R63-Q1 | **1B** | A mediana de AGI dos trajetos considera **todas as espécies diretamente controláveis pelo jogador**, **inclusive evoluções elegíveis**, não apenas iniciais | [D-167](decisoes/D-167-r63-q1-mediana-todas-especies-controlaveis.md) |
+| R63-Q2 | **2A** | Usar **AGI-base de cada espécie em nível comum** sem Nature, variação individual ou buffs; **nível ainda por decidir** | [D-168](decisoes/D-168-r63-q2-agi-base-nivel-comum-sem-modificadores.md) |
+| R63-Q3 | **3A** | Definir a **referência ATB** pela **calibração do ritmo existente**, apresentando o valor para aprovação **antes de implementar** | [D-169](decisoes/D-169-r63-q3-referencia-atb-calibrar-ritmo-existente.md) |
+| R63-Q4 | **4A** | Consultar **AGI efetiva a cada atualização da regeneração natural do ATB**, mantendo o progresso acumulado | [D-170](decisoes/D-170-r63-q4-agi-atualizada-a-cada-tick-regeneracao-atb.md) |
+| R63-Q5 | **5B** | Considerar empate de proximidade entre candidatos com **diferença de distâncias até 0,01 unidade da arena**, inclusive 0,01; sorteio reproduzível da D-166 preservado | [D-171](decisoes/D-171-r63-q5-tolerancia-empate-distancia-001-arena.md) |
+
+**Exemplos ilustrativos, não novas especificações:** se uma espécie inicial e sua evolução forem ambas controláveis, entram ambas na mediana; AGI-base hipotética 35 em um nível comum ainda não aprovado continua 35 para a mediana, mesmo que Nature/variação alterem um indivíduo. ATB com 2 blocos já acumulados usa AGI 20 nas atualizações anteriores e AGI 40 nas seguintes após um buff válido, sem modificar os blocos anteriores. Alvos a 4,000 e 4,006 unidades são considerados empatados para o sorteio; outro a 4,020 não é.
+
+**Pendências expressas:** o **nível comum de comparação**, a identificação das espécies controláveis e suas AGIs-base efetivas, o cálculo da mediana, a **validação do valor numérico de referência de trajetos antes de implementar**, a medição/calibração e **validação da referência ATB**, além da métrica geométrica concreta, seed e ordem de consumo de RNG. O exemplo de 0,01 usa unidades espaciais da arena, não metros físicos por suposição. **Nenhum código ou teste de gameplay foi alterado ou executado nesta atualização.**

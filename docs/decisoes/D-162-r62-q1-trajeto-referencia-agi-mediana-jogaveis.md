@@ -20,3 +20,7 @@
 
 - Definir conjunto de espécies jogáveis, estágio/nível e atributo-base comparável, inclusão de Nature e variações individuais e tratamento do conjunto com número par de espécies. Calcular e validar posteriormente a referência concreta.
 - Somente documentação; nenhum código, ficha, teste, cena ou VFX alterado.
+
+## Complemento posterior — Rodada 63 / D-167 e D-168 (2026-11-03)
+
+**D-167 (R63-Q1B):** o conjunto da mediana inclui **todas as espécies que podem ser controladas diretamente pelo jogador, inclusive formas evoluídas elegíveis**, não apenas iniciais ou espécies exclusivas da IA. **D-168 (R63-Q2A):** considerar **AGI-base de cada espécie no mesmo nível de referência**, sem Nature, variação individual ou buffs. **O nível de referência continua pendente**; nenhuma lista, mediana ou referência numérica foi calculada/aprovada. O valor encontrado ainda deverá ser **validado pelo criador antes de qualquer implementação**, como exige esta D-162. Preservado o histórico; sem código.

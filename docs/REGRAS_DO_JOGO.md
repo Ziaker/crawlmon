@@ -1291,3 +1291,49 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - Valor numérico de referência da AGI para ATB, calibração do ritmo, precisão/arredondamento e amostragem de AGI durante regeneração;
 - Tolerância geométrica para empate, seed e consumo reproduzível de RNG; precedências finas de eventos simultâneos;
 - D-001 mantida: **o GDD não é fonte normativa de combate**. Escopo documental: cinco novos D, cinco notas históricas, índice, consolidado e GDD. **Nenhum código, Move, asset, cena, VFX ou teste alterado.**
+
+
+---
+
+## 44. Rodada 63 — amostra da mediana de AGI, calibração ATB e tolerância de proximidade
+
+> **2026-11-03.** Decisões expressas do criador: **1B, 2A, 3A, 4A e 5B**, sem observações adicionais. Arquivos individuais **D-167 a D-171**. O histórico divergente da Rodada 62 (seções 42 e 43) permanece preservado; D-162 a D-166 continuam vigentes, agora complementadas. **Documentação apenas, sem implementação**.
+
+### 44.1 Matriz das decisões aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-167](decisoes/D-167-r63-q1-mediana-todas-especies-controlaveis.md) | **1B** | A amostra da mediana de AGI inclui **todas as espécies diretamente controláveis pelo jogador**, **inclusive evoluções elegíveis** |
+| [D-168](decisoes/D-168-r63-q2-agi-base-nivel-comum-sem-modificadores.md) | **2A** | Para cada espécie usar **AGI-base no mesmo nível de referência**, **sem Nature, variação individual ou buffs**; nível ainda indefinido |
+| [D-169](decisoes/D-169-r63-q3-referencia-atb-calibrar-ritmo-existente.md) | **3A** | Determinar a referência numérica de AGI para ATB pela **calibração do ritmo existente do jogo** e **apresentar o valor antes de implementar** |
+| [D-170](decisoes/D-170-r63-q4-agi-atualizada-a-cada-tick-regeneracao-atb.md) | **4A** | **Reavaliar a AGI efetiva em cada atualização da regeneração natural do ATB**, respeitando pausas, valores já acumulados e piso de cálculo |
+| [D-171](decisoes/D-171-r63-q5-tolerancia-empate-distancia-001-arena.md) | **5B** | Considerar **empate** no retarget quando a **diferença de distâncias for até 0,01 unidade da arena, inclusive exatamente 0,01** |
+
+### 44.2 Espécies e atributos comparáveis para a mediana (D-162/D-167/D-168)
+
+- O critério “espécies jogáveis” em D-162 significa **todas as espécies que o jogador pode controlar diretamente**, incluindo **formas evoluídas elegíveis**; não somente iniciais nem espécies exclusivas de controle da IA.
+- Cada espécie da amostra contribui com sua **AGI-base em um mesmo nível de referência para todas**, excluindo **Nature, variação individual e buffs** apenas do **cálculo da mediana**. Esses mecanismos continuam existentes no combate/progressão em seus próprios escopos.
+- **Pendente expressamente:** escolher o **nível comum**; verificar lista e AGI-base das espécies elegíveis no repositório, lidar com variantes e mediana de conjunto par, e então **apresentar o resultado numérico ao criador para validação antes da implementação** (D-162).
+- **Exemplo hipotético:** espécie A e sua evolução ambas controláveis entram na amostra; em determinado nível comum ainda não aprovado, uma AGI-base de 35 poderia ser usada no cálculo mesmo que um indivíduo modificado apresentasse 36. **Nenhuma espécie, número ou nível do exemplo é parâmetro oficial.**
+
+### 44.3 Calibração e atualização do ATB (D-126/D-145/D-163/D-164/D-169/D-170)
+
+- A referência numérica de **AGI para ATB** deve ser derivada de **calibração do ritmo efetivamente existente**, com **valor apresentado para aprovação antes da implementação**. Isso **não** aprova AGI 50, não exige equivalência à mediana de trajeto nem autoriza a alteração do ritmo existente por suposição.
+- **D-163 preservada:** para a mesma quantidade de ATB natural, o tempo é inversamente proporcional à AGI efetiva; a taxa de preenchimento é diretamente proporcional. **D-164:** utilizar `max(1, AGI_efetiva)` exclusivamente para cálculo se AGI for zero ou negativa.
+- **D-170:** em **cada atualização da regeneração natural de ATB**, consultar AGI efetiva novamente; buffs/debuffs modificam as taxas das próximas atualizações habilitadas, sem recálculo retroativo dos blocos já preenchidos. Preservar pausas/bloqueios e ganhos instantâneos.
+- **Exemplo ilustrativo:** ATB tem 2 blocos acumulados com AGI 20; um buff eleva AGI a 40. Mantêm-se os 2 blocos e a regeneração subsequente usa 40 enquanto o buff vigorar. Os valores não são um perfil de espécie aprovado.
+- Não foram realizadas **medições**, calibrações ou testes de gameplay para definir a referência de ATB nesta rodada.
+
+### 44.4 Tolerância do empate e sorteio reproduzível (D-108/D-155/D-166/D-171)
+
+- Para a troca automática em **WINDUP**, selecionar inimigos vivos mais próximos. Considerar candidatos **empatados com o mais próximo** quando a **diferença de distâncias for de até 0,01 unidade da arena, inclusive o limite**. Sortear **apenas entre esses candidatos** usando a aleatoriedade reproduzível já aprovada (D-166), não por identificador fixo.
+- **Exemplo ilustrativo:** Abra a 4,000 unidades da arena e Pancham a 4,006 unidades, sem alvo mais próximo: diferença **0,006**, ambos entram no sorteio. Um terceiro inimigo a 4,020 fica fora (diferença **0,020**). Se o segundo candidato estiver a **4,010**, a diferença **0,010** ainda conta como empate.
+- Não inventar métrica de geometria (distância em plano ou 3D, origem/pivô e pontos de contato), seed, algoritmo de RNG, ordem de sorteios, frequência de reavaliação ou efeitos em ações fora de WINDUP. **D-155** permanece: um recálculo de duração por cada troca automática ainda no WINDUP.
+
+### 44.5 Pendências remanescentes e estado de código
+
+- Definir o **nível de referência** e identificar de forma verificável a amostra real de espécies e valores de AGI-base, para calcular a mediana e **submeter o número à validação do criador**.
+- Medir/calibrar o **ritmo existente de ATB** para derivar o número de referência, sujeito a aprovação; definir conversão entre `base_speed` do código e AGI dos atributos permanentes sem supor equivalência.
+- Fechar detalhes técnicos do desempate espacial e RNG reproduzível; arredondamento, concorrência de eventos e outras lacunas não escolhidas nesta rodada.
+- **Consulta de código pré-publicação:** `scripts/combat/combatant.gd` ainda usa `base_speed` e `speed_buff` para a regeneração; o novo conjunto de atributos AGI e a referência numérica ainda não estão integrados. Registros novos não implicam implementação.
+- **Escopo desta rodada:** cinco D novos, notas aditivas em D-162/D-163/D-166, índice, este consolidado e adendo do GDD. **Nenhum código, teste, cena, asset, VFX ou ficha alterado**.

@@ -198,4 +198,11 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-165](D-165-r62-q4-sem-windup-calculo-entrada-travel.md) | Combate / R62 confirmada | **4A** — Sem WINDUP, duração do trajeto calculada ao entrar em TRAVEL, em vez de marco genérico da D-157 | Vigente; sem código |
 | [D-166](D-166-r62-q5-desempate-aleatorio-reproduzivel.md) | Combate / R62 confirmada | **5A** — Sorteio reproduzível entre alvos igualmente próximos no retarget, em vez de desempate por ID da D-158 | Vigente; sem código |
 
+
+| [D-167](D-167-r63-q1-mediana-todas-especies-controlaveis.md) | AGI / R63 | Q1B: mediana inclui todas as espécies diretamente controláveis pelo jogador, inclusive evoluções elegíveis | Aprovada; sem amostra calculada nem código |
+| [D-168](D-168-r63-q2-agi-base-nivel-comum-sem-modificadores.md) | AGI / R63 | Q2A: utilizar AGI-base por espécie em nível comum ainda a definir, sem Nature, variações ou buffs | Aprovada; nível numérico pendente; sem código |
+| [D-169](D-169-r63-q3-referencia-atb-calibrar-ritmo-existente.md) | ATB / R63 | Q3A: obter referência ATB por calibração do ritmo atual e apresentar valor antes de implementar | Aprovada; calibração e valor pendentes; sem código |
+| [D-170](D-170-r63-q4-agi-atualizada-a-cada-tick-regeneracao-atb.md) | ATB / R63 | Q4A: reler AGI efetiva a cada atualização da regeneração natural do ATB | Aprovada; sem código |
+| [D-171](D-171-r63-q5-tolerancia-empate-distancia-001-arena.md) | Combate / R63 | Q5B: tolerância inclusiva de 0,01 unidade da arena para empate entre alvos mais próximos no sorteio reproduzível | Aprovada; sem código |
+
 > **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.
