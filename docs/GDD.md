@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.45 — Rodada 74 registrada em adendo rastreável (2026-11-04); histórico preservado.  
+> **Revisão:** 1.46 — Rodada 75 registrada em adendo rastreável (2026-11-04); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1726,6 +1726,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.45 | 2026-11-04 | Rodada 74: registrar lacunas VIT/SPI nível 50 sem finalizar referência sem dados verificáveis; ficha incompleta se incompatibilidade não tiver prioridade; índices de retarget definidos no plano determinístico ao declarar ataque; consumo simultâneo de RNG de status por ID do alvo, preservando instante lógico. D-216–D-219. | Rodada 74 fechada / Rodada 75 proposta |
 
+| 1.46 | 2026-11-04 | Rodada 75: proposta de amostra verificável de defesa baixa/média/alta sujeita à aprovação; Move com prioridade de status incompatíveis ausente bloqueado em combate com indicação precisa; índices cancelados reservados sem reuso; desempate de RNG de status para mesmo alvo por atacante, declaração e índice. D-220–D-223. | Rodada 75 fechada / Rodada 76 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2034,4 +2036,19 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos não normativos:** (i) se faltar SPI nível 50 verificável, registrar a ausência e não completar lacunas por suposição; (ii) ficha abstrata com A e B incompatíveis, mas sem prioridade definida, permanece incompleta sem vencedor automático; (iii) ocorrência `A#2` preserva o índice estabelecido no plano declarativo do ataque até sua resolução, sem ordenar pelo callback; (iv) se alvos hipotéticos ID 2 e 5 tiverem sorteios de status simultâneos, RNG do alvo 2 é consumido antes do 5, sem atribuir-lhe precedência lógica de aplicação.
 
 **Relações e pendências:** a D-212 exige valores reais/verificáveis de VIT/SPI para futura proposta; a D-208 exige aprovação dos parâmetros de referência e mitigação-alvo antes de validar K compartilhado; D-213/D-215 continuam separando ordem das tentativas de prioridade de incompatibilidade; D-192/D-214 preservam ordenação do retarget com RNG exclusivo; D-210/D-211 preservam limites e condições de status; D-095 preserva empate por KO simultâneo. **Permanece não definido** desempate de rolagens simultâneas de status para **o mesmo alvo**, reação técnica a ficha incompleta, política de índices cancelados e dados numéricos de VIT/SPI. O conflito textual da Rodada 60 sobre LUK (§12.13) permanece **sem resolução**; D-203 continua excluindo odômetro do jogo principal. **Somente documentação:** nenhum código, teste, Move, VFX, asset ou cena modificado, nenhum teste de gameplay ou levantamento quantitativo executado.
+
+### 12.21 Rodada 75 — amostragem defensiva, bloqueio de ficha, índices cancelados e RNG de status para mesmo alvo (revisão 1.46)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Registros individuais **D-220 a D-223**, consolidados em **§56** de `docs/REGRAS_DO_JOGO.md`. Aditivo histórico; conforme D-001, o GDD **não é fonte normativa de combate**. Preservar todas as versões anteriores.
+
+| Pergunta | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R75-Q1 | **1A** | **Propor** amostra representativa com espécies de defesa **baixa, média e alta**, verificar **VIT/SPI nível 50** e submeter **composição da amostra à aprovação posterior**; nenhuma amostra ou valor oficial aprovado | [D-220](decisoes/D-220-r75-q1-amostra-defensiva-perfis-aprovacao.md) |
+| R75-Q2 | **2A** | **Bloquear em combate** o Move cuja configuração de prioridade entre **status declarados incompatíveis** esteja incompleta, **indicando exatamente a prioridade faltante** | [D-221](decisoes/D-221-r75-q2-bloquear-move-prioridade-incompatibilidade-ausente.md) |
+| R75-Q3 | **3A** | Em declaração de ataque, **preservar os índices reservados de ocorrências canceladas**; não reutilizá-los nem renumerar as demais ocorrências da mesma declaração | [D-222](decisoes/D-222-r75-q3-indices-cancelados-reservados-sem-reuso.md) |
+| R75-Q4 | **4A** | Em rolagens de status **simultâneas dirigidas ao mesmo alvo**, desempatar **apenas consumo do RNG** pelo **ID do atacante**, seguido da **ordem da declaração e índice da ocorrência**, sem criar precedência lógica de efeitos | [D-223](decisoes/D-223-r75-q4-status-mesmo-alvo-rng-id-atacante-declaracao-indice.md) |
+
+**Exemplos não normativos:** uma amostra futura pode ser proposta com perfis defensivos baixos/médios/altos, mas sem dados verificáveis do nível 50 nenhuma composição ou valor de K é homologado; Move hipotético com `Status A` e `Status B` incompatíveis sem prioridade **fica bloqueado**, com indicação da prioridade ausente; ocorrências fictícias `#1,#2,#3` não devem ser renumeradas ou reaproveitar `#2` se essa ocorrência for cancelada; para mesmo alvo fictício ID 3 e ataques simultâneos de IDs 2 e 5, consumir RNG da tentativa do atacante 2 antes da 5, **sem mudar simultaneidade lógica**.
+
+**Relações e pendências:** D-212/D-216 exigem dados reais/verificáveis de VIT/SPI nível 50; D-208 exige aprovação do atributo de referência e da mitigação-alvo antes de validar K compartilhado (D-201/D-204). D-215/D-217 mantêm prioridade **expressa** e ficha incompleta quando faltar; não há status concretos declarados incompatíveis. D-218 mantém índice determinado na declaração; D-219 ordena RNG simultâneo entre alvos diferentes por ID do **alvo**, e D-223 resolve o empate quando **o alvo é o mesmo**. D-213 conserva ordem dos efeitos dentro da ficha, sem criar novo fluxo de RNG. D-095 mantém KO simultâneo como empate; D-203 exclui odômetro do jogo principal. Divergência histórica R60-Q2/Q3 sobre LUK (§12.13) permanece **sem conciliação**. Não escolher automaticamente amostras, UI do bloqueio, custos/ATB/Burst, estruturas do plano de eventos ou seeds/algoritmos novos. **Nenhum código, teste, Move, ficha, cena, asset ou VFX modificado; nenhum teste de gameplay realizado.**
 

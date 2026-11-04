@@ -1730,3 +1730,34 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Conflitos históricos:** a divergência de LUK da reapresentação R60-Q2/Q3 frente a D-150/D-152/D-153 segue explícita no GDD §12.13; nenhuma fórmula de LUK foi escolhida aqui. A D-203 mantém **odômetro fora do jogo principal** mesmo que código histórico ainda exista. As D-198/D-205 preservam arredondamento único final e meia unidade para cima.
 - **Escopo:** quatro registros individuais, índice, esta seção do consolidado e adendo histórico no GDD. Nenhum código, teste, Move, ficha, VFX, asset ou cena alterado; nenhum teste de gameplay executado.
 
+---
+
+## 56. Rodada 75 — amostra defensiva, bloqueio de Move incompleto, índices cancelados e RNG para mesmo alvo
+
+> **2026-11-04.** Aprovações expressas do criador **1A, 2A, 3A e 4A**, sem observações próprias. Decisões individuais **D-220 a D-223**. Esta seção é aditiva conforme D-061 e não implica implementação de código.
+
+### 56.1 Regras aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-220](decisoes/D-220-r75-q1-amostra-defensiva-perfis-aprovacao.md) | **1A** | **Propor** amostra representativa de espécies com perfis defensivos **baixos, médios e altos**, verificar VIT/SPI **no nível 50** e **submeter a composição da amostra à aprovação** |
+| [D-221](decisoes/D-221-r75-q2-bloquear-move-prioridade-incompatibilidade-ausente.md) | **2A** | **Bloquear o uso em combate** de Move com prioridade obrigatória **ausente entre status declarados incompatíveis**, **indicando exatamente a omissão** |
+| [D-222](decisoes/D-222-r75-q3-indices-cancelados-reservados-sem-reuso.md) | **3A** | **Preservar índices reservados de ocorrências canceladas**, sem reutilizá-los ou renumerar as outras ocorrências **na mesma declaração** |
+| [D-223](decisoes/D-223-r75-q4-status-mesmo-alvo-rng-id-atacante-declaracao-indice.md) | **4A** | Para rolagens de status **simultâneas contra o mesmo alvo**, desempatar **somente o consumo de RNG** por **ID estável do atacante**, depois **declaração estável e índice de ocorrência** |
+
+### 56.2 Exemplos, relações e limites
+
+- **Amostra defensiva (D-220):** um levantamento futuro pode **propor** espécies de defesa baixa, média e alta, com VIT/SPI **reais e verificáveis no nível 50**, e apresentar suas fontes e lacunas. **Nenhuma espécie, valor, conjunto de dados, tamanho de amostra, limiar entre perfis ou estatística foi aprovado ou levantado nesta atividade.** D-216 impede finalizar referência quantitativa com dados necessários não verificáveis; D-208 ainda exige aprovação posterior de atributo de referência e mitigação-alvo, seguida de validação de **K único** (D-201/D-204).
+- **Bloqueio de ficha (D-221):** uma ficha **hipotética** declara `Status A` e `Status B` incompatíveis, mas omite a prioridade. **O Move fica bloqueado em combate** e a indicação precisa apontar a **prioridade faltante**. Não usar ordem das tentativas como prioridade implícita (D-213/D-215/D-217). **Não há incompatibilidades concretas de status aprovadas aqui**, nem interface ou regra nova de custos/ATB/Burst definida.
+- **Índices (D-222):** plano fictício `A#1, A#2, A#3, A#4`; se `A#2` for cancelado, as demais ocorrências mantêm **#1, #3, #4** e **#2 não é reutilizado nessa declaração**. D-218 fixa os índices na declaração do ataque; D-214 conserva desempate por declaração/ocorrência; D-189 continua evitando consumo de RNG de retarget sem empate elegível. Preservar D-095 sobre KO simultâneo.
+- **RNG de status (D-223):** alvo fictício Abra ID 3 sofre rolagens de status simultâneas de atacantes IDs 2 e 5; **para consumir RNG**, vem primeiro o atacante ID 2, depois ID 5. A ordenação primária **entre alvos diferentes** continua por **ID do alvo (D-219)**. Para mesmo atacante, usar declaração/ocorrência estáveis (D-214/D-218/D-222), sem substituir a ordem de status distintos **dentro da ficha (D-213)**. O evento continua **logicamente simultâneo**: não altera danos, status, resultados de KO ou prioridade entre equipes.
+
+### 56.3 Histórico e pendências preservados
+
+- **Dados e balanceamento:** amostra concreta, fontes e progressão de VIT/SPI no nível 50, representatividade, referência e mitigação-alvo e valor numérico K continuam em aberto. Não inventar espécies ou números.
+- **Bloqueio:** não foi definido como/onde exibir o erro, o instante da validação, se haverá cobrança de ATB/Burst diante de uma tentativa bloqueada ou como o editor impede salvar fichas incompletas. Não estabelecer automaticamente comportamento fora do bloqueio expressamente aprovado.
+- **Eventos:** permanecem pendentes o formato do plano declarativo, geração de ocorrências não previstas, serialização/replay, granularidade do instante lógico e possíveis empates residuais.
+- **Status:** sem algoritmo ou seed de RNG de status aprovado; D-213/D-215 separam ordem de rolagens e prioridade de incompatibilidade. Não antecipar solução para status incompatíveis de Moves diferentes ou eventos com mesmas chaves de desempate.
+- **Conflitos históricos:** a divergência da reapresentação R60-Q2/Q3 sobre LUK frente a D-150/D-152/D-153 permanece explicitamente **não resolvida** (GDD §12.13). D-203 mantém **odômetro fora do jogo principal**, embora permaneça código legado. D-095 mantém empate de eliminações simultâneas.
+- **Escopo:** quatro arquivos D novos, índice, este consolidado e adendo histórico GDD. **Nenhum código, teste, Move, ficha, cena, asset ou VFX alterado; nenhum teste de gameplay ou levantamento quantitativo de atributos executado.**
+
