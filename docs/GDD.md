@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.57 — Fichas de Moves M3: fórmula inicial, nenhuma prévia na seleção e MP obrigatório exceto Tackle (2026-11-04); histórico preservado.  
+> **Revisão:** 1.58 — Rodada 82 registrada em adendo rastreável (2026-11-04); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1750,6 +1750,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.57 | 2026-11-04 | Fichas de Moves M3: (base + escala STR/MAG) × potência; proibir prévia de dano em seleção; efeitos herdam alvos/facção salvo exceção; AGI não acelera automaticamente projéteis; Dispel remove todos elegíveis; todo Move exceto Tackle consome MP. D-258–D-263. | M3 fechada / M4 proposta |
 
+| 1.58 | 2026-11-04 | Rodada 82: universo de espécies oficial verificável para VIT/SPI nível 50 com lacunas e veto a cortes não representativos; lista textual compacta de omissões em seleção aberta; identificadores diagnósticos por declaração e sequência determinística de excessos; chance/elegibilidade antes de matriz de incompatibilidade. D-264–D-267. | Rodada 82 fechada / Rodada 83 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2230,4 +2232,19 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Delimitação e precedência:** a fórmula da D-258 define a parcela inicial ofensiva antes dos demais modificadores, preservando D-122/D-123/D-198/D-205; **não estabelece valores-base ou coeficientes oficiais**. D-259 veta **qualquer prévia de dano durante seleção de alvos**, mas não revoga a tooltip numérica e textual D-229/D-230 em seu contexto próprio. D-260 complementa a seleção/facção/abrangência de D-246 com **herança e exceções declaradas**; D-261 separa AGI de velocidade dos projéteis, preservando D-119/D-078 e exceções que venham a ser expressamente aprovadas. D-262 exige remover **todos os efeitos elegíveis que a ficha listar**, preservando exclusões da D-249; **não há Move concreto de Dispel definido**. D-263 estabelece **MP em todo Move exceto Tackle** e, neste aspecto, **supera expressamente a restrição a Moves mágicos/especiais de D-228**, preservando os registros históricos D-228/D-032. Os custos **individuais de MP não foram aprovados**, e a relação entre MP adicional e Burst pagar ação inteira (D-033/D-063) continua exigindo decisão específica; não escolher resposta tácita.
 
 **Limitações e histórico:** D-235 permanece obrigatória para independência de Move/VFX de personagem, equipe, lado e câmera fixa. D-244–D-249 permanecem intactas. Não assumir categorias de dano, números de MP, velocidades, faixas de STR/MAG, listas concretas de Dispel ou estruturas de código. D-203 mantém odômetro fora do jogo principal; divergência histórica de LUK da R60 (GDD §12.13) permanece sem conciliação; D-243/D-257 não homologam pares de status concretos. **Somente documentação: nenhum código, ficha, teste, HUD, IA, cena, asset, animação ou VFX modificado; nenhum teste de gameplay executado.**
+
+### 12.33 Rodada 82 — universo verificável, aviso textual, ID de excesso e matriz após chance (revisão 1.58)
+
+> **2026-11-04.** O criador aprovou **1A, 2A, 3A e 4A**, sem observações próprias. Documentos **D-264–D-267**, consolidados em **§68** de `docs/REGRAS_DO_JOGO.md`. Registro histórico aditivo (D-061). **D-001 mantém o GDD não normativo para combate**; toda a série M3 (D-258–D-263) e as decisões anteriores permanecem intactas.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R82-Q1 | **1A** | Usar **todas as espécies oficialmente incluídas no universo de referência do Crawlmon** com **VIT/SPI verificáveis no nível 50**, **uma observação por espécie**, registrando lacunas; **não homologar cortes se a cobertura impedir representatividade** | [D-264](decisoes/D-264-r82-q1-universo-oficial-especies-vit-spi-verificaveis.md) |
+| R82-Q2 | **2A** | Exibir **lista textual compacta com todas as omissões detectadas** na tentativa de confirmar Move bloqueado, **mantendo aberta a seleção de combate** | [D-265](decisoes/D-265-r82-q2-lista-textual-compacta-omissoes-selecao-aberta.md) |
+| R82-Q3 | **3A** | **Identificador diagnóstico separado dos índices válidos** do plano, derivado da **declaração e sequência determinística das solicitações excedentes** | [D-266](decisoes/D-266-r82-q3-id-diagnostico-declaracao-sequencia-excedentes.md) |
+| R82-Q4 | **4A** | Resolver **elegibilidade e chance** primeiro; **somente após sucesso efetivo** consultar a **matriz de incompatibilidade aprovada** e eliminar o status perdedor | [D-267](decisoes/D-267-r82-q4-elegibilidade-chance-antes-matriz-status.md) |
+
+**Exemplos abstratos, não novos valores/regras:** espécie do universo oficial com VIT verificável e SPI ausente deve ter **lacuna SPI registrada**, sem fabricar número; Move hipotético com duas omissões de bloqueio exibe **lista textual compacta com ambas**, sem fechar a seleção nem cobrar recursos; duas solicitações de evento excedente sob uma mesma declaração recebem **IDs de diagnóstico distintos**, não índices válidos; status Y novo com chance hipotética de 20%, se **falhar**, não remove X ativo; se **tiver sucesso**, só uma **entrada de prioridade concretamente aprovada** poderá definir a eliminação do menor.
+
+**Limites e preservações:** ainda não há universo de espécies auditado, valores VIT/SPI nível 50 verificados, limiar quantitativo de representatividade, tercis ou K aprovados (D-208/D-216/D-220/D-254/D-264). A HUD da seleção permanece sem modificação; D-259 **proíbe prévia de dano na seleção de alvos** e D-229/D-230 preservam a tooltip numérica em seu próprio contexto. O ID diagnóstico não cria eventos válidos (D-218/D-222/D-242/D-252/D-256/D-266). A matriz de status segue sem pares concretos ou vencedores, preservando D-239/D-243/D-253/D-257; D-234 continua evitando consumo de RNG para chances finais 0%/100% e D-095 mantém KO simultâneo. Preservados integralmente D-228–D-230, D-235, D-244–D-249 e D-258–D-263, incluindo MP obrigatório em Moves diferentes de Tackle (D-263); conflito de MP/Burst D-033/D-063 segue pendente. Divergência histórica de LUK da R60 (GDD §12.13) não foi conciliada. **Apenas documentação:** nenhum código, teste, ficha operacional, IA, Move, HUD, cena, asset ou VFX alterado; nenhum teste de gameplay executado.
 

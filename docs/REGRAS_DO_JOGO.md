@@ -2087,3 +2087,34 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Conflitos históricos gerais:** manter a divergência da reapresentação R60 sobre LUK frente às D-150/D-152/D-153 (GDD §12.13), D-203 sobre exclusão do odômetro do jogo principal, e a matriz ainda sem pares concretos de status incompatíveis das D-239/D-243/D-253/D-257.
 - **Escopo:** seis D individuais, índice, consolidado e GDD. **Nenhum código, ficha operacional, HUD, teste, IA, cena, asset ou VFX alterado; nenhum teste de gameplay executado.**
 
+---
+
+## 68. Rodada 82 — universo verificável, lista de omissões, IDs diagnósticos e matriz após chance
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações. Decisões individuais **D-264–D-267**. Registro documental segundo D-061. **Preservar sem alterações a Rodada M3 (D-258–D-263, §67), a série M2 (D-244–D-249), D-235 e histórico anterior.**
+
+### 68.1 Regras aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-264](decisoes/D-264-r82-q1-universo-oficial-especies-vit-spi-verificaveis.md) | **1A** | Usar **todas as espécies do universo de referência oficial do Crawlmon** com valores **verificáveis de VIT/SPI nível 50**, **uma observação por espécie**, registrar lacunas; **não homologar cortes se a cobertura impedir representatividade** |
+| [D-265](decisoes/D-265-r82-q2-lista-textual-compacta-omissoes-selecao-aberta.md) | **2A** | Na tentativa de confirmar Move bloqueado, **exibir lista textual compacta com todas as omissões detectadas**, **mantendo a seleção de combate aberta** |
+| [D-266](decisoes/D-266-r82-q3-id-diagnostico-declaracao-sequencia-excedentes.md) | **3A** | Criar **identificador diagnóstico separado dos índices válidos**, derivado da **declaração + sequência determinística de solicitações excedentes** |
+| [D-267](decisoes/D-267-r82-q4-elegibilidade-chance-antes-matriz-status.md) | **4A** | Resolver **elegibilidade e chance de status antes da matriz**; só após **sucesso efetivo** consultar **matriz aprovada** e **eliminar o status de menor prioridade** |
+
+### 68.2 Compatibilidades e exemplos
+
+- **Dados defensivos (D-264):** uma espécie oficialmente incluída com VIT verificável e SPI não verificável precisa ter a **lacuna SPI explicitada**; não inventar valores ausentes nem ocultar cobertura insuficiente. Usar **uma observação por espécie** (D-254), manter variações individuais ±3 separadas, distribuições de VIT e SPI por tercis independentes (D-224/D-236) e empates/limites segundo D-240/D-250. A **representatividade precisa ser sustentada por dados**, sem limiar de cobertura novo escolhido; cortes numéricos e composição ainda dependem de aprovação (D-212/D-216/D-220/D-231). **Nenhuma espécie/valor/tercil/K foi apurado ou aprovado nesta atividade**.
+- **Aviso de Move (D-265):** a validação de tentativa de confirmar um Move com **prioridade faltante entre status expressamente incompatíveis** (D-221) e **máximo condicional ausente** (D-238) deve mostrar **ambas as omissões** como **lista textual compacta na seleção ainda aberta**, conforme D-255, **antes de consumir ação, ATB, Burst ou MP**. Não adicionar cartão de previsão de dano na seleção de alvo (D-259), nem substituir a tooltip numérica mecânica D-229/D-230. O visual da HUD não foi refeito.
+- **Violação e identidade (D-266):** se uma declaração fictícia `D` fizer duas solicitações excedentes, podem ser distinguidas por **IDs apenas de diagnóstico** derivados de `D` e uma **sequência determinística dos excedentes**, sem criar ocorrências válidas ou renumerar reservas. O registro estruturado da D-256 continua exigindo **Move, atacante, declaração, máximo e ocorrência excedente**; D-242/D-252 mantêm **rejeição apenas do excedente** e **continuidade de eventos posteriores validamente previstos**, sem rollback.
+- **Chance e status (D-267):** para um status novo Y de Move distinto potencialmente incompatível com X ativo, resolver **elegibilidade + chance** primeiro. Se falhar, X permanece; se **tiver sucesso**, usar **uma entrada aprovada da matriz por pares** (D-239/D-243/D-253) e eliminar o perdedor sem restaurá-lo (D-257). **Nenhuma matriz concreta foi aprovada**. Chance final 0%/100% continua sem RNG (D-234); entre extremos, preservar semente e ordem de consumo D-219/D-223/D-227. Não usar RNG para prioridade nem alterar simultaneidade lógica/KO (D-095).
+
+### 68.3 Pendências, conflitos e escopo
+
+- **VIT/SPI:** lista de espécies oficialmente incluídas, valores oficiais verificáveis no nível 50, cobertura por atributo, critério quantitativo de representatividade, tercis, aprovação de cortes e amostra, mitigação-alvo e **K único** seguem pendentes. **Não homologar cortes na ausência de cobertura representativa**, sem supor suficiência.
+- **Bloqueios/HUD:** a lista textual compacta está aprovada; **não** foram escolhidos posição, tipografia, cor, tamanho em pixels, permanência, ordem exata das omissões ou comportamento após troca de Move. Somente bloqueios previamente aprovados são cobertos; nenhuma prévia de dano em seleção de alvos (D-259).
+- **Diagnóstico:** identidade separada do plano aprovada; não foram escolhidos tipo de ID, formato de log/serialização, mecanismo de replay ou comportamento sob rollback. Índices das ocorrências válidas mantêm reserva na declaração.
+- **Status:** matriz sem qualquer par real incompatível ou vencedor aprovado; permanece indefinido o comportamento diante de par sem entrada, e a resolução de múltiplos status simultaneamente bem-sucedidos quando regras futuras exigirem. A escolha de checar chance antes de matriz não modifica chance, RNG ou regras de elegibilidade.
+- **Conflitos e história preservados:** D-263 M3 agora exige **MP em todo Move exceto Tackle**, prevalecendo na abrangência sobre a D-228, com histórico intacto. **Relação entre MP e Burst pagar ação inteira (D-033/D-063) ainda pendente**. D-235 mantém independência de Moves/VFX por espécie/lado; D-095 conserva KO simultâneo; D-203 mantém odômetro fora do jogo principal. A divergência sobre escala de LUK da Rodada 60 no GDD §12.13 permanece não resolvida.
+- **Escopo:** quatro novos D, índice, consolidado e adendo do GDD. **Nenhum código, teste, Move, ficha operacional, IA, HUD, cena, asset ou VFX modificado e nenhum teste de gameplay executado.**
+
