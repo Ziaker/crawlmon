@@ -1,5 +1,5 @@
 extends SceneTree
-## Motion Composer V1 — Etapa 3: bifurcação, recombinação, ordem, máscaras e defasagens (D-233).
+## Motion Composer V1 — Etapa 3: bifurcação, recombinação, ordem, máscaras e defasagens (D-303).
 ## Rodar: godot --headless --path . --script res://tests/motion_composer/test_etapa3_composicao_espacial.gd
 
 const Op := MotionTypes.Op
@@ -93,7 +93,7 @@ func same_result(a: MotionResult, b: MotionResult) -> bool:
 
 func _init() -> void:
 	print("\n=================================================================")
-	print("   MOTION COMPOSER V1 — ETAPA 3: M14, M15 + COMPOSIÇÃO (D-233)")
+	print("   MOTION COMPOSER V1 — ETAPA 3: M14, M15 + COMPOSIÇÃO (D-303)")
 	print("=================================================================")
 	var nodes_before := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
 	_cat = MotionCatalog.new()

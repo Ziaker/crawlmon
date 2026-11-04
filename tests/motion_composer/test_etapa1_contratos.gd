@@ -1,5 +1,5 @@
 extends SceneTree
-## Motion Composer V1 — Etapa 1: testes dos contratos (D-230).
+## Motion Composer V1 — Etapa 1: testes dos contratos (D-300).
 ## Rodar: godot --headless --path . --script res://tests/motion_composer/test_etapa1_contratos.gd
 ## Os comportamentos abaixo são DUBLÊS de teste, não os M01–M20 (Etapa 2).
 
@@ -306,7 +306,7 @@ func has_code(diags: Array[MotionDiagnostic], code: StringName) -> bool:
 # --------------------------------------------------------------------------------------
 func _init() -> void:
 	print("\n=================================================================")
-	print("   MOTION COMPOSER V1 — ETAPA 1: CONTRATOS (D-230)")
+	print("   MOTION COMPOSER V1 — ETAPA 1: CONTRATOS (D-300)")
 	print("=================================================================")
 	var nodes_before := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
 

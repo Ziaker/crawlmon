@@ -1,4 +1,4 @@
-# D-230 — Motion Composer V1: Etapa 1 (contratos e avaliação) autorizada
+# D-300 — Motion Composer V1: Etapa 1 (contratos e avaliação) autorizada
 
 - **Data:** 2026-11-04
 - **Área:** Motion Composer / implementação isolada

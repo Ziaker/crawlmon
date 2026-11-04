@@ -1,5 +1,5 @@
 extends SceneTree
-## Motion Composer V1 — Etapa 2b: testes de M16, M17 e M18 (D-232).
+## Motion Composer V1 — Etapa 2b: testes de M16, M17 e M18 (D-302).
 ## Rodar: godot --headless --path . --script res://tests/motion_composer/test_etapa2b_impacto_envelopes.gd
 
 const Op := MotionTypes.Op
@@ -83,7 +83,7 @@ func visible_count(r: MotionResult) -> int:
 
 func _init() -> void:
 	print("\n=================================================================")
-	print("   MOTION COMPOSER V1 — ETAPA 2b: M16, M17, M18 (D-232)")
+	print("   MOTION COMPOSER V1 — ETAPA 2b: M16, M17, M18 (D-302)")
 	print("=================================================================")
 	var nodes_before := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
 	_cat = MotionCatalog.new()

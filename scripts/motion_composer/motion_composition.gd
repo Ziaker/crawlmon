@@ -229,7 +229,7 @@ func _apply_layer(l: MotionLayer, b: MotionBehavior, samples: Array[MotionSample
 		else:
 			var inserted := false
 			if n_out == sel.size():
-				# mesma contagem: substitui no lugar, preservando a ordem (D-233)
+				# mesma contagem: substitui no lugar, preservando a ordem (D-303)
 				result = samples.duplicate()
 				for j in sel.size():
 					result[sel[j]] = conv[j]

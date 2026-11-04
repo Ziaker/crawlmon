@@ -1,4 +1,4 @@
-# D-231 — Motion Composer V1: Etapa 2 (comportamentos básicos) autorizada
+# D-301 — Motion Composer V1: Etapa 2 (comportamentos básicos) autorizada
 
 - **Data:** 2026-11-04
 - **Área:** Motion Composer / implementação isolada
@@ -10,7 +10,7 @@
 
 ## Decisão
 
-Implementar a **Etapa 2** da seção 16 de [Motion Composer V1](../vfx/MOTION_COMPOSER_V1.md): "Implementar e validar trajetórias, campos, deformações e propagação". Isso corresponde a **M01–M13** (grupos A, B, C e D do catálogo), sobre os contratos da Etapa 1 ([D-230](D-230-motion-composer-etapa-1-autorizada.md)).
+Implementar a **Etapa 2** da seção 16 de [Motion Composer V1](../vfx/MOTION_COMPOSER_V1.md): "Implementar e validar trajetórias, campos, deformações e propagação". Isso corresponde a **M01–M13** (grupos A, B, C e D do catálogo), sobre os contratos da Etapa 1 ([D-300](D-300-motion-composer-etapa-1-autorizada.md)).
 
 Limites desta autorização:
 

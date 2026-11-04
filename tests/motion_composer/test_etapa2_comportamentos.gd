@@ -1,5 +1,5 @@
 extends SceneTree
-## Motion Composer V1 — Etapa 2: testes de M01–M13 (D-231).
+## Motion Composer V1 — Etapa 2: testes de M01–M13 (D-301).
 ## Rodar: godot --headless --path . --script res://tests/motion_composer/test_etapa2_comportamentos.gd
 ## Cada comportamento: parâmetros válidos, limites do domínio, ausência de NaN, repetibilidade,
 ## resposta à intensidade, pausa, independência da representação e identidade distinguível.
@@ -112,7 +112,7 @@ func extreme_params(b: MotionBehavior, high: bool) -> Dictionary:
 # --------------------------------------------------------------------------------------
 func _init() -> void:
 	print("\n=================================================================")
-	print("   MOTION COMPOSER V1 — ETAPA 2: M01–M13 (D-231)")
+	print("   MOTION COMPOSER V1 — ETAPA 2: M01–M13 (D-301)")
 	print("=================================================================")
 	var nodes_before := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
 	_cat = MotionCatalog.new()

@@ -734,7 +734,7 @@ Definir formalmente entradas, saídas, tipos de operação, espaços de coordena
 
 Implementar e validar trajetórias, campos, deformações e propagação.
 
-**Etapa 2b — Impacto e envelopes** (acrescentada por [D-232](../decisoes/D-232-motion-composer-etapa-2b-m16-m18.md))
+**Etapa 2b — Impacto e envelopes** (acrescentada por [D-302](../decisoes/D-302-motion-composer-etapa-2b-m16-m18.md))
 
 M16 explosão direcional, M17 crescimento progressivo e M18 dissolução progressiva, que esta seção não atribuía a nenhuma etapa.
 
@@ -884,7 +884,7 @@ Os testes devem verificar contratos, não copiar fórmulas: invariância ao part
 - D-044: quatro representações aprovadas contempladas.
 - D-045: política de pasta fixa preservada; caminho concreto apenas proposto.
 - Não verificado: funcionamento em Godot, aparência, desempenho, interoperabilidade de presets ou regressões em execução.
-## 20. Etapa 1 implementada — 2026-11-04 (D-230)
+## 20. Etapa 1 implementada — 2026-11-04 (D-300)
 
 Escopo: **somente** a Etapa 1 (contratos e avaliação). Os 20 comportamentos (Etapa 2), bifurcação/recombinação reais, histórico, laboratório visual, presets e renderizadores **não** existem. Nada do combate, de `VfxLib` ou dos VFX atuais foi tocado.
 
@@ -915,7 +915,7 @@ Valores experimentais (ajustáveis, sem valor de aceitação): `sample_count` 12
 
 **Verificado (Godot 4.7.2, headless):** 133 verificações, 0 falhas; 4 mutações no código (peso do OFFSET, limiar do MASK, inversão de espaço, checagem de ramo inexistente) derrubaram os testes correspondentes; log sem erro/aviso. **Medido:** 9 camadas, 128→384 amostras, ≈14 ms por avaliação em GDScript puro (≈0,8 ms por camada só de compositor, mesmo com comportamento vazio), sem renderização; sem orçamento aprovado, não é requisito nem garantia. **Não verificado:** renderer GL Compatibility, qualquer aparência, desempenho em outro hardware, os comportamentos reais (dublês de teste foram usados), regressão da suíte de combate (nenhum arquivo do combate foi alterado por esta etapa).
 
-## 21. Etapa 2 implementada — 2026-11-04 (D-231)
+## 21. Etapa 2 implementada — 2026-11-04 (D-301)
 
 Escopo: **M01–M13** (trajetórias, campos, deformações, propagação). M14–M15 (Etapa 3), M19–M20 (Etapa 4) e **M16–M18 (sem etapa definida na §16; aguardam o criador)** não foram implementados. Contratos da Etapa 1 inalterados. Código em `scripts/motion_composer/behaviors/` (um arquivo por comportamento), auxiliares em `motion_profile.gd`, registro em `MotionBehaviors.register_all(catalog)`. Testes: `tests/motion_composer/test_etapa2_comportamentos.gd`.
 
@@ -945,9 +945,9 @@ Convenções do contrato aplicadas: OFFSET devolve deslocamento em `position`; M
 
 **Verificado (Godot 4.7.2, headless):** 124 verificações, 0 falhas no teste da Etapa 2 e 133 no da Etapa 1. Cada comportamento: parâmetros padrão, todo o domínio no mínimo e no máximo (em dois instantes) sem valores não finitos, repetibilidade, intensidade 0,5 = ponto médio, pausa, ids independentes do tempo, assinaturas espaciais distintas nos 78 pares e nenhum nó criado. Fórmulas conferidas por valores analíticos. 13 mutações no código (uma por comportamento); uma sobreviveu (M11, borda suave), o teste foi reforçado e a mutação passou a falhar. **Medido:** de 1,9 a 4,1 ms por avaliação de 1 camada com 128 amostras, exceto M07 (≈8 ms), em GDScript puro e máquina ocupada; sem orçamento aprovado, não é requisito. **Não verificado:** aparência (nenhuma representação visual existe), GL Compatibility, hardware-alvo, qualidade artística das curvas e dos padrões, e a equivalência com os oito estudos helicoidais.
 
-## 22. Etapa 2b implementada — 2026-11-04 (D-232)
+## 22. Etapa 2b implementada — 2026-11-04 (D-302)
 
-Escopo: **M16, M17 e M18**, que a §16 não atribuía a nenhuma etapa; por escolha do criador ("Etapa 2b agora", [D-232](../decisoes/D-232-motion-composer-etapa-2b-m16-m18.md)) formam a **Etapa 2b**, entre as Etapas 2 e 3. Contratos das Etapas 1 e 2 inalterados (adição de três comportamentos e de dois auxiliares em `motion_profile.gd`). Código em `scripts/motion_composer/behaviors/` (`m16_…`, `m17_…`, `m18_…`); testes em `tests/motion_composer/test_etapa2b_impacto_envelopes.gd`.
+Escopo: **M16, M17 e M18**, que a §16 não atribuía a nenhuma etapa; por escolha do criador ("Etapa 2b agora", [D-302](../decisoes/D-302-motion-composer-etapa-2b-m16-m18.md)) formam a **Etapa 2b**, entre as Etapas 2 e 3. Contratos das Etapas 1 e 2 inalterados (adição de três comportamentos e de dois auxiliares em `motion_profile.gd`). Código em `scripts/motion_composer/behaviors/` (`m16_…`, `m17_…`, `m18_…`); testes em `tests/motion_composer/test_etapa2b_impacto_envelopes.gd`.
 
 ```bash
 godot --headless --path . --script res://tests/motion_composer/test_etapa2b_impacto_envelopes.gd
@@ -967,9 +967,9 @@ Garantias do contrato: no instante inicial M17 não mostra nada e M18 mostra tud
 
 **Estado do catálogo:** implementados M01–M13 e M16–M18 (16 de 20). Faltam M14, M15 (Etapa 3) e M19, M20 (Etapa 4).
 
-## 23. Etapa 3 implementada — 2026-11-04 (D-233)
+## 23. Etapa 3 implementada — 2026-11-04 (D-303)
 
-Escopo ([D-233](../decisoes/D-233-motion-composer-etapa-3-composicao-espacial.md)): **M14 Bifurcação** e **M15 Recombinação**, mais a validação, com comportamentos reais, de ordem de camadas, máscaras e defasagens (que existem desde a Etapa 1), e a receita da §6 **sem M19** (Etapa 4). Código em `scripts/motion_composer/behaviors/m14_bifurcation.gd` e `m15_recombination.gd`; testes em `tests/motion_composer/test_etapa3_composicao_espacial.gd`.
+Escopo ([D-303](../decisoes/D-303-motion-composer-etapa-3-composicao-espacial.md)): **M14 Bifurcação** e **M15 Recombinação**, mais a validação, com comportamentos reais, de ordem de camadas, máscaras e defasagens (que existem desde a Etapa 1), e a receita da §6 **sem M19** (Etapa 4). Código em `scripts/motion_composer/behaviors/m14_bifurcation.gd` e `m15_recombination.gd`; testes em `tests/motion_composer/test_etapa3_composicao_espacial.gd`.
 
 ```bash
 godot --headless --path . --script res://tests/motion_composer/test_etapa3_composicao_espacial.gd
@@ -994,7 +994,7 @@ Revisão feita a pedido do criador. Achados e correções:
 
 | # | Achado | Correção |
 |---|---|---|
-| 1 | **IDs de decisão colidiam** com D-171 a D-174 já existentes na `main` do GitHub (outros assuntos). | Renumerados para **D-230 a D-233** (maior ID remoto: D-229). |
+| 1 | **IDs de decisão colidiam** com D-171 a D-174 já existentes na `main` do GitHub (outros assuntos). | Renumerados para **D-300 a D-303**. Foram D-171–D-174 e depois D-230–D-233, mas a `main` passou a usar esses números em rodadas novas (maior ID remoto visto: D-234); a faixa D-300+ é reservada ao Motion Composer para evitar novas colisões (escolha técnica do agente). |
 | 2 | Comportamento que alterasse a entrada corrompia o fluxo no espaço LOCAL (introduzido por otimização). | Corrigido na Etapa 1 (cópias sempre) com 2 testes. |
 | 3 | Testes de catálogo das Etapas 2 e 2b ainda esperavam M14 e M15 ausentes. | Atualizados (faltam apenas M19 e M20). |
 | 4 | Verificações vazias ou frouxas nos testes (`or true`, variável sem uso, condição que não distinguia M11, M16, M17, M15). | Removidas ou reforçadas; 4 + 1 mutantes sobreviventes passaram a falhar. |

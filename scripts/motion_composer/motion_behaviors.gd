@@ -1,6 +1,6 @@
 class_name MotionBehaviors
 extends RefCounted
-## Registro dos comportamentos implementados da V1. Etapa 2: M01–M13 (D-231). Etapa 2b: M16–M18 (D-232).
+## Registro dos comportamentos implementados da V1. Etapa 2: M01–M13 (D-301). Etapa 2b: M16–M18 (D-302).
 
 
 static func all() -> Array[MotionBehavior]:
