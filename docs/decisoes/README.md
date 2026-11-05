@@ -340,5 +340,24 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 
 > **Conciliação da Rodada 62 (2026-11-03):** D-157 a D-161 são registros históricos de outra versão das perguntas e respostas. O criador confirmou expressamente que **D-162 a D-166 são as cinco escolhas prevalentes**. Em conflito, aplicar as decisões mais recentes; notas históricas foram adicionadas aos D-157 a D-161, sem apagar o conteúdo anterior.
 
-> **Histórico/precedência R70:** o arquivo [D-048 de HP rolante](D-048-rolling-hp-mother3-odometro.md) registra um **teste/protótipo histórico**, não uma regra vigente do jogo principal após [D-203](D-203-r70-q4d-odometro-descartado-jogo-principal.md). **Não confundir** com o outro arquivo [D-048 de recompensas AoE](D-048-r40-q8-atb-aoe-unico.md), que não foi revogado.
+> **Histórico/precedência R70:** o arquivo [D-048 de HP rolante](D-048-rolling-hp-mother3-odometro.md) registra um **teste/protótipo histórico**, não uma regra vigente do jogo principal após [D-203](D-203-r70-q4d-odometro-descartado-jogo-principal.md). **Nao confundir** com o outro arquivo [D-048 de recompensas AoE](D-048-r40-q8-atb-aoe-unico.md), que não foi revogado.
+
+## Decisões do overworld (2026-11-05)
+
+| ID | Área | Decisão | Estado |
+|---|---|---|---|
+| [D-278](D-278-restaurar-overworld-e-ajustar-paleta.md) | Exploração / visual | Restauração do overworld original e paleta; a D-313 relaxa a restrição de “somente cores” | Direção vigente |
+| [D-309](D-309-aliados-em-fila-no-overworld.md) | Exploração | Aliados ativos seguem em fila | Não implementado |
+| [D-310](D-310-niveis-de-ameaca-dos-inimigos-no-overworld.md) | Exploração / IA | Quatro níveis de ameaça (medroso, fraco, valente, perigoso), com tamanho e ícone; relativo ao nível | Não implementado |
+| [D-311](D-311-pontos-de-descanso-por-andar.md) | Exploração | Descanso cura todo HP/MP; 2 por andar (raramente 3); uso único | Não implementado |
+| [D-312](D-312-biomas-floresta-fortaleza-caverna.md) | Exploração / visual | Biomas: floresta, fortaleza (atual), caverna | Não implementado |
+| [D-313](D-313-overworld-tiles-refeitos-e-efeitos-visuais.md) | Exploração / visual | Tiles podem ser refeitos; poeira, tochas, NPC olhando e sprites de Pokémon (inimigos e aliados); sem sombra; sem novos modelos | Não implementado |
+| [D-314](D-314-fila-de-aliados-rastro-exato-sem-atravessar.md) | Exploração | Fila no rastro exato; espera 1 s e reposiciona; atravessa inimigos e o contato inicia batalha | Não implementado |
+| [D-315](D-315-niveis-de-ameaca-referencia-escala-e-distancias.md) | Exploração / IA | Ameaça pela soma do grupo vs soma da equipe; nível = média +1..+4; 3/6/9 tiles e 40/70/110/150 px/s; faixas −40%/−10%/+30%; ícones a desenhar | Não implementado |
+| [D-316](D-316-descanso-ao-pisar-e-expedicao-de-5-andares.md) | Exploração | Descanso ao pisar cura a equipe ativa; 3º ponto em 10%; 5 andares e nova expedição completa no fim | Não implementado |
+| [D-317](D-317-bioma-a-cada-5-andares.md) | Exploração / visual | Bioma sorteado por dungeon; o 5º andar usa outro bioma e a nova dungeon continua com ele | Não implementado |
+| [D-318](D-318-f6-eventos-primeiro.md) | Exploração / conteúdo | F6 começa por eventos; ordem restante pendente | Não implementado |
+| [D-319](D-319-f3-so-no-overworld-batalha-continua-gible.md) | Exploração / escopo | F3 só no overworld; batalha 3D continua Gible fixo | Não implementado |
+| [D-320](D-320-publicacao-de-docs-autorizada.md) | Processo / Git | Commit + push só de docs, por worktree limpo do `origin/main` | Pendente de execução |
+| [D-321](D-321-inimigos-tambem-andam-em-grupo.md) | Exploração / IA | Inimigos em grupo solto (máx. 3); soma define a ameaça do grupo; líder derrotado → próximo vira líder | Não implementado |
 

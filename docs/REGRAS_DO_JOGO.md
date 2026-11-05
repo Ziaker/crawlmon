@@ -255,16 +255,19 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 ## 14. Exploração 2D e campanha (GDD; aprovados)
 
 ### 14.1 Mapa e movimento
+- **[D-278, D-313]** O overworld mantém a estrutura e a colisão originais e continua 2D; a paleta usa a arena 3D como referência. A D-313 relaja a restrição “somente paleta”: os tiles podem ser refeitos/melhorados para encaixar melhor entre si, e ficam autorizados poeira/partículas, tochas cintilando, NPC olhando para o jogador e sprites de Pokémon. Sombra sob as entidades **não** foi autorizada. Não importar novos modelos por ora.
 - **[GDD R7-Q5, R8-Q3/Q4]** Mapas **gerados proceduralmente por exploração/andar**, com salas e corredores; **seed reutilizável** reproduz o mesmo layout (mesma seed + regras + versão do gerador); formas, posições e conexões algorítmicas.
 - **[GDD R9-Q2, R36-Q3]** Ao **revisitar um andar** na mesma exploração, o layout **não muda**; itens já coletados e eventos concluídos **mantêm o estado**; inimigos derrotados **continuam removidos** (R9-Q4). Sem respawn ao subir/descer escadas.
 - **[GDD R9-Q5, R23-Q1]** Movimento **contínuo e livre nas 4 direções cardeais**, sem diagonal direta.
 - **[GDD R32-Q4]** O mapa do andar é **revelado progressivamente**. **[CÓDIGO]** névoa de guerra com raio de visão 7,5 tiles; o explorado fica na memória e sobrevive às batalhas.
 - **[CÓDIGO]** Geração: 7–11 salas (4×4 a 9×7), 4–6 inimigos, 2–3 NPCs; tile de 48 px; o layout fica em cache no `GameState`.
+- **[D-314]** Aliados ativos seguem em **fila**, no **rastro exato** do protagonista, sem atravessar paredes/obstáculos; se travar, espera **1 s** e vai ao ponto livre mais próximo atrás do líder. Podem atravessar inimigos; o contato inicia batalha (R37-Q1).
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).
 - **[CÓDIGO]** Patrulha 42 px/s, perseguição 105 px/s; detecção por visão a 6,5 tiles (precisa de linha de visão), audição a 3 tiles, perde o rastro a 9 tiles; contato a 26 px; desiste após 4 s; raio de patrulha 4 tiles; **graça pós-batalha de 1,25 s**. Jogador 180 px/s.
 - **[GDD R9-Q4]** Inimigo derrotado é removido do andar nesta exploração.
+- **[D-310, D-315, D-321]** Substitui a detecção por visão atual: quatro níveis de ameaça (0 Medroso, 1 Fraco, 2 Valente, 3 Perigoso). A **soma dos níveis do grupo inimigo** (máx. 3 membros) é comparada com a **soma dos níveis dos membros vivos da equipe**; cada membro usa o próprio nível para ícone e tamanho. Inimigos podem andar **em grupo solto** (cada um calcula o próprio caminho, mas ficam próximos) ou sozinhos; a composição é aleatória; se o líder cai, o próximo vira líder. O nível de cada inimigo é **média da equipe + 1 a +4**. Distâncias: Fraco 3, Valente 6, Perigoso 9 tiles. Velocidades: Medroso 40, Fraco 70, Valente 110, Perigoso 150 px/s. Medroso foge a **3 tiles** e patrulha a **42 px/s**; tocado, inicia batalha normal. Faixas confirmadas: diferença percentual `(soma_inimiga - soma_equipe) / soma_equipe` com cortes **−0,40 / −0,10 / +0,30**. Tamanhos/ícones serão escolhidos após desenhos.
 
 ### 14.3 Dungeon, campanha e desfechos
 - **[GDD R23-Q2, R24-Q1]** Concluir uma dungeon = chegar ao **último andar e vencer o chefe**; avança-se de andar pela **escada/saída sem precisar matar todos**. Progressão entre andares **sequencial** (R34-Q3). Quantidade de andares **varia** entre expedições (R33-Q3). Chefe pode variar entre expedições (R34-Q4). Chefes: inimigos mais difíceis dentro das regras usuais, podem vir com apoio, máximo 3 inimigos ativos (R29-Q4, R30-Q3). **Missões/eventos secundários nunca impedem o acesso ao chefe** (R36-Q2).
@@ -276,6 +279,11 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[GDD R27-Q3, R28-Q4, R36-Q5]** Dungeons com **biomas mistos** que alteram inimigos/eventos/recompensas; cada dungeon tem espécies características. **[GDD R29-Q5]** Dificuldade cresce nos andares avançados e nas dungeons novas.
 - **[GDD R29-Q2, R30-Q2]** Eventos narrativos oferecem escolhas, com consequências **principalmente na expedição atual**. **[GDD R26-Q5, R33-Q4]** Salas secretas: opcionais, reveladas por pistas/mapas/NPCs/eventos.
 - **[GDD R30-Q5, R24-Q3, R25-Q2]** Recrutado entra na equipe ativa se houver vaga (máx. 3); senão vai para a **reserva**. Troca ativa↔reserva é **provisoriamente** permitida na exploração (um hub virá depois). **[GDD R26-Q1/Q2, R27-Q2]** O jogador **escolhe o protagonista** entre iniciais e **começa sozinho**; forma a equipe por recrutamento.
+- **[D-316]** A expedição tem **5 andares**; a escada do último andar inicia uma **nova expedição completa** (andar 1, nova seed, MP cheio, Natures novas; mantém equipe, itens e HP). O ponto de descanso ativa **ao pisar**, cura a **equipe ativa**, é de uso único e cada andar tem **2 pontos**, com **10% de chance** de um terceiro.
+- **[D-317]** O bioma é **sorteado por dungeon**; os 4 primeiros andares usam um bioma e o **5º andar usa outro bioma sorteado**, com o qual a nova dungeon continua. Não é necessário definir espécies por bioma agora e **não serão importados novos modelos**; usar os sprites overworld existentes.
+- **[D-318]** A F6 começa por **eventos**; a ordem dos demais conteúdos está pendente.
+- **[D-319]** A F3 mexe **só no overworld**; a batalha 3D continua com o Gible fixo.
+- **[D-320]** O criador autorizou commit + push **somente de documentação** nesta rodada, por um **worktree limpo do `origin/main`**.
 
 ### 14.4 Recrutamento
 - **[GDD R23-Q4, R24-Q2, R35-Q2]** Exige **interação voluntária explícita** (nunca automático por aproximação). Pokémon **especiais** exigem uma tarefa/evento antes (R32-Q5). Hostis normais seguem iniciando combate. Candidatos especiais são identificados no mapa (R26-Q2).
