@@ -2168,3 +2168,34 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Histórico e artefatos:** divergência textual de LUK na Rodada 60 (GDD §12.13) segue sem conciliação; D-203 mantém odômetro fora do jogo principal; D-235 e D-268 preservam independência de Moves/VFX e referência visual aprovada da HUD; D-300–D-307 de Motion Composer não foram alteradas.
 - **Escopo:** quatro novos D individuais, índice, consolidação e adendo GDD. **Nenhum código, teste, Move, ficha operacional, IA, HUD, cena, asset ou VFX alterado; nenhum teste de gameplay ou relatório quantitativo de VIT/SPI realizado.**
 
+---
+
+## 70. Rodada 84 reformulada — estrutura de dungeons, recrutamento, biblioteca de Moves e afinidades SMT
+
+> **2026-11-05.** Após substituir as perguntas de caráter técnico da Rodada 84, o criador respondeu literalmente **`C C C A`**, aprovando as alternativas **1C, 2C, 3C e 4A** do novo conjunto de questões de gameplay. Registros individuais **D-273–D-276**. O conjunto anterior de perguntas da Rodada 84 foi descartado sem resposta/aprovação. Registro documental conforme D-061; nenhum código alterado.
+
+### 70.1 Regras aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-273](decisoes/D-273-r84-q1-prototipo-cinco-andares-campanha-com-chefes.md) | **1C** | **Protótipo:** transição direta após **cinco andares** para nova expedição/dungeon, sem chefe obrigatório; **jogo completo:** dungeons de campanha continuam exigindo vitória contra o chefe no último andar |
+| [D-274](decisoes/D-274-r84-q2-recrutamento-eventos-e-batalhas-especiais.md) | **2C** | **Duas fontes de recrutamento:** eventos/missões/interações na exploração e encontros/batalhas especiais que podem tornar Pokémon elegíveis; o recrutamento exige **interação voluntária** |
+| [D-275](decisoes/D-275-r84-q3-biblioteca-moves-preparacao-restrita.md) | **3C** | Pokémon **conserva todos os Moves aprendidos** em biblioteca, mas equipa **até oito** para combate (quatro hotkeys); **trocas de equipados somente em locais seguros ou entre expedições**, com Tackle separado |
+| [D-276](decisoes/D-276-r84-q4-afinidades-null-repel-drain-por-especie.md) | **4A** | Sistema elemental inspirado em SMT inclui como possibilidades de afinidade **Null (anulação), Repel (reflexão) e Drain (absorção)** além de fraqueza/resistência, atribuíveis por espécie/elemento mediante definição posterior |
+
+### 70.2 Relações com regras anteriores e exemplos
+
+- **Cinco andares e chefes (D-273):** a transição automática após cinco andares da **D-316**, com nova expedição e seed, continua valendo **para o protótipo**. O jogo completo continua sujeito às decisões históricas **GDD R23-Q2/R24-Q1/R26-Q4**: **concluir dungeon de campanha exige vencer seu chefe**. A mudança **separa escopos sem revogar documentos antigos**. A D-317 sobre biomas mantém seu contexto provisório. Não foram fixados andares ou chefes concretos para a campanha final.
+- **Recrutamento (D-274):** um Pokémon hipotético pode tornar-se candidato após uma missão de exploração; outro após uma batalha especial. Ambos exigem **recrutamento voluntário**, e encontros hostis comuns seguem iniciando batalha por contato (**GDD R24-Q2/R26-Q2/R27-Q2**). Formação máxima de **três ativos** e acesso à reserva permanecem intactos.
+- **Biblioteca (D-275):** após aprender um nono Move, o Pokémon **não esquece permanentemente os oito anteriores**; seleciona até oito para uso, com **quatro hotkeys** e **Tackle separado** (**GDD R38-Q5**, D-032 R39). Poderá mudar equipados apenas **em locais seguros ou entre expedições**; ainda não está definido **quais lugares específicos** são considerados seguros nem interface/custos de preparação.
+- **Afinidades SMT (D-276):** além de fraqueza e resistência, **Null/Repel/Drain** são capacidades que **algumas espécies podem possuir contra elementos definidos nas fichas**. D-118/D-128 preservam os **11 elementos vigentes** e suas fraquezas até revisão específica, e **D-194** mantém o mínimo de dano **exceto** imunidade/bloqueio completo. **Não foram aprovadas tabelas por espécie, valores, regras detalhadas de reflexão/absorção, ou interação com AoE, status e recompensas ATB**. Preservar D-235: qualquer Move funciona para qualquer atacante/alvo/lado.
+
+### 70.3 Pendências, conflitos e escopo
+
+- **Dungeons:** implementar uma transição de protótipo não equivale a completar ou alterar a campanha final. Permanece pendente a integração de chefes, duração, andares e recompensas das dungeons completas.
+- **Recrutamento:** catálogo, critérios de elegibilidade, frequência e eventos especiais não foram especificados; não converter toda vitória em recrutamento nem impor recrutamento automático.
+- **Moves:** biblioteca persistente na progressão, oito equipados; definição de pontos seguros de preparação, disponibilidade, UI e gerenciamento de hotkeys continua em aberto. **Nenhum código ou ficha de Move foi alterado.**
+- **Afinidades:** adicionar tipos de interação ao design não define automaticamente como Repel e Drain se resolvem ou quem recebe recursos. **Nenhuma espécie real recebeu Null/Repel/Drain**, e o catálogo atual de elementos/fraquezas não foi reescrito.
+- **Histórico preservado:** D-033/D-063/D-270 mantêm Burst e MP; a matriz de status D-239/D-243/D-253/D-257/D-272 segue sem pares aprovados; D-268 preserva o visual do HUD; D-300–D-321, inclusive D-316–D-321, permanecem inalteradas. Divergência histórica de LUK R60 (GDD §12.13) não conciliada.
+- **Escopo da operação:** criar quatro decisões D individuais, atualizar índice, consolidado e adendo histórico GDD. **Nenhum código, teste, HUD, IA, asset, VFX, ficha ou cena modificado; nenhum teste de gameplay executado.**
+

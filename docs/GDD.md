@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.59 — Rodada 83 registrada em adendo rastreável (2026-11-05); histórico preservado.  
+> **Revisão:** 1.60 — Rodada 84 reformulada: quatro decisões centrais de gameplay (2026-11-05); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1754,6 +1754,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.59 | 2026-11-05 | Rodada 83: relatório verificável de cobertura separada VIT/SPI e suficiência sujeita à aprovação; Burst paga integralmente ATB e MP e excepciona cobrança D-263; ordenar excessos simultâneos por gerador e alvo; par incompatível sem matriz aprovada permanece sem resolução, sem remover status existente e com efeitos independentes preservados. D-269–D-272. | Rodada 83 fechada / Rodada 84 proposta |
 
+| 1.60 | 2026-11-05 | Rodada 84 reformulada (resposta literal C C C A): separar a transição direta do protótipo após cinco andares da regra de chefe obrigatório na campanha final; recrutar por eventos/missões e encontros especiais; biblioteca de Moves com até oito equipados e preparação restrita; permitir afinidades Null/Repel/Drain por espécie, inspiradas em SMT. D-273–D-276. | Rodada 84 reformulada fechada / Rodada 85 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2264,4 +2266,19 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos apenas ilustrativos:** uma espécie oficial com VIT verificável e SPI ausente integra a contagem de cobertura **separada**, mas não permite homologar tercis sem aprovação da suficiência; um Move hipotético de 3 ATB/8 MP pago com 1 Burst **não consome ATB nem MP**, sem aprovar os números; excedentes simultâneos recebem ordem por índice de evento gerador e ID do alvo **somente para identificação diagnóstica**; status X/Y expressamente incompatíveis, se ainda sem prioridade aprovada na matriz, **não produzem resolução conflitante nem remoção de X**, enquanto efeito Z independente pode continuar. **X/Y/Z não são pares concretos aprovados**.
 
 **Conciliação e pendências:** D-270 resolve **explicitamente** a dúvida deixada por **D-263** quanto a MP adicional quando **Burst paga a ação inteira**, preservando D-033/D-063 (pagamento integral/prioridade), D-228/D-263 (histórico de MP) e custos individuais ainda não fixados. Relatório de VIT/SPI, espécies, fontes, cobertura, representatividade, cortes e K permanecem pendentes; não simular levantamento. D-266/D-271 não aprovaram desempate residual entre excessos do mesmo gerador/alvo nem formato do log; D-267/D-272 preservam chance antes de matriz e impedem eliminar status em par sem precedência aprovada, sem determinar fila/reaplicação posterior. A divergência histórica de LUK R60 (GDD §12.13) continua não resolvida, D-203 mantém odômetro fora do jogo principal, D-235 independência de Moves/VFX, D-268 visual aprovado e D-300–D-307 como decisões independentes. **Nenhum código, teste, ficha operacional, Move, IA, HUD, cena, asset ou VFX alterado; nenhum teste de gameplay realizado.**
+
+### 12.35 Rodada 84 reformulada — dungeons, recrutamento, biblioteca de Moves e afinidades SMT (revisão 1.60)
+
+> **2026-11-05.** Após rejeitar as perguntas técnicas anteriores da Rodada 84, o criador aprovou as novas questões de **gameplay** respondendo literalmente **`C C C A`**. Correspondência com o novo questionário: **1C, 2C, 3C, 4A**. Registros individuais **D-273–D-276**, consolidado **§70** de `docs/REGRAS_DO_JOGO.md`. D-001 mantém o GDD apenas histórico para decisões de combate. O histórico anterior foi preservado, sem reescrita.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R84 reformulada-Q1 | **1C** | **Protótipo:** transição direta após cinco andares para nova dungeon/expedição; **jogo completo:** manter o chefe como requisito para concluir dungeons de campanha | [D-273](decisoes/D-273-r84-q1-prototipo-cinco-andares-campanha-com-chefes.md) |
+| R84 reformulada-Q2 | **2C** | **Recrutamento** por **eventos/missões** e também por **candidatos de encontros/batalhas especiais**, exigindo interação voluntária, não automática | [D-274](decisoes/D-274-r84-q2-recrutamento-eventos-e-batalhas-especiais.md) |
+| R84 reformulada-Q3 | **3C** | **Biblioteca com todos os Moves aprendidos**; até **oito equipados**, quatro hotkeys, Tackle separado; mudanças de equipamentos **somente em locais seguros ou entre expedições** | [D-275](decisoes/D-275-r84-q3-biblioteca-moves-preparacao-restrita.md) |
+| R84 reformulada-Q4 | **4A** | Sistema de **afinidades por espécie** inspirado em SMT permite **Null, Repel e Drain** além de fraqueza e resistência; efeitos específicos e distribuição sujeitos a decisões posteriores | [D-276](decisoes/D-276-r84-q4-afinidades-null-repel-drain-por-especie.md) |
+
+**Conciliações e exemplos hipotéticos:** D-273 **preserva escopo** de D-316/D-317 para o protótipo com cinco andares e preserva a regra anterior R23-Q2/R26-Q4 de chefe no jogo final, sem assumir duração ou chefes novos; um Pokémon pode oferecer recrutamento após missão ou batalha especial, mas **somente por interação voluntária**; um Pokémon que aprendeu onze Moves pode guardá-los na biblioteca, porém ter até oito preparados e trocá-los só em locais seguros/entre expedições; Null/Repel/Drain tornam-se categorias possíveis de afinidade, **sem atribuição a espécies reais ou alteração dos onze elementos existentes**. A decisão sobre afinidades é nova extensão expressa à D-118/D-128, sem copiar automaticamente tabelas de SMT.
+
+**Limitações e conflitos preservados:** ainda falta definir quais lugares são seguros para preparar Moves, condições concretas de recrutamento, integração da campanha com o chefe, distribuição das afinidades por espécie e como Repel/Drain interagem com dano, ATB e status. Nenhuma regra de MP/Burst (D-270), D-235 (Moves/VFX independentes de personagem/lado), D-268 (HUD), D-300–D-321 (Motion Composer e exploração) foi modificada. O conflito textual de LUK da Rodada 60 (§12.13) permanece sem resolução. **Somente documentação: nenhum código, teste, Move, ficha, IA, HUD, asset, cena ou VFX modificado; nenhum teste de gameplay executado.**
 

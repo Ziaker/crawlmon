@@ -346,6 +346,10 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 
 | ID | Área | Decisão | Estado |
 |---|---|---|---|
+| [D-273](D-273-r84-q1-prototipo-cinco-andares-campanha-com-chefes.md) | Exploração / R84 reformulada | Q1C: protótipo passa direto à nova expedição após cinco andares; jogo completo preserva chefes obrigatórios para conclusão das dungeons de campanha | Aprovada; duas regras de escopo conciliadas; sem implementação |
+| [D-274](D-274-r84-q2-recrutamento-eventos-e-batalhas-especiais.md) | Exploração / R84 reformulada | Q2C: recrutamento por eventos/missões e candidatos após encontros ou batalhas especiais, sempre voluntário | Aprovada; condições concretas pendentes |
+| [D-275](D-275-r84-q3-biblioteca-moves-preparacao-restrita.md) | Progressão / Moves / R84 reformulada | Q3C: preservar biblioteca de todos os Moves aprendidos; equipar até oito, alterando equipamento somente em locais seguros ou entre expedições | Aprovada; locais específicos pendentes |
+| [D-276](D-276-r84-q4-afinidades-null-repel-drain-por-especie.md) | Combate / afinidades / R84 reformulada | Q4A: além de fraqueza/resistência, prever Null, Repel e Drain como afinidades possíveis por espécie, segundo SMT | Aprovada; espécies e mecânicas específicas pendentes |
 | [D-278](D-278-restaurar-overworld-e-ajustar-paleta.md) | Exploração / visual | Restauração do overworld original e paleta; a D-313 relaxa a restrição de “somente cores” | Direção vigente |
 | [D-309](D-309-aliados-em-fila-no-overworld.md) | Exploração | Aliados ativos seguem em fila | Não implementado |
 | [D-310](D-310-niveis-de-ameaca-dos-inimigos-no-overworld.md) | Exploração / IA | Quatro níveis de ameaça (medroso, fraco, valente, perigoso), com tamanho e ícone; relativo ao nível | Não implementado |
