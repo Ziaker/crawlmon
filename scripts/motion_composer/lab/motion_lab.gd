@@ -101,7 +101,10 @@ func _ready() -> void:
 		game_fx.set_layout(game_fx.distance, game_fx.attacker_height, game_fx.target_height, true)
 	if _arg_text("--gamefx=") != "":
 		game_fx.request_framing()
-		game_fx.play(_arg_text("--gamefx="))
+		if _arg_text("--gfxt=") != "":
+			game_fx.seek(_arg_text("--gamefx="), _arg_float("--gfxt=", 0.0))
+		else:
+			game_fx.play(_arg_text("--gamefx="))
 		if _arg_text("--hidecomp=") == "1":
 			view_set.visible = false
 	session.clock.playing = _capture_path == ""

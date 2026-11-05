@@ -5,13 +5,19 @@ extends Node3D
 ## do laboratório. Nada aqui conhece personagem, time, lado ou coordenada fixa (D-235): posição, direção, altura e
 ## lado vêm dos dois marcadores configuráveis (distância, altura, espelhar).
 ##
-## Tempo: os efeitos do jogo disparam em tempo real (tweens e temporizadores); a ponte controla o ritmo por
-## `Engine.time_scale` (0 = pausa), que vale para o laboratório inteiro. Busca no tempo NÃO é oferecida nesta fatia.
+## Tempo: os efeitos do jogo disparam em tempo real (tweens e temporizadores). A ponte controla o ritmo por
+## `Engine.time_scale` (0 = pausa), que vale para o laboratório inteiro. BUSCA (`seek`): reinicia o efeito com a mesma
+## semente e o avança por quadros acelerados (escala = passo / duração real prevista do quadro), contando o tempo
+## avançado pelo `delta` já escalado do próprio quadro; ao chegar em t, pausa. Precisão: um quadro de jitter por salto
+## de temporizador encadeado; não é exata como o `--fixed-fps`.
 
 ## Efeitos disparáveis (id do Move → rótulo). O comportamento é por `move_id`, nunca por personagem.
 const EFFECTS: Array[String] = ["tackle", "megido", "mabufula", "hassou_tobi", "titanomachia", "media", "tarukaja", "rakunda", "sukunda"]
 const SPEEDS: Array[float] = [0.0, 0.1, 0.25, 0.5, 1.0]
 const TACKLE_IMPACT_DELAY := 0.24
+## Maior passo de tempo de efeito por quadro durante a busca (um passo por quadro de 1/60 s, como o jogo; mais largo encadearia menos saltos de temporizador).
+const SEEK_MAX_STEP := 1.0 / 60.0
+const DEFAULT_SEED := 1234
 
 ## Em quem o efeito acontece: o alvo ou o próprio atacante.
 const ON_TARGET := 0
@@ -25,6 +31,22 @@ var distance: float = 8.4
 var attacker_height: float = 2.0
 var target_height: float = 2.4
 var mirrored: bool = false
+## Semente do RNG global usada ao disparar (mesmo efeito + mesma semente = mesmo resultado).
+var rng_seed: int = DEFAULT_SEED
+
+signal seek_finished(advanced: float)
+var _seek_target: float = -1.0
+var _seek_advanced: float = 0.0
+var _seek_pending: float = -1.0
+var _seek_real: float = 1.0 / 60.0
+## Quadros iniciais da busca em câmera quase parada: o primeiro desenho de um efeito (carregar, compilar) pode levar
+## centenas de ms e, no ritmo normal, avançaria o efeito por esse tempo todo.
+var _seek_warm: int = 0
+var _seek_warm_total: int = 0
+var _seek_calm: int = 0
+const SEEK_WARM_FRAMES := 3
+const SEEK_WARM_SCALE := 0.001
+var _ui_time: HSlider
 
 var fx: BattleFx
 var _markers := {}
@@ -117,6 +139,7 @@ func play(effect: String) -> bool:
 	if not EFFECTS.has(effect):
 		return false
 	clear()
+	seed(rng_seed)
 	var l := layout()
 	var dir: Vector3 = l["dir"]
 	var target_c: Vector3 = l["target_center"]
@@ -182,6 +205,36 @@ func scene_stats() -> Dictionary:
 	return {"nodes": nodes, "particles": particles, "meshes": meshes}
 
 
+## Reinicia o efeito (mesma semente) e o avança até `t` segundos de tempo de efeito; depois pausa
+## (`Engine.time_scale` 0). `t` ≤ 0 deixa o efeito recém-disparado e pausado.
+func seek(effect: String, t: float) -> bool:
+	_seek_target = -1.0
+	Engine.time_scale = 1.0
+	if not play(effect):
+		return false
+	_seek_advanced = 0.0
+	if t <= 0.0005:
+		Engine.time_scale = 0.0
+		seek_finished.emit(0.0)
+		return true
+	_seek_target = t
+	_seek_real = 1.0 / 60.0
+	_seek_warm = SEEK_WARM_FRAMES
+	_seek_warm_total = 0
+	_seek_calm = 0
+	Engine.time_scale = SEEK_WARM_SCALE
+	return true
+
+
+## Passo de tempo de efeito pedido para o próximo quadro da busca: no máximo um quadro do jogo (1/60 s).
+static func seek_step(remaining: float) -> float:
+	return minf(SEEK_MAX_STEP, maxf(remaining, 0.0))
+
+
+func is_seeking() -> bool:
+	return _seek_target >= 0.0
+
+
 func is_active() -> bool:
 	return _active_effect != "" and fx.get_child_count() > 0
 
@@ -190,7 +243,35 @@ func set_speed(s: float) -> void:
 	Engine.time_scale = maxf(s, 0.0)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if _seek_pending >= 0.0:
+		var t := _seek_pending
+		_seek_pending = -1.0
+		seek(EFFECTS[_ui_effect.selected] if _ui_effect != null else _active_effect, t)
+		return
+	if _seek_target >= 0.0:
+		_seek_advanced += delta
+		if _seek_warm > 0:
+			# Aquecimento: segue em câmera quase parada até 2 quadros seguidos "normais" (< 40 ms reais), no mínimo
+			# SEEK_WARM_FRAMES e no máximo 120 quadros; o primeiro desenho de um efeito pode levar centenas de ms.
+			_seek_warm_total += 1
+			var real_w := delta / SEEK_WARM_SCALE
+			_seek_calm = _seek_calm + 1 if real_w < 0.04 else 0
+			if (_seek_calm >= 2 and _seek_warm_total >= SEEK_WARM_FRAMES) or _seek_warm_total >= 120:
+				_seek_warm = 0
+				_seek_real = clampf(real_w, 0.0005, 0.04)
+				Engine.time_scale = seek_step(_seek_target - _seek_advanced) / _seek_real
+			return
+		var scale := maxf(Engine.time_scale, 0.0001)
+		_seek_real = clampf(delta / scale, 0.0005, 0.25)
+		if _seek_advanced >= _seek_target - 0.0001:
+			_seek_target = -1.0
+			Engine.time_scale = 0.0
+			seek_finished.emit(_seek_advanced)
+			if _ui_speed != null:
+				_ui_speed.selected = 0
+		else:
+			Engine.time_scale = seek_step(_seek_target - _seek_advanced) / _seek_real
 	if not is_active():
 		if _active_effect != "" and fx.get_child_count() == 0:
 			_active_effect = ""
@@ -232,6 +313,14 @@ func build_ui(box: VBoxContainer) -> void:
 	_ui_speed.selected = SPEEDS.size() - 1
 	_ui_speed.item_selected.connect(func(i: int) -> void: set_speed(SPEEDS[i]))
 	box.add_child(_ui_speed)
+	var tl := _label("Tempo do efeito (busca)", 12)
+	box.add_child(tl)
+	_ui_time = HSlider.new()
+	_ui_time.min_value = 0.0
+	_ui_time.max_value = 1.5
+	_ui_time.step = 0.05
+	_ui_time.value_changed.connect(func(v: float) -> void: _seek_pending = v)
+	box.add_child(_ui_time)
 	_ui_mirror = CheckBox.new()
 	_ui_mirror.text = "Espelhar (atacante à direita)"
 	_ui_mirror.toggled.connect(func(on: bool) -> void: set_layout(distance, attacker_height, target_height, on))

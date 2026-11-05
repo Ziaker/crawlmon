@@ -1233,9 +1233,21 @@ O laboratório passa a tocar os efeitos que o jogo já tem, como referência, ao
 
 **D-235:** nada de personagem, time, lado ou coordenada fixa: o atacante e o alvo são dois marcadores configuráveis; o espelhado troca os lados e a direção; a altura do alvo muda onde o efeito acontece. O comportamento é por `move_id`.
 
-**Tempo:** os efeitos do jogo usam tweens e temporizadores em tempo real. O ritmo (pausa, 0,1×, 0,25×, 0,5×, 1×) é `Engine.time_scale` e vale para o **laboratório inteiro**. **Não há busca no tempo** nesta fatia (pedido do criador: "melhore o debug até ser capaz de fazer tudo isso e até mais"; fatias seguintes).
+**Tempo:** os efeitos do jogo usam tweens e temporizadores em tempo real. O ritmo (pausa, 0,1×, 0,25×, 0,5×, 1×) é `Engine.time_scale` e vale para o **laboratório inteiro**. A busca no tempo veio na fatia 2 (abaixo), pedido do criador: "melhore o debug até ser capaz de fazer tudo isso e até mais".
 
 **Verificado:** 16 verificações (layout e espelhado; os 9 efeitos × 2 lados criam nós perto do ponto certo; alvos de alturas 1,0/2,4/4,0; limpar, reiniciar sem acumular, ritmo e restauração); 5 mutações (espelho ignorado, efeito no lado errado ×2, altura ignorada, limpar sem limpar) derrubam os testes; as 14 suítes somam 819 verificações, 0 falhas; vídeo do megido e do tackle nos dois lados em GL Compatibility, sem erro nos registros.
 
 **Não verificado:** aprovação visual do criador; os outros 7 efeitos em vídeo (testados só por posição, em modo sem janela); busca no tempo; lado a lado com a composição; efeitos do Abra do `fx_lab`; a seção na tela (o painel é longo e a seção fica no fim do painel direito; conferida só pelo teste de construção).
+
+### 34.1 Fatia 2 — busca no tempo dos efeitos do jogo (2026-11-05)
+
+**Como funciona (sem editar `BattleFx`):** `GameFxBridge.seek(efeito, t)` reinicia o efeito com a **mesma semente** do RNG global (`rng_seed`, padrão 1234) e o avança por quadros acelerados: a cada quadro `Engine.time_scale = passo / duração real prevista do quadro`, com o passo de **no máximo 1/60 s** (`seek_step`), para encadear os temporizadores como o jogo encadeia a 60 quadros por segundo. O tempo avançado é contado pelo `delta` já escalado do próprio quadro; ao chegar em `t` o laboratório **pausa** (`time_scale` 0). Antes do avanço há um **aquecimento** em câmera quase parada (escala 0,001) até dois quadros seguidos normais (< 40 ms reais; mínimo 3, máximo 120 quadros): o primeiro desenho de um efeito leva centenas de ms e, sem isso, o efeito avançava 0,65 a 1,3 s em vez de 0,4 s (medido). Na interface: slider "Tempo do efeito (busca)" de 0 a 1,5 s; argumento `--gfxt=<t>` com `--gamefx`.
+
+**Medido (headless, 9 efeitos × 3 tempos, 27 casos):** o estado buscado repete-se em 25 de 27 (antes do aquecimento) e, depois dele, 10 de 10 execuções do teste passaram; o avanço fica entre 0,000 e 0,004 s além do pedido; a contagem de nós coincide com a reprodução em tempo real em cerca de 21 dos 27 casos (o próprio tempo real varia de uma execução a outra). Em janela (GL Compatibility, megido em 0,05 / 0,15 / 0,3 / 0,5 s, normal e espelhado) a sequência é a mesma nos dois lados: clarão e faíscas, anel e faíscas se espalhando, anel que some.
+
+**Verificado:** 28 verificações no teste da ponte (as 12 anteriores mais busca: chegada ao tempo, pausa, passo máximo de 1/60 s, busca repetida, depois do fim não sobra nada, voltar no tempo recria o efeito, lado espelhado, efeito desconhecido); 5 mutações (sem contar o tempo, sem semente, sem pausar ao chegar, passo largo, sem aquecimento) derrubam o teste, exceto a **sem aquecimento**, que só se manifesta no primeiro uso de um efeito na vida do processo e não pode ser reproduzida dentro do mesmo teste (observada à mão: avançou 1,304 / 0,788 / 0,647 s no lugar de 0,400 s); as 14 suítes somam 831 verificações, 0 falhas.
+
+**Limitações da busca:** não é exata como `--fixed-fps` (um quadro de variação por salto de temporizador encadeado); `sukunda` nasce um nó entre 0,25 e 0,4 s e a contagem varia em 1 conforme o quadro; `tackle` e `hassou_tobi` em tempos curtos (≤ 0,4 s) diferem da reprodução em tempo real em alguns nós; a busca em janela leva o tempo do efeito (1/60 s por quadro a 60 Hz); o ritmo e a pausa continuam valendo para o laboratório inteiro; sem lado a lado com a composição.
+
+**Não verificado:** aprovação visual do criador da fatia 2; os 7 efeitos além do megido em janela; busca com a composição visível ao mesmo tempo; efeitos do Abra do `fx_lab`.
 
