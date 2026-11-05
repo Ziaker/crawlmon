@@ -151,7 +151,7 @@ func _run() -> void:
 	ok(s.composition.find_layer(&"aux_nascimento").enabled, "religar o acabamento")
 	lab._on_study_selected(21)
 	await process_frame
-	ok(s.composition.id == &"estudo_RECEITA" and s.composition.layers.size() == 11, "o último item do seletor é a receita da §6 (11 camadas)")
+	ok(s.composition.id == &"estudo_RECEITA" and s.composition.layers.size() == 12, "o último item do seletor é a receita da §6 (11 camadas)")
 	lab._on_study_selected(0)
 	ok(s.composition.id == &"estudo_RECEITA", "o item de instrução do seletor não carrega nada")
 	for sid in MotionStudies.ids():

@@ -167,6 +167,8 @@ func play(effect: String) -> bool:
 		"sukunda":
 			fx.fx_impacts._status_impact_move("sukunda", target_c)
 	_active_effect = effect
+	if _ui_effect != null:
+		_ui_effect.selected = EFFECTS.find(effect)
 	_fired_at_usec = Time.get_ticks_usec()
 	_peak = {"nodes": 0, "particles": 0, "meshes": 0, "draw_calls": 0, "primitives": 0, "objects": 0, "frame_ms": 0.0}
 	return true
@@ -213,6 +215,8 @@ func seek(effect: String, t: float) -> bool:
 	if not play(effect):
 		return false
 	_seek_advanced = 0.0
+	if _ui_time != null:
+		_ui_time.set_value_no_signal(clampf(t, _ui_time.min_value, _ui_time.max_value))
 	if t <= 0.0005:
 		Engine.time_scale = 0.0
 		seek_finished.emit(0.0)
@@ -291,7 +295,7 @@ func _process(delta: float) -> void:
 ## Seção de interface (um VBoxContainer qualquer). A ponte só desenha seus próprios controles.
 func build_ui(box: VBoxContainer) -> void:
 	box.add_child(_label("Efeitos do jogo (referência, uso do BattleFx)", 15))
-	var note := _label("Tempo real; sem busca no tempo. O ritmo vale para o laboratório inteiro.", 12)
+	var note := _label("Tempo real, com busca pelo slider (aproximada). O ritmo e a pausa valem para o laboratório inteiro.", 12)
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(note)
 	_ui_effect = OptionButton.new()
@@ -300,7 +304,7 @@ func build_ui(box: VBoxContainer) -> void:
 	box.add_child(_ui_effect)
 	var row := HBoxContainer.new()
 	box.add_child(row)
-	row.add_child(_button("Disparar", func() -> void: play(EFFECTS[_ui_effect.selected])))
+	row.add_child(_button("Disparar", fire_from_ui))
 	row.add_child(_button("Limpar", clear))
 	row.add_child(_button("Enquadrar", request_framing))
 	var hide := CheckBox.new()
@@ -331,6 +335,19 @@ func build_ui(box: VBoxContainer) -> void:
 	_ui_stats = _label("", 12)
 	_ui_stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(_ui_stats)
+
+
+## Botão Disparar: se o laboratório está pausado (time_scale 0, por exemplo depois de uma busca), volta a 1× para o
+## efeito disparado andar em vez de nascer congelado.
+func fire_from_ui() -> void:
+	if _ui_effect == null:
+		return
+	_seek_target = -1.0
+	if Engine.time_scale <= 0.0:
+		set_speed(1.0)
+		if _ui_speed != null:
+			_ui_speed.selected = SPEEDS.size() - 1
+	play(EFFECTS[_ui_effect.selected])
 
 
 func _refresh_ui() -> void:

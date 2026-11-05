@@ -29,6 +29,7 @@ func _init() -> void:
 	await t_sizes()
 	await t_clear_and_time()
 	await t_seek()
+	await t_lab_ui()
 	print("\n  Resultado: %d verificações, %d falhas" % [_checks, _fails])
 	quit(1 if _fails > 0 else 0)
 
@@ -174,3 +175,47 @@ func t_seek() -> void:
 	b.queue_free()
 	await process_frame
 	ok(is_equal_approx(Engine.time_scale, 1.0), "sair da cena restaura o ritmo")
+
+
+func t_lab_ui() -> void:
+	print("
+-- Seção na interface do laboratório (cena real) --")
+	var lab: Node = load("res://scenes/motion_lab/motion_lab.tscn").instantiate()
+	root.add_child(lab)
+	await process_frame
+	await process_frame
+	var g: GameFxBridge = lab.game_fx
+	ok(g != null and g._ui_effect != null and g._ui_effect.item_count == GameFxBridge.EFFECTS.size(), "a seção existe e lista os 9 efeitos")
+	var d0: float = lab._dist
+	g.set_layout(12.0, 2.0, 2.4, false)
+	g.request_framing()
+	ok(lab._dist > d0 and is_equal_approx(lab._dist, 12.0 * 2.1), "Enquadrar afasta a câmera conforme a distância dos dois (%.1f)" % lab._dist)
+	g.composition_visible_requested.emit(false)
+	ok(not lab.view_set.visible, "Ocultar a composição esconde o conjunto de desenho")
+	g.composition_visible_requested.emit(true)
+	ok(lab.view_set.visible, "desmarcar volta a mostrar")
+	# Disparar depois de uma busca (pausado) volta ao ritmo normal
+	g._ui_effect.selected = GameFxBridge.EFFECTS.find("megido")
+	_adv = -1.0
+	g.seek_finished.connect(func(a: float) -> void: _adv = a)
+	g.seek("megido", 0.2)
+	var n := 0
+	while _adv < 0.0 and n < 600:
+		await process_frame
+		n += 1
+	ok(Engine.time_scale == 0.0, "depois da busca o laboratório está pausado")
+	g.fire_from_ui()
+	ok(is_equal_approx(Engine.time_scale, 1.0) and g.is_active(), "Disparar tira da pausa e dispara o efeito escolhido")
+	# o slider de busca pede uma busca e ela chega ao tempo
+	_adv = -1.0
+	g._ui_time.value = 0.3
+	n = 0
+	while _adv < 0.0 and n < 600:
+		await process_frame
+		n += 1
+	ok(_adv >= 0.2999 and _adv < 0.35, "mexer no slider de tempo busca o efeito até lá (%.3f)" % _adv)
+	g.seek("rakunda", 0.45)
+	ok(g._ui_effect.selected == GameFxBridge.EFFECTS.find("rakunda") and is_equal_approx(g._ui_time.value, 0.45), "a interface acompanha o efeito e o tempo buscados por código (seletor e slider)")
+	Engine.time_scale = 1.0
+	lab.queue_free()
+	await process_frame

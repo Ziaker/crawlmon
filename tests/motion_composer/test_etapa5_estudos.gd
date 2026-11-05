@@ -166,26 +166,46 @@ func t_aux() -> void:
 
 
 func t_recipe() -> void:
-	print("\n-- Receita da §6 como estudo --")
+	print("
+-- Receita da §6 como estudo (com o encerramento M18 + M19) --")
 	var c := MotionStudies.build(MotionStudies.RECIPE)
-	ok(c.layers.size() == 11 and c.sample_count == 96, "11 camadas e 96 amostras")
+	ok(c.layers.size() == 12 and c.sample_count == 96, "12 camadas e 96 amostras")
 	ok(c.validate(_cat).is_empty(), "valida sem diagnósticos")
+	ok(MotionStudies.title(MotionStudies.RECIPE) == "Receita da §6 (com rastro)" and "M19" in MotionStudies.note(MotionStudies.RECIPE), "título e nota dizem que inclui o rastro")
+	var last := c.layers[c.layers.size() - 1]
+	var before_last := c.layers[c.layers.size() - 2]
+	ok(last.behavior_id == &"M19" and last.op == MotionTypes.Op.PERSIST and before_last.behavior_id == &"M18", "o encerramento é M18 seguido de M19, nesta ordem (§6)")
+	ok(is_equal_approx(last.time_offset, before_last.time_offset), "o rastro começa junto da dissolução")
 	var counts_ok := true
+	var trail_grows := true
 	var t := 0.0
+	var prev_n := 0
 	while t <= 3.0001:
 		var r := eval_at(c, t)
 		if not finite_ok(r):
 			counts_ok = false
-		if r.samples.size() != (96 if t < 1.05 else 288):
+		var n := r.samples.size()
+		if t < 1.05 and n != 96:
 			counts_ok = false
+		if t >= 1.05 and t < 2.55 and n != 288:
+			counts_ok = false
+		if t >= 2.6 and n <= 288:
+			trail_grows = false
 		t += 0.05
-	ok(counts_ok, "61 instantes: 96 amostras até a bifurcação e 288 depois, sem erros")
+	ok(counts_ok, "61 instantes: 96 amostras até a bifurcação, 288 até o encerramento, sem erros nem valores inválidos")
+	ok(trail_grows, "depois do início do encerramento o rastro acrescenta amostras históricas")
+	var tail := eval_at(c, 2.8)
+	var aged := 0
+	for s2 in tail.samples:
+		if s2.age > 0.0:
+			aged += 1
+	ok(aged > 0 and tail.samples.size() <= 288 * 12, "o rastro traz estados anteriores (idade > 0) e respeita o limite do M19 (%d amostras)" % tail.samples.size())
 	var behaviors := {}
 	for l in c.layers:
 		behaviors[l.behavior_id] = true
-	var needed := [&"M11", &"M17", &"M02", &"M08", &"M14", &"M03", &"M07", &"M15", &"M13", &"M16", &"M18"]
+	var needed := [&"M11", &"M17", &"M02", &"M08", &"M14", &"M03", &"M07", &"M15", &"M13", &"M16", &"M18", &"M19"]
 	var has_all := true
 	for b in needed:
 		if not behaviors.has(b):
 			has_all = false
-	ok(has_all, "usa os 11 comportamentos da receita (M11, M17, M02, M08, M14, M03, M07, M15, M13, M16, M18) e nenhuma trajetória exclusiva")
+	ok(has_all and behaviors.size() == 12, "usa os 12 comportamentos da receita (M11, M17, M02, M08, M14, M03, M07, M15, M13, M16, M18, M19) e nenhuma trajetória exclusiva")

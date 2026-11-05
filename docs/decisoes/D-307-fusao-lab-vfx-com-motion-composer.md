@@ -27,9 +27,9 @@ Respostas às perguntas (literais): primeiro passo da D-274 → "Item 6 (mediç�
 
 1. **Busca no tempo (seek) e pausa dos efeitos do jogo:** o criador pediu "melhore o debug até ser capaz de fazer tudo isso e até mais". Fatia 1: disparo, reinício e ritmo. **Fatia 2 (2026-11-05): busca no tempo** por reinício com a mesma semente e avanço em passos de 1/60 s, aproximada (ver §34.1). Faltam: lado a lado com a composição e o que mais o criador pedir, uma fatia por vez, sem editar `BattleFx`.
 2. Os efeitos do Abra que vivem só no `fx_lab` (Raio Psíquico, Onda de Choque, Confusão): fora da 1ª fatia.
-3. Receita do estudo com M19 (pergunta anterior, D-306): ainda sem resposta.
+3. Receita do estudo com M19: resolvida em 2026-11-05 (ver D-306 e §35).
 4. O número D-274 da proposta e a relação com esta decisão.
 
 ## Estado
 
-**Fatia 1 implementada** (2026-11-05): `lab/game_fx_bridge.gd` (ponte só de uso), seção "Efeitos do jogo" no painel direito do laboratório; os 9 efeitos entre atacante e alvo derivados (distância, alturas, espelhar), ritmo por `Engine.time_scale`, métricas (nós, partículas, malhas, draw calls, primitivas, objetos, pico). 16 verificações novas, 819 no total. **Fatia 2 (busca no tempo) implementada**; 831 verificações no total. **Aguardando a aprovação visual do criador** das duas fatias. Nada em `scripts/combat`, `scripts/vfx` ou cenas de combate foi alterado.
+**Fatia 1 implementada** (2026-11-05): `lab/game_fx_bridge.gd` (ponte só de uso), seção "Efeitos do jogo" no painel direito do laboratório; os 9 efeitos entre atacante e alvo derivados (distância, alturas, espelhar), ritmo por `Engine.time_scale`, métricas (nós, partículas, malhas, draw calls, primitivas, objetos, pico). 16 verificações novas, 819 no total. **Fatia 2 (busca no tempo) implementada**; auditoria de 2026-11-05 corrigiu 4 defeitos da interface (§35); 844 verificações no total. **Aguardando a aprovação visual do criador** das duas fatias. Nada em `scripts/combat`, `scripts/vfx` ou cenas de combate foi alterado.

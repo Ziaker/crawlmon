@@ -37,7 +37,7 @@ const NOTES := {
 	&"M18": "Dissolução progressiva: o efeito some do início para o fim, complementar do crescimento.",
 	&"M19": "Rastro temporal: cada elemento deixa um fluxo contínuo de estados anteriores que afina e some.",
 	&"M20": "Pós-imagem: cópias discretas de estados anteriores, cada uma um ramo, esmaecendo em degraus.",
-	&"RECEITA": "Receita de teste da §6 (sem rastro): compressão, crescimento, zigue-zague e torção, bifurcação em 3, recombinação, onda e explosão, dissolução. Não é um Move.",
+	&"RECEITA": "Receita de teste da §6: compressão, crescimento, zigue-zague e torção, bifurcação em 3, recombinação, onda e explosão, e o encerramento dissolução + rastro (M18 + M19). Não é um Move.",
 }
 
 static var _cache: Dictionary = {}
@@ -55,7 +55,7 @@ static func note(id: StringName) -> String:
 
 static func title(id: StringName) -> String:
 	if id == RECIPE:
-		return "Receita da §6 (sem rastro)"
+		return "Receita da §6 (com rastro)"
 	for b in MotionBehaviors.all():
 		if b.id == id:
 			return "%s — %s" % [id, b.display_name]
@@ -135,6 +135,9 @@ static func _specs(id: StringName) -> Array:
 				_l("onda", &"M13", Op.OFFSET, {"speed": 1.5, "amplitude": 0.05}, 2.25),
 				_l("explosao", &"M16", Op.OFFSET, {"distance": 0.3, "t_duration": 0.3}, 2.25),
 				_l("dissolucao", &"M18", Op.MULTIPLY_ATTRIBUTE, {"t_duration": 0.45}, 2.55),
+				# §6: o encerramento é M18 + M19 (o fluxo desaparece deixando rastros temporários). Parâmetros do M19: os
+				# padrões do comportamento (proposta do agente, não aprovada).
+				_l("rastro", &"M19", Op.PERSIST, {}, 2.55),
 			]
 	_cache[id] = out
 	return out

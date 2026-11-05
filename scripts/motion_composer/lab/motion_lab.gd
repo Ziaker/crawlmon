@@ -33,6 +33,7 @@ var _scroll_target: int = 4
 var representation: int = 0
 ## Efeitos do jogo como referência (D-307).
 var game_fx: GameFxBridge
+var _right_box: VBoxContainer
 
 var _cam: Camera3D
 var _yaw: float = 0.6
@@ -314,7 +315,7 @@ func _on_aux_toggled(on: bool) -> void:
 	_refresh_layers()
 
 
-## Receita de teste da §6 (sem M19, que é a Etapa 4): compressão → crescimento → zigue-zague + torção →
+## Receita de teste da §6 (com o encerramento M18 + M19): compressão → crescimento → zigue-zague + torção →
 ## bifurcação em 3 → serpentina + turbulência → recombinação → onda radial + explosão → dissolução.
 ## Não é um Move do Crawlmon; janelas em segundos por defasagem de camada (ciclo de 3 s).
 func _recipe_composition() -> void:
@@ -663,6 +664,7 @@ func _build_ui() -> void:
 	_preset_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(_preset_status)
 	box.add_child(_small("Mouse: botão direito gira, meio move, roda aproxima. Teclas: espaço, R, vírgula, ponto."))
+	_right_box = right
 	game_fx = GameFxBridge.new()
 	add_child(game_fx)
 	game_fx.build_ui(right)
@@ -1127,6 +1129,8 @@ func _process(delta: float) -> void:
 		if _scroll_target == 0:
 			var sc := _params_box.get_parent().get_parent() as ScrollContainer
 			sc.scroll_vertical = int(_arg_float("--scroll=", 0.0))
+			if _arg_text("--scrollright=") == "1" and _right_box != null:
+				(_right_box.get_parent() as ScrollContainer).scroll_vertical = 100000
 	session.clock.advance(delta)
 	if session.clock.time != _last_time:
 		_dirty = true

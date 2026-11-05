@@ -25,4 +25,4 @@ P-07 (orçamento e hardware-alvo), P-08, P-09. A aprovação artística permanec
 
 ## Estado
 
-Executada em 2026-11-04 (ver §33 da especificação): medições, capturas em `gl_compatibility` e limitações registradas. **Aguardando a revisão do criador.** Corrigida em 2026-11-05 após auditoria externa (medição do desenho com efeitos visíveis; receita + M19 medida à parte; a conclusão "o gargalo é avaliar" foi retirada). Orçamento (P-07) segue aberto. **Pergunta aberta ao criador:** o estudo da receita deve passar a incluir o M19 (a §6 termina com M18 + M19)? Não alterado.
+Executada em 2026-11-04 (ver §33 da especificação): medições, capturas em `gl_compatibility` e limitações registradas. **Aguardando a revisão do criador.** Corrigida em 2026-11-05 após auditoria externa (medição do desenho com efeitos visíveis; receita + M19 medida à parte; a conclusão "o gargalo é avaliar" foi retirada). Orçamento (P-07) segue aberto. **Pergunta sobre o M19 respondida:** "auditorie pelo que esqueceu ou não corrigiu ou implementou, corrija e imediatamente já inclua o m19". A receita agora inclui o M19 (ver §35); instante e parâmetros do rastro são propostas do agente.
