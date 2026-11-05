@@ -52,6 +52,13 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-044](D-044-motion-composer-representacoes-v1.md) | Motion Composer / laboratório | Pontos, fragmentos, fitas e fumaça/billboards disponíveis na V1 | Especificado; não implementado |
 | [D-045](D-045-motion-composer-pasta-fixa-presets.md) | Motion Composer / persistência | Salvar e carregar presets em pasta fixa do laboratório | Especificado; não implementado |
 | [D-046](D-046-motion-composer-escopo-especificacao.md) | Motion Composer / escopo | Catálogo M01–M20 e consolidação da especificação com propostas técnicas identificadas | Documentado; não implementado |
+| [D-300](D-300-motion-composer-etapa-1-autorizada.md) | Motion Composer / implementação | Etapa 1 (contratos e avaliação) autorizada, isolada do combate | Etapa 1 implementada e testada |
+| [D-301](D-301-motion-composer-etapa-2-autorizada.md) | Motion Composer / implementação | Etapa 2 (M01–M13) autorizada | M01–M13 implementados e testados |
+| [D-302](D-302-motion-composer-etapa-2b-m16-m18.md) | Motion Composer / implementação | Etapa 2b: M16, M17 e M18 | M16–M18 implementados e testados |
+| [D-303](D-303-motion-composer-etapa-3-composicao-espacial.md) | Motion Composer / implementação | Etapa 3: M14 Bifurcação e M15 Recombinação; ordem, máscaras e defasagens validadas | M14–M15 implementados e testados; Etapas 4–6 não autorizadas |
+| [D-304](D-304-motion-composer-etapa-4-persistencia-temporal.md) | Motion Composer / implementação | Etapa 4: M19 Rastro temporal, M20 Pós-imagem e reconstrução determinística do histórico | M19–M20 implementados e testados; Etapas 5–6 não autorizadas |
+| [D-305](D-305-motion-composer-etapa-5-laboratorio-visual.md) | Motion Composer / laboratório | Etapa 5 em fatias: laboratório visual, representações em shaders/objetos do Godot, uma mudança visual por vez com aprovação | Fatia 1 (Pontos + laboratório) entregue; aguarda aprovação; Etapa 6 não autorizada |
+| [D-306](D-306-motion-composer-etapa-6-validacao.md) | Motion Composer / validação | Etapa 6: testes, inspeção visual, medir desempenho (sem limite definido) e capturas em GL Compatibility | Executada (§33); aguarda revisão; orçamento P-07 continua do criador |
 | [D-047](D-047-camera-lenta-3s-decisao-menu.md) | Combate / UI / Game Feel | Câmera Lenta de 3 Segundos para Decisão nos Menus Fight e Itens | Implementado |
 | [D-048](D-048-rolling-hp-mother3-odometro.md) | Combate / UI / Game Feel / Configurações | Mecânica de Vida Rolante (Rolling HP / Odômetro estilo Mother 3 / EarthBound) | Implementado |
 | [D-049](D-049-knockback-final-e-screen-shake-ko.md) | Combate / Visual / Game Feel / Câmera | Impacto de K.O.: Lançamento Balístico do Inimigo, Shake Épico e VFX de Derrota | Implementado |

@@ -734,6 +734,10 @@ Definir formalmente entradas, saídas, tipos de operação, espaços de coordena
 
 Implementar e validar trajetórias, campos, deformações e propagação.
 
+**Etapa 2b — Impacto e envelopes** (acrescentada por [D-302](../decisoes/D-302-motion-composer-etapa-2b-m16-m18.md))
+
+M16 explosão direcional, M17 crescimento progressivo e M18 dissolução progressiva, que esta seção não atribuía a nenhuma etapa.
+
 **Etapa 3 — Composição espacial**
 
 Adicionar bifurcação, recombinação, ordem de composição, máscaras e defasagens.
@@ -783,7 +787,7 @@ As escolhas confirmadas e propostas técnicas do adendo permitem concluir esta e
 
 **Ainda proposto:** detalhes técnicos e artísticos não resolvidos pelas decisões D-042–D-045, incluindo os valores sugeridos no adendo.
 
-**Não executado:** implementação, criação de cenas, criação de shaders, atualização dos VFX existentes, publicação no GitHub, commits, push e testes em execução. A documentação foi consolidada localmente nesta entrega.
+(Situação da consolidação de 2026-11-03; atualizada nas seções 20 a 24.) **Não executado nessa data:** implementação, criação de cenas, criação de shaders, atualização dos VFX existentes, publicação no GitHub, commits, push e testes em execução. A documentação foi consolidada localmente nesta entrega.
 
 Esta especificação deverá ser revista contra a versão atual do repositório antes de qualquer implementação autorizada.
 
@@ -880,3 +884,340 @@ Os testes devem verificar contratos, não copiar fórmulas: invariância ao part
 - D-044: quatro representações aprovadas contempladas.
 - D-045: política de pasta fixa preservada; caminho concreto apenas proposto.
 - Não verificado: funcionamento em Godot, aparência, desempenho, interoperabilidade de presets ou regressões em execução.
+## 20. Etapa 1 implementada — 2026-11-04 (D-300)
+
+Escopo: **somente** a Etapa 1 (contratos e avaliação). Os 20 comportamentos (Etapa 2), bifurcação/recombinação reais, histórico, laboratório visual, presets e renderizadores **não** existem. Nada do combate, de `VfxLib` ou dos VFX atuais foi tocado.
+
+Código em `scripts/motion_composer/` (nomes de pasta e de classe são escolha técnica, não do criador); testes em `tests/motion_composer/test_etapa1_contratos.gd`:
+
+```bash
+godot --headless --path . --script res://tests/motion_composer/test_etapa1_contratos.gd
+```
+
+| Contrato | Classe | Resumo |
+|---|---|---|
+| Enums | `MotionTypes` | `Kind` (§4.4), `Op` (§5.2), `Space` (§5.3), `Severity` |
+| Amostra | `MotionSample` | dado puro: u, rest, `element_id`, `branch`, posição, base, largura, intensidade, opacidade, visibilidade; `branch_path` e `derive_id` determinísticos |
+| Contexto | `MotionContext` | tempo (s) ≠ progresso (`progress()` saturado), duração finita > 0, semente, revisão, referência, `emitter_at(t)` válido em instantes passados |
+| Parâmetro | `MotionParam` | tipo, unidade, domínio; recusa NaN/infinito/tipo errado |
+| Comportamento | `MotionBehavior` | id, versão, tipo, operações aceitas, parâmetros, `needs_history`, `output_count` (conferido antes de alocar), `apply` pura |
+| Catálogo | `MotionCatalog` | registro; conjunto fechado `V1_IDS` (M01–M20) e `missing_v1()` |
+| Camada | `MotionLayer` | id estável, operação, seleção de ramos, espaço, parâmetros, máscara, intensidade 0–1, defasagem, janela de atividade |
+| Máscara | `MotionMask` | peso 0–1 por posição, tempo, elemento; degradê para fora da faixa; inversão |
+| Composição | `MotionComposition` | camadas ordenadas, revisão por edição, `validate`, `evaluate` sem estado |
+| Saída | `MotionResult`, `MotionDiagnostic` | amostras + diagnósticos + revisão; erro ⇒ nenhuma amostra, sem correção silenciosa |
+| Espaços | `MotionSpace` | LOCAL, GLOBAL, EMITTER, TRAJECTORY (referencial por amostra; proibido para topologia/persistência) |
+| Determinismo | `MotionHash` | hash de 32 bits no lugar de qualquer aleatoriedade |
+
+Semântica adotada (proposta do agente, não aprovada pelo criador): REPLACE interpola todos os campos; OFFSET soma um deslocamento; DEFORM só geometria; MULTIPLY_ATTRIBUTE multiplica atributos; MASK só visibilidade (limiar 0,5); BRANCH/MERGE exigem TOPOLOGY e substituem as amostras selecionadas; PERSIST exige HISTORICAL e acrescenta amostras. Intensidade 0 é neutra. O comportamento sempre recebe cópias das amostras: se alterar a entrada, o fluxo anterior permanece íntegro. Camada que produziria saída não finita, ids duplicados, contagem divergente ou mais amostras que `max_samples` é ignorada com diagnóstico. Ramo inexistente na seleção gera diagnóstico e a camada é ignorada.
+
+Valores experimentais (ajustáveis, sem valor de aceitação): `sample_count` 128, `base_length` 1,0, `max_samples` 100000, `duration` 3,0 s.
+
+**Verificado (Godot 4.7.2, headless):** 133 verificações, 0 falhas; 4 mutações no código (peso do OFFSET, limiar do MASK, inversão de espaço, checagem de ramo inexistente) derrubaram os testes correspondentes; log sem erro/aviso. **Medido:** 9 camadas, 128→384 amostras, ≈14 ms por avaliação em GDScript puro (≈0,8 ms por camada só de compositor, mesmo com comportamento vazio), sem renderização; sem orçamento aprovado, não é requisito nem garantia. **Não verificado:** renderer GL Compatibility, qualquer aparência, desempenho em outro hardware, os comportamentos reais (dublês de teste foram usados), regressão da suíte de combate (nenhum arquivo do combate foi alterado por esta etapa).
+
+## 21. Etapa 2 implementada — 2026-11-04 (D-301)
+
+Escopo: **M01–M13** (trajetórias, campos, deformações, propagação). M14–M15 (Etapa 3), M19–M20 (Etapa 4) e **M16–M18 (sem etapa definida na §16; aguardam o criador)** não foram implementados. Contratos da Etapa 1 inalterados. Código em `scripts/motion_composer/behaviors/` (um arquivo por comportamento), auxiliares em `motion_profile.gd`, registro em `MotionBehaviors.register_all(catalog)`. Testes: `tests/motion_composer/test_etapa2_comportamentos.gd`.
+
+```bash
+godot --headless --path . --script res://tests/motion_composer/test_etapa2_comportamentos.gd
+```
+
+Todas as fórmulas, nomes, unidades, padrões e limites abaixo são **propostas do agente** (não aprovadas pelo criador). `u` = coordenada longitudinal de repouso (0..1); ângulos em graus; "região" = [centro ± extensão/2] em `u` com borda suave `softness`.
+
+| ID | Comportamento | Operação | Fórmula resumida (parâmetros principais) |
+|---|---|---|---|
+| M01 | Espiral helicoidal | REPLACE | `(r·cosθ, r·sinθ, u·passo·voltas)`, `r = raio + evolução·u`, `θ = ±2π·voltas·u + fase + giro·t` |
+| M02 | Zigue-zague | OFFSET | `amplitude · mistura(triangular, seno)(frequência·z + fase − velocidade·t)` na direção lateral `axis_deg` |
+| M03 | Serpentina | OFFSET | `amplitude·sen(2π(z − v·t)/λ + fase) + ½·curvatura·z²` |
+| M04 | Bézier dinâmica | REPLACE | cúbica `p0..p3`; `p1` e `p2` derivam `drift·sen(2π·Hz·t)`; `progress` limita o trecho |
+| M05 | Vórtice | OFFSET | gira o componente perpendicular ao eixo por `ângulo·(1 − d/R)^decaimento` |
+| M06 | Convergência | OFFSET | `(alvo − p)·atração·(1 − d/alcance)^curva·rampa_temporal` |
+| M07 | Turbulência | OFFSET | ruído de valor 3D+tempo por hash inteiro; cada componente em ±intensidade |
+| M08 | Torção progressiva | DEFORM/REPLACE | gira (x,y) por `ângulo·janela(u)·rampa_temporal·frente(u,t)` |
+| M09 | Curvatura | DEFORM/REPLACE | gira o ponto em torno de eixo no plano XY por `ângulo·rampa(u)` |
+| M10 | Alongamento | DEFORM/REPLACE | `z += (f−1)·extensão·L·rampa(u)`; monotônico (fator ≥ 1) |
+| M11 | Compressão | DEFORM/REPLACE | `z = zc + (z − zc)(1 − k·janela)`; `radial` estreita x,y; monotônico (k ≤ 0,95) |
+| M12 | Pulso viajante | OFFSET / MULTIPLY_ATTRIBUTE | gaussiana assimétrica (frente curta, cauda `tail`×) em `c(t) = início + v·t`; laço opcional |
+| M13 | Onda radial | OFFSET / MULTIPLY_ATTRIBUTE | `exp(−((d − v·t)/largura)²)·(1 − R/alcance)^dissipação` no plano da normal |
+
+Convenções do contrato aplicadas: OFFSET devolve deslocamento em `position`; MULTIPLY_ATTRIBUTE devolve multiplicadores (M12/M13 fixam opacidade em 1); geradores ignoram a posição anterior e preservam atributos; nada decide dano, colisão ou câmera; nenhum usa `TIME`, relógio próprio ou aleatoriedade externa.
+
+**Verificado (Godot 4.7.2, headless):** 124 verificações, 0 falhas no teste da Etapa 2 e 133 no da Etapa 1. Cada comportamento: parâmetros padrão, todo o domínio no mínimo e no máximo (em dois instantes) sem valores não finitos, repetibilidade, intensidade 0,5 = ponto médio, pausa, ids independentes do tempo, assinaturas espaciais distintas nos 78 pares e nenhum nó criado. Fórmulas conferidas por valores analíticos. 13 mutações no código (uma por comportamento); uma sobreviveu (M11, borda suave), o teste foi reforçado e a mutação passou a falhar. **Medido:** de 1,9 a 4,1 ms por avaliação de 1 camada com 128 amostras, exceto M07 (≈8 ms), em GDScript puro e máquina ocupada; sem orçamento aprovado, não é requisito. **Não verificado:** aparência (nenhuma representação visual existe), GL Compatibility, hardware-alvo, qualidade artística das curvas e dos padrões, e a equivalência com os oito estudos helicoidais.
+
+## 22. Etapa 2b implementada — 2026-11-04 (D-302)
+
+Escopo: **M16, M17 e M18**, que a §16 não atribuía a nenhuma etapa; por escolha do criador ("Etapa 2b agora", [D-302](../decisoes/D-302-motion-composer-etapa-2b-m16-m18.md)) formam a **Etapa 2b**, entre as Etapas 2 e 3. Contratos das Etapas 1 e 2 inalterados (adição de três comportamentos e de dois auxiliares em `motion_profile.gd`). Código em `scripts/motion_composer/behaviors/` (`m16_…`, `m17_…`, `m18_…`); testes em `tests/motion_composer/test_etapa2b_impacto_envelopes.gd`.
+
+```bash
+godot --headless --path . --script res://tests/motion_composer/test_etapa2b_impacto_envelopes.gd
+```
+
+Todas as fórmulas, nomes, unidades, padrões e limites abaixo são **propostas do agente** (não aprovadas pelo criador).
+
+| ID | Comportamento | Operações | Fórmula resumida (parâmetros principais) |
+|---|---|---|---|
+| M16 | Explosão direcional | OFFSET / MULTIPLY_ATTRIBUTE | por elemento (hash do id + semente): direção dentro de um cone (`cone_deg`, `distribution`), alcance de 50% a 100% de `distance`; `radial` mistura afastamento de `origin`; progresso `1 − (1 − p)^curva`; opacidade cai a `1 − dissipate` |
+| M17 | Crescimento progressivo | MASK / MULTIPLY_ATTRIBUTE | cobertura 0..1 por varredura em `u` (`direction` 0 início→fim, 1 fim→início, 2 centro→bordas), frente em `progresso^curva × (1 + largura)`, `jitter` determinístico; canais `affect_visibility/width/intensity/opacity` |
+| M18 | Dissolução progressiva | MASK / MULTIPLY_ATTRIBUTE | complemento exato de M17 com os mesmos parâmetros (crescimento + dissolução = 1) |
+
+Garantias do contrato: no instante inicial M17 não mostra nada e M18 mostra tudo; no final, o inverso, mesmo com transição larga; a região de M17 nunca encolhe com o tempo; M16 depende só do id do elemento (o elemento 5 recebe o mesmo deslocamento com 33 ou 65 amostras); M16 não cria impactos nem altera resultado lógico; nenhum dos três usa `TIME` ou relógio próprio.
+
+**Verificado (Godot 4.7.2, headless):** 57 verificações, 0 falhas no teste da Etapa 2b; 124 na Etapa 2 e 133 na Etapa 1, todas sem falhas (o teste da Etapa 2 foi atualizado só para refletir que agora faltam apenas M14, M15, M19 e M20). 14 mutações no código; 4 sobreviveram (alcance variável, componente radial, semente no azimute e largura da transição), os testes foram reforçados e as 4 passaram a falhar. **Não verificado:** aparência (nenhuma representação visual existe), GL Compatibility, desempenho em hardware-alvo, qualidade artística dos perfis e a escolha de canal que cada representação usará.
+
+**Estado do catálogo:** implementados M01–M13 e M16–M18 (16 de 20). Faltam M14, M15 (Etapa 3) e M19, M20 (Etapa 4).
+
+## 23. Etapa 3 implementada — 2026-11-04 (D-303)
+
+Escopo ([D-303](../decisoes/D-303-motion-composer-etapa-3-composicao-espacial.md)): **M14 Bifurcação** e **M15 Recombinação**, mais a validação, com comportamentos reais, de ordem de camadas, máscaras e defasagens (que existem desde a Etapa 1), e a receita da §6 **sem M19** (Etapa 4). Código em `scripts/motion_composer/behaviors/m14_bifurcation.gd` e `m15_recombination.gd`; testes em `tests/motion_composer/test_etapa3_composicao_espacial.gd`.
+
+```bash
+godot --headless --path . --script res://tests/motion_composer/test_etapa3_composicao_espacial.gd
+```
+
+Fórmulas, nomes, unidades, padrões e limites são **propostas do agente** (não aprovadas pelo criador), seguindo a semântica proposta na §19.3.
+
+| ID | Comportamento | Operação | Fórmula resumida |
+|---|---|---|---|
+| M14 | Bifurcação | BRANCH | N ramos (1–16) com caminho `pai/camada.índice` e id derivado; afastamento lateral `distância·tanh(tan(ângulo)·Δz/distância)·intensidade·rampa_temporal` a partir de `split_u`, distribuído a 360°/N desde `phase_deg` |
+| M15 | Recombinação | MERGE | amostras com o mesmo `(u, rest)` formam um grupo; posição = `lerp(ramo, centroide, smoothstep(merge_start, merge_end, u)·força·rampa_temporal)`; intensidade/largura divididas entre os ramos do grupo (soma preservada com redução 1); ids, caminhos e ordem preservados |
+
+**Refinamento do compositor (aditivo):** operação de topologia que devolve a mesma quantidade de amostras (M15; M14 com um ramo) substitui as selecionadas no lugar, preservando a ordem; quantidades diferentes seguem agrupadas na posição da primeira amostra selecionada. Operações de topologia ignoram a máscara por amostra; a intensidade da camada vale só como liga/desliga (0 = ignorada).
+
+**Receita de teste (§6, sem M19)**, janelas por defasagem de camada com `duration` 3 s (derivadas dos intervalos propostos na §19.7): compressão (M11) e crescimento (M17) de 0 a 0,45 s; zigue-zague e torção (M02, M08) desde 0,45 s; bifurcação em 3 (M14) desde 1,05 s; serpentina e turbulência (M03, M07) desde 1,5 s; recombinação (M15) desde 1,95 s por 0,3 s; onda radial e explosão (M13, M16) desde 2,25 s; dissolução (M18) desde 2,55 s por 0,45 s. É receita de teste do compositor, não um Move do Crawlmon.
+
+**Verificado (Godot 4.7.2, headless):** 71 verificações no teste da Etapa 3, todas sem falhas: 65 amostras até 1,05 s e 195 depois; 61 instantes sem valores inválidos; fluxos coincidentes após a reunião e afastados antes; tudo dissolvido em 3 s; receita reproduzível e independente de buscas anteriores. 10 mutações no código (M14, M15 e o refinamento do compositor) derrubam os testes. **Medido:** ≈8–9 ms por avaliação da receita completa (11 camadas, 65→195 amostras), GDScript puro, sem renderização, sem orçamento aprovado. **Não verificado:** aparência (nenhuma representação visual existe), GL Compatibility, hardware-alvo.
+
+## 24. Auditoria das etapas 1 a 3 — 2026-11-04
+
+Revisão feita a pedido do criador. Achados e correções:
+
+| # | Achado | Correção |
+|---|---|---|
+| 1 | **IDs de decisão colidiam** com D-171 a D-174 já existentes na `main` do GitHub (outros assuntos). | Renumerados para **D-300 a D-303**. Foram D-171–D-174 e depois D-230–D-233, mas a `main` passou a usar esses números em rodadas novas (maior ID remoto visto: D-234); a faixa D-300+ é reservada ao Motion Composer para evitar novas colisões (escolha técnica do agente). |
+| 2 | Comportamento que alterasse a entrada corrompia o fluxo no espaço LOCAL (introduzido por otimização). | Corrigido na Etapa 1 (cópias sempre) com 2 testes. |
+| 3 | Testes de catálogo das Etapas 2 e 2b ainda esperavam M14 e M15 ausentes. | Atualizados (faltam apenas M19 e M20). |
+| 4 | Verificações vazias ou frouxas nos testes (`or true`, variável sem uso, condição que não distinguia M11, M16, M17, M15). | Removidas ou reforçadas; 4 + 1 mutantes sobreviventes passaram a falhar. |
+| 5 | Três testes errados da Etapa 3 (Δz numérico, ids comparados entre camadas de nomes distintos, limite de ramos acima do domínio). | Corrigidos; o código estava certo. |
+| 6 | Texto da especificação desatualizado (§16 sem Etapa 2b; §18 afirmava que nada fora executado). | Atualizado. |
+| 7 | Regressão do combate nunca havia sido rodada. | `test_d040_1atb`, `test_battle_load` e `test_attack_motion` rodam sem falha (árvore local com alterações de terceiros; nenhum arquivo de combate foi alterado por estas etapas). |
+
+**Continua pendente (não esquecido, não autorizado):** M19 e M20 e o histórico (feitos depois, na Etapa 4: §25); laboratório visual, presets e representações (Etapa 5); validação completa, GL Compatibility, orçamento de desempenho e aprovação artística (Etapa 6). 18 dos 20 comportamentos existiam nesta auditoria; com a Etapa 4 (§25) são 20 de 20.
+
+## 25. Etapa 4 implementada — 2026-11-04 (D-304)
+
+Escopo ([D-304](../decisoes/D-304-motion-composer-etapa-4-persistencia-temporal.md)): **M19 Rastro temporal**, **M20 Pós-imagem** e a **reconstrução determinística do histórico**. Com isso os 20 comportamentos M01–M20 existem (`MotionCatalog.missing_v1()` vazio). Código em `scripts/motion_composer/behaviors/m19_temporal_trail.gd`, `m20_afterimage.gd` e `motion_history.gd`; testes em `tests/motion_composer/test_etapa4_persistencia.gd`.
+
+```bash
+godot --headless --path . --script res://tests/motion_composer/test_etapa4_persistencia.gd
+```
+
+**Como o histórico é reconstruído (§9.3, §19.4):** o compositor entrega às camadas PERSIST uma função `MotionContext.history_fn(t)` que reavalia, do zero, as camadas **anteriores** no instante `t` (com as suas janelas, defasagens e parâmetros daquele instante). Não há estado entre avaliações, nem dependência de quadros exibidos: seek, retrocesso e reinício produzem o mesmo resultado, e mudar um parâmetro reconstrói tudo com a nova revisão. O histórico do emissor vem de `emitter_at(t)` em instantes passados. Adições aditivas aos contratos: `MotionContext.history_fn` e `MotionSample.age`.
+
+Fórmulas, nomes, unidades, padrões e limites são **propostas do agente** (não aprovadas pelo criador).
+
+| ID | Comportamento | Operação | Resumo |
+|---|---|---|---|
+| M19 | Rastro temporal | PERSIST | por elemento, `N = round(duration / sample_interval)` (1–256) amostras do **próprio estado** em `t − j·dt`, formando **um ramo contínuo** ordenável por `age`; largura `lerp(width_start, width_end, idade/duração)`, opacidade `(1 − idade/duração)^fade_curve` |
+| M20 | Pós-imagem | PERSIST | `count` (1–16) cópias do estado em `t − k·interval`, **cada uma um ramo** (`pai/camada.k−1`); opacidade em degraus `1 − fade·k/(count+1)`; largura × `scale^k` |
+
+`world_space` (ambos): desligado, o efeito acompanha o emissor (coordenadas locais do instante passado); ligado, a história fica no mundo, `E(t)⁻¹·E(t − idade)·p`, preservando posição e direção do emissor. Amostras anteriores ao instante 0 (ou sem histórico) são mantidas **invisíveis**, para que contagem e ids não mudem. A **diferença obrigatória** do grupo H vale: rastro = fluxo contínuo que afina e some; pós-imagem = estados discretos em ramos separados que preservam os atributos do estado.
+
+**Verificado (Godot 4.7.2, headless):** 72 verificações no teste da Etapa 4 (60 originais + 12 da auditoria abaixo) e todas as anteriores (133 + 124 + 57 + 71), todas sem falhas: 457 no total. Cada amostra histórica confere com o fluxo avaliado de forma independente em `t − idade`; seek/retrocesso/reinício idênticos; emissor em linha e em giro conferidos pela fórmula; histórico de histórico (M20 sobre M19); janelas de atividade das camadas anteriores respeitadas em cada instante passado; domínio no mínimo e no máximo sem valores inválidos. 14 mutações no código (M19, M20, histórico e compositor) derrubam os testes, mais 7 nas correções da auditoria. **Medido:** M19 padrão com 128 amostras de entrada (1408 de saída, 11 reavaliações do fluxo) ≈ 40 ms por avaliação em GDScript puro e máquina ocupada; o custo cresce com a quantidade de amostras históricas e com o custo das camadas anteriores, e não há orçamento aprovado (§12.3). **Não verificado:** aparência (nenhuma representação visual existe), GL Compatibility, hardware-alvo, orçamento de desempenho, qualidade artística, e o comportamento ao repetir um trecho em laço (depende do laboratório, Etapa 5).
+
+**Auditoria da Etapa 4 (2026-11-04, a pedido do criador) — o que havia sido esquecido e foi corrigido:**
+
+| # | Lacuna contra a especificação | Correção |
+|---|---|---|
+| 1 | §3 grupo H pede *intensidade* como propriedade controlável; M19 e M20 só variavam largura/tamanho e opacidade. | M19 `intensity_end`; M20 `intensity_fade` (padrões neutros). |
+| 2 | §19.4: ao repetir um trecho, a janela histórica não pode conectar a cauda ao ciclo anterior; só existia o corte em t = 0. | `MotionContext.history_start` (e `MotionComposition.history_start`, repassado ao contexto). |
+| 3 | §12.2: limites de amostragem e persistência "configuráveis"; o teto de 256 era constante. | M19 `max_samples` (1–1024, padrão 256). |
+| 4 | §19.4: história do emissor indisponível "deve ser sinalizada, não inventada". | Aviso `layer_emitter_history_missing` (não é erro) quando `world_space` é pedido sem `emitter_fn`. |
+| 5 | §12.1: métricas de inspeção (quantidade de amostras, tempo de avaliação) não existiam. | `MotionResult.stats`: `samples`, `history_samples`, `layers_active`, `eval_usec`. |
+| 6 | Custo: o emissor era consultado por amostra e por idade. | Transformação relativa calculada uma vez por idade. |
+
+**Ainda não coberto (não é esquecimento, depende de etapas não autorizadas):** orientação estável de fitas e tratamento de tangentes quase nulas (§19.4) são do renderizador de fitas (Etapa 5); a repetição de trecho em laço só pode ser exercitada com o relógio do laboratório (Etapa 5); orçamento e medições em hardware-alvo (Etapa 6).
+
+**Pendente (não autorizado):** laboratório visual, presets e representações (Etapa 5); validação completa, desempenho, GL Compatibility e aprovação artística (Etapa 6).
+
+## 26. Etapa 5, fatia 1 — laboratório e representação Pontos — 2026-11-04 (D-305)
+
+Escopo ([D-305](../decisoes/D-305-motion-composer-etapa-5-laboratorio-visual.md)): a Etapa 5 é entregue **em fatias, uma mudança visual por vez, com aprovação do criador entre elas**. Esta fatia traz a base testável e **uma** representação. Tudo usa objetos e shaders do Godot (nenhum HTML): `MultiMeshInstance3D`, `SphereMesh`, `ShaderMaterial` com `shaders/motion_lab/motion_point.gdshader` (spatial, `unshaded`, GL Compatibility), `ImmediateMesh` para eixos e grade, `Camera3D`, controles de UI do Godot.
+
+```bash
+godot --path . res://scenes/motion_lab/motion_lab.tscn
+godot --path . res://scenes/motion_lab/motion_lab.tscn -- --capture=C:/pasta/saida.png --t=1.2 --frames=8
+```
+
+| Parte | Arquivo | Resumo |
+|---|---|---|
+| Relógio | `lab/motion_clock.gd` | reproduzir, pausar, reiniciar, ±1 quadro (1/60 s), seek, velocidades 0,1x–2x, laço e trecho repetido; `history_start` = início do trecho (§19.4) |
+| Sessão | `lab/motion_lab_session.gd` | composição, catálogo, relógio, **toggle D-042** (atualizar no instante atual ↔ reiniciar), isolamento de camada, emissor de demonstração (parado, linha, órbita) |
+| Presets | `lab/motion_presets.gd` | JSON UTF-8 versionado em `user://motion_composer/presets/` (D-045): vetores como x/y/z, validação completa antes de substituir, versão desconhecida recusada, gravação atômica, nomes restritos; nunca executa código |
+| Pontos | `lab/motion_points_view.gd` + shader | um ponto por amostra visível, cor por ramo, alfa = opacidade, brilho = intensidade; neutro (§8.3) |
+| Laboratório | `lab/motion_lab.gd` + `scenes/motion_lab/motion_lab.tscn` | viewport 3D (botão direito gira, meio move, roda aproxima), catálogo M01–M20 com busca, camadas ordenadas (adicionar, subir/descer, ligar/desligar, isolar, remover), parâmetros gerados dos descritores (com unidades), linha do tempo, presets, estatísticas e diagnósticos |
+
+**Propostas do agente (não aprovadas):** disposição em dois painéis (P-08), pasta e formato dos presets, modo inicial "atualizar no instante atual" sem persistir a preferência, cores por ramo, ciclo de 3 s, 64 amostras na demonstração.
+
+**Verificado:** 79 verificações do relógio, da sessão e dos presets (ida e volta idêntica em 4 instantes; 17 formas de preset inválido recusadas; nenhum arquivo temporário sobra) e 17 do laboratório instanciado (adicionar, reordenar, ligar, isolar, remover, editar nos dois modos, salvar e carregar presets pela interface; o material é `ShaderMaterial` com `.gdshader`); execução em janela com GL Compatibility (NVIDIA GeForce RTX 2050) sem erros, com a captura mostrada ao criador. As sete suítes somam 553 verificações, todas sem falhas. **Medido:** avaliação ≈ 28–36 ms por quadro na demonstração (832 amostras, rastro de 12 idades), o que limita a prévia a cerca de 30 quadros/s; sem orçamento aprovado.
+
+**Não feito nesta fatia (aguarda aprovação visual):** Fitas, Fragmentos e Fumaça/billboards (D-044); comparação A/B; estudos individuais dos 20 comportamentos e a receita da §6 como demonstração; seleção de ramos e máscaras na interface; reprodução do trecho em laço pela interface. **Não verificado:** aparência aprovada pelo criador, desempenho em outro hardware, comportamento da interface em resoluções pequenas.
+
+## 27. Etapa 5, fatia 2 — representação Fitas — 2026-11-04 (D-305)
+
+Aprovação da fatia anterior pelo criador, literal: "estao otimos" (aparência dos Pontos, vídeos da §26). Esta fatia acrescenta **uma** representação: **Fitas**. Objetos e shader do Godot: `ArrayMesh` reconstruído por quadro num `MeshInstance3D`, `ShaderMaterial` com `shaders/motion_lab/motion_ribbon.gdshader` (spatial, `unshaded`, `cull_disabled`, GL Compatibility); nada de HTML.
+
+| Parte | Arquivo | Resumo |
+|---|---|---|
+| Geometria (dado puro) | `lab/motion_ribbon_builder.gd` | agrupa as amostras em fitas e gera vértices, cores, UVs, índices e AABB |
+| Vista | `lab/motion_ribbons_view.gd` | uma superfície de `ArrayMesh` por quadro, `custom_aabb` própria |
+| Shader | `shaders/motion_lab/motion_ribbon.gdshader` | cor e alfa dos vértices; borda suavizada por `UV.y` |
+| Laboratório | `lab/motion_lab.gd` | seletor Pontos / Fitas / Pontos + fitas; largura da fita; `--rep=pontos|fitas|ambos` |
+
+**Agrupamento (genérico, sem saber qual comportamento gerou as amostras):** por ramo. Se todas as amostras do ramo têm a mesma idade, é uma fita de *estado* ordenada por `u` (fluxo atual, cada ramo de bifurcação, cada pós-imagem). Se as idades variam (rastro M19), cada elemento é uma fita de *história* ordenada por idade, começando na amostra atual do mesmo elemento (sem vão).
+
+**Orientação (§19.4):** base de rotação mínima (transporte paralelo) a partir da base da primeira amostra; tangente nula reaproveita a anterior; inversão de 180° não gira a fita. Segmentos só são omitidos quando as **duas** pontas estão ocultas, para o rastro sumir por alfa e não ser cortado. Largura = largura-base × largura da amostra; alfa do vértice = opacidade (0 se invisível); brilho = intensidade; matiz por ramo (ângulo áureo por índice, nome da camada embaralhado). Trocar a representação não altera a composição, a revisão nem o relógio (testado).
+
+**Verificado:** 43 verificações da geometria (agrupamento de fluxo, rastro, bifurcação e pós-imagem; ordem mesmo com entrada invertida; cabeça do rastro; base estável em reta, inversão de 180°, pontos coincidentes e hélice; atributos por ponto; AABB; determinismo) e 22 do laboratório (incluindo a troca de representação); as oito suítes somam 601 verificações, todas sem falhas. 10 mutações no construtor derrubam os testes (uma, a de tangente nula, é equivalente: o resultado geométrico não muda). Execução em janela com GL Compatibility sem erros; vídeos mostrados ao criador. **Medido:** construção das fitas ≈ 5 ms por quadro com 704 amostras (GDScript, headless).
+
+**Não verificado:** aparência aprovada pelo criador; a ordenação de fitas translúcidas sobrepostas (o shader não escreve profundidade, §19.5 pede medição); fitas viradas de lado (fitas planas somem quando vistas de perfil, sem versão voltada para a câmera); desempenho em outro hardware. **Faltam:** Fragmentos e Fumaça/billboards (D-044), comparação A/B, estudos individuais dos 20, seleção de ramos e máscaras na interface.
+
+## 28. Etapa 5, fatia 3 — representação Fragmentos — 2026-11-04 (D-305)
+
+Aprovação da fatia anterior, literal: "ok, oque deve prosseguir agora, aprovo ambos" (vídeos de Fitas). Esta fatia acrescenta **uma** representação: **Fragmentos** (instâncias de malha, D-044, §8.1). Objetos e shader do Godot: `MultiMeshInstance3D` com malha procedural `ArrayMesh` de estilhaço (bipirâmide achatada, 6 faces com normais planas) e `ShaderMaterial` com `shaders/motion_lab/motion_fragment.gdshader` (spatial, `unshaded`, "luz de cabeça" fixa na câmera para ler as facetas, GL Compatibility); nada de HTML.
+
+| Parte | Arquivo | Resumo |
+|---|---|---|
+| Vista | `lab/motion_fragments_view.gd` | um fragmento por amostra visível; `fragment_basis` orienta pela base da amostra (eixo longo = tangente) com giro (0–360°) e inclinação (±54°) fixos por elemento e tamanho de 60 % a 140 % do base, tudo derivado do id do elemento (estável no tempo) |
+| Shader | `shaders/motion_lab/motion_fragment.gdshader` | cor e alfa da instância (matiz por ramo, opacidade, intensidade), facetas marcadas |
+| Laboratório | `lab/motion_lab.gd` | quarto item do seletor de representação; controle de tamanho do fragmento; `--rep=fragmentos`; `--demo=estilhacos` |
+
+**Demonstração `estilhacos` (não é um Move):** hélice M01 que nasce (M17), explode para fora (M16 OFFSET com componente radial) e se dissipa (M16 MULTIPLY com curva 0,5, mais lenta que o deslocamento), ciclo de 2,4 s.
+
+**Verificado:** 22 verificações dos fragmentos (determinismo e variação por elemento; bases ortogonais sem espelhamento e escala uniforme; faixa de tamanho; giro cobre toda a volta; inclinação até 54°; malha de 18 vértices com normais planas, unitárias, para fora e coerentes com o enrolamento horário; forma de estilhaço; MultiMesh com cor por instância; invisíveis, transparentes e de tamanho 0 descartados) e 25 do laboratório (troca para Fragmentos conserva composição, revisão e relógio). As nove suítes somam 648 verificações, todas sem falhas. 10 mutações no código derrubam os testes (3 sobreviventes iniciais, de giro, inclinação e semente por id, foram cobertos por testes de direção independentes do tamanho). Execução em janela com GL Compatibility sem erros; vídeos mostrados ao criador. Duas correções feitas ao olhar os quadros e os testes: a dissipação da demonstração ficava rápida demais (agora uma curva própria) e a inclinação máxima real é 54°, não 27°. **Medido:** preencher 256 fragmentos ≈ 1,5 ms por quadro (GDScript, headless).
+
+**Não verificado:** aparência aprovada pelo criador; fragmentos com giro no tempo (hoje a orientação é fixa por elemento; girar exigiria um tempo explícito no shader); a orientação segundo a direção real do movimento (hoje segue a base da amostra); desempenho em outro hardware. **Faltam:** Fumaça/billboards (D-044), comparação A/B, estudos individuais dos 20, seleção de ramos e máscaras na interface.
+
+## 29. Etapa 5, fatia 4 — representação Fumaça/billboards (poeira) — 2026-11-04 (D-305)
+
+Aprovação da fatia anterior, literal: "prossiga" (vídeos de Fragmentos). Esta fatia acrescenta a última representação da D-044: **Fumaça/billboards** (§8.1).
+
+**Histórico de rejeições do criador (literal) e correções:**
+1. "Não gostei n parece fumaça nem dust": a primeira versão (folha `flipbook_smoke.png`, baforadas de 20 cm esverdeadas, enfileiradas) parecia uma lagarta. Descartada.
+2. "Não estou satisfeito ainda": a segunda (baforadas macias, tamanho 35 cm, vida longa) continuava borrada e sem a cara da poeira do jogo. Perguntei o que incomodava; o criador marcou **borrada/mole demais, formato de nuvem/algodão, cor ou luz e movimento**, com referência **a poeira do jogo (D-041)**.
+3. Refeita medindo a referência: renderizei a poeira real do jogo (`fx_motion._dust_trail` + `fx_impacts._smoke`, via `VfxLib`, mesma cena e câmera) e copiei suas regras. Dois erros meus apareceram na comparação lado a lado: eu tinha **suavizado a textura** (a do jogo é manchada) e a baforada esmaecia **duas vezes** (pela rampa de vida e pelo esmaecimento do rastro), por isso ficava fraca.
+
+4. "Tá melhor, mas poeira mexe muito com opacidade, não estou vendo tanta": a quarta versão acrescenta o **jogo da opacidade**: cada baforada tem densidade própria (de 0,35 a 1; umas são véus, outras densas), a opacidade **oscila** com a idade (3 a 7 Hz, fase própria) e a queda depois do pico tem **curva ajustável** (expoente 1,5; 1 = reta do jogo); a vida padrão subiu de 0,38 s para 0,55 s para dar tempo de ver. Os quatro controles têm slider; com densidade 0, oscilação 0 e expoente 1 a opacidade volta a ser exatamente a rampa do jogo.
+
+**Regras copiadas da poeira do jogo:** baforadas de 0,55 a 1,15 m com ruído manchado (simplex suave, frequência 0,07, 3 oitavas, alfa = (1 − r)^1,2 × clamp(ruído × 1,6)); cor bege (0,82; 0,78; 0,72); vida de 0,38 s; opacidade 0 → 0,75 aos 20 % da vida → 0; crescimento até 1,8×; saída de uma esfera de 0,4 m, em qualquer direção, de 0,5 a 3 m/s, com atrito 1,5 e subida 0,25 m/s²; mistura alfa, sem adição luminosa (§19.5).
+
+Objetos e shader do Godot: `MultiMeshInstance3D` de `QuadMesh` com cor e dados por instância, `ShaderMaterial` com `shaders/motion_lab/motion_smoke.gdshader` (spatial, `unshaded`, quad voltado para a câmera, GL Compatibility); nada de HTML. A textura é um **atlas 2 × 2 gerado em código** (`MotionSmokeView.make_puff_atlas`, o mesmo cálculo do `VfxLib.smoke_tex`, 4 sementes), sem depender do código de combate e sem temporizadores.
+
+| Parte | Arquivo | Resumo |
+|---|---|---|
+| Vista | `lab/motion_smoke_view.gd` | `puff_params` (giro, variação do atlas e tamanho 65–135 % por elemento; crescimento pela idade), `puff_alpha` (rampa de vida), `puff_offset` (esfera de origem, velocidade com atrito, subida; função pura do id e da idade, decoração da vista, zerável), `back_to_front` (ordenação por câmera) |
+| Shader | `shaders/motion_lab/motion_smoke.gdshader` | giro e variação por instância (`INSTANCE_CUSTOM`); cor e alfa da instância; sem tempo próprio |
+| Laboratório | `lab/motion_lab.gd` | quinto item do seletor; sete controles da poeira; caixa "chão que oculta o que passa de y = 0" (como o chão do jogo oculta a metade que desce); emissor "Corrida (8 m/s)"; `--rep=fumaca`; `--demo=fumaca` (dois "pés" a 0,44 m deixando poeira de corrida atrás do emissor, rastro M19 preso ao mundo) e `--demo=estilhacos` com a poeira |
+
+**Verificado:** 64 verificações da fumaça (as 48 anteriores e 16 do jogo da opacidade: densidade entre 0,35 e 1 espalhada pela faixa, oscilação entre 1 − quantidade e 1 com fase própria, curva, opacidade final variando entre baforadas da mesma idade): determinismo; giro, tamanho (0,55–1,15 m) e variação do atlas por elemento sem piscar com a idade; crescimento 1,8× e teto; rampa de opacidade (0,375 aos 10 %, 0,75 aos 20 %, 0 no fim); atrito, subida (½·g·t²) e esfera de origem; direções cobrindo a esfera; atlas de 128 px com 4 variações diferentes, cantos transparentes e miolo denso; ordenação do mais distante ao mais próximo e permutação completa; a vista desenha nessa ordem; descarte de invisíveis, transparentes e mais velhas que a vida; `blend_mix` sem `blend_add`. 11 mutações no código derrubam os testes (uma sobrevivia, a esfera de origem, e foi coberta). As dez suítes somam 739 verificações, todas sem falhas. Execução em janela com GL Compatibility sem erros. **Medido:** preencher e ordenar 1088 baforadas ≈ 7 ms por quadro (GDScript, headless).
+
+**Não verificado:** a aprovação visual do criador da versão atual; o cascalho brilhante (partículas pequenas e claras) que a poeira do jogo também tem; fumaça com profundidade suave nas interseções; a ordenação entre representações mostradas juntas; desempenho em outro hardware. **Faltam:** comparação A/B, estudos individuais dos 20 comportamentos, seleção de ramos e máscaras na interface.
+
+## 30. Etapa 5, fatia 5 — comparação A/B — 2026-11-04 (D-305)
+
+Aprovação da fatia anterior, literal: "Muito melhor" (poeira, quarta versão), tratada como aprovação para seguir; se a intenção era só elogiar e pedir mais ajustes, a fatia 4 volta a ser retomada. Esta fatia acrescenta a **comparação A/B** (§10.4) com as regras da §19.5: "A/B mantém duas revisões imutáveis com o mesmo tempo e semente". Tudo com objetos do Godot (dois conjuntos de representações lado a lado, `Label3D` com billboard); nada de HTML.
+
+| Modo | A | B |
+|---|---|---|
+| Antes × depois | instantâneo fixado pelo botão "Fixar A agora" | composição viva (editável) |
+| Camada isolada × composição inteira | só a camada selecionada | composição inteira |
+| Representação neutra × escolhida | pontos (neutro) | a representação escolhida (os dados são os mesmos) |
+
+| Parte | Arquivo | Resumo |
+|---|---|---|
+| Lógica | `lab/motion_lab_session.gd` | `capture_a` (cópia profunda pela ida e volta do formato de presets, guarda a revisão do momento), `evaluate_snapshot`, `evaluate_ab` (mesmo instante, mesmo emissor, semente de cada lado; erro explícito se faltar A ou a camada), `diff` (elementos em comum, só em A, só em B, alterados, distância máxima e média, atributo máximo) |
+| Vistas | `lab/motion_view_set.gd` | as quatro representações como um conjunto; um para B e outro para A, cópia dos ajustes de desenho |
+| Laboratório | `lab/motion_lab.gd` | seletor de modo, "Fixar A agora", "Descartar A", leitura da diferença; A à esquerda e B à direita (±1,1 m) com rótulos; `--ab=antes|isolada|neutra` |
+
+**Verificado:** 35 verificações da lógica (instantâneo imutável diante de edição, adição e remoção de camadas, troca de semente e de revisão da composição viva; no momento da fixação A = B; mesmo instante; diferença só de posição, só de atributo e só de visibilidade; isolada coincide com a camada dentro da composição; erros explícitos) e 37 do laboratório (A à esquerda e B à direita simétricos, rótulos, A não muda com a edição, desligar volta B ao centro). 10 mutações no código; 3 sobreviveram (revisão de A, atributo e visibilidade na diferença) e foram cobertas. As onze suítes somam 739 verificações (corrigido na fatia 6: o número 777, dado antes, estava errado), todas sem falhas. Execução em janela com GL Compatibility sem erros; quadros e vídeos conferidos antes de mostrar.
+
+**Não verificado:** aprovação visual do criador; comparar mais de duas versões; sobreposição (fantasma) de A sobre B em vez de lado a lado; desempenho em outro hardware (dois conjuntos desenham o dobro). **Faltam:** estudos individuais dos 20 comportamentos e seleção de ramos e máscaras na interface.
+
+## 31. Etapa 5, fatia 6 — estudos individuais dos 20 comportamentos — 2026-11-04 (D-305)
+
+Aprovação da fatia anterior, literal: "O depois está melhor em todos" (os três pares A × B; o lado B, com mais camadas, fitas e fragmentos, foi o preferido). Esta fatia cumpre a proposta da §19.7 e a inspeção individual da §10.3: **um estudo por comportamento (M01–M20) mais a receita da §6**, escolhidos num seletor do laboratório. Cada estudo é uma composição feita só com camadas da biblioteca, com ciclo de 3 s: nascimento (0–0,5 s), desenvolvimento, transformação (≈ 0,5–2 s) e dissipação (2,4–3 s).
+
+**Acabamento do estudo (§19.7):** as camadas `aux_nascimento` (M17) e `aux_dissolucao` (M18) são apresentação do estudo, não o comportamento estudado; uma caixa liga ou desliga só elas. M17, M18 e a receita não têm acabamento. No rastro e na pós-imagem o acabamento vem antes do M19/M20, para o histórico herdar o nascer e o dissolver.
+
+| Arquivo | Resumo |
+|---|---|
+| `lab/motion_studies.gd` | `ids`, `title`, `note` (o que olhar), `build(id, com_acabamento)`, `main_layer_ids`, `aux_layer_ids`; os parâmetros de cada estudo são propostas do agente para mostrar o comportamento |
+| `lab/motion_lab.gd` | seletor "Estudos individuais", nota do estudo, caixa do acabamento, título e tempo no centro da vista, `--study=M05`; a demonstração `receita` passou a usar o estudo |
+
+**Bases dos estudos:** os geradores e campos que precisam de geometria fora do eixo (M05, M06, M10, M11, M13, M16 a M20) usam uma hélice de base; M08 usa um zigue-zague de base para a torção ser visível; M15 abre três ramos antes de recombiná-los.
+
+**Verificado:** 25 verificações dos estudos (21 estudos, títulos e notas; cada M01–M20 tem camada própria fora do acabamento; todos validam; 25 instantes de cada um sem valores inválidos; desligar o comportamento estudado muda o resultado em todos, contando elementos alterados, acrescentados ou removidos; nascimento, desenvolvimento, transformação e dissipação são estados diferentes entre si; reprodutíveis; acabamento: nada visível em t = 0 e dissolvido ao fim, desligável) e 45 do laboratório (carregar, nota, título, caixa do acabamento, os 21 estudos desenham sem erro). A receita: 11 camadas, 61 instantes, 96 amostras antes da bifurcação e 288 depois, sem erros. **Medido:** a maioria dos estudos avalia em poucos ms; o do rastro (M19) leva ≈ 54 ms por avaliação (história reavaliada 16 vezes), acima do orçamento de 30 quadros/s do laboratório.
+
+**Não verificado:** aprovação visual do criador de cada estudo; se os parâmetros escolhidos mostram o comportamento da melhor forma; estudo individual em representações diferentes da escolhida para os vídeos (fitas; fragmentos no M16). **Faltam:** seleção de ramos e máscaras na interface (Etapa 5) e a validação completa (Etapa 6, não autorizada).
+**Mutações nos estudos:** 6 quebras deliberadas nas definições (acabamento sempre ligado, acabamento em M17/M18, acabamento depois do M19/M20, sem nascimento, vórtice sem efeito, base da onda sem raio crescente) derrubam os testes. As doze suítes somam 772 verificações, todas sem falhas.
+
+## 32. Etapa 5, fatia 7 — ramos e máscaras na interface — 2026-11-04 (D-305)
+
+Aprovação da fatia anterior, literal: "estão ótimos" (os estudos individuais). Esta fatia fecha a Etapa 5: cada camada passa a ter, no painel, a **seleção de ramos** e a **máscara** (§8, D-044), sem tocar no motor.
+
+| Arquivo | Resumo |
+|---|---|
+| `motion_composition.gd` | `branches_before(layer_id, catalog, ctx)`: nomes de ramo existentes imediatamente antes da camada, em ordem de texto, sem repetição |
+| `lab/motion_lab_session.gd` | `available_branches(layer_id)`: usa o relógio e o emissor atuais do laboratório |
+| `lab/motion_lab.gd` | caixas de seleção por ramo disponível (nenhuma marcada = todos); sliders `mask_u_from`, `mask_u_to` (um empurra o outro), `mask_feather`, inverter, janela de tempo da máscara e `layer_active_from/to`; aviso para BRANCH/MERGE/PERSIST (que não aceitam máscara); `--demo=ramos` (M14 + M18 só no ramo 1, u ≥ 0,4, degradê 0,15) |
+
+**Verificado:** 31 verificações novas (ramos disponíveis antes de cada camada, inclusive ordem de texto com 12 ramos; marcar e desmarcar grava `branches`; sliders gravam a máscara, início além do fim arrasta o fim e vice-versa; aviso nas operações sem máscara; demonstração dissolve só o ramo escolhido e só na faixa da máscara) e 45 do laboratório. **Mutações:** 8 quebras deliberadas; as 8 derrubam os testes (2 sobreviveram na primeira rodada e ganharam testes). As 13 suítes somam 803 verificações, sem falhas. Conferido em vídeo: o ramo 1 dissolve só da metade ao fim; a interface mostra os 3 ramos e os sliders.
+
+**Não verificado:** aprovação visual do criador desta fatia; Etapa 6 (validação completa, orçamento, GL Compatibility formal) não autorizada.
+
+## 33. Etapa 6 — validação, medição e limitações — 2026-11-04 (D-306; corrigida em 2026-11-05)
+
+Autorização, literal: "Sim" (a "Quer que eu comece a Etapa 6?"). Escopo respondido: desempenho "Só medir e relatar"; GL Compatibility "Capturas + checklist". **Nenhum orçamento foi definido pelo agente** (P-07 segue do criador); os números abaixo são medições, não aprovação nem reprovação.
+
+**Correção (2026-11-05), após auditoria externa do commit `fcbb3f59`.** A primeira versão desta seção concluía que "o gargalo é avaliar, não desenhar; desenhar custa no máximo cerca de 5 ms". **Isso não foi demonstrado e está retirado.** Dois defeitos na medição: (1) o desenho era medido com as amostras do primeiro instante de maior quantidade, que existe já em t = 0, quando os efeitos ainda estão invisíveis (M19: 1088 amostras, 0 visíveis; só M18 e a receita escaparam); (2) a "receita" medida é a do estudo (11 camadas, **sem M19**), enquanto a §6 termina com M18 + M19; e a versão anterior a chamava de "receita com rastro". O medidor foi refeito: percorre os 41 instantes, mede o desenho em todos, só conta instantes com algo efetivamente desenhado (contador da própria representação: pontos, triângulos de fita, fragmentos, baforadas), registra a geometria desenhada e mede o tempo de quadro no instante de maior geometria. Caso novo **RECEITA+M19**: a receita do estudo mais uma camada M19 (duração 0,8 s, intervalo 0,05 s, ativa no ciclo todo, **pior caso**), montada só no medidor — o estudo da receita **não foi alterado** (decisão de incluir o M19 no estudo é do criador).
+
+**Testes:** as 13 suítes (1–5, 2b) somam 803 verificações, 0 falhas. Medidor: `tests/motion_composer/medir_desempenho.gd` (com janela); dados completos em `motion_composer_desempenho_2026-11-04.csv` (22 composições × 5 representações, 110 linhas).
+
+**Ambiente:** Godot 4.7.2, `gl_compatibility`, OpenGL 3.3 NVIDIA GeForce RTX 2050, Windows 11, 1280×720, GDScript a partir dos fontes. Uma só máquina. **Há variação entre execuções** (M19: mediana 59 ms / máx. 84 ms na primeira medição; 44 / 50 ms nesta); trate os valores como ordem de grandeza.
+
+**Avaliar a composição (CPU, 41 instantes de 0 a 3 s):**
+
+| Composição | Amostras (máx.) | Mediana | Máximo |
+|---|---|---|---|
+| **Receita + M19 (pior caso)** | 4896 | 141 ms | 496 ms |
+| M19 rastro | 1088 | 44 ms | 50 ms |
+| Receita do estudo (sem M19) | 288 | 15 ms | 31 ms |
+| M20 pós-imagem | 384 | 15 ms | 19 ms |
+| M15 / M14 | 192 | 7 / 5 ms | 10 / 6 ms |
+| demais 16 estudos | 64 | ≤ 4,2 ms | ≤ 5,6 ms |
+
+**Enviar as amostras ao desenho (CPU, só instantes com algo desenhado) — pior caso por representação (máximo entre os 41 instantes), entre os 21 estudos / na receita + M19:**
+
+| Representação | 21 estudos (pior: M19) | Receita + M19 |
+|---|---|---|
+| Pontos | 2,2 ms (1024 pontos) | 10,9 ms (4608) |
+| Fitas | 6,8 ms (2174 triângulos) | 28,2 ms (9786) |
+| Pontos + fitas | 8,2 ms | 38,9 ms |
+| Fragmentos | 5,5 ms (1024) | 25,7 ms (4608) |
+| Fumaça | 13,9 ms (704 baforadas) | 64,5 ms (3168) |
+
+Fora de M19 e da receita + M19 o envio é pequeno (mediana dos 21 estudos: 0,04 ms em pontos, 0,2–0,3 ms em fitas e fragmentos, 0,7 ms em fumaça; M20 chega a 6,5 ms em fumaça). O tempo médio de quadro (20 quadros no instante de maior geometria; CPU, **GPU não medida separadamente**) acompanha o envio: 2,7 / 6,4 / 9,2 / 6,0 / 13,6 ms em M19 e 10,6 / 27,0 / 38,3 / 24,3 / 57,2 ms na receita + M19 (pontos, fitas, pontos+fitas, fragmentos, fumaça).
+
+**Leitura (revista):** nas composições comuns o custo é pequeno. Nas que têm **persistência (M19)** o desenho **também** custa: de 2 a 14 ms só no M19, e na receita completa com rastro a avaliação (141 ms mediana, 496 ms no pior instante) e o desenho (11 a 64 ms) passam em muito de um quadro a 30 ou 60 por segundo nesta máquina. O que domina depende da composição; a conclusão anterior de que o desenho era desprezível só vale para as composições sem persistência. Sem orçamento aprovado não há como dizer "dentro" ou "fora".
+
+**GL Compatibility (checklist):** M01, M16, M19 e a receita (sem M19), nas 5 representações: 20 capturas, todas geradas, nenhuma linha de erro, aviso ou erro de shader nos registros; conferidas em folha de contato. A receita + M19 e as 21 × 5 combinações **não** foram capturadas. Esta parte não foi afetada pela correção.
+
+**Limitações conhecidas:**
+1. **A receita completa da §6 (com M19) é a composição mais cara e só foi medida, não capturada nem aprovada visualmente.** O estudo da receita (sem rastro) e a receita + M19 do medidor são composições diferentes; qual vale como estudo é decisão do criador.
+2. **Avaliação em GDScript** e envio ao desenho em GDScript custam; nenhuma otimização foi feita (não autorizada). Candidatas: menos reavaliações do histórico no M19, reutilizar resultados entre instantes, limitar amostras do rastro, agrupar desenho.
+3. **Fumaça/billboards** é a representação mais cara por elemento e, com muitas amostras, vira uma nuvem que esconde a forma (use Pontos/Fitas para inspeção de forma).
+4. Uma máquina e uma GPU; **não** testados: GPU fraca/integrada, web, móvel, outros sistemas. Tempo de GPU e memória não medidos. Há variação entre execuções.
+5. A **aprovação artística** permanece humana (§14).
+6. Parâmetros dos estudos e valores das representações são propostas do agente.
+
+**Não verificado:** orçamento (P-07), hardware-alvo, GPU, memória, captura da receita + M19 e das 21 × 5 combinações, aprovação do criador desta etapa.
