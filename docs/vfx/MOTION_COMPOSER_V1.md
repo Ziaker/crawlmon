@@ -1194,7 +1194,7 @@ Autorização, literal: "Sim" (a "Quer que eu comece a Etapa 6?"). Escopo respon
 | Receita do estudo (sem M19) | 288 | 15 ms | 31 ms |
 | M20 pós-imagem | 384 | 15 ms | 19 ms |
 | M15 / M14 | 192 | 7 / 5 ms | 10 / 6 ms |
-| demais 15 estudos | 64 | ≤ 3,6 ms | ≤ 5,6 ms |
+| demais 16 estudos | 64 | ≤ 3,6 ms | ≤ 5,6 ms |
 
 **Enviar as amostras ao desenho (CPU, só instantes com algo desenhado) — pior caso por representação (máximo entre os 41 instantes), entre os 21 estudos / na receita + M19:**
 
