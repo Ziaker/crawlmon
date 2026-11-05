@@ -2199,3 +2199,22 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Histórico preservado:** D-033/D-063/D-270 mantêm Burst e MP; a matriz de status D-239/D-243/D-253/D-257/D-272 segue sem pares aprovados; D-268 preserva o visual do HUD; D-300–D-321, inclusive D-316–D-321, permanecem inalteradas. Divergência histórica de LUK R60 (GDD §12.13) não conciliada.
 - **Escopo da operação:** criar quatro decisões D individuais, atualizar índice, consolidado e adendo histórico GDD. **Nenhum código, teste, HUD, IA, asset, VFX, ficha ou cena modificado; nenhum teste de gameplay executado.**
 
+## 71. Overhaul visual do BattleLog — opção C (D-322)
+
+> **Data:** 2026-11-05. **Natureza:** decisão visual/documental, sem implementação no Godot. Fonte: [D-322](decisoes/D-322-battlelog-overhaul-opcao-c-retratos.md). Referência visual em DOCX e PNG anexos à entrega de design; confirmar presença dos binários no repositório antes de utilizá-los como arquivos publicados.
+
+### 71.1 Escolhas expressamente aprovadas
+
+1. A referência visual selecionada para o **BattleLog** é a **terceira imagem, opção C**, da última rodada de mockups, **não** uma aprovação do restante do cenário recriado por geração de imagem.
+2. O BattleLog permanece na **região superior direita**, com ampliação de área após futura retirada dos controles visuais das câmeras. A retirada visual não implica remoção dos modos, lógica ou atalhos do diretor de câmera.
+3. **Cada entrada visual** do registro deve integrar **ícone/retrato do personagem associado ao evento**.
+4. **Estética:** título BattleLog em ciano/azul e tipografia forte inclinada; entradas em **peças brancas/off-white finas**, com recortes diagonais e tratamento cromático pontual; **não** criar grandes placas escuras que encubram a arena.
+5. **Preservar D-268:** cartões brancos de jogador/aliado, menu principal em leque, buffs/debuffs em peças angulares coloridas, tag do inimigo e tarja da habilidade. A arte selecionada é inspiração específica para o log. Cumprir D-015 (todos inimigos visíveis) e D-235 (independência de personagem/equipe/lado).
+
+### 71.2 Exemplo visual versus regra de jogo
+
+- Abra / Gible / Pancham e os textos “Psybeam”, “20 damage”, “Poison”, “DEF+1”, “ready” na opção C são **ilustrações**, não novos Moves, números de dano, efeitos, personagens obrigatórios ou tradução aprovada.
+- **Não foram definidos:** política para selecionar o retrato em eventos com mais de um participante ou eventos globais; alinhamento obrigatório do retrato à direita ou esquerda; mapa global de cores; limite de entradas, scroll, recolhimento, animação, persistência, idiomas ou arquitetura de eventos.
+- **Limite técnico auditado:** em 05/11/2026, `scripts/ui/battle_hud.gd` recebia `_on_log(text: String)` em `_log: Label` e mantinha até três mensagens; `scripts/combat/battle.gd` emitia `log_message(text: String)`. Isso não traz diretamente um identificador tipado para recuperar retratos. Qualquer mudança estrutural futura deve ser analisada e aprovada separadamente.
+- Nenhum código, cena, Move, regra de combate, VFX, teste ou arquivo do HUD original foi alterado por esta decisão. O prompt de execução controlada está em `docs/hud/PROMPT_CRAWLMON_BATTLELOG_OPCAO_C.md`.
+
