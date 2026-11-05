@@ -8,7 +8,7 @@
 
 > é pra teoricamente vc fundir ambos ou só colocar o motion composer encima se ele ser completamente superior, faça o pr commit e merge do que ainda falta
 
-Respostas às perguntas (literais): primeiro passo da D-274 → "Item 6 (medição e avaliação)"; onde → "tests/fx_lab (laboratório do jogo)"; formato da fusão → "Lab do composer ganha os efeitos".
+Respostas às perguntas (literais): primeiro passo da D-274 → "Item 6 (medição e avaliação)"; onde → "tests/fx_lab (laboratório do jogo)"; formato da fusão → "Lab do composer ganha os efeitos"; como tocar os efeitos do jogo (que não aceitam pausa nem busca) → "melhore o debug até ser capaz de fazer tudo isso e até mais"; quais efeitos → "Os 9 via BattleFx".
 
 ## Decisão
 
@@ -25,11 +25,11 @@ Respostas às perguntas (literais): primeiro passo da D-274 → "Item 6 (mediç�
 
 ## Ambiguidades em aberto
 
-1. Como tocar os efeitos existentes: eles são "dispare e esqueça" (tweens e temporizadores em tempo real) e **não aceitam seek nem pausa pelo relógio do laboratório**. Possibilidades: sobreposição em tempo real que reinicia com o Play, ou outra.
-2. Quais efeitos entram (os 9 do `fx_lab` que usam `BattleFx`; os efeitos do Abra que vivem só no `fx_lab`).
+1. **Busca no tempo (seek) e pausa precisa dos efeitos do jogo:** o criador pediu "melhore o debug até ser capaz de fazer tudo isso e até mais". A 1ª fatia só oferece disparo em tempo real, reinício e ritmo (pausa = `Engine.time_scale` 0); busca no tempo e lado a lado exigem investigação (tweens e temporizadores encadeados, sementes de partículas) e entram em fatias seguintes, uma por vez, sem editar `BattleFx`.
+2. Os efeitos do Abra que vivem só no `fx_lab` (Raio Psíquico, Onda de Choque, Confusão): fora da 1ª fatia.
 3. Receita do estudo com M19 (pergunta anterior, D-306): ainda sem resposta.
 4. O número D-274 da proposta e a relação com esta decisão.
 
 ## Estado
 
-Decisão registrada; **nenhum código escrito**. Aguardando respostas às ambiguidades 1 e 2.
+**Fatia 1 implementada** (2026-11-05): `lab/game_fx_bridge.gd` (ponte só de uso), seção "Efeitos do jogo" no painel direito do laboratório; os 9 efeitos entre atacante e alvo derivados (distância, alturas, espelhar), ritmo por `Engine.time_scale`, métricas (nós, partículas, malhas, draw calls, primitivas, objetos, pico). 16 verificações novas, 819 no total. **Aguardando a aprovação visual do criador.** Nada em `scripts/combat`, `scripts/vfx` ou cenas de combate foi alterado.

@@ -1221,3 +1221,21 @@ Fora de M19 e da receita + M19 o envio é pequeno (mediana dos 21 estudos: 0,04 
 6. Parâmetros dos estudos e valores das representações são propostas do agente.
 
 **Não verificado:** orçamento (P-07), hardware-alvo, GPU, memória, captura da receita + M19 e das 21 × 5 combinações, aprovação do criador desta etapa.
+
+## 34. Efeitos do jogo no laboratório — fatia 1 — 2026-11-05 (D-307)
+
+O laboratório passa a tocar os efeitos que o jogo já tem, como referência, ao lado das composições (decisão D-307). **Só uso**: nada em `BattleFx`, `VfxLib`, `scripts/combat`, `scripts/vfx` nem em cenas de combate foi alterado (D-003, D-019, D-020).
+
+| Arquivo | Resumo |
+|---|---|
+| `lab/game_fx_bridge.gd` | `GameFxBridge`: instancia um `BattleFx` e dispara os 9 efeitos (tackle, megido, mabufula, hassou_tobi, titanomachia, media, tarukaja, rakunda, sukunda) entre um atacante e um alvo **derivados** de distância, alturas e espelhamento; `layout()`, `play`, `clear`, `scene_stats`, `set_speed`; pedidos `framing_requested` e `composition_visible_requested` à cena |
+| `lab/motion_lab.gd` | seção "Efeitos do jogo" no painel direito (seletor, Disparar, Limpar, Enquadrar, ocultar a composição, ritmo, espelhar, distância, alturas, métricas); argumentos `--gamefx=<id>`, `--mirror=1`, `--hidecomp=1` |
+
+**D-235:** nada de personagem, time, lado ou coordenada fixa: o atacante e o alvo são dois marcadores configuráveis; o espelhado troca os lados e a direção; a altura do alvo muda onde o efeito acontece. O comportamento é por `move_id`.
+
+**Tempo:** os efeitos do jogo usam tweens e temporizadores em tempo real. O ritmo (pausa, 0,1×, 0,25×, 0,5×, 1×) é `Engine.time_scale` e vale para o **laboratório inteiro**. **Não há busca no tempo** nesta fatia (pedido do criador: "melhore o debug até ser capaz de fazer tudo isso e até mais"; fatias seguintes).
+
+**Verificado:** 16 verificações (layout e espelhado; os 9 efeitos × 2 lados criam nós perto do ponto certo; alvos de alturas 1,0/2,4/4,0; limpar, reiniciar sem acumular, ritmo e restauração); 5 mutações (espelho ignorado, efeito no lado errado ×2, altura ignorada, limpar sem limpar) derrubam os testes; as 14 suítes somam 819 verificações, 0 falhas; vídeo do megido e do tackle nos dois lados em GL Compatibility, sem erro nos registros.
+
+**Não verificado:** aprovação visual do criador; os outros 7 efeitos em vídeo (testados só por posição, em modo sem janela); busca no tempo; lado a lado com a composição; efeitos do Abra do `fx_lab`; a seção na tela (o painel é longo e a seção fica no fim do painel direito; conferida só pelo teste de construção).
+
