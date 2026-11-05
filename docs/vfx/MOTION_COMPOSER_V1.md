@@ -1213,7 +1213,7 @@ Fora de M19 e da receita + M19 o envio é pequeno (mediana dos 21 estudos: 0,04 
 **GL Compatibility (checklist):** M01, M16, M19 e a receita (sem M19), nas 5 representações: 20 capturas, todas geradas, nenhuma linha de erro, aviso ou erro de shader nos registros; conferidas em folha de contato. A receita + M19 e as 21 × 5 combinações **não** foram capturadas. Esta parte não foi afetada pela correção.
 
 **Limitações conhecidas:**
-1. **A receita completa da §6 (com M19) é a composição mais cara e só foi medida, não capturada nem aprovada visualmente.** O estudo da receita (sem rastro) e a receita + M19 do medidor são composições diferentes; qual vale como estudo é decisão do criador.
+1. **(Superada em 2026-11-05, ver §35.)** A receita completa da §6 (com M19) é a composição mais cara. Ela agora é o estudo da receita.
 2. **Avaliação em GDScript** e envio ao desenho em GDScript custam; nenhuma otimização foi feita (não autorizada). Candidatas: menos reavaliações do histórico no M19, reutilizar resultados entre instantes, limitar amostras do rastro, agrupar desenho.
 3. **Fumaça/billboards** é a representação mais cara por elemento e, com muitas amostras, vira uma nuvem que esconde a forma (use Pontos/Fitas para inspeção de forma).
 4. Uma máquina e uma GPU; **não** testados: GPU fraca/integrada, web, móvel, outros sistemas. Tempo de GPU e memória não medidos. Há variação entre execuções.
@@ -1221,3 +1221,65 @@ Fora de M19 e da receita + M19 o envio é pequeno (mediana dos 21 estudos: 0,04 
 6. Parâmetros dos estudos e valores das representações são propostas do agente.
 
 **Não verificado:** orçamento (P-07), hardware-alvo, GPU, memória, captura da receita + M19 e das 21 × 5 combinações, aprovação do criador desta etapa.
+
+## 34. Efeitos do jogo no laboratório — fatia 1 — 2026-11-05 (D-307)
+
+O laboratório passa a tocar os efeitos que o jogo já tem, como referência, ao lado das composições (decisão D-307). **Só uso**: nada em `BattleFx`, `VfxLib`, `scripts/combat`, `scripts/vfx` nem em cenas de combate foi alterado (D-003, D-019, D-020).
+
+| Arquivo | Resumo |
+|---|---|
+| `lab/game_fx_bridge.gd` | `GameFxBridge`: instancia um `BattleFx` e dispara os 9 efeitos (tackle, megido, mabufula, hassou_tobi, titanomachia, media, tarukaja, rakunda, sukunda) entre um atacante e um alvo **derivados** de distância, alturas e espelhamento; `layout()`, `play`, `clear`, `scene_stats`, `set_speed`; pedidos `framing_requested` e `composition_visible_requested` à cena |
+| `lab/motion_lab.gd` | seção "Efeitos do jogo" no painel direito (seletor, Disparar, Limpar, Enquadrar, ocultar a composição, ritmo, espelhar, distância, alturas, métricas); argumentos `--gamefx=<id>`, `--mirror=1`, `--hidecomp=1` |
+
+**D-235:** nada de personagem, time, lado ou coordenada fixa: o atacante e o alvo são dois marcadores configuráveis; o espelhado troca os lados e a direção; a altura do alvo muda onde o efeito acontece. O comportamento é por `move_id`.
+
+**Tempo:** os efeitos do jogo usam tweens e temporizadores em tempo real. O ritmo (pausa, 0,1×, 0,25×, 0,5×, 1×) é `Engine.time_scale` e vale para o **laboratório inteiro**. A busca no tempo veio na fatia 2 (abaixo), pedido do criador: "melhore o debug até ser capaz de fazer tudo isso e até mais".
+
+**Verificado:** 16 verificações (layout e espelhado; os 9 efeitos × 2 lados criam nós perto do ponto certo; alvos de alturas 1,0/2,4/4,0; limpar, reiniciar sem acumular, ritmo e restauração); 5 mutações (espelho ignorado, efeito no lado errado ×2, altura ignorada, limpar sem limpar) derrubam os testes; as 14 suítes somam 819 verificações, 0 falhas; vídeo do megido e do tackle nos dois lados em GL Compatibility, sem erro nos registros.
+
+**Não verificado:** aprovação visual do criador; os outros 7 efeitos em vídeo (testados só por posição, em modo sem janela); busca no tempo; lado a lado com a composição; efeitos do Abra do `fx_lab`; a seção na tela (o painel é longo e a seção fica no fim do painel direito; conferida só pelo teste de construção).
+
+### 34.1 Fatia 2 — busca no tempo dos efeitos do jogo (2026-11-05)
+
+**Como funciona (sem editar `BattleFx`):** `GameFxBridge.seek(efeito, t)` reinicia o efeito com a **mesma semente** do RNG global (`rng_seed`, padrão 1234) e o avança por quadros acelerados: a cada quadro `Engine.time_scale = passo / duração real prevista do quadro`, com o passo de **no máximo 1/60 s** (`seek_step`), para encadear os temporizadores como o jogo encadeia a 60 quadros por segundo. O tempo avançado é contado pelo `delta` já escalado do próprio quadro; ao chegar em `t` o laboratório **pausa** (`time_scale` 0). Antes do avanço há um **aquecimento** em câmera quase parada (escala 0,001) até dois quadros seguidos normais (< 40 ms reais; mínimo 3, máximo 120 quadros): o primeiro desenho de um efeito leva centenas de ms e, sem isso, o efeito avançava 0,65 a 1,3 s em vez de 0,4 s (medido). Na interface: slider "Tempo do efeito (busca)" de 0 a 1,5 s; argumento `--gfxt=<t>` com `--gamefx`.
+
+**Medido (headless, 9 efeitos × 3 tempos, 27 casos):** o estado buscado repete-se em 25 de 27 (antes do aquecimento) e, depois dele, 10 de 10 execuções do teste passaram; o avanço fica entre 0,000 e 0,004 s além do pedido; a contagem de nós coincide com a reprodução em tempo real em cerca de 21 dos 27 casos (o próprio tempo real varia de uma execução a outra). Em janela (GL Compatibility, megido em 0,05 / 0,15 / 0,3 / 0,5 s, normal e espelhado) a sequência é a mesma nos dois lados: clarão e faíscas, anel e faíscas se espalhando, anel que some.
+
+**Verificado:** 28 verificações no teste da ponte (as 12 anteriores mais busca: chegada ao tempo, pausa, passo máximo de 1/60 s, busca repetida, depois do fim não sobra nada, voltar no tempo recria o efeito, lado espelhado, efeito desconhecido); 5 mutações (sem contar o tempo, sem semente, sem pausar ao chegar, passo largo, sem aquecimento) derrubam o teste, exceto a **sem aquecimento**, que só se manifesta no primeiro uso de um efeito na vida do processo e não pode ser reproduzida dentro do mesmo teste (observada à mão: avançou 1,304 / 0,788 / 0,647 s no lugar de 0,400 s); as 14 suítes somam 831 verificações, 0 falhas.
+
+**Limitações da busca:** não é exata como `--fixed-fps` (um quadro de variação por salto de temporizador encadeado); `sukunda` nasce um nó entre 0,25 e 0,4 s e a contagem varia em 1 conforme o quadro; `tackle` e `hassou_tobi` em tempos curtos (≤ 0,4 s) diferem da reprodução em tempo real em alguns nós; a busca em janela leva o tempo do efeito (1/60 s por quadro a 60 Hz); o ritmo e a pausa continuam valendo para o laboratório inteiro; sem lado a lado com a composição.
+
+**Não verificado:** aprovação visual do criador da fatia 2; os 7 efeitos além do megido em janela; busca com a composição visível ao mesmo tempo; efeitos do Abra do `fx_lab`.
+
+## 35. Auditoria da Etapa 6 e da fusão, e M19 na receita — 2026-11-05 (D-306, D-307)
+
+Pedido do criador, literal: "auditorie pelo que esqueceu ou não corrigiu ou implementou, corrija e imediatamente já inclua o m19".
+
+**M19 na receita (feito).** O estudo da receita (`MotionStudies`, RECEITA) passou de 11 para **12 camadas**: o encerramento é M18 seguido de **M19 (rastro)**, com `time_offset` 2,55 s (igual ao da dissolução) e os **parâmetros padrão do M19** (0,5 s de duração, intervalo de 0,05 s, até 256 amostras por elemento). Título "Receita da §6 (com rastro)". **Proposta do agente, não aprovada:** o início do rastro em 2,55 s e os parâmetros. Alternativas medidas: rastro ativo no ciclo todo (instante 2,2 s: 4608 de 4896 amostras, 335 ms) e rastro de 0,8 s a cada 0,05 s (404 a 483 ms por avaliação no encerramento); o padrão escolhido custa menos. O teste da Etapa 3, que monta a própria receita sem M19, não foi alterado: ele valida a composição espacial e continua certo para o seu escopo.
+
+**Medição refeita com a receita nova** (`motion_composer_desempenho_2026-11-04.csv`, 22 composições × 5 representações, 110 linhas; caso de comparação "RECEITA sem M19"; mesma máquina, mesma ressalva de variação entre execuções):
+
+| Composição | Amostras (máx.) | Avaliar (mediana / máx.) | Enviar ao desenho, pior instante (pontos / fitas / pontos+fitas / fragmentos / fumaça) |
+|---|---|---|---|
+| **Receita com M19** | 3168 | 17 / 342 ms | 6,6 / 20,9 / 27,5 / 16,3 / 53,6 ms |
+| Receita sem M19 | 288 | 16 / 31 ms | 0,7 / 1,6 / 2,7 / 1,8 / 4,2 ms |
+| M19 rastro | 1088 | 45 / 58 ms | 2,7 / 7,8 / 8,4 / 6,4 / 18,6 ms |
+| M20 pós-imagem | 384 | 16 / 20 ms | 0,8 / 2,4 / 2,9 / 2,8 / 6,6 ms |
+| demais 17 estudos | ≤ 192 | ≤ 7 / ≤ 9 ms | ≤ 0,7 / 1,4 / 2,9 / 1,6 / 2,9 ms |
+
+Tempo médio de quadro no instante de maior geometria na receita com M19: 7,5 / 19,7 / 26,0 / 20,0 / 54,9 ms. A leitura da §33 continua: a persistência custa avaliar e desenhar; a receita completa passa de um quadro a 30 ou 60 por segundo nesta máquina no encerramento (342 ms no pior instante).
+
+**GL Compatibility:** a receita com M19 nas 5 representações em `gl_compatibility`: 5 capturas em t = 2,75 s e um vídeo do ciclo de 3 s (pontos + fitas), sem nenhuma linha de erro, aviso ou erro de shader; o rastro aparece em todas as representações.
+
+**Defeitos achados na auditoria e corrigidos (fusão, D-307):**
+1. O botão **Disparar** depois de uma busca (laboratório pausado) criava o efeito congelado. Agora sai da pausa (`fire_from_ui`).
+2. O texto da seção ainda dizia "sem busca no tempo". Corrigido.
+3. O seletor de efeito e o slider de tempo **não acompanhavam** o efeito e o tempo disparados ou buscados por código ou argumento (mostravam "tackle" e 0 s para um megido em 0,2 s). Agora acompanham.
+4. O argumento novo `--scrollright=1` (para mostrar a seção, que fica no fim do painel direito) tinha um erro de script (referência ao contêiner errado), achado na captura e corrigido.
+5. A seção nova **não tinha teste na cena real**: agora há (existência e 9 efeitos, Enquadrar, Ocultar a composição, Disparar tira da pausa, o slider busca, a interface acompanha). 4 mutações na ligação (sair da pausa, slider sem busca, ocultar, enquadrar) são todas pegas.
+6. A seção da interface nunca tinha sido vista na tela: agora foi capturada e conferida.
+
+**Verificado:** 14 suítes, **844 verificações, 0 falhas** (estudos 30, ponte e interface 36, o restante como antes); 4 mutações na receita (sem rastro, rastro desde 0, M20 no lugar do M19, rastro antes da dissolução) derrubam os testes.
+
+**Não verificado:** aprovação visual do criador da receita com rastro (vídeo enviado) e do rastro em 2,55 s com os parâmetros padrão; orçamento (P-07), GPU, memória, outras máquinas; os 7 efeitos além do megido em janela; o lado a lado de efeitos do jogo com a composição; efeitos do Abra do `fx_lab`.
+

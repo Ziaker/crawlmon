@@ -6,10 +6,10 @@ extends SceneTree
 ## e, por representação, o custo de enviar as amostras ao desenho (CPU) em TODOS os 41 instantes e o tempo de quadro no instante
 ## em que mais geometria é efetivamente desenhada. Só entram na estatística de desenho instantes com algo desenhado
 ## (contador da própria representação > 0); a coluna `instantes_com_desenho` mostra a cobertura.
-## Caso extra RECEITA+M19: a receita da §6 mais a camada M19 (pior caso: rastro ativo no ciclo todo), montada AQUI, sem alterar o estudo.
+## Caso extra RECEITA sem M19: a receita do estudo sem a camada de rastro (comparação; a receita agora inclui o M19, D-306).
 
 const REPS := ["pontos", "fitas", "pontos+fitas", "fragmentos", "fumaça"]
-const EXTRA := &"RECEITA+M19"
+const EXTRA := &"RECEITA sem M19"
 const EVAL_STEPS := 41
 const FRAMES_PER_CASE := 20
 const CAM := Vector3(0, 1.0, 5.0)
@@ -50,15 +50,9 @@ func _init() -> void:
 
 
 func _build(id: StringName) -> MotionComposition:
-	if id != EXTRA:
-		return MotionStudies.build(id)
-	var c := MotionStudies.build(MotionStudies.RECIPE)
-	var l := MotionLayer.new()
-	l.id = &"rastro"
-	l.behavior_id = &"M19"
-	l.op = MotionTypes.Op.PERSIST
-	l.params = {"duration": 0.8, "sample_interval": 0.05}
-	c.add_layer(l)
+	var c := MotionStudies.build(MotionStudies.RECIPE if id == EXTRA else id)
+	if id == EXTRA:
+		c.remove_layer(&"rastro")
 	return c
 
 

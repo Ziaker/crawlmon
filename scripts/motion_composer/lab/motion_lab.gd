@@ -31,6 +31,9 @@ var _study_id: StringName = &""
 var _scroll_target: int = 4
 ## 0 = pontos, 1 = fitas, 2 = pontos + fitas, 3 = fragmentos, 4 = fumaça/billboards (a troca conserva a composição).
 var representation: int = 0
+## Efeitos do jogo como referência (D-307).
+var game_fx: GameFxBridge
+var _right_box: VBoxContainer
 
 var _cam: Camera3D
 var _yaw: float = 0.6
@@ -95,6 +98,16 @@ func _ready() -> void:
 	if _arg_text("--select=") != "":
 		_selected = StringName(_arg_text("--select="))
 		_refresh_layers()
+	if _arg_text("--mirror=") == "1":
+		game_fx.set_layout(game_fx.distance, game_fx.attacker_height, game_fx.target_height, true)
+	if _arg_text("--gamefx=") != "":
+		game_fx.request_framing()
+		if _arg_text("--gfxt=") != "":
+			game_fx.seek(_arg_text("--gamefx="), _arg_float("--gfxt=", 0.0))
+		else:
+			game_fx.play(_arg_text("--gamefx="))
+		if _arg_text("--hidecomp=") == "1":
+			view_set.visible = false
 	session.clock.playing = _capture_path == ""
 	if _capture_path != "":
 		session.clock.seek(_arg_float("--t=", 1.2))
@@ -302,7 +315,7 @@ func _on_aux_toggled(on: bool) -> void:
 	_refresh_layers()
 
 
-## Receita de teste da §6 (sem M19, que é a Etapa 4): compressão → crescimento → zigue-zague + torção →
+## Receita de teste da §6 (com o encerramento M18 + M19): compressão → crescimento → zigue-zague + torção →
 ## bifurcação em 3 → serpentina + turbulência → recombinação → onda radial + explosão → dissolução.
 ## Não é um Move do Crawlmon; janelas em segundos por defasagem de camada (ciclo de 3 s).
 func _recipe_composition() -> void:
@@ -651,6 +664,18 @@ func _build_ui() -> void:
 	_preset_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(_preset_status)
 	box.add_child(_small("Mouse: botão direito gira, meio move, roda aproxima. Teclas: espaço, R, vírgula, ponto."))
+	_right_box = right
+	game_fx = GameFxBridge.new()
+	add_child(game_fx)
+	game_fx.build_ui(right)
+	game_fx.framing_requested.connect(func(c: Vector3, d: float) -> void:
+		_target = c
+		_dist = d
+		_apply_camera())
+	game_fx.composition_visible_requested.connect(func(on: bool) -> void:
+		view_set.visible = on
+		view_a.visible = on and session.ab_mode != MotionLabSession.AbMode.OFF
+		_dirty = true)
 
 
 func _make_panel(layer: CanvasLayer, on_left: bool) -> VBoxContainer:
@@ -1104,6 +1129,8 @@ func _process(delta: float) -> void:
 		if _scroll_target == 0:
 			var sc := _params_box.get_parent().get_parent() as ScrollContainer
 			sc.scroll_vertical = int(_arg_float("--scroll=", 0.0))
+			if _arg_text("--scrollright=") == "1" and _right_box != null:
+				(_right_box.get_parent() as ScrollContainer).scroll_vertical = 100000
 	session.clock.advance(delta)
 	if session.clock.time != _last_time:
 		_dirty = true
