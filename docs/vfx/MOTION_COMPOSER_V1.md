@@ -1175,3 +1175,39 @@ Aprovação da fatia anterior, literal: "estão ótimos" (os estudos individuais
 
 **Não verificado:** aprovação visual do criador desta fatia; Etapa 6 (validação completa, orçamento, GL Compatibility formal) não autorizada.
 
+## 33. Etapa 6 — validação, medição e limitações — 2026-11-04 (D-306)
+
+Autorização, literal: "Sim" (a "Quer que eu comece a Etapa 6?"). Escopo respondido: desempenho "Só medir e relatar"; GL Compatibility "Capturas + checklist". **Nenhum orçamento foi definido pelo agente** (P-07 segue do criador); os números abaixo são medições, não aprovação nem reprovação.
+
+**Testes:** as 13 suítes (1–5, 2b) somam 803 verificações, 0 falhas (rodadas na Fatia 7). Medição feita por `tests/motion_composer/medir_desempenho.gd` (com janela); dados completos em `motion_composer_desempenho_2026-11-04.csv` (21 estudos × 5 representações).
+
+**Ambiente da medição:** Godot 4.7.2, renderizador `gl_compatibility`, OpenGL 3.3 NVIDIA GeForce RTX 2050, Windows 11, 1280×720, GDScript executado a partir dos fontes (sem exportação). Uma só máquina.
+
+**Custo de avaliar a composição (CPU, 41 instantes de 0 a 3 s por estudo):**
+
+| Estudo | Amostras (máx.) | Mediana | Máximo |
+|---|---|---|---|
+| M19 rastro | 1088 | 59,1 ms | 83,6 ms |
+| Receita | 288 | 20,3 ms | 54,4 ms |
+| M20 pós-imagem | 384 | 20,8 ms | 30,2 ms |
+| M14 bifurcação | 192 | 8,9 ms | 26,8 ms |
+| M15 recombinação | 192 | 10,4 ms | 19,5 ms |
+| demais 16 estudos | 64 | ≤ 5,2 ms | ≤ 12,7 ms |
+
+**Custo de desenho (enviar as amostras ao renderizador, CPU) e tempo de quadro com o estudo em cena:** no pior caso de cada representação, o envio custou 0,8 ms (pontos, receita), 3,3 ms (fitas, M19 com 1088 amostras), 3,1 ms (pontos+fitas, M20), 1,8 ms (fragmentos, receita) e 4,8 ms (fumaça, receita); o tempo médio de quadro ficou entre 0,8 e 1,3 ms na mediana e no máximo 6,0 ms (fumaça, receita). O quadro foi medido do lado da CPU entre quadros do `SceneTree`; **o tempo de GPU não foi medido separadamente**.
+
+**Leitura:** o gargalo é **avaliar**, não desenhar. M19 (rastro, 16 reavaliações do histórico), a receita e M20 passam de 16 ms por avaliação (um quadro a 60 por segundo) e M19 passa de 33 ms (30 por segundo) já na mediana. Sem orçamento aprovado não há como dizer "dentro" ou "fora".
+
+**GL Compatibility (checklist):** M01, M16, M19 e a receita, nas 5 representações (pontos, fitas, pontos+fitas, fragmentos, fumaça): 20 capturas, todas geradas, nenhuma linha de erro, aviso ou erro de shader nos registros; conferidas visualmente em folha de contato (formas, cores, ramos distintos e o rastro aparecem como esperado em cada representação).
+
+**Limitações conhecidas:**
+1. **Avaliação em GDScript** custa mais que o desenho; nenhuma otimização foi feita (não autorizada nem necessária sem orçamento). Candidatas, se o orçamento exigir: reduzir reavaliações do histórico (M19), reutilizar resultados entre instantes, menos amostras.
+2. **Fumaça/billboards** com muitas amostras vira uma nuvem que cobre a estrutura; é adequada a poucos elementos ou a efeito de ambiente, não a inspeção de forma (use Pontos/Fitas para isso).
+3. Uma única máquina e uma única GPU; **não** testados: GPU integrada ou fraca, exportação web, dispositivos móveis, outros sistemas.
+4. Tempo de GPU e consumo de memória não medidos.
+5. O estudo do M19 e a receita com rastro excedem o tempo de quadro nesta máquina; o laboratório continua utilizável porque o relógio permite pausar e pesquisar o tempo.
+6. A **aprovação artística** dos estudos, das cores e do movimento permanece humana (§14); só as fatias 1–7 tiveram aprovação visual do criador.
+7. Parâmetros dos estudos e valores das representações são propostas do agente (não aprovadas como requisito).
+
+**Não verificado:** orçamento (P-07), hardware-alvo, GPU, memória, as 21 × 5 combinações em captura (só 4 estudos × 5 representações), aprovação do criador desta etapa.
+
