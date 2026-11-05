@@ -138,6 +138,30 @@ func _run() -> void:
 	await process_frame
 	ok(not lab.view_a.visible and lab.view_set.position == Vector3.ZERO and not lab._label_b.visible, "desligar a comparação volta B ao centro e esconde A e os rótulos")
 	lab.set_representation(0)
+	# estudos individuais
+	lab.set_ab_mode(MotionLabSession.AbMode.OFF)
+	lab.load_study(&"M05")
+	await process_frame
+	ok(s.composition.id == &"estudo_M05" and s.composition.layers.size() == 4 and s.clock.duration == 3.0 and s.clock.time == 0.0, "carregar o estudo M05: composição do estudo, ciclo de 3 s, relógio no início")
+	ok(lab._study_note.text.contains("Vórtice") and lab._hud.text.begins_with("M05 — Vórtice"), "a nota e o título do estudo aparecem")
+	ok(lab._selected == &"vortice" and lab.points.shown_count >= 0, "a camada do comportamento fica selecionada")
+	lab._on_aux_toggled(false)
+	ok(not s.composition.find_layer(&"aux_nascimento").enabled and not s.composition.find_layer(&"aux_dissolucao").enabled and s.composition.find_layer(&"vortice").enabled, "desligar o acabamento mexe só nas camadas aux")
+	lab._on_aux_toggled(true)
+	ok(s.composition.find_layer(&"aux_nascimento").enabled, "religar o acabamento")
+	lab._on_study_selected(21)
+	await process_frame
+	ok(s.composition.id == &"estudo_RECEITA" and s.composition.layers.size() == 11, "o último item do seletor é a receita da §6 (11 camadas)")
+	lab._on_study_selected(0)
+	ok(s.composition.id == &"estudo_RECEITA", "o item de instrução do seletor não carrega nada")
+	for sid in MotionStudies.ids():
+		lab.load_study(sid)
+		await process_frame
+	ok(not s.last_result.has_errors(), "os 21 estudos carregam e desenham no laboratório sem erro")
+	lab.load_study(&"M01")
+	s.clock.pause()
+	s.clock.seek(1.5)
+	await process_frame
 	# pelo menos um quadro depois de tudo
 	await process_frame
 	ok(lab.points.shown_count > 0 and not s.last_result.has_errors(), "continua desenhando sem erros após as operações")

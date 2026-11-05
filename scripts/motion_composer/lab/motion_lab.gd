@@ -23,6 +23,11 @@ var _label_a: Label3D
 var _label_b: Label3D
 var _ab_opt: OptionButton
 var _ab_status: Label
+var _study_opt: OptionButton
+var _study_note: Label
+var _aux_check: CheckBox
+var _hud: Label
+var _study_id: StringName = &""
 ## 0 = pontos, 1 = fitas, 2 = pontos + fitas, 3 = fragmentos, 4 = fumaça/billboards (a troca conserva a composição).
 var representation: int = 0
 
@@ -70,7 +75,9 @@ func _ready() -> void:
 	_parse_args()
 	_build_world()
 	_build_ui()
-	if _arg_text("--demo=") == "receita":
+	if _arg_text("--study=") != "":
+		load_study(StringName(_arg_text("--study=")))
+	elif _arg_text("--demo=") == "receita":
 		_recipe_composition()
 	elif _arg_text("--demo=") == "estilhacos":
 		_shards_composition()
@@ -235,38 +242,49 @@ func _shards_composition() -> void:
 	_apply_camera()
 
 
+## Carrega um estudo individual (M01–M20 ou a receita) no lugar da composição aberta.
+func load_study(id: StringName) -> void:
+	var c := MotionStudies.build(id, _aux_check.button_pressed)
+	session.composition = c
+	session.set_solo(&"")
+	session.clock.duration = c.duration
+	session.clock.restart()
+	_study_id = id
+	var mains := MotionStudies.main_layer_ids(id)
+	_selected = mains[0] if not mains.is_empty() else (c.layers[0].id if not c.layers.is_empty() else &"")
+	_target = Vector3(0.0, 0.0, 0.5)
+	_dist = 2.8 if id == MotionStudies.RECIPE else 3.3
+	_apply_camera()
+	_study_note.text = MotionStudies.note(id)
+	var idx := MotionStudies.ids().find(id)
+	if idx >= 0:
+		_study_opt.select(idx + 1)
+	_time_slider.max_value = c.duration
+	_refresh_layers()
+	_dirty = true
+
+
+func _on_study_selected(i: int) -> void:
+	if i <= 0:
+		return
+	load_study(MotionStudies.ids()[i - 1])
+
+
+## Liga ou desliga só o acabamento (aux_*): nascer e dissolver. O comportamento estudado não muda.
+func _on_aux_toggled(on: bool) -> void:
+	for lid in MotionStudies.aux_layer_ids(session.composition):
+		session.composition.set_enabled(lid, on)
+	_after_edit()
+	_refresh_layers()
+
+
 ## Receita de teste da §6 (sem M19, que é a Etapa 4): compressão → crescimento → zigue-zague + torção →
 ## bifurcação em 3 → serpentina + turbulência → recombinação → onda radial + explosão → dissolução.
 ## Não é um Move do Crawlmon; janelas em segundos por defasagem de camada (ciclo de 3 s).
 func _recipe_composition() -> void:
-	var c := session.composition
-	c.sample_count = 96
-	c.seed = 2026
-	var specs := [
-		[&"compressao", &"M11", MotionTypes.Op.DEFORM, {"strength": 0.8, "center": 0.5, "extent": 0.5, "softness": 0.2}, 0.0],
-		[&"crescimento", &"M17", MotionTypes.Op.MULTIPLY_ATTRIBUTE, {"t_duration": 0.45, "width": 0.1}, 0.0],
-		[&"zigzag", &"M02", MotionTypes.Op.OFFSET, {"amplitude": 0.06, "frequency": 6.0}, 0.45],
-		[&"torcao", &"M08", MotionTypes.Op.DEFORM, {"amount_deg": 120.0}, 0.45],
-		[&"bifurcacao", &"M14", MotionTypes.Op.BRANCH, {"branches": 3, "split_u": 0.3, "angle_deg": 35.0, "distance": 0.4}, 1.05],
-		[&"serpentina", &"M03", MotionTypes.Op.OFFSET, {"amplitude": 0.03, "wavelength": 0.3}, 1.5],
-		[&"turbulencia", &"M07", MotionTypes.Op.OFFSET, {"intensity": 0.02}, 1.5],
-		[&"recombinacao", &"M15", MotionTypes.Op.MERGE, {"merge_start": 0.6, "merge_end": 0.9, "t_duration": 0.3}, 1.95],
-		[&"onda", &"M13", MotionTypes.Op.OFFSET, {"speed": 1.5, "amplitude": 0.05}, 2.25],
-		[&"explosao", &"M16", MotionTypes.Op.OFFSET, {"distance": 0.3, "t_duration": 0.3}, 2.25],
-		[&"dissolucao", &"M18", MotionTypes.Op.MULTIPLY_ATTRIBUTE, {"t_duration": 0.45}, 2.55],
-	]
-	for sp in specs:
-		var l := MotionLayer.new()
-		l.id = sp[0]
-		l.behavior_id = sp[1]
-		l.op = sp[2]
-		l.params = sp[3]
-		l.time_offset = sp[4]
-		c.add_layer(l)
+	load_study(MotionStudies.RECIPE)
 	_selected = &"bifurcacao"
-	_target = Vector3(0.0, 0.0, 0.5)
-	_dist = 2.6
-	_apply_camera()
+	_refresh_layers()
 
 
 # ------------------------------------------------------------------ mundo 3D
@@ -393,6 +411,17 @@ func _unhandled_input(event: InputEvent) -> void:
 func _build_ui() -> void:
 	var layer := CanvasLayer.new()
 	add_child(layer)
+	_hud = Label.new()
+	_hud.anchor_left = 0.5
+	_hud.anchor_right = 0.5
+	_hud.offset_left = -190.0
+	_hud.offset_right = 190.0
+	_hud.offset_top = 10.0
+	_hud.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hud.add_theme_font_size_override("font_size", 20)
+	_hud.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	_hud.add_theme_constant_override("outline_size", 6)
+	layer.add_child(_hud)
 	var left := _make_panel(layer, true)
 	var right := _make_panel(layer, false)
 	var box := left
@@ -453,8 +482,23 @@ func _build_ui() -> void:
 	_emitter_opt.item_selected.connect(func(i: int) -> void: session.emitter_mode = i; _dirty = true)
 	row3.add_child(_emitter_opt)
 
-	# --- catálogo (painel da direita)
+	# --- estudos individuais (painel da direita)
 	box = right
+	box.add_child(_section("Estudos individuais (§10.3)"))
+	_study_opt = OptionButton.new()
+	_study_opt.add_item("— escolher um estudo —")
+	for sid in MotionStudies.ids():
+		_study_opt.add_item(MotionStudies.title(sid))
+	_study_opt.item_selected.connect(_on_study_selected)
+	box.add_child(_study_opt)
+	_study_note = _small("")
+	box.add_child(_study_note)
+	_aux_check = CheckBox.new()
+	_aux_check.text = "Acabamento do estudo (nascer e dissolver)"
+	_aux_check.button_pressed = true
+	_aux_check.toggled.connect(_on_aux_toggled)
+	box.add_child(_aux_check)
+	# --- catálogo (painel da direita)
 	box.add_child(_section("Catálogo (M01–M20)"))
 	_filter = LineEdit.new()
 	_filter.placeholder_text = "buscar por nome ou id…"
@@ -1001,6 +1045,8 @@ func _update_readouts(r: MotionResult) -> void:
 	_time_label.text = "t = %.3f s / %.2f s%s" % [session.clock.time, session.clock.duration,
 		"   (histórico desde %.2f s)" % session.clock.history_start() if session.clock.history_start() > 0.0 else ""]
 	_time_slider.set_value_no_signal(session.clock.time)
+	_hud.text = ("%s
+" % MotionStudies.title(_study_id) if _study_id != &"" else "") + "t = %.2f s" % session.clock.time
 
 
 func _save_capture() -> void:
