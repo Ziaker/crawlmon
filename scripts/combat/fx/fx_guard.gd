@@ -1,13 +1,13 @@
 class_name FxGuard
 extends RefCounted
-## D-195: the Guard shield. A flat heater shield, white and translucent so the character can be seen
+## D-272: the Guard shield. A flat heater shield, white and translucent so the character can be seen
 ## through it, with no border, standing in front of the character (toward its opponent). It builds itself
 ## when the Guard starts (wedge pieces slide in and assemble). Over the 2 seconds of the Guard it CRACKS
 ## (straight cracks, like pizza slices, appear and grow, so you can see when it is about to end) and, when the time runs out, it breaks
 ## into irregular shards. When contact destroys it earlier, it flashes white and breaks the same way. "GUARD" (white, Impact)
 ## sits on top of the shield: it pops in letter by letter and is shot out in a fan on contact.
 ## The same for every character and every side of the field (D-235).
-## The dome barrier is kept for a future Protect move in fx_barrier.gd (D-196).
+## The dome barrier is kept for a future Protect move in fx_barrier.gd (D-273).
 ## Part of BattleFx (see battle_fx.gd): the shared state lives in `fx`.
 
 const SHIELD_HEIGHT := 1.6  ## Shield height relative to the character's height.

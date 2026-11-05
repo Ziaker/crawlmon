@@ -1,4 +1,4 @@
-# D-193 — Atributos vêm da conversão dos valores originais dos personagens, criada pelo assistente
+# D-270 — Atributos vêm da conversão dos valores originais dos personagens, criada pelo assistente
 
 - **Data:** 2026-11-04
 - **Área:** Personagens / atributos
@@ -13,8 +13,8 @@
 
 - Os atributos-base de cada espécie no jogo saem da **conversão dos valores originais** da espécie (HP, Attack, Defense, Sp. Atk, Sp. Def, Speed).
 - A **conversão é criada pelo assistente**, não pelo criador. O criador não fornece os números nem a fórmula de conversão.
-- O **HP** também é convertido do HP original da espécie. O MP não tem valor original, então sai da Magia e do nível. Sem número-alvo: a D-192 não impõe limite de 10.
-- Compatível com D-120 (referência biológica com balanceamento próprio do jogo) e D-192 (sem valores exorbitantes em níveis baixos; o "10" não é regra).
+- O **HP** também é convertido do HP original da espécie. O MP não tem valor original, então sai da Magia e do nível. Sem número-alvo: a D-269 não impõe limite de 10.
+- Compatível com D-120 (referência biológica com balanceamento próprio do jogo) e D-269 (sem valores exorbitantes em níveis baixos; o "10" não é regra).
 
 ## Ambiguidades em aberto (perguntar antes de agir)
 
@@ -25,3 +25,5 @@
 ## Estado no código
 
 Nenhuma alteração.
+
+> **Renumeração (2026-11-05):** este registro foi criado localmente com outro número (D-19x) que colidia com as decisões das Rodadas 68-82 do GitHub (D-192 a D-268). Por escolha do criador passou a ser **D-270**; texto e regras não mudaram.

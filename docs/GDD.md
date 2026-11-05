@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.31 — Rodada 61 adicionada ao adendo de combate em 2026-11-03; seções históricas das revisões 1.29 e 1.30 preservadas.  
+> **Revisão:** 1.59 — regras do Guard e barreira reservada registradas em adendo rastreável (§12.34, 2026-11-05); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -264,6 +264,8 @@ Explorar uma dungeon 2D em movimentação cardinal contínua → encontrar adver
 
 **PENDENTE:** custo e propriedades das **exceções individuais de Move**, **valor do custo-base comum de MP e exceções individuais por Move**, detalhes do catálogo de itens, momento de cobrança dos consumíveis e efeitos concretos de buffs/debuffs. **Já aprovados:** Tackle (2 ATB), Moves equipados (2 ATB salvo exceções), ITENS (1 ATB por uso), Evade (3 ATB), Tactic (0), custos de Burst e **MP adicional nos Moves mágicos/especiais**. Não criar PP nem alterar ATB/Burst.
 
+**APROVADO (Guard; ver §12.34):** o bloco do comando **4 — Evade** ganha uma **variante Guard**, trocada com a seta direita (esquerda volta ao Evade), sem criar um quinto comando. O **Guard custa 1 ATB** e **não aceita Burst como pagamento**. Esta é uma exceção explícita à regra "Burst paga a ação" e não altera os custos de Evade (3), Tackle (2), Moves (2) ou ITENS (1).
+
 ## 3. Sistema ATB — especificação aprovada
 
 ### 3.1 Capacidade, tempo e elegibilidade
@@ -329,6 +331,8 @@ Há dois mecanismos distintos. Um acerto evitado passivamente não se confunde c
 
 **PENDENTE:** critérios e pesos exatos da IA ao considerar Evade; como o jogo apresenta a janela de reação; quais ataques podem ser desviados; como se resolve a simultaneidade com invulnerabilidade, proteção, imunidades, multi-hit e ataques em área.
 
+**APROVADO (Guard; ver §12.34):** o **Guard** é uma ação defensiva **distinta do Evade e da evasão automática**. Ele **não evita o golpe**: o golpe com dano **atinge**, o Guard **reduz o dano** e **se quebra**. Por isso o Guard **não concede** recompensa de ATB nem Burst por esquiva (tabela acima) e **não altera** a regra de Evade; golpes de status de alvo único não são bloqueados (D-012).
+
 ## 5. Burst — sexto bloco especial (APROVADO)
 
 - O **Burst** é representado por um **bloco extra/sexto**, **independente dos cinco blocos normais de ATB**.
@@ -344,6 +348,8 @@ Há dois mecanismos distintos. Um acerto evitado passivamente não se confunde c
 - Aliados e inimigos podem participar das condições de Burst, conforme suas regras de esquiva ativa.
 
 **PENDENTE, NÃO INFERIR:** efeitos, duração, alvos e pré-requisitos concretos de buffs/debuffs via Burst; limites de encadeamento e prioridade diante de outras ações. O **custo de buff/debuff já está definido: um Burst sem ATB adicional** (R5-Q4). O armazenamento de **vários** Bursts **não possui teto fixo** e dura até uso ou término da batalha; Moves ofensivos via Burst não geram recompensa por fraqueza nem por crítico garantido.
+
+**APROVADO (Guard; ver §12.34):** **Burst não pode ser usado para o Guard**; a ação só aceita blocos ATB (normais/extras). É a única ação cujo pagamento por Burst foi expressamente proibido pelo criador; as demais regras de Burst permanecem.
 
 ### Exemplo de sequência aprovada, sem números inventados
 
@@ -1698,6 +1704,62 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.31 | 2026-11-03 | Rodada 61: cinco escolhas aprovadas e documentadas em D-152 a D-156; curva de esquiva simétrica e decrescente, captura de duração no WINDUP, recálculo por troca de alvo e LUK por evento. | Rodada 61 fechada / Rodada 62 proposta |
 
+| 1.32 | 2026-11-03 | Rodada 62: decisões D-157 a D-161; Moves sem WINDUP, desempate por ID estável, ordem determinística para LUK, AGI de referência 50 para trajetos e referência ATB pendente. | Rodada 62 encerrada / Rodada 63 proposta |
+
+| 1.33 | 2026-11-03 | Rodada 62 conciliada: D-162–D-166 prevalecem sobre D-157–D-161, com referências históricas preservadas. Mediana AGI sujeita a validação, ATB inverso, piso 1, TRAVEL sem WINDUP e desempate por sorteio reproduzível. | Rodada 62 conciliada / Rodada 63 proposta |
+
+| 1.34 | 2026-11-03 | Rodada 63: amostra de espécies controláveis e AGI-base em nível comum para mediana, calibração de ATB pelo ritmo existente, AGI dinâmica por atualização de ATB e tolerância 0,01 da arena no desempate; D-167–D-171. | Rodada 63 fechada / Rodada 64 proposta |
+
+| 1.35 | 2026-11-03 | Rodada 64: AGI-base ao nível 50, média dos dois centrais na mediana par, espécies controláveis oficialmente planejadas, comparação ATB 3→5 e 0→5, proximidade horizontal; D-172–D-176. | Rodada 64 fechada / Rodada 65 proposta |
+
+| 1.36 | 2026-11-03 | Rodada 65: formas alternativas só com AGI-base própria distinta; mediana apenas com dados completos; precisão fracionária; medição ATB controlada 3→5 e 0→5; distância horizontal entre posições lógicas; D-177–D-181. | Rodada 65 fechada / Rodada 66 proposta |
+
+| 1.37 | 2026-11-03 | Rodada 66: deduplicação de formas por AGI distinta intrasespécie; derivação por fórmula oficial verificável; medição ATB baixa/intermediária/alta com cinco repetições e mediana; RNG próprio de retarget; D-182–D-186. | Rodada 66 fechada / Rodada 67 proposta |
+
+| 1.38 | 2026-11-03 | Rodada 67: seed própria registrada para retarget; candidatos ordenados por ID antes do sorteio; RNG consumido só em empate real; seis medianas ATB separadas, conversão velocidade→AGI exigida; tempo simulado e real distintos; D-187–D-191. | Rodada 67 fechada / Rodada 68 proposta |
+
+| 1.39 | 2026-11-04 | Rodada 68: ordem de eventos simultâneos de retarget por ID do atacante; resistência natural VIT/SPI antes dos estágios de DEF; dano mínimo 1 para acerto válido salvo imunidade/bloqueio; esquiva automática antes de crítico/status dependentes do acerto; D-192–D-195. | Rodada 68 fechada / Rodada 69 proposta |
+
+| 1.40 | 2026-11-04 | Rodada 69: IDs únicos estáveis ao iniciar combate; mitigação percentual de retornos decrescentes com estrutura comum VIT/SPI; arredondamento único final e mínimo posterior; crítico e dano antes de status condicionado ao acerto quando alvo sobreviver; D-196–D-199. | Rodada 69 fechada / Rodada 70 proposta |
+
+| 1.41 | 2026-11-04 | Rodada 70: IDs por slots aliados depois inimigos; mitigação racional R(x)=x/(x+K) com K ainda a validar; status multi-hit máximo uma tentativa por alvo/execução após último impacto; Q4D define descarte integral do odômetro no jogo principal, sem aprovar nova aferição de sobrevivência. D-200–D-203. | Rodada 70 fechada / Rodada 71 proposta |
+
+| 1.42 | 2026-11-04 | Rodada 71: K único compartilhado por VIT/SPI, sem valor homologado; arredondamento final exatamente em 0,5 para cima; ID crescente sem reuso em eventual entrada posterior; status após último impacto destinado a cada alvo. D-204–D-207. | Rodada 71 fechada / Rodada 72 proposta |
+
+| 1.43 | 2026-11-04 | Rodada 72: método de K por atributo de referência e mitigação-alvo com aprovação futura; retorno do mesmo combatente conserva ID; uma tentativa por status distinto, alvo e execução; interrupção após acertos válidos usa último impacto efetivamente executado para resolver status elegível. D-208–D-211. | Rodada 72 fechada / Rodada 73 proposta |
+
+| 1.44 | 2026-11-04 | Rodada 73: levantamento rastreável de VIT/SPI nível 50 para proposta posterior; ordem de tentativas de status conforme ficha do Move; desempate de retarget simultâneo do mesmo atacante por ordem declarativa e índice estável; prioridade explícita para status declarados incompatíveis. D-212–D-215. | Rodada 73 fechada / Rodada 74 proposta |
+
+| 1.45 | 2026-11-04 | Rodada 74: registrar lacunas VIT/SPI nível 50 sem finalizar referência sem dados verificáveis; ficha incompleta se incompatibilidade não tiver prioridade; índices de retarget definidos no plano determinístico ao declarar ataque; consumo simultâneo de RNG de status por ID do alvo, preservando instante lógico. D-216–D-219. | Rodada 74 fechada / Rodada 75 proposta |
+
+| 1.46 | 2026-11-04 | Rodada 75: proposta de amostra verificável de defesa baixa/média/alta sujeita à aprovação; Move com prioridade de status incompatíveis ausente bloqueado em combate com indicação precisa; índices cancelados reservados sem reuso; desempate de RNG de status para mesmo alvo por atacante, declaração e índice. D-220–D-223. | Rodada 75 fechada / Rodada 76 proposta |
+
+| 1.47 | 2026-11-04 | Rodada 76: classificação separada dos perfis VIT/SPI para amostra física/mágica/mista; validação de Move antes de confirmar sem consumir ATB/Burst ou ação; ocorrências condicionais previstas e indexadas na declaração; RNG próprio de status com seed inicial registrada, separado do retarget. D-224–D-227. | Rodada 76 fechada / Rodada 77 proposta |
+
+| 1.48 | 2026-11-04 | Nova série Fichas de Moves M1: somente Q4A aprovada — MP adicional para mágicos/especiais com custos individuais a definir e superação expressa da regra sem MP da D-032; Q1D/Q2D/Q3D sem nova regra, aguardando quatro exemplos. D-228. | M1-Q4 registrada / M1-Q1–Q3 abertas / M2 proposta |
+
+| 1.49 | 2026-11-04 | Fichas de Moves: orientação posterior aprova custos/windup acima do texto, descrição mecânica de dano/efeitos/modificadores integrada estilo LoL e descrição visual apenas em ficha fora de combate. Esquema técnico de alvos, fórmulas e custos MP continuam pendentes. D-229. | Apresentação de ficha aprovada / detalhes técnicos pendentes |
+
+| 1.50 | 2026-11-04 | Correção de tooltip dos Moves: exibir dano e cura com valores numéricos em pontos, não somente multiplicadores de dano-base ou fórmulas; preservar texto integrado da D-229, custos/windup acima e visual exclusivamente fora de combate. Valores exemplificativos contextualizados não são dano-base aprovado. D-230. | Diretriz numérica de apresentação aprovada / fórmulas e valores-base pendentes |
+
+| 1.51 | 2026-11-04 | Rodada 77: propor faixas VIT/SPI por distribuição verificável e aprovar cortes antes da amostra; IA filtra Moves incompletos antes da escolha e sem custo; máximo explícito para ocorrências condicionais variáveis; chance final status 0%/100% sem RNG. D-231–D-234. | Rodada 77 fechada / Rodada 78 proposta |
+
+| 1.52 | 2026-11-04 | Rodada 78: propor tercis de VIT/SPI nível 50 separadamente, aprovando cortes concretos; IA pode considerar Tackle se nenhum Move válido e se elegível; bloquear confirmação de Move com plano sem máximo antes de debitar recursos/ação; exigir política aprovada para incompatibilidades entre status de Moves diferentes. D-236–D-239. | Rodada 78 fechada / Rodada 79 proposta |
+
+| 1.53 | 2026-11-04 | Rodada 79: VIT/SPI idênticos na mesma faixa mesmo com tercis desiguais; IA sem Move/Tackle elegíveis reavalia na próxima oportunidade normal sem agir/gastar; excedente condicional rejeitado e violação registrada preservando eventos válidos; matriz de prioridades por pares de status incompatíveis entre Moves sujeita à aprovação. D-240–D-243. | Rodada 79 fechada / Rodada 80 proposta |
+
+| 1.54 | 2026-11-04 | Fichas de Moves M2: dano-base/categoria/escalas separados com tooltip numérica; windup/trajeto/projétil separados; seleção/facção/abrangência independentes; efeitos individuais parametrizados; visual por fases apenas fora de combate; Dispel lista remoções e exceções. D-244–D-249. | M2 fechada / M3 proposta |
+
+| 1.55 | 2026-11-04 | Rodada 80: valor VIT/SPI coincidente com limite aprovado recebe faixa superior; IA filtra Moves sem máximo condicional antes da escolha; excedente é rejeitado/registrado, continuando eventos válidos; matriz futura de prioridades entre Moves distintos vale também para conflito de status ativo e novo. D-250–D-253. | Rodada 80 fechada / Rodada 81 proposta |
+
+| 1.56 | 2026-11-04 | Rodada 81: cada espécie conta uma vez na distribuição VIT/SPI nível 50 com variações individuais ±3 separadas; validar e indicar conjuntamente todas as causas aprovadas de bloqueio; registrar violações com IDs estruturados de Move, atacante, declaração, máximo e excedente; eliminar status perdedor por matriz aprovada sem restaurar. D-254–D-257. | Rodada 81 fechada / Rodada 82 proposta |
+
+| 1.57 | 2026-11-04 | Fichas de Moves M3: (base + escala STR/MAG) × potência; proibir prévia de dano em seleção; efeitos herdam alvos/facção salvo exceção; AGI não acelera automaticamente projéteis; Dispel remove todos elegíveis; todo Move exceto Tackle consome MP. D-258–D-263. | M3 fechada / M4 proposta |
+
+| 1.58 | 2026-11-04 | Rodada 82: universo de espécies oficial verificável para VIT/SPI nível 50 com lacunas e veto a cortes não representativos; lista textual compacta de omissões em seleção aberta; identificadores diagnósticos por declaração e sequência determinística de excessos; chance/elegibilidade antes de matriz de incompatibilidade. D-264–D-267. | Rodada 82 fechada / Rodada 83 proposta |
+
+| 1.59 | 2026-11-05 | Guard: ação defensiva de 1 ATB (sem Burst), 2 s, sem cancelamento, ATB pausado, badge azul acima da vida, hotkey Shift e variante do bloco Evade; reduz dano com arredondamento para cima (valor provisório), sem recuo ao contato, quebrado pelo Brick Break (+1 ATB ao atacante); Mold Break só registrado; hit stun +0,30 s global; IA usa o Guard; barreira em cúpula reservada para um futuro Move Protect. Decisões D-269–D-273 (Guard = D-272; renumeradas das locais D-192–D-196, §12.34). | Guard implementado localmente, aguardando commit; Protect não definido |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -1759,3 +1821,480 @@ As cinco escolhas da Rodada 61 foram expressamente aprovadas: **1B, 2A, 3A, 4A, 
 **Exemplo de captura de LUK:** LUK atacante varia 40 → 50 → 60 entre declaração, início de TRAVEL e resolução do impacto; LUK alvo 40 na resolução. Se ocorrer rolagem de crítico probabilístico no impacto, a chance é **30%** pela D-150, usando o valor de LUK do momento da rolagem.
 
 **Hierarquia de fontes:** preservar D-001; o GDD permanece não normativo para combate e os registros anteriores não são reescritos. **Pendentes:** Moves sem WINDUP, desempate de alvos igualmente próximos, ordem de eventos simultâneos e referências numéricas de AGI. **Sem implementação de código ou testes de gameplay.**
+
+
+### 12.6 Rodada 62 — cinco escolhas expressas (2026-11-03; revisão 1.32)
+
+A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As decisões estão nos documentos individuais D-157–D-161 e no consolidado `docs/REGRAS_DO_JOGO.md`, seção 42. Esta atualização é **aditiva**: registros e pendências históricos do GDD permanecem no estado em que foram documentados, incluindo conflitos resolvidos posteriormente. Conforme D-001, este GDD continua **não normativo para combate**.
+
+| Questão | Escolha | Regra ou adiamento aprovado | Registro |
+|---|---|---|---|
+| R62-Q1 | **1A** | Para Move instantâneo sem WINDUP, calcular duração de eventual trajeto ao **iniciar efetivamente a execução**, sem inventar WINDUP | [D-157](decisoes/D-157-r62-q1-trajeto-instantaneo-inicio-execucao.md) |
+| R62-Q2 | **2A** | Empate de distância entre alvos no redirecionamento de WINDUP: usar **identificador estável de combate** e resultado determinístico no mesmo estado | [D-158](decisoes/D-158-r62-q2-desempate-alvo-identificador-estavel.md) |
+| R62-Q3 | **3A** | Eventos com a mesma posição temporal seguem uma **ordem determinística única**; mudanças de LUK antes da rolagem valem, depois não | [D-159](decisoes/D-159-r62-q3-ordem-deterministica-luk.md) |
+| R62-Q4 | **4A** | AGI de referência **50** para duração dos trajetos, comum às espécies; não fixar ATB | [D-160](decisoes/D-160-r62-q4-referencia-agi-50-trajetos.md) |
+| R62-Q5 | **5B** | Manter **referência numérica de AGI para ATB pendente** até avaliação do ritmo; nenhum valor aprovado | [D-161](decisoes/D-161-r62-q5-referencia-atb-pendente-avaliacao.md) |
+
+**Exemplos ilustrativos vinculados às escolhas:** ataque instantâneo sem WINDUP captura o tempo no início da execução; retarget entre Abra e Gible à mesma distância usa o ID de combate estável, sem sorteio; um buff de LUK resolvido antes de uma rolagem no mesmo instante lógico influencia essa rolagem, enquanto um buff posterior não; Move de tempo-base 1,0 s com AGI efetiva 50 mantém 1,0 s antes dos passos, e com AGI efetiva 100 fica em 0,5 s antes dos passos, usando referência **50 apenas para trajetos**.
+
+**Compatibilidades preservadas:** D-019 (única linha do tempo), D-095 (eliminação de ambas as equipes no mesmo instante lógico permanece empate), D-108/D-155 (retarget e recálculo durante WINDUP), D-133/D-136/D-140/D-145 (fórmula de trajeto e referências separadas), D-156 (LUK no momento do evento).
+
+**Ainda pendente:** comparação/atribuição dos IDs estáveis; ordenação concreta de eventos simultâneos; eventual recaptura de AGI alterada no WINDUP durante o retarget; fórmula e referência de ATB; calibração e arredondamento. Não converter essas pendências em escolhas automáticas.
+
+**Validação de fonte antes desta atualização:** `main` em `af42a7d608c7eb7aaa20adf16e86d41d4a276c3b`; a consulta ao código atual mostrou tempos e probabilidades fixas, sem comprovação de implementação das novas regras. **Nenhum código ou teste de gameplay alterado ou executado nesta atividade.**
+
+
+### 12.7 Rodada 62 — versão prevalente confirmada (revisão 1.33)
+
+> **2026-11-03.** A versão de Rodada 62 registrada na seção **12.6**, com D-157–D-161, divergira da resposta enviada pelo criador nesta conversa. Ele confirmou expressamente que as suas escolhas **1C, 2A, 3B, 4A e 5A prevalecem** sobre aquela versão já publicada. Por isso, **D-162 a D-166 são vigentes** e **D-157 a D-161 e a seção 12.6 permanecem íntegros como histórico**, com conciliações posteriores. Para combate, preservar D-001: este GDD é adendo rastreável, não fonte superior às decisões individuais e ao consolidado.
+
+| Questão | Escolha vigente | Regra aprovada | Decisão |
+|---|---|---|---|
+| R62-Q1 | **1C** | Referência AGI do **trajeto** por **mediana das espécies jogáveis**, com **número sujeito a validação antes da implementação**; referência 50 histórica da D-160 não prevalece | [D-162](decisoes/D-162-r62-q1-trajeto-referencia-agi-mediana-jogaveis.md) |
+| R62-Q2 | **2A** | Tempo natural de preenchimento **ATB inversamente proporcional à AGI efetiva**, mantendo referência ATB numérica pendente | [D-163](decisoes/D-163-r62-q2-atb-tempo-inverso-agi.md) |
+| R62-Q3 | **3B** | **AGI mínima 1 só no cálculo da regeneração ATB**, sem alterar atributo; aplicação adicional distinta do piso de trajeto D-140 | [D-164](decisoes/D-164-r62-q3-piso-agi-um-na-regeneracao-atb.md) |
+| R62-Q4 | **4A** | Move com TRAVEL e sem WINDUP calcula duração **ao entrar efetivamente em TRAVEL** | [D-165](decisoes/D-165-r62-q4-sem-windup-calculo-entrada-travel.md) |
+| R62-Q5 | **5A** | Entre inimigos vivos igualmente próximos no retarget de WINDUP, **sortear com aleatoriedade reproduzível**, em vez de desempate por ID | [D-166](decisoes/D-166-r62-q5-desempate-aleatorio-reproduzivel.md) |
+
+**Conciliação:** D-157 (marco genérico) foi especificada pela D-165 (TRAVEL); D-158 (ID estável) foi substituída por D-166 (sorteio); D-159 (ordem fina dos eventos) **não foi ratificada por esta versão** e permanece histórico, sem revogar D-019/D-095/D-156; D-160 (AGI 50) foi substituída por D-162 (mediana sujeita a validação); D-161 (adiar referência numérica ATB) não é a resposta vigente Q5, embora a referência ainda não tenha número, agora coexistindo com a fórmula aprovada D-163.
+
+**Exemplos apenas explicativos:** uma lista fictícia de AGIs 20, 30, 40, 50, 60 tem mediana 40, **não aprovada**; dobrar AGI positiva reduz à metade o tempo de preenchimento da mesma quantidade natural de ATB; AGI 45 na confirmação e 60 na entrada TRAVEL sem WINDUP usa 60 para calcular duração; alvos igualmente próximos participam de sorteio reproduzível. **Sem código ou testes de gameplay.**
+
+**Pendências:** composição da mediana e sua validação, referência numérica ATB, detalhes de calibração, igualdade geométrica de distâncias, seed/ordem de RNG e ordenação fina de eventos simultâneos.
+
+
+### 12.8 Rodada 63 — definição da amostra AGI, calibração ATB e tolerância de empate (revisão 1.34)
+
+> **2026-11-03.** O criador aprovou expressamente **1B, 2A, 3A, 4A e 5B**, sem observações adicionais. Decisões individuais **D-167 a D-171** e consolidação em **docs/REGRAS_DO_JOGO.md, seção 44**. Esta atualização é aditiva e preserva integralmente o histórico da versão divergente da Rodada 62 nas seções 12.6/12.7; em combate, D-001 mantém a precedência das decisões do criador e do consolidado.
+
+| Questão | Escolha | Regra vigente | Registro |
+|---|---|---|---|
+| R63-Q1 | **1B** | A mediana de AGI dos trajetos considera **todas as espécies diretamente controláveis pelo jogador**, **inclusive evoluções elegíveis**, não apenas iniciais | [D-167](decisoes/D-167-r63-q1-mediana-todas-especies-controlaveis.md) |
+| R63-Q2 | **2A** | Usar **AGI-base de cada espécie em nível comum** sem Nature, variação individual ou buffs; **nível ainda por decidir** | [D-168](decisoes/D-168-r63-q2-agi-base-nivel-comum-sem-modificadores.md) |
+| R63-Q3 | **3A** | Definir a **referência ATB** pela **calibração do ritmo existente**, apresentando o valor para aprovação **antes de implementar** | [D-169](decisoes/D-169-r63-q3-referencia-atb-calibrar-ritmo-existente.md) |
+| R63-Q4 | **4A** | Consultar **AGI efetiva a cada atualização da regeneração natural do ATB**, mantendo o progresso acumulado | [D-170](decisoes/D-170-r63-q4-agi-atualizada-a-cada-tick-regeneracao-atb.md) |
+| R63-Q5 | **5B** | Considerar empate de proximidade entre candidatos com **diferença de distâncias até 0,01 unidade da arena**, inclusive 0,01; sorteio reproduzível da D-166 preservado | [D-171](decisoes/D-171-r63-q5-tolerancia-empate-distancia-001-arena.md) |
+
+**Exemplos ilustrativos, não novas especificações:** se uma espécie inicial e sua evolução forem ambas controláveis, entram ambas na mediana; AGI-base hipotética 35 em um nível comum ainda não aprovado continua 35 para a mediana, mesmo que Nature/variação alterem um indivíduo. ATB com 2 blocos já acumulados usa AGI 20 nas atualizações anteriores e AGI 40 nas seguintes após um buff válido, sem modificar os blocos anteriores. Alvos a 4,000 e 4,006 unidades são considerados empatados para o sorteio; outro a 4,020 não é.
+
+**Pendências expressas:** o **nível comum de comparação**, a identificação das espécies controláveis e suas AGIs-base efetivas, o cálculo da mediana, a **validação do valor numérico de referência de trajetos antes de implementar**, a medição/calibração e **validação da referência ATB**, além da métrica geométrica concreta, seed e ordem de consumo de RNG. O exemplo de 0,01 usa unidades espaciais da arena, não metros físicos por suposição. **Nenhum código ou teste de gameplay foi alterado ou executado nesta atualização.**
+
+
+### 12.9 Rodada 64 — nível 50, mediana par, espécies planejadas, calibração ATB e proximidade horizontal (revisão 1.35)
+
+> **2026-11-03.** Aprovações expressas **1C, 2A, 3B, 4C e 5B**, sem observações adicionais. Decisões individuais **D-172 a D-176** e consolidação em **docs/REGRAS_DO_JOGO.md, seção 45**. Adendo estritamente documental e aditivo; **preserva** o histórico e a conciliação anteriores. O GDD não é fonte normativa de combate por D-001.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R64-Q1 | **1C** | AGI-base das espécies elegíveis comparada no **nível 50**, com Nature, variações e buffs excluídos só da amostra da mediana | [D-172](decisoes/D-172-r64-q1-nivel-50-mediana-agi.md) |
+| R64-Q2 | **2A** | Mediana de quantidade par de espécies: **média dos dois valores centrais** ordenados | [D-173](decisoes/D-173-r64-q2-mediana-par-media-dois-centrais.md) |
+| R64-Q3 | **3B** | A amostra inclui espécies **oficialmente previstas na documentação vigente para controle direto**, mesmo não implementadas | [D-174](decisoes/D-174-r64-q3-especies-controlaveis-planejadas-documentadas.md) |
+| R64-Q4 | **4C** | Calibrar referência ATB medindo **ambos os intervalos de regeneração natural: 3→5 e 0→5 blocos**, comparando com o ritmo vigente | [D-175](decisoes/D-175-r64-q4-calibracao-atb-intervalos-3a5-e-0a5.md) |
+| R64-Q5 | **5B** | Distância de proximidade para retarget em WINDUP: **horizontal no plano da arena**, ignorando altura | [D-176](decisoes/D-176-r64-q5-distancia-horizontal-plano-arena.md) |
+
+**Exemplos apenas ilustrativos:** AGIs ordenadas fictícias `20, 30, 50, 60` → mediana 40 (não é referência real aprovada). Se a regeneração hipotética for 1 bloco/s, de 3→5 levaria 2 s e de 0→5 levaria 5 s (não são medições do jogo). Um inimigo a 5 unidades horizontais e 3 unidades acima é avaliado por **5 unidades** de distância para seleção de alvo (não 5,83 em 3D). A tolerância 0,01 de D-171 e o sorteio reproduzível D-166 permanecem vigentes.
+
+**Pendentes:** verificar as espécies controláveis e oficialmente previstas, obter valores reais de AGI-base no nível 50, calcular mediana e **solicitar validação do número antes de implementar** (D-162); realizar duas medições de ATB e **submeter valor de referência à aprovação** (D-169); definir referência geométrica horizontal e detalhes de RNG; política para fichas/AGI ausentes e mediana fracionária. **Nenhum código ou teste de gameplay modificado ou executado nesta atualização.**
+
+
+### 12.10 Rodada 65 — formas alternativas, mediana exata, completude, ATB controlado e posições lógicas (revisão 1.36)
+
+> **2026-11-03.** As escolhas **1C, 2A, 3A, 4A e 5A** foram expressamente aprovadas, sem observações. Registros **D-177 a D-181** e consolidação na **seção 46** de `docs/REGRAS_DO_JOGO.md`. Esta é uma atualização **aditiva**, preservando todas as seções anteriores e a divergência histórica da Rodada 62. Por **D-001**, este adendo não torna o GDD fonte normativa para combate.
+
+| Questão | Escolha | Regra documentada | Decisão |
+|---|---|---|---|
+| R65-Q1 | **1C** | Contar formas alternativas separadamente **somente quando forem controláveis e possuírem AGI-base própria distinta** | [D-177](decisoes/D-177-r65-q1-formas-alternativas-agi-propria-distinta.md) |
+| R65-Q2 | **2A** | **Não finalizar mediana** se faltar AGI-base verificável **no nível 50** para qualquer espécie elegível | [D-178](decisoes/D-178-r65-q2-nao-finalizar-mediana-sem-dados-completos.md) |
+| R65-Q3 | **3A** | **Preservar valor fracionário exato da mediana**, sem arredondamento | [D-179](decisoes/D-179-r65-q3-mediana-fracionaria-exata-sem-arredondar.md) |
+| R65-Q4 | **4A** | Medir **3→5 e 0→5 blocos de ATB em condições controladas**, regeneração natural ativa, **sem buffs, ações, recompensas instantâneas ou pausas** | [D-180](decisoes/D-180-r65-q4-atb-medicao-controlada-sem-interferencias.md) |
+| R65-Q5 | **5A** | Medir a **distância horizontal entre posições lógicas de referência dos combatentes**, não centros ou superfícies de colisão | [D-181](decisoes/D-181-r65-q5-distancia-posicoes-logicas-plano-horizontal.md) |
+
+**Exemplos ilustrativos, não parâmetros aprovados:** forma-base controlável com AGI-base hipotética 40 e forma alternativa também controlável com AGI-base própria 65 → duas entradas; variante cosmética com AGI-base idêntica não aumenta automaticamente a amostra. Se os dois valores centrais forem 42 e 43, a mediana é **42,5** e permanece fracionária. Sob regeneração fictícia de 1 bloco/s, 3→5 demoraria 2 s e 0→5, 5 s; isso **não foi medido**. Com distâncias lógicas horizontais 4,000 e 4,006, há empate segundo a tolerância inclusiva 0,01 de D-171.
+
+**Não resolvido:** lista real e AGI-base nível 50 de todas as espécies/formas elegíveis, completude da amostra, validação do valor da mediana para trajetos (D-162); medição real dos intervalos naturais de ATB e validação da referência ATB (D-169); identificação dos pontos lógicos de posição no código e política de RNG reproduzível. **Nenhum código, ficha, cena, teste ou VFX modificado; nenhuma medição executada.**
+
+
+### 12.11 Rodada 66 — valores distintos por espécie, AGI oficial verificável, medição estratificada e RNG isolado (revisão 1.37)
+
+> **2026-11-03.** Decisões expressas **1A, 2B, 3B, 4B e 5A**, sem observações adicionais; **D-182–D-186** e seção **47** de `docs/REGRAS_DO_JOGO.md`. Registro aditivo e de rastreabilidade; as revisões e conflitos históricos anteriores permanecem intactos. O GDD continua **não normativo para combate** por D-001.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R66-Q1 | **1A** | **Uma observação por AGI-base distinta dentro da mesma espécie**: não duplicar formas com valor igual, mas preservar observações de espécies diferentes | [D-182](decisoes/D-182-r66-q1-formas-um-valor-distinto-agi-por-especie.md) |
+| R66-Q2 | **2B** | Valor AGI-base nível 50 pode ser **calculado por fórmula oficialmente aprovada e verificável, com entradas documentadas**; sem fórmula válida, manter pendência | [D-183](decisoes/D-183-r66-q2-agi-nivel50-por-formula-oficial-verificavel.md) |
+| R66-Q3 | **3B** | Medir representantes das **faixas baixa, intermediária e alta de velocidade realmente presentes no código**, sob as mesmas condições controladas | [D-184](decisoes/D-184-r66-q3-atb-perfis-velocidade-baixa-media-alta.md) |
+| R66-Q4 | **4B** | **Cinco medições para cada intervalo e combatente**, usando **mediana dos cinco tempos observados** | [D-185](decisoes/D-185-r66-q4-atb-cinco-medicoes-mediana-por-intervalo.md) |
+| R66-Q5 | **5A** | Desempates de retarget usam **fluxo próprio de RNG reproduzível**, isolado dos demais sorteios do combate | [D-186](decisoes/D-186-r66-q5-fluxo-rng-exclusivo-desempate-retarget.md) |
+
+**Exemplos exclusivamente ilustrativos:** espécie A com AGI-base 40 e duas formas controláveis com AGI própria 60 produz duas observações (`40, 60`), não três; espécie B de AGI 60 continua contribuindo separadamente. Se cinco observações de tempo forem `2,00; 2,01; 2,00; 2,18; 2,01 s`, sua mediana é **2,01 s** (não medido no jogo). Uma rolagem de crítico não deve avançar o fluxo exclusivo de RNG de retarget.
+
+**Pendências e garantias:** identificar fontes oficiais de espécies e fórmulas de AGI-base no nível 50, formar amostra completa e **validar mediana real com o criador antes de implementar (D-162)**; selecionar perfis reais, medir 3→5 e 0→5 controladamente cinco vezes por perfil, consolidar tempos e **submeter referência ATB à validação (D-169)**; definir seed, algoritmo, ordenação e consumo de RNG. **Nenhum código ou teste alterado, nenhuma medição ou cálculo real executado nesta rodada.**
+
+
+### 12.12 Rodada 67 — seed e consumo de RNG, seis medianas ATB e relógios separados (revisão 1.38)
+
+> **2026-11-03.** O criador aprovou expressamente **1B, 2A, 3A, 4A e 5C**, sem observações adicionais. Novas decisões **D-187 a D-191** e seção **48** de `docs/REGRAS_DO_JOGO.md`. Registro **aditivo**, preservando os históricos anteriores, inclusive a divergência da Rodada 62. **D-001:** GDD não é fonte normativa de combate.
+
+| Questão | Escolha | Regra aprovada | Decisão |
+|---|---|---|---|
+| R67-Q1 | **1B** | Gerar **seed exclusiva do RNG de retarget ao iniciar o combate**, registrá-la para reprodução | [D-187](decisoes/D-187-r67-q1-seed-propria-retarget-inicio-combate.md) |
+| R67-Q2 | **2A** | Ordenar **candidatos empatados por identificador estável de combatente na batalha antes de sortear**, sem selecionar automaticamente o menor ID | [D-188](decisoes/D-188-r67-q2-ordenacao-candidatos-id-estavel-antes-rng.md) |
+| R67-Q3 | **3A** | Consumir RNG de retarget **somente com dois ou mais candidatos empatados elegíveis** | [D-189](decisoes/D-189-r67-q3-rng-so-consumir-em-empate-real.md) |
+| R67-Q4 | **4A** | Apresentar **as seis medianas de tempo ATB separadamente**; **não definir referência de AGI/ATB sem conversão verificável entre velocidade atual e AGI** | [D-190](decisoes/D-190-r67-q4-seis-medianas-atb-antes-conversao-agi.md) |
+| R67-Q5 | **5C** | Registrar **tempo simulado e tempo real separadamente** por medição para diagnosticar discrepâncias | [D-191](decisoes/D-191-r67-q5-tempo-simulado-real-medições-atb-separados.md) |
+
+**Exemplos ilustrativos, não dados reais:** IDs empatados `8, 3, 5` são ordenados `3, 5, 8` **antes do sorteio**, não selecionados deterministamente. Quando só Abra é elegível ao retarget, o fluxo isolado não consome RNG; dois empatados exigem sorteio. Uma medição hipotética de ATB com **2,00 s simulados** e **2,08 s reais** mantém os dois valores distintos. A análise dos três perfis × dois intervalos fornece **seis combinações** por tipo de relógio, sem agregá-las em referência numérica presumida.
+
+**Pendências e limites:** seed registrada mas ainda sem algoritmo, representação, serialização ou rotina de replay escolhidos; identificadores estáveis e concorrência de sorteios ainda por verificar. ATB: obter perfis reais, executar medições, definir **conversão verificável velocidade atual→AGI**, apresentar seis medianas por tipo de relógio e **validar a referência numérica com o criador antes de implementar (D-169)**. A mediana de AGI-base dos trajetos (D-162) também continua sem resultado real homologado. **Nenhum código, teste, dado de espécie, cena ou VFX modificado; nenhuma medição executada nesta rodada.**
+
+### 12.13 Conferência de reapresentação da Rodada 60 — divergências mantidas em aberto (2026-11-04; nota de rastreabilidade)
+
+> **Natureza desta nota:** a solicitação de 2026-11-04 reapresenta quatro respostas da Rodada 60 e pede continuidade do registro documental. Na conferência da `main` (HEAD anterior a esta nota: `5b1564b74ec3d92c8fc8c3c77426aaa5eec11851`), a Rodada 60 já constava nas D-149–D-151 e as Rodadas 61–67 nas D-152–D-191. **Não** duplicar registros nem reabrir como inéditas perguntas já respondidas. Esta nota preserva a divergência textual para consulta do criador, **sem atribuir precedência**, sem homologar fórmula nova e sem mudar as decisões individuais ou o consolidado.
+
+| Questão reapresentada | Texto de 2026-11-04 | Histórico documental existente | Situação |
+|---|---|---|---|
+| R60-Q1 | **1A:** recalcular uma vez a duração do trajeto quando há troca automática de alvo morto no WINDUP | **D-149 (1A)**; D-155 esclarece um recálculo **por cada troca efetiva** no WINDUP | **Compatível; já registrada** |
+| R60-Q2 | **2A:** crítico com base 10% + **1 pp a cada 10 pontos de diferença de LUK**; exemplo LUK 70 contra 40 → **13%** | **D-150 (2B):** base 10% + **1 pp por ponto** de diferença; mesmo exemplo → **40%**. D-156 pressupõe esta fórmula. | **Divergência material pendente de confirmação** |
+| R60-Q3 | **3A:** esquiva automática com base 10% + **1 pp a cada 10 pontos de diferença de LUK a favor do defensor**; exemplo 70 contra 40 → **13%** | **D-151 documenta R60-Q3D** como resposta histórica; **D-152/D-153**, aprovadas na R61, definem retorno marginal decrescente e curva simétrica; mesmo exemplo → **27,5%**. | **Divergência material pendente de confirmação** |
+| R60-Q4 | **4A:** chance final de crítico e esquiva automática limitada a **0–100%** | **D-151 (4A)** | **Compatível; já registrada** |
+
+**Confirmação necessária, sem inferência:** determinar se as escolhas **2A e 3A reapresentadas** pretendem **substituir expressamente** as regras posteriormente registradas em **D-150** e **D-152/D-153**, respectivamente, ou se foram incluídas apenas como transcrição de uma versão anterior da Rodada 60. **Nenhuma precedência é escolhida nesta nota.** Até essa resposta, as decisões publicadas continuam documentadas integralmente, sem alteração silenciosa da regra vigente nem criação de novos D-*. A D-001 permanece: para combate, a fonte normativa é o histórico de decisões do criador e `docs/REGRAS_DO_JOGO.md`, **não** o GDD.
+
+**Escopo:** somente acréscimo desta nota de rastreabilidade no GDD. Não foram editados o índice, os documentos de decisão, as regras consolidadas, o código, os testes, assets, VFX nem as fichas de Moves. **A Rodada 68 será apresentada como questionário; nenhuma resposta futura é considerada aprovada.**
+
+### 12.14 Rodada 68 — retarget simultâneo, defesa natural, dano mínimo e ordem das rolagens (revisão 1.39)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Decisões individuais **D-192 a D-195**, consolidadas na **seção 49** de `docs/REGRAS_DO_JOGO.md`. Esta seção é **aditiva**, sem reescrever as Rodadas 39–67 nem a **conferência divergente da Rodada 60 (§12.13)**. Conforme **D-001**, o GDD **não se torna fonte normativa de combate**.
+
+| Questão | Escolha | Regra aprovada | Registro |
+|---|---|---|---|
+| R68-Q1 | **1A** | Ordenar eventos de retarget **simultâneos que requerem RNG exclusivo** pelo **ID estável do atacante** antes de consumir sorteios; **não** escolher automaticamente o menor ID entre alvos | [D-192](decisoes/D-192-r68-q1-ordem-retarget-simultaneo-id-atacante.md) |
+| R68-Q2 | **2A** | Aplicar **resistência natural de VIT/SPI antes dos estágios de DEF**, conservando VIT para físico e SPI para mágico | [D-193](decisoes/D-193-r68-q2-resistencia-natural-antes-def.md) |
+| R68-Q3 | **3A** | Golpes danosos com **acerto válido** causam **mínimo 1** após mitigação, **exceto imunidade ou bloqueio completo** | [D-194](decisoes/D-194-r68-q3-dano-minimo-um-golpe-valido.md) |
+| R68-Q4 | **4A** | Resolver **esquiva automática antes** de crítico/status dependentes do acerto; se esquivar, **não rolar** esses efeitos | [D-195](decisoes/D-195-r68-q4-esquiva-antes-critico-status.md) |
+
+**Exemplos não normativos:** (i) retarget simultâneo dos atacantes ID 2 e 5, com empate real em ambos: sorteio do 2 precede sorteio do 5; dentro de cada evento continuam válidos D-188/D-189. (ii) Dano hipotético 100, resistência fictícia de 20 pontos e estágio fictício ×0,8 produziria 64, **sem aprovar uma fórmula subtrativa**. (iii) Dano hipotético pós-mitigação 0,4 de golpe válido resulta em mínimo **1** sem imunidade/bloqueio. (iv) Esquiva automática bem-sucedida impede rolagens de crítico/status **que dependam do acerto**, preservando debuffs não esquiváveis da D-012.
+
+**Preservações e pendências:** D-095 mantém **empate por eliminações no mesmo instante lógico**, independente da ordem de RNG; D-130/D-138 mantêm separação VIT/SPI e estágios de DEF; D-134/D-146/D-150–D-153/D-156 mantêm suas regras e o conflito textual **R60-Q2/Q3 do §12.13 permanece aberto**, sem resolução implícita nesta rodada. Fórmulas/coeficientes de resistência, arredondamento e relação com outros fatores de dano, granularidade dos eventos simultâneos e dois retargets do mesmo atacante ainda dependem de escolhas futuras. **Nenhum código, teste, Move, asset, VFX ou cenário modificado; nenhum teste de gameplay executado.**
+
+### 12.15 Rodada 69 — IDs únicos, mitigação VIT/SPI, arredondamento final e status após dano (revisão 1.40)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem regras próprias adicionais. Decisões individuais **D-196 a D-199**, consolidadas na **seção 50** de `docs/REGRAS_DO_JOGO.md`. Atualização exclusivamente documental e **aditiva**: mantém a origem normativa de combate em D-001, a divergência da Rodada 60 no §12.13 e o histórico integral das Rodadas 39–68.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R69-Q1 | **1A** | Atribuir **identificadores únicos ao iniciar o combate**, conforme ordem estável/documentada ainda a especificar, e **não renumerar participantes durante a batalha** | [D-196](decisoes/D-196-r69-q1-ids-unicos-estaveis-por-combate.md) |
+| R69-Q2 | **2A** | Defesa natural VIT e SPI deve usar **mitigação percentual com retornos decrescentes e mesma estrutura de curva**, VIT para físico e SPI para mágico | [D-197](decisoes/D-197-r69-q2-mitigacao-percentual-retornos-decrescentes-vit-spi.md) |
+| R69-Q3 | **3A** | Preservar **decimais até terminar os modificadores**, arredondar **uma vez ao final**, depois aplicar mínimo cabível segundo D-194 | [D-198](decisoes/D-198-r69-q3-arredondamento-unico-final-dano.md) |
+| R69-Q4 | **4A** | Após acerto válido, resolver **crítico e dano primeiro**; aplicar **status condicionado ao acerto somente se o alvo sobreviver** | [D-199](decisoes/D-199-r69-q4-critico-dano-antes-status-alvo-sobrevive.md) |
+
+**Exemplos estritamente ilustrativos:** (i) combatentes recebem IDs diferentes ao começar a batalha e não mudam de ID ao perder companheiros; o exemplo não aprova uma ordem de atribuição. (ii) SPI 40→50 e 90→100 oferece benefício percentual marginal cada vez menor, sem fixar valores de porcentagem. (iii) 9,4×0,7×0,8 = 5,264 → **5** após um único arredondamento; números hipotéticos, não parâmetros oficiais. (iv) um golpe crítico que derrota Abra não aplica Stun **dependente desse acerto**; se Abra sobreviver, a aplicação segue a ficha e a LUK vigente.
+
+**Limites e rastreabilidade:** a ordem **VIT/SPI antes de DEF** (D-193), o **dano mínimo 1 salvo imunidade/bloqueio completo** (D-194) e a **esquiva automática antes do crítico/status** (D-195) permanecem. O código atual contém arredondamentos separados em `battle.gd` e `combatant.gd`, portanto a D-198 ainda **não está implementada**, e as fórmulas novas de VIT/SPI também não foram integradas. Permanecem sem aprovação: ordem concreta para atribuir IDs, coeficientes/equação de mitigação, tratamento do exato x,5, fatores restantes da cadeia de dano, condições de multi-hit e sobrevivência com HP rolante. A **divergência de LUK R60-Q2/Q3 (§12.13) continua sem resolução**. **Nenhum código, teste, dado, Move, asset, cena ou VFX alterado; nenhum teste de gameplay executado.**
+
+### 12.16 Rodada 70 — IDs por slots, defesa racional, status por execução e descarte do odômetro (revisão 1.41)
+
+> **2026-11-04.** Respostas do criador: **1A, 2A, 3A e 4D**, com a observação literal **“o odometro era só um teste, não usaremos ele no jogo principal, descarte toda e qualquer ideia que o envolva”**. Registros **D-200–D-203**, consolidados em **§51** de `docs/REGRAS_DO_JOGO.md`. Conforme D-001, o GDD permanece **não normativo para combate**. Este adendo não apaga decisões, trechos antigos ou arquivos de código.
+
+| Questão | Resposta | Registro aprovado |
+|---|---|---|
+| R70-Q1 | **1A** | **D-200:** IDs estáveis únicos, atribuídos sequencialmente na composição inicial pelos slots da equipe do protagonista e depois pelos slots inimigos, sem renumeração durante o combate. |
+| R70-Q2 | **2A** | **D-201:** mitigação natural percentual para VIT/SPI pela **função racional R(x) = x/(x+K)**, **K positivo a calibrar e validar depois**. Mesma estrutura funcional, parâmetros ainda indefinidos. |
+| R70-Q3 | **3A** | **D-202:** Move multi-hit com status condicionado ao acerto permite **no máximo uma tentativa por alvo e execução**, **após último impacto** e **somente quando o alvo sobreviver** e tiver recebido acerto válido. |
+| R70-Q4 | **4D + regra própria** | **D-203:** odômetro de HP pertenceu a **teste/protótipo** e está **descartado de qualquer requisito ou ideia do jogo principal**. **Não foi escolhida uma nova lógica de sobrevivência** entre 4A/4B/4C. |
+
+**Exemplos somente ilustrativos:** slots aliados Gible/Abra e inimigos Pancham/outro → IDs em ordem sequencial ilustrativa, sem fixar número inicial; `x=50` e `K=100` fictício → `R=1/3 ≈ 33,33%`, sem homologar K; três impactos com possibilidade de Poison contra um alvo sobrevivente geram no máximo uma tentativa desse status após o último impacto, não uma por hit.
+
+**Preservação e precedência:** a decisão histórica `docs/decisoes/D-048-rolling-hp-mother3-odometro.md` continua no repositório como evidência de **teste antigo**, **superada exclusivamente para o jogo principal** por D-203. Não confundir com a distinta `D-048-r40-q8-atb-aoe-unico.md`, relativa a recompensas AoE. Código atual ainda contém `rolling_hp_enabled`, `target_hp`, `tick_rolling_hp` e o teste correspondente, **sem qualquer autorização nesta rodada para excluir, desligar ou refatorar esses recursos**. D-199 conserva status após dano somente para sobreviventes; a origem lógica dessa sobrevivência **não foi definida na escolha 4D**. As fórmulas de LUK divergentes na reapresentação da Rodada 60 (§12.13) continuam sem precedência nova, e as demais decisões anteriores são preservadas.
+
+**Pendências e escopo:** K e critério de calibração; entrada tardia de combatentes e número inicial dos IDs; multi-status e instantes lógicos dos impactos; meia unidade no arredondamento e desempates de retarget do mesmo atacante. **Somente documentação:** nenhum código, teste, Move, VFX, cena ou asset modificado; nenhum teste de gameplay executado.
+
+### 12.17 Rodada 71 — K compartilhado, arredondamento exato, novos IDs e resolução de status por alvo (revisão 1.42)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A** e declarou não haver observações próprias. Regras novas **D-204 a D-207**, consolidadas em **§52 de `docs/REGRAS_DO_JOGO.md`**. Esta seção é **aditiva**, sem revogar qualquer decisão histórica. Como determinado por D-001, o GDD não é fonte normativa para as regras de combate.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R71-Q1 | **1A** | **Um único valor numérico positivo de K**, compartilhado pela curva racional `R(x)=x/(x+K)` de VIT e SPI; **K concreto permanece pendente de calibração e validação** | [D-204](decisoes/D-204-r71-q1-k-unico-compartilhado-vit-spi.md) |
+| R71-Q2 | **2A** | Em valor final de dano com parte fracionária **exatamente 0,5**, **arredondar para o inteiro superior**, após concluir todos os modificadores e antes do piso cabível | [D-205](decisoes/D-205-r71-q2-arredondamento-metade-para-cima.md) |
+| R71-Q3 | **3A** | Se houver **novo participante após o início**, atribuir o **próximo ID não usado**, **sem renumerar ou reutilizar IDs anteriores**; não aprova reforços por si só | [D-206](decisoes/D-206-r71-q3-proximo-id-sem-reuso-entradas-posteriores.md) |
+| R71-Q4 | **4A** | Em Move multi-alvo/multi-hit, tentar status elegível de **cada alvo após seu último impacto próprio**, sem aguardar os impactos contra os demais alvos; teto de **uma tentativa por alvo/execução** (D-202) | [D-207](decisoes/D-207-r71-q4-status-apos-ultimo-impacto-por-alvo.md) |
+
+**Exemplos não normativos:** com `VIT=SPI=50` e **K hipotético 100**, cada categoria teria `R=1/3`; **K=100 não foi aprovado**. O desempate exato `4,5 → 5` e `5,5 → 6` esclarece D-198. Com IDs fictícios `1,2,3`, a saída do participante 2 não libera ID 2: o **novo** participante recebe o próximo número `4`. Uma onda que conclua os impactos destinados a Gible antes de atingir Abra/Pancham pode resolver o status **de Gible** após seu próprio último impacto, se ele sobreviveu a acerto válido; não antecipar ou multiplicar rolagens.
+
+**Pendências e preservações:** não definir K numérico, efeitos de reentrada do **mesmo** combatente, duas entradas perfeitamente simultâneas, múltiplos status diferentes de um Move, ordem de impactos simultâneos ou precisão/tolerância de ponto flutuante. D-203 mantém **odômetro fora do jogo principal**; D-095 mantém empate de KO simultâneo; a divergência de LUK da reapresentação R60 (§12.13) permanece **sem nova precedência**. **Somente documentação**: nenhum código, teste, ficha, cena, asset ou VFX modificado; nenhum teste de gameplay realizado.
+
+### 12.18 Rodada 72 — calibração de K, identidade no retorno e status sob múltiplos efeitos/interrupção (revisão 1.43)
+
+> **2026-11-04.** Respostas expressas do criador: **1A, 2A, 3A, 4A**; observações adicionais: nenhuma. Novas decisões individuais **D-208 a D-211**, consolidadas em **§53** de `docs/REGRAS_DO_JOGO.md`. Adendo estritamente documental; D-001 mantém o GDD não normativo para combate e o histórico integral das Rodadas 39–71 não é reescrito.
+
+| Pergunta | Escolha | Decisão aprovada | Registro |
+|---|---|---|---|
+| R72-Q1 | **1A** | **Calibrar K** a partir de atributo defensivo de referência e porcentagem de mitigação-alvo, **ambos submetidos posteriormente a aprovação**; não há referência, alvo nem valor numérico de K aprovados | [D-208](decisoes/D-208-r72-q1-calibrar-k-por-atributo-referencia-e-mitigacao-alvo.md) |
+| R72-Q2 | **2A** | **O mesmo combatente** que retorna **à mesma batalha** mantém seu ID original; novo participante continua recebendo próximo ID não usado (D-206) | [D-209](decisoes/D-209-r72-q2-mesmo-combatente-mantem-id-no-retorno.md) |
+| R72-Q3 | **3A** | Permitir **uma tentativa por status distinto declarado na ficha**, por alvo e execução, sem multiplicação de tentativas por quantidade de hits | [D-210](decisoes/D-210-r72-q3-uma-tentativa-por-status-distinto-alvo-execucao.md) |
+| R72-Q4 | **4A** | Quando o Move for **interrompido depois de acertos válidos**, usar para cada alvo seu **último impacto efetivamente executado** e resolver status elegível se sobreviver; não aguardar impactos cancelados | [D-211](decisoes/D-211-r72-q4-status-apos-ultimo-impacto-efetivo-se-interrompido.md) |
+
+**Exemplos não normativos:** um `x_ref=50` e `R_alvo=25%` hipotéticos implicariam `K=150` pela curva racional, **sem aprovar nenhum desses números**; o mesmo Gible de ID 2 volta à mesma batalha com ID 2, enquanto um participante verdadeiramente novo recebe próximo ID nunca usado; Poison e Paralysis hipotéticos, ambos condicionados a acerto válido, podem receber **cada um** uma tentativa por alvo sobrevivente; um Move interrompido após dois dos três impactos planejados pode realizar a tentativa de status elegível após o **último impacto efetivamente executado**, não após um terceiro inexistente.
+
+**Preservação:** manter D-202/D-207 quanto ao teto e à ordem por alvo na execução normal; D-199 quanto à exigência de sobrevivência e dano antes de status; D-134/D-146/D-156 quanto à LUK; D-200/D-206 quanto aos IDs; D-203 quanto a **descartar completamente o odômetro no jogo principal**, sem removê-lo do código nesta atividade. Permanecem pendentes: números e validação para K, entrada/retorno como mecânica, ordem de status distintos e incompatibilidades, simultaneidade de impactos; a divergência de LUK **R60-Q2/Q3** da nota §12.13 permanece **sem resolução**. **Nenhum código, teste, asset, Move, VFX ou cena alterado; nenhum teste de gameplay executado.**
+
+### 12.19 Rodada 73 — VIT/SPI verificáveis, ordem de status, retarget do mesmo atacante e prioridades (revisão 1.44)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Decisões individuais **D-212 a D-215**, consolidadas em **§54 de `docs/REGRAS_DO_JOGO.md`**. Seção aditiva e estritamente documental; D-001 preserva que o GDD não é fonte normativa para combate.
+
+| Pergunta | Escolha | Regra aprovada | Registro |
+|---|---|---|---|
+| R73-Q1 | **1A** | Levantar **valores reais e verificáveis de VIT e SPI no nível 50** para propor um atributo de referência sujeito à **aprovação posterior**; nenhum valor ou amostra foi aprovado/levantado nesta rodada | [D-212](decisoes/D-212-r73-q1-levantar-vit-spi-reais-verificaveis-nivel50.md) |
+| R73-Q2 | **2A** | Resolver tentativas de status distintos **na ordem explicitamente declarada na ficha do Move**, preservando uma tentativa por efeito distinto, por alvo e execução | [D-213](decisoes/D-213-r73-q2-status-ordem-declarada-ficha-move.md) |
+| R73-Q3 | **3A** | Se eventos simultâneos de retarget tiverem **o mesmo atacante**, desempatar pela **ordem estável de declaração dos eventos** e por **índice estável da ocorrência da mesma declaração** | [D-214](decisoes/D-214-r73-q3-retarget-mesmo-atacante-ordem-declaracao-indice.md) |
+| R73-Q4 | **4A** | Quando **dois status forem expressamente declarados incompatíveis**, resolver precedência usando **prioridade explicitada na ficha do Move**, sem inventar incompatibilidades concretas | [D-215](decisoes/D-215-r73-q4-prioridade-ficha-para-status-incompativeis.md) |
+
+**Exemplos apenas ilustrativos:** atributos hipotéticos de nível 50 precisam de fontes verificadas antes de qualquer proposta e não são aqui apresentados como números reais; ordem declarada `Poison` depois `Paralysis` gera tentativas nessa sequência quando ambas elegíveis, sem mudar chances; eventos de retarget `A#1`, `A#2` e `B` do mesmo atacante seguem declaração/índice estáveis, sem trocar sorteio por preferência de alvo; prioridade `Efeito A > Efeito B` só valeria quando uma ficha futura declarasse **ambos incompatíveis**. Nenhum status real foi classificado como incompatível.
+
+**Preservações e pendências:** D-201/D-204/D-208 exigem K compartilhado positivo **ainda sem valor numérico**, com referência de atributo e percentual-alvo dependentes de aprovação; D-210/D-211 mantêm limites de tentativas e resolução após impacto efetivo em interrupções; D-188/D-192 mantêm as demais ordenações de RNG, D-095 mantém empate por KO simultâneo; D-203 mantém odômetro fora do jogo principal. A divergência das escalas de LUK da reapresentação da Rodada 60 (§12.13) continua em aberto. Não se aprovam hierarquia universal de status, política de fichas omissas, algoritmo de PRNG ou dados de espécie faltantes. **Somente documentação:** nenhum código, teste, Move, ficha, asset, cena ou VFX alterado; nenhuma bateria de testes ou coleta quantitativa de VIT/SPI executada.
+
+### 12.20 Rodada 74 — lacunas de VIT/SPI, fichas incompletas, índices de retarget e rolagens simultâneas de status (revisão 1.45)
+
+> **2026-11-04.** Respostas expressamente aprovadas pelo criador: **1A, 2A, 3A, 4A**, sem observações adicionais. Registros individuais **D-216 a D-219**, consolidados em **§55** de `docs/REGRAS_DO_JOGO.md`. O GDD mantém função de **adendo histórico, não de fonte normativa de combate** conforme D-001. Nenhum texto de rodadas anteriores foi substituído.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R74-Q1 | **1A** | **Registrar lacunas de VIT/SPI no nível 50** e **não finalizar referência quantitativa sem dados necessários verificáveis**, sem impor amostra/estatística não aprovadas | [D-216](decisoes/D-216-r74-q1-lacunas-vit-spi-nivel50-sem-referencia-prematura.md) |
+| R74-Q2 | **2A** | **Ficha do Move incompleta** enquanto faltarem prioridades expressas para **status declarados incompatíveis**; **não escolher vencedor automaticamente** | [D-217](decisoes/D-217-r74-q2-ficha-incompleta-sem-prioridade-incompatibilidade.md) |
+| R74-Q3 | **3A** | **Índice estável** de ocorrência obtido a partir de **plano determinístico de eventos no instante da declaração do ataque**, mantido fixo até sua resolução | [D-218](decisoes/D-218-r74-q3-indice-retarget-plano-deterministico-na-declaracao.md) |
+| R74-Q4 | **4A** | **Ordenar rolagens simultâneas de status pelo ID estável do alvo para consumir RNG**, sem **mudar a simultaneidade lógica dos efeitos** | [D-219](decisoes/D-219-r74-q4-status-rng-simultaneo-por-id-do-alvo.md) |
+
+**Exemplos não normativos:** (i) se faltar SPI nível 50 verificável, registrar a ausência e não completar lacunas por suposição; (ii) ficha abstrata com A e B incompatíveis, mas sem prioridade definida, permanece incompleta sem vencedor automático; (iii) ocorrência `A#2` preserva o índice estabelecido no plano declarativo do ataque até sua resolução, sem ordenar pelo callback; (iv) se alvos hipotéticos ID 2 e 5 tiverem sorteios de status simultâneos, RNG do alvo 2 é consumido antes do 5, sem atribuir-lhe precedência lógica de aplicação.
+
+**Relações e pendências:** a D-212 exige valores reais/verificáveis de VIT/SPI para futura proposta; a D-208 exige aprovação dos parâmetros de referência e mitigação-alvo antes de validar K compartilhado; D-213/D-215 continuam separando ordem das tentativas de prioridade de incompatibilidade; D-192/D-214 preservam ordenação do retarget com RNG exclusivo; D-210/D-211 preservam limites e condições de status; D-095 preserva empate por KO simultâneo. **Permanece não definido** desempate de rolagens simultâneas de status para **o mesmo alvo**, reação técnica a ficha incompleta, política de índices cancelados e dados numéricos de VIT/SPI. O conflito textual da Rodada 60 sobre LUK (§12.13) permanece **sem resolução**; D-203 continua excluindo odômetro do jogo principal. **Somente documentação:** nenhum código, teste, Move, VFX, asset ou cena modificado, nenhum teste de gameplay ou levantamento quantitativo executado.
+
+### 12.21 Rodada 75 — amostragem defensiva, bloqueio de ficha, índices cancelados e RNG de status para mesmo alvo (revisão 1.46)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Registros individuais **D-220 a D-223**, consolidados em **§56** de `docs/REGRAS_DO_JOGO.md`. Aditivo histórico; conforme D-001, o GDD **não é fonte normativa de combate**. Preservar todas as versões anteriores.
+
+| Pergunta | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R75-Q1 | **1A** | **Propor** amostra representativa com espécies de defesa **baixa, média e alta**, verificar **VIT/SPI nível 50** e submeter **composição da amostra à aprovação posterior**; nenhuma amostra ou valor oficial aprovado | [D-220](decisoes/D-220-r75-q1-amostra-defensiva-perfis-aprovacao.md) |
+| R75-Q2 | **2A** | **Bloquear em combate** o Move cuja configuração de prioridade entre **status declarados incompatíveis** esteja incompleta, **indicando exatamente a prioridade faltante** | [D-221](decisoes/D-221-r75-q2-bloquear-move-prioridade-incompatibilidade-ausente.md) |
+| R75-Q3 | **3A** | Em declaração de ataque, **preservar os índices reservados de ocorrências canceladas**; não reutilizá-los nem renumerar as demais ocorrências da mesma declaração | [D-222](decisoes/D-222-r75-q3-indices-cancelados-reservados-sem-reuso.md) |
+| R75-Q4 | **4A** | Em rolagens de status **simultâneas dirigidas ao mesmo alvo**, desempatar **apenas consumo do RNG** pelo **ID do atacante**, seguido da **ordem da declaração e índice da ocorrência**, sem criar precedência lógica de efeitos | [D-223](decisoes/D-223-r75-q4-status-mesmo-alvo-rng-id-atacante-declaracao-indice.md) |
+
+**Exemplos não normativos:** uma amostra futura pode ser proposta com perfis defensivos baixos/médios/altos, mas sem dados verificáveis do nível 50 nenhuma composição ou valor de K é homologado; Move hipotético com `Status A` e `Status B` incompatíveis sem prioridade **fica bloqueado**, com indicação da prioridade ausente; ocorrências fictícias `#1,#2,#3` não devem ser renumeradas ou reaproveitar `#2` se essa ocorrência for cancelada; para mesmo alvo fictício ID 3 e ataques simultâneos de IDs 2 e 5, consumir RNG da tentativa do atacante 2 antes da 5, **sem mudar simultaneidade lógica**.
+
+**Relações e pendências:** D-212/D-216 exigem dados reais/verificáveis de VIT/SPI nível 50; D-208 exige aprovação do atributo de referência e da mitigação-alvo antes de validar K compartilhado (D-201/D-204). D-215/D-217 mantêm prioridade **expressa** e ficha incompleta quando faltar; não há status concretos declarados incompatíveis. D-218 mantém índice determinado na declaração; D-219 ordena RNG simultâneo entre alvos diferentes por ID do **alvo**, e D-223 resolve o empate quando **o alvo é o mesmo**. D-213 conserva ordem dos efeitos dentro da ficha, sem criar novo fluxo de RNG. D-095 mantém KO simultâneo como empate; D-203 exclui odômetro do jogo principal. Divergência histórica R60-Q2/Q3 sobre LUK (§12.13) permanece **sem conciliação**. Não escolher automaticamente amostras, UI do bloqueio, custos/ATB/Burst, estruturas do plano de eventos ou seeds/algoritmos novos. **Nenhum código, teste, Move, ficha, cena, asset ou VFX modificado; nenhum teste de gameplay realizado.**
+
+### 12.22 Rodada 76 — amostragem VIT/SPI separada, validação pré-custo, índices condicionais e seed de status (revisão 1.47)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Registros individuais **D-224–D-227** consolidados em **§57** de `docs/REGRAS_DO_JOGO.md`. Este adendo preserva histórico e conflitos; D-001 mantém o GDD **não normativo para combate**. Atualização apenas documental.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R76-Q1 | **1A** | **Classificar os perfis defensivos de VIT e SPI separadamente**, garantindo representatividade **física, mágica e mista** na proposta de amostra; **composição e dados ainda sem aprovação** | [D-224](decisoes/D-224-r76-q1-perfis-defensivos-separados-vit-spi-amostra.md) |
+| R76-Q2 | **2A** | **Validar Move incompleto antes de confirmar a ação e debitar ATB/Burst**; bloqueio não consome recursos nem oportunidade de ação, preservando indicação de prioridade ausente | [D-225](decisoes/D-225-r76-q2-validar-bloqueio-antes-confirmacao-sem-custos.md) |
+| R76-Q3 | **3A** | O **plano determinístico inicial do ataque** deve **prever ocorrências condicionais possíveis e reservar índices na declaração**, preservando D-218/D-222 | [D-226](decisoes/D-226-r76-q3-reservar-indices-ocorrencias-condicionais-na-declaracao.md) |
+| R76-Q4 | **4A** | Usar **fluxo RNG próprio para status**, com **seed gerada no início do combate e registrada para reprodução**, separado do RNG exclusivo de retarget | [D-227](decisoes/D-227-r76-q4-rng-exclusivo-status-seed-inicio-combate-registrada.md) |
+
+**Exemplos apenas ilustrativos:** uma espécie de VIT alta e SPI baixa poderia representar especialização física sem ser classificada por média dos atributos; Move hipotético com prioridade de incompatibilidade ausente não confirma ação nem debita ATB/Burst; evento condicional `A#2` é indexado desde a declaração mesmo quando não acontecer, sem consumo fictício de RNG; sementes de status e retarget são geradas/registradas em fluxos separados, sem homologar números ou algoritmo PRNG.
+
+**Limitações, decisões preservadas e conflitos:** a amostra concreta e os valores VIT/SPI nível 50 **não foram levantados** e os parâmetros de K único continuam pendentes de aprovação (D-208/D-216/D-220/D-224). A política de bloqueio de Move continua limitada à falta expressa de prioridade de status incompatíveis (D-215/D-217/D-221), sem definir visual do aviso ou mecanismo de editor. Índices fixos e sem reuso continuam regidos por D-218/D-222; novas exceções para ocorrências impossíveis de antecipar não foram aprovadas. D-219/D-223 continuam ordenando consumo RNG de status sem quebrar simultaneidade lógica (D-095). Algoritmo de RNG, formato de seed, consumo de chances 0%/100% e protocolo de replay não foram determinados. A divergência de LUK da Rodada 60 (GDD §12.13) permanece **não resolvida**. D-203 mantém odômetro fora do jogo principal. **Nenhum código, teste, ficha, Move, cena, asset ou VFX alterado; nenhum teste de gameplay executado.**
+
+### 12.23 Fichas de Moves — Rodada M1: MP adicional e três decisões aguardando exemplos (revisão 1.48)
+
+> **2026-11-04.** O criador abriu uma série independente, **Fichas de Moves**, com respostas: **1D, 2D, 3D e 4A** e observação expressa **“Quero exemplos de 4 moves antes de definir suas ideias”**. Conforme D-061, **somente Q4A** tem conteúdo decisório completo e foi registrada como [D-228](decisoes/D-228-m1-q4a-mp-adicional-moves-magicos-especiais.md), consolidada em **§58** de `docs/REGRAS_DO_JOGO.md`. O GDD continua não normativo para combate (D-001).
+
+| Questão | Resposta | Estado real |
+|---|---|---|
+| **M1-Q1** | **1D** | **Nenhum formato de descrições aprovado**; o criador pediu quatro exemplos antes de escolher. |
+| **M1-Q2** | **2D** | **Nenhuma notação de modificadores aprovada**; o criador pediu quatro exemplos antes de escolher. |
+| **M1-Q3** | **3D** | **Nenhuma estrutura nova de alvos aprovada**; o criador pediu quatro exemplos antes de escolher. |
+| **M1-Q4** | **4A** | **D-228 aprovada:** Moves **mágicos/especiais** gastarão **MP adicional em gameplay**, além dos recursos **ATB/Burst aplicáveis**; **cada custo individual continua pendente**. A regra **sem MP** de D-032 fica **expressamente superada somente quanto a esse ponto**. |
+
+**Precedência, limites e exemplos:** preservar o conteúdo integral de `docs/decisoes/D-032-balanceamento-moves-ingles-e-status.md`, registrando a superação histórica do trecho “MP descartado” exclusivamente pelo novo D-228. §14.6 de `docs/REGRAS_DO_JOGO.md` já descrevia MP adicional, mas esta nova aprovação **não fixa custos, não altera outras regras de MP, nem implementa a funcionalidade**. `scripts/data/skill.gd` ainda carece de campo MP; classificação de dano físico/mágico não é automaticamente dada por `Skill.Kind` conforme D-122. Exemplos demonstrativos de quatro Moves são **somente referência visual/editorial**, sem escolher fichas definitivas, valores de MP, fórmulas, efeitos, alvos ou descrição padrão. D-119/D-123/D-210/D-213/D-215/D-225 permanecem em vigor. A divergência de LUK da Rodada 60 (§12.13) e demais decisões históricas são preservadas. **Nenhum código, teste, Move, ficha, VFX, cena ou asset alterado; nenhum teste de gameplay executado.**
+
+### 12.24 Fichas de Moves — Tooltip textual integrada ao estilo LoL e descrição visual fora de combate (revisão 1.49)
+
+> **2026-11-04.** Em resposta aos quatro exemplos da série M1, o criador determinou: **“Não, está péssimo, seja mais similar a como lol descreve suas habilidades, com toda descrição, dano e efeitos em blocos de texto junto com seus modificadores e o restante como custos e wind up acima, deixa a parte do efeito visual pra descrição na ficha fora de combate”**. Regra registrada em **[D-229](decisoes/D-229-moves-tooltip-texto-integrado-visual-fora-combate.md)** e consolidada em **§59 de `docs/REGRAS_DO_JOGO.md`**.
+
+**Formato de combate aprovado:** custos e windup em cabeçalho acima; **texto completo em prosa**, com descrição, valores de dano/cura, status, modificadores, chances, duração, condições e exceções **integrados na mesma explicação**, de modo semelhante aos tooltips de League of Legends. **Não** criar cartões independentes de dano, status e modificadores. **Descrição de efeito visual** (animação, partículas, trajetória estética e dissipação) deve aparecer **somente na ficha consultada fora do combate**, não na tooltip de combate. Termos de trajetória mecanicamente relevantes continuam permitidos na explicação da habilidade quando necessários ao funcionamento.
+
+**Exemplos não homologados:** Bite (2 ATB, windup 1,2 s, 1,3× dano, Stun 30% por 2 s), Sand Attack (1 ATB, windup 0,75 s, sem dano, Blind por 4 s, 35% de erro de ações ofensivas enquanto cego), Dragon Rage (3 ATB, windup 2 s, 1,6× dano, explosão em área condicionada ao impacto no alvo principal) e Media (2 ATB, windup 0,5 s, cura 40% HP máximo, mínimo 12 HP por aliado vivo) ilustram **como redigir**, não aprovam novas fichas, categorias de dano, custos MP ou efeitos. Preservar suas fontes atuais, D-032 e `scripts/combat/battle.gd`.
+
+**Precedência e limites:** esta instrução posterior **resolve M1-Q1 e M1-Q2 no aspecto da apresentação da descrição e dos modificadores**, mas **não especifica o esquema técnico de dados para alvos (M1-Q3)** nem fórmulas internas ou categorias individuais; não escolher arquitetura por inferência. **D-228** mantém MP adicional para mágicos/especiais, custo individual ainda pendente, superando apenas a regra histórica sem MP de D-032. D-203 mantém o odômetro fora do jogo principal; o conflito de LUK da Rodada 60 (§12.13) permanece. **Atualização apenas documental: nenhum código, teste, VFX, ficha oficial, cena ou asset alterado; testes de gameplay não executados.**
+
+### 12.25 Fichas de Moves — Valor numérico de dano/cura obrigatório nas tooltips (revisão 1.50)
+
+> **2026-11-04.** O criador corrigiu os exemplos que apresentavam “1,3× dano-base”: **“TÁ PÉSSIMO VOU SABER OQ É 1X3 O DANO BASE?? É PRA TER NÚMEROS NÚMEROS NÃO FORMULAS”**. Nova decisão individual **[D-230](decisoes/D-230-moves-tooltip-dano-cura-numericos-sem-formulas.md)**, consolidada em **§60** de `docs/REGRAS_DO_JOGO.md`. A D-001 mantém o GDD não normativo para o combate.
+
+**Apresentação aprovada:** uma tooltip de Move em combate deve informar **dano ou cura como quantidades numéricas em pontos**, sem forçar o jogador a fazer contas. **Multiplicadores e expressões de STR/MAG não substituem a quantidade real exibida.** Manter os metadados de **custos/windup acima**, a explicação integrada em texto com efeitos, valores de chance e duração e a **descrição visual apenas na ficha consultada fora de combate** (D-229).
+
+**Exemplos verificáveis na implementação atual, não fichas definitivas:** Gible do código tem ataque 9. Com alvo neutro, sem crítico, fraqueza, buff, defesa ou diferença de passos, **Bite = 12 pontos de dano** e **Dragon Rage = 14 pontos de dano**; **Sand Attack = 0 pontos**; para **Media**, um aliado vivo com **32 HP máximo** e pelo menos 13 HP faltantes recupera **13 pontos de HP** conforme a rotina atual. Esses números **não definem um dano-base fixo oficial por Move**, não homologam o futuro sistema STR/MAG nem a natureza física/mágica dos Moves. A aprovação numérica da apresentação **não determina como obter valores quando o contexto de atacante/alvo não estiver disponível**, nem atualiza o sistema de HUD.
+
+**Histórico:** a D-229 continua válida sobre o bloco textual e a separação de VFX, mas seus exemplos antigos apresentados unicamente como `1,3×` e `1,6×` devem ser considerados **insuficientes para a tooltip**. D-032 continua preservada como fonte histórica dos multiplicadores; D-228 mantém MP adicional para mágicos/especiais, valores individuais pendentes. D-198/D-205 preservam regras novas de arredondamento ainda não implementadas no código; M1-Q3 ainda não define modelagem técnica de alvos. Preservar o conflito histórico de LUK da Rodada 60 sem escolher prevalência. **Somente documentação:** nenhum código, ficha, teste, HUD, cena, asset ou VFX modificado; nenhum teste de gameplay executado.
+
+### 12.26 Rodada 77 — faixas defensivas, IA, máximo de ocorrências e consumo RNG em chance extrema (revisão 1.51)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Registros individuais **D-231–D-234**, consolidados em **§61** de `docs/REGRAS_DO_JOGO.md`. Adendo aditivo, sem alterar documentação das séries anteriores; **D-001 mantém o GDD não normativo para combate**. Os adendos das fichas M1 (D-228–D-230) permanecem integralmente preservados.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R77-Q1 | **1A** | **Propor** limites de defesa **baixa, média, alta** a partir da distribuição verificável de **VIT e SPI no nível 50**, **separadamente**, e **submeter os limites à aprovação antes de classificar a amostra** | [D-231](decisoes/D-231-r77-q1-propor-faixas-vit-spi-por-distribuicao-verificavel.md) |
+| R77-Q2 | **2A** | **Excluir Moves com configuração incompleta** da lista de candidatos da IA **antes da seleção tática**, **sem consumo de ação ou recursos**, restringindo-se à falta já normatizada de prioridade para status incompatíveis | [D-232](decisoes/D-232-r77-q2-ia-excluir-moves-incompletos-antes-selecao.md) |
+| R77-Q3 | **3A** | Para Move com número variável de eventos condicionais, **exigir limite máximo explícito** e **reservar os índices de todas as ocorrências possíveis na declaração**; sem máximo, **plano incompleto** | [D-233](decisoes/D-233-r77-q3-limite-maximo-explicito-ocorrencias-condicionais.md) |
+| R77-Q4 | **4A** | Para **chance final de status exatamente 0% ou 100%**, **determinar falha/sucesso sem consumir RNG**, preservando demais condições de aplicação | [D-234](decisoes/D-234-r77-q4-chance-status-extrema-sem-consumir-rng.md) |
+
+**Exemplos hipotéticos, não valores aprovados:** faixas baixa/média/alta de VIT e SPI exigem dados de nível 50 **reais e verificáveis**, com limiares aprovados antes da classificação; ficha com `Status A` e `Status B` incompatíveis sem prioridade não é elegível à escolha tática da IA; limite **hipotético** de três ocorrências condicionais permite reservar três índices na declaração, sem executar eventos que não ocorrerem; chance final de Poison 100% após modificadores só tem sucesso **se o alvo continuar elegível**, sem consumir RNG.
+
+**Compatibilidades e pendências:** D-212/D-216/D-220/D-224 preservam verificação de dados, amostra representativa física/mágica/mista e aprovação posterior; o K compartilhado de VIT/SPI continua sem número (D-201/D-204/D-208). D-215/D-217/D-221/D-225 exigem prioridade de status expressa e bloqueio sem gastar ação; D-232 filtra apenas esse caso na IA, sem criar fallback quando não houver Move válido. D-218/D-222/D-226 mantêm índices fixos e reservados, e D-233 declara plano incompleto sem máximo **sem aprovar bloqueio automático do Move por essa nova causa**. D-143/D-227/D-219/D-223 mantêm chance 0–100%, RNG exclusivo de status e sua ordem, com extremos 0%/100% sem sorteio (D-234). D-095 mantém empate por KO simultâneo e D-203 mantém odômetro fora do jogo principal. O conflito textual de escalas de LUK da Rodada 60 (§12.13) permanece **não resolvido**. A série M1 D-228–D-230 sobre MP e tooltips está **inalterada**. **Nenhum código, teste, ficha, Move, cena, asset ou VFX alterado; nenhum teste de gameplay realizado.**
+
+### 12.27 Rodada 78 — tercis defensivos, Tackle da IA, plano incompleto e prioridades entre Moves (revisão 1.52)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Decisões individuais **D-236 a D-239**, consolidadas em **§62** de `docs/REGRAS_DO_JOGO.md`. Registro histórico aditivo; **D-001 mantém o GDD não normativo para combate**. Preservar a série M1 D-228–D-230 e a regra posterior D-235 sobre independência de Moves e VFX, sem reescrevê-las.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R78-Q1 | **1A** | **Propor faixas baixas/médias/altas por tercis**, separadamente para **VIT e SPI no nível 50**, usando **distribuições verificadas**, e **submeter limites concretos à aprovação** antes de classificar a amostra | [D-236](decisoes/D-236-r78-q1-tercis-separados-vit-spi-faixas-para-aprovacao.md) |
+| R78-Q2 | **2A** | Se **nenhum Move válido da lista da IA** permanecer, **permitir considerar Tackle separadamente apenas se elegível**; caso contrário, reação permanece **pendente de outra regra** | [D-237](decisoes/D-237-r78-q2-ia-considerar-tackle-se-sem-moves-validos.md) |
+| R78-Q3 | **3A** | **Bloquear confirmação** de Move com plano de ocorrências condicionais incompleto por **falta de máximo explícito**, **antes de consumir ação ou recursos**, **identificando a omissão** | [D-238](decisoes/D-238-r78-q3-bloquear-move-plano-sem-maximo-antes-custos.md) |
+| R78-Q4 | **4A** | Exigir **política explícita de prioridade entre status declarados incompatíveis oriundos de Moves diferentes**, definida e **aprovada antes da resolução**, sem inferir prioridade das fichas isoladas | [D-239](decisoes/D-239-r78-q4-politica-explicita-status-incompativeis-moves-distintos.md) |
+
+**Exemplos ilustrativos, não regras extras:** se as distribuições VIT/SPI nível 50 verificadas forem disponíveis, propor os respectivos cortes por tercis e **aguardar aprovação numérica**; se a IA não possuir Moves válidos, poderá considerar **Tackle elegível**, sem que isso determine a reação quando Tackle também não estiver disponível; Move com máximo de ocorrências condicionais ausente não confirma ação nem debita ATB/Burst/MP; quando dois Moves hipotéticos produzirem status X/Y declarados incompatíveis, **não determinar vencedor** sem política de precedência **entre Moves** previamente aprovada.
+
+**Preservação e pendências:** D-216/D-220/D-224/D-231 continuam exigindo dados, cortes e amostra aprovados; valor numérico K permanece pendente (D-208). D-225/D-232 exigem filtragem/bloqueio sem custo, mas **não autorizam comportamento específico da IA sem Move/Tackle elegíveis**. D-218/D-222/D-226/D-233 mantêm plano inicial e índices reservados; exceder máximo não foi regulado. D-213/D-215/D-219/D-223/D-227/D-234 continuam válidas para status e RNG; a política entre Moves não tem forma nem prioridade concreta, e **nenhum par real de status foi declarado incompatível**. D-095 mantém empate por KO simultâneo, D-203 mantém odômetro fora do jogo principal, **D-235** mantém independência de Moves/VFX em relação a personagens e lados. A divergência histórica de LUK da Rodada 60 (§12.13) permanece **não resolvida**. **Somente documentação: nenhum código, teste, ficha, Move, IA, cena, asset ou VFX modificado; nenhum teste de gameplay realizado.**
+
+### 12.28 Rodada 79 — valores empatados em tercis, reavaliação da IA, ocorrências excedentes e matriz de incompatibilidades (revisão 1.53)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Registros individuais **D-240 a D-243**, consolidados em **§63** de `docs/REGRAS_DO_JOGO.md`. Aditivo histórico; D-001 mantém o GDD não normativo para combate. Preservar integralmente D-228–D-230 sobre MP/tooltips e D-235 sobre independência de Moves/VFX de personagem, lado e posição.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R79-Q1 | **1A** | Espécies com **mesmo valor de VIT ou SPI** permanecem na **mesma faixa daquele atributo** mesmo se os tercis tiverem **quantidades diferentes** | [D-240](decisoes/D-240-r79-q1-igualdade-atributo-mesma-faixa-tercis.md) |
+| R79-Q2 | **2A** | Se **não houver Move válido nem Tackle elegível**, IA **não inicia ação nem consome recursos**; **reavalia na próxima oportunidade normal** de decisão | [D-241](decisoes/D-241-r79-q2-ia-sem-opcoes-reavaliar-proxima-oportunidade.md) |
+| R79-Q3 | **3A** | **Impedir ocorrência condicional excedente**, **registrar violação do plano** e **preservar eventos válidos previamente resolvidos** | [D-242](decisoes/D-242-r79-q3-ocorrencia-excedente-rejeitar-e-registrar-violacao.md) |
+| R79-Q4 | **4A** | **Matriz explícita de prioridades por pares de status declarados incompatíveis vindos de Moves diferentes**, **sujeita à aprovação**, sem atribuir prioridade a pares não aprovados | [D-243](decisoes/D-243-r79-q4-matriz-pares-status-incompativeis-aprovacao.md) |
+
+**Exemplos não normativos:** espécies hipotéticas com VIT 50 exatamente em um tercil fronteiriço devem receber **uma mesma classificação em VIT**, mantendo pendente qual faixa será homologada; a IA sem qualquer ação elegível **não inicia ação nem consome recursos** e consulta novamente na próxima oportunidade normal; Move com máximo fictício três que solicite uma quarta ocorrência deve **rejeitar a quarta** e registrar violação, sem desfazer eventos válidos resolvidos; a matriz por pares de status ainda **não contém pares concretos nem vencedores aprovados**, apesar de seu formato estar agora aprovado.
+
+**Preservação e pendências:** D-212/D-216/D-220/D-224/D-231/D-236 mantêm verificação de valores VIT/SPI nível 50, tercis separados e aprovação de cortes e amostra antes de qualquer K (D-208); D-225/D-232/D-237 continuam controlando filtragem de Moves e consideração separada de Tackle pela IA. D-218/D-222/D-226/D-233/D-238 preservam o plano na declaração, índices reservados e máximo exigido; a nova D-242 não aprova como lidar com eventos posteriores ao excedente nem canal de log. D-213/D-215/D-219/D-223/D-227/D-234/D-239 mantêm tentativas, probabilidades e ordenação RNG, sem escolher vencedores de pares incompatíveis. D-095 mantém empate por KO simultâneo; D-203 exclui odômetro do jogo principal; D-235 mantém independência de Moves/VFX. A divergência de LUK da Rodada 60 (§12.13) continua **não resolvida**. **Somente documentação, sem editar código, testes, IA, fichas, Moves, cenas, assets ou VFX, sem testar gameplay ou levantar valores defensivos.**
+
+### 12.29 Fichas de Moves — Rodada M2: dano, tempos, alvos, efeitos, visual e Dispel (revisão 1.54)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A, 4A, 5A e 6A**; **sem observações próprias**. Registros individuais **D-244–D-249** consolidados em **§64** de `docs/REGRAS_DO_JOGO.md`. A D-061 exige registro individual e preservação histórica; o GDD permanece **não normativo para o combate** (D-001). Nenhum código ou ficha operacional foi modificado.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| M2-Q1 | **1A** | Q1A: separar dano-base, categoria físico/mágico e escalas STR/MAG na ficha técnica; tooltip com dano numérico calculado | [D-244](decisoes/D-244-m2-q1-dano-base-categoria-escalas-separadas.md) |
+| M2-Q2 | **2A** | Q2A: windup, tempo-base de deslocamento e velocidade de projétil separados; usar só modificadores aprovados | [D-245](decisoes/D-245-m2-q2-windup-trajeto-velocidade-projetil-independentes.md) |
+| M2-Q3 | **3A** | Q3A: seleção Self/One/Two/All, facção ally/enemy/both e abrangência condicional dos efeitos como dimensões distintas | [D-246](decisoes/D-246-m2-q3-selecao-faccao-abrangencia-alvos-separadas.md) |
+| M2-Q4 | **4A** | Q4A: cura, buffs/debuffs, status e Dispel como efeitos individuais com magnitude, condição, chance, duração e ordem aplicáveis | [D-247](decisoes/D-247-m2-q4-cura-buffs-status-dispel-efeitos-individuais.md) |
+| M2-Q5 | **5A** | Q5A: descrição visual somente fora do combate, separada por preparação, movimento/emissão, impacto e dissipação quando aplicável | [D-248](decisoes/D-248-m2-q5-visual-preparo-emissao-impacto-dissipacao-ficha-fora-combate.md) |
+| M2-Q6 | **6A** | Q6A: Move com Dispel deve listar expressamente efeitos removíveis e exceções aplicáveis | [D-249](decisoes/D-249-m2-q6-dispel-lista-explicita-removiveis-excecoes.md) |
+
+**Aplicação e exemplos ilustrativos:** uma ficha de Bite pode manter dano-base/categoria/escalas em campos técnicos separados, enquanto sua tooltip apresenta **número calculado** do contexto (D-230), sem inventar fórmula. Dragon Rage pode selecionar um inimigo e só produzir dano em área após contato válido; isso é **separação de seleção e abrangência**, não revogação das regras gerais de AoE (D-007/D-032). Um Move com projétil possui campos distintos para windup e velocidade de voo, sem presumir como AGI influencia o projétil (D-119/D-133/D-078). Efeitos distintos são descritos individualmente conforme suas condições e ordem, sem importar status incompatíveis ou Dispel concreto (D-210/D-213/D-215/D-243). As descrições artísticas por **preparação, movimento/emissão, impacto e dissipação** ficam **somente fora de combate** (D-229/D-248).
+
+**Proteções e pendências:** preservar **D-228** para MP adicional dos Moves mágicos/especiais, com custos específicos em aberto; preservar **D-229/D-230** para tooltip estilo LoL com dano/cura expressos em **pontos numéricos**, e **D-235** para independência de Moves/VFX de personagem, time, lado e coordenadas fixas. Não foi definida fórmula STR/MAG, valor numérico oficial por Move, escala de projétil por AGI, alcance concreto de Dispel, herança de seleção de alvo, cena ou visual específico. Divergência histórica de LUK na R60 (GDD §12.13) preservada; D-203 mantém odômetro fora do jogo principal. **Somente documentação: nenhum código, teste, ficha, Move, HUD, cena, asset, animação ou VFX alterado; nenhum teste de gameplay executado.**
+
+### 12.30 Rodada 80 — limite de tercil na faixa superior, filtro IA, continuidade após excedente e abrangência da matriz (revisão 1.55)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações adicionais. Decisões individuais **D-250–D-253**, consolidadas em **§65** de `docs/REGRAS_DO_JOGO.md`. Aditivo histórico: **D-001 mantém o GDD não normativo para o combate**. Preservar adendos anteriores, inclusive M2 (D-244–D-249), e D-235.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R80-Q1 | **1A** | Valor de VIT/SPI **exatamente igual a limite aprovado** recebe a **faixa superior**, sem separar espécies com o mesmo valor | [D-250](decisoes/D-250-r80-q1-valor-igual-limite-tercil-faixa-superior.md) |
+| R80-Q2 | **2A** | Excluir também Moves sem máximo obrigatório de ocorrências condicionais **antes da seleção tática da IA**, **sem consumir ação ou recursos** | [D-251](decisoes/D-251-r80-q2-ia-filtrar-moves-sem-maximo-condicional.md) |
+| R80-Q3 | **3A** | **Rejeitar e registrar somente a ocorrência excedente**; continuar eventos posteriores **validamente previstos** e preservar os eventos anteriores | [D-252](decisoes/D-252-r80-q3-continuar-eventos-validos-apos-excedente.md) |
+| R80-Q4 | **4A** | Matriz por pares de status incompatíveis **aprovada futuramente** vale tanto para conflitos **simultâneos** entre Moves distintos quanto para conflito de **status ativo** com outro **aplicado depois por Move diferente** | [D-253](decisoes/D-253-r80-q4-matriz-incompatibilidade-simultaneos-e-ativos.md) |
+
+**Exemplos hipotéticos, sem decisões numéricas:** limite fictício entre defesa baixa/média em 50 classifica `VIT=50` na faixa média; IA exclui Move que não declare máximo condicional e ainda segue D-237/D-241 se faltar opção elegível; excedente fictício `#4` é rejeitado e registrado, mas ocorrência posterior `#3` já planejada e válida continua, preservando resoluções anteriores; se efeitos X/Y de Moves distintos forem futuramente aprovados como incompatíveis na matriz, essa mesma precedência vale também se X estiver ativo antes da tentativa de Y. **Nenhum par X/Y ou vencedor foi aprovado**.
+
+**Pendências e conflitos:** VIT/SPI de nível 50, tercis, limites, espécies, amostra e K permanecem não verificados/não aprovados (D-212/D-216/D-220/D-236/D-240); filtro IA limita-se às duas causas já decididas (D-232/D-251), sem mudar custos de ações válidas; faltam formato do registro de violação e limites por Move (D-233/D-242/D-252); matriz por pares segue sem entradas concretas (D-239/D-243/D-253), sem escolher remoções ou efeitos com menor prioridade. D-095 e D-203 preservados, assim como D-228–D-230, D-235 e D-244–D-249. A divergência histórica sobre LUK da Rodada 60 (§12.13) continua **sem resolução**. **Somente documentação:** nenhum código, teste, ficha, Move, IA, cena, asset ou VFX alterado; nenhum teste de gameplay executado.
+
+### 12.31 Rodada 81 — unidade de amostra, validação completa, violação estruturada e status perdedor (revisão 1.56)
+
+> **2026-11-04.** O criador aprovou expressamente **1A, 2A, 3A e 4A**, sem observações próprias. Registros individuais **D-254 a D-257**, consolidados em **§66** de `docs/REGRAS_DO_JOGO.md`. Adendo histórico aditivo; **D-001 mantém o GDD não normativo para combate**. Preservar a série de fichas de Moves D-228–D-230/D-244–D-249 e D-235 sem reescrever seu conteúdo.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R81-Q1 | **1A** | **Uma observação por espécie** para distribuição de VIT/SPI **no nível 50**, baseada em **valores oficiais de referência** e **separada dos desvios individuais ±3** | [D-254](decisoes/D-254-r81-q1-uma-especie-por-observacao-vit-spi-nivel50.md) |
+| R81-Q2 | **2A** | Para Move com **múltiplas causas de bloqueio já aprovadas**, **identificar todas as omissões detectadas na mesma validação**, **sem debitar ação ou recursos** | [D-255](decisoes/D-255-r81-q2-identificar-todas-omissoes-de-bloqueio-juntas.md) |
+| R81-Q3 | **3A** | **Registrar violação do plano de forma estruturada** com identificação estável de **Move, atacante, declaração, máximo aprovado e ocorrência excedente** | [D-256](decisoes/D-256-r81-q3-log-estruturado-violacao-plano-identificadores-estaveis.md) |
+| R81-Q4 | **4A** | Sob prioridade por par concretamente aprovada, **eliminar status de menor prioridade**, **removendo se ativo ou impedindo sua aplicação se novo**, **sem restaurá-lo quando o vencedor terminar** | [D-257](decisoes/D-257-r81-q4-eliminar-status-perdedor-sem-restauracao.md) |
+
+**Exemplos meramente ilustrativos:** dez indivíduos de uma espécie e um indivíduo de outra representam **uma observação de referência por espécie**, sem contaminar os tercis com variação ±3; ficha com prioridade obrigatória de status incompatíveis ausente e máximo condicional obrigatório ausente **indica as duas omissões na mesma validação**, antes de qualquer ação/custo; violação hipotética de máximo registra os campos Move/atacante/declaração/máximo/ocorrência com IDs estáveis sem executar o excedente; se status X/Y **futuramente** tiverem incompatibilidade e precedência aprovadas, o perdedor será removido/bloqueado e **não retornará** depois do vencedor. **Nenhuma entrada X/Y concreta foi aprovada.**
+
+**Pendências e conflitos:** não foram verificados valores VIT/SPI no nível 50, dados oficiais por espécie, limites de tercis, amostra, mitigação ou K (D-208/D-216/D-220/D-236/D-250). A política de validação restringe-se às causas de bloqueio já aprovadas (D-221/D-238/D-255), sem novos erros ou interface fixada. O registro estruturado não define tecnologia nem formato de serialização (D-242/D-252/D-256). A matriz segue sem pares/precedências aprovados (D-239/D-243/D-253/D-257); permanece pendente quando conferir a incompatibilidade em relação ao RNG e como agir com entrada ausente. D-095 mantém KO simultâneo, D-203 mantém odômetro fora do jogo principal, D-235 mantém Moves e VFX independentes de personagem e lado. A divergência histórica da Rodada 60 sobre LUK (GDD §12.13) continua sem resolução. **Somente documentação:** nenhum código, teste, ficha, Move, IA, cena, HUD, asset ou VFX alterado; nenhum teste de gameplay realizado.
+
+### 12.32 Fichas de Moves — Rodada M3: fórmula, alvos, projéteis, Dispel e abrangência de MP (revisão 1.57)
+
+> **2026-11-04.** O criador respondeu expressamente **1A, 2D, 3A, 4A, 5A e 6D**. As alternativas D são especificadas apenas pela sua observação literal: **“Tudo q não é tackle consome MP , não existe previa de dano em seleção e não deve existir, pare de inventar coisa que eu não pedi”**. Registros **D-258–D-263**, consolidados em **§67** de `docs/REGRAS_DO_JOGO.md`. D-001 mantém o GDD não normativo para combate; adendo histórico sem implementação.
+
+| Questão | Escolha | Regra aprovada | Decisão |
+|---|---|---|---|
+| M3-Q1 | **1A** | Q1A: aplicar (base + coeficiente STR/MAG × atributo) × potência antes de outros modificadores | [D-258](decisoes/D-258-m3-q1-formula-dano-base-escala-vezes-potencia.md) |
+| M3-Q2 | **2D** | Q2D: não existe nem deve existir prévia de dano durante a seleção de alvos; tooltip numérica D-230 preservada | [D-259](decisoes/D-259-m3-q2-sem-previa-dano-na-selecao-alvos.md) |
+| M3-Q3 | **3A** | Q3A: efeitos herdam seleção e facção padrão, salvo abrangência ou condição diferente expressamente declarada | [D-260](decisoes/D-260-m3-q3-efeitos-herdam-selecao-faccao-salvo-excecao.md) |
+| M3-Q4 | **4A** | Q4A: AGI não altera automaticamente velocidade de projétil; velocidade própria do Move, exceções só expressas | [D-261](decisoes/D-261-m3-q4-agi-nao-altera-velocidade-projeteis-sem-excecao.md) |
+| M3-Q5 | **5A** | Q5A: Dispel remove todos os efeitos elegíveis declarados na ficha, respeitando exceções | [D-262](decisoes/D-262-m3-q5-dispel-remove-todos-efeitos-elegiveis.md) |
+| M3-Q6 | **6D** | Q6D: todo Move exceto Tackle consome MP; amplia a D-228 histórica, valores por Move pendentes | [D-263](decisoes/D-263-m3-q6-todos-moves-exceto-tackle-consomem-mp.md) |
+
+**Delimitação e precedência:** a fórmula da D-258 define a parcela inicial ofensiva antes dos demais modificadores, preservando D-122/D-123/D-198/D-205; **não estabelece valores-base ou coeficientes oficiais**. D-259 veta **qualquer prévia de dano durante seleção de alvos**, mas não revoga a tooltip numérica e textual D-229/D-230 em seu contexto próprio. D-260 complementa a seleção/facção/abrangência de D-246 com **herança e exceções declaradas**; D-261 separa AGI de velocidade dos projéteis, preservando D-119/D-078 e exceções que venham a ser expressamente aprovadas. D-262 exige remover **todos os efeitos elegíveis que a ficha listar**, preservando exclusões da D-249; **não há Move concreto de Dispel definido**. D-263 estabelece **MP em todo Move exceto Tackle** e, neste aspecto, **supera expressamente a restrição a Moves mágicos/especiais de D-228**, preservando os registros históricos D-228/D-032. Os custos **individuais de MP não foram aprovados**, e a relação entre MP adicional e Burst pagar ação inteira (D-033/D-063) continua exigindo decisão específica; não escolher resposta tácita.
+
+**Limitações e histórico:** D-235 permanece obrigatória para independência de Move/VFX de personagem, equipe, lado e câmera fixa. D-244–D-249 permanecem intactas. Não assumir categorias de dano, números de MP, velocidades, faixas de STR/MAG, listas concretas de Dispel ou estruturas de código. D-203 mantém odômetro fora do jogo principal; divergência histórica de LUK da R60 (GDD §12.13) permanece sem conciliação; D-243/D-257 não homologam pares de status concretos. **Somente documentação: nenhum código, ficha, teste, HUD, IA, cena, asset, animação ou VFX modificado; nenhum teste de gameplay executado.**
+
+### 12.33 Rodada 82 — universo verificável, aviso textual, ID de excesso e matriz após chance (revisão 1.58)
+
+> **2026-11-04.** O criador aprovou **1A, 2A, 3A e 4A**, sem observações próprias. Documentos **D-264–D-267**, consolidados em **§68** de `docs/REGRAS_DO_JOGO.md`. Registro histórico aditivo (D-061). **D-001 mantém o GDD não normativo para combate**; toda a série M3 (D-258–D-263) e as decisões anteriores permanecem intactas.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R82-Q1 | **1A** | Usar **todas as espécies oficialmente incluídas no universo de referência do Crawlmon** com **VIT/SPI verificáveis no nível 50**, **uma observação por espécie**, registrando lacunas; **não homologar cortes se a cobertura impedir representatividade** | [D-264](decisoes/D-264-r82-q1-universo-oficial-especies-vit-spi-verificaveis.md) |
+| R82-Q2 | **2A** | Exibir **lista textual compacta com todas as omissões detectadas** na tentativa de confirmar Move bloqueado, **mantendo aberta a seleção de combate** | [D-265](decisoes/D-265-r82-q2-lista-textual-compacta-omissoes-selecao-aberta.md) |
+| R82-Q3 | **3A** | **Identificador diagnóstico separado dos índices válidos** do plano, derivado da **declaração e sequência determinística das solicitações excedentes** | [D-266](decisoes/D-266-r82-q3-id-diagnostico-declaracao-sequencia-excedentes.md) |
+| R82-Q4 | **4A** | Resolver **elegibilidade e chance** primeiro; **somente após sucesso efetivo** consultar a **matriz de incompatibilidade aprovada** e eliminar o status perdedor | [D-267](decisoes/D-267-r82-q4-elegibilidade-chance-antes-matriz-status.md) |
+
+**Exemplos abstratos, não novos valores/regras:** espécie do universo oficial com VIT verificável e SPI ausente deve ter **lacuna SPI registrada**, sem fabricar número; Move hipotético com duas omissões de bloqueio exibe **lista textual compacta com ambas**, sem fechar a seleção nem cobrar recursos; duas solicitações de evento excedente sob uma mesma declaração recebem **IDs de diagnóstico distintos**, não índices válidos; status Y novo com chance hipotética de 20%, se **falhar**, não remove X ativo; se **tiver sucesso**, só uma **entrada de prioridade concretamente aprovada** poderá definir a eliminação do menor.
+
+**Limites e preservações:** ainda não há universo de espécies auditado, valores VIT/SPI nível 50 verificados, limiar quantitativo de representatividade, tercis ou K aprovados (D-208/D-216/D-220/D-254/D-264). A HUD da seleção permanece sem modificação; D-259 **proíbe prévia de dano na seleção de alvos** e D-229/D-230 preservam a tooltip numérica em seu próprio contexto. O ID diagnóstico não cria eventos válidos (D-218/D-222/D-242/D-252/D-256/D-266). A matriz de status segue sem pares concretos ou vencedores, preservando D-239/D-243/D-253/D-257; D-234 continua evitando consumo de RNG para chances finais 0%/100% e D-095 mantém KO simultâneo. Preservados integralmente D-228–D-230, D-235, D-244–D-249 e D-258–D-263, incluindo MP obrigatório em Moves diferentes de Tackle (D-263); conflito de MP/Burst D-033/D-063 segue pendente. Divergência histórica de LUK da R60 (GDD §12.13) não foi conciliada. **Apenas documentação:** nenhum código, teste, ficha operacional, IA, Move, HUD, cena, asset ou VFX alterado; nenhum teste de gameplay executado.
+
+### 12.34 Guard — ação defensiva de 1 ATB, quebra pelo Brick Break e barreira reservada (revisão 1.59)
+
+> **2026-11-05.** Registro **aditivo** das regras do **Guard** pedidas e respondidas diretamente pelo criador na conversa de implementação, para que **nenhuma regra posterior as contradiga sem perceber**. Conforme **D-001**, este GDD **não é fonte normativa de combate**: a fonte são os documentos de decisão do Guard (**D-272**, `docs/decisoes/D-272-guard-escudo-de-1-atb.md`, e **D-273**, `docs/decisoes/D-273-barreira-hexagonal-reservada-para-protect.md`; os registros D-269–D-271 tratam de atributos/Natures) e a seção correspondente de `docs/REGRAS_DO_JOGO.md`.
+>
+> **Numeração:** o Guard foi criado localmente como D-195/D-196 e a seção 49 de `REGRAS_DO_JOGO.md`, números que colidiam com as Rodadas 68–82 do GitHub (D-192 a D-268). Por escolha do criador (2026-11-05) os registros locais foram **renumerados para D-269 a D-273** (seção 69 de `REGRAS_DO_JOGO.md`): D-269 sem escala 1–100, D-270 conversão de atributos, D-271 Natures flat, **D-272 Guard**, **D-273 barreira para Protect**. Nas citações antigas "D-195 = Guard" leia-se D-272.
+
+**Regras aprovadas do Guard** (frases literais e respostas na decisão local do Guard):
+
+| # | Regra | Valor / comportamento |
+|---|---|---|
+| G1 | Natureza | **Ação**, não buff: enquanto ativa, o personagem **não realiza outras ações** (Moves, Tackle, ITENS, Evade, passos de posição) até o Guard **expirar, receber contato ou ser quebrado**. |
+| G2 | Custo | **1 ATB**; **Burst não pode pagar o Guard**. O ATB **não é devolvido** ao fim. |
+| G3 | Duração | **2 segundos** (reduzida de 3 s pelo criador); **não pode ser cancelado** pelo jogador. |
+| G4 | ATB durante o Guard | O ATB do personagem **pausa** enquanto o Guard durar. |
+| G5 | Quem pode usar | **Jogador, aliados e inimigos** (D-021 simetria; D-235 independência de personagem/lado). A **IA** de aliados e inimigos pode usar o Guard. |
+| G6 | O que interage | **Só golpes com dano**. Status de alvo único **não** é bloqueado (D-012). O Guard **não evita** o golpe e **não** é esquiva. |
+| G7 | Redução de dano | **Porcentagem com arredondamento para cima**, baseada no atributo referente ao dano causado (VIT para físico, SPI para mágico). **Valor provisório:** o assistente escolheu **50%** como constante trocável até VIT/SPI oficiais existirem; **não é regra aprovada**. |
+| G8 | Contato | O Guard **termina ao receber contato** (um escudo por personagem, quebrado pelo primeiro contato dele). O alvo em Guard **não sofre o recuo/cambaleio** do golpe. |
+| G9 | Brick Break | **Quebra o Guard**, causa o **dano normal do ataque (sem redução)** e **dá +1 ATB ao atacante** quando quebra com sucesso. É o **Brick Break** (Quebra-Telha) que ganha essa trait. |
+| G10 | Mold Break | **Habilidade futura**; **apenas registrada**, sem implementação nem efeito. |
+| G11 | Hit stun global | A duração do **recuo/cambaleio do alvo** ao receber um golpe aumenta **0,30 s, globalmente** (todos os golpes, todos os personagens). |
+| G12 | Interface | No bloco do **Evade**, **direita** troca para o bloco **Guard** (escudo sobre fundo azul flat em vez do verde), **esquerda** volta; com o Guard selecionado, **Espaço** executa o Guard no lugar do Evade. **Hotkey própria: Shift.** |
+| G13 | Status visual | Ícone/badge **azul flat com escudo e o nome "Guard"** acima da vida de jogador, aliado e oponente, como os demais status. |
+| G14 | Visual | **Escudo de verdade** (brasão de topo reto e ponta embaixo), **branco translúcido, flat, sem bordas**, **em pé na frente do personagem, voltado ao oponente**, com animação de construção; **rachaduras retas em fatias de pizza (8)** crescem durante os 2 s; ao contato ou ao expirar ele **quebra nas 8 fatias**; o texto **GUARD** (branco, Impact, sem borda) aparece letra a letra e, ao contato, é **disparado em leque, sem quicar, e some em 0,5 s com fade nos últimos 0,2 s**. O personagem toca a animação **`charge`** em loop durante o Guard. Aprovado visualmente pelo criador. |
+| G15 | Barreira em cúpula | **Não descartada**: o efeito de cúpula hexagonal fica **reservado para um futuro Move "Protect"**, **sem ligação a nenhum Move** hoje. |
+
+**Conflitos e precedências com regras anteriores (resolvidos assim, para evitar contradição futura):**
+
+1. **Burst paga a ação inteira** (D-033/D-063, §2/§5): o **Guard é exceção expressa** (G2). Não generalizar para outras ações; a pendência D-033/D-063 sobre MP × Burst permanece aberta.
+2. **Quatro comandos** (§2): o Guard **não** é um quinto comando; é variante do bloco Evade (G12).
+3. **Evade/Burst por esquiva** (§4, §5): o Guard **não gera** Burst nem recompensa ATB por esquiva e não participa da evasão automática (G6).
+4. **Cadeia de dano** (GitHub D-193 VIT/SPI antes de DEF; D-194 mínimo 1; D-197 retornos decrescentes; D-198 arredondamento único final; D-258 fórmula ofensiva): o Guard reduz o dano em **porcentagem com arredondamento para cima** e **mínimo 1**. Como o criador pediu "arredondamento para cima" **e** a D-198 manda "arredondar uma vez ao final", e a posição do Guard dentro da cadeia **não foi definida**, **a implementação atual aplica `ceil(dano × (1 − redução))` sobre o dano final, mínimo 1**; isso é uma **escolha provisória do assistente, a confirmar** pelo criador. O **K da mitigação racional** (D-208/D-216/D-220) continua não aprovado e **não deve ser inventado** para o Guard.
+5. **Recuo/knockback** de golpes e lançamento fatal: o alvo em Guard **não sofre recuo**, mas, se o golpe quebrar o Guard (G9) ou o dano restante for fatal, as regras de KO/lançamento continuam valendo como antes. Efeitos secundários de contato (por exemplo, Karate Chop −1 VEL, Mordida atordoa) **continuam aplicando** como antes (assunção do assistente, a confirmar).
+6. **IA** (D-111, D-112, D-114, D-115): a chance de a IA acionar o Guard é de **25% quando um ataque é declarado contra ela** e ela tem reação Evade (**valor provisório do assistente**, `Battle.AI_GUARD_CHANCE`). Não há critério tático oficial do Guard; **não inferir pesos**.
+7. **Hit stun:** o **+0,30 s** é global e **aditivo** a qualquer duração de recuo já aprovada; não substitui nenhuma duração por Move.
+8. **Ataques em área / múltiplos alvos:** cada alvo tem **seu próprio escudo**, quebrado pelo **seu primeiro contato**; a relação detalhada com multi-hit continua indefinida (**pendente**).
+9. **Guard indisponível** quando o personagem está **engajado, em ação própria, atordoado ou em pausa de status**; é uma **escolha do assistente a confirmar**, não regra literal do criador.
+10. **Moves/VFX independentes de personagem, equipe e lado** (D-235, AGENTS §7): vale integralmente para o Guard, o Brick Break e a futura barreira Protect; **comportamento por `move_id`**, nunca por nome de personagem.
+
+**Pendências abertas (não decididas):** valor oficial da redução (G7) e posição na cadeia de dano; se o Guard absorve ou concede ATB/Burst além do +1 ATB do Brick Break; interação do Guard com multi-hit, projéteis e ataques em área; tratamento de golpes com dano que não podem ser reduzidos; definição do Move **Protect** (custo, duração, o que bloqueia, se cobre o time); efeito e Move do **Mold Break**; quais outros Moves além do Brick Break terão a trait de quebrar o Guard; comportamento do Guard no mapa/exploração e em chefes; A divergência histórica de LUK da R60 (§12.13) **não foi tocada**.
+
+**Estado de implementação (verificado no repositório local em 2026-11-05):** lógica, teste `tests/battle/test_d272_guard.gd`, menu, hotkey, badge e efeito visual existem **no repositório local**; parte da integração mora em arquivos compartilhados com outras sessões e **ainda não foi commitada**, portanto o Guard **não roda no `HEAD`** até esse commit. **Nada foi enviado ao GitHub.** Testado: Guard no Pancham, no Gible e espelhado (Gible contra Abra e Pancham). **Não testado:** Guard por Espaço/bloco azul e por Shift em jogo real (apenas por leitura de código), inimigo distante com escudo/texto em escala por distância, alvos de tamanhos diferentes além dos três personagens, interação com todos os Moves do catálogo.

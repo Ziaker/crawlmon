@@ -1,6 +1,6 @@
 class_name FxBarrier
 extends RefCounted
-## D-196: the dome barrier, kept for a future "Protect" move. NOT wired into the game yet (Guard uses the
+## D-273: the dome barrier, kept for a future "Protect" move. NOT wired into the game yet (Guard uses the
 ## shield in fx_guard.gd). The upper half of a round dome standing in front of the character: seen from
 ## behind it is one big circular arch over the body, with both legs on the floor. It is ONE smooth shell
 ## drawn by a shader (hexagon cells, a plain glass bubble or ribs). It rises when started, fades when the

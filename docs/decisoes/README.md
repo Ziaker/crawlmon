@@ -55,6 +55,11 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-047](D-047-camera-lenta-3s-decisao-menu.md) | Combate / UI / Game Feel | Câmera Lenta de 3 Segundos para Decisão nos Menus Fight e Itens | Implementado |
 | [D-048](D-048-rolling-hp-mother3-odometro.md) | Combate / UI / Game Feel / Configurações | Mecânica de Vida Rolante (Rolling HP / Odômetro estilo Mother 3 / EarthBound) | Implementado |
 | [D-049](D-049-knockback-final-e-screen-shake-ko.md) | Combate / Visual / Game Feel / Câmera | Impacto de K.O.: Lançamento Balístico do Inimigo, Shake Épico e VFX de Derrota | Implementado |
+| [D-269](D-269-sem-escala-1-100-e-niveis-baixos-sem-valores-altos.md) | Personagens / atributos | Sem escala 1–100; sem valores exorbitantes em níveis baixos; o "limite de 10" NÃO é regra | Registrada; sem implementação (ambiguidades abertas) |
+| [D-270](D-270-atributos-convertidos-dos-valores-originais-pelo-assistente.md) | Personagens / atributos | Atributos vêm da conversão dos valores originais, criada pelo assistente | Registrada; proposta em `docs/PROPOSTA_ATRIBUTOS_NIVEL_XP.md` (inválida: refazer); sem implementação |
+| [D-271](D-271-nature-valores-flat-sem-porcentagem.md) | Personagens / Natures | Nature em valores flat de −3 a +3, soma 0, de 2 a 6 atributos; só atributos e formas de agir em combate, sem crescimento | Registrada; **Natures adiadas** pelo criador (precisam de mais planejamento); sem implementação |
+| [D-272](D-272-guard-escudo-de-1-atb.md) | Combate / HUD | Guard: ação de 1 ATB, 2 s, escudo azul, hotkey Shift, quebrado por Brick Break; hit stun +0,30 s global | Implementado; aguardando aprovação visual |
+| [D-273](D-273-barreira-hexagonal-reservada-para-protect.md) | Combate / VFX | A barreira em cúpula hexagonal fica guardada para um futuro Move Protect | Preservada (`fx_barrier.gd`), sem uso |
 
 ## Decisões Documentais de Design / Rodadas R39–R61 (GDD e REGRAS_DO_JOGO)
 

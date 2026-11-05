@@ -1218,3 +1218,16 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - As pendências históricas **R60-Q3D, diferenças negativas, instante WINDUP e múltiplas trocas sucessivas** receberam respostas nas D-152 a D-155, preservando os registros originais como histórico.
 - Permanecem sem definição: regra para ataque sem WINDUP; empate na escolha do alvo vivo mais próximo; ordem de resolução para eventos simultâneos; referências numéricas de AGI para ATB e trajeto (D-145); calibração de fórmulas quantitativas ainda não aprovadas.
 - **Somente documentação**: novos arquivos D-152–D-156, índice, este consolidado e adendo do GDD. Sem mudanças de código, testes, modelos, recursos ou VFX.
+
+---
+
+## 69. Decisões D-269 a D-273 — atributos sem escala 1–100 e conversão dos valores originais
+
+> Renumerado em 2026-11-05 (antes D-192 a D-196, seção 49), por escolha do criador, para não colidir com as Rodadas 68–82 do GitHub (D-192 a D-268, seções 49–68). O Guard (D-272) tem regras completas em `docs/decisoes/D-272-guard-escudo-de-1-atb.md`.
+
+- **D-269:** a escala 1–100 deixa de valer; personagens em níveis baixos não têm valores exorbitantes. O "limite de 10" **não é regra** (correção expressa do criador). Em aberto: o que define um valor baixo para o nível 1 e se vale para HP, MP e inimigos.
+- **D-270:** os atributos de cada espécie saem da conversão dos valores originais, criada pelo assistente (não pelo criador). A proposta atual está em `docs/PROPOSTA_ATRIBUTOS_NIVEL_XP.md`.
+- **D-271:** os modificadores de Nature são valores flat de −3 a +3 somados aos atributos (formatos variados, ex.: +1/+1/+1/−3), não porcentagens; a Nature afeta só atributos e formas de agir em combate, não o crescimento. Os modificadores somam 0 e uma Nature altera de 2 a 6 atributos. Em aberto: Natures neutras, catálogo e vínculo com a tática.
+- **Natures adiadas (2026-11-04):** o criador mandou deixar as Natures para implementar outra hora, por precisarem de mais planejamento (D-271).
+- **D-272 (Guard):** ação de 1 ATB (Burst não paga), dura 2 s, sem cancelar; impede outras ações e pausa o ATB de quem a faz; reduz o dano do contato (arredondando para cima) e termina; o recuo do alvo ganha +0,30 s globalmente, menos quem está em Guard; Brick Break quebra o Guard, causa dano normal e dá 1 ATB; Mold Break é habilidade futura.
+- **D-273:** a barreira em cúpula hexagonal não foi descartada: fica guardada (`fx_barrier.gd`) para um eventual Move Protect; o Guard usa o escudo (D-272).

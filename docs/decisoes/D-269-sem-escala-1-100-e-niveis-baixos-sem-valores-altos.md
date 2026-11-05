@@ -1,9 +1,9 @@
-# D-192 — Sem escala 1–100; personagens em níveis baixos não têm valores exorbitantes
+# D-269 — Sem escala 1–100; personagens em níveis baixos não têm valores exorbitantes
 
 - **Data:** 2026-11-04 (corrigida no mesmo dia)
 - **Área:** Personagens / atributos
 - **Origem:** decisão direta do criador, na conversa.
-- **Estado:** regra registrada; **sem implementação**. Numeração: D-192 evita os IDs usados nas duas séries (GitHub até D-191; local até D-170).
+- **Estado:** regra registrada; **sem implementação**. Numeração: renumerada em 2026-11-05 de D-192 para D-269 (os números D-192 a D-196 locais colidiam com as Rodadas 68-82 do GitHub, que usam D-192 a D-268). O criador escolheu renumerar os locais.
 
 ## Declaração literal do criador
 

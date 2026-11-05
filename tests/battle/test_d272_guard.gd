@@ -1,12 +1,12 @@
 extends SceneTree
-## D-195: Guard (1 ATB, 2 s, sem cancelar, ATB pausado, Burst não paga, reduz o dano com arredondamento
+## D-272: Guard (1 ATB, 2 s, sem cancelar, ATB pausado, Burst não paga, reduz o dano com arredondamento
 ## para cima e termina no contato; Brick Break quebra, causa dano normal e dá 1 ATB) e hit stun +0,30 s.
-## Roda com: godot --headless --path . --script res://tests/battle/test_d195_guard.gd
+## Roda com: godot --headless --path . --script res://tests/battle/test_d272_guard.gd
 
 
 func _init() -> void:
 	print("\n=================================================================")
-	print("   CRAWLMON — TESTES DO GUARD (D-195)")
+	print("   CRAWLMON — TESTES DO GUARD (D-272)")
 	print("=================================================================")
 
 	var b := Battle.new()
@@ -106,5 +106,5 @@ func _init() -> void:
 	assert(is_equal_approx(AttackMotion.HIT_HOLD, 0.45), "HIT_HOLD 0,15 + 0,30")
 	print("  [PASS] O hit stun ganhou +0,30 s.")
 
-	print("\n=== TODOS OS TESTES D-195 PASSARAM ===\n")
+	print("\n=== TODOS OS TESTES D-272 PASSARAM ===\n")
 	quit()

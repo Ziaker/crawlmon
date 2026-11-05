@@ -33,6 +33,6 @@ A decisão posterior **D-135 (R55-Q5, 5A)** cria exceção à distribuição obr
 
 **D-139 (R57-Q1B)** revoga explicitamente o **teto máximo permanente de 100** desta decisão. STR, MAG, VIT, SPI, AGI e LUK podem superar 100 por progressão, Nature e variações individuais. A escala-base inicial 1–100 e a separação dos buffs não foram alteradas; o texto original continua como registro histórico. A exceção da D-135 baseada no teto anterior deixa de ser aplicável.
 
-## Complemento posterior — D-192 (2026-11-04)
+## Complemento posterior — D-269 (2026-11-04)
 
-**D-192** encerra a escala 1–100: o limite 1–100 desta decisão e a escala-base inicial 1–100 deixam de valer, e personagens em níveis baixos não têm valores exorbitantes (o "limite de 10" que o criador citou não é regra). O texto acima fica como registro histórico.
+**D-269** encerra a escala 1–100: o limite 1–100 desta decisão e a escala-base inicial 1–100 deixam de valer, e personagens em níveis baixos não têm valores exorbitantes (o "limite de 10" que o criador citou não é regra). O texto acima fica como registro histórico.

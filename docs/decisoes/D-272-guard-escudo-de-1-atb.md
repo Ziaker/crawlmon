@@ -1,4 +1,4 @@
-# D-195 — Guard: escudo de 1 ATB, ícone azul, hotkey Shift, quebrado pelo Brick Break
+# D-272 — Guard: escudo de 1 ATB, ícone azul, hotkey Shift, quebrado pelo Brick Break
 
 - **Data:** 2026-11-04
 - **Área:** Combate / HUD / Game Feel
@@ -100,7 +100,7 @@ Respostas às perguntas do assistente:
 - **Só golpes com dano** interagem com o Guard; golpes de status de alvo único continuam não bloqueados (D-012).
 - **A IA usa o Guard**, aliados e inimigos (simetria, D-021).
 - O **valor provisório** da redução de dano é escolhido pelo assistente, deixado como constante fácil de trocar e mostrado ao criador antes de seguir.
-- **Visual atual (2026-11-04), substitui a barreira/cúpula:** um **escudo de verdade** (brasão com topo reto e ponta embaixo), **branco com opacidade reduzida**, **chapado (flat), sem bordas e sem degradê**, **em pé na frente do personagem, voltado para o oponente** (do jogador, do aliado ou do oponente), com a ponta tocando o chão, **da mesma forma que a barreira ficava** (não sobre o personagem). **Animação de surgimento:** o escudo se constrói (pedaços em cunha deslizam de fora e se montam, em ~0,4 s). **Detalhes mantidos das melhorias (2026-11-05):** (3) ao contato, **flash branco de 0,08 s e quebra nas fatias de pizza**; (4) em vez de sumir gradualmente, o escudo **racha**: rachaduras **em linhas retas, sem bifurcações, estilo pizza**: 8 linhas saindo do centro até a borda (o criador pediu para voltar às 8 fatias depois de testar 16), aparecem e crescem ao longo dos 2 s do Guard e, quando o tempo acaba, ele **quebra nas mesmas fatias** (8 pedaços triangulares, cortados exatamente sobre as rachaduras) (só o fade acontece no fim da batalha). **Desfeitos a pedido:** o emblema interno e o giro de 35° para a câmera. Versões descartadas: cúpula (guardada, D-196), cápsula, parede em C, cocho em U, casca hexagonal, escudo com borda, escudo sobre o personagem, emblema interno, escudo girado, drenagem.
+- **Visual atual (2026-11-04), substitui a barreira/cúpula:** um **escudo de verdade** (brasão com topo reto e ponta embaixo), **branco com opacidade reduzida**, **chapado (flat), sem bordas e sem degradê**, **em pé na frente do personagem, voltado para o oponente** (do jogador, do aliado ou do oponente), com a ponta tocando o chão, **da mesma forma que a barreira ficava** (não sobre o personagem). **Animação de surgimento:** o escudo se constrói (pedaços em cunha deslizam de fora e se montam, em ~0,4 s). **Detalhes mantidos das melhorias (2026-11-05):** (3) ao contato, **flash branco de 0,08 s e quebra nas fatias de pizza**; (4) em vez de sumir gradualmente, o escudo **racha**: rachaduras **em linhas retas, sem bifurcações, estilo pizza**: 8 linhas saindo do centro até a borda (o criador pediu para voltar às 8 fatias depois de testar 16), aparecem e crescem ao longo dos 2 s do Guard e, quando o tempo acaba, ele **quebra nas mesmas fatias** (8 pedaços triangulares, cortados exatamente sobre as rachaduras) (só o fade acontece no fim da batalha). **Desfeitos a pedido:** o emblema interno e o giro de 35° para a câmera. Versões descartadas: cúpula (guardada, D-273), cápsula, parede em C, cocho em U, casca hexagonal, escudo com borda, escudo sobre o personagem, emblema interno, escudo girado, drenagem.
 - Ao receber contato, o Guard **reduz o dano em uma porcentagem, arredondada para cima**, baseada no **atributo de status referente ao dano causado** (VIT para físico, SPI para mágico, D-130/D-138).
 - **Brick Break** quebra o Guard, causa o **dano normal** do ataque (sem redução) e dá **1 ATB** a quem o usa, quando quebra com sucesso. O **Brick Break é o Move que ganha essa trait**.
 - **Mold Break** é uma **habilidade futura**; fica apenas registrada, sem implementação nem efeito agora.
@@ -113,7 +113,7 @@ Respostas às perguntas do assistente:
 
 ## Estado no código
 
-Implementado (2026-11-04): `Battle.use_guard` / `can_guard` / `guard_block_reason`, `Combatant.guard_timer` / `is_guarding`, dano em `Battle._hit`, hotkey `guard` (Shift) em `GameState`, bloco azul em `FanMenu`/`battle_scene.gd`, badge `🛡 GUARD` em `battle_hud.gd`, domo em `scripts/combat/fx/fx_guard.gd`, hit stun `AttackMotion.HIT_STUN_EXTRA = 0.30`. Teste: `tests/battle/test_d195_guard.gd`.
+Implementado (2026-11-04): `Battle.use_guard` / `can_guard` / `guard_block_reason`, `Combatant.guard_timer` / `is_guarding`, dano em `Battle._hit`, hotkey `guard` (Shift) em `GameState`, bloco azul em `FanMenu`/`battle_scene.gd`, badge `🛡 GUARD` em `battle_hud.gd`, domo em `scripts/combat/fx/fx_guard.gd`, hit stun `AttackMotion.HIT_STUN_EXTRA = 0.30`. Teste: `tests/battle/test_d272_guard.gd`.
 
 Escolhas do assistente que o criador deve confirmar:
 - **Redução provisória de 50%** (`Battle.GUARD_REDUCTION`), igual para dano físico e mágico até VIT/SPI existirem.
@@ -124,3 +124,5 @@ Escolhas do assistente que o criador deve confirmar:
 - IA: um alvo controlado pela IA com reação Esquiva sorteia o Guard com 25% de chance quando um ataque é declarado contra ele (`Battle.AI_GUARD_CHANCE`).
 - Hit stun +0,30 s aplicado em: `HIT_HOLD` (recuo de quem é interrompido), retorno de conjuração interrompida (0,55 s) e a animação de reação do alvo (`_hit_react`). Quem está em Guard não sofre o recuo.
 - Shift sozinho dispara o Guard; no painel de debug, Shift+tecla também o aciona.
+
+> **Renumeração (2026-11-05):** este registro foi criado localmente com outro número (D-19x) que colidia com as decisões das Rodadas 68-82 do GitHub (D-192 a D-268). Por escolha do criador passou a ser **D-272**; texto e regras não mudaram.

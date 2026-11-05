@@ -1,4 +1,4 @@
-# D-194 — Nature em valores flat (de −3 a +3), só atributos e formas de agir em combate
+# D-271 — Nature em valores flat (de −3 a +3), só atributos e formas de agir em combate
 
 - **Data:** 2026-11-04
 - **Área:** Personagens / atributos / Natures
@@ -40,3 +40,5 @@
 ## Estado no código
 
 Nenhuma alteração.
+
+> **Renumeração (2026-11-05):** este registro foi criado localmente com outro número (D-19x) que colidia com as decisões das Rodadas 68-82 do GitHub (D-192 a D-268). Por escolha do criador passou a ser **D-271**; texto e regras não mudaram.
