@@ -94,7 +94,7 @@ Respostas às perguntas do assistente:
 - No bloco do **Dodge**, apertar **direita** troca a seleção para o **Guard** (bloco com **escudo sobre fundo azul flat**, em vez do verde); apertar **esquerda** volta ao Dodge. Enquanto o Guard estiver selecionado, **Space executa o Guard** em vez do Dodge.
 - O Guard **não é um buff**: é uma **ação** que **impede o personagem de realizar outras ações até o Guard expirar (2 s) ou ser quebrado**; também termina ao **receber contato**. Pode ser ativado a qualquer momento em que se tenha o ATB. Dura **2 segundos** (reduzida de 3 s pelo criador). **Não pode ser cancelado** pelo jogador.
 - **Animação:** nenhum dos três (Abra, Pancham, Gible) tem clipe de defesa; durante o Guard o personagem toca o clipe **`charge`** em loop (a pose agachada do preparo) e volta ao idle quando o Guard acaba.
-- **Texto GUARD (versão atual):** as letras **GUARD** ficam **em cima do escudo**, **brancas**, fonte **Impact** do HUD, sem borda, e aparecem uma a uma. **Ao contato**, o escudo **se quebra em pedaços** e as letras **são disparadas em leque, com gravidade, sem quicar**, e **somem em 0,5 s** com a **opacidade caindo nos últimos 0,2 s**. Se o Guard só expira, escudo e letras desvanecem.
+- **Texto GUARD (versão atual):** as letras **GUARD** ficam **em cima do escudo**, **brancas**, fonte **Impact** do HUD, sem borda, e aparecem uma a uma. **Ao contato**, o escudo **se quebra em pedaços** e as letras **são disparadas, cada uma numa direção aleatória em todas as direções (não só para um lado), com gravidade, sem quicar**, e **somem em 0,5 s** com a **opacidade caindo nos últimos 0,2 s**. Se o Guard só expira, escudo e letras desvanecem.
 - A cúpula fica mais **perto do corpo** (base puxada para trás do peito).
 - Ao receber contato, o personagem em Guard **não sofre o recuo/cambaleio** (o hit stun de +0,30 s não se aplica a ele).
 - **Só golpes com dano** interagem com o Guard; golpes de status de alvo único continuam não bloqueados (D-012).
@@ -105,6 +105,14 @@ Respostas às perguntas do assistente:
 - **Brick Break** quebra o Guard, causa o **dano normal** do ataque (sem redução) e dá **1 ATB** a quem o usa, quando quebra com sucesso. O **Brick Break é o Move que ganha essa trait**.
 - **Mold Break** é uma **habilidade futura**; fica apenas registrada, sem implementação nem efeito agora.
 - **Hit stun:** a duração do **recuo/cambaleio do alvo** ao receber um golpe aumenta em **0,30 s, globalmente** (todos os golpes, todos os personagens).
+
+## Atualização — direção das letras e tamanho (2026-11-05)
+
+> faça com que as letras vão todas pra uma direção aleatória não só pra esquerda (caso seja o que ja aconteça no jogo)
+
+**Decisão:** ao contato, cada letra do texto GUARD é disparada numa **direção horizontal aleatória em todo o círculo**, sem o viés que as afastava do lado esquerdo da tela (antes: leque de cerca de ±92° para a frente do personagem, com 75% das letras viradas para a esquerda da tela espelhadas para a direita). Letras podem agora passar por trás do HUD; foi o que o criador pediu.
+
+**Correção de tamanho/posição (achados da ferramenta de percepção, D-274 item 6, autorizada pelo criador com "Corrigir letras"):** o tamanho das letras na tela fica entre os valores que já eram aprovados: no máximo o que aparecia no personagem mais próximo (altura do glifo 7,33% da tela) e no mínimo o do personagem do meio (3,2%); letras de personagens longe deixam de ficar minúsculas (~14 px passa a ~23 px a 720p) e a palavra desce sobre o escudo se passaria do topo da tela (margem de 5%). Valores derivados da câmera, sem nada de personagem ou lado (D-235). Mínimo 3,2% e margem 5% são escolhas do assistente, **a confirmar**.
 
 ## Ambiguidades em aberto (perguntar antes de agir)
 

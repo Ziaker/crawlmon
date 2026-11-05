@@ -60,6 +60,7 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-271](D-271-nature-valores-flat-sem-porcentagem.md) | Personagens / Natures | Nature em valores flat de −3 a +3, soma 0, de 2 a 6 atributos; só atributos e formas de agir em combate, sem crescimento | Registrada; **Natures adiadas** pelo criador (precisam de mais planejamento); sem implementação |
 | [D-272](D-272-guard-escudo-de-1-atb.md) | Combate / HUD | Guard: ação de 1 ATB, 2 s, escudo azul, hotkey Shift, quebrado por Brick Break; hit stun +0,30 s global | Implementado; aguardando aprovação visual |
 | [D-273](D-273-barreira-hexagonal-reservada-para-protect.md) | Combate / VFX | A barreira em cúpula hexagonal fica guardada para um futuro Move Protect | Preservada (`fx_barrier.gd`), sem uso |
+| [D-274](D-274-proposta-compositor-de-efeitos-em-camadas-pendente.md) | VFX / Laboratório | Proposta: evoluir o laboratório para um compositor de efeitos em camadas (7 itens; 4 receitas de referência) | PROPOSTA registrada, não aprovada, sem implementação |
 
 ## Decisões Documentais de Design / Rodadas R39–R61 (GDD e REGRAS_DO_JOGO)
 

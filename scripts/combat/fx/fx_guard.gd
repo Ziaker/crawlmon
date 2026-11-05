@@ -30,6 +30,13 @@ const LETTERS := "GUARD"
 const LETTER_GRAVITY := 12.0
 const LETTER_SECONDS := 0.5  ## How long the flying letters live after the contact.
 const LETTER_FADE := 0.2  ## They fade out during the last part of that time.
+## The letters' size on screen (D-274 correction, from perception-tool findings). Glyph height as a fraction of the
+## screen height: the ceiling is how large they already looked on the nearest character, the floor how small they
+## looked on the middle one (both already approved), so far characters stay legible and near ones are unchanged.
+const LETTER_MAX_SCREEN := 0.0733
+const LETTER_MIN_SCREEN := 0.032
+const LETTER_GLYPH := 0.79  ## Glyph height per unit of letter scale (font_size 110 x pixel_size 0.01 x cap height).
+const LETTER_TOP_MARGIN := 0.05  ## The letters never go above this fraction of the screen from the top edge.
 
 ## Flat unlit color (from the vertex colors; white for the letters). A mesh can carry a reveal order in
 ## UV.x: parts with UV.x above `reveal` are hidden (the cracks grow this way). The letters are drawn over
@@ -340,7 +347,18 @@ func _text_font() -> Font:
 func _spawn_letters(c: Combatant, center: Vector3, shield_h: float) -> void:
 	var cam := fx._cam_pos()
 	var size := shield_h * 0.30
+	var camera := fx.get_viewport().get_camera_3d() if fx.is_inside_tree() else null
+	if camera != null:  # Keep the letters readable (and inside the screen) whatever the distance and height.
+		var view_h := 2.0 * camera.global_position.distance_to(center) * tan(deg_to_rad(camera.fov) * 0.5)
+		size = clampf(size, LETTER_MIN_SCREEN * view_h / LETTER_GLYPH, LETTER_MAX_SCREEN * view_h / LETTER_GLYPH)
 	var base := center + Vector3.UP * (shield_h * 0.5 + size * 0.7)
+	if camera != null:
+		var screen_h := float(fx.get_viewport().get_visible_rect().size.y)
+		var glyph := LETTER_GLYPH * size
+		var steps := 0
+		while steps < 60 and not camera.is_position_behind(base) and camera.unproject_position(base + Vector3.UP * glyph).y < LETTER_TOP_MARGIN * screen_h and base.y > center.y:
+			base.y -= glyph * 0.1  # Too high for the screen: lower the word onto the shield.
+			steps += 1
 	var yaw := atan2(cam.x - base.x, cam.z - base.z)
 	var right := Vector3(cos(yaw), 0.0, -sin(yaw))
 	var gap := 0.5 * size
@@ -376,23 +394,15 @@ func _set_letters_alpha(holder: Node3D, a: float) -> void:
 			(mi.material_override as ShaderMaterial).set_shader_parameter("alpha", clampf(a, 0.0, 1.0))
 
 
-## The contact destroys the shield: the letters are shot out in a fan toward the front of the
-## character, fall a little with gravity, and vanish after LETTER_SECONDS (fading at the end).
+## The contact destroys the shield: the letters are shot out each in a random direction, all around, fall a little with gravity, and vanish after LETTER_SECONDS (fading at the end).
 func _fling_letters(holder: Node3D, forward: Vector3, big: bool) -> void:
 	var letters := holder.get_children()
-	var cam := fx._cam_pos()
-	var cam_yaw := atan2(cam.x - holder.get_child(0).global_position.x, cam.z - holder.get_child(0).global_position.z)
-	var cam_right := Vector3(cos(cam_yaw), 0.0, -sin(cam_yaw))
 	var vel: Array[Vector3] = []
 	var boost := 1.3 if big else 1.0
 	for l in letters:
-		# A wide fan toward the front of the character (about +-100 degrees): different directions,
-		# but out in the open field, in view, not behind the camera or under the HUD.
-		var fwd_flat := Vector3(forward.x, 0.0, forward.z).normalized()
-		var turn := randf_range(-1.6, 1.6)
-		var dir := fwd_flat.rotated(Vector3.UP, turn)
-		if dir.dot(cam_right) < -0.2 and randf() < 0.75:
-			dir = fwd_flat.rotated(Vector3.UP, -turn)  # Mostly away from the left side, where the HUD is.
+		# Each letter is shot in its own random direction, all around (the creator asked for every direction,
+		# not a fan toward one side). Only the horizontal direction is random; the lift is always upward.
+		var dir := Vector3.FORWARD.rotated(Vector3.UP, randf_range(-PI, PI))
 		var spd := randf_range(5.0, 9.0) * boost  # Shot out fast: they only live half a second.
 		vel.append(dir * spd + Vector3.UP * randf_range(1.5, 3.5) * boost)
 	var last := [0.0]  # An array: a lambda copies plain variables, but shares arrays.
