@@ -365,3 +365,4 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-320](D-320-publicacao-de-docs-autorizada.md) | Processo / Git | Commit + push só de docs, por worktree limpo do `origin/main` | Pendente de execução |
 | [D-321](D-321-inimigos-tambem-andam-em-grupo.md) | Exploração / IA | Inimigos em grupo solto (máx. 3); soma define a ameaça do grupo; líder derrotado → próximo vira líder | Não implementado |
 
+| [D-322](D-322-battlelog-overhaul-opcao-c-retratos.md) | HUD / BattleLog / visual | Opção C aprovada para o log no alto à direita: faixas claras diagonais e retrato/ícone do personagem em cada evento, preservando D-268 | Visual aprovado; não implementado; imagem e DOCX binários ainda sem publicação verificada no GitHub |
