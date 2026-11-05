@@ -162,6 +162,21 @@ func evaluate(catalog: MotionCatalog, ctx: MotionContext) -> MotionResult:
 	return res
 
 
+## Ramos que existem logo ANTES da camada `layer_id` (caminhos únicos, ordenados), no instante de `ctx`.
+## É o que uma camada pode selecionar: ramos criados por camadas posteriores ainda não existem (§19.3).
+func branches_before(layer_id: StringName, catalog: MotionCatalog, ctx: MotionContext) -> PackedStringArray:
+	var idx := layer_ids().find(layer_id)
+	if idx < 0:
+		return PackedStringArray()
+	var scratch: Array[MotionDiagnostic] = []
+	var seen := {}
+	for s in _run_layers(idx, catalog, ctx, scratch):
+		seen[s.branch] = true
+	var out := PackedStringArray(seen.keys())
+	out.sort()
+	return out
+
+
 ## Avalia as primeiras `count` camadas. Camadas PERSIST recebem `history_fn`: o fluxo das camadas
 ## anteriores em qualquer instante, reavaliado do zero (sem estado, sem depender de quadros anteriores).
 func _run_layers(count: int, catalog: MotionCatalog, ctx: MotionContext, diags: Array[MotionDiagnostic]) -> Array[MotionSample]:

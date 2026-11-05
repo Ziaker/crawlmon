@@ -110,6 +110,15 @@ func capture_a() -> Array[MotionDiagnostic]:
 	return none
 
 
+## Ramos que a camada `layer_id` pode selecionar agora (no instante do relógio, com o emissor da sessão).
+func available_branches(layer_id: StringName) -> PackedStringArray:
+	composition.history_start = clock.history_start()
+	var ctx := composition.make_context(clock.time)
+	var mode := emitter_mode
+	ctx.emitter_fn = func(t: float) -> Transform3D: return MotionLabSession.emitter_transform(mode, t)
+	return composition.branches_before(layer_id, catalog, ctx)
+
+
 func clear_a() -> void:
 	snapshot_a = null
 

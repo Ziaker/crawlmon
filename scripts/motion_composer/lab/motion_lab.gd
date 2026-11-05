@@ -28,6 +28,7 @@ var _study_note: Label
 var _aux_check: CheckBox
 var _hud: Label
 var _study_id: StringName = &""
+var _scroll_target: int = 4
 ## 0 = pontos, 1 = fitas, 2 = pontos + fitas, 3 = fragmentos, 4 = fumaça/billboards (a troca conserva a composição).
 var representation: int = 0
 
@@ -75,7 +76,9 @@ func _ready() -> void:
 	_parse_args()
 	_build_world()
 	_build_ui()
-	if _arg_text("--study=") != "":
+	if _arg_text("--demo=") == "ramos":
+		load_study(&"M14")
+	elif _arg_text("--study=") != "":
 		load_study(StringName(_arg_text("--study=")))
 	elif _arg_text("--demo=") == "receita":
 		_recipe_composition()
@@ -89,6 +92,9 @@ func _ready() -> void:
 	_refresh_presets()
 	set_representation(representation)
 	_setup_ab_demo()
+	if _arg_text("--select=") != "":
+		_selected = StringName(_arg_text("--select="))
+		_refresh_layers()
 	session.clock.playing = _capture_path == ""
 	if _capture_path != "":
 		session.clock.seek(_arg_float("--t=", 1.2))
@@ -96,7 +102,25 @@ func _ready() -> void:
 
 
 ## Demonstrações da comparação (para captura): --ab=antes | isolada | neutra
+## Demonstração de ramos e máscara (para captura): bifurcação em 3 e uma dissolução que só afeta o ramo 1,
+## e só do meio para o fim (máscara u ≥ 0,4 com degradê).
+func _setup_branch_mask_demo() -> void:
+	var l := MotionLayer.new()
+	l.id = &"dissolve_so_o_ramo_1"
+	l.behavior_id = &"M18"
+	l.op = MotionTypes.Op.MULTIPLY_ATTRIBUTE
+	l.params = {"t_start": 1.0, "t_duration": 1.2, "width": 0.1}
+	l.branches = PackedStringArray(["root/bifurcacao.1"])
+	l.mask.u_from = 0.4
+	l.mask.feather = 0.15
+	session.composition.add_layer(l, 1)
+	_selected = l.id
+	_refresh_layers()
+
+
 func _setup_ab_demo() -> void:
+	if _arg_text("--demo=") == "ramos":
+		_setup_branch_mask_demo()
 	var mode := _arg_text("--ab=")
 	if mode == "":
 		return
@@ -855,7 +879,9 @@ func _after_edit() -> void:
 
 # ------------------------------------------------------------------ parâmetros
 func _rebuild_params() -> void:
+	# remove já (e libera depois): senão os nomes dos controles novos colidem com os antigos e ganham sufixo
 	for c in _params_box.get_children():
+		_params_box.remove_child(c)
 		c.queue_free()
 	var l := session.composition.find_layer(_selected)
 	if l == null:
@@ -870,8 +896,107 @@ func _rebuild_params() -> void:
 	space.select(l.space)
 	space.item_selected.connect(func(i: int) -> void: l.space = i; session.composition.touch(); _after_edit())
 	_params_box.add_child(space)
+	_params_box.add_child(_branches_box(l))
+	_params_box.add_child(_mask_box(l))
 	for p in b.params:
 		_params_box.add_child(_param_widget(l, p))
+
+
+## Seleção de ramos (§19.3): marca quais ramos a camada afeta; nenhum marcado = todos. Só mostra os ramos
+## que existem antes da camada, no instante atual.
+func _branches_box(l: MotionLayer) -> Control:
+	var vb := VBoxContainer.new()
+	vb.name = "ramos_box"
+	vb.add_child(_section("Ramos afetados (nenhum marcado = todos)"))
+	var avail := session.available_branches(l.id)
+	if avail.size() <= 1:
+		vb.add_child(_small("Neste ponto da pilha e neste instante só existe o ramo %s; a camada afeta tudo." % (avail[0] if avail.size() == 1 else "(nenhum)")))
+		return vb
+	var i := 0
+	for path in avail:
+		var cb := CheckBox.new()
+		cb.name = "ramo_%d" % i
+		cb.text = path
+		cb.button_pressed = path in l.branches
+		cb.toggled.connect(func(on: bool) -> void:
+			var arr := Array(l.branches)
+			if on and not (path in arr):
+				arr.append(path)
+			elif not on:
+				arr.erase(path)
+			l.branches = PackedStringArray(arr)
+			session.composition.touch()
+			_after_edit())
+		vb.add_child(cb)
+		i += 1
+	return vb
+
+
+## Máscara de influência (§5.4): peso 0–1 por posição, tempo e inversão, mais a janela de atividade da camada.
+## Operações de topologia e de persistência ignoram a máscara por amostra.
+func _mask_box(l: MotionLayer) -> Control:
+	var vb := VBoxContainer.new()
+	vb.name = "mascara_box"
+	vb.add_child(_section("Máscara de influência (peso 0–1)"))
+	if l.op == MotionTypes.Op.BRANCH or l.op == MotionTypes.Op.MERGE or l.op == MotionTypes.Op.PERSIST:
+		vb.add_child(_small("Esta operação (topologia/persistência) ignora a máscara por amostra; vale a janela de atividade abaixo."))
+	var d := session.composition.duration
+	var m := l.mask
+	var touch := func() -> void:
+		session.composition.touch()
+		_after_edit()
+	vb.add_child(_named_slider("mask_u_from", "início da faixa (u)", m.u_from, 0.0, 1.0, 0.01, func(v: float) -> void:
+		m.u_from = v
+		m.u_to = maxf(m.u_to, v)
+		touch.call()))
+	vb.add_child(_named_slider("mask_u_to", "fim da faixa (u)", m.u_to, 0.0, 1.0, 0.01, func(v: float) -> void:
+		m.u_to = v
+		m.u_from = minf(m.u_from, v)
+		touch.call()))
+	vb.add_child(_named_slider("mask_feather", "degradê nas bordas (u)", m.feather, 0.0, 0.5, 0.01, func(v: float) -> void:
+		m.feather = v
+		touch.call()))
+	var inv := CheckBox.new()
+	inv.name = "mask_invert"
+	inv.text = "Inverter a máscara espacial"
+	inv.button_pressed = m.invert
+	inv.toggled.connect(func(on: bool) -> void:
+		m.invert = on
+		touch.call())
+	vb.add_child(inv)
+	var te := CheckBox.new()
+	te.name = "mask_time_enabled"
+	te.text = "Máscara temporal"
+	te.button_pressed = m.time_enabled
+	te.toggled.connect(func(on: bool) -> void:
+		m.time_enabled = on
+		touch.call())
+	vb.add_child(te)
+	vb.add_child(_named_slider("mask_t_from", "máscara temporal: de (s)", m.t_from, 0.0, d, 0.01, func(v: float) -> void:
+		m.t_from = v
+		m.t_to = maxf(m.t_to, v)
+		touch.call()))
+	vb.add_child(_named_slider("mask_t_to", "máscara temporal: até (s)", m.t_to, 0.0, d, 0.01, func(v: float) -> void:
+		m.t_to = v
+		m.t_from = minf(m.t_from, v)
+		touch.call()))
+	vb.add_child(_named_slider("mask_t_feather", "máscara temporal: degradê (s)", m.t_feather, 0.0, 1.0, 0.01, func(v: float) -> void:
+		m.t_feather = v
+		touch.call()))
+	vb.add_child(_section("Janela de atividade da camada"))
+	vb.add_child(_named_slider("layer_active_from", "ativa a partir de (s, relógio da camada)", l.active_from, 0.0, d, 0.01, func(v: float) -> void:
+		l.active_from = v
+		touch.call()))
+	vb.add_child(_named_slider("layer_active_to", "ativa até (s; −1 = sem fim)", l.active_to, -1.0, d, 0.01, func(v: float) -> void:
+		l.active_to = v
+		touch.call()))
+	return vb
+
+
+func _named_slider(node_name: String, label: String, value: float, lo: float, hi: float, step: float, cb: Callable) -> Control:
+	var vb := _layer_slider(label, value, lo, hi, step, cb)
+	(vb.get_child(1) as HSlider).name = node_name
+	return vb
 
 
 func _param_widget(l: MotionLayer, p: MotionParam) -> Control:
@@ -974,6 +1099,11 @@ func _on_load_preset() -> void:
 
 # ------------------------------------------------------------------ quadro
 func _process(delta: float) -> void:
+	if _scroll_target > 0 and _params_box != null:
+		_scroll_target -= 1
+		if _scroll_target == 0:
+			var sc := _params_box.get_parent().get_parent() as ScrollContainer
+			sc.scroll_vertical = int(_arg_float("--scroll=", 0.0))
 	session.clock.advance(delta)
 	if session.clock.time != _last_time:
 		_dirty = true

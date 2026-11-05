@@ -45,6 +45,8 @@ P-07 (orçamento), P-08 (aparência e disposição da interface), P-09 (composi�
 
 - Fatia 5 (comparação A/B): "O depois está melhor em todos" (julgou os três pares A × B com a ferramenta: o lado B, com mais camadas / fitas / fragmentos, foi preferido; tratado como aprovação da comparação e como preferência visual de Fitas e Fragmentos sobre Pontos).
 
+- Fatia 6 (estudos individuais): "estão ótimos".
+
 ## Estado
 
-Fatia 1 **aprovada pelo criador** ("estao otimos"). Fatia 2 (Fitas) **aprovada**. Fatia 3 (Fragmentos) **aprovada**. Fatia 4 (Fumaça/billboards): aprovada na quarta versão ("Muito melhor"). Fatia 5 (comparação A/B) **aprovada**. Fatia 6 (estudos individuais dos 20 comportamentos e a receita) entregue e mostrada em dois mosaicos de vídeo; **aguarda a aprovação visual** (ver §31). Histórico: fatia 1 entregue e mostrada ao criador (relógio, toggle D-042, presets D-045, representação Pontos com shader, laboratório mínimo; 96 verificações novas, 553 no total). **Aguardando a aprovação visual do criador** antes da fatia seguinte (ver §26 da especificação).
+Fatia 1 **aprovada pelo criador** ("estao otimos"). Fatia 2 (Fitas) **aprovada**. Fatia 3 (Fragmentos) **aprovada**. Fatia 4 (Fumaça/billboards): aprovada na quarta versão ("Muito melhor"). Fatia 5 (comparação A/B) **aprovada**. Fatia 6 (estudos individuais dos 20 comportamentos e a receita) **aprovada** ("estão ótimos"). Fatia 7 (seleção de ramos e máscaras na interface, último item da Etapa 5) implementada, aguardando aprovação visual (ver §32). Histórico: fatia 1 entregue e mostrada ao criador (relógio, toggle D-042, presets D-045, representação Pontos com shader, laboratório mínimo; 96 verificações novas, 553 no total). **Aguardando a aprovação visual do criador** antes da fatia seguinte (ver §26 da especificação).

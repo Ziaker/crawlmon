@@ -1160,3 +1160,18 @@ Aprovação da fatia anterior, literal: "O depois está melhor em todos" (os tr�
 
 **Não verificado:** aprovação visual do criador de cada estudo; se os parâmetros escolhidos mostram o comportamento da melhor forma; estudo individual em representações diferentes da escolhida para os vídeos (fitas; fragmentos no M16). **Faltam:** seleção de ramos e máscaras na interface (Etapa 5) e a validação completa (Etapa 6, não autorizada).
 **Mutações nos estudos:** 6 quebras deliberadas nas definições (acabamento sempre ligado, acabamento em M17/M18, acabamento depois do M19/M20, sem nascimento, vórtice sem efeito, base da onda sem raio crescente) derrubam os testes. As doze suítes somam 772 verificações, todas sem falhas.
+
+## 32. Etapa 5, fatia 7 — ramos e máscaras na interface — 2026-11-04 (D-305)
+
+Aprovação da fatia anterior, literal: "estão ótimos" (os estudos individuais). Esta fatia fecha a Etapa 5: cada camada passa a ter, no painel, a **seleção de ramos** e a **máscara** (§8, D-044), sem tocar no motor.
+
+| Arquivo | Resumo |
+|---|---|
+| `motion_composition.gd` | `branches_before(layer_id, catalog, ctx)`: nomes de ramo existentes imediatamente antes da camada, em ordem de texto, sem repetição |
+| `lab/motion_lab_session.gd` | `available_branches(layer_id)`: usa o relógio e o emissor atuais do laboratório |
+| `lab/motion_lab.gd` | caixas de seleção por ramo disponível (nenhuma marcada = todos); sliders `mask_u_from`, `mask_u_to` (um empurra o outro), `mask_feather`, inverter, janela de tempo da máscara e `layer_active_from/to`; aviso para BRANCH/MERGE/PERSIST (que não aceitam máscara); `--demo=ramos` (M14 + M18 só no ramo 1, u ≥ 0,4, degradê 0,15) |
+
+**Verificado:** 31 verificações novas (ramos disponíveis antes de cada camada, inclusive ordem de texto com 12 ramos; marcar e desmarcar grava `branches`; sliders gravam a máscara, início além do fim arrasta o fim e vice-versa; aviso nas operações sem máscara; demonstração dissolve só o ramo escolhido e só na faixa da máscara) e 45 do laboratório. **Mutações:** 8 quebras deliberadas; as 8 derrubam os testes (2 sobreviveram na primeira rodada e ganharam testes). As 13 suítes somam 803 verificações, sem falhas. Conferido em vídeo: o ramo 1 dissolve só da metade ao fim; a interface mostra os 3 ramos e os sliders.
+
+**Não verificado:** aprovação visual do criador desta fatia; Etapa 6 (validação completa, orçamento, GL Compatibility formal) não autorizada.
+
