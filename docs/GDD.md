@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.58 — Rodada 82 registrada em adendo rastreável (2026-11-04); histórico preservado.  
+> **Revisão:** 1.59 — Rodada 83 registrada em adendo rastreável (2026-11-05); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1752,6 +1752,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.58 | 2026-11-04 | Rodada 82: universo de espécies oficial verificável para VIT/SPI nível 50 com lacunas e veto a cortes não representativos; lista textual compacta de omissões em seleção aberta; identificadores diagnósticos por declaração e sequência determinística de excessos; chance/elegibilidade antes de matriz de incompatibilidade. D-264–D-267. | Rodada 82 fechada / Rodada 83 proposta |
 
+| 1.59 | 2026-11-05 | Rodada 83: relatório verificável de cobertura separada VIT/SPI e suficiência sujeita à aprovação; Burst paga integralmente ATB e MP e excepciona cobrança D-263; ordenar excessos simultâneos por gerador e alvo; par incompatível sem matriz aprovada permanece sem resolução, sem remover status existente e com efeitos independentes preservados. D-269–D-272. | Rodada 83 fechada / Rodada 84 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2247,4 +2249,19 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos abstratos, não novos valores/regras:** espécie do universo oficial com VIT verificável e SPI ausente deve ter **lacuna SPI registrada**, sem fabricar número; Move hipotético com duas omissões de bloqueio exibe **lista textual compacta com ambas**, sem fechar a seleção nem cobrar recursos; duas solicitações de evento excedente sob uma mesma declaração recebem **IDs de diagnóstico distintos**, não índices válidos; status Y novo com chance hipotética de 20%, se **falhar**, não remove X ativo; se **tiver sucesso**, só uma **entrada de prioridade concretamente aprovada** poderá definir a eliminação do menor.
 
 **Limites e preservações:** ainda não há universo de espécies auditado, valores VIT/SPI nível 50 verificados, limiar quantitativo de representatividade, tercis ou K aprovados (D-208/D-216/D-220/D-254/D-264). A HUD da seleção permanece sem modificação; D-259 **proíbe prévia de dano na seleção de alvos** e D-229/D-230 preservam a tooltip numérica em seu próprio contexto. O ID diagnóstico não cria eventos válidos (D-218/D-222/D-242/D-252/D-256/D-266). A matriz de status segue sem pares concretos ou vencedores, preservando D-239/D-243/D-253/D-257; D-234 continua evitando consumo de RNG para chances finais 0%/100% e D-095 mantém KO simultâneo. Preservados integralmente D-228–D-230, D-235, D-244–D-249 e D-258–D-263, incluindo MP obrigatório em Moves diferentes de Tackle (D-263); conflito de MP/Burst D-033/D-063 segue pendente. Divergência histórica de LUK da R60 (GDD §12.13) não foi conciliada. **Apenas documentação:** nenhum código, teste, ficha operacional, IA, Move, HUD, cena, asset ou VFX alterado; nenhum teste de gameplay executado.
+
+### 12.34 Rodada 83 — cobertura defensiva verificável, Burst/MP, ordem diagnóstica e matriz sem entrada (revisão 1.59)
+
+> **2026-11-05.** O criador aprovou expressamente **1A, 2B, 3A e 4A**, sem observações próprias. Registros individuais **D-269 a D-272**, consolidados em **§69** de `docs/REGRAS_DO_JOGO.md`. Adendo histórico conforme D-061; **D-001 mantém o GDD não normativo para combate**. D-268 (HUD), D-300–D-307 (Motion Composer), M3 D-258–D-263 e todas as seções anteriores permanecem preservadas.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R83-Q1 | **1A** | **Preparar relatório verificável de cobertura de VIT/SPI separadamente**, com espécies e lacunas; **aprovação da suficiência da cobertura antes de homologar os tercis** | [D-269](decisoes/D-269-r83-q1-relatorio-cobertura-vit-spi-separados-para-aprovacao.md) |
+| R83-Q2 | **2B** | **Burst preservado como pagamento integral de ATB e MP da ação**; quando Burst for usado, **exceção expressa à cobrança de MP** da D-263 | [D-270](decisoes/D-270-r83-q2-burst-paga-integralmente-atb-mp.md) |
+| R83-Q3 | **3A** | **Solicitações excedentes simultâneas** ordenadas por **índice do evento gerador**, depois **ID do alvo**, para atribuição da **sequência diagnóstica determinística** | [D-271](decisoes/D-271-r83-q3-excedentes-simultaneos-ordem-gerador-alvo.md) |
+| R83-Q4 | **4A** | **Sem entrada aprovada para par explicitamente incompatível**, **não resolver aplicação conflitante nem eliminar status ativo**; **registrar configuração pendente** e **preservar efeitos independentes** | [D-272](decisoes/D-272-r83-q4-matriz-ausente-suspender-conflito-preservar-independentes.md) |
+
+**Exemplos apenas ilustrativos:** uma espécie oficial com VIT verificável e SPI ausente integra a contagem de cobertura **separada**, mas não permite homologar tercis sem aprovação da suficiência; um Move hipotético de 3 ATB/8 MP pago com 1 Burst **não consome ATB nem MP**, sem aprovar os números; excedentes simultâneos recebem ordem por índice de evento gerador e ID do alvo **somente para identificação diagnóstica**; status X/Y expressamente incompatíveis, se ainda sem prioridade aprovada na matriz, **não produzem resolução conflitante nem remoção de X**, enquanto efeito Z independente pode continuar. **X/Y/Z não são pares concretos aprovados**.
+
+**Conciliação e pendências:** D-270 resolve **explicitamente** a dúvida deixada por **D-263** quanto a MP adicional quando **Burst paga a ação inteira**, preservando D-033/D-063 (pagamento integral/prioridade), D-228/D-263 (histórico de MP) e custos individuais ainda não fixados. Relatório de VIT/SPI, espécies, fontes, cobertura, representatividade, cortes e K permanecem pendentes; não simular levantamento. D-266/D-271 não aprovaram desempate residual entre excessos do mesmo gerador/alvo nem formato do log; D-267/D-272 preservam chance antes de matriz e impedem eliminar status em par sem precedência aprovada, sem determinar fila/reaplicação posterior. A divergência histórica de LUK R60 (GDD §12.13) continua não resolvida, D-203 mantém odômetro fora do jogo principal, D-235 independência de Moves/VFX, D-268 visual aprovado e D-300–D-307 como decisões independentes. **Nenhum código, teste, ficha operacional, Move, IA, HUD, cena, asset ou VFX alterado; nenhum teste de gameplay realizado.**
 

@@ -2128,3 +2128,35 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **[ESCOPO]** HTML, captura e documentação são **referências de UI**, não implementação do Godot nem mudança de lógica de status/Move. A D-235 continua obrigatória para implementação real independente de personagem/lado/posição.
 - **[PENDENTE]** Overhaul do BattleLog será discutido posteriormente; o comportamento atual permanece sem aprovação de alterações.
 - **[RASTREABILIDADE]** D-268 registra a aprovação visual; decisões de mecânica e implementação continuam nas D-* respectivas.
+
+---
+
+## 69. Rodada 83 — cobertura de VIT/SPI, Burst como pagamento integral de MP/ATB, desempate diagnóstico e matriz pendente
+
+> **2026-11-05.** O criador aprovou **1A, 2B, 3A e 4A**, sem observações próprias. Decisões individuais **D-269 a D-272**. Adendo documental conforme D-061; preservar **D-268 (HUD)** e **D-300–D-307 (Motion Composer)**, bem como a série M3 e o histórico integral. Não modificar código.
+
+### 69.1 Decisões aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-269](decisoes/D-269-r83-q1-relatorio-cobertura-vit-spi-separados-para-aprovacao.md) | **1A** | **Preparar relatório verificável** de cobertura para **VIT e SPI separadamente**, identificando espécies e lacunas; **submeter suficiência da cobertura à aprovação antes de homologar tercis** |
+| [D-270](decisoes/D-270-r83-q2-burst-paga-integralmente-atb-mp.md) | **2B** | **1 Burst paga integralmente a ação, incluindo ATB e MP**; quando usado, **não debitar MP adicional** apesar da regra geral D-263 de MP obrigatório fora de Tackle |
+| [D-271](decisoes/D-271-r83-q3-excedentes-simultaneos-ordem-gerador-alvo.md) | **3A** | Solicitações de ocorrência excedente simultâneas na mesma declaração: ordenar por **índice estável do evento gerador**, depois **ID do alvo**, e atribuir **sequência diagnóstica nessa ordem** |
+| [D-272](decisoes/D-272-r83-q4-matriz-ausente-suspender-conflito-preservar-independentes.md) | **4A** | Com **par explicitamente incompatível sem entrada de prioridade aprovada**, **não resolver aplicação conflitante nem eliminar status existentes**, **registrar pendência** e **preservar demais efeitos independentes** |
+
+### 69.2 Exemplos e relações normativas
+
+- **VIT/SPI (D-269):** uma espécie oficial hipotética possui valor de **VIT verificável** e **SPI ausente** no nível 50: o relatório separa cobertura e lacuna **por atributo**, com identificação de espécie e fonte; **não fabricar SPI nem homologar tercis** antes de o criador aprovar a suficiência da cobertura. Preservar D-212/D-216/D-220/D-224/D-231/D-236/D-240/D-250/D-254/D-264; **uma observação por espécie** e desvios individuais ±3 separados. **O relatório concreto e os dados NÃO foram produzidos nesta atividade**; nenhum critério percentual foi inventado; K único permanece não aprovado (D-208).
+- **Burst/MP (D-270):** Move hipotético custaria `3 ATB` e `8 MP`; **se pago com 1 Burst**, não há débito separado dos dois recursos. Sem Burst usado, continuam os custos ATB/MP válidos da ficha e **D-263** exige MP em todo Move exceto Tackle. **Os valores são fictícios e não homologam custos.** D-033/D-063 preservadas: Burst paga ação inteira, máximo 5 e prioridade de Burst quando Burst/ATB forem suficientes. **D-270 resolve expressamente a divergência MP/Burst apontada pela D-263**, sem apagar o histórico D-032/D-228/D-263 e sem inventar custos de MP específicos.
+- **Diagnóstico (D-271):** duas solicitações excedentes simultâneas de uma declaração recebem sequência diagnóstica ordenada primeiro pelo **índice do evento gerador** e depois pelo **ID do alvo**; preservar D-266 (ID da declaração + sequência de excessos), D-256 (campos mínimos), D-242/D-252 (rejeição somente excedente, sem afetar eventos futuros válidos) e D-222 (índices válidos não reutilizados). **Não converter ID de diagnóstico em índice válido e não escolher desempate residual entre solicitações do mesmo gerador e alvo**.
+- **Status sem entrada (D-272):** com status X e Y **expressamente incompatíveis** de Moves distintos e **chance de aplicação já resolvida com sucesso (D-267)**, se faltar entrada aprovada do par, **não resolver a aplicação conflitante nem remover X ativo**; registrar **configuração pendente**, mas resolver os demais efeitos independentes. **Não há pares reais incompatíveis nem entradas concretas de matriz homologados.** D-257 só elimina perdedor quando prioridade concreta está aprovada. Não reordenar RNG ou consumir sorteio extra (D-219/D-223/D-227/D-234).
+
+### 69.3 Pendências, conflitos preservados e escopo
+
+- **Relatório:** falta levantar fontes, lista de espécies do universo oficial, lacunas e cobertura VIT/SPI por separado; aprovação da suficiência da cobertura e, posteriormente, dos cortes e da amostra; não há valores de K aprovados.
+- **Recursos:** custos individuais de MP de cada Move ainda pendentes; a exceção aprovada refere-se à **cobrança de MP quando Burst paga a ação**. D-263 preservada no histórico, com precedência explicada; nenhum novo custo, elegibilidade ou política de reembolso foi inventado.
+- **Diagnóstico:** desempate adicional se coincidirem índice do gerador **e** ID do alvo, formato/serialização e persistência dos IDs diagnósticos continuam pendentes; ordenação **não altera simultaneidade lógica** nem KO simultâneo (D-095).
+- **Matriz:** nenhum par real incompatível ou vencedor foi aprovado. Registro da pendência não autoriza resolver conflito, nem interfere em efeitos independentes; duração, aplicação retroativa e múltiplos pares interdependentes ainda não estão definidos.
+- **Histórico e artefatos:** divergência textual de LUK na Rodada 60 (GDD §12.13) segue sem conciliação; D-203 mantém odômetro fora do jogo principal; D-235 e D-268 preservam independência de Moves/VFX e referência visual aprovada da HUD; D-300–D-307 de Motion Composer não foram alteradas.
+- **Escopo:** quatro novos D individuais, índice, consolidação e adendo GDD. **Nenhum código, teste, Move, ficha operacional, IA, HUD, cena, asset ou VFX alterado; nenhum teste de gameplay ou relatório quantitativo de VIT/SPI realizado.**
+
