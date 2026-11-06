@@ -23,3 +23,7 @@ O personagem atingido por um hit fatal é lançado **para longe da posição de 
 - **Decisões relacionadas:** D-056, D-068, D-069.
 - **Pendência:** Não foram definidos valores de ângulo vertical, distância, velocidade, duração ou parâmetros de colisão com cenário.
 - **Escopo:** documentação somente, sem mudança de código, FX, configurações ou testes.
+
+## Complemento posterior (2026-11-03)
+
+**D-903:** para inimigos, o lançamento fatal passa a ser sempre para longe de onde os jogadores estão, e não de quem aplicou o golpe.

@@ -24,3 +24,7 @@
 ## Complemento posterior — Rodada 53
 
 **D-114/D-115 (Rodada 53):** a escolha tática de Move agora tem ordem definida: **primeiro selecionar o alvo** aleatoriamente, respeitando engajamento, **depois escolher o Move** adequado. A escolha entre cura por poção e ataque também integra a avaliação situacional, sem prioridade rígida automática só por HP ≤ 50%; respeitar Tactics e regras de itens existentes. Pesos e fórmula continuam indefinidos.
+
+## Complemento posterior (2026-11-03)
+
+**D-911:** implementado em `scripts/combat/battle_ai.gd`; pesos definidos por delegação (D-116).

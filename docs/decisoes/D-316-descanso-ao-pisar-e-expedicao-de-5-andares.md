@@ -25,3 +25,5 @@
 ## Estado no código
 
 Não implementado. Detalha a D-311.
+
+**Atualização 2026-11-06:** o reset de derrota já recomeça no **andar 1** com nova seed/bioma (`visual_floor = 1`, `biome_seed = 0`, `new_dungeon(0, false)`), conforme R23-Q3/R33-Q1 e D-317. A expedição real de 5 andares, a escada, o MP cheio, as Natures novas e os pontos de descanso continuam pendentes.

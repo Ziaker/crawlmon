@@ -31,3 +31,7 @@
 ## Estado no código
 
 Implementado em `battle_evade.gd` (custo 3/2, perfeito, teleporte, contra-ataque sem preparo). O desvio parado não interrompe mais o atacante nem cria engajamento.
+
+## Complemento posterior (2026-11-03)
+
+**D-907:** o contra-ataque sem preparo vale para todo desvio perfeito, inclusive parado. O teleporte continua só no próprio trajeto.

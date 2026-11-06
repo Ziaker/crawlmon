@@ -19,3 +19,7 @@ Se um hit mata um inimigo, exibir lançamento para trás pelo ar, queda ao chão
 - **Referências:** D-024; D-025; R40-Q5; R41-Q5.
 - **Observação:** Substitui a permanência do corpo no chão para inimigos. Não define alcance, tempo, FX exato ou regra equivalente para aliados.
 - **Implementação:** não modificar comportamento do jogo apenas pela criação deste registro; avaliar divergências antes da implementação.
+
+## Complemento posterior (2026-11-03)
+
+**D-909:** para inimigos, o modelo encolhe e some ainda no ar, sem queda ao chão.
