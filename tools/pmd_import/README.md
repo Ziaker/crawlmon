@@ -44,7 +44,7 @@ O atlas tem **18 tiles** de núcleo (Walls 3×3 + Ground 3×3), as **Ground Alt.
 1/2** e **8 peças reais de parede**: `wall_strip_v` (C3R4, lados W+E),
 `wall_strip_h` (C4R3, N+S), `wall_island` (C4R4, 4 lados), `wall_tip_n/s/w/e`
 (C4R6/C4R8/C3R7/C5R7, 3 lados) e `wall_cross` (C4R7). Total: **30 tiles** (os 2 ?ltimos s?o os centros Wall Alt. 1/2, C7R1/C10R1, usados s? como varia??o rara de interior, D-355).
-Nenhuma peça é sintética. O perfil mapeia os papéis, a célula de origem
+Nenhuma peça é sintética. O atlas 48 px é gerado com **Scale2x 2×** da célula 24×24 (D-357). O perfil mapeia os papéis, a célula de origem
 (`role_cells`), a assinatura de lado medida (`role_sides`) e
 `side_contract_ok`; o jogo só usa a assinatura quando o contrato está OK.
 
@@ -141,8 +141,8 @@ As imagens vão para `scratch/tilesets/<nome>_catalog.png`, `_room.png` e
   688 células e 0 divergências.
 - A auditoria de percepção cobre as 16 e grava o preview composto:
   `topo (linha 1) → face (linha 2) → chão`.
-- O golden da sala passa (correlação 0,60; 2D 0,61; topo 137,8 > face 83,4;
-  chão 48,2) e as máscaras 8-vizinhos têm 19 papéis.
+- O golden da sala passa (correlação 0,60; 2D 0,61; topo 137,8 > face 83,2;
+  chão 48,0) e as máscaras 8-vizinhos têm 19 papéis.
 - Os decals de piso ficam em **4%+4% exatos** por andar (8,1% medidos), sem
   pares adjacentes; os centros Wall Alt. aparecem em 9,25% das células
   totalmente interiores.
@@ -162,9 +162,12 @@ As imagens vão para `scratch/tilesets/<nome>_catalog.png`, `_room.png` e
 - O **piso orgânico** usa `Ground Alt. 1/2` em 4%+4% das células de chão
   interiores, com seed do andar; bordas/cantos continuam na máscara de 4
   vizinhos.
-- Water ainda não é usada (precisa de sistema de água/D-312); o Unused Ground
-  tem um tile isolado e não virou decal. Os centros Wall Alt. 1/2 são usados em
-  10% do interior.
+- Water ainda não é usada: o bloco Water do Temporal é cinza-escuro e lê como
+  o chão; nas folhas de gelo é azul. Exige escolha visual (água azul das folhas
+  de gelo, shader ou fora) antes de virar sistema de mapa (D-312/D-357). O
+  Unused Ground tem um tile isolado e não virou decal.
+- Os centros Wall Alt. 1/2 são usados em 10% do interior.
+- As tochas visuais/brasas foram removidas; a luz invisível continua (D-357).
 - O terrain nativo/blob 47 foi descartado; o jogo usa o renderer manual
   aprovado.
 - Nada foi commitado ou publicado.

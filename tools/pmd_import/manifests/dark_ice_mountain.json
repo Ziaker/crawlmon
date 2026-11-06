@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "2.9.0",
+  "pipeline_version": "3.0.0",
   "name": "dark_ice_mountain",
   "source": "assets/pmd/dungeons/sky/raw/dark_ice_mountain.png",
   "source_sha256": "959c4267bad50a4b6f30718b0db5978c49b5d1659f4adc9bc795fd874079031d",
@@ -386,7 +386,7 @@
   },
   "atlas": {
     "path": "assets/pmd/dungeons/sky/atlas/dark_ice_mountain_atlas.png",
-    "sha256": "91d7266170e665223128fbcb6dc0f23f091d2f0e1cef53006eafb890968d51fa",
+    "sha256": "64fe6f343af86d31baceccfffedc85d1dd56a6544a9ba8b8a25518ae0e6491e6",
     "tile_size": 48,
     "columns": 30,
     "rows": 1

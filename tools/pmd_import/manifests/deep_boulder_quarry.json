@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "2.9.0",
+  "pipeline_version": "3.0.0",
   "name": "deep_boulder_quarry",
   "source": "assets/pmd/dungeons/sky/raw/deep_boulder_quarry.png",
   "source_sha256": "e5849c81c6794d75f34d02fe781171eb0ed816ec69c326d9632b54ccfa02c23d",
@@ -386,7 +386,7 @@
   },
   "atlas": {
     "path": "assets/pmd/dungeons/sky/atlas/deep_boulder_quarry_atlas.png",
-    "sha256": "4df0672d8b949159bb1adddd8552be265c22a34a9cbe78e0741f01b5a2ca1d86",
+    "sha256": "8744ba9ccc517fdb4f05a104bbc2d31b022744b81205d8ca33f92a7cba4fd26f",
     "tile_size": 48,
     "columns": 30,
     "rows": 1

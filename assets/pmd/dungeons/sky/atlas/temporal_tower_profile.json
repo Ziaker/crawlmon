@@ -1,6 +1,6 @@
 {
   "name": "temporal_tower",
-  "pipeline_version": "2.9.0",
+  "pipeline_version": "3.0.0",
   "atlas": "res://assets/pmd/dungeons/sky/atlas/temporal_tower_atlas.png",
   "tile_size": 48,
   "columns": 30,

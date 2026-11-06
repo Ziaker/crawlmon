@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "2.9.0",
+  "pipeline_version": "3.0.0",
   "name": "icicle_forest",
   "source": "assets/pmd/dungeons/sky/raw/icicle_forest.png",
   "source_sha256": "0f565a56cd5b35321f65b60dd2fdb341db2dae77362c5b5c222933be92b94959",
@@ -386,7 +386,7 @@
   },
   "atlas": {
     "path": "assets/pmd/dungeons/sky/atlas/icicle_forest_atlas.png",
-    "sha256": "eb6ca85da826390baca847aadf414a162f2273ccaa3f3eae6783022f17ac5584",
+    "sha256": "d9e916cc1a3afc16ef3441366712a48d33869df6ead1cc53e90e5a2f9ff88106",
     "tile_size": 48,
     "columns": 30,
     "rows": 1

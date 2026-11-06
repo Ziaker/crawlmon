@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "2.9.0",
+  "pipeline_version": "3.0.0",
   "name": "vast_ice_mountain_peak",
   "source": "assets/pmd/dungeons/sky/raw/vast_ice_mountain_peak.png",
   "source_sha256": "ed818d4715ca49ed6236eb7460527a38f1b386b449ebc1e6940885d3c8c83253",
@@ -386,7 +386,7 @@
   },
   "atlas": {
     "path": "assets/pmd/dungeons/sky/atlas/vast_ice_mountain_peak_atlas.png",
-    "sha256": "196caecdb7777eb198edee337eebdcc527ba03ab6a0ef0cb83e9a5b4aafeb38c",
+    "sha256": "43b2c58e1dacfe83f352b4c8cbb1fde5f1adb72676460f05a238d1bf0ebfecfc",
     "tile_size": 48,
     "columns": 30,
     "rows": 1

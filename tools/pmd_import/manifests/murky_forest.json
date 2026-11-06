@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "2.9.0",
+  "pipeline_version": "3.0.0",
   "name": "murky_forest",
   "source": "assets/pmd/dungeons/sky/raw/murky_forest.png",
   "source_sha256": "aba3f9bf5580e59bd142ce754d7fc6f1e083167f8b57e3fc9d45bf59afc1b210",
@@ -386,7 +386,7 @@
   },
   "atlas": {
     "path": "assets/pmd/dungeons/sky/atlas/murky_forest_atlas.png",
-    "sha256": "a86fab6cb6cb00f000855c79855ba4f721292544035a430bc159163dba3c38ad",
+    "sha256": "8bbcd4db8426b879d29d474eb8329665b25eef613fd4c77e99712c9ef42a4cdf",
     "tile_size": 48,
     "columns": 30,
     "rows": 1

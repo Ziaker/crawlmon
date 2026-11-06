@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "2.9.0",
+  "pipeline_version": "3.0.0",
   "name": "limestone_cavern",
   "source": "assets/pmd/dungeons/sky/raw/limestone_cavern.png",
   "source_sha256": "b2b2e8367d874693207c07e7fd5752395a3ad22e6b55afab9ca60135f44c8397",
@@ -382,7 +382,7 @@
   },
   "atlas": {
     "path": "assets/pmd/dungeons/sky/atlas/limestone_cavern_atlas.png",
-    "sha256": "e03b5bd16a71882f142b004adb1c30e3ee28204f1452233e6ffb83b8f8568f96",
+    "sha256": "f30185fc86000e997d551e1bb7a516f49e1970c948fec4c77db32f4d54716054",
     "tile_size": 48,
     "columns": 30,
     "rows": 1

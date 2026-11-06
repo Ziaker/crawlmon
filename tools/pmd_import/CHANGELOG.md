@@ -1,5 +1,18 @@
 # Changelog — pipeline de tilesets
 
+## 3.0.0 — 2026-11-06
+
+- **Atlas em Scale2x:** a célula 24×24 vai para 48×48 com Scale2x/EPX em vez
+  de nearest (16 folhas, perfis 3.0.0). A câmera 2,3×, o tile de 48 px e a
+  geração procedural não mudam.
+- **Tochas visíveis removidas:** chama, cabo e brasas saíram; a `PointLight2D`
+  invisível continua no lugar para a sala não escurecer.
+- **Água decorativa adiada:** o Water do Temporal é cinza-escuro e lê como o
+  chão; a escolha (água azul das folhas de gelo, shader ou fora) fica pendente.
+- **Testes:** 16 capturas in-game atualizadas; golden 1D 0,60 / 2D 0,61; brilho
+  do piso −0,7% a −2,1%; 6.970 paredes / 0 divergências; fallback 688/0;
+  decals 8,1% / 0 adjacentes.
+
 ## 2.9.1 — 2026-11-06
 
 - **16 biomas no jogo:** a cena real de exploração foi carregada com a seed

@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "2.9.0",
+  "pipeline_version": "3.0.0",
   "name": "spacial_cliffs",
   "source": "assets/pmd/dungeons/sky/raw/spacial_cliffs.png",
   "source_sha256": "a844e302106d64745c608843fd716af052421bfbc22f9c2576fcb10cadca64de",
@@ -386,7 +386,7 @@
   },
   "atlas": {
     "path": "assets/pmd/dungeons/sky/atlas/spacial_cliffs_atlas.png",
-    "sha256": "78089334517502b3b0304cc8bb573cce2c468ff0b4b2e7813aa50f80332a3eb0",
+    "sha256": "ec24b2efa5307e9c57a2bf4bbe008e3562e820dcdc4ace99048f80a6bc997fde",
     "tile_size": 48,
     "columns": 30,
     "rows": 1

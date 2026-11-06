@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "2.9.0",
+  "pipeline_version": "3.0.0",
   "name": "barren_valley",
   "source": "assets/pmd/dungeons/sky/raw/barren_valley.png",
   "source_sha256": "9152cf745fd4e7cdf5c0943dd13cf661672d2bd018d6228303babd0f3e3b3806",
@@ -386,7 +386,7 @@
   },
   "atlas": {
     "path": "assets/pmd/dungeons/sky/atlas/barren_valley_atlas.png",
-    "sha256": "b0bad55d4dbed8b0a278b9efa7e2cc40e5bdcfb2aafaeecbb7ad8d524b4d78b8",
+    "sha256": "9f9ab03b94eece2f45839f833ed489291b1f29d62097e3159c9bdf231ea80bdb",
     "tile_size": 48,
     "columns": 30,
     "rows": 1

@@ -16,7 +16,7 @@ from pathlib import Path
 
 from PIL import Image
 
-PIPELINE_VERSION = "2.9.0"
+PIPELINE_VERSION = "3.0.0"
 CYAN = (128, 255, 255, 255)
 TEAL = (0, 128, 128, 255)
 
@@ -216,9 +216,50 @@ def detect_extras(
     return extras
 
 
+def scale2x(image: Image.Image) -> Image.Image:
+    """EPX/Scale2x 2x: smoother pixel art without the Lanczos blur.
+
+    The PMD source cells are 24x24; the atlas needs 48x48. Nearest keeps hard
+    stair-steps, Lanczos blurs. Scale2x compares the four neighbours and only
+    replaces a pixel when the edge is unambiguous.
+    """
+    source = image.convert("RGBA")
+    width, height = source.size
+    src = source.load()
+    out = Image.new("RGBA", (width * 2, height * 2))
+    dst = out.load()
+
+    def pixel(x: int, y: int):
+        return src[min(max(x, 0), width - 1), min(max(y, 0), height - 1)]
+
+    for y in range(height):
+        for x in range(width):
+            p = pixel(x, y)
+            a = pixel(x, y - 1)
+            b = pixel(x + 1, y)
+            c = pixel(x - 1, y)
+            d = pixel(x, y + 1)
+            e0 = a if (c == a and c != d and a != b) else p
+            e1 = b if (a == b and a != c and b != d) else p
+            e2 = c if (d == c and d != b and c != a) else p
+            e3 = d if (b == d and b != a and d != c) else p
+            dst[2 * x, 2 * y] = e0
+            dst[2 * x + 1, 2 * y] = e1
+            dst[2 * x, 2 * y + 1] = e2
+            dst[2 * x + 1, 2 * y + 1] = e3
+    return out
+
+
 def tile_image(image: Image.Image, grid: SheetGrid, column: int, row: int, size: int) -> Image.Image:
-    """Crop the full 24x24 art cell and scale with nearest neighbour."""
+    """Crop the full 24x24 art cell and upscale with Scale2x (D-357)."""
     cell = image.crop(grid.cell_box(column, row)).convert("RGBA")
+    if size >= cell.width * 2:
+        out = cell
+        while out.width * 2 <= size:
+            out = scale2x(out)
+        if out.width != size:
+            out = out.resize((size, size), Image.NEAREST)
+        return out
     return cell.resize((size, size), Image.NEAREST)
 
 

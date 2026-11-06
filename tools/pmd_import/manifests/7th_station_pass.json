@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "2.9.0",
+  "pipeline_version": "3.0.0",
   "name": "7th_station_pass",
   "source": "assets/pmd/dungeons/sky/raw/7th_station_pass.png",
   "source_sha256": "db80305d4f2776add5d50a784511bb2f7f9469a479ab2c2dc56a07adf5ea38e5",
@@ -382,7 +382,7 @@
   },
   "atlas": {
     "path": "assets/pmd/dungeons/sky/atlas/7th_station_pass_atlas.png",
-    "sha256": "11ac1cc3dc12de7f86b7cad0516c29ca768bd2516223935a79ccdcc5fb78eefd",
+    "sha256": "4b0eddf0aa7e2b1ddb42ceec306cfcc8703bf7ddd2419b99c40453d5ef46309f",
     "tile_size": 48,
     "columns": 30,
     "rows": 1

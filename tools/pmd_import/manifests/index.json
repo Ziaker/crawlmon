@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "2.9.0",
+  "pipeline_version": "3.0.0",
   "active": "temporal_tower",
   "active_atlas": "res://assets/pmd/dungeons/sky/atlas/temporal_tower_atlas.png",
   "active_profile": "res://assets/pmd/dungeons/sky/atlas/temporal_tower_profile.json",

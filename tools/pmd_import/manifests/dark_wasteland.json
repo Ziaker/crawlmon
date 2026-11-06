@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "2.9.0",
+  "pipeline_version": "3.0.0",
   "name": "dark_wasteland",
   "source": "assets/pmd/dungeons/sky/raw/dark_wasteland.png",
   "source_sha256": "92740c84fcd5fd5a1649c5df502735f42e61d334ba8d8abacc37379caeff15a5",
@@ -386,7 +386,7 @@
   },
   "atlas": {
     "path": "assets/pmd/dungeons/sky/atlas/dark_wasteland_atlas.png",
-    "sha256": "98d470d0338f9f8f7eca67ca1633810e608a17062484a5347d9fc7b47966542d",
+    "sha256": "844277fc0e2ae94e83cc2ce286e5f27cb34f6de25790ae8048ac8e8b0481e9a5",
     "tile_size": 48,
     "columns": 30,
     "rows": 1

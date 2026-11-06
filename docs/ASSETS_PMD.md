@@ -1,6 +1,6 @@
 # Assets 2D do Pokémon Mystery Dungeon (Explorers)
 
-> **Status:** primeira leva do hub e os 16 Dungeon Tiles do Sky importados. **Estado atual:** o visual ativo é o **Sky Temporal Tower de 30 tiles** (18 do núcleo + `ground_alt_1/2` + 8 peças reais de parede: strip V/H, island, tip N/S/W/E e cross), alinhado à grade real da folha; as peças sintéticas do atlas de 42 foram descartadas porque misturavam componentes (pitch de 25 px: 1 px de linha ciano + 24×24 de arte). O sheet do Time/Darkness fica como referência em `docs/referencias/`. O piso orgânico usa as Ground Alt em 4%+4% (D-347); a seleção de parede é por assinatura de lado medida (D-354).
+> **Status:** primeira leva do hub e os 16 Dungeon Tiles do Sky importados. **Estado atual:** o visual ativo é o **Sky Temporal Tower de 30 tiles** (18 do núcleo + `ground_alt_1/2` + 8 peças reais de parede: strip V/H, island, tip N/S/W/E e cross + 2 centros Wall Alt. 1/2), alinhado à grade real da folha; o atlas 48 px é gerado com **Scale2x 2×** a partir da célula 24×24 (D-357), e as tochas visuais/brasas foram removidas (a luz invisível continua). As peças sintéticas do atlas de 42 foram descartadas porque misturavam componentes (pitch de 25 px: 1 px de linha ciano + 24×24 de arte). O sheet do Time/Darkness fica como referência em `docs/referencias/`. O piso orgânico usa as Ground Alt em 4%+4% (D-347); a seleção de parede é por assinatura de lado medida (D-354).
 > **Decisões:** D-325, D-326, D-329, D-330. **Páginas-fonte:** Explorers of Time/Darkness e Explorers of Sky (The Spriters Resource).
 > **Créditos/proveniência:** `docs/CREDITOS_ASSETS.md`.
 
@@ -120,7 +120,7 @@ A folha usa **pitch de 25 px**: 1 px de linha ciano + célula de arte de 24×24.
 - O renderizador escolhe a parede pela assinatura de lado medida; o “Legend” da folha ainda não é lido como máscara automática.
 - O preview da folha foi casado pixel a pixel: ele usa a linha 1 (topo) + linha 2 (face) + Ground; isso está documentado em D-354.
 - A folha **não tem peças reais de canto interno de chão**; o fallback é `ground_c`. O `Unused Ground` tem um tile isolado em C22R1, não um conjunto, e não foi usado como decal (D-356).
-- **Water** não é usada: exige células de água, colisão e regra de mapa (D-312), ainda sem decisão.
+- **Water** não é usada: o bloco Water do Temporal é cinza-escuro e lê como o chão; nas folhas de gelo é azul. Exige uma escolha visual (água azul das folhas de gelo, shader ou fora) antes de virar sistema de mapa (D-312/D-357).
 - Os decals de piso agora são **4%+4% exatos** por andar (8,1% medidos), com exclusão de 1 tile.
 - Os backgrounds do hub em `raw/` ainda têm fundo branco e não foram limpos.
 - O seletor de bioma por andar existe (16 perfis), mas os **3 biomas de D-312** (floresta/fortaleza/caverna) não.

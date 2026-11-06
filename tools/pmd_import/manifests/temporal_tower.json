@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "2.9.0",
+  "pipeline_version": "3.0.0",
   "name": "temporal_tower",
   "source": "assets/pmd/dungeons/sky/raw/temporal_tower.png",
   "source_sha256": "47a2a466dd9baee2d93d4de0052fa9a819a558a3d44992bed5f0d55a1711aaca",
@@ -386,7 +386,7 @@
   },
   "atlas": {
     "path": "assets/pmd/dungeons/sky/atlas/temporal_tower_atlas.png",
-    "sha256": "26a73bef7150354bfc570a8bab10eee774f4a432862fe6d4f9a821b62e332f20",
+    "sha256": "86226ff8344ed90bf52f1f71bb75c673b721e1c6d7faa145032c2d49dbf660df",
     "tile_size": 48,
     "columns": 30,
     "rows": 1

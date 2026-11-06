@@ -503,32 +503,9 @@ func _add_torch(wall_center: Vector2) -> void:
 	light.shadow_filter_smooth = 3.5
 	light.position = wall_center + Vector2(0, TILE * 0.5 + 8.0)
 	add_child(light)
-	var flame := wall_center + Vector2(0, TILE * 0.5 - 14.0)
-	_torches.append({"light": light, "pos": flame, "phase": randf() * TAU})
-	_add_embers(flame)
-
-
-## Faíscas curtas subindo do fogo; o tremor principal continua na luz (D-313).
-func _add_embers(pos: Vector2) -> void:
-	var embers := CPUParticles2D.new()
-	embers.name = "Embers"
-	embers.texture = _make_particle_texture()
-	embers.amount = 6
-	embers.lifetime = 1.1
-	embers.preprocess = 1.1
-	embers.local_coords = false
-	embers.position = pos
-	embers.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
-	embers.emission_sphere_radius = 3.0
-	embers.direction = Vector2(0, -1)
-	embers.spread = 28.0
-	embers.initial_velocity_min = 5.0
-	embers.initial_velocity_max = 13.0
-	embers.gravity = Vector2(0, 9)
-	embers.scale_amount_min = 0.15
-	embers.scale_amount_max = 0.35
-	embers.color = Color(1.0, 0.55, 0.22, 0.75)
-	add_child(embers)
+	# The visible torch/flame/embers were removed: the light stays as an
+	# invisible warm pool so the room keeps its approved lighting.
+	_torches.append({"light": light, "pos": wall_center, "phase": randf() * TAU})
 
 
 ## The player appears after this node's _ready, so its light is attached lazily.
@@ -666,22 +643,12 @@ func _hash(x: int, y: int) -> int:
 
 
 func _draw() -> void:
-	for t in _torches:
-		_draw_torch(t["pos"], t["phase"])
 	var player: Node2D = _parent.get("player")
 	if player != null:
 		_blob(player.position + Vector2(0, 14), 13.0, 5.0)
 	var npcs: Array = _parent.get("npcs") if _parent.get("npcs") != null else []
 	for npc in npcs:
 		_blob(npc.position + Vector2(0, 14), 13.0, 5.0)
-
-
-func _draw_torch(p: Vector2, phase: float) -> void:
-	draw_rect(Rect2(p + Vector2(-2, 6), Vector2(4, 10)), Color("4a3431"))
-	var h := 14.0 + 3.0 * sin(_time * 12.0 + phase)
-	var sway := 1.5 * sin(_time * 7.0 + phase)
-	draw_colored_polygon(PackedVector2Array([p + Vector2(-5, 6), p + Vector2(5, 6), p + Vector2(sway, 6 - h)]), Color("ff624f"))
-	draw_colored_polygon(PackedVector2Array([p + Vector2(-3, 6), p + Vector2(3, 6), p + Vector2(sway, 6 - h * 0.6)]), Color("f7cb78"))
 
 
 func _blob(pos: Vector2, rx: float, ry: float) -> void:

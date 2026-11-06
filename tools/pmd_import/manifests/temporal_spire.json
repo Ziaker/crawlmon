@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "2.9.0",
+  "pipeline_version": "3.0.0",
   "name": "temporal_spire",
   "source": "assets/pmd/dungeons/sky/raw/temporal_spire.png",
   "source_sha256": "04c2cf17821452bc3a30935f75cc92d6bb2e87fb76989391dab17032099f43ef",
@@ -386,7 +386,7 @@
   },
   "atlas": {
     "path": "assets/pmd/dungeons/sky/atlas/temporal_spire_atlas.png",
-    "sha256": "f68358a33f40e37042a17de664d0175847e8770dfdfd8b6dbced4b5aff51f7f3",
+    "sha256": "7e9328ff0504c2918fc117846651396517b4b2336a405852a8f184853d5587cb",
     "tile_size": 48,
     "columns": 30,
     "rows": 1

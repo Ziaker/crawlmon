@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "2.9.0",
+  "pipeline_version": "3.0.0",
   "name": "4th_station_pass",
   "source": "assets/pmd/dungeons/sky/raw/4th_station_pass.png",
   "source_sha256": "a3c9debd70c51666bce681435ed3723d07f28747be56817f5a03c2c6b2ab5997",
@@ -382,7 +382,7 @@
   },
   "atlas": {
     "path": "assets/pmd/dungeons/sky/atlas/4th_station_pass_atlas.png",
-    "sha256": "1d6a766be5f452dc1e2196fe4b1ca637f087a74f9cf8496121f7cf86d8536eae",
+    "sha256": "6336fc4884f858d5ac744023eee1b4d1225dae014dece4ff24274c4f3b145ea3",
     "tile_size": 48,
     "columns": 30,
     "rows": 1
