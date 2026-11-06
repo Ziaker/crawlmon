@@ -36,6 +36,10 @@ func _process(delta: float) -> void:
 	_time += delta
 	queue_redraw()
 	if _player != null and position.distance_to(_player.position) <= PICKUP_RADIUS:
+		# R35-Q3: a full non-held inventory blocks the pickup; the item stays on
+		# the floor and can be collected after the player frees a slot.
+		if GameState.is_inventory_full():
+			return
 		_taken = true
 		collected.emit(self)
 		queue_free()

@@ -91,7 +91,11 @@ func _build_tab() -> void:
 	var names := PackedStringArray()
 	for i in TABS.size():
 		names.append("[%s]" % TABS[i] if i == tab else TABS[i])
-	_title.text = "  ".join(names) + "      (←/→ troca aba, Z escolhe, X fecha)"
+	var header := "  ".join(names)
+	if tab == 0:
+		# R35-Q3: non-held items in the shared bag vs. the active party's capacity.
+		header += "   [%d/%d]" % [GameState.total_item_count(), GameState.max_inventory_capacity()]
+	_title.text = header + "      (←/→ troca aba, Z escolhe, X fecha)"
 	var entries: Array = []
 	_shown_items.clear()
 	match tab:

@@ -180,6 +180,19 @@ func set_hp_instant(value: int) -> void:
 	_last_int_rolling_hp = hp
 
 
+## R23-Q3/R33-Q1: restores the member for a new expedition after defeat.
+## XP/level stay untouched; only transient battle state is cleared.
+func revive_full() -> void:
+	set_hp_instant(max_hp)
+	atb = 0.0
+	extra = 0.0
+	burst = 0
+	counter_ready = false
+	clear_pending()
+	clear_buffs()
+	in_battle = false
+
+
 func take_damage(amount: int) -> void:
 	var def_mult := 1.0 - float(def_buff) * 0.25
 	var final_dmg := maxi(1, roundi(amount * maxf(def_mult, 0.4)))

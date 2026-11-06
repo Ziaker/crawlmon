@@ -32,8 +32,10 @@ func _run() -> void:
 		root.add_child(gs)
 	gs.start_battle("test_enemy", Vector2(120, 120))
 
-	# 3. Aguardar a transição e troca de cena para battle.tscn
-	var timeout := 180 # 3 segundos a 60fps
+	# 3. Aguardar a transição e troca de cena para battle.tscn.
+	# 600 frames: a intro roda em tempo real e o headless pode ter delta menor
+	# que 1/60 s; 180 frames era curto demais.
+	var timeout := 600
 	var battle_loaded := false
 	for i in timeout:
 		await process_frame
@@ -55,14 +57,20 @@ func _run() -> void:
 
 	print("PASS: Cena de batalha carregada com sucesso após transição!")
 
-	# 4. Aguardar a intro dos combatentes correndo e o início do combate
+	# 4. Aguardar a intro dos combatentes correndo e o início do combate.
+	# O teste precisa FALHAR se o loop não iniciar; apenas imprimir "PASS" não vale.
 	var battle_running := false
-	for i in 180:
+	for i in timeout:
 		await process_frame
 		var bs = root.get_node_or_null("BattleScene")
 		if bs != null and bs.battle != null and bs.battle.running:
 			battle_running = true
 			break
+
+	if not battle_running:
+		print("ERRO: a batalha carregou, mas battle.running continuou false após %d frames!" % timeout)
+		quit(1)
+		return
 
 	print("PASS: Batalha iniciada e em execução (battle.running = %s)!" % battle_running)
 
