@@ -2571,3 +2571,34 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Outras regras:** D-352 (Drain HP/MP), D-356–D-359 (Drain Spear/Badge Steal), D-360–D-363 (engine R87B), D-268/D-322–D-326 (HUD/BattleLog/escudos) e demais decisões foram preservadas. A divergência histórica de LUK da Rodada 60 (GDD §12.13) permanece não conciliada.
 - **Escopo:** quatro decisões novas, índice, consolidado e adendo GDD. **Nenhum código, teste, Move, ficha operacional, IA, HUD, cena, asset ou VFX alterado; nenhum teste de gameplay executado.**
 
+---
+
+## 83. Rodada 89 — item segurado, escolha de evolução, chefes sem reforço oculto e dungeons opcionais persistentes
+
+> **2026-11-06.** O criador aprovou **1A, 2A, 3D (regra própria) e 4A**. Registros individuais **D-368–D-371** conforme D-061. A resposta **3D rejeita as alternativas propostas** e tem sua observação literal preservada na D-370. Não reescrever decisões anteriores, inclusive série B, Drain Spear/Badge Steal e regras de chefes. Nenhum código alterado.
+
+### 83.1 Regras expressamente aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-368](decisoes/D-368-r89-q1-um-item-segurado-por-pokemon.md) | **1A** | Cada Pokémon **equipa um único item segurado por vez**, independentemente de ser passivo ou de ativação automática |
+| [D-369](decisoes/D-369-r89-q2-escolha-evolucao-entre-formas-elegiveis.md) | **2A** | Se uma espécie possuir **múltiplas evoluções elegíveis**, o jogador **escolhe a forma** ao realizar a evolução voluntária |
+| [D-370](decisoes/D-370-r89-q3-sem-poder-reforcado-chefe-exceto-buff-badges-removiveis.md) | **3D — regra própria** | **Não existe poder reforçado de chefe por padrão**; exceção expressa apenas para **buff badges permanentes removíveis em combate**, sem afirmar que persistem após recrutamento |
+| [D-371](decisoes/D-371-r89-q4-dungeon-opcional-descoberta-acesso-permanente.md) | **4A** | Descobrir e desbloquear dungeon opcional **mantém seu acesso permanente na campanha**, permitindo **novas expedições com geração procedural renovada** |
+
+### 83.2 Exemplos e compatibilidades
+
+- **Item segurado (D-368):** um Pokémon que já equipou uma berry de ativação automática não pode manter simultaneamente outro item segurado passivo. Preservar **GDD R28-Q2** (funcionamento passivo/automático) e **R34-Q5/R35-Q3** (limite de **10 itens não segurados por Pokémon ativo**, sem contar segurados). A regra **não determina** quando trocar equipamento ou reequipa automaticamente consumíveis.
+- **Evolução (D-369):** quando **mais de uma forma evoluída cumprir requisitos**, o jogador escolhe entre as elegíveis. Preservar **GDD R25-Q3** (evolução escolhida voluntariamente), **D-353** (somente em locais seguros ou entre expedições) e **D-331** (fichas vinculadas de espécies/formas). Nenhuma linha evolutiva concreta, efeito de evolução ou requisito é criado.
+- **Chefes (D-370):** o criador declarou **literalmente**: "Não existe isso de poder reforçado exceto se firem buff badges permanentes que podem ser removidas no combate". Não inventar reforço oculto ou multiplicadores exclusivos de chefe; apenas buffs com **badges permanentes removíveis em combate** são exceção explicitamente admitida, sem magnitude/ciclo de vida aprovados. Preservar **D-328** (dificuldade via IA e cooperação), **D-347/D-365** (chefes designados e recrutamento voluntário) e **D-359** (Badge Steal sobre efeitos elegíveis quando condições específicas forem cumpridas). **Ainda não se sabe se buff badges existentes em chefes são conservadas após recrutamento**; não optar pelas alternativas 3A–3C por inferência.
+- **Dungeons (D-371):** uma dungeon opcional descoberta permanece acessível em outras expedições. Sua **exploração procedural pode variar entre expedições**, preservando layout já visitado durante a mesma expedição e seeds reproduzíveis sob condições aprovadas. Preservar **D-330/D-346/D-367** (dungeons opcionais, Builds/Moves como incentivos e mistura procedural/autoral). Não criar dungeons concretas.
+
+### 83.3 Pendências e histórico
+
+- **Itens:** momentos de troca, obtenção e comportamento do slot após consumo continuam pendentes.
+- **Evolução:** espécies e formas reais com ramificação, requisitos e efeitos sobre atributos/Moves/afinidades ainda não definidos.
+- **Chefes:** efeitos concretos das buff badges permanentes, mecanismos de remoção, significado técnico de permanência e eventual conservação **após recrutamento** não foram aprovados. A resposta própria **não escolhe uma política de atributos para chefes recrutados** além de rejeitar reforço oculto e admitir a exceção.
+- **Dungeons:** regras específicas de descoberta, localização, recompensas e integração de conteúdo procedural e planejado permanecem pendentes.
+- **Histórico:** D-359 (Badge Steal), D-347/D-365 (chefes recrutáveis), D-353 (evolução) e todas as decisões anteriores são preservadas; divergência histórica sobre LUK R60 no GDD §12.13 permanece sem conciliação.
+- **Escopo:** quatro decisões D, índice, este consolidado e adendo GDD, **sem alterar código, testes, IA, Moves, fichas operacionais, HUD, cenas, assets ou VFX**. Nenhum teste de gameplay realizado.
+

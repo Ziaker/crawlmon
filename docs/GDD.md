@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.69 — Rodada 88 de Repel, recrutamento, reservas e dungeons opcionais (2026-11-06); histórico preservado.  
+> **Revisão:** 1.70 — Rodada 89: itens segurados, evolução, buff badges de chefes e dungeons opcionais (2026-11-06); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1774,6 +1774,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.69 | 2026-11-06 | Rodada 88: Repel de Moves multialvo reflete apenas impacto do portador; chefes designados recrutáveis têm requisitos individuais de história/exploração/combate definidos na ficha; reservas recebem parcela de XP por vitória além de treinamento; dungeons opcionais combinam geração procedural e conteúdo especial planejado. D-364–D-367. | Rodada 88 registrada / Rodada 89 proposta |
 
+| 1.70 | 2026-11-06 | Rodada 89: um item segurado por Pokémon; escolha entre evoluções elegíveis na evolução voluntária; regra própria rejeita poder reforçado de chefe salvo buff badges permanentes removíveis em combate, sem decidir persistência após recrutamento; dungeon opcional descoberta permanece acessível para expedições procedurais renovadas. D-368–D-371. | Rodada 89 registrada / Rodada 90 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2467,4 +2469,19 @@ A engine deverá **demonstrar por validação e testes reproduzíveis** que even
 **Exemplos ilustrativos sem criar fichas:** se um Move atingir dois alvos e apenas um tiver Repel, somente o **impacto desse alvo** reflete; chefes especiais podem exigir missões ou condições de batalha diferentes, quando **aprovadas em suas fichas**; um Pokémon da reserva recebe parcela **não definida** da XP de vitórias da equipe ativa e continua podendo treinar; dungeon opcional pode variar corredores por seed e incluir uma sala especial planejada.
 
 **Compatibilidades:** D-344/D-276/D-235 preservam a regra de reflexão única e independência de Moves/lados; D-347/D-274 mantêm recrutamento voluntário após vitória de chefe especificamente elegível; D-355 e GDD R33-Q2 preservam treinamento da reserva; GDD R7-Q5/R8-Q3/R9-Q2 mantém geração procedural e seed reproduzível; D-330/D-346/D-354 preservam dungeons adicionais e recompensas principais de Moves/builds. **Não foram aprovados** critérios numéricos de XP, requisitos de chefes reais, dados de Repel em espécie, números de salas ou regras de multi-hit. A divergência textual histórica sobre LUK na Rodada 60 (§12.13) permanece sem conciliação. **Somente documentação; nenhum código, Move, IA, ficha operacional, HUD, cena, asset, teste ou VFX alterado.**
+
+### 12.45 Rodada 89 — item segurado, evolução ramificada, badges de chefes e acesso persistente (revisão 1.70)
+
+> **2026-11-06.** O criador aprovou expressamente **1A, 2A, 3D (regra própria) e 4A**, consolidado em **§83** de `docs/REGRAS_DO_JOGO.md` e registros **D-368–D-371**. A observação própria foi preservada literalmente no registro D-370, sem tratá-la como aprovação das alternativas 3A–3C. Este é um adendo histórico, conforme D-061; D-001 mantém decisões de combate nos documentos normativos próprios, não no GDD antigo.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R89-Q1 | **1A** | **Um item segurado equipado por Pokémon**, passivo ou automaticamente ativado | [D-368](decisoes/D-368-r89-q1-um-item-segurado-por-pokemon.md) |
+| R89-Q2 | **2A** | **Escolher a forma ao evoluir voluntariamente** quando houver mais de uma evolução **elegível** | [D-369](decisoes/D-369-r89-q2-escolha-evolucao-entre-formas-elegiveis.md) |
+| R89-Q3 | **3D — outra regra** | **Não há poder reforçado oculto de chefes**, exceto **buff badges permanentes que podem ser removidas em combate**; persistência após recrutamento segue não decidida | [D-370](decisoes/D-370-r89-q3-sem-poder-reforcado-chefe-exceto-buff-badges-removiveis.md) |
+| R89-Q4 | **4A** | **Dungeon opcional descoberta continua disponível na campanha**, permitindo novas expedições e geração procedural renovada | [D-371](decisoes/D-371-r89-q4-dungeon-opcional-descoberta-acesso-permanente.md) |
+
+**Exemplos e compatibilidades:** item segurado de ativação automática ocupa o mesmo único slot de item passivo, sem alterar o limite de inventário (GDD R28-Q2/R35-Q3); entre formas evoluídas com requisitos cumpridos, o jogador escolhe durante evolução voluntária em local seguro/intervalo (D-353); chefe não ganha atributos reforçados apenas por ser chefe, mas pode ter **buff badge permanente removível em combate** se concretamente definida, preservando IA estratégica de D-328 e os requisitos de recrutamento D-347/D-365; uma dungeon opcional desbloqueada pode ser selecionada de novo na campanha e sua porção procedural pode variar por expedição (D-330/D-367), mantendo seed reproduzível sob as condições de GDD R8-Q3.
+
+**Limitações e conflitos:** nenhum item, forma evoluída, buff badge, chefe ou dungeon real foi criado. **Não foi definido** se buff badges de chefes permanecem após recrutamento, como são removidas, seus números/duração ou funcionamento em outros encontros; D-359 sobre Badge Steal preserva suas próprias condições. As escolhas não criam bônus oculto nem determinam atributos alternativos de chefes recrutados. D-235 mantém a independência de Moves/VFX; a divergência textual histórica sobre LUK da Rodada 60 (GDD §12.13) permanece sem resolução. **Somente documentação; nenhum código, Move, ficha, IA, HUD, cena, asset, teste ou VFX alterado.**
 
