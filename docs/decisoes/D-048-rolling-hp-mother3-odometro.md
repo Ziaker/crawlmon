@@ -49,3 +49,6 @@ Implementado e validado por testes automatizados (`tests/battle/test_d048_rollin
 
 **Superada para o jogo principal, sem apagar este histórico.** O criador determinou expressamente: **“o odometro era só um teste, não usaremos ele no jogo principal, descarte toda e qualquer ideia que o envolva”**. Conforme [D-203](D-203-r70-q4d-odometro-descartado-jogo-principal.md), toda esta mecânica de HP rolante, sua opção de ativação e ideias dependentes dela ficam **fora dos requisitos do jogo principal**. A implementação e os testes antigos podem continuar fisicamente presentes no repositório, mas não comprovam vigência do requisito nem autorizam sua integração no jogo principal. Esta anotação preserva o testemunho histórico do teste e **não modifica código**. A outra D-048 (ATB de AoE) é distinta e não é afetada.
 
+## Complemento local — 2026-11-06 / D-949
+
+**Arquivado em 2026-11-06 por D-949.** O odômetro saiu do fluxo ativo: o HP e a barra atualizam imediatamente, o toggle saiu do menu e o sistema foi guardado em `scripts/legacy/rolling_hp_odometer.gd`, com o teste em `tests/legacy/test_d048_rolling_hp.gd`. Quando o criador pedir, o sistema volta a partir desse módulo.

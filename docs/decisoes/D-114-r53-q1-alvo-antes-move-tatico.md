@@ -25,3 +25,7 @@
 - Em `scripts/combat/battle.gd`, `_run_ai()` chama atualmente `_pick_skill()` **antes** de selecionar o alvo determinístico `_first_alive(foes)` ou engajado. A nova ordem aprovada **diverge do código existente**; nenhum código foi modificado.
 - Não foram definidos pesos de pontuação, fórmulas, desempates ou escolha de Move para situações específicas.
 - **Escopo:** somente documentação.
+
+## Complemento posterior (2026-11-03)
+
+**D-911:** implementado em `scripts/combat/battle_ai.gd`.

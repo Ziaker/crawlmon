@@ -421,3 +421,73 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-374](D-374-r88b-q2-condicoes-declarativas-predicados-operadores-logicos.md) | Engine de Moves / R88B | Q2A: condições tipadas declarativas com predicados reutilizáveis e operadores lógicos explícitos, sem scripts arbitrários nas fichas | Aprovada; catálogo de predicados pendente |
 | [D-375](D-375-r88b-q3-resultados-terminais-ocorrencias-condicionais.md) | Engine de Moves / R88B | Q3A: resultado terminal determinístico por ocorrência condicional reservada (executada, cancelada, não acionada), sem efeitos/RNG pela não ativação | Aprovada; formato pendente |
 | [D-376](D-376-r88b-q4-resource-visual-invalido-indisponibilidade-pos-migracao.md) | Engine de Moves / R88B | Q4A: Move migrado com visual obrigatório ausente ou inválido fica indisponível na nova engine, com diagnóstico e sem fallback silencioso | Aprovada; implementação pendente |
+
+## Decisões locais reconciliadas — 2026-11-06
+
+As decisões locais que colidiam com IDs do `origin/main` foram renumeradas para a faixa reservada **D-900–D-952**. As que não colidiam mantiveram o ID. O mapa completo está em [MAPA_RENUMERACAO_2026-11-06.md](MAPA_RENUMERACAO_2026-11-06.md).
+
+| ID | Título | Arquivo |
+|---|---|---|
+| D-277 | D-277 — Ruínas suspensas e passagens do overworld | [D-277-ruinas-suspensas-overworld.md](D-277-ruinas-suspensas-overworld.md) |
+| D-279 | D-279 — Choque de corridas: pulinho para trás e golpes ao mesmo tempo | [D-279-choque-de-corridas-pulinho-e-golpes-simultaneos.md](D-279-choque-de-corridas-pulinho-e-golpes-simultaneos.md) |
+| D-280 | D-280 — O atacante persegue o alvo desenhado; STRIKE com trajetória fixa (restaura D-054) | [D-280-perseguicao-do-visual-e-strike-fixo.md](D-280-perseguicao-do-visual-e-strike-fixo.md) |
+| D-281 | D-281 — Espera de 0,7 s no alvo antes de pular de volta (Moves melee de wind-up 1,5 s) | [D-281-espera-de-0-7-s-antes-do-retorno-no-tackle.md](D-281-espera-de-0-7-s-antes-do-retorno-no-tackle.md) |
+| D-282 | D-282 — Estado de prisão: o idle pós-golpe espera o ataque do outro terminar | [D-282-estado-de-prisao-no-idle-pos-golpe.md](D-282-estado-de-prisao-no-idle-pos-golpe.md) |
+| D-283 | D-283 — O Evade só existe como desvio perfeito, nos últimos 0,25 s do golpe | [D-283-evade-so-perfeito-nos-ultimos-0-25-s.md](D-283-evade-so-perfeito-nos-ultimos-0-25-s.md) |
+| D-284 | D-284 — Contra-ataque pós-desvio perfeito tem wind-up de 0,3 s (instantâneo só para status) | [D-284-contra-ataque-com-wind-up-de-0-3-s.md](D-284-contra-ataque-com-wind-up-de-0-3-s.md) |
+| D-285 | D-285 — A IA levanta o Guard perto do impacto, não no começo do wind-up | [D-285-ia-levanta-o-guard-perto-do-impacto.md](D-285-ia-levanta-o-guard-perto-do-impacto.md) |
+| D-286 | D-286 — Quando o alvo se move durante o golpe, o atacante o alcança deslizando (sem teleporte) | [D-286-contato-sem-teleporte-quando-o-alvo-se-move.md](D-286-contato-sem-teleporte-quando-o-alvo-se-move.md) |
+| D-308 | D-308 — Efeitos de elemento: sempre vídeo (normal e espelhado), quatro fases e padrão de qualidade | [D-308-videos-fases-e-qualidade-dos-efeitos-de-elemento.md](D-308-videos-fases-e-qualidade-dos-efeitos-de-elemento.md) |
+| D-900 | D-900 — Retorno do Hit Shake nos Ataques e Correção do Lançamento de K.O. à Distância | [D-900-retorno-hitshake-e-correcao-lancamento-ko.md](D-900-retorno-hitshake-e-correcao-lancamento-ko.md) |
+| D-901 | D-901 — Efeitos Visuais Físicos de Buffs e Debuffs: Tamanho, Velocidade de Animação e Armadura | [D-901-buffs-escalamento-tamanho-velocidade-e-defesa.md](D-901-buffs-escalamento-tamanho-velocidade-e-defesa.md) |
+| D-902 | D-902 — Limite de Buffs/Debuffs Ampliado para ±5, Acumulação Aditiva Unificada, Cálculo Fracionário e Teto Visual em 3 Stacks | [D-902-limite-de-buffs-5-e-calculo-fracionario.md](D-902-limite-de-buffs-5-e-calculo-fracionario.md) |
+| D-903 | D-903 — Lançamento de K.O. sempre para longe de onde os jogadores estão | [D-903-lancamento-ko-sempre-para-tras.md](D-903-lancamento-ko-sempre-para-tras.md) |
+| D-904 | D-904 — Seleção de Move na pausa de status e buffer de seleção | [D-904-buffer-de-selecao-de-move.md](D-904-buffer-de-selecao-de-move.md) |
+| D-905 | D-905 — Câmera lenta de decisão: 2 s no Fight; Itens continua com 3 s | [D-905-camera-lenta-fight-2s.md](D-905-camera-lenta-fight-2s.md) |
+| D-906 | D-906 — A animação de wind-up fica em loop até o fim do preparo | [D-906-windup-em-loop.md](D-906-windup-em-loop.md) |
+| D-907 | D-907 — Todo desvio perfeito dá contra-ataque de wind-up instantâneo | [D-907-contra-ataque-em-todo-desvio-perfeito.md](D-907-contra-ataque-em-todo-desvio-perfeito.md) |
+| D-908 | D-908 — A velocidade de animação por SPD vale para todos os clipes | [D-908-spd-vale-para-todos-os-clipes.md](D-908-spd-vale-para-todos-os-clipes.md) |
+| D-909 | D-909 — O inimigo lançado encolhe e some ainda no ar | [D-909-ko-encolhe-e-some-no-ar.md](D-909-ko-encolhe-e-some-no-ar.md) |
+| D-910 | D-910 — Correções da auditoria de buffs (D-901/D-902) | [D-910-correcoes-da-auditoria-buffs.md](D-910-correcoes-da-auditoria-buffs.md) |
+| D-911 | D-911 — IA estratégica: variedade de Moves, desvios e reserva de ATB | [D-911-ia-estrategica-e-desvios.md](D-911-ia-estrategica-e-desvios.md) |
+| D-912 | D-912 — Karate Chop e Dragon Claw correm mais devagar | [D-912-karate-chop-e-dragon-claw-mais-lentos.md](D-912-karate-chop-e-dragon-claw-mais-lentos.md) |
+| D-913 | D-913 — VFX dos 4 moves do Abra conforme o protótipo HTML v9 | [D-913-vfx-dos-4-moves-do-abra-prototipo-v9.md](D-913-vfx-dos-4-moves-do-abra-prototipo-v9.md) |
+| D-914 | D-914 — Moves de Fogo: Fire Bullet e Splitter Flames (fichas, escopo visual) | [D-914-moves-fire-bullet-e-splitter-flames.md](D-914-moves-fire-bullet-e-splitter-flames.md) |
+| D-915 | D-915 — Burn: opção 2 (HUD com o dano pendente) e barra de vida em chamas para jogador e aliado | [D-915-burn-opcao-2-barra-de-vida-em-chamas.md](D-915-burn-opcao-2-barra-de-vida-em-chamas.md) |
+| D-916 | D-916 — Burn: regras (primeiro tick, reaplicação, morte) e aplicação pelo Fire Bullet | [D-916-burn-regras-e-aplicacao-pelo-fire-bullet.md](D-916-burn-regras-e-aplicacao-pelo-fire-bullet.md) |
+| D-917 | D-917 — HUD do Burn no jogo (fundo do cartão chamuscado) | [D-917-burn-hud-real.md](D-917-burn-hud-real.md) |
+| D-918 | D-918 — HUD sem logo nem linha de título, sombra básica no lugar do anel ciano e anéis de wind-up mais baixos e centrados | [D-918-hud-sem-textos-sombra-basica-e-aneis-de-windup.md](D-918-hud-sem-textos-sombra-basica-e-aneis-de-windup.md) |
+| D-919 | D-919 — Mach Punch acerta 0,20 s depois de chegar ao alvo (clipe de ataque acelerado) | [D-919-mach-punch-acerta-0-20-s-depois-de-chegar.md](D-919-mach-punch-acerta-0-20-s-depois-de-chegar.md) |
+| D-920 | D-920 — Proposta: evoluir o laboratório de VFX para um compositor de efeitos completos em camadas (PENDENTE, NÃO APROVADA) | [D-920-proposta-compositor-de-efeitos-em-camadas-pendente.md](D-920-proposta-compositor-de-efeitos-em-camadas-pendente.md) |
+| D-921 | D-921 — Overworld 2D com referência visual da arena | [D-921-overworld-2d-referencia-arena.md](D-921-overworld-2d-referencia-arena.md) |
+| D-922 | D-922 — Pokémon Mystery Dungeon como referência do overworld | [D-922-mystery-dungeon-referencia-overworld.md](D-922-mystery-dungeon-referencia-overworld.md) |
+| D-923 | D-923 — Refazer do zero os efeitos de elemento (fogo, água, terra, ar) com qualidade visual extrema | [D-923-refazer-os-efeitos-de-elemento-do-zero.md](D-923-refazer-os-efeitos-de-elemento-do-zero.md) |
+| D-924 | D-924 — Melhorar a capacidade do Motion Composer ANTES de fazer qualquer efeito | [D-924-melhorar-o-motion-composer-antes-de-qualquer-efeito.md](D-924-melhorar-o-motion-composer-antes-de-qualquer-efeito.md) |
+| D-925 | D-925 — Remover seis espécies da Pokédex usável por falta de overworld | [D-925-remover-seis-especies-sem-overworld.md](D-925-remover-seis-especies-sem-overworld.md) |
+| D-926 | D-926 — Hub 2D: base compacta que cresce para vila, com modelo de extração | [D-926-hub-2d-extracao-e-vila-compacta.md](D-926-hub-2d-extracao-e-vila-compacta.md) |
+| D-927 | D-927 — Usar assets 2D de Pokémon Mystery Dungeon (Explorers) no jogo | [D-927-usar-assets-2d-de-mystery-dungeon.md](D-927-usar-assets-2d-de-mystery-dungeon.md) |
+| D-928 | D-928 — Ordem dos assets, tilesets e 24 px por ora | [D-928-ordem-dos-assets-tilesets-e-24px.md](D-928-ordem-dos-assets-tilesets-e-24px.md) |
+| D-929 | D-929 — O Composer precisa de MODELOS 3D dos objetos elementais, não só formas procedurais e texturas | [D-929-composer-precisa-de-modelos-3d-dos-elementos.md](D-929-composer-precisa-de-modelos-3d-dos-elementos.md) |
+| D-930 | D-930 — 24 px no jogo inteiro e cena de teste do hub | [D-930-24px-no-jogo-inteiro-e-cena-de-teste-do-hub.md](D-930-24px-no-jogo-inteiro-e-cena-de-teste-do-hub.md) |
+| D-931 | D-931 — Voltar para 48 px | [D-931-voltar-para-48px.md](D-931-voltar-para-48px.md) |
+| D-932 | D-932 — Importar os Dungeon Tiles do Sky e trocar o atlas procedural | [D-932-dungeon-tiles-do-sky-e-troca-do-atlas.md](D-932-dungeon-tiles-do-sky-e-troca-do-atlas.md) |
+| D-933 | D-933 — Correções e acabamento do protótipo HTML de oito Moves | [D-933-atelier-html-quarks-e-sincronia.md](D-933-atelier-html-quarks-e-sincronia.md) |
+| D-934 | D-934 — Fogo por shader, flipbook e Composer; referências: Persona, Genshin Impact, Pokémon | [D-934-fogo-por-shader-flipbook-e-composer-referencias.md](D-934-fogo-por-shader-flipbook-e-composer-referencias.md) |
+| D-935 | D-935 — Exceção do protocolo para o atelier HTML com Quarks.js | [D-935-excecao-atelier-html-quarks.md](D-935-excecao-atelier-html-quarks.md) |
+| D-936 | D-936 — Oito efeitos do atelier com tamanho fixo no mundo | [D-936-atelier-tamanho-fixo-no-mundo.md](D-936-atelier-tamanho-fixo-no-mundo.md) |
+| D-937 | D-937 — Implementar no Godot os efeitos do atelier.html, um de cada, melhorando com shaders sem arruinar o visual | [D-937-implementar-no-godot-os-efeitos-do-atelier.md](D-937-implementar-no-godot-os-efeitos-do-atelier.md) |
+| D-938 | D-938 — Batalha de teste DQT: modelos 30% menores, personagens centralizados e chão mais largo | [D-938-batalha-dqt-tamanho-posicoes-e-chao.md](D-938-batalha-dqt-tamanho-posicoes-e-chao.md) |
+| D-939 | D-939 — Auditoria extrema e implementação fiel no jogo dos 6 Moves já codados do Atelier HTML (deixando Psychic Cannon e Psycho Orb por último para brainstorm) | [D-939-auditoria-e-fidelidade-6-moves-atelier.md](D-939-auditoria-e-fidelidade-6-moves-atelier.md) |
+| D-940 | D-940 — Inimigos alinhados para a esquerda, 6 entre eles, e chão de largura 60 (todas as batalhas) | [D-940-inimigos-alinhados-a-esquerda-e-chao-60.md](D-940-inimigos-alinhados-a-esquerda-e-chao-60.md) |
+| D-941 | D-941 — Inimigos 20% maiores em todas as batalhas (em vez de trazê-los para perto) | [D-941-inimigos-20-porcento-maiores.md](D-941-inimigos-20-porcento-maiores.md) |
+| D-942 | D-942 — Piscar próprio dos monstros DQT (e regra de olhos do jogo) | [D-942-piscar-proprio-dos-monstros-dqt.md](D-942-piscar-proprio-dos-monstros-dqt.md) |
+| D-943 | D-943 — Cyclops lento: +0,8 s para chegar ao alvo e passo casado com o chão | [D-943-cyclops-lento-mais-0-8s-e-passo-casado.md](D-943-cyclops-lento-mais-0-8s-e-passo-casado.md) |
+| D-944 | D-944 — Orc e Cyclops 1,2× maiores no lado do jogador | [D-944-orc-e-cyclops-1-2x-no-lado-do-jogador.md](D-944-orc-e-cyclops-1-2x-no-lado-do-jogador.md) |
+| D-945 | D-945 — Heal Gain: opção 2 (Persona Kinetic Cross) no jogo, cruzes verdes em flipbook e lado direito limpo | [D-945-heal-gain-opcao-2-cruzes-verdes-flipbook.md](D-945-heal-gain-opcao-2-cruzes-verdes-flipbook.md) |
+| D-946 | D-946 — Câmera do dungeon em 2,3× | [D-946-camera-do-dungeon-em-2-3x.md](D-946-camera-do-dungeon-em-2-3x.md) |
+| D-947 | D-947 — Pipeline de tilesets: medir, validar e testar antes de usar | [D-947-pipeline-de-tilesets-medir-validar-testar.md](D-947-pipeline-de-tilesets-medir-validar-testar.md) |
+| D-948 | D-948 — Terrain nativo e seletor de bioma por andar (Bloco 1) | [D-948-terrain-nativo-e-seletor-de-bioma.md](D-948-terrain-nativo-e-seletor-de-bioma.md) |
+| D-949 | D-949 — Heal Gain acima da ficha, torto por lado e odômetro guardado | [D-949-heal-gain-acima-da-ficha-e-odometro-guardado.md](D-949-heal-gain-acima-da-ficha-e-odometro-guardado.md) |
+| D-950 | D-950 — Piso orgânico com Ground Alt. 1/2 (Bloco 2) | [D-950-piso-organico-ground-alt.md](D-950-piso-organico-ground-alt.md) |
+| D-951 | D-951 — Heal Gain na frente, visível desde o começo, e o atraso correto do ganho | [D-951-heal-gain-na-frente-e-atraso-do-ganho.md](D-951-heal-gain-na-frente-e-atraso-do-ganho.md) |
+| D-952 | D-952 — Parede de 1 tile: strip de dois lados e máscara de 8 vizinhos | [D-952-parede-strip-dois-lados-e-mascara.md](D-952-parede-strip-dois-lados-e-mascara.md) |
