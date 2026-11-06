@@ -2618,4 +2618,32 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 
 - Permanecem pendentes os sistemas de escudos e efeitos por badge, a implementação de Normal, MAG/SPI, o contato e a distância mid-range, tempos e VFX definitivos, os Resources e a validação da engine de Moves. As outras pendências de D-356/D-359 **não** são resolvidas por esta confirmação.
 - **Somente registro documental:** não houve alteração de código, Move, Resource, HUD, VFX, cena, teste ou GDD.
+---
+
+## 85. Rodada 88B — IDs de efeitos, predicados declarativos, ocorrências e integridade de Resources
+
+> **2026-11-06.** O criador aprovou expressamente **1A, 2A, 3A e 4A** na série **Rodada 88B**, sem observações próprias. Registros **D-373–D-376**, conforme D-061. A numeração D-368–D-371 já pertence à **Rodada 89 tradicional**, registrada em §83; não houve renumeração, reescrita nem interferência nela. Somente documentação.
+
+### 85.1 Decisões aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-373](decisoes/D-373-r88b-q1-ids-estaveis-efeitos-edicao-variantes.md) | **1A** | **ID estável em cada efeito** da ficha; variantes **substituem, acrescentam e removem entradas explicitamente**, preservando as demais e sua ordem |
+| [D-374](decisoes/D-374-r88b-q2-condicoes-declarativas-predicados-operadores-logicos.md) | **2A** | **Condições declarativas tipadas**, compostas por **predicados reutilizáveis e operadores lógicos explícitos**, sem scripts arbitrários na ficha |
+| [D-375](decisoes/D-375-r88b-q3-resultados-terminais-ocorrencias-condicionais.md) | **3A** | **Resultado terminal determinístico por ocorrência condicional reservada**: **executada, cancelada ou não acionada**; não acionada **não causa efeito ou consumo de RNG** |
+| [D-376](decisoes/D-376-r88b-q4-resource-visual-invalido-indisponibilidade-pos-migracao.md) | **4A** | Move **já migrado**, com **Resource visual obrigatório ausente ou inválido**, fica **indisponível na nova engine até correção**, com diagnóstico explícito e **sem fallback silencioso** |
+
+### 85.2 Exemplos, limites e compatibilidades
+
+- **Efeitos (D-373):** preservar D-333/D-360 (uma ficha lógica por Move, variantes com substituições explícitas) e D-361 (efeitos tipados e ordenados). Identificação de um **efeito da ficha** não equivale ao **índice de ocorrência mecânica** ou ao **ID de diagnóstico** (D-218/D-222/D-226/D-256/D-266). **Exemplo hipotético:** Splitter Flames modifica apenas efeito/atributos que já diferem entre variantes, sem alterar os demais. A posição de nova entrada e regras de conflito de mesclagem não foram aprovadas.
+- **Condições (D-374):** as fichas declaram predicados tipados e operadores lógicos, sem scripts arbitrários. Preservar D-340/D-361 e herança de seleção, facção e abrangência (D-260). **Nenhum catálogo de predicados, operador concreto, política de curto-circuito ou novo consumo de RNG foi escolhido.**
+- **Ocorrências (D-375):** cada ocorrência condicional validamente reservada na declaração termina como executada, cancelada ou não acionada. **Mera reserva ou não acionamento não cria efeito ou RNG**. Excedentes rejeitados **não recebem índices válidos** e continuam com diagnóstico separado (D-242/D-252/D-256/D-266). Preservar eventos e interrupções D-362/D-363.
+- **Visual inválido pós-migração (D-376):** não confundir com D-350, que **impede aprovar a migração**. A partir da migração concluída, falha do visual **obrigatório** torna o Move indisponível na **nova engine**, explicitamente diagnosticado e sem fallback silencioso. **Não foram aprovadas novas regras específicas de UI, IA, custos, revalidação automática ou visuais opcionais.** Preservar D-235 em todos os casos.
+
+### 85.3 Referência incorreta identificada e pendências
+
+- **D-363 não foi alterada:** em sua primeira regra, a referência **D-358** aparece como contrato de correlação de eventos, mas **D-358 trata do mid-range/recuo da Drain Spear**. O contrato de **eventos estruturados e correlação** está na **D-362**. Trata-se de referência documental incorreta, **identificada mas não corrigida** por pedido expresso; não alterar a regra substantiva nem o histórico.
+- **Pendente:** representação/mesclagem/posição de efeitos, predicados e semântica de avaliação, registro técnico do resultado terminal, momento/diagnóstico de detecção visual inválida em runtime e regras de seleção/IA aplicáveis; não inventar limiares, classes de Resource ou Move piloto.
+- **Preservações:** Rodada 89 tradicional (§83, D-368–D-371), complemento específico de Badge Steal (§84, D-372), Drain Spear/Badge Steal (D-356–D-359), D-235 e D-333–D-363, a divergência histórica de LUK na Rodada 60 (GDD §12.13), e o descompasso técnico já documentado entre planejamento após Windup e reserva na declaração da D-226.
+- **Escopo:** quatro D novos, índice, este consolidado e adendo do GDD. **Nenhum código, Resource, Move operacional, IA, HUD, cena, asset, VFX ou teste alterado; testes Godot não executados.**
 

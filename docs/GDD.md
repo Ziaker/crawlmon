@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.70 — Rodada 89: itens segurados, evolução, buff badges de chefes e dungeons opcionais (2026-11-06); histórico preservado.  
+> **Revisão:** 1.71 — Rodada 88B: IDs estáveis de efeitos, condições tipadas, estados de ocorrências e indisponibilidade pós-migração (2026-11-06); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1776,6 +1776,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.70 | 2026-11-06 | Rodada 89: um item segurado por Pokémon; escolha entre evoluções elegíveis na evolução voluntária; regra própria rejeita poder reforçado de chefe salvo buff badges permanentes removíveis em combate, sem decidir persistência após recrutamento; dungeon opcional descoberta permanece acessível para expedições procedurais renovadas. D-368–D-371. | Rodada 89 registrada / Rodada 90 proposta |
 
+| 1.71 | 2026-11-06 | Rodada 88B: efeitos com IDs estáveis e edições explícitas por variante; condições tipadas com predicados e operadores declarativos; resultado terminal de cada ocorrência condicional reservada, sem RNG por não acionamento; Move migrado com Resource visual obrigatório inválido fica indisponível na nova engine, com diagnóstico e sem fallback silencioso. D-373–D-376. | Rodada 88B registrada / Rodada 89B proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2484,4 +2486,23 @@ A engine deverá **demonstrar por validação e testes reproduzíveis** que even
 **Exemplos e compatibilidades:** item segurado de ativação automática ocupa o mesmo único slot de item passivo, sem alterar o limite de inventário (GDD R28-Q2/R35-Q3); entre formas evoluídas com requisitos cumpridos, o jogador escolhe durante evolução voluntária em local seguro/intervalo (D-353); chefe não ganha atributos reforçados apenas por ser chefe, mas pode ter **buff badge permanente removível em combate** se concretamente definida, preservando IA estratégica de D-328 e os requisitos de recrutamento D-347/D-365; uma dungeon opcional desbloqueada pode ser selecionada de novo na campanha e sua porção procedural pode variar por expedição (D-330/D-367), mantendo seed reproduzível sob as condições de GDD R8-Q3.
 
 **Limitações e conflitos:** nenhum item, forma evoluída, buff badge, chefe ou dungeon real foi criado. **Não foi definido** se buff badges de chefes permanecem após recrutamento, como são removidas, seus números/duração ou funcionamento em outros encontros; D-359 sobre Badge Steal preserva suas próprias condições. As escolhas não criam bônus oculto nem determinam atributos alternativos de chefes recrutados. D-235 mantém a independência de Moves/VFX; a divergência textual histórica sobre LUK da Rodada 60 (GDD §12.13) permanece sem resolução. **Somente documentação; nenhum código, Move, ficha, IA, HUD, cena, asset, teste ou VFX alterado.**
+
+### 12.46 Rodada 88B — identidade de efeitos, condições declarativas, ocorrências e falha visual pós-migração (revisão 1.71)
+
+> **2026-11-06.** Escolhas expressas **1A, 2A, 3A e 4A** na **Rodada 88B**, sem observações adicionais. Registros **D-373 a D-376**, consolidados em **§84** de `docs/REGRAS_DO_JOGO.md`. **D-368–D-371 pertencem à Rodada 89 tradicional (adendo 12.45) e não foram alteradas. D-372 documenta exclusivamente Badge Steal, já consolidada em §84, e também permanece inalterada.** Este adendo preserva o histórico e **D-001 mantém o GDD não normativo para resolução de combate**.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R88B-Q1 | **1A** | Cada **entrada de efeito possui ID estável**; a variante substitui, acrescenta ou remove explicitamente efeitos, preservando demais entradas e ordem | [D-373](decisoes/D-373-r88b-q1-ids-estaveis-efeitos-edicao-variantes.md) |
+| R88B-Q2 | **2A** | **Condições declarativas tipadas** com **predicados reutilizáveis e operadores lógicos explícitos**, sem scripts arbitrários na ficha | [D-374](decisoes/D-374-r88b-q2-condicoes-declarativas-predicados-operadores-logicos.md) |
+| R88B-Q3 | **3A** | **Resultado terminal determinístico** para cada ocorrência condicional reservada: **executada, cancelada ou não acionada**; a não ativação não produz efeito nem consumo de RNG | [D-375](decisoes/D-375-r88b-q3-resultados-terminais-ocorrencias-condicionais.md) |
+| R88B-Q4 | **4A** | Move **já migrado** com visual obrigatório ausente/inválido fica **indisponível na nova engine** até correção, com diagnóstico e **sem fallback silencioso** | [D-376](decisoes/D-376-r88b-q4-resource-visual-invalido-indisponibilidade-pos-migracao.md) |
+
+**Contratos preservados:** D-333/D-339–D-343/D-348–D-351/D-360–D-363 estabelecem uma ficha lógica por Move, Resources separados por mecânica/visual, interpretação genérica e efeitos tipados/ordenados, variantes com diferenças explícitas, plano mecânico autoritativo, eventos estruturados e cancelamento explícito. IDs de **efeito**, **ocorrência planejada** e **solicitação excedente** são distintos (D-218/D-222/D-226/D-256/D-266). O status **não acionada** não implica evento mecânico, efeito ou RNG. D-350 impede aprovar migração inválida; D-376 determina indisponibilidade **de Move já migrado** na nova engine. Não introduzir política de consumo, IA/UI ou fallback não aprovada. D-235 mantém independência de personagem, lado e anatomia.
+
+**Exemplos não normativos:** Splitter Flames declara apenas as diferenças realmente aprovadas de efeitos por variante; uma ocorrência A#2 reservada que não ocorra conserva seu índice e recebe estado final, sem impacto; um Move já migrado com referência obrigatória de VFX inválida não executa na engine nova até correção. Nenhum desses exemplos aprova novos Moves, parâmetros ou visuais.
+
+**Inconsistência editorial identificada, não corrigida:** a **D-363** cita a **D-358** como contrato de correlação de eventos, embora a D-358 trate da distância/recuo da Drain Spear. O contrato de eventos estruturados é a **D-362**. **A D-363 não foi editada**, conforme solicitado.
+
+**Pendências e escopo:** faltam mesclagem de arrays, política de inserção, tipos e avaliação de predicados, formato técnico de registros terminais, tratamento de erro visual em runtime/seleção/IA e testes concretos da engine. A divergência de planejamento legado posterior ao Windup versus a D-226 e o conflito histórico da Rodada 60 sobre LUK (GDD §12.13) continuam sem resolução. **Somente documentação; sem alterações de código, Resources, testes, VFX, IA, HUD, cenas ou assets; nenhum teste de gameplay executado.**
 
