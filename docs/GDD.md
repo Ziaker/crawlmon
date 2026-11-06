@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.66 — Rodada 86B: autoridade mecânica, integridade de Resources, bloqueio de aprovação de migração e testes de sincronia (2026-11-06); histórico preservado.  
+> **Revisão:** 1.67 — Rodada 87: Drain HP/MP, evolução, áreas de risco e hub (2026-11-06); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1768,6 +1768,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.66 | 2026-11-06 | Rodada 86B (engine): plano mecânico autoritativo de eventos e tempos; Resources mecânico/visual vinculados por ID estável com validação de variantes e gatilhos; visual obrigatório ausente/incompatível bloqueia aprovação da migração; testes automatizados e integração visual em interrupções, variantes, lados e anatomias. D-348–D-351. | Rodada 86B fechada / Rodada 87B proposta |
 
+| 1.67 | 2026-11-06 | Rodada 87: regra própria de Drain (HP ou MP no valor do dano que seria sofrido; ambos só se Move específico declarar), evolução voluntária em local seguro ou entre expedições, áreas opcionais com confrontos/risco-recompensa e hub central de equipe, Moves, treino, comércio e narrativa. D-352–D-355. | Rodada 87 fechada / Rodada 88 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2414,4 +2416,19 @@ A engine deverá **demonstrar por validação e testes reproduzíveis** que even
 **Auditoria estática do código:** na `main` `28816628d8a96489329369dd6740c0ffec88e877`, `scripts/combat/battle.gd` possui sinais `attack_resolved`, `attack_phase` e `attack_interrupted`, mas chama `AttackPlanner.plan(inc)` após Windup; a D-226 exige reservas de ocorrências condicionais já na declaração. **Não corrigir essa diferença sem autorização; o novo contrato deve respeitar a decisão normativa**. `BattleTrace` registra sinais e certas discrepâncias espaciais, mas não equivale a validar os dois Resources da engine nova. As baterias aprovadas em D-351 **ainda precisam ser implementadas e executadas**.
 
 **Estado real e pendências:** nenhum Resource, adaptador de eventos, validador, Move ou teste da engine foi implementado nesta rodada; nenhum teste Godot rodado. A representatividade estatística de VIT/SPI, regras da Rodada 86 tradicional e divergência de LUK da Rodada 60 (GDD §12.13) permanecem sem alteração. **Somente documentação: quatro novos registros D, índice, consolidado e adendo do GDD; sem modificar código, testes, VFX, IA, HUD, cena ou assets.**
+
+### 12.42 Rodada 87 — Drain HP/MP, evolução em local seguro, desafios opcionais e hub (revisão 1.67)
+
+> **2026-11-06.** Resposta literal do criador: **“sigo suas recomendacoes exceto a primeira, Drain pode ser de MP ou de HP, recebendo o dano que sofreria em HP ou MP no lugar, nao pode ter um drain que tome ambos exceto se for um move especifico que permita isso”**. Resultam decisões **1D (regra própria), 2B, 3C e 4A** do formulário visual da Rodada 87. Registros individuais **D-352–D-355** e consolidação **§79** de `docs/REGRAS_DO_JOGO.md`. Adendo histórico conforme D-061; **D-001 mantém o GDD não normativo para combate**.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R87-Q1 | **1D própria** | **Drain recupera em HP ou MP o valor do dano que seria sofrido**; **recuperar ambos é proibido por padrão**, salvo **autorização expressa de Move específico** | [D-352](decisoes/D-352-r87-q1-drain-hp-ou-mp-valor-dano-excecao-move.md) |
+| R87-Q2 | **2B** | **Evolução voluntária somente em locais seguros de preparação ou entre expedições**, após cumprir requisitos | [D-353](decisoes/D-353-r87-q2-evolucao-voluntaria-em-locais-seguros-ou-entre-expedicoes.md) |
+| R87-Q3 | **3C** | **Áreas opcionais de alto risco** combinam **combates difíceis** e **decisões de risco/recompensa**, variando por área | [D-354](decisoes/D-354-r87-q3-areas-alto-risco-combate-e-escolhas-recompensa.md) |
+| R87-Q4 | **4A** | **Hub central entre expedições** com equipe/reserva, Moves, treinamento, comércio e NPCs narrativos | [D-355](decisoes/D-355-r87-q4-hub-central-equipe-moves-treino-comercio-narrativa.md) |
+
+**Exemplos somente para entendimento:** dano hipotético 30 absorvido por Drain **HP** concede 30 HP, ou por Drain **MP** concede 30 MP — **não ambos**, salvo exceção de Move específico; um Pokémon elegível para evoluir só executa a evolução ao acessar preparação segura ou intervalo entre expedições; áreas opcionais podem propor combate forte ou gasto voluntário de recursos em troca de prêmio; no hub o jogador poderá reorganizar equipe, preparar Moves, treinar, comerciar e conversar com NPCs.
+
+**Limites:** o cálculo exato do dano de referência para Drain, máximo de HP/MP, escudos/status, AoE/multi-hit e extensão de uma exceção dupla permanecem pendentes; a decisão não atribui Drain a espécie real nem cria Move excepcional. Locais exatos de evolução, áreas de risco, acesso/serviços e interface de hub também não foram escolhidos. R25-Q3 mantém evolução por escolha, D-275/D-329 preservam preparação restrita, GDD R26-Q5/R34-Q2 mantêm salas e eventos opcionais sem foco obrigatório em armadilhas, R29-Q1 preserva comércio também nas dungeons. As decisões de engine **D-348–D-351** e a divergência histórica LUK R60 (§12.13) permanecem preservadas. **Somente documentação, sem modificar código, Resources, Move, IA, HUD, cenas, VFX ou testes; nenhum teste de gameplay executado.**
 

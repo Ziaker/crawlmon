@@ -2446,3 +2446,34 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Histórico preservado:** D-344–D-347 (Rodada 86 de gameplay), conflito de LUK da Rodada 60 (GDD §12.13) e demais pendências anteriores, sem conciliação unilateral.
 - **Somente documentação:** quatro decisões novas, índice, esta seção do consolidado e adendo GDD. **Nenhum código, Move executável, Resource, teste, VFX, IA, HUD, cena, rig ou asset modificado; nenhum teste de gameplay executado.**
 
+---
+
+## 79. Rodada 87 — Drain HP/MP, evolução em preparação, exploração arriscada e hub central
+
+> **2026-11-06.** O criador declarou que segue as recomendações **exceto a primeira**, definindo **regra própria para Drain**. Resultado: **1D (regra própria), 2B, 3C, 4A**, conforme as alternativas apresentadas no questionário visual. Decisões individuais **D-352–D-355**, registradas conforme D-061. Preservar D-344–D-351, inclusive a série paralela de engine (D-348–D-351). Somente documentação.
+
+### 79.1 Regras aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-352](decisoes/D-352-r87-q1-drain-hp-ou-mp-valor-dano-excecao-move.md) | **1D própria** | **Drain converte em recuperação de HP ou MP o dano que o defensor sofreria**. **Não recupera ambos por padrão**; apenas **Move específico** que permita expressamente pode conceder ambos |
+| [D-353](decisoes/D-353-r87-q2-evolucao-voluntaria-em-locais-seguros-ou-entre-expedicoes.md) | **2B** | Evolução **voluntária** após cumprir requisitos, **somente em locais seguros de preparação ou entre expedições** |
+| [D-354](decisoes/D-354-r87-q3-areas-alto-risco-combate-e-escolhas-recompensa.md) | **3C** | Áreas opcionais de alto risco **combinam confrontos difíceis e escolhas voluntárias de risco/recompensa**, variando conforme sala e dungeon |
+| [D-355](decisoes/D-355-r87-q4-hub-central-equipe-moves-treino-comercio-narrativa.md) | **4A** | Hub central entre expedições com **equipe/reserva, Moves, treinamento, comércio e NPCs narrativos**, sem excluir serviços ou comerciantes nas dungeons |
+
+### 79.2 Exemplos, precedências e limites de interpretação
+
+- **Drain (D-352):** contra um dano hipotético de **30**, se o defensor possuir Drain **HP**, recebe **30 HP** no lugar do dano; com Drain **MP**, recebe **30 MP**. **Não recebe HP e MP simultaneamente** salvo por **exceção explicitamente permitida na ficha de um Move específico**. Preservar D-276/D-128 (afinidades por espécie), D-344 (Repel é mecânica distinta) e D-235 (Moves genéricos, qualquer lado). **Não definir** automaticamente fórmula do dano hipotético frente a críticos/mitigação/escudos, cap dos recursos, elegibilidade contra AoE ou execução simultânea de ambos em Move excepcional. O usuário não aprovou um Drain de HP+MP como afinidade básica de espécie.
+- **Evolução (D-353):** preservar **GDD R25-Q3**, em que jogador decide quando evoluir após satisfazer requisitos. Acrescentar **apenas a restrição de momento/local** da alternativa 2B. Preservar D-275/D-329 como diretrizes de preparação restrita, **sem equiparar automaticamente todos os locais seguros** nem atribuir efeitos de evolução não escolhidos.
+- **Exploração (D-354):** passagens laterais, salas ou áreas opcionais podem apresentar confrontos duros, decisões de arriscar recursos e recompensas diferenciadas. Preservar **GDD R26-Q5/R34-Q2**: salas secretas opcionais não bloqueiam progressão principal, foco em encontros/eventos/narrativas, não em armadilhas/enigmas compulsórios. D-346 continua priorizando Moves/builds em **dungeons opcionais**, sem aplicar obrigação universal a toda sala.
+- **Hub (D-355):** centraliza equipe/reserva, Moves, treinamento, comércio e NPCs narrativos **entre expedições**. Preservar GDD **R25-Q2** como intenção histórica, D-275/D-329 (organização em locais seguros ou intervalos; hub não necessariamente exclusivo), **R28-Q1/R29-Q1** (lojas/comércio também nas dungeons), **R33-Q2** (treino de reservados fora de expedições) e D-330 (narrativa principal).
+
+### 79.3 Pendências e escopo
+
+- **Drain:** fichas/afinidades concretas HP ou MP, cálculo exato do dano hipotético, limite de recuperação, interação com escudos/status, regras de Move que excepcionalmente permita ambos.
+- **Evolução:** locais seguros concretos, requisitos por espécie, efeitos de evolução e interface.
+- **Áreas de risco:** frequência, sinalização, tabelas de encontros/recompensas, valores e critérios concretos.
+- **Hub:** localização, forma, NPCs, custos, catálogo, acesso e estrutura visual não definidos.
+- **Histórico:** D-348–D-351 da engine e testes obrigatórios são preservados; nenhum Move foi migrado por esta documentação. Permanecem as pendências anteriores e a divergência histórica de LUK da Rodada 60 (GDD §12.13).
+- **Somente documentação:** quatro decisões individuais, índice, consolidação e adendo GDD. **Nenhum código, Resource, Move, ficha operacional, IA, HUD, cena, VFX, asset ou teste alterado. Nenhum teste Godot ou gameplay executado.**
+
