@@ -176,8 +176,9 @@ func _spawn_items(spots: Array[Dictionary]) -> void:
 ## Coleta automática (D-033): soma a Poção ao inventário e registra no GameState
 ## para ela não reaparecer ao voltar de uma batalha.
 func _on_item_collected(pickup) -> void:
+	if not GameState.add_item(DungeonPickupClass.ITEM_ID):
+		return
 	GameState.dungeon_items_collected.append(pickup.id)
-	GameState.add_item(DungeonPickupClass.ITEM_ID)
 
 
 ## Cardinal pathfinding grid: walls and NPCs are solid, everything else is
