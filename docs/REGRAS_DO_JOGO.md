@@ -2716,3 +2716,35 @@ As regras completas de cada item ficam no arquivo da decisão; esta lista é o �
 - [D-950 — Piso orgânico com Ground Alt. 1/2 (Bloco 2)](decisoes/D-950-piso-organico-ground-alt.md)
 - [D-951 — Heal Gain na frente, visível desde o começo, e o atraso correto do ganho](decisoes/D-951-heal-gain-na-frente-e-atraso-do-ganho.md)
 - [D-952 — Parede de 1 tile: strip de dois lados e máscara de 8 vizinhos](decisoes/D-952-parede-strip-dois-lados-e-mascara.md)
+
+---
+
+## 86. Rodada 89B — âncoras de efeitos, tempo das condições, validação agregada e fluxo de eventos
+
+> **2026-11-06.** O criador aprovou expressamente **1A, 2A, 3A e 4A** da **Rodada 89B**, série sobre contratos internos e validação da engine de Moves, sem observações próprias. Decisões **D-953 a D-956** registradas conforme D-061, sem implementação. O índice já preserva as decisões de outras sessões, incluindo D-900–D-952; não renumerar ou reescrever nenhum histórico.
+
+### 86.1 Regras aprovadas
+
+| Documento | Escolha | Contrato |
+|---|---|---|
+| [D-953](decisoes/D-953-r89b-q1-insercao-efeitos-ancora-id-antes-depois.md) | **1A** | Ao adicionar efeito em variante, **referenciar ID estável de outro efeito e indicar antes/depois**; âncora inexistente **impede validar** a variante, preservando a ordem dos demais |
+| [D-954](decisoes/D-954-r89b-q2-condicoes-avaliadas-no-instante-mecanico.md) | **2A** | **Avaliar cada condição no instante mecânico do seu efeito**, sobre o estado autoritativo desse instante; **preservar o resultado para rastreabilidade** e **não reavaliar pelo VFX** |
+| [D-955](decisoes/D-955-r89b-q3-validacao-agregada-ids-referencias-tipos.md) | **3A** | **Rejeitar** configurações com IDs de efeitos **duplicados no mesmo escopo**, referências inválidas ou parâmetros incompatíveis com tipos; **relatar juntos os erros detectados, sem correção automática** |
+| [D-956](decisoes/D-956-r89b-q4-fluxo-deterministico-eventos-consumidores-independentes.md) | **4A** | Transmitir eventos mecânicos **estruturados em fluxo determinístico**, observando as **prioridades já aprovadas**, para **consumidores independentes de VFX e rastreamento**, sem alterar resolução mecânica |
+
+### 86.2 Interpretação e preservação dos contratos anteriores
+
+- **Variantes/efeitos:** D-333/D-360/D-361/D-373 exigem ficha lógica única, efeitos tipados e ordenados e apenas as diferenças explícitas da variante. D-953 completa **somente a posição de inserção** mediante uma referência a outro efeito. **Exemplo abstrato:** A,B,C + "D antes de B" resulta A,D,B,C; efeito âncora inexistente impede validação, sem fallback de posição e sem criar um efeito concreto.
+- **Condições:** D-374 aprova predicados e operadores lógicos declarativos, D-954 delimita **quando avaliar**; D-348/D-362 reservam autoridade mecânica de eventos/tempos. O **resultado da condição** é rastreável e distinto do **resultado terminal da ocorrência** da D-375. Não modificar chances, elegibilidade, prioridade de status, esquiva, consumo de RNG ou fases já aprovadas.
+- **Validação:** D-955 exige diagnóstico agregado de erros estruturais já detectados, preservando D-255/D-265 (omissões previamente aprovadas), D-349 (consistência entre Resources), D-350/D-376 (configuração visual inválida antes/depois da migração), e D-235 (neutralidade de personagem e lado). Não renumerar IDs nem ajustar tipos sem autorização.
+- **Eventos:** D-956 reaproveita o contrato mínimo estruturado D-362 e a autoridade temporal D-348; consumidores VFX/rastreamento não resolvem novamente golpes. A ordem respeita **prioridades e critérios de desempate já normativos**; não criar ordenação nova, política de entrega, deduplicação, serialização ou relógio paralelo.
+- **Escopos de identidade distintos:** ID de efeito na ficha, ID de Move, declaração, índice de ocorrência mecânica e identificador de diagnóstico de excesso não são intercambiáveis (D-218/D-222/D-226/D-256/D-266). D-375 preserva ocorrências condicionais não acionadas sem evento/consumo de RNG somente por terem sido reservadas.
+
+### 86.3 Pendências, divergências e integridade histórica
+
+- **Pendentes:** múltiplas inserções na mesma âncora, âncora também removida, representação dos predicados e resultado de avaliação, esquema/versão dos Resources, momento da validação, IDs/tipo de evento individuais, distribuição de eventos e idempotência, e casos concretos de teste.
+- **Código/design:** o sistema legado ainda não foi comprovado compatível com a reserva de ocorrências na declaração (D-226 versus planejamento posterior ao Windup). Nenhum código alterado para reconciliar.
+- **Referência documental incorreta preservada:** D-363 remete a D-358 para a correlação dos eventos, embora o contrato esteja em **D-362**. Não reescrever D-363 sem autorização; este registro não introduz nova regra.
+- **Histórico:** preservar D-001/D-061/D-235, as séries B anteriores (D-331–D-376), D-372 (Badge Steal), os registros locais renumerados D-900–D-952, divergência histórica de LUK da Rodada 60 no GDD §12.13 e todo conteúdo não solicitado.
+- **Escopo:** quatro D novos, índice, este adendo ao consolidado e adendo do GDD. **Nenhum código, Resource, Move operacional, IA, HUD, VFX, cena, asset ou teste modificado; nenhum teste Godot executado.**
+

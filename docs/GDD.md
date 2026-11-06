@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.71 — Rodada 88B: IDs estáveis de efeitos, condições tipadas, estados de ocorrências e indisponibilidade pós-migração (2026-11-06); histórico preservado.  
+> **Revisão:** 1.72 — Rodada 89B: âncoras de efeitos, avaliação temporal de condições, validação agregada e fluxo determinístico de eventos (2026-11-06); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1778,6 +1778,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.71 | 2026-11-06 | Rodada 88B: efeitos com IDs estáveis e edições explícitas por variante; condições tipadas com predicados e operadores declarativos; resultado terminal de cada ocorrência condicional reservada, sem RNG por não acionamento; Move migrado com Resource visual obrigatório inválido fica indisponível na nova engine, com diagnóstico e sem fallback silencioso. D-373–D-376. | Rodada 88B registrada / Rodada 89B proposta |
 
+| 1.72 | 2026-11-06 | Rodada 89B: inserção de efeitos em variantes por âncora de ID e antes/depois; condições avaliadas no instante mecânico próprio com resultado rastreável; rejeição e diagnóstico agregado de IDs/referências/tipos inválidos sem correção automática; eventos estruturados em fluxo determinístico para consumidores VFX/diagnóstico independentes. D-953–D-956. | Rodada 89B fechada / Rodada 90B proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2505,4 +2507,21 @@ A engine deverá **demonstrar por validação e testes reproduzíveis** que even
 **Inconsistência editorial identificada, não corrigida:** a **D-363** cita a **D-358** como contrato de correlação de eventos, embora a D-358 trate da distância/recuo da Drain Spear. O contrato de eventos estruturados é a **D-362**. **A D-363 não foi editada**, conforme solicitado.
 
 **Pendências e escopo:** faltam mesclagem de arrays, política de inserção, tipos e avaliação de predicados, formato técnico de registros terminais, tratamento de erro visual em runtime/seleção/IA e testes concretos da engine. A divergência de planejamento legado posterior ao Windup versus a D-226 e o conflito histórico da Rodada 60 sobre LUK (GDD §12.13) continuam sem resolução. **Somente documentação; sem alterações de código, Resources, testes, VFX, IA, HUD, cenas ou assets; nenhum teste de gameplay executado.**
+
+### 12.47 Rodada 89B — mesclagem de efeitos, avaliação de condições, validação e eventos da engine (revisão 1.72)
+
+> **2026-11-06.** As alternativas **1A, 2A, 3A e 4A** da Rodada 89B foram aprovadas expressamente sem observações adicionais. Registros **D-953–D-956** e consolidado **§86**. A numeração atual preserva decisões das outras sessões até D-952. A atualização é aditiva e documental; D-001 continua determinando as fontes normativas para resolução de combate.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R89B-Q1 | **1A** | Inserções de efeitos por **ID estável de efeito âncora**, **antes/depois** explícito; âncora inexistente invalida a variante, preservada ordem dos demais | [D-953](decisoes/D-953-r89b-q1-insercao-efeitos-ancora-id-antes-depois.md) |
+| R89B-Q2 | **2A** | Condição avaliada **no instante mecânico do efeito** sobre estado autoritativo; resultado rastreável e sem reavaliação pelo VFX | [D-954](decisoes/D-954-r89b-q2-condicoes-avaliadas-no-instante-mecanico.md) |
+| R89B-Q3 | **3A** | Rejeitar configurações com **IDs de efeitos duplicados no escopo, referências inválidas ou parâmetros incompatíveis**, comunicando erros detectados **conjuntamente, sem autocorreção** | [D-955](decisoes/D-955-r89b-q3-validacao-agregada-ids-referencias-tipos.md) |
+| R89B-Q4 | **4A** | Eventos mecânicos estruturados distribuídos por **fluxo determinístico** conforme **prioridades existentes**, com consumidores independentes VFX/rastreamento e sem interferência na resolução | [D-956](decisoes/D-956-r89b-q4-fluxo-deterministico-eventos-consumidores-independentes.md) |
+
+**Compatibilidade:** D-333/D-339–D-343/D-348–D-351/D-360–D-363/D-373–D-376 permanecem aprovadas como requisitos arquiteturais, **não como funcionalidades já implementadas**. O mecanismo de inserção D-953 complementa as variantes D-360/D-373; a avaliação temporal D-954 respeita o plano mecânico D-348 e não cria RNG; D-955 complementa diagnósticos de configuração sem ampliar silenciosamente custo de ações/IA; D-956 não estabelece novas prioridades mecânicas. D-235 continua exigindo neutralidade de personagem, lado, anatomia e posição.
+
+**Exemplos abstratos, sem aprovar novos efeitos:** com efeitos A,B,C, variante com D antes de B preserva A,D,B,C; um predicado relacionado à interrupção é avaliado no instante mecânico aprovado para seu efeito, não no relógio visual; um impacto do plano produz um evento com identidade/tempo que pode ser consultado por VFX e rastreamento sem reaplicar o golpe.
+
+**Pendências:** IDs e tipos concretos, semântica de múltiplas inserções conflitantes, predicados/operadores concretos, formato de resultado de condição, integração dos Resources e distribuição de eventos, testes e tolerâncias. A divergência entre planejamento legado posterior ao Windup e D-226 (reserva na declaração) segue aberta. A referência incorreta da D-363 à D-358 é reconhecida, mas não corrigida; referência apropriada é D-362. Conflito histórico de LUK da Rodada 60 (§12.13) preservado. **Somente documentos; nenhum código, Resource, Move, IA, HUD, VFX, cena, asset ou teste modificado, e nenhum teste Godot realizado.**
 

@@ -491,3 +491,7 @@ As decisões locais que colidiam com IDs do `origin/main` foram renumeradas para
 | D-950 | D-950 — Piso orgânico com Ground Alt. 1/2 (Bloco 2) | [D-950-piso-organico-ground-alt.md](D-950-piso-organico-ground-alt.md) |
 | D-951 | D-951 — Heal Gain na frente, visível desde o começo, e o atraso correto do ganho | [D-951-heal-gain-na-frente-e-atraso-do-ganho.md](D-951-heal-gain-na-frente-e-atraso-do-ganho.md) |
 | D-952 | D-952 — Parede de 1 tile: strip de dois lados e máscara de 8 vizinhos | [D-952-parede-strip-dois-lados-e-mascara.md](D-952-parede-strip-dois-lados-e-mascara.md) |
+| D-953 | D-953 — R89B Q1A: efeito novo ancorado por ID estável antes/depois, sem reordenar demais | [D-953-r89b-q1-insercao-efeitos-ancora-id-antes-depois.md](D-953-r89b-q1-insercao-efeitos-ancora-id-antes-depois.md) |
+| D-954 | D-954 — R89B Q2A: avaliar condições no instante mecânico do efeito e preservar resultado rastreável | [D-954-r89b-q2-condicoes-avaliadas-no-instante-mecanico.md](D-954-r89b-q2-condicoes-avaliadas-no-instante-mecanico.md) |
+| D-955 | D-955 — R89B Q3A: rejeitar IDs/referências/tipos inválidos, relatar todos os erros detectados sem correções automáticas | [D-955-r89b-q3-validacao-agregada-ids-referencias-tipos.md](D-955-r89b-q3-validacao-agregada-ids-referencias-tipos.md) |
+| D-956 | D-956 — R89B Q4A: fluxo determinístico de eventos estruturados, consumidores VFX/diagnóstico independentes | [D-956-r89b-q4-fluxo-deterministico-eventos-consumidores-independentes.md](D-956-r89b-q4-fluxo-deterministico-eventos-consumidores-independentes.md) |
