@@ -149,8 +149,8 @@ As imagens vão para `scratch/tilesets/<nome>_catalog.png`, `_room.png` e
 - O occluder é ciente da face: o centro do piso não escureceu; a massa de
   parede ficou um pouco mais escura (efeito desejado). O
   `check_occluder_brightness.py` guarda a baseline das 10 seeds (51,1–68,5).
-- A aprovação do Temporal está **pendente** depois da mudança de 28 para 30
-  tiles; revise a folha de componentes e rode `--approve` de novo.
+- A aprovação do Temporal foi **gravada** em 2026-11-06 (30 tiles, 5+5% Wall Alt);
+  o build não avisa mais que falta aprovação.
 - 16 capturas de sala em `scratch/tilesets/`; contato em
   `docs/referencias/tilesets/biomes_contact.png`.
 - O **seletor de bioma** (`scripts/dungeon/biome_selector.gd`) usa o

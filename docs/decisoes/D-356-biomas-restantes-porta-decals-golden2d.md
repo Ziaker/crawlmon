@@ -19,7 +19,7 @@ E, depois da lista:
 3. **Porta no laboratório:** um corredor de 1 tile atravessa a parede esquerda (`DOOR_CELLS`), mostrando wall tip + borda de chão juntos. A sala antiga não tinha porta.
 4. **Decals exatos por andar:** o mapa de decals é pré-computado com alvo **4% + 4%**, shuffle determinístico e exclusão de 1 tile. Medição em 10 seeds: **8,1% totais**, **0 pares adjacentes** (antes variava 6,4–11,5%).
 5. **Golden 2D + occluder medido:** o golden agora compara também 2D (corr 0,61; MAE2D 0,65) e o `check_occluder_brightness.py` usa uma baseline por seed. Medição: centro do piso 51,1–68,5; qualquer mudança >12% falha.
-6. **Sintonia do Wall Alt:** o laboratório captura **0+0%, 2+3%, 5+5% e 7+8%** (`tileset_lab_alt_*.png`); o jogo mantém 5+5% até o criador escolher outro valor.
+6. **Sintonia do Wall Alt:** o laboratório captura **0+0%, 2+3%, 5+5% e 7+8%** (`tileset_lab_alt_*.png`); o jogo mantém **5+5%** como padrão aprovado em 2026-11-06. As outras três variantes ficam para ajuste manual.
 
 ## O que foi investigado e não mudou
 
@@ -31,4 +31,4 @@ E, depois da lista:
 
 ## Estado
 
-Implementado e testado: fallback dos 12 perfis (murky_forest 0 divergências), 16 capturas de bioma, porta no lab, decals 8,1% sem adjacentes, golden 2D OK, baseline de occluder OK, 4 variantes de Wall Alt, benchmark 44–69 ms. A folha ativa continua com **30 tiles** e o gate do Temporal segue **pendente** até o criador revisar a folha de componentes e os 16 biomas. Nada foi commitado ou publicado.
+Implementado e testado: fallback dos 12 perfis (murky_forest 0 divergências), 16 capturas de bioma, porta no lab, decals 8,1% sem adjacentes, golden 2D OK, baseline de occluder OK, 4 variantes de Wall Alt, benchmark 44-69 ms. A folha ativa continua com **30 tiles** e o gate do Temporal foi **aprovado** em 2026-11-06 (5+5% Wall Alt). As 16 salas estão em `biomes_contact.png` para revisão; a paleta de cada bioma é a da própria folha. Nada foi publicado.

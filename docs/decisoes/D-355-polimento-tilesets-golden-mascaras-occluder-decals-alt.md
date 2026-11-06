@@ -34,4 +34,4 @@ Wall Alt. 1/2 são **estilos alternativos** da categoria parede, não o bloco pr
 
 ## Estado
 
-Implementado: 30 tiles no atlas ativo (18 núcleo + 2 Ground Alt + 8 peças de parede + 2 centros Wall Alt), golden OK (correlação 0,60; topo 137,8 > face 83,4; chão 48,2), máscaras com 19 papéis, occluder por face, decals em 8,7% sem adjacentes, alt em 9,25% dos interiores. D-356 depois fixou os decals em 4%+4% exatos (8,1% medidos) e fez o fallback dos 12 perfis. O gate do Temporal ficou **pendente** porque o atlas mudou de 28 para 30 tiles; o build avisa até o criador revisar e rodar `--approve` de novo. Nada foi commitado ou publicado.
+Implementado: 30 tiles no atlas ativo (18 núcleo + 2 Ground Alt + 8 peças de parede + 2 centros Wall Alt), golden OK (correlação 0,60; topo 137,8 > face 83,4; chão 48,2), máscaras com 19 papéis, occluder por face, decals em 8,7% sem adjacentes, alt em 9,25% dos interiores. D-356 depois fixou os decals em 4%+4% exatos (8,1% medidos) e fez o fallback dos 12 perfis. O gate do Temporal foi **aprovado** em 2026-11-06 (30 tiles, 5+5% Wall Alt); o build não avisa mais. Nada foi publicado.

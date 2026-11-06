@@ -18,7 +18,8 @@
 - **Investigação:** a folha não tem canto interno de chão; `Unused Ground` tem
   um tile isolado (não usado); Water bloqueada por D-312; padding adiado.
 - **Performance:** 4.800 células constroem em 44–69 ms; sem redraw por frame.
-- **Commit:** bloqueado pelo worktree misto; nada publicado.
+- **Commit:** feito localmente (tilesets, ferramentas, docs D-354..D-356 e gate
+  aprovado); push não autorizado.
 
 ## 2.8.0 — 2026-11-06
 
