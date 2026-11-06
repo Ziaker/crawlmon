@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.63 — Rodada 84B registrada e alerta de auditoria da engine de Moves (2026-11-06); histórico preservado.  
+> **Revisão:** 1.64 — Rodada 85B: arquitetura da engine, dois arquivos por Move e exigência de sincronia verificável (2026-11-06); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1762,6 +1762,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.63 | 2026-11-06 | Rodada 84B: situação por campo nas fichas; fontes e requisitos de aprendizado agrupados; gatilhos e durações por fase visual apenas quando definidos; âncoras anatômicas genéricas por Move. Auditoria estática: existe núcleo compartilhado de combate/VFX, mas não engine unificada interpretadora das fichas aprovadas. D-335–D-338. | Rodada 84B fechada / Rodada 85B dedicada à arquitetura de Moves proposta |
 
+| 1.64 | 2026-11-06 | Rodada 85B: Resources tipados do Godot, interpretador genérico de efeitos, pipeline visual separado e migração Move a Move; separação de arquivos mecânico e visual por Move e sincronia como critério de aceitação verificável. D-339–D-343. | Rodada 85B documentada / Rodada 86B proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2350,4 +2352,28 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Limites da auditoria:** leitura estática de arquivos do repositório; **não foram executados Godot, testes nem testes com personagens espelhados**. Não concluir que todo módulo do projeto seja inexistente nem que o Motion Composer deva ser substituído; a validação técnica integral exigirá implementação e testes específicos.
 
 **Preservações:** D-235 (Moves independentes de espécie, equipe e lado), D-248 (visual fora de combate), D-275 (biblioteca individual), D-331–D-334 (estrutura das fichas), D-323–D-326 (escudos), GDD histórico e conflito textual de LUK R60 §12.13 permanecem inalterados. **Nenhum código, Move operacional, ficha concreta, IA, HUD, teste, animação ou VFX foi modificado nesta rodada.**
+
+### 12.39 Rodada 85B — arquitetura de Moves, arquivos separados e requisito de sincronia (revisão 1.64)
+
+> **2026-11-06.** O criador aprovou as alternativas **1A–4A** da Rodada 85B com “Sigo suas recomendações” e solicitou explicitamente **edição de Moves em arquivos mecânicos e visuais próprios**, buscando **menor consumo de tokens** e **sincronia entre funcionamento e apresentação**. Decisões **D-339–D-343**, consolidadas em **§76** de `docs/REGRAS_DO_JOGO.md`. D-001 mantém o GDD não normativo para resolução de combate; nenhum código foi alterado.
+
+| Questão | Escolha | Diretriz aprovada | Documento |
+|---|---|---|---|
+| R85B-Q1 | **1A** | **Resources tipados do Godot**, com Move ID estável e validação | [D-339](decisoes/D-339-r85b-q1-resources-tipados-moves.md) |
+| R85B-Q2 | **2A** | **Interpretador genérico** de efeitos declarativos e componentes reutilizáveis | [D-340](decisoes/D-340-r85b-q2-interpretador-generico-efeitos.md) |
+| R85B-Q3 | **3A** | **Pipeline visual independente** dos efeitos mecânicos, com gatilhos/receitas e Motion Composer opcional | [D-341](decisoes/D-341-r85b-q3-pipeline-visual-separado.md) |
+| R85B-Q4 | **4A** | **Migração incremental com testes de equivalência** antes de substituir cada Move antigo | [D-342](decisoes/D-342-r85b-q4-migracao-incremental-equivalencia.md) |
+| Complemento | **Requisito** | **Arquivo mecânico próprio + arquivo visual próprio para cada Move**, compondo uma **única ficha lógica** com sincronia verificável | [D-343](decisoes/D-343-r85b-edicao-isolada-mecanica-visual-sincronia.md) |
+
+#### Organização solicitada para reduzir consumo de tokens
+
+A futura engine terá **dados mecânicos e dados visuais em arquivos separados para cada Move**. Ambos representam o **mesmo Move lógico**, vinculado por identificação estável, evitando que agentes precisem reabrir arquivos extensos ou modificar ambos os lados para alterações locais. Componentes comuns poderão ser compartilhados. A separação é **compatível com D-333** (uma ficha lógica por Move). Não fixar caminhos, classes, extensões, esquemas, manifestos ou convenções de importação sem decisão específica.
+
+#### Sincronia mecânica/visual — exigência obrigatória, ainda sem garantia empírica
+
+A engine deverá **demonstrar por validação e testes reproduzíveis** que eventos, tempos e interrupções mecânicos permanecem sincronizados com VFX e animações correspondentes, respeitando decisões e valores aprovados. O visual **não deve alterar resultados mecânicos**. A forma concreta de manter o vínculo e a autoridade temporal (eventos, relógio, referências, versionamento), a reação a arquivos ausentes, validações e limites de tolerância **ainda precisam ser escolhidos**. Não confundir **um requisito verificável** com uma **garantia de comportamento já implementado** ou com uma promessa de ausência absoluta de regressões.
+
+**Exemplo ilustrativo:** Fire Bullet poderá ter um Resource de dano/custo/Burn e outro da mão de fogo, projétil, anéis e impacto, ligados pelo mesmo Move; **nenhum desses arquivos executáveis foi criado aqui**. O Move deve funcionar também quando executado por um inimigo distante ou personagem de anatomia diferente (D-235).
+
+**Preservações:** D-235, D-333–D-334/D-337–D-338, D-244–D-249/D-258–D-263, D-323–D-326, e histórico anterior. O alerta arquitetural do §12.38 continua vigente como inspeção estática da implementação na data informada, não prova de uma engine futura. A divergência histórica de LUK R60 (§12.13) permanece sem conciliação. **Somente documentação: nenhum código, Move executável, Resource, VFX, cena, asset ou teste modificado; nenhum teste de gameplay executado.**
 

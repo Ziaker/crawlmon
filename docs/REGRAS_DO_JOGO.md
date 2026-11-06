@@ -2355,3 +2355,32 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - Preservar D-061, D-235, D-244–D-249, D-258–D-263, D-275, D-331–D-334 e demais decisões sem alterações. A divergência histórica de LUK da Rodada 60 (GDD §12.13) permanece sem resolução.
 - **Nenhum código, teste, Move operacional, ficha concreta, IA, HUD, rig, cena, VFX ou asset alterado; nenhum teste de gameplay realizado.**
 
+---
+
+## 76. Rodada 85B — arquitetura da engine e edição isolada com sincronia verificável
+
+> **2026-11-06.** A afirmação do criador **“Sigo suas recomendações”** aprova as quatro alternativas **1A, 2A, 3A e 4A** da Rodada 85B. O criador também questionou expressamente a **separação de arquivos mecânicos e visuais próprios por Move**, para edição com menos tokens, e a garantia de sincronia. Registros **D-339–D-343**, sem implementação de código, conforme D-061.
+
+### 76.1 Decisões de arquitetura
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-339](decisoes/D-339-r85b-q1-resources-tipados-moves.md) | **1A** | **Resources tipados do Godot** como definições executáveis dos Moves, com ID estável e validação |
+| [D-340](decisoes/D-340-r85b-q2-interpretador-generico-efeitos.md) | **2A** | **Interpretador genérico** de efeitos declarativos em ordem de ficha com operadores reutilizáveis e extensões específicas aprovadas |
+| [D-341](decisoes/D-341-r85b-q3-pipeline-visual-separado.md) | **3A** | **Pipeline visual separado** das regras mecânicas, com receitas/gatilhos por Move e integração opcional com Motion Composer |
+| [D-342](decisoes/D-342-r85b-q4-migracao-incremental-equivalencia.md) | **4A** | **Migração incremental**, Move por Move, verificando equivalência mecânica e visual antes de substituir código legado |
+| [D-343](decisoes/D-343-r85b-edicao-isolada-mecanica-visual-sincronia.md) | **Complemento** | **Arquivo mecânico e arquivo visual próprios por Move**, integrados como **uma única ficha lógica**, e sincronia definida como requisito de aceitação verificável |
+
+### 76.2 Editabilidade, compatibilidades e limites da garantia
+
+- **Separação física:** editar a definição visual de Fire Bullet não deverá exigir editar os dados de custo/dano/Burn; editar sua mecânica não deverá exigir reescrever toda a receita de VFX. Ambos os arquivos referenciam a **mesma identidade estável**. Componentes comuns reutilizáveis permanecem compartilhados para evitar duplicação; D-333 continua exigindo **uma ficha lógica por Move**.
+- **Sincronia:** o sistema futuro **precisa comprovar por validações e testes** que disparo, impacto, interrupção e demais marcos visuais correspondem aos eventos mecânicos aprovados. O visual não pode criar ou alterar dano, status, custos ou condições por conta própria. Faltam aprovar a autoridade temporal, os contratos entre recursos, a reação a referências inválidas/arquivos ausentes, a observabilidade e as tolerâncias de testes.
+- **Limite técnico:** esta rodada **não garante empiricamente a sincronia** e não autoriza alegar que o runtime já executa essas regras. A garantia operacional dependerá de implementação, testes reproduzíveis e verificação dos resultados.
+- **Compatibilidade:** preservar D-235/AGENTS.md §7 (Moves e VFX independentes de personagem, lado e anatomia; testar espelhamento e variações), D-333–D-334/D-337–D-338 (fichas), D-244–D-249/D-258–D-263 (parâmetros e efeitos), D-323–D-326 (escudos) e as demais decisões. A auditoria estática anterior do GDD §12.38 permanece um **diagnóstico de ausência de engine completa na implementação antiga**, não declaração sobre uma engine nova já existente.
+
+### 76.3 Pendências e escopo
+
+- Não foram escolhidos caminhos, nomes de arquivos, classes, schema de Resource, API de eventos, sincronizador, catálogo de operadores, testes concretos, limiares ou Move piloto. Essas decisões exigem rodada própria e não devem ser presumidas.
+- A divergência textual de LUK da Rodada 60 (GDD §12.13) permanece preservada, sem conciliação unilateral.
+- **Somente documentação:** cinco decisões individuais, índice, consolidado e GDD. **Nenhum código, Resource de Move, VFX, cena, IA, asset, ficha operacional ou teste criado/alterado; nenhum teste de gameplay realizado.**
+
