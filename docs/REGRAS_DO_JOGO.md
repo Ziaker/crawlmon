@@ -2415,3 +2415,34 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Outras decisões:** D-322–D-326 (BattleLog/escudos), D-327–D-343 (Rodada 85 e série B de engine/fichas), D-270 (Burst/MP), D-095 (KO simultâneo) e D-203 (odômetro fora do jogo principal) preservados. A divergência histórica de LUK da Rodada 60 (GDD §12.13) permanece sem conciliação.
 - **Escopo:** quatro decisões individuais, índice, regras consolidadas e adendo do GDD. **Nenhum código, IA, Move, ficha, Resource, teste, HUD, cena, asset ou VFX alterado; nenhum teste de gameplay executado.**
 
+---
+
+## 78. Rodada 86B — plano mecânico autoritativo, integridade dos Resources e testes de sincronização
+
+> **2026-11-06.** O criador aprovou expressamente as alternativas **1A, 2A, 3A e 4A** da **Rodada 86B**, dedicada à arquitetura e integração da engine de Moves; sem observações adicionais. Registros individuais **D-348 a D-351**, conforme D-061. Preservar a Rodada 86 de gameplay (§77, D-344–D-347), a série B anterior (§§74–76, D-331–D-343) e todos os conflitos históricos. **Nenhuma autorização para alterar código.**
+
+### 78.1 Decisões aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-348](decisoes/D-348-r86b-q1-plano-mecanico-autoritativo-gatilhos-vfx.md) | **1A** | **Plano mecânico é fonte autoritativa de eventos e tempos**; apresentação visual acompanha **gatilhos correspondentes** |
+| [D-349](decisoes/D-349-r86b-q2-id-estavel-validar-variantes-gatilhos-recursos.md) | **2A** | **Resources mecânico e visual vinculados por Move ID estável**; validar também **variantes e gatilhos referenciados** |
+| [D-350](decisoes/D-350-r86b-q3-definicao-visual-incompleta-bloquear-aprovacao-migracao.md) | **3A** | Definição visual **obrigatória ausente ou incompatível** torna o Move **incompleto e impede aprovar sua migração** até correção/validação |
+| [D-351](decisoes/D-351-r86b-q4-testes-automaticos-e-integracao-visual-para-migracao.md) | **4A** | Exigir **testes automatizados de identidade, eventos, ordem e tempos** e **testes de integração visual** com **interrupções, variantes, lados espelhados e anatomias distintas** |
+
+### 78.2 Escopo técnico, exemplos e regras preservadas
+
+- **Autoridade mecânica (D-348):** o sistema visual recebe gatilhos do plano de execução do Move; alterações cosméticas não mudam dano, custo, tempo de resolução, status ou ordem. **Exemplo hipotético:** mudar os anéis de Fire Bullet não altera quando o plano decide o impacto. Preservar D-226 (planejamento e índices reservados na declaração, inclusive condicionais) e D-235 (atacantes e alvos de qualquer espécie, tamanho e lado).
+- **Vínculo e integridade (D-349):** cada Move tem seus **dois Resources próprios** (D-339/D-343), componentes de **uma mesma ficha lógica** (D-333), verificados pela **identidade estável**, variantes realmente existentes e eventos visuais referenciados. **Exemplo:** variante de dois alvos de Splitter Flames não pode apontar para gatilho de um Move diferente. Não escolher nomes de arquivos nem formatos de IDs.
+- **Migração (D-350):** se o visual **obrigatório** não existir ou fizer referências incompatíveis, **não declarar o Move migrado**. O alcance é **validação pré-aprovação de migração**; não criar por extensão um bloqueio novo **de uso em batalha** nem estabelecer fallback em runtime sem aprovação.
+- **Testes (D-351):** exigem-se verificações automatizadas do vínculo e da sequência de eventos/tempos, mais integração visual e mecânica sob interrupção, variante quando aplicável, espelhamento e anatomias distintas. Preservar D-342 (comparar especificação normativa e comportamento antigo, sem migrar no escuro). **Nenhum teste novo foi criado nem executado.**
+- **Divergência com o código atual:** na `main` `28816628d8a96489329369dd6740c0ffec88e877`, `Battle.use_skill` declara a ação/inicia Windup e `AttackPlanner.plan(inc)` só ocorre mais tarde em `Battle._resolve_incoming`. A reserva inicial de índices de ocorrências condicionais da D-226 continua **sem implementação comprovada**; **não escolher correção nem mudar comportamento** a partir desta documentação. `Battle` dispõe de sinais de fases e resolução, e `BattleTrace` dispõe de diagnóstico parcial de sincronia, mas **não há teste demonstrado do contrato entre os dois Resources novos**.
+- **Compatibilidades:** D-235 (independência de personagem e lado), D-333–D-343 (fichas, Resources, engine genérica, VFX separado e arquivos por Move), D-226/D-242/D-252/D-256 (plano e índices estáveis), D-244–D-249/D-258–D-263 (parâmetros e efeitos) e D-323–D-326 (escudos) permanecem sem alterações.
+
+### 78.3 Pendências e limitações
+
+- **Não definidos:** esquema exato dos Resources, interface de eventos, fonte concreta do relógio, estrutura do plano/variantes, política de referências inválidas durante o runtime, testes exatos, tolerâncias temporais, IDs concretos ou Move piloto.
+- Os testes exigidos não são prova de sincronização atualmente alcançada; a conformidade depende de implementação e resultados reproduzíveis. Não prometer ausência absoluta de bugs.
+- **Histórico preservado:** D-344–D-347 (Rodada 86 de gameplay), conflito de LUK da Rodada 60 (GDD §12.13) e demais pendências anteriores, sem conciliação unilateral.
+- **Somente documentação:** quatro decisões novas, índice, esta seção do consolidado e adendo GDD. **Nenhum código, Move executável, Resource, teste, VFX, IA, HUD, cena, rig ou asset modificado; nenhum teste de gameplay executado.**
+

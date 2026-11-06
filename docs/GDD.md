@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.65 — Rodada 86: Repel, fuga, dungeons opcionais e chefes recrutáveis (2026-11-06); histórico preservado.  
+> **Revisão:** 1.66 — Rodada 86B: autoridade mecânica, integridade de Resources, bloqueio de aprovação de migração e testes de sincronia (2026-11-06); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1766,6 +1766,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.65 | 2026-11-06 | Rodada 86: Repel devolve golpe de alvo único ao atacante original uma vez sem cadeia; tentativa de fuga ocupa uma oportunidade e falha mantém combate; dungeons opcionais têm novos Moves/técnicas/builds como recompensa distintiva; só chefes designados podem ser recrutados após vitória mediante requisitos e interação voluntária. D-344–D-347. | Rodada 86 fechada / Rodada 87 proposta |
 
+| 1.66 | 2026-11-06 | Rodada 86B (engine): plano mecânico autoritativo de eventos e tempos; Resources mecânico/visual vinculados por ID estável com validação de variantes e gatilhos; visual obrigatório ausente/incompatível bloqueia aprovação da migração; testes automatizados e integração visual em interrupções, variantes, lados e anatomias. D-348–D-351. | Rodada 86B fechada / Rodada 87B proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2393,4 +2395,23 @@ A engine deverá **demonstrar por validação e testes reproduzíveis** que even
 **Exemplos hipotéticos:** um alvo com Repel de fogo devolve um Move de fogo de alvo único uma vez ao lançador original, sem iniciar nova reflexão do mesmo golpe; uma tentativa de fuga sem sucesso ocupa a ação e o combate normal prossegue, sem oportunidade punitiva especial; uma dungeon extra pode abrir acesso a novas técnicas e builds, **sem substituir o avanço de campanha como recompensa das dungeons principais**; um chefe designado para recrutamento pode oferecer interação voluntária após vitória e cumprimento de requisitos, mas chefes comuns não se tornam recrutáveis por padrão.
 
 **Pendências e preservações:** custo numérico e chance de fuga continuam indefinidos; a regra de sucesso (retorno ao local e três segundos de imobilização do inimigo) e a vedação em chefes seguem GDD R28-Q3/R35-Q4. Repel permanece sem dano/status/ATB/tempo detalhados e sem regra de AoE ou multi-hit. O principal incentivo de dungeons opcionais é Moves/técnicas/builds, mas catálogo e aquisição ainda não existem. Chefes concretos recrutáveis, requisitos, interface e momento da interação não foram fixados. D-276/D-235, D-274/D-328, D-275/D-330 e D-339–D-343 preservados integralmente. O alerta arquitetural de §12.38 e a exigência de sincronismo verificável de §12.39 continuam em vigor; **não afirmar engine já implementada**. A divergência histórica de LUK da Rodada 60 (§12.13) permanece sem conciliação. **Somente documentação: nenhum código, teste, IA, Move, ficha, Resource, HUD, cena, asset ou VFX modificado; nenhum teste de gameplay realizado.**
+
+### 12.41 Rodada 86B — autoridade mecânica e critérios de integridade/sincronia da engine de Moves (revisão 1.66)
+
+> **2026-11-06.** O criador aprovou expressamente **1A, 2A, 3A e 4A** da **Rodada 86B**, série de arquitetura da engine, sem observações extras. Decisões **D-348 a D-351**, consolidadas em **§78** de `docs/REGRAS_DO_JOGO.md`. Não confundir com a Rodada 86 tradicional (**D-344–D-347, §77, adendo 12.40**), integralmente preservada. **D-001 mantém o GDD não normativo para a resolução de combate.** Nenhuma implementação autorizada.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R86B-Q1 | **1A** | **Plano mecânico é a única autoridade de eventos e tempos**; o visual recebe gatilhos correspondentes, sem alterar resolução mecânica | [D-348](decisoes/D-348-r86b-q1-plano-mecanico-autoritativo-gatilhos-vfx.md) |
+| R86B-Q2 | **2A** | **Resources mecânico e visual de cada Move vinculados por identidade estável**, validando também variantes e gatilhos referenciados | [D-349](decisoes/D-349-r86b-q2-id-estavel-validar-variantes-gatilhos-recursos.md) |
+| R86B-Q3 | **3A** | Recurso visual **obrigatório** ausente ou incompatível implica configuração **incompleta**, **impedindo aprovar a migração** até correção | [D-350](decisoes/D-350-r86b-q3-definicao-visual-incompleta-bloquear-aprovacao-migracao.md) |
+| R86B-Q4 | **4A** | **Testes automatizados** de identidade, eventos, ordem e tempos e **testes de integração visual** com interrupções, variantes, lados espelhados e anatomias distintas | [D-351](decisoes/D-351-r86b-q4-testes-automaticos-e-integracao-visual-para-migracao.md) |
+
+**Compatibilidade com D-339–D-343:** continuam obrigatórios os dois arquivos executáveis próprios (mecânica e visual) compondo uma ficha lógica, Resources tipados do Godot, interpretador genérico, pipeline visual separado e migração incremental. Os gatilhos mecânicos **governam a apresentação**; a integração dos arquivos valida **identidade, variantes e eventos**, sem criar uma segunda autoridade temporal independente. **Não escolher silenciosamente** estrutura de classes, diretórios, relógio/algoritmo de eventos, critérios de tolerância ou Move piloto.
+
+**Limitação importante:** a D-350 estabelece **bloqueio de aceitação da migração**, não um bloqueio novo de execução durante combate. O comportamento se faltar um recurso **depois da migração, em runtime**, e a reação em builds de produção continuam não definidos.
+
+**Auditoria estática do código:** na `main` `28816628d8a96489329369dd6740c0ffec88e877`, `scripts/combat/battle.gd` possui sinais `attack_resolved`, `attack_phase` e `attack_interrupted`, mas chama `AttackPlanner.plan(inc)` após Windup; a D-226 exige reservas de ocorrências condicionais já na declaração. **Não corrigir essa diferença sem autorização; o novo contrato deve respeitar a decisão normativa**. `BattleTrace` registra sinais e certas discrepâncias espaciais, mas não equivale a validar os dois Resources da engine nova. As baterias aprovadas em D-351 **ainda precisam ser implementadas e executadas**.
+
+**Estado real e pendências:** nenhum Resource, adaptador de eventos, validador, Move ou teste da engine foi implementado nesta rodada; nenhum teste Godot rodado. A representatividade estatística de VIT/SPI, regras da Rodada 86 tradicional e divergência de LUK da Rodada 60 (GDD §12.13) permanecem sem alteração. **Somente documentação: quatro novos registros D, índice, consolidado e adendo do GDD; sem modificar código, testes, VFX, IA, HUD, cena ou assets.**
 
