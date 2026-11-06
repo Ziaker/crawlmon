@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.61 — Rodada 85 registrada em adendo rastreável (2026-11-06); histórico preservado.  
+> **Revisão:** 1.62 — Rodada 83B (fichas de personagens e Moves) registrada em adendo rastreável (2026-11-06); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1758,6 +1758,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.61 | 2026-11-06 | Rodada 85: afinidades desconhecidas reveladas por teste e registradas por espécie; chefes combinam IA estratégica e cooperação variável sem Moves exclusivos; trocas equipe/reserva em locais seguros ou entre expedições (revisão da permissão provisória R25-Q2); campanha narrativa principal com dungeons adicionais por exploração. D-327–D-330. | Rodada 85 fechada / Rodada 86 proposta |
 
+| 1.62 | 2026-11-06 | Rodada 83B (série de fichas): ficha de referência vinculada por espécie/forma sem duplicar dados; aprendizados possíveis com fonte/requisitos separados da biblioteca individual; ficha única por Move com variantes em blocos; especificação visual relativa ao modelo com adaptação anatômica genérica. D-331–D-334. | Rodada 83B fechada / Rodada 84B proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2298,4 +2300,19 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos hipotéticos e compatibilidades:** testar uma afinidade elemental revela apenas a propriedade testada da espécie, não seu catálogo completo (D-118/D-128/D-276). Chefes podem aproveitar sinergia de equipe e uma IA mais estratégica, sem criar Moves exclusivos (D-235; GDD R29-Q4/R30-Q3). A troca ativa/reserva deixa de ser livre no jogo final, **substituindo a provisória R25-Q2**, mas mantém a entrada de novo recrutado em vaga ativa (R30-Q5) e o máximo de três integrantes; os lugares seguros não foram escolhidos (D-275). A narrativa libera a progressão principal, enquanto exploração pode liberar dungeons adicionais, preservando a campanha e o requisito de chefes finais (D-273). Nenhum desses exemplos estabelece conteúdo, personagem ou local concreto.
 
 **Pendências e histórico preservados:** distribuição real de Null/Repel/Drain por espécie, interface do registro, padrões de IA de chefes, locais seguros de trocas, dungeons, desafios e requisitos de desbloqueio não foram definidos. D-322–D-326 (HUD/BattleLog e escudos), D-268, D-270 e D-300–D-321 não foram modificadas. A divergência histórica de LUK da Rodada 60 (§12.13) permanece sem conciliação. **Somente documentação; nenhum código, teste, IA, ficha, Move, cena, HUD, asset ou VFX alterado, sem teste de gameplay.**
+
+### 12.37 Rodada 83B — fichas de espécies/formas, aprendizado, variantes e origem visual genérica (revisão 1.62)
+
+> **2026-11-06.** O criador aprovou **1A, 2A, 3A e 4A** na **Rodada 83B**, série dedicada exclusivamente a **fichas de personagens e Moves**, separada das Rodadas 83–85 anteriores. Registros individuais **D-331–D-334**, consolidados em **§74** de `docs/REGRAS_DO_JOGO.md`. Adendo de design sem substituir o histórico. Para combate, **D-001 preserva o caráter não normativo do GDD**.
+
+| Questão | Escolha | Regra documental aprovada | Documento |
+|---|---|---|---|
+| R83B-Q1 | **1A** | **Uma ficha de referência por espécie/forma distinta**, com vínculos a formas/evoluções relacionadas e **sem repetir dados compartilhados** | [D-331](decisoes/D-331-r83b-q1-ficha-referencia-por-especie-forma-vinculada.md) |
+| R83B-Q2 | **2A** | Na ficha do personagem, registrar **Moves que pode aprender, fonte e requisitos conhecidos**, **separadamente da biblioteca individual de Moves aprendidos** | [D-332](decisoes/D-332-r83b-q2-tabela-aprendizado-moves-por-personagem.md) |
+| R83B-Q3 | **3A** | **Ficha única por Move**, com **blocos de variantes de utilização** que mostrem apenas diferenças reais de **efeitos, valores, alvos e descrições visuais** | [D-333](decisoes/D-333-r83b-q3-ficha-unica-move-com-blocos-de-variantes.md) |
+| R83B-Q4 | **4A** | A ficha do Move especifica **origem visual relativa ao modelo, referências necessárias e adaptações anatômicas**, independente de espécie específica | [D-334](decisoes/D-334-r83b-q4-origem-vfx-relativa-modelo-adaptacao-anatomica.md) |
+
+**Exemplos e limites:** fichas hipotéticas de Gible/Gabite/Garchomp podem ser vinculadas sem copiar dados comprovadamente comuns, sem fixar atributos/evoluções; possíveis aprendizados são separados dos Moves já aprendidos por um indivíduo, preservando D-275; Splitter Flames pode ter blocos um/dois alvos somente para diferenças já definidas, respeitando D-244–D-249/D-258–D-263; a mão de fogo visual do Fire Bullet exemplifica a necessidade de origem/anatomia independente de espécie, com orientações relativas ao corpo real e não coordenadas fixas. **Exemplos não criam fichas, animações ou dados concretos.**
+
+**Histórico e pendências:** D-235/AGENTS.md §7 continua exigindo o mesmo Move funcionando em qualquer personagem, time e lado, sem Move exclusivo por espécie, e validação visual espelhada e com anatomias diferentes. D-229/D-230 preservam tooltip numérica, D-248 reserva descrição de VFX à ficha fora de combate e D-259 proíbe prévia de dano na seleção. A série B define **organização documental**, não banco de dados, mecanismo de aprendizado, progressão, variante técnica ou algoritmos de rig/âncora. D-323–D-326 e as Rodadas 83–85 anteriores permanecem inalteradas; a divergência histórica de LUK da Rodada 60 (§12.13) não foi resolvida. **Nenhum código, teste, Move operacional, ficha concreta, IA, HUD, cena, asset ou VFX modificado; nenhum teste de gameplay realizado.**
 

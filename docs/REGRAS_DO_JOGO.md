@@ -2293,3 +2293,31 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Outras regras:** D-322–D-326 (BattleLog/Bubble Shield/escudos/Brick Break), D-268 (HUD), D-270 (Burst/MP), D-300–D-321 (Motion Composer/exploração) permanecem inalteradas. O conflito textual de LUK da Rodada 60 (GDD §12.13) não foi conciliado.
 - **Escopo:** quatro D novos, índice, consolidado e adendo GDD. **Nenhum código, teste, Move, IA, ficha, HUD, cena, asset ou VFX modificado; nenhum teste de gameplay executado.**
 
+---
+
+## 74. Rodada 83B — estrutura das fichas de personagens, aprendizado de Moves, variantes e VFX anatômico
+
+> **2026-11-06.** Série **B**, exclusiva de fichas de personagens e Moves e **distinta da Rodada 83 geral**, já aprovada anteriormente. O criador aprovou **1A, 2A, 3A e 4A**, sem observações próprias. Registros individuais **D-331 a D-334**, conforme D-061. Adendo documental, sem alterar código, fichas operacionais ou as decisões históricas.
+
+### 74.1 Decisões aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-331](decisoes/D-331-r83b-q1-ficha-referencia-por-especie-forma-vinculada.md) | **1A** | **Uma ficha de referência por espécie ou forma distinta**, vinculada a formas e evoluções relacionadas, **sem duplicação de dados compartilhados** |
+| [D-332](decisoes/D-332-r83b-q2-tabela-aprendizado-moves-por-personagem.md) | **2A** | A ficha do personagem descreve **Moves que pode aprender**, **fontes** e **requisitos conhecidos**, separadamente da **biblioteca individual de Moves aprendidos** |
+| [D-333](decisoes/D-333-r83b-q3-ficha-unica-move-com-blocos-de-variantes.md) | **3A** | **Ficha única por Move**, com **blocos explícitos para variantes de uso**, detalhando somente diferenças existentes de **efeitos, números, alvos e visuais** |
+| [D-334](decisoes/D-334-r83b-q4-origem-vfx-relativa-modelo-adaptacao-anatomica.md) | **4A** | A ficha visual de Move especifica **origem relativa ao modelo**, **pontos de referência necessários** e **adaptação para anatomias distintas**, sem depender de uma espécie específica |
+
+### 74.2 Exemplos, compatibilidades e limite de escopo
+
+- **Espécies e formas (D-331):** uma linha evolutiva como Gible/Gabite/Garchomp pode ter fichas distintas vinculadas entre si, evitando repetir informações comprovadamente comuns. **Não foram criadas fichas dessas espécies nem aprovados dados de atributos/evolução.** D-120/D-124/D-128 e D-132/D-254 continuam regendo dados por espécie/indivíduo e informações verificáveis.
+- **Aprendizado (D-332):** o catálogo da ficha distingue **Moves aprendíveis** (com fonte e requisitos quando conhecidos) de **Moves efetivamente aprendidos por um indivíduo**; D-275 preserva a biblioteca individual completa, **até oito equipados** e edição em locais seguros/entre expedições. **Ter capacidade de aprender um Move não o equipa nem o torna aprendido automaticamente.** D-235 continua exigindo execução do Move independente do personagem.
+- **Variantes (D-333):** uma ficha de Splitter Flames poderia agrupar uso com um ou dois alvos e explicitar **somente diferenças já aprovadas** em valores, efeitos e visual. Preservar D-244–D-249/D-258–D-263, incluindo efeitos e seleção/facção e herança padrão; **D-229/D-230/D-259 mantêm números adequados na tooltip sem prévia de dano na seleção**. Os blocos de visual são **da ficha fora do combate**, conforme D-248, e não modificam a HUD.
+- **Origem visual (D-334):** Fire Bullet possui mão de fogo visual independente da existência de mão anatômica; a ficha deve especificar sua origem **relativa ao corpo real do usuário**, com referências e adaptações para modelos diferentes. Preservar **D-235/AGENTS.md §7**: execução genérica por Move, qualquer atacante/time/lado, posições e dimensões medidas do modelo, e validação em atacantes e alvos de diferentes tamanhos. Nenhuma âncora, escala, implementação ou nova animação foi escolhida.
+
+### 74.3 Pendências, conflitos e estado real
+
+- **Fichas:** catálogos de espécies, formas/evoluções, lista de campos compartilhados, níveis e requisitos por espécie, estrutura concreta do catálogo de Moves, visual dos blocos de variantes, âncoras, hierarquia anatômica e parâmetros numéricos **não foram definidos**.
+- **Decisões anteriores:** preservar D-235, D-275, D-244–D-249/D-258–D-263, D-323–D-326, D-327–D-330 e demais regras sem reescrever o histórico. A estrutura documental por espécie **não autoriza Move exclusivo por espécie ou lado**. A divergência textual de LUK da Rodada 60 (GDD §12.13) permanece sem conciliação.
+- **Escopo:** quatro decisões D novas, índice, este consolidado e adendo do GDD. **Nenhum código, IA, Move operacional, ficha concreta, teste, HUD, cena, rig, asset ou VFX modificado; nenhum teste de gameplay executado.**
+
