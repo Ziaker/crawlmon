@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.68 — Rodada 87B: contratos internos de variantes, efeitos e eventos da engine de Moves (2026-11-06); histórico preservado.  
+> **Revisão:** 1.69 — Rodada 88 de Repel, recrutamento, reservas e dungeons opcionais (2026-11-06); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1772,6 +1772,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.68 | 2026-11-06 | Rodada 87B: parâmetros comuns mais substituições explícitas de variantes; efeitos tipados e ordenados; eventos estruturados com Move/declaração/ocorrência/variante/tipo/tempo/participantes; notificações de cancelamento e interrupção com VFX conforme ficha. D-360–D-363. | Rodada 87B documentada / Rodada 88B proposta |
 
+| 1.69 | 2026-11-06 | Rodada 88: Repel de Moves multialvo reflete apenas impacto do portador; chefes designados recrutáveis têm requisitos individuais de história/exploração/combate definidos na ficha; reservas recebem parcela de XP por vitória além de treinamento; dungeons opcionais combinam geração procedural e conteúdo especial planejado. D-364–D-367. | Rodada 88 registrada / Rodada 89 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2450,4 +2452,19 @@ A engine deverá **demonstrar por validação e testes reproduzíveis** que even
 **Restrições preservadas:** D-333/D-343 (uma ficha lógica, recursos mecânico e visual próprios), D-340 (interpretador genérico), D-348/D-349 (plano mecânico autoritativo e vínculo por ID), D-235 (qualquer personagem/lado/anatomia), D-226 (índices reservados na declaração) e D-351 (testes obrigatórios). A implementação atual de AttackPlanner ainda não comprova D-226; nenhuma correção foi feita. As decisões **Drain Spear/Badge Steal D-356–D-359** continuam vigentes no consolidado (§80), inclusive prioridade própria do Badge Steal anterior ao dano (não generalizar para outros Moves). D-352 trata exclusivamente de Drain HP/MP. A divergência histórica da Rodada 60 sobre LUK (§12.13) permanece não conciliada.
 
 **Pendências:** detalhes técnicos de mesclagem de variantes, tipos dos Resources, catálogo de operadores/condições, representação de IDs/tempo, transporte e versionamento de eventos, reação visual ainda não especificada, critérios de testes e escolha do Move piloto. **Somente documentação: nenhum código, Resource, Move operacional, teste, VFX, animação, IA, HUD, cena ou asset modificado; nenhum teste Godot executado.**
+
+### 12.44 Rodada 88 — reflexão individual em multialvo, recrutamento de chefes, XP da reserva e dungeons híbridas (revisão 1.69)
+
+> **2026-11-06.** O criador aprovou **1A, 2C, 3B e 4C**, sem observações próprias. Decisões individuais **D-364 a D-367**, consolidadas em **§82** de `docs/REGRAS_DO_JOGO.md`. Adendo histórico conforme D-061; **D-001 mantém o GDD não normativo para combate**. A série paralela **R87B (D-360–D-363)**, Drain Spear/Badge Steal (D-356–D-359) e demais registros permanecem preservados.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R88-Q1 | **1A** | **Somente o impacto dirigido ao portador de Repel** em Move multialvo retorna ao **atacante original**; demais impactos resolvidos normalmente | [D-364](decisoes/D-364-r88-q1-repel-multialvos-reflexao-individual.md) |
+| R88-Q2 | **2C** | **Requisitos próprios por chefe designado**, de história, exploração ou combate, devem estar **expressos em sua ficha** para permitir candidatura ao recrutamento | [D-365](decisoes/D-365-r88-q2-chefes-recrutaveis-requisitos-por-ficha.md) |
+| R88-Q3 | **3B** | **Reservados recebem parcela de XP** dos combates **vencidos pela equipe ativa**, preservando **treinamento no hub** | [D-366](decisoes/D-366-r88-q3-reserva-experiencia-parcial-combates-vencidos.md) |
+| R88-Q4 | **4C** | **Dungeons opcionais híbridas** combinam exploração procedural com **salas, encontros e desafios especiais planejados** | [D-367](decisoes/D-367-r88-q4-dungeons-opcionais-procedural-com-salas-planejadas.md) |
+
+**Exemplos ilustrativos sem criar fichas:** se um Move atingir dois alvos e apenas um tiver Repel, somente o **impacto desse alvo** reflete; chefes especiais podem exigir missões ou condições de batalha diferentes, quando **aprovadas em suas fichas**; um Pokémon da reserva recebe parcela **não definida** da XP de vitórias da equipe ativa e continua podendo treinar; dungeon opcional pode variar corredores por seed e incluir uma sala especial planejada.
+
+**Compatibilidades:** D-344/D-276/D-235 preservam a regra de reflexão única e independência de Moves/lados; D-347/D-274 mantêm recrutamento voluntário após vitória de chefe especificamente elegível; D-355 e GDD R33-Q2 preservam treinamento da reserva; GDD R7-Q5/R8-Q3/R9-Q2 mantém geração procedural e seed reproduzível; D-330/D-346/D-354 preservam dungeons adicionais e recompensas principais de Moves/builds. **Não foram aprovados** critérios numéricos de XP, requisitos de chefes reais, dados de Repel em espécie, números de salas ou regras de multi-hit. A divergência textual histórica sobre LUK na Rodada 60 (§12.13) permanece sem conciliação. **Somente documentação; nenhum código, Move, IA, ficha operacional, HUD, cena, asset, teste ou VFX alterado.**
 

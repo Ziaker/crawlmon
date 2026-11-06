@@ -2540,3 +2540,34 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - Preservadas integralmente D-235, D-333–D-359 e histórico anterior, incluindo D-356–D-359 da ficha Drain Spear e a divergência de LUK da Rodada 60 (GDD §12.13).
 - **Somente documentação:** quatro D novos, índice, este consolidado e adendo GDD. **Nenhum código, Resource, Move, IA, HUD, animação, cena, asset, VFX ou teste alterado; nenhum teste Godot executado.**
 
+---
+
+## 82. Rodada 88 — Repel por impacto, requisitos individuais de chefes, experiência da reserva e dungeons híbridas
+
+> **2026-11-06.** O criador aprovou expressamente **1A, 2C, 3B e 4C**, sem observações próprias. Registros individuais **D-364 a D-367**, publicados conforme D-061. Preservar a série de engine **Rodada 87B (D-360–D-363, §81)**, **Drain Spear/Badge Steal (D-356–D-359, §80)** e todas as demais decisões históricas. Somente documentação.
+
+### 82.1 Regras aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-364](decisoes/D-364-r88-q1-repel-multialvos-reflexao-individual.md) | **1A** | Em Move multialvo, **somente o impacto destinado ao portador de Repel** reflete ao **atacante original**; impactos dos demais alvos prosseguem normalmente |
+| [D-365](decisoes/D-365-r88-q2-chefes-recrutaveis-requisitos-por-ficha.md) | **2C** | **Cada chefe especificamente designado recrutável** pode ter **requisitos próprios de história, exploração ou combate**, **expressamente definidos na ficha** |
+| [D-366](decisoes/D-366-r88-q3-reserva-experiencia-parcial-combates-vencidos.md) | **3B** | **Reservados recebem parcela da experiência de combates vencidos pela equipe ativa**, além de continuar podendo treinar no hub |
+| [D-367](decisoes/D-367-r88-q4-dungeons-opcionais-procedural-com-salas-planejadas.md) | **4C** | **Dungeons opcionais híbridas:** exploração procedural combinada a **salas, encontros e desafios especiais planejados** |
+
+### 82.2 Exemplos, compatibilidades e limites
+
+- **Repel (D-364):** em um Splitter Flames **hipotético** contra dois alvos, um com Repel e outro sem, **refletir somente o impacto destinado ao primeiro** ao atacante original, preservando o impacto do outro. **D-344** mantém retorno único e sem cadeia, **D-235** garante independência de lado/personagem; D-276 permite Repel como afinidade de espécie, ainda sem distribuição concreta. Não determinar dano/status/crit/tempo/ATB, vários impactos no mesmo alvo ou combinação com Null/Drain.
+- **Chefes (D-365):** chefes **designados como recrutáveis** podem exigir condições diferentes, expressas nas respectivas fichas, como uma missão ou um desafio especial **hipotético**. **D-347** mantém designação individual, **vitória prévia**, requisitos e interação **voluntária**; **D-274** preserva demais recrutamentos e **D-328/D-235** impedem inferir Moves exclusivos ou composição obrigatória. **Nenhum chefe real, missão, requisito ou ficha foi criado.**
+- **Reserva (D-366):** após vitória de combate pela equipe ativa, Pokémon da reserva também recebem **uma parcela não quantificada da XP** e podem progredir por **treinamento no hub** (**D-355; GDD R33-Q2**). **Não inventar porcentagens, fórmula, arredondamento, limites ou participação em fugas/derrotas.** Preservar D-329: ganho de XP não habilita troca de equipe fora de local seguro/intervalo.
+- **Dungeons (D-367):** o conteúdo opcional pode mesclar corredores gerados por seed com arena planejada e encontro especial. Preservar GDD **R7-Q5/R8-Q3/R9-Q2** (procedural, reprodução e preservação de layout), **D-330** (desbloqueios por exploração), **D-346** (Moves/técnicas/builds como incentivo principal) e **D-354** (risco/recompensa em áreas opcionais). Não determinar posição, frequência ou obrigatoriedade de salas especiais e não modificar o gerador.
+
+### 82.3 Pendências e histórico
+
+- **Repel:** cálculos e efeitos refletidos (crítico/status/esquiva), escudos, regras específicas de múltiplos hits/reflexões simultâneas e VFX ainda não aprovados.
+- **Chefes:** quais são recrutáveis, requisitos concretos, sinalização, chance, transição após vitória e fichas ainda pendentes.
+- **Reserva:** percentual, fórmula e condições especiais de distribuição de XP pendentes; **ganho parcial aprovado não equivale a XP integral**.
+- **Dungeons:** distribuição procedural/autoral, salas/combates planejados, geração, recompensas e integração dos segmentos ainda pendentes.
+- **Outras regras:** D-352 (Drain HP/MP), D-356–D-359 (Drain Spear/Badge Steal), D-360–D-363 (engine R87B), D-268/D-322–D-326 (HUD/BattleLog/escudos) e demais decisões foram preservadas. A divergência histórica de LUK da Rodada 60 (GDD §12.13) permanece não conciliada.
+- **Escopo:** quatro decisões novas, índice, consolidado e adendo GDD. **Nenhum código, teste, Move, ficha operacional, IA, HUD, cena, asset ou VFX alterado; nenhum teste de gameplay executado.**
+
