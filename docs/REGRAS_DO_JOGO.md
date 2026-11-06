@@ -2602,3 +2602,20 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Histórico:** D-359 (Badge Steal), D-347/D-365 (chefes recrutáveis), D-353 (evolução) e todas as decisões anteriores são preservadas; divergência histórica sobre LUK R60 no GDD §12.13 permanece sem conciliação.
 - **Escopo:** quatro decisões D, índice, este consolidado e adendo GDD, **sem alterar código, testes, IA, Moves, fichas operacionais, HUD, cenas, assets ou VFX**. Nenhum teste de gameplay realizado.
 
+
+## 84. Complemento de Drain Spear / Badge Steal — imunidade roubada antes do dano (D-372)
+
+> **2026-11-06.** Após a pergunta direta de confirmação da precedência de imunidade mágica removida por Badge Steal, o criador respondeu literalmente **“Sim”**. Registro individual [D-372](decisoes/D-372-badge-steal-imunidade-magica-roubada-antes-dano.md), conforme D-061, preservando D-356/D-359 e o histórico anterior.
+
+### 84.1 Regra específica aprovada
+
+- Quando a Drain Spear **acerta validamente** e o **Badge Steal** pode ser aplicado, um **buff positivo com badge que conceda imunidade ao dano mágico**, mas **não** bloqueie o próprio roubo, é **transferido/removido antes do cálculo do dano**.
+- **A imunidade roubada deixa de proteger o alvo contra o impacto atual**: **acerto válido → Badge Steal retira a badge → dano mágico calculado com as proteções ainda existentes → aplicação do dano**.
+- O caso **não autoriza ignorar outras imunidades, defesas ou bloqueios ainda presentes**, nem roubar quando o contato/Move/efeito for impedido. Preservar D-195/D-199 e não estender esta exceção a todos os status; **Badge Steal não corresponde à afinidade Drain de HP/MP (D-352)**.
+- A remoção mecânica ocorre antes do dano, independentemente do tempo visual de transferência das badges (D-019/D-348). A pendência sobre snapshot de imunidade mágica no próprio impacto, identificada em **D-356/D-359**, fica **resolvida por esta aprovação posterior**, sem reescrever aqueles documentos históricos.
+
+### 84.2 Pendências e escopo
+
+- Permanecem pendentes os sistemas de escudos e efeitos por badge, a implementação de Normal, MAG/SPI, o contato e a distância mid-range, tempos e VFX definitivos, os Resources e a validação da engine de Moves. As outras pendências de D-356/D-359 **não** são resolvidas por esta confirmação.
+- **Somente registro documental:** não houve alteração de código, Move, Resource, HUD, VFX, cena, teste ou GDD.
+
