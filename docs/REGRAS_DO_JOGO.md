@@ -2218,3 +2218,46 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Limite técnico auditado:** em 05/11/2026, `scripts/ui/battle_hud.gd` recebia `_on_log(text: String)` em `_log: Label` e mantinha até três mensagens; `scripts/combat/battle.gd` emitia `log_message(text: String)`. Isso não traz diretamente um identificador tipado para recuperar retratos. Qualquer mudança estrutural futura deve ser analisada e aprovada separadamente.
 - Nenhum código, cena, Move, regra de combate, VFX, teste ou arquivo do HUD original foi alterado por esta decisão. O prompt de execução controlada está em `docs/hud/PROMPT_CRAWLMON_BATTLELOG_OPCAO_C.md`.
 
+---
+
+## 72. Bubble Shield e mecânica de escudos — decisões D-323 a D-326
+
+> **2026-11-05.** Fonte: descrição inicial de Bubble Shield e respostas posteriores do criador. Registro de design conforme D-061. **Sem implementação** de combate, dados de Move, VFX ou testes. Preservar toda a documentação anterior e o GDD histórico; para combate prevalecem as decisões vigentes.
+
+### 72.1 Bubble Shield — dados expressos (D-323)
+
+- **Nome:** Bubble Shield.
+- **Elemento do Move:** Água (Water); **tipo:** Status; **seleção/facção:** ALL ALLIES, incluindo lançador (D-012).
+- **Custo ATB:** 3 blocos; **wind-up:** 0,7 s.
+- **Escudo:** concede a **cada aliado** reserva de proteção de **25 + MAG do usuário**, com **duração de 8 segundos**; a proteção deixa de existir ao ser reduzida completamente ou ao atingir o término da duração.
+- **MP:** valor individual ainda pendente; respeitar D-263 (Moves diferentes de Tackle consomem MP) e D-270 (ação paga por Burst não debita ATB nem MP adicionais).
+- **Tipagem da reserva:** o fato de o **Move** ser Water não define por si a **tipagem defensiva** do escudo; isso permanece para aprovação expressa. Não confundir com escudo físico do exemplo seguinte.
+- VFX de membrana líquida, wind-up, release, proteção, dano, rompimento e dissipação foram apresentados como **propostas**, não aprovados como arte final. Preservar D-019/D-235.
+
+### 72.2 Reaplicação, acumulação e prioridade (D-324)
+
+- **Mesmo Move reutilizado:** o escudo **reseta por padrão**; só acumula com versões anteriores do **mesmo Move** se a descrição do efeito disser expressamente que stacka.
+- **Coexistência:** reservas de escudos de naturezas diferentes podem coexistir; escudos de dano sem tipagem específica também podem acumular, conforme declaração do criador.
+- **Ordem de proteção expressa:** **escudo de tipo > escudo sem tipo > vida (HP)**.
+- **Exemplo do criador:** 25 pontos de escudo **físico** e 30 pontos de escudo **sem tipo** podem coexistir no mesmo combatente.
+- **Não homologado:** o que "reseta" recompõe exatamente (magnitude, duração ou ambos); elegibilidade por classe/tipo de dano; desempate entre duas reservas na mesma prioridade; valores, duração e outros efeitos de quaisquer escudos ainda não descritos. Não presumir ordenação adicional.
+
+### 72.3 Interrupção e dano periódico (D-325)
+
+- **Proteção contra interrupção é condicional à descrição do efeito**: somente se ele disser que os Moves do personagem não podem ser interrompidos enquanto o efeito estiver ativo se deve aplicar essa proteção. Um escudo que absorve 100% do dano **não concede automaticamente** anti-interrupção.
+- **Burn e Poison** causam dano que também deve consumir escudos elegíveis, respeitando a prioridade aprovada D-324.
+- **Não homologado:** se escudo absorvendo 100% do dano impede **aplicação de status**; condição/status não podem ser implicitamente anulados.
+- Bubble Shield (D-323) **não traz** declaração de anti-interrupção na ficha inicial.
+
+### 72.4 Brick Break (D-326)
+
+- O criador determinou expressamente: **"Brick break quebra escudos também como dito no efeito (agora que escudos existem)"**.
+- Incluir **Bubble Shield** entre escudos passíveis de quebra por Brick Break. Preservar os outros efeitos e descrições desse Move (D-032).
+- **Não homologado:** se Brick Break rompe uma reserva ou todas, quais tipos elegíveis, sequência entre remoção/dano e demais condições; não inventar regras de Dispel para outros Moves.
+- A pesquisa em código desta rodada localizou Brick Break na documentação histórica, mas não confirmou implementação operacional completa da remoção de escudos.
+
+### 72.5 Integração e estado real
+
+- O estado de combate consultado na `main` ainda armazena HP sem reserva de escudo (`scripts/combat/combatant.gd`; `take_damage` desconta diretamente do HP). A classe `Skill` possui custo ATB, categoria, wind-up e alvos amigáveis, mas ainda não implementa a nova proteção.
+- Preservar D-193/D-194/D-198/D-205 para dano, D-012 para ALL ALLIES, D-019 para relógio lógico de combate, D-235 para moves/VFX independentes do personagem e D-247/D-262 para descrições de efeitos e Dispel.
+- **Escopo documental desta atualização:** criar D-323 a D-326, atualizar índice e esta seção. Sem mudanças em código, cenas, Move operacional, shaders, VFX, HUD, testes ou GDD.
