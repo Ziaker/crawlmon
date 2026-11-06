@@ -1,6 +1,6 @@
 # Assets 2D do Pokémon Mystery Dungeon (Explorers)
 
-> **Status:** primeira leva do hub e os 16 Dungeon Tiles do Sky importados. **Estado atual:** o visual ativo é o **Sky Temporal Tower de 22 tiles** (18 do núcleo + `ground_alt_1/2` + `wall_strip_h/v` sintetizadas), alinhado à grade real da folha (pitch de 25 px: 1 px de linha ciano + 24×24 de arte). O sheet do Time/Darkness fica como referência em `docs/referencias/`. O piso orgânico usa as Ground Alt em 4%+4% (D-347); as strips fecham paredes de 1 tile (D-348).
+> **Status:** primeira leva do hub e os 16 Dungeon Tiles do Sky importados. **Estado atual:** o visual ativo é o **Sky Temporal Tower de 30 tiles** (18 do núcleo + `ground_alt_1/2` + 8 peças reais de parede: strip V/H, island, tip N/S/W/E e cross), alinhado à grade real da folha; as peças sintéticas do atlas de 42 foram descartadas porque misturavam componentes (pitch de 25 px: 1 px de linha ciano + 24×24 de arte). O sheet do Time/Darkness fica como referência em `docs/referencias/`. O piso orgânico usa as Ground Alt em 4%+4% (D-347); a seleção de parede é por assinatura de lado medida (D-354).
 > **Decisões:** D-325, D-326, D-329, D-330. **Páginas-fonte:** Explorers of Time/Darkness e Explorers of Sky (The Spriters Resource).
 > **Créditos/proveniência:** `docs/CREDITOS_ASSETS.md`.
 
@@ -32,14 +32,14 @@ assets/pmd/
   dungeons/
     sky/
       raw/                       # 16 folhas originais, ignoradas pelo Godot
-      atlas/                     # 16 atlas de 18 tiles + 16 perfis JSON
+      atlas/                     # 16 atlas de 30 tiles + 16 perfis JSON
       _intermediate/             # recortes 2x/48 antigos, ignorados; não usados
   referencias/tilesets/          # contato, atlas rotulado, labels e preview (docs)
     time_darkness/
       raw/
         temporal_tower.png       # sheet de referência (Time/Darkness 84824)
       atlas/
-        temporal_tower_atlas.png # referência: 21 tiles, Time/Darkness
+        temporal_tower_atlas.png # referência: 30 tiles, Sky (ativo)
   items/
     items.png                    # folha de itens original
   ui/
@@ -91,16 +91,19 @@ Os `.gdignore` em `hub/raw/`, `dungeons/sky/raw/` e `dungeons/sky/_intermediate/
 
 **Código que usa:** `scripts/dungeon/map_visuals.gd` → `res://assets/pmd/dungeons/sky/atlas/temporal_tower_profile.json` (o perfil aponta para o atlas e para os papéis).
 
-**Mapeamento do atlas ativo (22 tiles de 48 px, Sky Temporal Tower):**
+**Mapeamento do atlas ativo (30 tiles de 48 px, Sky Temporal Tower):**
 
 - 0..8: bloco 3×3 de **Walls** (C3..C5, R0..R2; centro C4 R1)
 - 9..17: bloco 3×3 de **Ground** (C12..C14, R0..R2; centro C13 R1)
 - 18: **Ground Alt. 1** (C16 R1)
 - 19: **Ground Alt. 2** (C19 R1)
-- 20: **Wall strip H** (sintética: bordas de wall_t/wall_b sobre wall_c)
-- 21: **Wall strip V** (sintética: bordas de wall_l/wall_r sobre wall_c)
+- 20: **Wall strip V** (C3 R4; lados opostos W+E)
+- 21: **Wall strip H** (C4 R3; lados opostos N+S)
+- 22: **Wall island** (C4 R4; quatro lados abertos)
+- 23..26: **Wall tips** N/S/W/E (C4 R6, C4 R8, C3 R7, C5 R7; três lados abertos)
+- 27: **Wall cross** (C4 R7; quatro vizinhos ortogonais em parede, diagonais em chão)
 
-A folha usa **pitch de 25 px**: 1 px de linha ciano + célula de arte de 24×24. A origem da arte é `(9, 163)`, o recorte é a célula inteira de 24×24 e a escala é nearest para 48. Não há moldura de 4 px nem limpeza de fundo. O `map_visuals.gd` pede papéis (`wall_tl`, `ground_c`, …) ao perfil e escolhe o tile por uma máscara de 4 vizinhos (lados abertos para parede; lados com parede para chão). Pipeline reproduzível: `tools/pmd_import/build_dungeon_atlases.py`; manifesto em `tools/pmd_import/manifests/`; contato/labels/preview em `docs/referencias/tilesets/`; laboratório em `scenes/tileset_lab.tscn` (D-345). O atlas de **21 tiles do Time/Darkness** (`time_darkness/atlas/`) fica como referência, não é o ativo.
+A folha usa **pitch de 25 px**: 1 px de linha ciano + célula de arte de 24×24. A origem da arte é `(9, 163)`, o recorte é a célula inteira de 24×24 e a escala é nearest para 48. Não há moldura de 4 px nem limpeza de fundo. O `map_visuals.gd` pede papéis (`wall_tl`, `ground_c`, …) ao perfil e escolhe a parede pela **assinatura de lados abertos medida** (`role_sides`), com fallback pelos nomes do núcleo; o chão usa a máscara de 4 vizinhos. A auditoria de percepção (`tools/pmd_import/audit_components.py`) mede orientação, preview, costura, espelho e contrato de face antes de usar o atlas (D-345/D-354). Pipeline reproduzível: `tools/pmd_import/build_dungeon_atlases.py`; manifesto em `tools/pmd_import/manifests/`; contato/labels/preview em `docs/referencias/tilesets/`; laboratório em `scenes/tileset_lab.tscn` (D-345/D-354). O atlas de **21 tiles do Time/Darkness** (`time_darkness/atlas/`) fica como referência, não é o ativo.
 
 ## Não importados ainda
 
@@ -112,9 +115,13 @@ A folha usa **pitch de 25 px**: 1 px de linha ciano + célula de arte de 24×24.
 
 ## Pendências
 
-- Só o **Temporal Tower** foi testado em cena; os outros 15 atlas foram gerados, mas não vistos no jogo.
-- O renderizador usa os **centros** dos blocos 3×3; as máscaras de canto/borda do “Legend” ainda não foram implementadas.
+- Só o **Temporal Tower** foi testado em cena; os outros 15 atlas foram gerados com 30 tiles e revisados em `docs/referencias/tilesets/biomes_contact.png`, mas não no jogo.
+- O contrato de face passa no Temporal Tower; as outras 12 folhas têm arte ambígua (o lado escuro não é consistente) e ficam com `side_contract_ok=false`. Para elas o jogo usa o **fallback por papel** (strips, tips, island, cross e alt) e o `murky_forest` foi testado com 688 células e 0 divergências (D-356).
+- O renderizador escolhe a parede pela assinatura de lado medida; o “Legend” da folha ainda não é lido como máscara automática.
+- O preview da folha foi casado pixel a pixel: ele usa a linha 1 (topo) + linha 2 (face) + Ground; isso está documentado em D-354.
+- A folha **não tem peças reais de canto interno de chão**; o fallback é `ground_c`. O `Unused Ground` tem um tile isolado em C22R1, não um conjunto, e não foi usado como decal (D-356).
+- **Water** não é usada: exige células de água, colisão e regra de mapa (D-312), ainda sem decisão.
+- Os decals de piso agora são **4%+4% exatos** por andar (8,1% medidos), com exclusão de 1 tile.
 - Os backgrounds do hub em `raw/` ainda têm fundo branco e não foram limpos.
-- O seletor de bioma/andar (D-312/D-317) ainda não existe.
-- As funções antigas do atlas procedural continuam em `map_visuals.gd`, sem uso.
+- O seletor de bioma por andar existe (16 perfis), mas os **3 biomas de D-312** (floresta/fortaleza/caverna) não.
 - Nada foi commitado ou publicado.

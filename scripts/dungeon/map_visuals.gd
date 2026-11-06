@@ -20,8 +20,13 @@ const DEFAULT_ROLES := {
 	"ground_tl": 9, "ground_t": 10, "ground_tr": 11,
 	"ground_l": 12, "ground_c": 13, "ground_r": 14,
 	"ground_bl": 15, "ground_b": 16, "ground_br": 17,
+	"ground_alt_1": 18, "ground_alt_2": 19,
+	"wall_strip_v": 20, "wall_strip_h": 21, "wall_island": 22,
+	"wall_tip_n": 23, "wall_tip_s": 24, "wall_tip_w": 25,
+	"wall_tip_e": 26, "wall_cross": 27,
+	"wall_alt_1": 28, "wall_alt_2": 29,
 }
-const DEFAULT_ATLAS_COLUMNS := 18
+const DEFAULT_ATLAS_COLUMNS := 30
 const TILE := 48
 const MAX_TORCHES := 12  ## Cap on shadow-casting lights for big procedural floors.
 ## Bright enough to read the floor, still tinted so torches keep the mood (D-033).
@@ -38,6 +43,7 @@ var _parent: Node2D
 var _map: Array = []
 var _glow: GradientTexture2D
 var _torches: Array[Dictionary] = []  ## {light, pos, phase}
+var _decals: Dictionary = {}  ## Vector2i -> atlas index (D-356)
 var _player_light: PointLight2D
 var _dust: CPUParticles2D
 var _camera_fitted := false
@@ -46,6 +52,8 @@ var _floor_layer: TileMapLayer
 var _decor_layer: TileMapLayer
 var _source_id := -1
 var _roles: Dictionary = DEFAULT_ROLES.duplicate()
+var _role_sides: Dictionary = {}  ## side signature ("NSEW") -> atlas index
+var _role_face: Dictionary = {}   ## role name -> measured side signature
 var _atlas_columns := DEFAULT_ATLAS_COLUMNS
 var _atlas_path := PMD_TILESET
 var _profile_path := PMD_PROFILE
@@ -109,22 +117,28 @@ func _build_tiles() -> void:
 			src.create_tile(Vector2i(col, row))
 	_source_id = tileset.add_source(src)
 
-	# Wall tiles block light. The polygon is centred on the tile; the chamfered
-	# corners + PCF13/smooth below keep the cast shadow from looking like a box.
-	var h := TILE * 0.5 - 2.0
-	var c := 5.0
-	var wall_poly := OccluderPolygon2D.new()
-	wall_poly.polygon = PackedVector2Array([
-		Vector2(-h + c, -h), Vector2(h - c, -h), Vector2(h, -h + c),
-		Vector2(h, h - c), Vector2(h - c, h), Vector2(-h + c, h),
-		Vector2(-h, h - c), Vector2(-h, -h + c)])
-	for role in ["wall_tl", "wall_t"]:
-		var data := src.get_tile_data(Vector2i(_role(role), 0), 0)
+	# Face-aware occluders (D-355): each wall tile blocks light only on its
+	# wall-mass side, leaving the lit face free. The old full-tile occluder on
+	# every wall darkened the room; this keeps the floor and the faces readable.
+	for role_name in _roles.keys():
+		var role_key := str(role_name)
+		if not role_key.begins_with("wall_"):
+			continue
+		var index := _role(role_key)
+		if index < 0:
+			continue
+		var polygon := _make_occluder(role_key, _wall_signature(role_key))
+		if polygon == null:
+			continue
+		var data := src.get_tile_data(Vector2i(index, 0), 0)
+		if data == null:
+			continue
 		data.set_occluder_polygons_count(0, 1)
-		data.set_occluder_polygon(0, 0, wall_poly)
+		data.set_occluder_polygon(0, 0, polygon)
 
 	_floor_layer = _make_layer("Floor", tileset)
 	_decor_layer = _make_layer("Decor", tileset)
+	_build_decals()
 	_fill_cells()
 
 
@@ -144,6 +158,20 @@ func _load_profile() -> void:
 	if typeof(roles) == TYPE_DICTIONARY:
 		for key in roles.keys():
 			_roles[key] = int(roles[key])
+	# Measured side signatures from the importer (D-354). The game never
+	# guesses a wall face from a role name; it asks for the signature it needs.
+	_role_sides.clear()
+	var sides_data: Variant = data.get("role_sides")
+	_role_face = sides_data if typeof(sides_data) == TYPE_DICTIONARY else {}
+	var contract_ok := bool(data.get("side_contract_ok", false))
+	if contract_ok and typeof(sides_data) == TYPE_DICTIONARY:
+		for role_name in sides_data.keys():
+			var sides := str(sides_data[role_name])
+			if sides.is_empty():
+				continue
+			var index := int(_roles.get(role_name, -1))
+			if index >= 0:
+				_role_sides[sides] = index
 	var columns: Variant = data.get("columns")
 	if columns != null:
 		_atlas_columns = maxi(1, int(columns))
@@ -154,6 +182,71 @@ func _load_profile() -> void:
 
 func _role(role_name: String) -> int:
 	return int(_roles.get(role_name, DEFAULT_ROLES.get(role_name, -1)))
+
+
+## Side signature used by the face-aware occluder. Prefers the measured sides
+## from the profile; falls back to the role table for older profiles (D-355).
+func _wall_signature(role_name: String) -> String:
+	if _role_face.has(role_name):
+		return str(_role_face[role_name])
+	var fallback := {
+		"wall_tl": "NW", "wall_t": "N", "wall_tr": "NE",
+		"wall_l": "W", "wall_c": "", "wall_r": "E",
+		"wall_bl": "SW", "wall_b": "S", "wall_br": "SE",
+		"wall_strip_v": "WE", "wall_strip_h": "NS",
+		"wall_island": "NSWE",
+		"wall_tip_n": "NWE", "wall_tip_s": "SWE",
+		"wall_tip_w": "NSW", "wall_tip_e": "NSE",
+		"wall_cross": "",
+	}
+	return str(fallback.get(role_name, ""))
+
+
+## Occluder covering only the wall-mass side. The lit face side stays free,
+## so the room does not darken like the old full-tile attempt.
+func _make_occluder(role_name: String, signature: String) -> OccluderPolygon2D:
+	if role_name == "wall_cross" or signature == "NSWE" \
+		or signature == "WE" or signature == "NS":
+		return null
+	var h := TILE * 0.5 - 2.0
+	var c := 5.0
+	var points: Array[Vector2] = []
+	if signature.is_empty():
+		points = [
+			Vector2(-h + c, -h), Vector2(h - c, -h), Vector2(h, -h + c),
+			Vector2(h, h - c), Vector2(h - c, h), Vector2(-h + c, h),
+			Vector2(-h, h - c), Vector2(-h, -h + c)]
+	elif signature.length() == 1:
+		match signature:
+			"S": points = [Vector2(-h, -h), Vector2(h, -h), Vector2(h, 0), Vector2(-h, 0)]
+			"N": points = [Vector2(-h, 0), Vector2(h, 0), Vector2(h, h), Vector2(-h, h)]
+			"E": points = [Vector2(-h, -h), Vector2(0, -h), Vector2(0, h), Vector2(-h, h)]
+			"W": points = [Vector2(0, -h), Vector2(h, -h), Vector2(h, h), Vector2(0, h)]
+	elif signature.length() == 2:
+		match signature:
+			"SE": points = [Vector2(-h, -h), Vector2(0, -h), Vector2(0, 0), Vector2(-h, 0)]
+			"SW": points = [Vector2(0, -h), Vector2(h, -h), Vector2(h, 0), Vector2(0, 0)]
+			"NE": points = [Vector2(-h, 0), Vector2(0, 0), Vector2(0, h), Vector2(-h, h)]
+			"NW": points = [Vector2(0, 0), Vector2(h, 0), Vector2(h, h), Vector2(0, h)]
+	elif signature.length() == 3:
+		var closed := _missing_side(signature)
+		match closed:
+			"S": points = [Vector2(-h, 0), Vector2(h, 0), Vector2(h, h), Vector2(-h, h)]
+			"N": points = [Vector2(-h, -h), Vector2(h, -h), Vector2(h, 0), Vector2(-h, 0)]
+			"E": points = [Vector2(0, -h), Vector2(h, -h), Vector2(h, h), Vector2(0, h)]
+			"W": points = [Vector2(-h, -h), Vector2(0, -h), Vector2(0, h), Vector2(-h, h)]
+	if points.is_empty():
+		return null
+	var polygon := OccluderPolygon2D.new()
+	polygon.polygon = PackedVector2Array(points)
+	return polygon
+
+
+func _missing_side(signature: String) -> String:
+	for side in ["N", "S", "W", "E"]:
+		if not signature.contains(side):
+			return side
+	return ""
 
 
 ## Reads the current PNG directly while developing, so a rebuilt atlas does
@@ -188,49 +281,56 @@ func _fill_cells() -> void:
 
 
 func _wall_tile_index(x: int, y: int) -> int:
-	# Outside the map is an open end, not a continuing wall (D-348).
+	# Open = floor or outside the map (D-348). The side signature is measured
+	# from the source tile by the importer (D-354); this function only asks
+	# which sides are open and lets the profile return the matching real tile.
 	var n := not _is_solid(x, y - 1)
 	var s := not _is_solid(x, y + 1)
 	var w := not _is_solid(x - 1, y)
 	var e := not _is_solid(x + 1, y)
-	# One-tile-thick wall with both opposite sides open: the synthetic strips
-	# have borders on both sides and no joints when repeated.
-	if n and s and not w and not e:
-		var strip_h := _role("wall_strip_h")
-		if strip_h >= 0:
-			return strip_h
-	if w and e and not n and not s:
-		var strip_v := _role("wall_strip_v")
-		if strip_v >= 0:
-			return strip_v
-	# If exactly one side is floor, the border faces that floor, even when the
-	# opposite side is outside the map. This is the inside border of the top,
-	# bottom, left and right wall bands.
-	var nf := _is_floor(x, y - 1)
-	var sf := _is_floor(x, y + 1)
-	var wf := _is_floor(x - 1, y)
-	var ef := _is_floor(x + 1, y)
-	var floors := int(nf) + int(sf) + int(wf) + int(ef)
-	if floors == 1:
-		if sf:
-			return _role("wall_b")
-		if nf:
-			return _role("wall_t")
-		if ef:
-			return _role("wall_r")
-		if wf:
-			return _role("wall_l")
-	# Inner corner: no orthogonal floor, one diagonal floor. The base outer
-	# corner keeps the two outside borders; the patch adds the inner corner.
-	if floors == 0:
-		if _is_floor(x + 1, y + 1):
-			return _role("wall_inner_br")
-		if _is_floor(x - 1, y + 1):
-			return _role("wall_inner_bl")
-		if _is_floor(x + 1, y - 1):
-			return _role("wall_inner_tr")
-		if _is_floor(x - 1, y - 1):
-			return _role("wall_inner_tl")
+	var key := ""
+	if n:
+		key += "N"
+	if s:
+		key += "S"
+	if w:
+		key += "W"
+	if e:
+		key += "E"
+	if key.is_empty():
+		# All four orthogonal neighbours are wall: an interior tile or a
+		# 1-tile cross with floor in all four diagonals.
+		if _role("wall_cross") >= 0 and _diagonal_floor(x, y):
+			return _role("wall_cross")
+		var alt1 := _role("wall_alt_1")
+		var alt2 := _role("wall_alt_2")
+		if (alt1 >= 0 or alt2 >= 0) and _deep_wall(x, y):
+			var roll := absi(_hash(x, y) ^ _variation_seed) % 100
+			if alt1 >= 0 and roll < 5:
+				return alt1
+			if alt2 >= 0 and roll < 10:
+				return alt2
+		return _role("wall_c")
+	var matched := int(_role_sides.get(key, -1))
+	if matched >= 0:
+		return matched
+	# Fallback for a profile without the measured contract (the 12 sheets
+	# whose art does not expose a clean dark face). The role table is the same
+	# across the 16 sheets, so the real extras are still used by name.
+	if n and s and w and e:
+		return _role("wall_island")
+	if n and w and e:
+		return _role("wall_tip_n")
+	if s and w and e:
+		return _role("wall_tip_s")
+	if n and s and w:
+		return _role("wall_tip_w")
+	if n and s and e:
+		return _role("wall_tip_e")
+	if n and s:
+		return _role("wall_strip_h")
+	if w and e:
+		return _role("wall_strip_v")
 	if n and w:
 		return _role("wall_tl")
 	if n and e:
@@ -248,6 +348,27 @@ func _wall_tile_index(x: int, y: int) -> int:
 	if s:
 		return _role("wall_b")
 	return _role("wall_c")
+
+
+func _diagonal_floor(x: int, y: int) -> bool:
+	return _is_floor(x - 1, y - 1) and _is_floor(x + 1, y - 1) \
+		and _is_floor(x - 1, y + 1) and _is_floor(x + 1, y + 1)
+
+
+## Deep interior of the wall mass: all 8 neighbours are walls. The Wall Alt
+## variation only applies here, never on an edge or corner (D-355).
+func _deep_wall(x: int, y: int) -> bool:
+	if not _is_solid(x, y):
+		return false
+	for dy in [-1, 0, 1]:
+		for dx in [-1, 0, 1]:
+			if dx == 0 and dy == 0:
+				continue
+			var nx: int = x + dx
+			var ny: int = y + dy
+			if not _is_solid(nx, ny):
+				return false
+	return true
 
 
 func _ground_tile_index(x: int, y: int) -> int:
@@ -271,35 +392,72 @@ func _ground_tile_index(x: int, y: int) -> int:
 		return _role("ground_r")
 	if s:
 		return _role("ground_b")
-	# Floor diagonal to a wall: the 3x3 has no inner corner; add the patch.
-	var inner := -1
-	if _is_solid(x - 1, y - 1):
-		inner = _role("ground_inner_tl")
-	elif _is_solid(x + 1, y - 1):
-		inner = _role("ground_inner_tr")
-	elif _is_solid(x - 1, y + 1):
-		inner = _role("ground_inner_bl")
-	elif _is_solid(x + 1, y + 1):
-		inner = _role("ground_inner_br")
-	if inner >= 0:
-		return inner
 	return _ground_center(x, y)
 
 
-## Organic floor (D-347): only the interior center cells vary; edge/corner
-## cells keep the 4-neighbor border tile. The seed makes the pattern stable
-## for the same floor and different on the next one.
-func _ground_center(x: int, y: int) -> int:
+## Organic floor (D-347/D-356): only interior cells vary; the decal map is
+## built once per floor with exactly 4% + 4% targets, a seeded shuffle and a
+## 1-tile exclusion, so two decals never touch and the density is stable.
+func _build_decals() -> void:
+	_decals.clear()
 	var alt1 := _role("ground_alt_1")
 	var alt2 := _role("ground_alt_2")
-	var roll := absi(_hash(x, y) ^ _variation_seed) % 100
-	# The Ground Alt tiles are sparse ground decals (flowers, trees, rocks,
-	# rubble), not seamless floor variants; 4% each keeps them occasional.
-	if alt2 >= 0 and roll < 4:
-		return alt2
-	if alt1 >= 0 and roll < 8:
-		return alt1
-	return _role("ground_c")
+	if alt1 < 0 and alt2 < 0:
+		return
+	var candidates: Array[Vector2i] = []
+	for y in _map.size():
+		for x in _map[y].length():
+			if _is_interior_floor(x, y):
+				candidates.append(Vector2i(x, y))
+	if candidates.is_empty():
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = _variation_seed
+	for i in range(candidates.size() - 1, 0, -1):
+		var j := rng.randi_range(0, i)
+		var swap := candidates[i]
+		candidates[i] = candidates[j]
+		candidates[j] = swap
+	var target1 := int(round(candidates.size() * 0.04))
+	var target2 := int(round(candidates.size() * 0.04))
+	var placed1 := 0
+	var placed2 := 0
+	for cell in candidates:
+		if placed1 >= target1 and placed2 >= target2:
+			break
+		if _has_decal_near(cell):
+			continue
+		var role := -1
+		if alt1 >= 0 and placed1 < target1 and (alt2 < 0 or placed1 <= placed2):
+			role = alt1
+			placed1 += 1
+		elif alt2 >= 0 and placed2 < target2:
+			role = alt2
+			placed2 += 1
+		if role >= 0:
+			_decals[cell] = role
+
+
+func _ground_center(x: int, y: int) -> int:
+	var decal := int(_decals.get(Vector2i(x, y), -1))
+	return decal if decal >= 0 else _role("ground_c")
+
+
+func _has_decal_near(cell: Vector2i) -> bool:
+	for dy in [-1, 0, 1]:
+		for dx in [-1, 0, 1]:
+			if dx == 0 and dy == 0:
+				continue
+			if _decals.has(cell + Vector2i(dx, dy)):
+				return true
+	return false
+
+
+func _is_interior_floor(x: int, y: int) -> bool:
+	if _is_wall(x, y):
+		return false
+	return not _is_wall(x - 1, y) and not _is_wall(x + 1, y) \
+		and not _is_wall(x, y - 1) and not _is_wall(x, y + 1)
 
 
 # --- Lights ------------------------------------------------------------------

@@ -56,4 +56,4 @@ Também corrigidos na auditoria:
 
 ## Estado
 
-Implementado e validado nos 16 sheets. Nada foi commitado ou publicado.
+Implementado e validado nos 16 sheets. As 10 melhorias de percepção propostas depois do erro dos lados foram implementadas em D-354: orientação medida, preview como gabarito, contrato de face, teste de espelho, grade de componentes e gate humano. A folha ativa (Temporal Tower) tem 28 tiles reais e contrato de face OK; a aprovação humana ainda não foi gravada. Nada foi commitado ou publicado.

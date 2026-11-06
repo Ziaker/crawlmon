@@ -1,6 +1,6 @@
 {
   "name": "deep_boulder_quarry",
-  "pipeline_version": "2.4.0",
+  "pipeline_version": "2.9.0",
   "atlas": "res://assets/pmd/dungeons/sky/atlas/deep_boulder_quarry_atlas.png",
   "tile_size": 48,
   "columns": 30,
@@ -26,15 +26,115 @@
     "ground_br": 17,
     "ground_alt_1": 18,
     "ground_alt_2": 19,
-    "wall_strip_h": 20,
-    "wall_strip_v": 21,
-    "wall_inner_br": 22,
-    "wall_inner_bl": 23,
-    "wall_inner_tr": 24,
-    "wall_inner_tl": 25,
-    "ground_inner_tl": 26,
-    "ground_inner_tr": 27,
-    "ground_inner_bl": 28,
-    "ground_inner_br": 29
-  }
+    "wall_strip_v": 20,
+    "wall_strip_h": 21,
+    "wall_island": 22,
+    "wall_tip_n": 23,
+    "wall_tip_s": 24,
+    "wall_tip_w": 25,
+    "wall_tip_e": 26,
+    "wall_cross": 27,
+    "wall_alt_1": 28,
+    "wall_alt_2": 29
+  },
+  "role_sides": {
+    "wall_tl": "",
+    "wall_t": "",
+    "wall_tr": "",
+    "wall_l": "",
+    "wall_c": "",
+    "wall_r": "",
+    "wall_bl": "NE",
+    "wall_b": "NSE",
+    "wall_br": "N",
+    "wall_strip_v": "",
+    "wall_strip_h": "E",
+    "wall_island": "",
+    "wall_tip_n": "",
+    "wall_tip_s": "N",
+    "wall_tip_w": "",
+    "wall_tip_e": "",
+    "wall_cross": "",
+    "wall_alt_1": "SE",
+    "wall_alt_2": "NSWE"
+  },
+  "role_cells": {
+    "wall_tl": [
+      3,
+      0
+    ],
+    "wall_t": [
+      4,
+      0
+    ],
+    "wall_tr": [
+      5,
+      0
+    ],
+    "wall_l": [
+      3,
+      1
+    ],
+    "wall_c": [
+      4,
+      1
+    ],
+    "wall_r": [
+      5,
+      1
+    ],
+    "wall_bl": [
+      3,
+      2
+    ],
+    "wall_b": [
+      4,
+      2
+    ],
+    "wall_br": [
+      5,
+      2
+    ],
+    "wall_strip_v": [
+      3,
+      4
+    ],
+    "wall_strip_h": [
+      4,
+      3
+    ],
+    "wall_island": [
+      4,
+      4
+    ],
+    "wall_tip_n": [
+      4,
+      6
+    ],
+    "wall_tip_s": [
+      4,
+      8
+    ],
+    "wall_tip_w": [
+      3,
+      7
+    ],
+    "wall_tip_e": [
+      5,
+      7
+    ],
+    "wall_cross": [
+      4,
+      7
+    ],
+    "wall_alt_1": [
+      7,
+      1
+    ],
+    "wall_alt_2": [
+      10,
+      1
+    ]
+  },
+  "side_contract_ok": false
 }

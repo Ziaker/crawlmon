@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "2.4.0",
+  "pipeline_version": "2.9.0",
   "name": "temporal_spire",
   "source": "assets/pmd/dungeons/sky/raw/temporal_spire.png",
   "source_sha256": "04c2cf17821452bc3a30935f75cc92d6bb2e87fb76989391dab17032099f43ef",
@@ -386,7 +386,7 @@
   },
   "atlas": {
     "path": "assets/pmd/dungeons/sky/atlas/temporal_spire_atlas.png",
-    "sha256": "8637cfed64c7de0abdffe63f7aafe3f221cf36b83d3b7e7b0cf2f6064f2dcb0e",
+    "sha256": "f68358a33f40e37042a17de664d0175847e8770dfdfd8b6dbced4b5aff51f7f3",
     "tile_size": 48,
     "columns": 30,
     "rows": 1
@@ -412,17 +412,117 @@
     "ground_br": 17,
     "ground_alt_1": 18,
     "ground_alt_2": 19,
-    "wall_strip_h": 20,
-    "wall_strip_v": 21,
-    "wall_inner_br": 22,
-    "wall_inner_bl": 23,
-    "wall_inner_tr": 24,
-    "wall_inner_tl": 25,
-    "ground_inner_tl": 26,
-    "ground_inner_tr": 27,
-    "ground_inner_bl": 28,
-    "ground_inner_br": 29
+    "wall_strip_v": 20,
+    "wall_strip_h": 21,
+    "wall_island": 22,
+    "wall_tip_n": 23,
+    "wall_tip_s": 24,
+    "wall_tip_w": 25,
+    "wall_tip_e": 26,
+    "wall_cross": 27,
+    "wall_alt_1": 28,
+    "wall_alt_2": 29
   },
+  "role_sides": {
+    "wall_tl": "NW",
+    "wall_t": "N",
+    "wall_tr": "NE",
+    "wall_l": "W",
+    "wall_c": "",
+    "wall_r": "E",
+    "wall_bl": "SW",
+    "wall_b": "S",
+    "wall_br": "SE",
+    "wall_strip_v": "WE",
+    "wall_strip_h": "NSW",
+    "wall_island": "NSWE",
+    "wall_tip_n": "NWE",
+    "wall_tip_s": "SWE",
+    "wall_tip_w": "NSW",
+    "wall_tip_e": "NSWE",
+    "wall_cross": "WE",
+    "wall_alt_1": "",
+    "wall_alt_2": ""
+  },
+  "role_cells": {
+    "wall_tl": [
+      3,
+      0
+    ],
+    "wall_t": [
+      4,
+      0
+    ],
+    "wall_tr": [
+      5,
+      0
+    ],
+    "wall_l": [
+      3,
+      1
+    ],
+    "wall_c": [
+      4,
+      1
+    ],
+    "wall_r": [
+      5,
+      1
+    ],
+    "wall_bl": [
+      3,
+      2
+    ],
+    "wall_b": [
+      4,
+      2
+    ],
+    "wall_br": [
+      5,
+      2
+    ],
+    "wall_strip_v": [
+      3,
+      4
+    ],
+    "wall_strip_h": [
+      4,
+      3
+    ],
+    "wall_island": [
+      4,
+      4
+    ],
+    "wall_tip_n": [
+      4,
+      6
+    ],
+    "wall_tip_s": [
+      4,
+      8
+    ],
+    "wall_tip_w": [
+      3,
+      7
+    ],
+    "wall_tip_e": [
+      5,
+      7
+    ],
+    "wall_cross": [
+      4,
+      7
+    ],
+    "wall_alt_1": [
+      7,
+      1
+    ],
+    "wall_alt_2": [
+      10,
+      1
+    ]
+  },
+  "side_contract_ok": false,
   "profile": "assets/pmd/dungeons/sky/atlas/temporal_spire_profile.json",
   "contact_sheet": "docs/referencias/tilesets/temporal_spire_contact.png",
   "labeled_atlas": "docs/referencias/tilesets/temporal_spire_atlas_labeled.png",
@@ -430,17 +530,8 @@
   "preview": "docs/referencias/tilesets/temporal_spire_preview.png",
   "validation": {
     "tiles": 30,
-    "unique_tiles": 28,
-    "duplicates": [
-      [
-        13,
-        28
-      ],
-      [
-        13,
-        29
-      ]
-    ],
+    "unique_tiles": 30,
+    "duplicates": [],
     "seam": {
       "wall_c": {
         "left_right": 0.375,
@@ -452,7 +543,9 @@
       }
     },
     "warnings": [
-      "temporal_spire: repeated atlas tiles [[13, 28], [13, 29]]",
+      "temporal_spire: role wall_strip_h measures open=NSW but the contract expects NS (not the active sheet)",
+      "temporal_spire: role wall_tip_e measures open=NSWE but the contract expects NSE (not the active sheet)",
+      "temporal_spire: role wall_cross measures open=WE but the contract expects - (not the active sheet)",
       "temporal_spire: wall_c does not self-tile perfectly (L/R 38%, T/B 17%); the 3x3 block is a border set, so this is diagnostic",
       "temporal_spire: ground_c does not self-tile perfectly (L/R 96%, T/B 75%); the 3x3 block is a border set, so this is diagnostic"
     ]

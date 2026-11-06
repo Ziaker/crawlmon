@@ -30,6 +30,7 @@ ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = ROOT / "assets" / "pmd" / "dungeons" / "sky" / "raw"
 ATLAS_DIR = ROOT / "assets" / "pmd" / "dungeons" / "sky" / "atlas"
 MANIFEST_DIR = ROOT / "tools" / "pmd_import" / "manifests"
+AUDIT_DIR = ROOT / "tools" / "pmd_import" / "audits"
 CONTACT_DIR = ROOT / "docs" / "referencias" / "tilesets"
 ACTIVE = "temporal_tower"
 ATLAS_TILE = 48
@@ -39,6 +40,10 @@ for index, role in enumerate(ps.CORE_ROLES):
     BASE_ROLES[f"wall_{role}"] = index
 for index, role in enumerate(ps.CORE_ROLES):
     BASE_ROLES[f"ground_{role}"] = 9 + index
+
+# The face contract lives in pmd_sheet so the builder and the audit use the
+# same one.
+SIDE_CONTRACT = ps.SIDE_CONTRACT
 
 
 def _font(size: int) -> ImageFont.ImageFont:
@@ -52,50 +57,6 @@ def _font(size: int) -> ImageFont.ImageFont:
 
 def _rel(path: Path) -> str:
     return path.relative_to(ROOT).as_posix()
-
-
-def _corner_image(
-    image: Image.Image,
-    grid: ps.SheetGrid,
-    base: tuple[int, int],
-    patch: tuple[int, int],
-    corner: str,
-) -> Image.Image:
-    """Base 24x24 tile plus the 8x8 corner patch from another core tile."""
-    def raw(column: int, row: int) -> Image.Image:
-        return image.crop(grid.cell_box(column, row)).convert("RGBA")
-
-    tile = raw(*base)
-    source = raw(*patch)
-    box = {
-        "tl": (0, 0, 8, 8),
-        "tr": (16, 0, 24, 8),
-        "bl": (0, 16, 8, 24),
-        "br": (16, 16, 24, 24),
-    }[corner]
-    tile.paste(source.crop(box), box)
-    return tile.resize((ATLAS_TILE, ATLAS_TILE), Image.NEAREST)
-
-
-def _strip_image(image: Image.Image, grid: ps.SheetGrid, horizontal: bool) -> Image.Image:
-    """Synthesize a clean two-border strip from the 3x3 wall pieces.
-
-    The sheet's frame pieces have joints when repeated. This composes the
-    border rows/columns of wall_t/wall_b/wall_l/wall_r over wall_c, giving a
-    seamless strip with borders on both sides and no vertical/horizontal seam.
-    """
-    def raw(column: int, row: int) -> Image.Image:
-        return image.crop(grid.cell_box(column, row)).convert("RGBA")
-
-    base = raw(4, 1)
-    border = 6
-    if horizontal:
-        base.paste(raw(4, 0).crop((0, 0, 24, border)), (0, 0))
-        base.paste(raw(4, 2).crop((0, 24 - border, 24, 24)), (0, 24 - border))
-    else:
-        base.paste(raw(3, 1).crop((0, 0, border, 24)), (0, 0))
-        base.paste(raw(5, 1).crop((24 - border, 0, 24, 24)), (24 - border, 0))
-    return base.resize((ATLAS_TILE, ATLAS_TILE), Image.NEAREST)
 
 
 def _make_contact_sheet(
@@ -231,48 +192,97 @@ def build_one(name: str) -> dict:
             "row": row,
         })
 
-    # Clean two-border strips synthesized from the 3x3 wall pieces (D-348).
-    # The sheet's frame bars have joints; these are continuous.
-    for role, horizontal in [("wall_strip_h", True), ("wall_strip_v", False)]:
+    # Real extra wall pieces below the 3x3 core (D-354). Each one is chosen by
+    # the side signature measured from its own pixels, never by grid position:
+    #   C3R4 EW strip, C4R3 NS strip, C4R4 island, C4R6/8/3R7/5R7 tips,
+    #   C4R7 cross. The 3x3 core is the wall mass; these are its shapes.
+    wall_extras = [
+        ("wall_strip_v", "Wall strip V", (3, 4)),
+        ("wall_strip_h", "Wall strip H", (4, 3)),
+        ("wall_island", "Wall island", (4, 4)),
+        ("wall_tip_n", "Wall tip N", (4, 6)),
+        ("wall_tip_s", "Wall tip S", (4, 8)),
+        ("wall_tip_w", "Wall tip W", (3, 7)),
+        ("wall_tip_e", "Wall tip E", (5, 7)),
+        ("wall_cross", "Wall cross", (4, 7)),
+    ]
+    for role, category, (column, row) in wall_extras:
+        if ps.art_fraction(image, grid, column, row) < 0.5:
+            continue
         roles[role] = len(cells)
         cells.append({
-            "category": "Wall strip",
+            "category": category,
             "role": role,
-            "column": -1,
-            "row": -1,
-            "source": "synthetic",
-            "image": _strip_image(image, grid, horizontal),
+            "column": column,
+            "row": row,
         })
 
-    # Inner corners: the 3x3 only has outer corners. Base outer-corner tile +
-    # the diagonal corner patch from the matching corner (D-348).
-    inner_corners = [
-        ("wall_inner_br", (3, 0), (5, 2), "br"),
-        ("wall_inner_bl", (5, 0), (3, 2), "bl"),
-        ("wall_inner_tr", (3, 2), (5, 0), "tr"),
-        ("wall_inner_tl", (5, 2), (3, 0), "tl"),
-        ("ground_inner_tl", (13, 1), (12, 0), "tl"),
-        ("ground_inner_tr", (13, 1), (14, 0), "tr"),
-        ("ground_inner_bl", (13, 1), (12, 2), "bl"),
-        ("ground_inner_br", (13, 1), (14, 2), "br"),
-    ]
-    for role, base, patch, corner in inner_corners:
+    # Wall Alt. 1/2 centres (D-355): real cells, used only as a rare interior
+    # variation of the wall mass, never on edges/corners.
+    for role, (column, row) in [("wall_alt_1", (7, 1)), ("wall_alt_2", (10, 1))]:
+        if ps.art_fraction(image, grid, column, row) < 0.5:
+            continue
         roles[role] = len(cells)
         cells.append({
-            "category": "Inner corner",
+            "category": "Wall Alt centre",
             "role": role,
-            "column": -1,
-            "row": -1,
-            "source": "synthetic",
-            "image": _corner_image(image, grid, base, patch, corner),
+            "column": column,
+            "row": row,
         })
 
     columns = len(cells)
-    atlas = Image.new("RGBA", (columns * ATLAS_TILE, ATLAS_TILE), (0, 0, 0, 0))
-    tile_hashes: list[str] = []
     errors: list[str] = []
     warnings: list[str] = []
     duplicates: list[list[int]] = []
+    # Measure the face of every wall role from the source pixels. The game
+    # selects by this signature, and a mismatch stops the build.
+    role_sides: dict[str, str] = {}
+    role_cells: dict[str, list[int]] = {}
+    contract_ok = True
+    for cell in cells:
+        role_name = str(cell["role"])
+        if cell.get("category") == "Walls":
+            role_name = f"wall_{role_name}"
+        if not role_name.startswith("wall_"):
+            continue
+        source_tile = image.crop(
+            grid.cell_box(int(cell["column"]), int(cell["row"]))
+        ).convert("RGB")
+        sides = ps.open_sides(source_tile)
+        role_sides[role_name] = sides
+        role_cells[role_name] = [int(cell["column"]), int(cell["row"])]
+        expected = SIDE_CONTRACT.get(role_name)
+        if expected is not None and sides != expected:
+            contract_ok = False
+            message = (
+                f"{name}: role {role_name} measures open={sides or '-'} "
+                f"but the contract expects {expected or '-'}"
+            )
+            if name == ACTIVE:
+                errors.append(message)
+            else:
+                warnings.append(message + " (not the active sheet)")
+
+    if name == ACTIVE:
+        approval_path = AUDIT_DIR / f"{name}_approved.json"
+        if not approval_path.exists():
+            warnings.append(
+                f"{name}: no human component approval yet; run audit_components.py "
+                f"--only {name} --approve after reviewing the component sheet"
+            )
+        else:
+            approval = json.loads(approval_path.read_text(encoding="utf-8"))
+            if approval.get("source_sha256") != ps.sha256_file(source_path):
+                warnings.append(f"{name}: component approval is stale (source changed)")
+            elif approval.get("atlas_columns") != columns \
+                    or approval.get("component_map") != role_cells:
+                warnings.append(
+                    f"{name}: component approval is stale (atlas/roles changed); "
+                    f"review the component sheet and run --approve again"
+                )
+
+    atlas = Image.new("RGBA", (columns * ATLAS_TILE, ATLAS_TILE), (0, 0, 0, 0))
+    tile_hashes: list[str] = []
     seen: dict[str, int] = {}
     for index, cell in enumerate(cells):
         if cell.get("source") == "synthetic":
@@ -318,6 +328,9 @@ def build_one(name: str) -> dict:
         "columns": columns,
         "rows": 1,
         "roles": roles,
+        "role_sides": role_sides,
+        "role_cells": role_cells,
+        "side_contract_ok": contract_ok,
     }
     profile_path.write_text(json.dumps(profile, indent=2) + "\n", encoding="utf-8")
 
@@ -367,6 +380,9 @@ def build_one(name: str) -> dict:
             "rows": 1,
         },
         "roles": roles,
+        "role_sides": role_sides,
+        "role_cells": role_cells,
+        "side_contract_ok": contract_ok,
         "profile": _rel(profile_path),
         "contact_sheet": _rel(contact_path),
         "labeled_atlas": _rel(labeled_atlas_path),
@@ -419,15 +435,42 @@ def check_one(name: str) -> list[str]:
     if len(set(role_indices)) != len(role_indices):
         problems.append(f"{name}: duplicate role indices")
     for role in (
-        "ground_alt_1", "ground_alt_2", "wall_strip_h", "wall_strip_v",
-        "wall_inner_br", "wall_inner_bl", "wall_inner_tr", "wall_inner_tl",
-        "ground_inner_tl", "ground_inner_tr", "ground_inner_bl", "ground_inner_br",
+        "ground_alt_1", "ground_alt_2",
+        "wall_strip_v", "wall_strip_h", "wall_island",
+        "wall_tip_n", "wall_tip_s", "wall_tip_w", "wall_tip_e", "wall_cross",
+        "wall_alt_1", "wall_alt_2",
     ):
         if role not in profile["roles"]:
             continue
         index = int(profile["roles"][role])
         if index < len(BASE_ROLES) or index >= columns:
             problems.append(f"{name}: role {role} has invalid index {index}")
+    # Face contract: re-measure each wall role's source cell (D-354). The
+    # strict contract is the active sheet's gate; the other sheets record
+    # their own sides and are reviewed when they become active.
+    if name == ACTIVE:
+        source_image = Image.open(source_path).convert("RGBA")
+        role_sides = profile.get("role_sides", {})
+        role_cells = profile.get("role_cells", {})
+        for role, expected in SIDE_CONTRACT.items():
+            index = profile["roles"].get(role)
+            if index is None:
+                continue
+            if role not in role_sides or role not in role_cells:
+                problems.append(f"{name}: role {role} has no measured side signature")
+                continue
+            column, row = int(role_cells[role][0]), int(role_cells[role][1])
+            measured = ps.open_sides(source_image.crop(grid.cell_box(column, row)))
+            if measured != expected:
+                problems.append(
+                    f"{name}: role {role} measures open={measured or '-'} "
+                    f"but the contract expects {expected or '-'}"
+                )
+            if role_sides[role] != measured:
+                problems.append(
+                    f"{name}: role {role} stored open={role_sides[role] or '-'} "
+                    f"but the source now measures {measured or '-'}"
+                )
     for key in ("contact_sheet", "labeled_atlas", "labels", "preview"):
         artifact = ROOT / manifest[key]
         if not artifact.exists():

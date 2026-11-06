@@ -1,14 +1,75 @@
 # Changelog — pipeline de tilesets
 
+## 2.9.0 — 2026-11-06
+
+- **Fallback dos 12 perfis:** com `side_contract_ok=false`, o jogo usa as peças
+  reais por papel (strip, island, tips, cross, alt); `murky_forest` testado com
+  688 células e 0 divergências.
+- **16 biomas:** captura de sala por perfil; contato em
+  `docs/referencias/tilesets/biomes_contact.png`.
+- **Porta no laboratório:** corredor de 1 tile atravessa a parede esquerda;
+  wall tip + borda de chão visíveis.
+- **Decals exatos:** mapa pré-computado 4%+4% por andar, shuffle e exclusão de
+  1 tile; 8,1% medidos, 0 adjacentes.
+- **Golden 2D:** correlação 0,61 e MAE2D 0,65 além do perfil 1D.
+- **Occluder medido:** `check_occluder_brightness.py` com baseline por seed
+  (51,1–68,5); falha se escurecer >12%.
+- **Wall Alt tuning:** capturas 0+0, 2+3, 5+5 e 7+8%.
+- **Investigação:** a folha não tem canto interno de chão; `Unused Ground` tem
+  um tile isolado (não usado); Water bloqueada por D-312; padding adiado.
+- **Performance:** 4.800 células constroem em 44–69 ms; sem redraw por frame.
+- **Commit:** bloqueado pelo worktree misto; nada publicado.
+
+## 2.8.0 — 2026-11-06
+
+- **Golden room diff:** `--golden` no laboratório + `check_golden_room.py`;
+  compara topo/face/chão com o preview. Passa com correlação 0,60.
+- **Máscaras 8-vizinhos:** grade de 19 papéis (núcleo, strip, island, tips,
+  cross, alt centres), capturada em `_masks.png`; tecla **M** no laboratório.
+- **Occluder ciente da face:** cada parede bloqueia luz só no lado da massa;
+  o centro do piso não escureceu. O full-tile antigo foi rejeitado.
+- **Decals de piso com espaçamento:** 13% de candidatos + desempate por célula
+  → 8,7% reais, sem pares adjacentes; a média visual 4%+4% de D-347 continua.
+- **Wall Alt. 1/2 centres:** 30 tiles; C7R1/C10R1 só em células totalmente
+  interiores, 10% (5% cada), nunca em borda/canto/strip/tip/cross (D-355).
+- **Gate:** a aprovação do Temporal fica stale (28 → 30 tiles) e o build avisa
+  até nova revisão + `--approve`.
+- **Validação:** 16 atlas/perfis com 30 tiles; `--check` OK; 6.970 células de
+  parede em 10 seeds com 0 divergências; decals 8,7% sem adjacentes; alt 9,25%.
+
+## 2.7.0 — 2026-11-06
+
+- **Pipeline de percepção (D-354):** `audit_components.py` mede simetria H/V,
+  linhas topo/face/fundo, assinatura de lado (`N/S/W/E`), costura, espelho,
+  contrato de face e composição do preview.
+- **Preview como gabarito:** casado pixel a pixel nas 16 folhas; a composição é
+  `topo (linha 1) → face (linha 2) → chão`.
+- **28 tiles reais:** 18 núcleo + 2 Ground Alt + strip V/H, island, tip N/S/W/E
+  e cross. Nenhuma peça sintética.
+- **Contrato de face:** `role_sides`/`role_cells`/`side_contract_ok` no perfil;
+  o jogo escolhe a parede pela assinatura de lado medida, com fallback.
+- **Gate humano:** `audit_components.py --only <folha> --approve` grava a
+  aprovação; o build avisa quando falta ou envelhece.
+- **Laboratório:** sala 14×10 embutida numa massa de parede (o caso do jogo),
+  piso 6×4, parede fina de 3 tiles (strip + tips), câmera 2,3× e 48 px.
+- **16 perfis/atlas** regerados com 28 tiles; `--check` OK. O contrato passa no
+  Temporal Tower; 12 folhas de arte ambígua ficam sinalizadas até revisão.
+- O atlas de 2.6.0 (21 tiles) fica superado por esta versão.
+
+## 2.6.0 — 2026-11-06
+
+- **Reversão das peças sintéticas:** o atlas de 42 tiles misturava topo/frente/
+  centro de componentes diferentes e piorou os lados. Voltou para **21 tiles**:
+  18 núcleo + 2 Ground Alt + `wall_strip_v` real C3 R4.
+- Topo/base usam `wall_b`/`wall_t` reais, escolhidos pelo lado do chão.
+- Nenhuma peça sintética no jogo/lab ativo; o pipeline não gera mais strips/
+  ends/islands/inner. **Superado pela 2.7.0** (28 tiles + assinatura de lado).
+
 ## 2.5.0 — 2026-11-06
 
-- **Cantos internos sintéticos:** 4 de parede (base do canto externo + patch
-  do canto diagonal) e 4 de chão (base `ground_c` + patch do canto). O topo,
-  base, laterais, cantos da sala e o pilar 2×2 ficam com as bordas internas.
-- Atlas ativo com **30 tiles** (18 núcleo + 2 Ground Alt + 2 strips + 8 inner).
-- O laboratório reposicionou a sala para não sobrepor o catálogo de 30 tiles.
-- O jogo não foi capturado nesta rodada: `game_state.gd` está com erro de
-  compilação em `heal_gain_mark.gd` (outra sessão); o laboratório é independente.
+- **Autotile sintético completo:** 7 peças de parede, 7 de chão e 8 inner
+  corners; atlas de 42 tiles. **Descartado na 2.6.0** por misturar componentes
+  da folha e piorar os lados.
 
 ## 2.4.0 — 2026-11-06
 
@@ -68,4 +129,16 @@
   duplicatas (aviso), costura (aviso), hashes no `--check`.
 - **Folha de contato e atlas rotulado** para cada uma das 16 folhas.
 - **Laboratório no Godot:** catálogo + sala de máscaras no 48 px real e câmera
-  2,3×; cap
+  2,3×; captura das 16 em `scratch/tilesets/`.
+- **Índice global** em `tools/pmd_import/manifests/index.json`; `--only` não o
+  sobrescreve mais.
+- **Limpeza:** removido o gerador procedural antigo de atlas em
+  `map_visuals.gd` e o `docs/referencias/tilesets/` recebeu `.gdignore`.
+- **Todos os 16 atlas** regerados e validados.
+
+## 1.x — legado (descartado)
+
+- Origem `(14, 160)`, pitch 24 e recorte 19×19 em `(+4, +3)`.
+- O deslocamento de 1 px por coluna fazia o Ground ser lido meio tile fora;
+  foi a causa dos resultados embaralhados.
+- Não usar como referência de implementação.

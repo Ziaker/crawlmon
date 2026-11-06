@@ -9,13 +9,27 @@ extends Node2D
 const TILE := 48
 const ACTIVE_PROFILE := "res://assets/pmd/dungeons/sky/atlas/temporal_tower_profile.json"
 const POOL_PATH := "res://assets/pmd/dungeons/sky/atlas/biome_pool.json"
-const ROOM := Vector2i(10, 6)
+## Room embedded in a wall mass (the same case the game generates), so the
+## sides use the core side pieces instead of the free-standing border strips.
+const ROOM := Vector2i(14, 10)
+const FLOOR_RECT := Rect2i(4, 3, 6, 4)
+## A 1-tile corridor through the left wall: the doorway case (D-356).
+const DOOR_CELLS := [Vector2i(3, 4), Vector2i(2, 4), Vector2i(1, 4)]
+const MASK_ORIGIN := Vector2i(0, 20)
+const MASK_COLUMNS := 6
+const MASK_STEP := 4
 const VARIATION_SEED := 12345
 
 @export var profile_override := ""
+@export var alt1_percent := 5
+@export var alt2_percent := 5
 
 var _roles: Dictionary = {}
-var _columns := 18
+var _role_sides: Dictionary = {}
+var _role_face: Dictionary = {}
+var _decals: Dictionary = {}
+var _columns := 28
+var _mask_mode := false
 var _name := "tileset"
 var _atlas: Texture2D
 var _camera: Camera2D
@@ -40,6 +54,32 @@ func _ready() -> void:
 			if arg.begins_with("--profile="):
 				profile_path = arg.trim_prefix("--profile=")
 	setup(profile_path)
+	if args.has("--golden"):
+		await get_tree().process_frame
+		if _title != null:
+			_title.visible = false
+		if _hover != null:
+			_hover.visible = false
+		_camera.zoom = Vector2(2.3, 2.3)
+		_camera.position = Vector2(7 * TILE, 13 * TILE)
+		await capture("res://scratch/tileset_lab_golden_room.png")
+		get_tree().quit()
+		return
+	if args.has("--alt-capture"):
+		for pair in [[0, 0], [2, 3], [5, 5], [7, 8]]:
+			alt1_percent = pair[0]
+			alt2_percent = pair[1]
+			setup(ACTIVE_PROFILE)
+			await get_tree().process_frame
+			_camera.zoom = Vector2(2.3, 2.3)
+			_camera.position = Vector2(7 * TILE, 13 * TILE)
+			_title.text = "Wall Alt. %d%% + %d%%" % [alt1_percent, alt2_percent]
+			_title.position = Vector2(200, 520)
+			if _hover != null:
+				_hover.visible = false
+			await capture("res://scratch/tileset_lab_alt_%d_%d.png" % [alt1_percent, alt2_percent])
+		get_tree().quit()
+		return
 	if args.has("--capture"):
 		await get_tree().process_frame
 		await capture_views("res://scratch/tileset_lab_active")
@@ -53,6 +93,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		_cycle(1)
 	elif event.keycode == KEY_LEFT:
 		_cycle(-1)
+	elif event.keycode == KEY_M:
+		_mask_mode = not _mask_mode
+		_camera.zoom = Vector2(1.0, 1.0) if _mask_mode else Vector2(2.3, 2.3)
+		_camera.position = Vector2(552, 1320) if _mask_mode else Vector2(7 * TILE, 13 * TILE)
 
 
 func _load_pool() -> void:
@@ -96,7 +140,11 @@ func setup(profile_path: String) -> void:
 		push_error("tileset lab: invalid profile " + profile_path)
 		return
 	_roles = data.get("roles", {})
-	_columns = int(data.get("columns", 18))
+	_role_sides = {}
+	_role_face = data.get("role_sides", {})
+	if bool(data.get("side_contract_ok", false)):
+		_role_sides = data.get("role_sides", {})
+	_columns = int(data.get("columns", 28))
 	_name = str(data.get("name", "tileset"))
 	var atlas_path := str(data.get("atlas", ""))
 	if not ResourceLoader.exists(atlas_path):
@@ -105,7 +153,9 @@ func setup(profile_path: String) -> void:
 	_atlas = _load_texture(atlas_path)
 	_build_tileset()
 	_build_catalog()
+	_build_decals()
 	_build_room()
+	_build_masks()
 	_build_camera()
 	_build_title()
 	_sync_pool_index()
@@ -159,22 +209,103 @@ func _build_catalog() -> void:
 
 
 func _build_room() -> void:
-	var origin := Vector2i(0, 6)
+	var origin := Vector2i(0, 8)
 	for y in ROOM.y:
 		for x in ROOM.x:
 			var index := _wall_index(x, y) if _is_wall(x, y) else _ground_index(x, y)
 			_room_layer.set_cell(origin + Vector2i(x, y), _source_id, Vector2i(index, 0))
 
 
-## A 2x2 free pillar exercises the four wall corners.
+## One 3x3 mini-grid per wall role: the centre is the role, the neighbours
+## show its 8-neighbour mask. This is how the rare pieces (island, tips, cross)
+## are seen instead of only inferred from the atlas.
+func _build_masks() -> void:
+	var cases: Array[String] = []
+	for role in _roles.keys():
+		if str(role).begins_with("wall_"):
+			cases.append(str(role))
+	cases.sort()
+	for index in cases.size():
+		var role := cases[index]
+		var base := MASK_ORIGIN + Vector2i(
+			(index % MASK_COLUMNS) * MASK_STEP,
+			(index / MASK_COLUMNS) * MASK_STEP)
+		_paint_mask_case(base, role)
+		var label := Label.new()
+		label.text = "%s %s" % [role, _mask_signature(role)]
+		label.position = Vector2(base.x * TILE + 2, base.y * TILE + 2)
+		label.add_theme_font_size_override("font_size", 9)
+		label.add_theme_color_override("font_color", Color(1, 0.9, 0.4))
+		label.z_index = 5
+		add_child(label)
+
+
+func _paint_mask_case(base: Vector2i, role: String) -> void:
+	var signature := _mask_signature(role)
+	var floor_cells := {}
+	if role == "wall_cross":
+		for dx in [-1, 1]:
+			for dy in [-1, 1]:
+				floor_cells[Vector2i(dx, dy)] = true
+	elif role != "wall_c":
+		for side in signature:
+			var direction := _side_direction(side)
+			floor_cells[direction] = true
+			if side == "N" or side == "S":
+				floor_cells[Vector2i(-1, direction.y)] = true
+				floor_cells[Vector2i(1, direction.y)] = true
+			else:
+				floor_cells[Vector2i(direction.x, -1)] = true
+				floor_cells[Vector2i(direction.x, 1)] = true
+	for dy in range(-1, 2):
+		for dx in range(-1, 2):
+			var cell := base + Vector2i(dx, dy)
+			if dx == 0 and dy == 0:
+				_room_layer.set_cell(cell, _source_id, Vector2i(_role(role), 0))
+			elif floor_cells.get(Vector2i(dx, dy), false):
+				_room_layer.set_cell(cell, _source_id, Vector2i(_role("ground_c"), 0))
+			else:
+				_room_layer.set_cell(cell, _source_id, Vector2i(_role("wall_c"), 0))
+
+
+func _mask_signature(role: String) -> String:
+	if _role_face.has(role):
+		return str(_role_face[role])
+	var fallback := {
+		"wall_tl": "NW", "wall_t": "N", "wall_tr": "NE",
+		"wall_l": "W", "wall_c": "", "wall_r": "E",
+		"wall_bl": "SW", "wall_b": "S", "wall_br": "SE",
+		"wall_strip_v": "WE", "wall_strip_h": "NS",
+		"wall_island": "NSWE",
+		"wall_tip_n": "NWE", "wall_tip_s": "SWE",
+		"wall_tip_w": "NSW", "wall_tip_e": "NSE",
+		"wall_cross": "",
+		"wall_alt_1": "", "wall_alt_2": "",
+	}
+	return str(fallback.get(role, ""))
+
+
+func _side_direction(side: String) -> Vector2i:
+	match side:
+		"N": return Vector2i(0, -1)
+		"S": return Vector2i(0, 1)
+		"W": return Vector2i(-1, 0)
+		"E": return Vector2i(1, 0)
+	return Vector2i.ZERO
+
+
+## A 3-tile thin wall exercises the horizontal strip and the two tips; the
+## room ring exercises the four corners.
 func _is_pillar(x: int, y: int) -> bool:
-	return (x == 3 or x == 4) and (y == 2 or y == 3)
+	return y == 4 and (x == 6 or x == 7 or x == 8)
 
 
 func _is_wall(x: int, y: int) -> bool:
 	if x < 0 or y < 0 or x >= ROOM.x or y >= ROOM.y:
 		return true
-	if x == 0 or y == 0 or x == ROOM.x - 1 or y == ROOM.y - 1:
+	if DOOR_CELLS.has(Vector2i(x, y)):
+		return false
+	if not FLOOR_RECT.has_point(Vector2i(x, y)):
 		return true
 	return _is_pillar(x, y)
 
@@ -200,37 +331,44 @@ func _wall_index(x: int, y: int) -> int:
 	var s := not _is_solid(x, y + 1)
 	var w := not _is_solid(x - 1, y)
 	var e := not _is_solid(x + 1, y)
-	if n and s and not w and not e:
-		var strip_h := _role("wall_strip_h")
-		if strip_h >= 0:
-			return strip_h
-	if w and e and not n and not s:
-		var strip_v := _role("wall_strip_v")
-		if strip_v >= 0:
-			return strip_v
-	var nf := _is_floor(x, y - 1)
-	var sf := _is_floor(x, y + 1)
-	var wf := _is_floor(x - 1, y)
-	var ef := _is_floor(x + 1, y)
-	var floors := int(nf) + int(sf) + int(wf) + int(ef)
-	if floors == 1:
-		if sf:
-			return _role("wall_b")
-		if nf:
-			return _role("wall_t")
-		if ef:
-			return _role("wall_r")
-		if wf:
-			return _role("wall_l")
-	if floors == 0:
-		if _is_floor(x + 1, y + 1):
-			return _role("wall_inner_br")
-		if _is_floor(x - 1, y + 1):
-			return _role("wall_inner_bl")
-		if _is_floor(x + 1, y - 1):
-			return _role("wall_inner_tr")
-		if _is_floor(x - 1, y - 1):
-			return _role("wall_inner_tl")
+	var key := ""
+	if n:
+		key += "N"
+	if s:
+		key += "S"
+	if w:
+		key += "W"
+	if e:
+		key += "E"
+	if key.is_empty():
+		if _role("wall_cross") >= 0 and _diagonal_floor(x, y):
+			return _role("wall_cross")
+		var alt1 := _role("wall_alt_1")
+		var alt2 := _role("wall_alt_2")
+		if (alt1 >= 0 or alt2 >= 0) and _deep_wall(x, y):
+			var roll := absi(_hash(x, y) ^ VARIATION_SEED) % 100
+			if alt1 >= 0 and roll < alt1_percent:
+				return alt1
+			if alt2 >= 0 and roll < alt1_percent + alt2_percent:
+				return alt2
+		return _role("wall_c")
+	var matched := int(_role_sides.get(key, -1))
+	if matched >= 0:
+		return matched
+	if n and s and w and e:
+		return _role("wall_island")
+	if n and w and e:
+		return _role("wall_tip_n")
+	if s and w and e:
+		return _role("wall_tip_s")
+	if n and s and w:
+		return _role("wall_tip_w")
+	if n and s and e:
+		return _role("wall_tip_e")
+	if n and s:
+		return _role("wall_strip_h")
+	if w and e:
+		return _role("wall_strip_v")
 	if n and w:
 		return _role("wall_tl")
 	if n and e:
@@ -248,6 +386,25 @@ func _wall_index(x: int, y: int) -> int:
 	if s:
 		return _role("wall_b")
 	return _role("wall_c")
+
+
+func _diagonal_floor(x: int, y: int) -> bool:
+	return _is_floor(x - 1, y - 1) and _is_floor(x + 1, y - 1) \
+		and _is_floor(x - 1, y + 1) and _is_floor(x + 1, y + 1)
+
+
+func _deep_wall(x: int, y: int) -> bool:
+	if not _is_solid(x, y):
+		return false
+	for dy in [-1, 0, 1]:
+		for dx in [-1, 0, 1]:
+			if dx == 0 and dy == 0:
+				continue
+			var nx: int = x + dx
+			var ny: int = y + dy
+			if not _is_solid(nx, ny):
+				return false
+	return true
 
 
 func _ground_index(x: int, y: int) -> int:
@@ -271,29 +428,69 @@ func _ground_index(x: int, y: int) -> int:
 		return _role("ground_r")
 	if s:
 		return _role("ground_b")
-	var inner := -1
-	if _is_solid(x - 1, y - 1):
-		inner = _role("ground_inner_tl")
-	elif _is_solid(x + 1, y - 1):
-		inner = _role("ground_inner_tr")
-	elif _is_solid(x - 1, y + 1):
-		inner = _role("ground_inner_bl")
-	elif _is_solid(x + 1, y + 1):
-		inner = _role("ground_inner_br")
-	if inner >= 0:
-		return inner
 	return _ground_center(x, y)
 
 
-func _ground_center(x: int, y: int) -> int:
+func _build_decals() -> void:
+	_decals.clear()
 	var alt1 := _role("ground_alt_1")
 	var alt2 := _role("ground_alt_2")
-	var roll := absi(_hash(x, y) ^ VARIATION_SEED) % 100
-	if alt2 >= 0 and roll < 4:
-		return alt2
-	if alt1 >= 0 and roll < 8:
-		return alt1
-	return _role("ground_c")
+	if alt1 < 0 and alt2 < 0:
+		return
+	var candidates: Array[Vector2i] = []
+	for y in ROOM.y:
+		for x in ROOM.x:
+			if _is_interior_floor(x, y):
+				candidates.append(Vector2i(x, y))
+	if candidates.is_empty():
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = VARIATION_SEED
+	for i in range(candidates.size() - 1, 0, -1):
+		var j := rng.randi_range(0, i)
+		var swap := candidates[i]
+		candidates[i] = candidates[j]
+		candidates[j] = swap
+	var target1 := int(round(candidates.size() * 0.04))
+	var target2 := int(round(candidates.size() * 0.04))
+	var placed1 := 0
+	var placed2 := 0
+	for cell in candidates:
+		if placed1 >= target1 and placed2 >= target2:
+			break
+		if _has_decal_near(cell):
+			continue
+		var role := -1
+		if alt1 >= 0 and placed1 < target1 and (alt2 < 0 or placed1 <= placed2):
+			role = alt1
+			placed1 += 1
+		elif alt2 >= 0 and placed2 < target2:
+			role = alt2
+			placed2 += 1
+		if role >= 0:
+			_decals[cell] = role
+
+
+func _ground_center(x: int, y: int) -> int:
+	var decal := int(_decals.get(Vector2i(x, y), -1))
+	return decal if decal >= 0 else _role("ground_c")
+
+
+func _has_decal_near(cell: Vector2i) -> bool:
+	for dy in [-1, 0, 1]:
+		for dx in [-1, 0, 1]:
+			if dx == 0 and dy == 0:
+				continue
+			if _decals.has(cell + Vector2i(dx, dy)):
+				return true
+	return false
+
+
+func _is_interior_floor(x: int, y: int) -> bool:
+	if _is_wall(x, y):
+		return false
+	return not _is_wall(x - 1, y) and not _is_wall(x + 1, y) \
+		and not _is_wall(x, y - 1) and not _is_wall(x, y + 1)
 
 
 func _hash(x: int, y: int) -> int:
@@ -303,7 +500,7 @@ func _hash(x: int, y: int) -> int:
 func _build_camera() -> void:
 	_camera = Camera2D.new()
 	_camera.zoom = Vector2(2.3, 2.3)
-	_camera.position = Vector2(5 * TILE, 9 * TILE)
+	_camera.position = Vector2(7 * TILE, 13 * TILE)
 	_camera.enabled = true
 	add_child(_camera)
 	_camera.make_current()
@@ -314,11 +511,12 @@ func _build_title() -> void:
 	_title.add_theme_font_size_override("font_size", 12)
 	_title.add_theme_color_override("font_color", Color(1, 0.9, 0.4))
 	_title.z_index = 10
+	_title.position = Vector2(200, 520)
 	add_child(_title)
 	_hover = Label.new()
 	_hover.add_theme_font_size_override("font_size", 10)
 	_hover.add_theme_color_override("font_color", Color(0.7, 1.0, 0.8))
-	_hover.position = Vector2(8, 6 * TILE + 28)
+	_hover.position = Vector2(200, 540)
 	_hover.z_index = 10
 	add_child(_hover)
 
@@ -352,14 +550,25 @@ func _label() -> String:
 func capture_views(prefix: String) -> void:
 	if _hover != null:
 		_hover.visible = false
-	_camera.position = Vector2(3 * TILE, 1.5 * TILE)
+	# The 42-tile catalog needs a slightly wider view than the 2.3x room.
+	_camera.zoom = Vector2(1.8, 1.8)
+	_camera.position = Vector2(3 * TILE, 3 * TILE)
 	_title.text = "%s — catálogo (índices)" % _label()
 	_title.position = Vector2(8, -18)
 	await capture(prefix + "_catalog.png")
-	_camera.position = Vector2(5 * TILE, 9 * TILE)
+	_camera.zoom = Vector2(2.3, 2.3)
+	_camera.position = Vector2(7 * TILE, 13 * TILE)
 	_title.text = "%s — piso orgânico, 48 px, câmera 2,3x" % _label()
-	_title.position = Vector2(8, 6 * TILE + 8)
+	_title.position = Vector2(200, 520)
 	await capture(prefix + "_room.png")
+	_title.visible = false
+	_camera.zoom = Vector2(1.0, 1.0)
+	_camera.position = Vector2(552, 1320)
+	await capture(prefix + "_masks.png")
+	_title.visible = true
+	_camera.zoom = Vector2(2.3, 2.3)
+	_camera.position = Vector2(7 * TILE, 13 * TILE)
+	_title.position = Vector2(200, 520)
 
 
 func capture(path: String) -> void:

@@ -1,0 +1,648 @@
+{
+  "name": "icicle_forest",
+  "grid": {
+    "origin_x": 9,
+    "origin_y": 163,
+    "pitch": 25,
+    "tile": 24
+  },
+  "walls": {
+    "h_symmetry_mae": 9.9,
+    "v_symmetry_mae": 26.8,
+    "h_symmetric": true,
+    "v_symmetric": false,
+    "row_means": [
+      190.2,
+      207.1,
+      176.8
+    ],
+    "col_means": [
+      185.0,
+      203.5,
+      185.6
+    ],
+    "surface_row": 1,
+    "front_row": 2,
+    "back_row": 0,
+    "inference": "wall object: top surface + front face + back edge, not a 9-piece autotile",
+    "tiles": [
+      {
+        "label": "back-L",
+        "cell": "C3R0",
+        "side": "",
+        "mean": 181.9,
+        "self_seam": {
+          "left_right": 0.0,
+          "top_bottom": 0.167
+        }
+      },
+      {
+        "label": "back",
+        "cell": "C4R0",
+        "side": "",
+        "mean": 203.0,
+        "self_seam": {
+          "left_right": 0.542,
+          "top_bottom": 0.0
+        }
+      },
+      {
+        "label": "back-R",
+        "cell": "C5R0",
+        "side": "",
+        "mean": 185.5,
+        "self_seam": {
+          "left_right": 0.0,
+          "top_bottom": 0.167
+        }
+      },
+      {
+        "label": "side-L",
+        "cell": "C3R1",
+        "side": "",
+        "mean": 197.3,
+        "self_seam": {
+          "left_right": 0.0,
+          "top_bottom": 0.375
+        }
+      },
+      {
+        "label": "top",
+        "cell": "C4R1",
+        "side": "",
+        "mean": 226.0,
+        "self_seam": {
+          "left_right": 0.667,
+          "top_bottom": 0.75
+        }
+      },
+      {
+        "label": "side-R",
+        "cell": "C5R1",
+        "side": "",
+        "mean": 198.0,
+        "self_seam": {
+          "left_right": 0.0,
+          "top_bottom": 0.333
+        }
+      },
+      {
+        "label": "front-L",
+        "cell": "C3R2",
+        "side": "",
+        "mean": 175.8,
+        "self_seam": {
+          "left_right": 0.042,
+          "top_bottom": 0.083
+        }
+      },
+      {
+        "label": "front",
+        "cell": "C4R2",
+        "side": "",
+        "mean": 181.6,
+        "self_seam": {
+          "left_right": 0.375,
+          "top_bottom": 0.0
+        }
+      },
+      {
+        "label": "front-R",
+        "cell": "C5R2",
+        "side": "",
+        "mean": 173.2,
+        "self_seam": {
+          "left_right": 0.167,
+          "top_bottom": 0.083
+        }
+      }
+    ],
+    "weak_seams": []
+  },
+  "ground": {
+    "h_symmetry_mae": 11.7,
+    "v_symmetry_mae": 12.3,
+    "h_symmetric": false,
+    "v_symmetric": false
+  },
+  "side_strip_C3R4": {
+    "sides": ""
+  },
+  "preview": {
+    "size": [
+      76,
+      124
+    ],
+    "scale": 24,
+    "matches": [
+      {
+        "row": 1,
+        "label": "top surface",
+        "x": 2,
+        "y": 2,
+        "mae": 0.0
+      },
+      {
+        "row": 0,
+        "label": "back/top edge",
+        "x": 49,
+        "y": 9,
+        "mae": 25.1
+      },
+      {
+        "row": 2,
+        "label": "front face",
+        "x": 2,
+        "y": 26,
+        "mae": 0.0
+      },
+      {
+        "row": "ground",
+        "label": "floor",
+        "x": 2,
+        "y": 50,
+        "mae": 4.8
+      }
+    ],
+    "matched": 3,
+    "composition": "top surface (row 1 y=2) -> front face (row 2 y=26) -> floor (row ground y=50)",
+    "core_scale_matches": [
+      {
+        "x": 15,
+        "y": 50,
+        "mae": 37.3,
+        "tile": "back-L",
+        "cell": "C3R0"
+      },
+      {
+        "x": 49,
+        "y": 9,
+        "mae": 25.1,
+        "tile": "back",
+        "cell": "C4R0"
+      },
+      {
+        "x": 47,
+        "y": 5,
+        "mae": 39.0,
+        "tile": "back-R",
+        "cell": "C5R0"
+      },
+      {
+        "x": 2,
+        "y": 2,
+        "mae": 30.1,
+        "tile": "side-L",
+        "cell": "C3R1"
+      },
+      {
+        "x": 2,
+        "y": 2,
+        "mae": 0.0,
+        "tile": "top",
+        "cell": "C4R1"
+      },
+      {
+        "x": 2,
+        "y": 2,
+        "mae": 29.0,
+        "tile": "side-R",
+        "cell": "C5R1"
+      },
+      {
+        "x": 50,
+        "y": 26,
+        "mae": 30.1,
+        "tile": "front-L",
+        "cell": "C3R2"
+      },
+      {
+        "x": 2,
+        "y": 26,
+        "mae": 0.0,
+        "tile": "front",
+        "cell": "C4R2"
+      },
+      {
+        "x": 26,
+        "y": 26,
+        "mae": 27.5,
+        "tile": "front-R",
+        "cell": "C5R2"
+      }
+    ]
+  },
+  "contract": [
+    {
+      "role": "wall_tl",
+      "cell": "C3R0",
+      "expected": "NW",
+      "measured": "",
+      "stored": "",
+      "ok": false
+    },
+    {
+      "role": "wall_t",
+      "cell": "C4R0",
+      "expected": "N",
+      "measured": "",
+      "stored": "",
+      "ok": false
+    },
+    {
+      "role": "wall_tr",
+      "cell": "C5R0",
+      "expected": "NE",
+      "measured": "",
+      "stored": "",
+      "ok": false
+    },
+    {
+      "role": "wall_l",
+      "cell": "C3R1",
+      "expected": "W",
+      "measured": "",
+      "stored": "",
+      "ok": false
+    },
+    {
+      "role": "wall_c",
+      "cell": "C4R1",
+      "expected": "",
+      "measured": "",
+      "stored": "",
+      "ok": true
+    },
+    {
+      "role": "wall_r",
+      "cell": "C5R1",
+      "expected": "E",
+      "measured": "",
+      "stored": "",
+      "ok": false
+    },
+    {
+      "role": "wall_bl",
+      "cell": "C3R2",
+      "expected": "SW",
+      "measured": "",
+      "stored": "",
+      "ok": false
+    },
+    {
+      "role": "wall_b",
+      "cell": "C4R2",
+      "expected": "S",
+      "measured": "",
+      "stored": "",
+      "ok": false
+    },
+    {
+      "role": "wall_br",
+      "cell": "C5R2",
+      "expected": "SE",
+      "measured": "",
+      "stored": "",
+      "ok": false
+    },
+    {
+      "role": "wall_strip_v",
+      "cell": "C3R4",
+      "expected": "WE",
+      "measured": "",
+      "stored": "",
+      "ok": false
+    },
+    {
+      "role": "wall_strip_h",
+      "cell": "C4R3",
+      "expected": "NS",
+      "measured": "",
+      "stored": "",
+      "ok": false
+    },
+    {
+      "role": "wall_island",
+      "cell": "C4R4",
+      "expected": "NSWE",
+      "measured": "",
+      "stored": "",
+      "ok": false
+    },
+    {
+      "role": "wall_tip_n",
+      "cell": "C4R6",
+      "expected": "NWE",
+      "measured": "",
+      "stored": "",
+      "ok": false
+    },
+    {
+      "role": "wall_tip_s",
+      "cell": "C4R8",
+      "expected": "SWE",
+      "measured": "",
+      "stored": "",
+      "ok": false
+    },
+    {
+      "role": "wall_tip_w",
+      "cell": "C3R7",
+      "expected": "NSW",
+      "measured": "",
+      "stored": "",
+      "ok": false
+    },
+    {
+      "role": "wall_tip_e",
+      "cell": "C5R7",
+      "expected": "NSE",
+      "measured": "",
+      "stored": "",
+      "ok": false
+    },
+    {
+      "role": "wall_cross",
+      "cell": "C4R7",
+      "expected": "",
+      "measured": "",
+      "stored": "",
+      "ok": true
+    },
+    {
+      "role": "wall_alt_1",
+      "cell": "C7R1",
+      "expected": "",
+      "measured": "",
+      "stored": "",
+      "ok": true
+    },
+    {
+      "role": "wall_alt_2",
+      "cell": "C10R1",
+      "expected": "",
+      "measured": "",
+      "stored": "",
+      "ok": true
+    }
+  ],
+  "same_component": {
+    "profile": true,
+    "columns": 30,
+    "roles": {
+      "wall_tl": 0,
+      "wall_t": 1,
+      "wall_tr": 2,
+      "wall_l": 3,
+      "wall_c": 4,
+      "wall_r": 5,
+      "wall_bl": 6,
+      "wall_b": 7,
+      "wall_br": 8,
+      "ground_tl": 9,
+      "ground_t": 10,
+      "ground_tr": 11,
+      "ground_l": 12,
+      "ground_c": 13,
+      "ground_r": 14,
+      "ground_bl": 15,
+      "ground_b": 16,
+      "ground_br": 17,
+      "ground_alt_1": 18,
+      "ground_alt_2": 19,
+      "wall_strip_v": 20,
+      "wall_strip_h": 21,
+      "wall_island": 22,
+      "wall_tip_n": 23,
+      "wall_tip_s": 24,
+      "wall_tip_w": 25,
+      "wall_tip_e": 26,
+      "wall_cross": 27,
+      "wall_alt_1": 28,
+      "wall_alt_2": 29
+    },
+    "contract": [
+      {
+        "role": "wall_tl",
+        "cell": "C3R0",
+        "expected": "NW",
+        "measured": "",
+        "stored": "",
+        "ok": false
+      },
+      {
+        "role": "wall_t",
+        "cell": "C4R0",
+        "expected": "N",
+        "measured": "",
+        "stored": "",
+        "ok": false
+      },
+      {
+        "role": "wall_tr",
+        "cell": "C5R0",
+        "expected": "NE",
+        "measured": "",
+        "stored": "",
+        "ok": false
+      },
+      {
+        "role": "wall_l",
+        "cell": "C3R1",
+        "expected": "W",
+        "measured": "",
+        "stored": "",
+        "ok": false
+      },
+      {
+        "role": "wall_c",
+        "cell": "C4R1",
+        "expected": "",
+        "measured": "",
+        "stored": "",
+        "ok": true
+      },
+      {
+        "role": "wall_r",
+        "cell": "C5R1",
+        "expected": "E",
+        "measured": "",
+        "stored": "",
+        "ok": false
+      },
+      {
+        "role": "wall_bl",
+        "cell": "C3R2",
+        "expected": "SW",
+        "measured": "",
+        "stored": "",
+        "ok": false
+      },
+      {
+        "role": "wall_b",
+        "cell": "C4R2",
+        "expected": "S",
+        "measured": "",
+        "stored": "",
+        "ok": false
+      },
+      {
+        "role": "wall_br",
+        "cell": "C5R2",
+        "expected": "SE",
+        "measured": "",
+        "stored": "",
+        "ok": false
+      },
+      {
+        "role": "wall_strip_v",
+        "cell": "C3R4",
+        "expected": "WE",
+        "measured": "",
+        "stored": "",
+        "ok": false
+      },
+      {
+        "role": "wall_strip_h",
+        "cell": "C4R3",
+        "expected": "NS",
+        "measured": "",
+        "stored": "",
+        "ok": false
+      },
+      {
+        "role": "wall_island",
+        "cell": "C4R4",
+        "expected": "NSWE",
+        "measured": "",
+        "stored": "",
+        "ok": false
+      },
+      {
+        "role": "wall_tip_n",
+        "cell": "C4R6",
+        "expected": "NWE",
+        "measured": "",
+        "stored": "",
+        "ok": false
+      },
+      {
+        "role": "wall_tip_s",
+        "cell": "C4R8",
+        "expected": "SWE",
+        "measured": "",
+        "stored": "",
+        "ok": false
+      },
+      {
+        "role": "wall_tip_w",
+        "cell": "C3R7",
+        "expected": "NSW",
+        "measured": "",
+        "stored": "",
+        "ok": false
+      },
+      {
+        "role": "wall_tip_e",
+        "cell": "C5R7",
+        "expected": "NSE",
+        "measured": "",
+        "stored": "",
+        "ok": false
+      },
+      {
+        "role": "wall_cross",
+        "cell": "C4R7",
+        "expected": "",
+        "measured": "",
+        "stored": "",
+        "ok": true
+      },
+      {
+        "role": "wall_alt_1",
+        "cell": "C7R1",
+        "expected": "",
+        "measured": "",
+        "stored": "",
+        "ok": true
+      },
+      {
+        "role": "wall_alt_2",
+        "cell": "C10R1",
+        "expected": "",
+        "measured": "",
+        "stored": "",
+        "ok": true
+      }
+    ],
+    "contract_ok": false,
+    "unexpected_roles": [],
+    "outside_component": [],
+    "same_component": true
+  },
+  "mirror_pairs": [
+    {
+      "cell": "C3R0",
+      "h_cell": "C5R0",
+      "h_mae": 5.5,
+      "v_cell": "C3R2",
+      "v_mae": 31.8
+    },
+    {
+      "cell": "C4R0",
+      "h_cell": "C4R0",
+      "h_mae": 19.1,
+      "v_cell": "C4R2",
+      "v_mae": 29.5
+    },
+    {
+      "cell": "C5R0",
+      "h_cell": "C3R0",
+      "h_mae": 5.5,
+      "v_cell": "C5R2",
+      "v_mae": 32.8
+    },
+    {
+      "cell": "C3R1",
+      "h_cell": "C5R1",
+      "h_mae": 3.6,
+      "v_cell": "C3R1",
+      "v_mae": 21.6
+    },
+    {
+      "cell": "C4R1",
+      "h_cell": "C4R1",
+      "h_mae": 9.5,
+      "v_cell": "C4R1",
+      "v_mae": 9.4
+    },
+    {
+      "cell": "C5R1",
+      "h_cell": "C3R1",
+      "h_mae": 3.6,
+      "v_cell": "C5R1",
+      "v_mae": 22.1
+    },
+    {
+      "cell": "C3R2",
+      "h_cell": "C5R2",
+      "h_mae": 8.1,
+      "v_cell": "C3R0",
+      "v_mae": 31.8
+    },
+    {
+      "cell": "C4R2",
+      "h_cell": "C4R2",
+      "h_mae": 25.9,
+      "v_cell": "C4R0",
+      "v_mae": 29.5
+    },
+    {
+      "cell": "C5R2",
+      "h_cell": "C3R2",
+      "h_mae": 8.1,
+      "v_cell": "C5R0",
+      "v_mae": 32.8
+    }
+  ]
+}

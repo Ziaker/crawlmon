@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "2.4.0",
+  "pipeline_version": "2.9.0",
   "floors_per_biome": 5,
   "fallback": "temporal_tower",
   "profiles": [

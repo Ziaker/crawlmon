@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "2.5.0",
+  "pipeline_version": "2.9.0",
   "name": "deep_limestone_cavern",
   "source": "assets/pmd/dungeons/sky/raw/deep_limestone_cavern.png",
   "source_sha256": "ec5c0c28b9a343555fdfb20fdc8f9757adcade7ad73d371ff66eb8fa2f200804",
@@ -382,7 +382,7 @@
   },
   "atlas": {
     "path": "assets/pmd/dungeons/sky/atlas/deep_limestone_cavern_atlas.png",
-    "sha256": "25bc6ab02ade31eaaa87e868876401423476deeff4c2d6aeaccb3bacf2a644a7",
+    "sha256": "eb4c9f253251daf7b2cc6da3ea9ce5302bb9b4cbb2bff96e3ffeb5c89521c8cb",
     "tile_size": 48,
     "columns": 30,
     "rows": 1
@@ -408,17 +408,117 @@
     "ground_br": 17,
     "ground_alt_1": 18,
     "ground_alt_2": 19,
-    "wall_strip_h": 20,
-    "wall_strip_v": 21,
-    "wall_inner_br": 22,
-    "wall_inner_bl": 23,
-    "wall_inner_tr": 24,
-    "wall_inner_tl": 25,
-    "ground_inner_tl": 26,
-    "ground_inner_tr": 27,
-    "ground_inner_bl": 28,
-    "ground_inner_br": 29
+    "wall_strip_v": 20,
+    "wall_strip_h": 21,
+    "wall_island": 22,
+    "wall_tip_n": 23,
+    "wall_tip_s": 24,
+    "wall_tip_w": 25,
+    "wall_tip_e": 26,
+    "wall_cross": 27,
+    "wall_alt_1": 28,
+    "wall_alt_2": 29
   },
+  "role_sides": {
+    "wall_tl": "",
+    "wall_t": "S",
+    "wall_tr": "",
+    "wall_l": "E",
+    "wall_c": "",
+    "wall_r": "W",
+    "wall_bl": "NE",
+    "wall_b": "N",
+    "wall_br": "NW",
+    "wall_strip_v": "",
+    "wall_strip_h": "",
+    "wall_island": "",
+    "wall_tip_n": "",
+    "wall_tip_s": "N",
+    "wall_tip_w": "",
+    "wall_tip_e": "",
+    "wall_cross": "",
+    "wall_alt_1": "SWE",
+    "wall_alt_2": "NSWE"
+  },
+  "role_cells": {
+    "wall_tl": [
+      3,
+      0
+    ],
+    "wall_t": [
+      4,
+      0
+    ],
+    "wall_tr": [
+      5,
+      0
+    ],
+    "wall_l": [
+      3,
+      1
+    ],
+    "wall_c": [
+      4,
+      1
+    ],
+    "wall_r": [
+      5,
+      1
+    ],
+    "wall_bl": [
+      3,
+      2
+    ],
+    "wall_b": [
+      4,
+      2
+    ],
+    "wall_br": [
+      5,
+      2
+    ],
+    "wall_strip_v": [
+      3,
+      4
+    ],
+    "wall_strip_h": [
+      4,
+      3
+    ],
+    "wall_island": [
+      4,
+      4
+    ],
+    "wall_tip_n": [
+      4,
+      6
+    ],
+    "wall_tip_s": [
+      4,
+      8
+    ],
+    "wall_tip_w": [
+      3,
+      7
+    ],
+    "wall_tip_e": [
+      5,
+      7
+    ],
+    "wall_cross": [
+      4,
+      7
+    ],
+    "wall_alt_1": [
+      7,
+      1
+    ],
+    "wall_alt_2": [
+      10,
+      1
+    ]
+  },
+  "side_contract_ok": false,
   "profile": "assets/pmd/dungeons/sky/atlas/deep_limestone_cavern_profile.json",
   "contact_sheet": "docs/referencias/tilesets/deep_limestone_cavern_contact.png",
   "labeled_atlas": "docs/referencias/tilesets/deep_limestone_cavern_atlas_labeled.png",
@@ -426,17 +526,8 @@
   "preview": "docs/referencias/tilesets/deep_limestone_cavern_preview.png",
   "validation": {
     "tiles": 30,
-    "unique_tiles": 28,
-    "duplicates": [
-      [
-        13,
-        28
-      ],
-      [
-        13,
-        29
-      ]
-    ],
+    "unique_tiles": 30,
+    "duplicates": [],
     "seam": {
       "wall_c": {
         "left_right": 1.0,
@@ -448,7 +539,23 @@
       }
     },
     "warnings": [
-      "deep_limestone_cavern: repeated atlas tiles [[13, 28], [13, 29]]",
+      "deep_limestone_cavern: role wall_tl measures open=- but the contract expects NW (not the active sheet)",
+      "deep_limestone_cavern: role wall_t measures open=S but the contract expects N (not the active sheet)",
+      "deep_limestone_cavern: role wall_tr measures open=- but the contract expects NE (not the active sheet)",
+      "deep_limestone_cavern: role wall_l measures open=E but the contract expects W (not the active sheet)",
+      "deep_limestone_cavern: role wall_r measures open=W but the contract expects E (not the active sheet)",
+      "deep_limestone_cavern: role wall_bl measures open=NE but the contract expects SW (not the active sheet)",
+      "deep_limestone_cavern: role wall_b measures open=N but the contract expects S (not the active sheet)",
+      "deep_limestone_cavern: role wall_br measures open=NW but the contract expects SE (not the active sheet)",
+      "deep_limestone_cavern: role wall_strip_v measures open=- but the contract expects WE (not the active sheet)",
+      "deep_limestone_cavern: role wall_strip_h measures open=- but the contract expects NS (not the active sheet)",
+      "deep_limestone_cavern: role wall_island measures open=- but the contract expects NSWE (not the active sheet)",
+      "deep_limestone_cavern: role wall_tip_n measures open=- but the contract expects NWE (not the active sheet)",
+      "deep_limestone_cavern: role wall_tip_s measures open=N but the contract expects SWE (not the active sheet)",
+      "deep_limestone_cavern: role wall_tip_w measures open=- but the contract expects NSW (not the active sheet)",
+      "deep_limestone_cavern: role wall_tip_e measures open=- but the contract expects NSE (not the active sheet)",
+      "deep_limestone_cavern: role wall_alt_1 measures open=SWE but the contract expects - (not the active sheet)",
+      "deep_limestone_cavern: role wall_alt_2 measures open=NSWE but the contract expects - (not the active sheet)",
       "deep_limestone_cavern: ground_c does not self-tile perfectly (L/R 58%, T/B 54%); the 3x3 block is a border set, so this is diagnostic"
     ]
   }

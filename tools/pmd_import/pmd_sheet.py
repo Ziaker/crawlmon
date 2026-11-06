@@ -16,7 +16,7 @@ from pathlib import Path
 
 from PIL import Image
 
-PIPELINE_VERSION = "2.5.0"
+PIPELINE_VERSION = "2.9.0"
 CYAN = (128, 255, 255, 255)
 TEAL = (0, 128, 128, 255)
 
@@ -32,6 +32,22 @@ CORE_ROLES = (
     "l", "c", "r",
     "bl", "b", "br",
 )
+
+# Face contract (D-354): open sides measured on the source tile for each wall
+# role. "open" means the dark cliff face is on that side (floor side).
+SIDE_CONTRACT = {
+    "wall_tl": "NW", "wall_t": "N", "wall_tr": "NE",
+    "wall_l": "W", "wall_c": "", "wall_r": "E",
+    "wall_bl": "SW", "wall_b": "S", "wall_br": "SE",
+    "wall_strip_v": "WE", "wall_strip_h": "NS",
+    "wall_island": "NSWE",
+    "wall_tip_n": "NWE", "wall_tip_s": "SWE",
+    "wall_tip_w": "NSW", "wall_tip_e": "NSE",
+    "wall_cross": "",
+    # Wall Alt. 1/2 are interior centres used only as a rare variation
+    # (D-355); they have no open side of their own.
+    "wall_alt_1": "", "wall_alt_2": "",
+}
 
 
 @dataclass(frozen=True)
@@ -230,3 +246,54 @@ def seam_score(tile: Image.Image) -> dict[str, float]:
         "left_right": round(left_right, 3),
         "top_bottom": round(top_bottom, 3),
     }
+
+
+def edge_means(tile: Image.Image) -> dict[str, float]:
+    """Mean luminance of each 4 px border strip and of the centre (D-354).
+
+    The PMD wall art puts a dark cliff face on the side that touches the
+    floor. Measuring those strips is how the importer knows which side of a
+    tile is open instead of trusting its grid position.
+    """
+    gray = tile.convert("L")
+    pixels = gray.load()
+    width, height = gray.size
+    centre = _region_mean(pixels, width, height, width // 3, height // 3, width * 2 // 3, height * 2 // 3)
+    return {
+        "center": round(centre, 1),
+        "N": round(_region_mean(pixels, width, height, 4, 0, width - 4, 4), 1),
+        "S": round(_region_mean(pixels, width, height, 4, height - 4, width - 4, height), 1),
+        "W": round(_region_mean(pixels, width, height, 0, 4, 4, height - 4), 1),
+        "E": round(_region_mean(pixels, width, height, width - 4, 4, width, height - 4), 1),
+    }
+
+
+def _region_mean(pixels, width: int, height: int, x0: int, y0: int, x1: int, y1: int) -> float:
+    total = 0.0
+    count = 0
+    for y in range(max(0, y0), min(height, y1)):
+        for x in range(max(0, x0), min(width, x1)):
+            total += pixels[x, y]
+            count += 1
+    return total / count if count else 0.0
+
+
+def open_sides(tile: Image.Image) -> str:
+    """Side signature of a wall tile, in NSWE order (D-354).
+
+    A side is open when its border strip is much darker than the centre: that
+    dark band is the cliff face drawn on the floor side. The 3x3 core then
+    reads as NW / N / NE / W / (none) / E / SW / S / SE, which is the real
+    orientation contract of the sheet.
+    """
+    means = edge_means(tile)
+    sides = "".join(
+        side for side in ("N", "S", "W", "E")
+        if means[side] < 95.0 and means[side] < means["center"] * 0.85
+    )
+    return sides
+
+
+def tile_array(tile: Image.Image):
+    """Small helper for callers that need the raw RGB pixels."""
+    return tile.convert("RGB")

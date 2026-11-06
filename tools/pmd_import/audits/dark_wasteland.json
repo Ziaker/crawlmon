@@ -1,0 +1,648 @@
+{
+  "name": "dark_wasteland",
+  "grid": {
+    "origin_x": 9,
+    "origin_y": 163,
+    "pitch": 25,
+    "tile": 24
+  },
+  "walls": {
+    "h_symmetry_mae": 16.5,
+    "v_symmetry_mae": 23.7,
+    "h_symmetric": false,
+    "v_symmetric": false,
+    "row_means": [
+      98.2,
+      117.2,
+      87.3
+    ],
+    "col_means": [
+      92.9,
+      111.8,
+      98.0
+    ],
+    "surface_row": 1,
+    "front_row": 2,
+    "back_row": 0,
+    "inference": "wall object: top surface + front face + back edge, not a 9-piece autotile",
+    "tiles": [
+      {
+        "label": "back-L",
+        "cell": "C3R0",
+        "side": "NW",
+        "mean": 89.9,
+        "self_seam": {
+          "left_right": 0.042,
+          "top_bottom": 0.042
+        }
+      },
+      {
+        "label": "back",
+        "cell": "C4R0",
+        "side": "N",
+        "mean": 109.1,
+        "self_seam": {
+          "left_right": 0.75,
+          "top_bottom": 0.0
+        }
+      },
+      {
+        "label": "back-R",
+        "cell": "C5R0",
+        "side": "NE",
+        "mean": 95.7,
+        "self_seam": {
+          "left_right": 0.042,
+          "top_bottom": 0.083
+        }
+      },
+      {
+        "label": "side-L",
+        "cell": "C3R1",
+        "side": "W",
+        "mean": 109.3,
+        "self_seam": {
+          "left_right": 0.0,
+          "top_bottom": 0.625
+        }
+      },
+      {
+        "label": "top",
+        "cell": "C4R1",
+        "side": "",
+        "mean": 130.1,
+        "self_seam": {
+          "left_right": 0.833,
+          "top_bottom": 0.792
+        }
+      },
+      {
+        "label": "side-R",
+        "cell": "C5R1",
+        "side": "E",
+        "mean": 112.1,
+        "self_seam": {
+          "left_right": 0.0,
+          "top_bottom": 0.667
+        }
+      },
+      {
+        "label": "front-L",
+        "cell": "C3R2",
+        "side": "SW",
+        "mean": 79.4,
+        "self_seam": {
+          "left_right": 0.125,
+          "top_bottom": 0.0
+        }
+      },
+      {
+        "label": "front",
+        "cell": "C4R2",
+        "side": "S",
+        "mean": 96.2,
+        "self_seam": {
+          "left_right": 0.5,
+          "top_bottom": 0.0
+        }
+      },
+      {
+        "label": "front-R",
+        "cell": "C5R2",
+        "side": "SE",
+        "mean": 86.2,
+        "self_seam": {
+          "left_right": 0.083,
+          "top_bottom": 0.083
+        }
+      }
+    ],
+    "weak_seams": []
+  },
+  "ground": {
+    "h_symmetry_mae": 6.4,
+    "v_symmetry_mae": 6.9,
+    "h_symmetric": true,
+    "v_symmetric": true
+  },
+  "side_strip_C3R4": {
+    "sides": "WE"
+  },
+  "preview": {
+    "size": [
+      76,
+      124
+    ],
+    "scale": 24,
+    "matches": [
+      {
+        "row": 1,
+        "label": "top surface",
+        "x": 2,
+        "y": 2,
+        "mae": 0.0
+      },
+      {
+        "row": 2,
+        "label": "front face",
+        "x": 2,
+        "y": 26,
+        "mae": 0.0
+      },
+      {
+        "row": "ground",
+        "label": "floor",
+        "x": 2,
+        "y": 50,
+        "mae": 0.7
+      },
+      {
+        "row": 0,
+        "label": "back/top edge",
+        "x": 3,
+        "y": 78,
+        "mae": 24.2
+      }
+    ],
+    "matched": 3,
+    "composition": "top surface (row 1 y=2) -> front face (row 2 y=26) -> floor (row ground y=50)",
+    "core_scale_matches": [
+      {
+        "x": 4,
+        "y": 76,
+        "mae": 27.8,
+        "tile": "back-L",
+        "cell": "C3R0"
+      },
+      {
+        "x": 3,
+        "y": 78,
+        "mae": 24.2,
+        "tile": "back",
+        "cell": "C4R0"
+      },
+      {
+        "x": 19,
+        "y": 76,
+        "mae": 27.3,
+        "tile": "back-R",
+        "cell": "C5R0"
+      },
+      {
+        "x": 36,
+        "y": 3,
+        "mae": 23.7,
+        "tile": "side-L",
+        "cell": "C3R1"
+      },
+      {
+        "x": 2,
+        "y": 2,
+        "mae": 0.0,
+        "tile": "top",
+        "cell": "C4R1"
+      },
+      {
+        "x": 18,
+        "y": 4,
+        "mae": 21.6,
+        "tile": "side-R",
+        "cell": "C5R1"
+      },
+      {
+        "x": 23,
+        "y": 35,
+        "mae": 27.7,
+        "tile": "front-L",
+        "cell": "C3R2"
+      },
+      {
+        "x": 2,
+        "y": 26,
+        "mae": 0.0,
+        "tile": "front",
+        "cell": "C4R2"
+      },
+      {
+        "x": 40,
+        "y": 25,
+        "mae": 28.5,
+        "tile": "front-R",
+        "cell": "C5R2"
+      }
+    ]
+  },
+  "contract": [
+    {
+      "role": "wall_tl",
+      "cell": "C3R0",
+      "expected": "NW",
+      "measured": "NW",
+      "stored": "NW",
+      "ok": true
+    },
+    {
+      "role": "wall_t",
+      "cell": "C4R0",
+      "expected": "N",
+      "measured": "N",
+      "stored": "N",
+      "ok": true
+    },
+    {
+      "role": "wall_tr",
+      "cell": "C5R0",
+      "expected": "NE",
+      "measured": "NE",
+      "stored": "NE",
+      "ok": true
+    },
+    {
+      "role": "wall_l",
+      "cell": "C3R1",
+      "expected": "W",
+      "measured": "W",
+      "stored": "W",
+      "ok": true
+    },
+    {
+      "role": "wall_c",
+      "cell": "C4R1",
+      "expected": "",
+      "measured": "",
+      "stored": "",
+      "ok": true
+    },
+    {
+      "role": "wall_r",
+      "cell": "C5R1",
+      "expected": "E",
+      "measured": "E",
+      "stored": "E",
+      "ok": true
+    },
+    {
+      "role": "wall_bl",
+      "cell": "C3R2",
+      "expected": "SW",
+      "measured": "SW",
+      "stored": "SW",
+      "ok": true
+    },
+    {
+      "role": "wall_b",
+      "cell": "C4R2",
+      "expected": "S",
+      "measured": "S",
+      "stored": "S",
+      "ok": true
+    },
+    {
+      "role": "wall_br",
+      "cell": "C5R2",
+      "expected": "SE",
+      "measured": "SE",
+      "stored": "SE",
+      "ok": true
+    },
+    {
+      "role": "wall_strip_v",
+      "cell": "C3R4",
+      "expected": "WE",
+      "measured": "WE",
+      "stored": "WE",
+      "ok": true
+    },
+    {
+      "role": "wall_strip_h",
+      "cell": "C4R3",
+      "expected": "NS",
+      "measured": "NS",
+      "stored": "NS",
+      "ok": true
+    },
+    {
+      "role": "wall_island",
+      "cell": "C4R4",
+      "expected": "NSWE",
+      "measured": "NSWE",
+      "stored": "NSWE",
+      "ok": true
+    },
+    {
+      "role": "wall_tip_n",
+      "cell": "C4R6",
+      "expected": "NWE",
+      "measured": "NWE",
+      "stored": "NWE",
+      "ok": true
+    },
+    {
+      "role": "wall_tip_s",
+      "cell": "C4R8",
+      "expected": "SWE",
+      "measured": "SWE",
+      "stored": "SWE",
+      "ok": true
+    },
+    {
+      "role": "wall_tip_w",
+      "cell": "C3R7",
+      "expected": "NSW",
+      "measured": "NSW",
+      "stored": "NSW",
+      "ok": true
+    },
+    {
+      "role": "wall_tip_e",
+      "cell": "C5R7",
+      "expected": "NSE",
+      "measured": "NSE",
+      "stored": "NSE",
+      "ok": true
+    },
+    {
+      "role": "wall_cross",
+      "cell": "C4R7",
+      "expected": "",
+      "measured": "",
+      "stored": "",
+      "ok": true
+    },
+    {
+      "role": "wall_alt_1",
+      "cell": "C7R1",
+      "expected": "",
+      "measured": "",
+      "stored": "",
+      "ok": true
+    },
+    {
+      "role": "wall_alt_2",
+      "cell": "C10R1",
+      "expected": "",
+      "measured": "",
+      "stored": "",
+      "ok": true
+    }
+  ],
+  "same_component": {
+    "profile": true,
+    "columns": 30,
+    "roles": {
+      "wall_tl": 0,
+      "wall_t": 1,
+      "wall_tr": 2,
+      "wall_l": 3,
+      "wall_c": 4,
+      "wall_r": 5,
+      "wall_bl": 6,
+      "wall_b": 7,
+      "wall_br": 8,
+      "ground_tl": 9,
+      "ground_t": 10,
+      "ground_tr": 11,
+      "ground_l": 12,
+      "ground_c": 13,
+      "ground_r": 14,
+      "ground_bl": 15,
+      "ground_b": 16,
+      "ground_br": 17,
+      "ground_alt_1": 18,
+      "ground_alt_2": 19,
+      "wall_strip_v": 20,
+      "wall_strip_h": 21,
+      "wall_island": 22,
+      "wall_tip_n": 23,
+      "wall_tip_s": 24,
+      "wall_tip_w": 25,
+      "wall_tip_e": 26,
+      "wall_cross": 27,
+      "wall_alt_1": 28,
+      "wall_alt_2": 29
+    },
+    "contract": [
+      {
+        "role": "wall_tl",
+        "cell": "C3R0",
+        "expected": "NW",
+        "measured": "NW",
+        "stored": "NW",
+        "ok": true
+      },
+      {
+        "role": "wall_t",
+        "cell": "C4R0",
+        "expected": "N",
+        "measured": "N",
+        "stored": "N",
+        "ok": true
+      },
+      {
+        "role": "wall_tr",
+        "cell": "C5R0",
+        "expected": "NE",
+        "measured": "NE",
+        "stored": "NE",
+        "ok": true
+      },
+      {
+        "role": "wall_l",
+        "cell": "C3R1",
+        "expected": "W",
+        "measured": "W",
+        "stored": "W",
+        "ok": true
+      },
+      {
+        "role": "wall_c",
+        "cell": "C4R1",
+        "expected": "",
+        "measured": "",
+        "stored": "",
+        "ok": true
+      },
+      {
+        "role": "wall_r",
+        "cell": "C5R1",
+        "expected": "E",
+        "measured": "E",
+        "stored": "E",
+        "ok": true
+      },
+      {
+        "role": "wall_bl",
+        "cell": "C3R2",
+        "expected": "SW",
+        "measured": "SW",
+        "stored": "SW",
+        "ok": true
+      },
+      {
+        "role": "wall_b",
+        "cell": "C4R2",
+        "expected": "S",
+        "measured": "S",
+        "stored": "S",
+        "ok": true
+      },
+      {
+        "role": "wall_br",
+        "cell": "C5R2",
+        "expected": "SE",
+        "measured": "SE",
+        "stored": "SE",
+        "ok": true
+      },
+      {
+        "role": "wall_strip_v",
+        "cell": "C3R4",
+        "expected": "WE",
+        "measured": "WE",
+        "stored": "WE",
+        "ok": true
+      },
+      {
+        "role": "wall_strip_h",
+        "cell": "C4R3",
+        "expected": "NS",
+        "measured": "NS",
+        "stored": "NS",
+        "ok": true
+      },
+      {
+        "role": "wall_island",
+        "cell": "C4R4",
+        "expected": "NSWE",
+        "measured": "NSWE",
+        "stored": "NSWE",
+        "ok": true
+      },
+      {
+        "role": "wall_tip_n",
+        "cell": "C4R6",
+        "expected": "NWE",
+        "measured": "NWE",
+        "stored": "NWE",
+        "ok": true
+      },
+      {
+        "role": "wall_tip_s",
+        "cell": "C4R8",
+        "expected": "SWE",
+        "measured": "SWE",
+        "stored": "SWE",
+        "ok": true
+      },
+      {
+        "role": "wall_tip_w",
+        "cell": "C3R7",
+        "expected": "NSW",
+        "measured": "NSW",
+        "stored": "NSW",
+        "ok": true
+      },
+      {
+        "role": "wall_tip_e",
+        "cell": "C5R7",
+        "expected": "NSE",
+        "measured": "NSE",
+        "stored": "NSE",
+        "ok": true
+      },
+      {
+        "role": "wall_cross",
+        "cell": "C4R7",
+        "expected": "",
+        "measured": "",
+        "stored": "",
+        "ok": true
+      },
+      {
+        "role": "wall_alt_1",
+        "cell": "C7R1",
+        "expected": "",
+        "measured": "",
+        "stored": "",
+        "ok": true
+      },
+      {
+        "role": "wall_alt_2",
+        "cell": "C10R1",
+        "expected": "",
+        "measured": "",
+        "stored": "",
+        "ok": true
+      }
+    ],
+    "contract_ok": true,
+    "unexpected_roles": [],
+    "outside_component": [],
+    "same_component": true
+  },
+  "mirror_pairs": [
+    {
+      "cell": "C3R0",
+      "h_cell": "C5R0",
+      "h_mae": 20.9,
+      "v_cell": "C3R2",
+      "v_mae": 26.3
+    },
+    {
+      "cell": "C4R0",
+      "h_cell": "C4R0",
+      "h_mae": 19.3,
+      "v_cell": "C4R2",
+      "v_mae": 29.7
+    },
+    {
+      "cell": "C5R0",
+      "h_cell": "C3R0",
+      "h_mae": 20.9,
+      "v_cell": "C5R2",
+      "v_mae": 29.0
+    },
+    {
+      "cell": "C3R1",
+      "h_cell": "C5R1",
+      "h_mae": 7.0,
+      "v_cell": "C3R1",
+      "v_mae": 18.5
+    },
+    {
+      "cell": "C4R1",
+      "h_cell": "C4R1",
+      "h_mae": 6.4,
+      "v_cell": "C4R1",
+      "v_mae": 6.4
+    },
+    {
+      "cell": "C5R1",
+      "h_cell": "C3R1",
+      "h_mae": 7.0,
+      "v_cell": "C5R1",
+      "v_mae": 18.5
+    },
+    {
+      "cell": "C3R2",
+      "h_cell": "C5R2",
+      "h_mae": 22.9,
+      "v_cell": "C3R0",
+      "v_mae": 26.3
+    },
+    {
+      "cell": "C4R2",
+      "h_cell": "C4R2",
+      "h_mae": 21.2,
+      "v_cell": "C4R0",
+      "v_mae": 29.7
+    },
+    {
+      "cell": "C5R2",
+      "h_cell": "C3R2",
+      "h_mae": 22.9,
+      "v_cell": "C5R0",
+      "v_mae": 29.0
+    }
+  ]
+}

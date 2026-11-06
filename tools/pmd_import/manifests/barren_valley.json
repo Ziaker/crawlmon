@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "2.5.0",
+  "pipeline_version": "2.9.0",
   "name": "barren_valley",
   "source": "assets/pmd/dungeons/sky/raw/barren_valley.png",
   "source_sha256": "9152cf745fd4e7cdf5c0943dd13cf661672d2bd018d6228303babd0f3e3b3806",
@@ -386,7 +386,7 @@
   },
   "atlas": {
     "path": "assets/pmd/dungeons/sky/atlas/barren_valley_atlas.png",
-    "sha256": "fd7919988ed890d3150397b9a619f151f1c1ad66266905c232e086caf469e7d9",
+    "sha256": "b0bad55d4dbed8b0a278b9efa7e2cc40e5bdcfb2aafaeecbb7ad8d524b4d78b8",
     "tile_size": 48,
     "columns": 30,
     "rows": 1
@@ -412,17 +412,117 @@
     "ground_br": 17,
     "ground_alt_1": 18,
     "ground_alt_2": 19,
-    "wall_strip_h": 20,
-    "wall_strip_v": 21,
-    "wall_inner_br": 22,
-    "wall_inner_bl": 23,
-    "wall_inner_tr": 24,
-    "wall_inner_tl": 25,
-    "ground_inner_tl": 26,
-    "ground_inner_tr": 27,
-    "ground_inner_bl": 28,
-    "ground_inner_br": 29
+    "wall_strip_v": 20,
+    "wall_strip_h": 21,
+    "wall_island": 22,
+    "wall_tip_n": 23,
+    "wall_tip_s": 24,
+    "wall_tip_w": 25,
+    "wall_tip_e": 26,
+    "wall_cross": 27,
+    "wall_alt_1": 28,
+    "wall_alt_2": 29
   },
+  "role_sides": {
+    "wall_tl": "NWE",
+    "wall_t": "N",
+    "wall_tr": "NE",
+    "wall_l": "W",
+    "wall_c": "",
+    "wall_r": "E",
+    "wall_bl": "",
+    "wall_b": "",
+    "wall_br": "",
+    "wall_strip_v": "NWE",
+    "wall_strip_h": "NS",
+    "wall_island": "NSWE",
+    "wall_tip_n": "NWE",
+    "wall_tip_s": "",
+    "wall_tip_w": "NS",
+    "wall_tip_e": "NSE",
+    "wall_cross": "NWE",
+    "wall_alt_1": "",
+    "wall_alt_2": ""
+  },
+  "role_cells": {
+    "wall_tl": [
+      3,
+      0
+    ],
+    "wall_t": [
+      4,
+      0
+    ],
+    "wall_tr": [
+      5,
+      0
+    ],
+    "wall_l": [
+      3,
+      1
+    ],
+    "wall_c": [
+      4,
+      1
+    ],
+    "wall_r": [
+      5,
+      1
+    ],
+    "wall_bl": [
+      3,
+      2
+    ],
+    "wall_b": [
+      4,
+      2
+    ],
+    "wall_br": [
+      5,
+      2
+    ],
+    "wall_strip_v": [
+      3,
+      4
+    ],
+    "wall_strip_h": [
+      4,
+      3
+    ],
+    "wall_island": [
+      4,
+      4
+    ],
+    "wall_tip_n": [
+      4,
+      6
+    ],
+    "wall_tip_s": [
+      4,
+      8
+    ],
+    "wall_tip_w": [
+      3,
+      7
+    ],
+    "wall_tip_e": [
+      5,
+      7
+    ],
+    "wall_cross": [
+      4,
+      7
+    ],
+    "wall_alt_1": [
+      7,
+      1
+    ],
+    "wall_alt_2": [
+      10,
+      1
+    ]
+  },
+  "side_contract_ok": false,
   "profile": "assets/pmd/dungeons/sky/atlas/barren_valley_profile.json",
   "contact_sheet": "docs/referencias/tilesets/barren_valley_contact.png",
   "labeled_atlas": "docs/referencias/tilesets/barren_valley_atlas_labeled.png",
@@ -430,19 +530,11 @@
   "preview": "docs/referencias/tilesets/barren_valley_preview.png",
   "validation": {
     "tiles": 30,
-    "unique_tiles": 27,
+    "unique_tiles": 29,
     "duplicates": [
       [
         13,
         16
-      ],
-      [
-        13,
-        27
-      ],
-      [
-        13,
-        29
       ]
     ],
     "seam": {
@@ -456,7 +548,15 @@
       }
     },
     "warnings": [
-      "barren_valley: repeated atlas tiles [[13, 16], [13, 27], [13, 29]]",
+      "barren_valley: role wall_tl measures open=NWE but the contract expects NW (not the active sheet)",
+      "barren_valley: role wall_bl measures open=- but the contract expects SW (not the active sheet)",
+      "barren_valley: role wall_b measures open=- but the contract expects S (not the active sheet)",
+      "barren_valley: role wall_br measures open=- but the contract expects SE (not the active sheet)",
+      "barren_valley: role wall_strip_v measures open=NWE but the contract expects WE (not the active sheet)",
+      "barren_valley: role wall_tip_s measures open=- but the contract expects SWE (not the active sheet)",
+      "barren_valley: role wall_tip_w measures open=NS but the contract expects NSW (not the active sheet)",
+      "barren_valley: role wall_cross measures open=NWE but the contract expects - (not the active sheet)",
+      "barren_valley: repeated atlas tiles [[13, 16]]",
       "barren_valley: wall_c does not self-tile perfectly (L/R 50%, T/B 54%); the 3x3 block is a border set, so this is diagnostic",
       "barren_valley: ground_c does not self-tile perfectly (L/R 46%, T/B 46%); the 3x3 block is a border set, so this is diagnostic"
     ]
