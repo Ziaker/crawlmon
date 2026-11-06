@@ -16,6 +16,7 @@ const TILE := 48
 const RADIUS := 7.5  ## Tiles of sight.
 const EXPLORED_ALPHA := 0.0  ## Visited tiles are fully lit (D-033).
 const FOG_COLOR := Color(0, 0, 0, 1)
+const BiomeVisuals := preload("res://scripts/dungeon/biome_visuals.gd")
 ## The visibility grid is still one value per tile, but the mask is written at
 ## 2x so the linear filter and the shader blur can round the tile edge.
 const MASK_SCALE := 2
@@ -77,8 +78,27 @@ func setup(grid: Array[String], player: Node2D, state: Object = null) -> void:
 	_img = Image.create(_w * MASK_SCALE, _h * MASK_SCALE, false, Image.FORMAT_RGBA8)
 	_img.fill(FOG_COLOR)
 	_tex = ImageTexture.create_from_image(_img)
+	var biome := BiomeVisuals.DEFAULT_BIOME
+	if _state != null:
+		var current = _state.get("visual_biome")
+		if current != null:
+			biome = str(current)
+	apply_biome(biome)
 	_refresh()
 	queue_redraw()
+
+
+## Changes the fog palette without resetting the explored/visible mask. The
+## in-game biome capture calls this when it swaps the Visuals profile.
+func apply_biome(biome_name: String) -> void:
+	var preset := BiomeVisuals.fog(biome_name)
+	var mat := material as ShaderMaterial
+	if mat == null:
+		return
+	mat.set_shader_parameter("fog_color", preset["color"])
+	mat.set_shader_parameter("density", preset["density"])
+	mat.set_shader_parameter("warp", preset["warp"])
+	mat.set_shader_parameter("drift", preset["drift"])
 
 
 func _process(_delta: float) -> void:

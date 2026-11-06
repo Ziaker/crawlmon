@@ -148,7 +148,8 @@ As imagens vão para `scratch/tilesets/<nome>_catalog.png`, `_room.png` e
   totalmente interiores.
 - O occluder é ciente da face: o centro do piso não escureceu; a massa de
   parede ficou um pouco mais escura (efeito desejado). O
-  `check_occluder_brightness.py` guarda a baseline das 10 seeds (51,1–68,5).
+  `check_occluder_brightness.py` guarda a baseline das 10 seeds; ela foi
+  regerada após remover as luzes de tocha (D-358).
 - A aprovação do Temporal foi **gravada** em 2026-11-06 (30 tiles, 5+5% Wall Alt);
   o build não avisa mais que falta aprovação.
 - 16 capturas de sala em `scratch/tilesets/` e **16 no jogo** em
@@ -167,7 +168,9 @@ As imagens vão para `scratch/tilesets/<nome>_catalog.png`, `_room.png` e
   de gelo, shader ou fora) antes de virar sistema de mapa (D-312/D-357). O
   Unused Ground tem um tile isolado e não virou decal.
 - Os centros Wall Alt. 1/2 são usados em 10% do interior.
-- As tochas visuais/brasas foram removidas; a luz invisível continua (D-357).
+- As tochas e luzes amarelas foram removidas; a única luz é a fria do
+  jogador. A névoa/overlay por bioma fica em
+  `scripts/dungeon/biome_visuals.gd` (D-358).
 - O terrain nativo/blob 47 foi descartado; o jogo usa o renderer manual
   aprovado.
 - Nada foi commitado ou publicado.

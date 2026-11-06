@@ -28,10 +28,9 @@ const DEFAULT_ROLES := {
 }
 const DEFAULT_ATLAS_COLUMNS := 30
 const TILE := 48
-const MAX_TORCHES := 12  ## Cap on shadow-casting lights for big procedural floors.
-## Bright enough to read the floor, still tinted so torches keep the mood (D-033).
+## Bright fallback; the real tint comes from BiomeVisuals (D-358).
 const AMBIENT := Color("a3b9c5")
-const TORCH_COLOR := Color("ff9a73")
+const BiomeVisuals := preload("res://scripts/dungeon/biome_visuals.gd")
 
 ## Active atlas: Sky Temporal Tower, the categorized sheet.
 ## 0..8  = Walls 3x3 block (TL, T, TR, L, C, R, BL, B, BR)
@@ -42,12 +41,12 @@ const ATLAS_ROWS := 1
 var _parent: Node2D
 var _map: Array = []
 var _glow: GradientTexture2D
-var _torches: Array[Dictionary] = []  ## {light, pos, phase}
 var _decals: Dictionary = {}  ## Vector2i -> atlas index (D-356)
 var _player_light: PointLight2D
 var _dust: CPUParticles2D
+var _modulate: CanvasModulate
+var _biome_name := ""
 var _camera_fitted := false
-var _time := 0.0
 var _floor_layer: TileMapLayer
 var _decor_layer: TileMapLayer
 var _source_id := -1
@@ -64,9 +63,9 @@ func _ready() -> void:
 	_parent = get_parent()
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_glow = _make_glow()
-	var mod := CanvasModulate.new()
-	mod.color = AMBIENT
-	add_child(mod)
+	_modulate = CanvasModulate.new()
+	_modulate.color = AMBIENT
+	add_child(_modulate)
 
 
 ## Called by exploration.gd once the floor has been generated (this node's
@@ -78,7 +77,8 @@ func setup(grid: Array[String], profile_path := "", variation_seed := 0) -> void
 	_variation_seed = variation_seed
 	_clear_visuals()
 	_build_tiles()
-	_build_torches()
+	if _modulate != null:
+		_modulate.color = BiomeVisuals.ambient(_biome_name)
 	queue_redraw()
 
 
@@ -95,22 +95,12 @@ func _clear_visuals() -> void:
 		child.queue_free()
 	_floor_layer = null
 	_decor_layer = null
-	_torches.clear()
 	_dust = null
 
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	if _map.is_empty():
 		return
-	_time += delta
-	for t in _torches:
-		var light: PointLight2D = t["light"]
-		var phase: float = t["phase"]
-		# Dois períodos lentos, sem serrilhado de alta frequência.
-		var breath := 0.5 + 0.5 * sin(_time * 2.1 + phase)
-		var detail := 0.5 + 0.5 * sin(_time * 5.3 + phase * 1.7)
-		var flicker := 0.7 * breath + 0.3 * detail
-		light.energy = lerpf(0.90, 1.12, flicker) + 0.02 * sin(_time * 17.0 + phase)
 	_attach_dynamic_lights()
 	queue_redraw()
 
@@ -196,6 +186,9 @@ func _load_profile() -> void:
 	var atlas_path: Variant = data.get("atlas")
 	if atlas_path != null:
 		_atlas_path = str(atlas_path)
+	var profile_name: Variant = data.get("name")
+	if profile_name != null:
+		_biome_name = str(profile_name)
 
 
 func _role(role_name: String) -> int:
@@ -479,34 +472,6 @@ func _is_interior_floor(x: int, y: int) -> bool:
 
 
 # --- Lights ------------------------------------------------------------------
-
-func _build_torches() -> void:
-	var torch_spots: Array[Vector2] = []
-	for y in _map.size():
-		for x in _map[y].length():
-			if _is_wall(x, y) and not _is_wall(x, y + 1):
-				torch_spots.append(Vector2(x + 0.5, y + 0.5) * TILE)
-	# A procedural floor has far more wall fronts than the old hand-made map;
-	# keep a spread-out subset so the lights stay cheap and readable.
-	var step := maxi(1, int(ceil(float(torch_spots.size()) / MAX_TORCHES)))
-	for i in range(0, torch_spots.size(), step):
-		_add_torch(torch_spots[i])
-
-
-func _add_torch(wall_center: Vector2) -> void:
-	var light := PointLight2D.new()
-	light.texture = _glow
-	light.texture_scale = 1.5
-	light.color = TORCH_COLOR
-	light.shadow_enabled = true
-	light.shadow_filter = Light2D.SHADOW_FILTER_PCF13
-	light.shadow_filter_smooth = 3.5
-	light.position = wall_center + Vector2(0, TILE * 0.5 + 8.0)
-	add_child(light)
-	# The visible torch/flame/embers were removed: the light stays as an
-	# invisible warm pool so the room keeps its approved lighting.
-	_torches.append({"light": light, "pos": wall_center, "phase": randf() * TAU})
-
 
 ## The player appears after this node's _ready, so its light is attached lazily.
 ## Enemies own their own lights (scripts/dungeon/enemy.gd).

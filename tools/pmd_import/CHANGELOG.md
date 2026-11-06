@@ -1,5 +1,16 @@
 # Changelog — pipeline de tilesets
 
+## 3.1.0 — 2026-11-06
+
+- **Névoa e overlay por bioma:** `scripts/dungeon/biome_visuals.gd` tem 16
+  `AMBIENT` e 16 presets de névoa (cor/densidade/warp/drift). O `fog_of_war`
+  lê `GameState.visual_biome`; o `map_visuals` aplica o `AMBIENT` do perfil.
+- **Luzes amarelas removidas:** não há mais `PointLight2D` de tocha; resta só a
+  luz fria do jogador. A baseline do `check_occluder_brightness.py` foi
+  regerada para a nova iluminação.
+- **16 capturas in-game** atualizadas em `biomes_ingame_contact.png`.
+- A água decorativa continua pendente de escolha visual (D-357).
+
 ## 3.0.0 — 2026-11-06
 
 - **Atlas em Scale2x:** a célula 24×24 vai para 48×48 com Scale2x/EPX em vez

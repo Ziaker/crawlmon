@@ -1,6 +1,6 @@
 # Assets 2D do Pokémon Mystery Dungeon (Explorers)
 
-> **Status:** primeira leva do hub e os 16 Dungeon Tiles do Sky importados. **Estado atual:** o visual ativo é o **Sky Temporal Tower de 30 tiles** (18 do núcleo + `ground_alt_1/2` + 8 peças reais de parede: strip V/H, island, tip N/S/W/E e cross + 2 centros Wall Alt. 1/2), alinhado à grade real da folha; o atlas 48 px é gerado com **Scale2x 2×** a partir da célula 24×24 (D-357), e as tochas visuais/brasas foram removidas (a luz invisível continua). As peças sintéticas do atlas de 42 foram descartadas porque misturavam componentes (pitch de 25 px: 1 px de linha ciano + 24×24 de arte). O sheet do Time/Darkness fica como referência em `docs/referencias/`. O piso orgânico usa as Ground Alt em 4%+4% (D-347); a seleção de parede é por assinatura de lado medida (D-354).
+> **Status:** primeira leva do hub e os 16 Dungeon Tiles do Sky importados. **Estado atual:** o visual ativo é o **Sky Temporal Tower de 30 tiles** (18 do núcleo + `ground_alt_1/2` + 8 peças reais de parede: strip V/H, island, tip N/S/W/E e cross + 2 centros Wall Alt. 1/2), alinhado à grade real da folha; o atlas 48 px é gerado com **Scale2x 2×** a partir da célula 24×24 (D-357); as tochas/luzes amarelas foram removidas e a névoa/ambiente segue `scripts/dungeon/biome_visuals.gd` por bioma (D-358). As peças sintéticas do atlas de 42 foram descartadas porque misturavam componentes (pitch de 25 px: 1 px de linha ciano + 24×24 de arte). O sheet do Time/Darkness fica como referência em `docs/referencias/`. O piso orgânico usa as Ground Alt em 4%+4% (D-347); a seleção de parede é por assinatura de lado medida (D-354).
 > **Decisões:** D-325, D-326, D-329, D-330. **Páginas-fonte:** Explorers of Time/Darkness e Explorers of Sky (The Spriters Resource).
 > **Créditos/proveniência:** `docs/CREDITOS_ASSETS.md`.
 
@@ -116,6 +116,7 @@ A folha usa **pitch de 25 px**: 1 px de linha ciano + célula de arte de 24×24.
 ## Pendências
 
 - Os 16 foram capturados no laboratório e **no jogo** na mesma seed/mapa (`scratch/exploration_biomes/`, contato `docs/referencias/tilesets/biomes_ingame_contact.png`); só o **Temporal Tower** está aprovado visualmente. O `MapVisuals.setup` virou re-entrante (`_clear_visuals`) para o teste in-game não travar após ~9 perfis.
+- A **névoa e o overlay** são por bioma (`scripts/dungeon/biome_visuals.gd`, D-358): 16 cores de `AMBIENT` e 16 presets de névoa (cor/densidade/warp/drift). As luzes amarelas de tocha foram removidas; a única luz é a fria do jogador.
 - O contrato de face passa no Temporal Tower; as outras 12 folhas têm arte ambígua (o lado escuro não é consistente) e ficam com `side_contract_ok=false`. Para elas o jogo usa o **fallback por papel** (strips, tips, island, cross e alt) e o `murky_forest` foi testado com 688 células e 0 divergências (D-356).
 - O renderizador escolhe a parede pela assinatura de lado medida; o “Legend” da folha ainda não é lido como máscara automática.
 - O preview da folha foi casado pixel a pixel: ele usa a linha 1 (topo) + linha 2 (face) + Ground; isso está documentado em D-354.

@@ -22,7 +22,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[2]
 SEEDS = [1, 2, 3, 7, 42, 777, 2026, 12345, 54321, 99999]
 CAPTURE = ROOT / "scratch" / "exploration_seed_{seed}.png"
-BASELINE = ROOT / "scratch" / "occluder_baseline.json"
+BASELINE = ROOT / "tools" / "pmd_import" / "audits" / "occluder_baseline.json"
 
 
 def centre_mean(path: Path) -> float:
