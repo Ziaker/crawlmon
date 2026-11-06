@@ -168,9 +168,10 @@ As imagens vão para `scratch/tilesets/<nome>_catalog.png`, `_room.png` e
   de gelo, shader ou fora) antes de virar sistema de mapa (D-312/D-357). O
   Unused Ground tem um tile isolado e não virou decal.
 - Os centros Wall Alt. 1/2 são usados em 10% do interior.
-- As tochas e luzes amarelas foram removidas; a única luz é a fria do
-  jogador. A névoa/overlay por bioma fica em
-  `scripts/dungeon/biome_visuals.gd` (D-358).
+- As tochas e luzes amarelas foram removidas, e D-359 removeu também a luz do
+  jogador; a única `PointLight2D` restante é a vermelha dos inimigos. A
+  névoa/overlay por bioma fica em `scripts/dungeon/biome_visuals.gd` com 16
+  paletas fortes (D-358/D-359).
 - O terrain nativo/blob 47 foi descartado; o jogo usa o renderer manual
   aprovado.
 - Nada foi commitado ou publicado.

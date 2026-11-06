@@ -40,9 +40,7 @@ const ATLAS_ROWS := 1
 
 var _parent: Node2D
 var _map: Array = []
-var _glow: GradientTexture2D
 var _decals: Dictionary = {}  ## Vector2i -> atlas index (D-356)
-var _player_light: PointLight2D
 var _dust: CPUParticles2D
 var _modulate: CanvasModulate
 var _biome_name := ""
@@ -62,7 +60,6 @@ var _variation_seed := 0
 func _ready() -> void:
 	_parent = get_parent()
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_glow = _make_glow()
 	_modulate = CanvasModulate.new()
 	_modulate.color = AMBIENT
 	add_child(_modulate)
@@ -86,9 +83,6 @@ func setup(grid: Array[String], profile_path := "", variation_seed := 0) -> void
 ## per profile). Keeps the one CanvasModulate, frees the old layers, torches,
 ## embers and dust, and drops the player light so it is recreated cleanly.
 func _clear_visuals() -> void:
-	if _player_light != null and is_instance_valid(_player_light):
-		_player_light.queue_free()
-	_player_light = null
 	for child in get_children():
 		if child is CanvasModulate:
 			continue
@@ -479,13 +473,6 @@ func _attach_dynamic_lights() -> void:
 	var player: Node2D = _parent.get("player")
 	if player == null:
 		return
-	if _player_light == null:
-		_player_light = PointLight2D.new()
-		_player_light.texture = _glow
-		_player_light.texture_scale = 1.25
-		_player_light.color = Color("d6f4fb")
-		_player_light.energy = 0.70
-		player.add_child(_player_light)
 	if _dust == null:
 		_dust = _make_dust()
 		add_child(_dust)
@@ -560,25 +547,6 @@ func _fit_camera(player: Node2D) -> void:
 		cam.limit_top = int(map_size.y * 0.5)
 		cam.limit_bottom = int(map_size.y * 0.5)
 	cam.reset_smoothing()
-
-
-func _make_glow() -> GradientTexture2D:
-	var g := Gradient.new()
-	g.set_color(0, Color.WHITE)
-	g.set_color(1, Color.BLACK)
-	# Falloff mais contínuo: sem o degrau único que marcava o fim da luz.
-	g.add_point(0.20, Color(0.92, 0.92, 0.92))
-	g.add_point(0.42, Color(0.60, 0.60, 0.60))
-	g.add_point(0.65, Color(0.26, 0.26, 0.26))
-	g.add_point(0.85, Color(0.07, 0.07, 0.07))
-	var tex := GradientTexture2D.new()
-	tex.gradient = g
-	tex.fill = GradientTexture2D.FILL_RADIAL
-	tex.fill_from = Vector2(0.5, 0.5)
-	tex.fill_to = Vector2(1.0, 0.5)
-	tex.width = 256
-	tex.height = 256
-	return tex
 
 
 # --- Drawing -----------------------------------------------------------------

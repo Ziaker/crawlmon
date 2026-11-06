@@ -10,7 +10,7 @@
 
 ## Decisão
 
-1. **Luzes amarelas removidas de vez.** Não há mais `PointLight2D` de tocha no mapa. A única luz é a **luz fria do jogador** (`d6f4fb`); o resto é o `CanvasModulate` do bioma. Nada de fogueira/stick/triângulo.
+1. **Luzes amarelas removidas de vez.** Não há mais `PointLight2D` de tocha no mapa. **D-359 removeu também a luz fria do jogador**: a sala é iluminada só pelo `CanvasModulate` do bioma; a única `PointLight2D` restante é a vermelha dos inimigos.
 2. **Névoa por bioma.** `scripts/dungeon/biome_visuals.gd` define, para os 16 biomas:
    - `AMBIENT`: a cor do `CanvasModulate` (o overlay visível do mapa);
    - `FOG`: cor da névoa, densidade, warp e drift.
@@ -22,4 +22,4 @@
 
 ## Estado
 
-Implementado: `biome_visuals.gd` (16 paletas), `fog_of_war.apply_biome`, `map_visuals` ambient por perfil, tochas/luzes amarelas removidas, 16 capturas in-game, baseline de brilho atualizada. O golden do laboratório (que não usa névoa) continua OK; paredes 6.970/0; fallback murky 688/0; decals 8,1%/0. A água decorativa continua pendente de escolha visual (D-357). Nada foi publicado.
+Implementado: `biome_visuals.gd` (16 paletas), `fog_of_war.apply_biome`, `map_visuals` ambient por perfil, tochas/luzes amarelas removidas, 16 capturas in-game, baseline de brilho atualizada. D-359 reforçou as 16 paletas e removeu também a luz do jogador. O golden do laboratório (que não usa névoa) continua OK; paredes 6.970/0; fallback murky 688/0; decals 8,1%/0. A água decorativa continua pendente de escolha visual (D-357). Nada foi publicado.

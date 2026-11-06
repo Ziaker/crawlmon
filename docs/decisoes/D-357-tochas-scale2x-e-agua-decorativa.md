@@ -14,7 +14,7 @@
 
 ## Decisão
 
-1. **Tochas visíveis removidas.** O desenho da chama, o cabo e as brasas saíram do `map_visuals.gd`. **D-358 removeu também a `PointLight2D` invisível**: não há mais luz amarela de tocha; só a luz fria do jogador e o `CanvasModulate` do bioma.
+1. **Tochas visíveis removidas.** O desenho da chama, o cabo e as brasas saíram do `map_visuals.gd`. **D-358 removeu a `PointLight2D` invisível de tocha e D-359 removeu também a luz do jogador**: não há mais luz dinâmica do personagem; só o `CanvasModulate`/névoa do bioma e a luz vermelha dos inimigos.
 2. **Atlas em Scale2x.** A fonte das folhas é 24×24; não existe versão nativa maior. O atlas 48×48 agora usa **Scale2x/EPX** (2×) em vez de nearest: suaviza as bordas sem o borrão do Lanczos. As 16 folhas foram regeradas na versão 3.0.0; a câmera 2,3×, o tamanho de 48 px e a geração procedural não mudam.
 3. **Água decorativa adiada.** O bloco `Water` do Temporal Tower é **cinza-escuro** (o centro C25R1 lê como o próprio chão); nas folhas de gelo a água é azul. Adicionar um `water_c` ao atlas/profiler e um patch no laboratório criaria 31 tiles para um efeito que quase não aparece no bioma ativo. Antes de fazer, o criador precisa escolher:
    - usar a **água azul das folhas de gelo** como decoração mesmo no Temporal;

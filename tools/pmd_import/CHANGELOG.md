@@ -1,5 +1,17 @@
 # Changelog — pipeline de tilesets
 
+## 3.2.0 — 2026-11-06
+
+- **16 paletas fortes:** o `BiomeVisuals` saiu dos tons pastel; verde, ciano,
+  areia, azul, índigo, rosa, laranja, amarelo, violeta, cinza etc. O
+  `AMBIENT`/`FOG` de cada bioma é claramente distinto.
+- **Luz do jogador removida:** o `PointLight2D` do personagem saiu do
+  `map_visuals`; a sala é iluminada só pelo `CanvasModulate`/névoa. A única
+  `PointLight2D` restante é a vermelha dos inimigos.
+- **Temporal/Spire compensados:** `c8dce8` e `a0b0c8` para continuarem legíveis
+  sem as luzes dinâmicas.
+- **16 capturas in-game** e baseline de brilho regeneradas.
+
 ## 3.1.0 — 2026-11-06
 
 - **Névoa e overlay por bioma:** `scripts/dungeon/biome_visuals.gd` tem 16
