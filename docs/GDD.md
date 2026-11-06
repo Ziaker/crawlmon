@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.62 — Rodada 83B (fichas de personagens e Moves) registrada em adendo rastreável (2026-11-06); histórico preservado.  
+> **Revisão:** 1.63 — Rodada 84B registrada e alerta de auditoria da engine de Moves (2026-11-06); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1760,6 +1760,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.62 | 2026-11-06 | Rodada 83B (série de fichas): ficha de referência vinculada por espécie/forma sem duplicar dados; aprendizados possíveis com fonte/requisitos separados da biblioteca individual; ficha única por Move com variantes em blocos; especificação visual relativa ao modelo com adaptação anatômica genérica. D-331–D-334. | Rodada 83B fechada / Rodada 84B proposta |
 
+| 1.63 | 2026-11-06 | Rodada 84B: situação por campo nas fichas; fontes e requisitos de aprendizado agrupados; gatilhos e durações por fase visual apenas quando definidos; âncoras anatômicas genéricas por Move. Auditoria estática: existe núcleo compartilhado de combate/VFX, mas não engine unificada interpretadora das fichas aprovadas. D-335–D-338. | Rodada 84B fechada / Rodada 85B dedicada à arquitetura de Moves proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2315,4 +2317,37 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Exemplos e limites:** fichas hipotéticas de Gible/Gabite/Garchomp podem ser vinculadas sem copiar dados comprovadamente comuns, sem fixar atributos/evoluções; possíveis aprendizados são separados dos Moves já aprendidos por um indivíduo, preservando D-275; Splitter Flames pode ter blocos um/dois alvos somente para diferenças já definidas, respeitando D-244–D-249/D-258–D-263; a mão de fogo visual do Fire Bullet exemplifica a necessidade de origem/anatomia independente de espécie, com orientações relativas ao corpo real e não coordenadas fixas. **Exemplos não criam fichas, animações ou dados concretos.**
 
 **Histórico e pendências:** D-235/AGENTS.md §7 continua exigindo o mesmo Move funcionando em qualquer personagem, time e lado, sem Move exclusivo por espécie, e validação visual espelhada e com anatomias diferentes. D-229/D-230 preservam tooltip numérica, D-248 reserva descrição de VFX à ficha fora de combate e D-259 proíbe prévia de dano na seleção. A série B define **organização documental**, não banco de dados, mecanismo de aprendizado, progressão, variante técnica ou algoritmos de rig/âncora. D-323–D-326 e as Rodadas 83–85 anteriores permanecem inalteradas; a divergência histórica de LUK da Rodada 60 (§12.13) não foi resolvida. **Nenhum código, teste, Move operacional, ficha concreta, IA, HUD, cena, asset ou VFX modificado; nenhum teste de gameplay realizado.**
+
+### 12.38 Rodada 84B — documentação das fichas e ALERTA DE ARQUITETURA DOS MOVES (revisão 1.63)
+
+> **2026-11-06.** “Sigo suas recomendações” aprova as quatro alternativas **1A, 2A, 3A e 4A** da Rodada 84B, série de fichas de personagens e Moves. Decisões **D-335–D-338**, consolidadas em **§75** de `docs/REGRAS_DO_JOGO.md`. Aditivo histórico, sem reescrita de decisões anteriores. **D-001 preserva o GDD como fonte não normativa para a resolução de combate.**
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R84B-Q1 | **1A** | Situação individual por campo da ficha: **aprovado/verificado, proposto ainda não homologado ou pendente**, com **fonte quando conhecida** | [D-335](decisoes/D-335-r84b-q1-status-por-campo-nas-fichas-de-personagens.md) |
+| R84B-Q2 | **2A** | **Cada entrada de Move aprendível** na ficha do personagem agrupa **fontes alternativas de aprendizado e respectivos requisitos conhecidos**, separada da biblioteca individual | [D-336](decisoes/D-336-r84b-q2-fontes-de-aprendizado-agrupadas-por-move.md) |
+| R84B-Q3 | **3A** | Na ficha de Move **fora do combate**, especificar por fase visual **gatilhos, referências temporais e durações quando definidos**, mantendo desconhecidos pendentes | [D-337](decisoes/D-337-r84b-q3-gatilhos-e-referencias-temporais-por-fase-visual.md) |
+| R84B-Q4 | **4A** | **Referência anatômica principal e alternativas genéricas relativas ao modelo**, quando necessárias, **definidas individualmente por Move** | [D-338](decisoes/D-338-r84b-q4-referencias-anatomicas-alternativas-por-move.md) |
+
+#### ALERTA TÉCNICO — as fichas aprovadas ainda não são interpretadas por uma engine própria e completa de Moves
+
+**Resultado de inspeção estática na `main` do commit `ae961464c172ed86cb8787926e923897ba46a87c` (2026-11-06):** o projeto **possui um núcleo real de execução compartilhada de ataques e VFX**, porém **não foi identificada uma engine declarativa unificada capaz de carregar, validar e executar integralmente as fichas técnicas e visuais de Moves conforme as decisões já aprovadas**. Portanto, **a documentação das fichas não deve ser confundida com implementação funcional nem com um sistema de autoria configurável por ficha**.
+
+**Evidências diretamente inspecionadas:**
+
+1. `scripts/data/skill.gd` — `Skill extends RefCounted` com nome, `power`, custo ATB, elemento, tipo de alcance/execução, flags de AoE/amizade, `windup` e contato AoE. Catálogo pequeno criado via `Skill.new` em GDScript; **sem esquema abrangente de custos MP/Burst, STR/MAG e efeitos individualizados com chances/duração/ordem, variantes, referências anatômicas e fases visuais**.
+2. `scripts/combat/battle.gd` — `use_skill` usa `skill.cost` e constrói `Incoming`; `_execute_status_move` contém `match` por ID de Move, aplicando Media, Tarukaja, Rakunda, Sukunda e Taunt diretamente no código. Há também tratamento particularizado para ataques como Sand Attack e Dragon Rage. Isso demonstra execução atual **codificada por Move**, não interpretação genérica de uma lista declarativa de efeitos.
+3. `scripts/combat/attack_planner.gd` — planeja fases compartilhadas, mas possui condicionais e `match inc.move_id` específicos para Dragon Rage, Teleport, golpes corpo a corpo e Taunt/Shock Wave, com durações codificadas.
+4. `scripts/combat/battle_scene.gd` e `scripts/combat/combatant.gd` — grupos de `Skill.new(...)` são atribuídos diretamente a combatentes no código; os Moves do combatente são `Array[Skill]`. **Não se observou integração operacional das fichas por espécie, fontes de aprendizado, variantes e biblioteca conforme o design recente**.
+5. `scripts/combat/battle_fx.gd`, `scripts/combat/fx/fx_projectiles.gd` e `fx_impacts.gd` — existe divisão modular de VFX e roteamento por `move_id`, com efeitos individuais e fallback elementar; **não foi localizada uma interpretação unificada das receitas visuais definidas nas fichas de Moves**.
+6. `scripts/motion_composer/` — contém framework próprio para comportamentos e composição **de movimento e VFX**, incluindo catálogo `M01–M20` e ponte do laboratório para efeitos já existentes, **mas não equivale a uma engine completa de Moves** com definição, validação, custos, efeitos e progressão integrados.
+7. `scripts/ui/battle_hud.gd` — documenta expressamente `MP N/D` porque MP **não existe ainda no runtime atual**; essa observação é consistente com a ausência de custo MP no objeto `Skill` e o uso de custo ATB em `Battle.use_skill`.
+
+**Diagnóstico:** há uma base parcial reutilizável e modular, **não ausência total de engine**. A lacuna é **um contrato de ficha executável, catálogo por ID, validação de completude, interpretação de efeitos e variantes, ligação com recursos/custos e integração com pipeline VFX**, sem comprometer as regras já aprovadas. **Não aprovar silenciosamente nenhuma arquitetura** para saná-la.
+
+**Próxima pauta (Rodadas 85B+):** decidir a arquitetura de autoria/carregamento das fichas e a separação dos componentes de dados, execução mecânica e VFX, com estratégia de compatibilidade e testes, **antes de qualquer implementação**. As alternativas serão submetidas ao criador.
+
+**Limites da auditoria:** leitura estática de arquivos do repositório; **não foram executados Godot, testes nem testes com personagens espelhados**. Não concluir que todo módulo do projeto seja inexistente nem que o Motion Composer deva ser substituído; a validação técnica integral exigirá implementação e testes específicos.
+
+**Preservações:** D-235 (Moves independentes de espécie, equipe e lado), D-248 (visual fora de combate), D-275 (biblioteca individual), D-331–D-334 (estrutura das fichas), D-323–D-326 (escudos), GDD histórico e conflito textual de LUK R60 §12.13 permanecem inalterados. **Nenhum código, Move operacional, ficha concreta, IA, HUD, teste, animação ou VFX foi modificado nesta rodada.**
 

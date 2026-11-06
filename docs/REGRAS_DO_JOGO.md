@@ -2321,3 +2321,37 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Decisões anteriores:** preservar D-235, D-275, D-244–D-249/D-258–D-263, D-323–D-326, D-327–D-330 e demais regras sem reescrever o histórico. A estrutura documental por espécie **não autoriza Move exclusivo por espécie ou lado**. A divergência textual de LUK da Rodada 60 (GDD §12.13) permanece sem conciliação.
 - **Escopo:** quatro decisões D novas, índice, este consolidado e adendo do GDD. **Nenhum código, IA, Move operacional, ficha concreta, teste, HUD, cena, rig, asset ou VFX modificado; nenhum teste de gameplay executado.**
 
+---
+
+## 75. Rodada 84B — estados dos campos, fontes de aprendizado, tempo visual e adaptações anatômicas
+
+> **2026-11-06.** O criador declarou **“Sigo suas recomendações”**, aprovando expressamente **1A, 2A, 3A e 4A** da Rodada 84B, sem observações que modifiquem as alternativas. Registros individuais **D-335 a D-338** conforme D-061. Série B exclusiva de fichas de personagens e Moves, distinta das Rodadas de gameplay. Atualização apenas documental.
+
+### 75.1 Regras aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-335](decisoes/D-335-r84b-q1-status-por-campo-nas-fichas-de-personagens.md) | **1A** | **Por campo** da ficha, diferenciar **dados aprovados/verificados**, **propostas não homologadas** e **pendências**, indicando a **fonte quando conhecida** |
+| [D-336](decisoes/D-336-r84b-q2-fontes-de-aprendizado-agrupadas-por-move.md) | **2A** | Para cada Move aprendível da ficha de personagem, **agrupar na mesma entrada suas fontes de aprendizado**, cada qual com **requisitos conhecidos** |
+| [D-337](decisoes/D-337-r84b-q3-gatilhos-e-referencias-temporais-por-fase-visual.md) | **3A** | Em cada **fase visual aplicável** do Move, registrar **gatilhos, referências temporais e durações** apenas quando definidos; **tempos desconhecidos permanecem pendentes** |
+| [D-338](decisoes/D-338-r84b-q4-referencias-anatomicas-alternativas-por-move.md) | **4A** | A ficha do Move registra **referência anatômica principal e alternativas genéricas relativas ao corpo** quando necessária a adaptação, **definidas individualmente por Move** |
+
+### 75.2 Integração às decisões anteriores
+
+- **Personagens (D-335/D-336):** preservar D-331 (uma ficha por espécie/forma distinta, com vínculos e sem cópia de dados compartilhados), D-332 (aprendíveis, fontes e requisitos por espécie), D-275 (biblioteca de Moves efetivamente aprendidos por indivíduo e até oito equipados), D-120/D-132 (atributos próprios de espécie e variações individuais). **Exemplo hipotético:** ficha identifica atributo aprovado, fonte de aprendizado proposta e requisito pendente, sem apresentar qualquer um como dado oficial ainda não verificado.
+- **Moves (D-337/D-338):** preservar D-333 (uma ficha por Move com variantes explícitas quando existirem), D-334 (referências relativas ao corpo e adaptação anatômica), D-248 (fases visuais fora do combate), D-245 (tempos de windup/trajeto/projétil distintos) e D-235 (Move/VFX independente de personagem, espécie, lado e posição fixa). **Exemplo:** referência à mão e sua alternativa para modelos sem mãos precisam de dados aprovados individualmente; não inventar origem ou duração.
+- **Apresentação:** preservar D-229/D-230 e D-259: tooltip em combate usa números mecânicos quando definidos, sem descrição de VFX nem prévia de dano na seleção de alvo.
+- **Escopo:** essas quatro decisões **não definem engine de Moves**, estrutura de runtime, banco de dados, formato de recursos, novos valores de fichas ou alterações técnicas.
+
+### 75.3 Achado de auditoria estática — documentação não equivale a uma engine de Moves
+
+- Após inspeção do código da `main` no commit `ae961464c172ed86cb8787926e923897ba46a87c`, há **núcleo de execução compartilhado** (`Skill`, `Battle`, `AttackPlanner`, `Incoming`, `BattleFx`) e módulos visuais, **mas não foi encontrada uma engine unificada que carregue, valide e interprete integralmente as fichas de Moves aprovadas**. Este é um **achado estático**, não uma decisão de arquitetura.
+- **Evidência:** `scripts/data/skill.gd` tem atributos elementares de Move e construtores em código, mas não todos os campos de efeitos/custos/variantes/fases/âncoras da documentação; `scripts/combat/battle.gd` resolve alguns efeitos com `match` por nome/ID; `scripts/combat/attack_planner.gd` trata fases específicas por ID; `scripts/combat/fx/fx_projectiles.gd` e `fx_impacts.gd` possuem roteamento individual de efeitos; `scripts/combat/battle_scene.gd` constrói listas de Skills diretamente no código. `scripts/motion_composer/` constitui uma biblioteca de **movimento/VFX**, não o parser/validador das fichas de Moves.
+- **Pendência:** definir a arquitetura futura **em rodadas próprias e com aprovação explícita**, sem presumir `Resource`, JSON, classes por Move, interpretador de efeitos, editor ou migração. **Nenhuma engine nova foi construída nesta rodada**.
+
+### 75.4 Pendências e preservação
+
+- Nenhum dado concreto de espécies, aprendizado, variantes, gatilhos ou adaptações anatômicas foi criado; fichas operacionais ainda não foram sincronizadas ao código.
+- Preservar D-061, D-235, D-244–D-249, D-258–D-263, D-275, D-331–D-334 e demais decisões sem alterações. A divergência histórica de LUK da Rodada 60 (GDD §12.13) permanece sem resolução.
+- **Nenhum código, teste, Move operacional, ficha concreta, IA, HUD, rig, cena, VFX ou asset alterado; nenhum teste de gameplay realizado.**
+
