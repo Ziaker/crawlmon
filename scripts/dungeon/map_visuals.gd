@@ -76,9 +76,27 @@ func setup(grid: Array[String], profile_path := "", variation_seed := 0) -> void
 	if not profile_path.is_empty():
 		_profile_path = profile_path
 	_variation_seed = variation_seed
+	_clear_visuals()
 	_build_tiles()
 	_build_torches()
 	queue_redraw()
+
+
+## Re-entrant setup (the game calls it once; the in-game biome capture calls it
+## per profile). Keeps the one CanvasModulate, frees the old layers, torches,
+## embers and dust, and drops the player light so it is recreated cleanly.
+func _clear_visuals() -> void:
+	if _player_light != null and is_instance_valid(_player_light):
+		_player_light.queue_free()
+	_player_light = null
+	for child in get_children():
+		if child is CanvasModulate:
+			continue
+		child.queue_free()
+	_floor_layer = null
+	_decor_layer = null
+	_torches.clear()
+	_dust = null
 
 
 func _process(delta: float) -> void:

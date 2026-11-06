@@ -115,7 +115,7 @@ A folha usa **pitch de 25 px**: 1 px de linha ciano + célula de arte de 24×24.
 
 ## Pendências
 
-- Só o **Temporal Tower** foi testado em cena; os outros 15 atlas foram gerados com 30 tiles e revisados em `docs/referencias/tilesets/biomes_contact.png`, mas não no jogo.
+- Os 16 foram capturados no laboratório e **no jogo** na mesma seed/mapa (`scratch/exploration_biomes/`, contato `docs/referencias/tilesets/biomes_ingame_contact.png`); só o **Temporal Tower** está aprovado visualmente. O `MapVisuals.setup` virou re-entrante (`_clear_visuals`) para o teste in-game não travar após ~9 perfis.
 - O contrato de face passa no Temporal Tower; as outras 12 folhas têm arte ambígua (o lado escuro não é consistente) e ficam com `side_contract_ok=false`. Para elas o jogo usa o **fallback por papel** (strips, tips, island, cross e alt) e o `murky_forest` foi testado com 688 células e 0 divergências (D-356).
 - O renderizador escolhe a parede pela assinatura de lado medida; o “Legend” da folha ainda não é lido como máscara automática.
 - O preview da folha foi casado pixel a pixel: ele usa a linha 1 (topo) + linha 2 (face) + Ground; isso está documentado em D-354.

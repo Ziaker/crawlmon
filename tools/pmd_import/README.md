@@ -151,8 +151,11 @@ As imagens vão para `scratch/tilesets/<nome>_catalog.png`, `_room.png` e
   `check_occluder_brightness.py` guarda a baseline das 10 seeds (51,1–68,5).
 - A aprovação do Temporal foi **gravada** em 2026-11-06 (30 tiles, 5+5% Wall Alt);
   o build não avisa mais que falta aprovação.
-- 16 capturas de sala em `scratch/tilesets/`; contato em
-  `docs/referencias/tilesets/biomes_contact.png`.
+- 16 capturas de sala em `scratch/tilesets/` e **16 no jogo** em
+  `scratch/exploration_biomes/` (mesma seed/mapa); contatos em
+  `docs/referencias/tilesets/biomes_contact.png` e `biomes_ingame_contact.png`.
+- O `MapVisuals.setup` é re-entrante (`_clear_visuals`), necessário para o teste
+  in-game dos 16 perfis; o jogo chama uma vez.
 - O **seletor de bioma** (`scripts/dungeon/biome_selector.gd`) usa o
   `biome_pool.json`: andares 1–4 em Temporal Tower, troca no 5º andar, fallback
   para Temporal Tower.

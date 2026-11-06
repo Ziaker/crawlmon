@@ -1,5 +1,16 @@
 # Changelog — pipeline de tilesets
 
+## 2.9.1 — 2026-11-06
+
+- **16 biomas no jogo:** a cena real de exploração foi carregada com a seed
+  12345 e o `Visuals.setup` foi chamado para cada perfil; 16 capturas em
+  `scratch/exploration_biomes/` e contato em
+  `docs/referencias/tilesets/biomes_ingame_contact.png`.
+- **Setup re-entrante:** `MapVisuals.setup` agora chama `_clear_visuals()` e
+  limpa camadas/tochas/brasas/poeira; antes, o teste in-game travava após ~9
+  perfis por acúmulo de nós. O jogo chama o setup uma vez, sem mudança visual.
+- **Gate:** aprovado em 2026-11-06 (30 tiles, Wall Alt. 5+5%).
+
 ## 2.9.0 — 2026-11-06
 
 - **Fallback dos 12 perfis:** com `side_contract_ok=false`, o jogo usa as peças
