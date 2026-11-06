@@ -366,3 +366,8 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-321](D-321-inimigos-tambem-andam-em-grupo.md) | Exploração / IA | Inimigos em grupo solto (máx. 3); soma define a ameaça do grupo; líder derrotado → próximo vira líder | Não implementado |
 
 | [D-322](D-322-battlelog-overhaul-opcao-c-retratos.md) | HUD / BattleLog / visual | Opção C aprovada para o log no alto à direita: faixas claras diagonais e retrato/ícone do personagem em cada evento, preservando D-268 | Visual aprovado; não implementado; imagem e DOCX binários ainda sem publicação verificada no GitHub |
+
+| [D-323](D-323-bubble-shield-ficha-inicial.md) | Moves / escudos | Bubble Shield: Water, Status, ALL ALLIES, 3 ATB, wind-up 0,7 s, proteção 25 + MAG do usuário por aliado, 8 s | Aprovado como design; MP e tipagem da reserva pendentes; não implementado |
+| [D-324](D-324-escudos-reaplicacao-empilhamento-prioridade.md) | Combate / escudos | Mesmo Move reseta escudo salvo empilhamento expresso; escudos de naturezas distintas podem coexistir; prioridade escudo tipado > sem tipo > HP | Aprovado; critérios de tipagem/ordem dentro da mesma camada pendentes; não implementado |
+| [D-325](D-325-escudos-interrupcao-e-dano-periodico.md) | Combate / escudos | Anti-interrupção somente se descrita no efeito; Burn e Poison também consomem escudos elegíveis | Aprovado; interação exata com aplicação de status pendente; não implementado |
+| [D-326](D-326-brick-break-quebra-escudos.md) | Moves / escudos | Brick Break também quebra escudos, inclusive Bubble Shield, sem inferir quantas reservas ou condições adicionais | Aprovado; abrangência operacional pendente; não implementado |
