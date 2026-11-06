@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.67 — Rodada 87: Drain HP/MP, evolução, áreas de risco e hub (2026-11-06); histórico preservado.  
+> **Revisão:** 1.68 — Rodada 87B: contratos internos de variantes, efeitos e eventos da engine de Moves (2026-11-06); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1770,6 +1770,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.67 | 2026-11-06 | Rodada 87: regra própria de Drain (HP ou MP no valor do dano que seria sofrido; ambos só se Move específico declarar), evolução voluntária em local seguro ou entre expedições, áreas opcionais com confrontos/risco-recompensa e hub central de equipe, Moves, treino, comércio e narrativa. D-352–D-355. | Rodada 87 fechada / Rodada 88 proposta |
 
+| 1.68 | 2026-11-06 | Rodada 87B: parâmetros comuns mais substituições explícitas de variantes; efeitos tipados e ordenados; eventos estruturados com Move/declaração/ocorrência/variante/tipo/tempo/participantes; notificações de cancelamento e interrupção com VFX conforme ficha. D-360–D-363. | Rodada 87B documentada / Rodada 88B proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2431,4 +2433,21 @@ A engine deverá **demonstrar por validação e testes reproduzíveis** que even
 **Exemplos somente para entendimento:** dano hipotético 30 absorvido por Drain **HP** concede 30 HP, ou por Drain **MP** concede 30 MP — **não ambos**, salvo exceção de Move específico; um Pokémon elegível para evoluir só executa a evolução ao acessar preparação segura ou intervalo entre expedições; áreas opcionais podem propor combate forte ou gasto voluntário de recursos em troca de prêmio; no hub o jogador poderá reorganizar equipe, preparar Moves, treinar, comerciar e conversar com NPCs.
 
 **Limites:** o cálculo exato do dano de referência para Drain, máximo de HP/MP, escudos/status, AoE/multi-hit e extensão de uma exceção dupla permanecem pendentes; a decisão não atribui Drain a espécie real nem cria Move excepcional. Locais exatos de evolução, áreas de risco, acesso/serviços e interface de hub também não foram escolhidos. R25-Q3 mantém evolução por escolha, D-275/D-329 preservam preparação restrita, GDD R26-Q5/R34-Q2 mantêm salas e eventos opcionais sem foco obrigatório em armadilhas, R29-Q1 preserva comércio também nas dungeons. As decisões de engine **D-348–D-351** e a divergência histórica LUK R60 (§12.13) permanecem preservadas. **Somente documentação, sem modificar código, Resources, Move, IA, HUD, cenas, VFX ou testes; nenhum teste de gameplay executado.**
+
+### 12.43 Rodada 87B — contratos de variantes, efeitos, eventos e cancelamentos (revisão 1.68)
+
+> **2026-11-06.** O criador aprovou expressamente **1A, 2A, 3A e 4A** da **Rodada 87B**, sem observações. Registros **D-360–D-363**, consolidados em **§81** de `docs/REGRAS_DO_JOGO.md`. **A numeração D-356–D-359 pertence a Drain Spear/Badge Steal e foi preservada**. A série B permanece distinta da Rodada 87 tradicional (D-352–D-355, §79). D-001 mantém o GDD não normativo para a resolução de combate.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R87B-Q1 | **1A** | **Parâmetros comuns no Move**, com variantes substituindo **explicitamente somente campos diferentes** | [D-360](decisoes/D-360-r87b-q1-variantes-sobrescritas-explicitas-campos-diferentes.md) |
+| R87B-Q2 | **2A** | **Efeitos tipados e ordenados**, com parâmetros, condições e abrangência próprios quando declarados, usando componentes reutilizáveis | [D-361](decisoes/D-361-r87b-q2-efeitos-tipados-ordenados-parametros-condicoes-abrangencia.md) |
+| R87B-Q3 | **3A** | Eventos com **Move, declaração, ocorrência, variante quando aplicável, tipo, referência temporal mecânica e participantes** | [D-362](decisoes/D-362-r87b-q3-eventos-estruturados-identidades-tempo-participantes.md) |
+| R87B-Q4 | **4A** | **Eventos explícitos de cancelamento/interrupção**; apresentação encerra/dissipa conforme **comportamento visual aprovado do Move**, mantendo indefinições pendentes | [D-363](decisoes/D-363-r87b-q4-eventos-cancelamento-interrupcao-vfx-conforme-ficha.md) |
+
+**Exemplos apenas de estrutura, sem criar conteúdo:** Splitter Flames manterá parâmetros comuns e variantes que substituem somente diferenças já aprovadas; efeitos como dano/status serão entradas tipadas ordenadas somente quando definidos na ficha; um impacto poderá gerar evento com identidade estável, tempo mecânico e participantes; ao cancelar uma ocorrência, o visual segue a dissipação individual aprovada ou fica com especificação pendente. **Nenhum valor, efeito, Move ou animação novo foi aprovado por estes exemplos.**
+
+**Restrições preservadas:** D-333/D-343 (uma ficha lógica, recursos mecânico e visual próprios), D-340 (interpretador genérico), D-348/D-349 (plano mecânico autoritativo e vínculo por ID), D-235 (qualquer personagem/lado/anatomia), D-226 (índices reservados na declaração) e D-351 (testes obrigatórios). A implementação atual de AttackPlanner ainda não comprova D-226; nenhuma correção foi feita. As decisões **Drain Spear/Badge Steal D-356–D-359** continuam vigentes no consolidado (§80), inclusive prioridade própria do Badge Steal anterior ao dano (não generalizar para outros Moves). D-352 trata exclusivamente de Drain HP/MP. A divergência histórica da Rodada 60 sobre LUK (§12.13) permanece não conciliada.
+
+**Pendências:** detalhes técnicos de mesclagem de variantes, tipos dos Resources, catálogo de operadores/condições, representação de IDs/tempo, transporte e versionamento de eventos, reação visual ainda não especificada, critérios de testes e escolha do Move piloto. **Somente documentação: nenhum código, Resource, Move operacional, teste, VFX, animação, IA, HUD, cena ou asset modificado; nenhum teste Godot executado.**
 

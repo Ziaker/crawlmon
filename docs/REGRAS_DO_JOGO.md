@@ -2511,3 +2511,32 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Pendente:** contato mágico a 16,3 unidades sem tratar como projétil ou mover o corpo até 2,6; sobreposição dos tempos provisórios; alvo móvel/interrupção/engajamento; snapshots de imunidade; magnitude de buffs roubados dependentes do emissor; capacidade de reservas equivalentes não stackáveis no atacante; âncoras VFX anatômicas; tabelas de Normal; calibração de AGI; testes visuais e mecânicos conforme D-349–D-351.
 - **Preservar histórico:** D-352 continua significando exclusivamente **Drain HP/MP**, não Badge Steal; D-324 conserva prioridade dos escudos para outros golpes; D-348–D-351 exigem integridade dos Resources e testes antes de aprovar migração. Nenhuma mecânica/código/HUD/scene/VFX/Resource foi implementada nesta atualização.
 
+---
+
+## 81. Rodada 87B — variantes declarativas, efeitos tipados e eventos mecânico-visuais
+
+> **2026-11-06.** O criador aprovou expressamente **1A, 2A, 3A e 4A** na **Rodada 87B**, sem observações adicionais. Registros individuais **D-360–D-363** conforme D-061. Preservar a **Rodada 87 tradicional (D-352–D-355, §79)** e **Drain Spear / Badge Steal (D-356–D-359, §80)**, além de toda a série anterior da engine. Nenhum código alterado.
+
+### 81.1 Regras aprovadas
+
+| Documento | Escolha | Contrato |
+|---|---|---|
+| [D-360](decisoes/D-360-r87b-q1-variantes-sobrescritas-explicitas-campos-diferentes.md) | **1A** | Dados comuns ficam na definição principal; cada variante faz **substituições explícitas apenas dos campos realmente diferentes** |
+| [D-361](decisoes/D-361-r87b-q2-efeitos-tipados-ordenados-parametros-condicoes-abrangencia.md) | **2A** | **Entradas de efeito tipadas e ordenadas**, cada uma com parâmetros, condições e abrangência próprios **quando declarados**, executadas por componentes genéricos |
+| [D-362](decisoes/D-362-r87b-q3-eventos-estruturados-identidades-tempo-participantes.md) | **3A** | **Eventos estruturados** com Move, declaração, ocorrência, variante quando aplicável, tipo, referência temporal mecânica e participantes envolvidos |
+| [D-363](decisoes/D-363-r87b-q4-eventos-cancelamento-interrupcao-vfx-conforme-ficha.md) | **4A** | **Eventos explícitos de cancelamento e interrupção**; a apresentação encerra/dissipa efeitos conforme **regras visuais aprovadas do Move**, mantendo outros casos pendentes |
+
+### 81.2 Exemplos, integrações e limites
+
+- **Variantes (D-360):** preservar D-333/D-343: **uma ficha lógica por Move**, dois recursos executáveis separados por mecânica/visual, e vínculo/validação por ID estável (D-349). Exemplo **hipotético**: Splitter Flames registra em cada variante somente os parâmetros que já diferem para um ou dois alvos; não gerar novos valores ou variantes. Não decidir aqui algoritmo de mesclagem de coleções ou classes de `Resource`.
+- **Efeitos (D-361):** preservar D-340 e a ordem aprovada na ficha. D-260 mantém herança de seleção/facção/abrangência padrão salvo exceção expressa de cada efeito; nenhuma prioridade ou chance é inferida pela estrutura, e as decisões anteriores de status/RNG continuam normativas. Exemplo: entrada de dano e entrada condicional de status em uma lista tipada apenas quando efetivamente aprovadas.
+- **Eventos (D-362):** preservar D-348 (plano mecânico autoritativo), D-218/D-222/D-226 (reserva inicial e índices estáveis), D-256/D-266 (IDs diagnósticos de excedentes separados) e D-235 (atacante/alvo reais em qualquer lado). Exemplo: evento de impacto correlacionado a Move, declaração, ocorrência, variante aplicável, referência temporal e participantes. **Não foi escolhido** transporte, unidade de tempo ou representação dos identificadores.
+- **Cancelamentos (D-363):** comunicar cancelamento e interrupção explicitamente; os VFX respondem conforme regras individuais já aprovadas, sem criar impacto mecânico para ocorrência cancelada. **Sem regra visual individual, manter a decisão pendente**, sem impor desaparecimento imediato ou conclusão normal universal. Exigir testes compatíveis com D-351 e D-235.
+- **Conflito de implementação mantido:** em `Battle`/`AttackPlanner` o plano atual ainda é criado depois do Windup, enquanto D-226 exige reserva de ocorrências condicionais na declaração. Não foi feita conciliação técnica. Preservar a regra específica de **Badge Steal antes do dano** da D-359 sem convertê-la em regra geral de status; D-352 continua a tratar de Drain de HP/MP.
+
+### 81.3 Pendências, conflitos e escopo
+
+- Pendente: campos e tipos do esquema de Resources, substituições de listas, operadores e linguagem de condições, meio de transporte de eventos, relógio e IDs concretos, política de cleanup e VFX não especificados, versionamento, limiares de testes e Move piloto.
+- Preservadas integralmente D-235, D-333–D-359 e histórico anterior, incluindo D-356–D-359 da ficha Drain Spear e a divergência de LUK da Rodada 60 (GDD §12.13).
+- **Somente documentação:** quatro D novos, índice, este consolidado e adendo GDD. **Nenhum código, Resource, Move, IA, HUD, animação, cena, asset, VFX ou teste alterado; nenhum teste Godot executado.**
+
