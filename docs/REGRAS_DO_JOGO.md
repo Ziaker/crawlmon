@@ -2477,3 +2477,37 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Histórico:** D-348–D-351 da engine e testes obrigatórios são preservados; nenhum Move foi migrado por esta documentação. Permanecem as pendências anteriores e a divergência histórica de LUK da Rodada 60 (GDD §12.13).
 - **Somente documentação:** quatro decisões individuais, índice, consolidação e adendo GDD. **Nenhum código, Resource, Move, ficha operacional, IA, HUD, cena, VFX, asset ou teste alterado. Nenhum teste Godot ou gameplay executado.**
 
+---
+
+## 80. Drain Spear — ficha parcial, elemento Normal, mid-range e keyword Badge Steal (D-356–D-359)
+
+> **2026-11-06.** Decisões expressas do criador na ficha técnica de Drain Spear, nas respostas DS1, nas confirmações «elemento A; mid-range A; badges A» e no esclarecimento «Drain spear ao invés de usar o nome drain, use como keyword, "Badge Steal" sigo suas recomendações». Estes registros são **documentação de design parcialmente definida**, não homologação de uma implementação.
+
+### 80.1 Identidade e matemática do Move (D-356)
+
+- **Nome preservado:** Drain Spear; **ID:** `move_drain_spear`; global para qualquer espécie/lado, com Orc como primeiro usuário planejado (D-235).
+- **Elemento:** Normal (D-357). **Execução:** contato, mid-range. **Custo:** 2 ATB + 12 MP; Burst paga integralmente a ação quando utilizado (D-270).
+- **Dano mágico:** parcela ofensiva `5 + MAG atual`; MAG 10 resulta em 15 antes de outros modificadores; mitigação natural por **SPI**, não VIT. Não definir escalas adicionais ou converter o contato em categoria de dano físico.
+- **Timings para referência visual, ainda provisórios:** Wind-up 1 s, execução 1 s, recovery 1,6 s. O contato, o deslocamento, o Evade e a janela de aplicação exigem plano mecânico sincronizado (D-019/D-030/D-348).
+
+### 80.2 Elemento Normal e mid-range (D-357–D-358)
+
+- **Normal** foi aprovado como elemento neutro, **separado da categoria física/mágica e da forma de execução**. `Element.Type.FISICO` ainda existe no código antigo; esta aprovação **não altera automaticamente enum, afinidades nem Moves existentes**. Almighty e os modificadores de Normal permanecem pendentes.
+- A **Drain Spear** usa distância-alvo **16,3 unidades entre centros**, com faixa válida de **15,3 a 17,3 unidades**. A faixa foi confirmada para este Move; não estender automaticamente a todos os futuros Moves.
+- O usuário aproxima, aguarda ou recua conforme posição e alvo em deslocamento. Ao alcançar a faixa antecipadamente, cessa o movimento; se o recuo não alcançar a faixa dentro do tempo, **ainda executa o ataque**.
+- **Recuo:** tempo-base 1,2 s reduzido por AGI segundo D-119/D-133/D-136/D-140/D-148; a referência numérica de AGI para trajetos não foi homologada. Preservar correção dos passos e piso temporal existentes.
+
+### 80.3 Keyword Badge Steal (D-359)
+
+- **Badge Steal** nomeia o efeito especial de **roubo de buffs positivos e escudos com badge**, **não** o Move, que permanece **Drain Spear**. **Debuffs não são roubados.**
+- **Condição:** acerto/contato válido e efeito não bloqueado. Em caso de sucesso, transferir efeitos elegíveis do alvo para o atacante **antes de aplicar o dano**, reiniciando suas durações.
+- Escudos roubados conservam **a resistência restante**; efeitos equivalentes só fazem stack quando a própria definição permitir, ou então são reiniciados no atacante. A afinidade **Drain** de HP/MP (D-352) e Dispel são mecânicas distintas.
+- Invulnerabilidade que impede o contato bloqueia Badge Steal; imunidade apenas a dano mágico, sem proteção contra efeitos, **não** impede necessariamente o roubo. O caso de **imunidade roubada antes do próprio dano** ainda requer confirmação explícita de precedência.
+- Os gatilhos do motor são autoritativos; a transferência **visual** das badges dura cerca de **0,3 s**. No VFX, impacto comum = **spray curto tipo shotgun** no ponto do acerto; com roubo, energia orientada **do alvo para o usuário**, com referência de dissipação de **0,55 s**. A imagem produzida na conversa **não** define o enquadramento/ângulo real da câmera do jogo. Preservar BattleLog opção C (D-322), HUD aprovada (D-268) e D-235 (independência de anatomia/lado).
+
+### 80.4 Conflitos, pendências e estado
+
+- **Precedência local:** Badge Steal ocorre antes do dano **neste Move**, sem reordenar por interpretação o processamento geral de status após dano da D-199.
+- **Pendente:** contato mágico a 16,3 unidades sem tratar como projétil ou mover o corpo até 2,6; sobreposição dos tempos provisórios; alvo móvel/interrupção/engajamento; snapshots de imunidade; magnitude de buffs roubados dependentes do emissor; capacidade de reservas equivalentes não stackáveis no atacante; âncoras VFX anatômicas; tabelas de Normal; calibração de AGI; testes visuais e mecânicos conforme D-349–D-351.
+- **Preservar histórico:** D-352 continua significando exclusivamente **Drain HP/MP**, não Badge Steal; D-324 conserva prioridade dos escudos para outros golpes; D-348–D-351 exigem integridade dos Resources e testes antes de aprovar migração. Nenhuma mecânica/código/HUD/scene/VFX/Resource foi implementada nesta atualização.
+
