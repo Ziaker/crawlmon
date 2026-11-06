@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.60 — Rodada 84 reformulada: quatro decisões centrais de gameplay (2026-11-05); histórico preservado.  
+> **Revisão:** 1.61 — Rodada 85 registrada em adendo rastreável (2026-11-06); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1756,6 +1756,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.60 | 2026-11-05 | Rodada 84 reformulada (resposta literal C C C A): separar a transição direta do protótipo após cinco andares da regra de chefe obrigatório na campanha final; recrutar por eventos/missões e encontros especiais; biblioteca de Moves com até oito equipados e preparação restrita; permitir afinidades Null/Repel/Drain por espécie, inspiradas em SMT. D-273–D-276. | Rodada 84 reformulada fechada / Rodada 85 proposta |
 
+| 1.61 | 2026-11-06 | Rodada 85: afinidades desconhecidas reveladas por teste e registradas por espécie; chefes combinam IA estratégica e cooperação variável sem Moves exclusivos; trocas equipe/reserva em locais seguros ou entre expedições (revisão da permissão provisória R25-Q2); campanha narrativa principal com dungeons adicionais por exploração. D-327–D-330. | Rodada 85 fechada / Rodada 86 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2281,4 +2283,19 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Conciliações e exemplos hipotéticos:** D-273 **preserva escopo** de D-316/D-317 para o protótipo com cinco andares e preserva a regra anterior R23-Q2/R26-Q4 de chefe no jogo final, sem assumir duração ou chefes novos; um Pokémon pode oferecer recrutamento após missão ou batalha especial, mas **somente por interação voluntária**; um Pokémon que aprendeu onze Moves pode guardá-los na biblioteca, porém ter até oito preparados e trocá-los só em locais seguros/entre expedições; Null/Repel/Drain tornam-se categorias possíveis de afinidade, **sem atribuição a espécies reais ou alteração dos onze elementos existentes**. A decisão sobre afinidades é nova extensão expressa à D-118/D-128, sem copiar automaticamente tabelas de SMT.
 
 **Limitações e conflitos preservados:** ainda falta definir quais lugares são seguros para preparar Moves, condições concretas de recrutamento, integração da campanha com o chefe, distribuição das afinidades por espécie e como Repel/Drain interagem com dano, ATB e status. Nenhuma regra de MP/Burst (D-270), D-235 (Moves/VFX independentes de personagem/lado), D-268 (HUD), D-300–D-321 (Motion Composer e exploração) foi modificada. O conflito textual de LUK da Rodada 60 (§12.13) permanece sem resolução. **Somente documentação: nenhum código, teste, Move, ficha, IA, HUD, asset, cena ou VFX modificado; nenhum teste de gameplay executado.**
+
+### 12.36 Rodada 85 — afinidades, chefes táticos, troca de equipe e dungeons adicionais (revisão 1.61)
+
+> **2026-11-06.** O criador aprovou **1A, 2C, 3A e 4C**, sem observações. Decisões individuais **D-327 a D-330**, consolidadas em **§73** de `docs/REGRAS_DO_JOGO.md`. Registro aditivo conforme D-061, preservando o histórico; **D-001 mantém o GDD não normativo para combate**. D-322 a D-326 permanecem integralmente inalteradas.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R85-Q1 | **1A** | **Afinidades desconhecidas reveladas quando testadas** e registradas por espécie | [D-327](decisoes/D-327-r85-q1-afinidades-reveladas-por-teste-registro-especie.md) |
+| R85-Q2 | **2C** | **Chefes com IA estratégica e cooperação variável**, sem exigir Moves exclusivos de personagem | [D-328](decisoes/D-328-r85-q2-chefes-ia-tatica-cooperacao-variavel.md) |
+| R85-Q3 | **3A** | **Trocar ativa/reserva somente em locais seguros ou entre expedições**; superar a permissão provisória de R25-Q2 para troca livre durante exploração | [D-329](decisoes/D-329-r85-q3-troca-equipe-reserva-locais-seguros-entre-expedicoes.md) |
+| R85-Q4 | **4C** | **Progressão principal narrativa, com conquistas de exploração também desbloqueando dungeons adicionais** | [D-330](decisoes/D-330-r85-q4-campanha-narrativa-dungeons-extras-exploracao.md) |
+
+**Exemplos hipotéticos e compatibilidades:** testar uma afinidade elemental revela apenas a propriedade testada da espécie, não seu catálogo completo (D-118/D-128/D-276). Chefes podem aproveitar sinergia de equipe e uma IA mais estratégica, sem criar Moves exclusivos (D-235; GDD R29-Q4/R30-Q3). A troca ativa/reserva deixa de ser livre no jogo final, **substituindo a provisória R25-Q2**, mas mantém a entrada de novo recrutado em vaga ativa (R30-Q5) e o máximo de três integrantes; os lugares seguros não foram escolhidos (D-275). A narrativa libera a progressão principal, enquanto exploração pode liberar dungeons adicionais, preservando a campanha e o requisito de chefes finais (D-273). Nenhum desses exemplos estabelece conteúdo, personagem ou local concreto.
+
+**Pendências e histórico preservados:** distribuição real de Null/Repel/Drain por espécie, interface do registro, padrões de IA de chefes, locais seguros de trocas, dungeons, desafios e requisitos de desbloqueio não foram definidos. D-322–D-326 (HUD/BattleLog e escudos), D-268, D-270 e D-300–D-321 não foram modificadas. A divergência histórica de LUK da Rodada 60 (§12.13) permanece sem conciliação. **Somente documentação; nenhum código, teste, IA, ficha, Move, cena, HUD, asset ou VFX alterado, sem teste de gameplay.**
 

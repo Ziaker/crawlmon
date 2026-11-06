@@ -2261,3 +2261,35 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - O estado de combate consultado na `main` ainda armazena HP sem reserva de escudo (`scripts/combat/combatant.gd`; `take_damage` desconta diretamente do HP). A classe `Skill` possui custo ATB, categoria, wind-up e alvos amigáveis, mas ainda não implementa a nova proteção.
 - Preservar D-193/D-194/D-198/D-205 para dano, D-012 para ALL ALLIES, D-019 para relógio lógico de combate, D-235 para moves/VFX independentes do personagem e D-247/D-262 para descrições de efeitos e Dispel.
 - **Escopo documental desta atualização:** criar D-323 a D-326, atualizar índice e esta seção. Sem mudanças em código, cenas, Move operacional, shaders, VFX, HUD, testes ou GDD.
+
+---
+
+## 73. Rodada 85 — afinidades descobertas, chefes táticos, reservas e progressão da campanha
+
+> **2026-11-06.** O criador aprovou expressamente **1A, 2C, 3A e 4C**, sem observações. Registros individuais **D-327 a D-330**, conforme D-061. Preservar integralmente D-322–D-326 sobre BattleLog e escudos e as decisões de exploração D-309–D-321. Somente documentação.
+
+### 73.1 Regras aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-327](decisoes/D-327-r85-q1-afinidades-reveladas-por-teste-registro-especie.md) | **1A** | Afinidades **desconhecidas** são reveladas **quando testadas**, ficando **registradas por espécie** |
+| [D-328](decisoes/D-328-r85-q2-chefes-ia-tatica-cooperacao-variavel.md) | **2C** | Chefes combinam **IA estratégica e cooperação**, variando conforme o chefe, **sem Moves exclusivos de personagem** |
+| [D-329](decisoes/D-329-r85-q3-troca-equipe-reserva-locais-seguros-entre-expedicoes.md) | **3A** | **Troca entre equipe ativa e reserva somente em locais seguros de preparação ou entre expedições**, substituindo a permissão provisória de troca livre |
+| [D-330](decisoes/D-330-r85-q4-campanha-narrativa-dungeons-extras-exploracao.md) | **4C** | **Campanha principalmente narrativa**, com **dungeons adicionais desbloqueáveis por conquistas de exploração** |
+
+### 73.2 Relações e exemplos de gameplay
+
+- **Afinidades (D-327):** testar uma interação elementar contra uma espécie revela a **afinidade testada** dessa espécie, registrando o conhecimento; não revela automaticamente afinidades restantes. Preservar **D-118/D-128/D-276**: SMT como referência, Null/Repel/Drain como possibilidades sem alocação concreta e os elementos/fraquezas existentes até revisão expressa. Preservar **D-235** (Move e VFX independentes de personagem/lado). Nenhum elemento foi atribuído a espécie nesta rodada.
+- **Chefes (D-328):** chefe hipotético poderá combinar decisões estratégicas de IA com papéis complementares de aliados; outro chefe poderá valorizar estratégias diferentes. **GDD R29-Q4/R30-Q3** mantém chefes principalmente dentro das regras normais, aliados opcionais, **até três inimigos ativos**, sem exigir fases ou poderes exclusivos. Nenhuma tática, Move ou chefe real foi definido.
+- **Equipe (D-329):** a **GDD R25-Q2** registrava permissão **provisória** de trocar ativa/reserva durante exploração (`A po ora`). Esta **R85-Q3A** estabelece a **regra definitiva de trocas apenas em locais seguros ou entre expedições**, sem apagar o histórico; não proíbe a entrada de **novo recrutado em vaga ativa livre** (GDD R30-Q5) nem altera o limite de três membros. **D-275** já restringe troca de Moves equipados; **locais específicos** ainda não estão definidos.
+- **Campanha (D-330):** progressão narrativa abre dungeons principais; conquistas de exploração podem liberar **dungeons adicionais**, sem exigir automaticamente ambas as fontes de desbloqueio para toda dungeon. Preservar **GDD R25-Q1/R31-Q4/R34-Q1** (objetivos por história/NPCs e histórias por dungeon), **R29-Q3/R30-Q4** (revisitas), **D-273** (chefe na campanha completa e transição direta provisória do protótipo). Nenhuma missão/dungeon real foi homologada.
+
+### 73.3 Pendências e conflitos preservados
+
+- **Afinidades:** UI de consulta, critério exato de teste quando há esquiva, persistência entre campanhas/saves e distribuição por espécie ainda pendentes.
+- **Chefes:** configurações de IA, equipes, comportamentos específicos e dificuldades numéricas continuam abertos.
+- **Equipe:** quais locais são seguros para troca, eventual função de descanso/hub, regras de acesso à reserva e interface permanecem sem decisão. **R25-Q2 continua como histórico provisório, superado expressamente por D-329 para o jogo completo.**
+- **Campanha:** missões, desbloqueios, localizações, conteúdo e recompensas concretas das dungeons adicionais não foram escolhidos.
+- **Outras regras:** D-322–D-326 (BattleLog/Bubble Shield/escudos/Brick Break), D-268 (HUD), D-270 (Burst/MP), D-300–D-321 (Motion Composer/exploração) permanecem inalteradas. O conflito textual de LUK da Rodada 60 (GDD §12.13) não foi conciliado.
+- **Escopo:** quatro D novos, índice, consolidado e adendo GDD. **Nenhum código, teste, Move, IA, ficha, HUD, cena, asset ou VFX modificado; nenhum teste de gameplay executado.**
+
