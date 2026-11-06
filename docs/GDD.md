@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.64 — Rodada 85B: arquitetura da engine, dois arquivos por Move e exigência de sincronia verificável (2026-11-06); histórico preservado.  
+> **Revisão:** 1.65 — Rodada 86: Repel, fuga, dungeons opcionais e chefes recrutáveis (2026-11-06); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1764,6 +1764,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.64 | 2026-11-06 | Rodada 85B: Resources tipados do Godot, interpretador genérico de efeitos, pipeline visual separado e migração Move a Move; separação de arquivos mecânico e visual por Move e sincronia como critério de aceitação verificável. D-339–D-343. | Rodada 85B documentada / Rodada 86B proposta |
 
+| 1.65 | 2026-11-06 | Rodada 86: Repel devolve golpe de alvo único ao atacante original uma vez sem cadeia; tentativa de fuga ocupa uma oportunidade e falha mantém combate; dungeons opcionais têm novos Moves/técnicas/builds como recompensa distintiva; só chefes designados podem ser recrutados após vitória mediante requisitos e interação voluntária. D-344–D-347. | Rodada 86 fechada / Rodada 87 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2376,4 +2378,19 @@ A engine deverá **demonstrar por validação e testes reproduzíveis** que even
 **Exemplo ilustrativo:** Fire Bullet poderá ter um Resource de dano/custo/Burn e outro da mão de fogo, projétil, anéis e impacto, ligados pelo mesmo Move; **nenhum desses arquivos executáveis foi criado aqui**. O Move deve funcionar também quando executado por um inimigo distante ou personagem de anatomia diferente (D-235).
 
 **Preservações:** D-235, D-333–D-334/D-337–D-338, D-244–D-249/D-258–D-263, D-323–D-326, e histórico anterior. O alerta arquitetural do §12.38 continua vigente como inspeção estática da implementação na data informada, não prova de uma engine futura. A divergência histórica de LUK R60 (§12.13) permanece sem conciliação. **Somente documentação: nenhum código, Move executável, Resource, VFX, cena, asset ou teste modificado; nenhum teste de gameplay executado.**
+
+### 12.40 Rodada 86 — reflexão Repel, fuga falha, recompensas opcionais e chefes recrutáveis (revisão 1.65)
+
+> **2026-11-06.** O criador aprovou expressamente **1A, 2A, 3B e 4B**, sem observações adicionais. Decisões individuais **D-344 a D-347**, consolidadas em **§77** de `docs/REGRAS_DO_JOGO.md`. Adendo histórico conforme D-061; **D-001 mantém o GDD não normativo para combate**. Preservar integralmente a série B (D-331–D-343), o BattleLog/escudos (D-322–D-326) e as decisões anteriores.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R86-Q1 | **1A** | Repel de golpe **de alvo único** devolve o golpe **ao atacante original uma vez**, **sem reflexões em cadeia** | [D-344](decisoes/D-344-r86-q1-repel-alvo-unico-reflete-atacante-sem-cadeia.md) |
+| R86-Q2 | **2A** | Tentar fugir de combate comum **ocupa uma oportunidade de ação**; se **falhar**, a batalha **prossegue normalmente** | [D-345](decisoes/D-345-r86-q2-fuga-falha-consome-oportunidade-acao.md) |
+| R86-Q3 | **3B** | Dungeons opcionais priorizam como **recompensa distintiva novos Moves, técnicas e possibilidades de builds**, sem proibir recompensas secundárias | [D-346](decisoes/D-346-r86-q3-dungeons-opcionais-foco-novos-moves-builds.md) |
+| R86-Q4 | **4B** | **Somente chefes especificamente designados** podem ser candidatos a recrutamento **após vitória**, mediante **requisitos e interação voluntária** | [D-347](decisoes/D-347-r86-q4-chefes-designados-recrutaveis-apos-vitoria.md) |
+
+**Exemplos hipotéticos:** um alvo com Repel de fogo devolve um Move de fogo de alvo único uma vez ao lançador original, sem iniciar nova reflexão do mesmo golpe; uma tentativa de fuga sem sucesso ocupa a ação e o combate normal prossegue, sem oportunidade punitiva especial; uma dungeon extra pode abrir acesso a novas técnicas e builds, **sem substituir o avanço de campanha como recompensa das dungeons principais**; um chefe designado para recrutamento pode oferecer interação voluntária após vitória e cumprimento de requisitos, mas chefes comuns não se tornam recrutáveis por padrão.
+
+**Pendências e preservações:** custo numérico e chance de fuga continuam indefinidos; a regra de sucesso (retorno ao local e três segundos de imobilização do inimigo) e a vedação em chefes seguem GDD R28-Q3/R35-Q4. Repel permanece sem dano/status/ATB/tempo detalhados e sem regra de AoE ou multi-hit. O principal incentivo de dungeons opcionais é Moves/técnicas/builds, mas catálogo e aquisição ainda não existem. Chefes concretos recrutáveis, requisitos, interface e momento da interação não foram fixados. D-276/D-235, D-274/D-328, D-275/D-330 e D-339–D-343 preservados integralmente. O alerta arquitetural de §12.38 e a exigência de sincronismo verificável de §12.39 continuam em vigor; **não afirmar engine já implementada**. A divergência histórica de LUK da Rodada 60 (§12.13) permanece sem conciliação. **Somente documentação: nenhum código, teste, IA, Move, ficha, Resource, HUD, cena, asset ou VFX modificado; nenhum teste de gameplay realizado.**
 

@@ -2384,3 +2384,34 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - A divergência textual de LUK da Rodada 60 (GDD §12.13) permanece preservada, sem conciliação unilateral.
 - **Somente documentação:** cinco decisões individuais, índice, consolidado e GDD. **Nenhum código, Resource de Move, VFX, cena, IA, asset, ficha operacional ou teste criado/alterado; nenhum teste de gameplay realizado.**
 
+---
+
+## 77. Rodada 86 — Repel de alvo único, falha de fuga, recompensas opcionais e recrutamento de chefes
+
+> **2026-11-06.** O criador aprovou expressamente **1A, 2A, 3B e 4B**, sem observações. Registros individuais **D-344 a D-347**, de gameplay, conforme D-061. A série paralela de fichas/engine **D-331–D-343 (§§74–76)** e os registros prévios de HUD/escudos **D-322–D-326** foram preservados, sem modificação de código.
+
+### 77.1 Regras aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-344](decisoes/D-344-r86-q1-repel-alvo-unico-reflete-atacante-sem-cadeia.md) | **1A** | **Repel** devolve golpe de **alvo único** ao **atacante original**, **uma vez**, sem reflexões em cadeia |
+| [D-345](decisoes/D-345-r86-q2-fuga-falha-consome-oportunidade-acao.md) | **2A** | **Tentativa de fuga ocupa oportunidade de ação**; **quando falha**, combate comum prossegue normalmente |
+| [D-346](decisoes/D-346-r86-q3-dungeons-opcionais-foco-novos-moves-builds.md) | **3B** | **Novos Moves, técnicas e possibilidades de builds** são a **principal recompensa distintiva** das **dungeons opcionais** |
+| [D-347](decisoes/D-347-r86-q4-chefes-designados-recrutaveis-apos-vitoria.md) | **4B** | **Somente chefes especialmente designados** podem tornar-se **recrutáveis após vitória**, mediante **requisitos e interação voluntária**, sem recrutamento automático |
+
+### 77.2 Exemplos e compatibilidades com decisões anteriores
+
+- **Repel (D-344):** contra um alvo hipotético com Repel de fogo, um Move de fogo **de alvo único** retorna **uma única vez ao atacante original**. Mesmo se o atacante tiver Repel correspondente, **não iniciar uma cadeia de novas reflexões do mesmo golpe**. D-276 introduziu a categoria, D-118/D-128 preservam afinidades por espécie, e D-235 exige Move independente de personagem, equipe e lado. **Não se definiu** cálculo do dano, esquiva, crítico/status, tempo de retorno, cadeia multi-hit ou AoE, nem distribuição de afinidades reais.
+- **Fuga (D-345):** uma tentativa em **combate comum** ocupa uma oportunidade de ação; **se falhar**, o combate continua normalmente, sem turno punitivo novo. Se **tiver sucesso**, preservar GDD R28-Q3: retorno ao local do encontro e inimigo imobilizado por três segundos; **chefes não permitem fuga** (R35-Q4). **O custo numérico de ATB/Burst/MP, chance e interface continuam pendentes**. A retirada voluntária de dungeon (R30-Q1) é distinta.
+- **Dungeons opcionais (D-346):** a recompensa de gameplay distintiva pode ser nova técnica/Move ou opção de build; GDD R23-Q5/R27-Q4 e D-275 conservam as fontes de aprendizado existentes, biblioteca permanente e limite de oito equipados. D-330 mantém o desbloqueio de dungeons adicionais por exploração. **Não excluir recompensas secundárias** como Pokémon, itens ou narrativas. **A regra histórica de avanço/desbloqueio como recompensa principal de concluir dungeon de campanha (GDD R28-Q5) permanece distinta e vigente**.
+- **Chefes recrutáveis (D-347):** após vencer um chefe **expressamente designado** e cumprir requisitos, o jogador pode interagir voluntariamente para recrutá-lo; vitória de chefe não recruta por padrão. Preservar D-274 (fontes especiais, interação voluntária), D-328 (IA cooperativa sem Move exclusivo), D-235, o máximo de três ativos e as regras de reserva. A conquista da dungeon de campanha após vencer o chefe permanece conforme D-273/GDD R26-Q4; **não definir quando a oferta de recrutamento aparece em relação à transição**.
+
+### 77.3 Pendências, conflitos e escopo
+
+- **Repel:** efeito e recursos sobre o atacante atingido, parâmetros, status/crítico/ATB, caso de múltiplos alvos, reflexões de outros efeitos e VFX permanecem sem especificação, além de não haver tabela concreta de afinidades por espécie.
+- **Fuga:** chance/condições, custo numérico de ação/ATB/Burst/MP e interação com estados de combate ainda precisam ser decididos; não inventar débito além de ocupar a oportunidade.
+- **Recompensas:** espécies, catálogo de Moves/técnicas, condições, dificuldade e locais das dungeons opcionais ainda não foram escolhidos.
+- **Chefes:** quais podem ser recrutados, regras de desbloqueio, apresentação da oferta após a vitória e interação com encerramento da dungeon estão pendentes.
+- **Outras decisões:** D-322–D-326 (BattleLog/escudos), D-327–D-343 (Rodada 85 e série B de engine/fichas), D-270 (Burst/MP), D-095 (KO simultâneo) e D-203 (odômetro fora do jogo principal) preservados. A divergência histórica de LUK da Rodada 60 (GDD §12.13) permanece sem conciliação.
+- **Escopo:** quatro decisões individuais, índice, regras consolidadas e adendo do GDD. **Nenhum código, IA, Move, ficha, Resource, teste, HUD, cena, asset ou VFX alterado; nenhum teste de gameplay executado.**
+
