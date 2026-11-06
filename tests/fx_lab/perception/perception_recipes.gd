@@ -88,3 +88,20 @@ static func guard_hit(ctx: Dictionary) -> void:
 
 static func guard_broken(ctx: Dictionary) -> void:
 	guard_fx(ctx, "broken", 0.9)
+
+
+## D-274: element reference recipes (scripts/vfx/elements). They are only built from ctx (D-235).
+static func el_fire(ctx: Dictionary) -> void:
+	ElFireStream.new().setup(ctx)
+
+
+static func el_water(ctx: Dictionary) -> void:
+	ElWaterJet.new().setup(ctx)
+
+
+static func el_earth(ctx: Dictionary) -> void:
+	ElEarthEruption.new().setup(ctx)
+
+
+static func el_air(ctx: Dictionary) -> void:
+	ElAirGust.new().setup(ctx)

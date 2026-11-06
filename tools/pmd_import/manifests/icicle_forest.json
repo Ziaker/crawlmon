@@ -1,0 +1,450 @@
+{
+  "pipeline_version": "2.4.0",
+  "name": "icicle_forest",
+  "source": "assets/pmd/dungeons/sky/raw/icicle_forest.png",
+  "source_sha256": "0f565a56cd5b35321f65b60dd2fdb341db2dae77362c5b5c222933be92b94959",
+  "grid": {
+    "width": 691,
+    "height": 770,
+    "origin_x": 9,
+    "origin_y": 163,
+    "pitch": 25,
+    "tile": 24,
+    "shared_columns": 24,
+    "physical_columns": 27,
+    "rows": 24
+  },
+  "categories": {
+    "legend": [
+      0,
+      2
+    ],
+    "walls": [
+      3,
+      5
+    ],
+    "wall_alt_1": [
+      6,
+      8
+    ],
+    "wall_alt_2": [
+      9,
+      11
+    ],
+    "ground": [
+      12,
+      14
+    ],
+    "ground_alt_1": [
+      15,
+      17
+    ],
+    "ground_alt_2": [
+      18,
+      20
+    ],
+    "unused_ground": [
+      21,
+      23
+    ],
+    "water": [
+      24,
+      26
+    ]
+  },
+  "autotile": {
+    "walls": {
+      "base": {
+        "column": 3,
+        "row": 0
+      },
+      "core": [
+        [
+          {
+            "role": "tl",
+            "column": 3,
+            "row": 0,
+            "art": 1.0
+          },
+          {
+            "role": "t",
+            "column": 4,
+            "row": 0,
+            "art": 1.0
+          },
+          {
+            "role": "tr",
+            "column": 5,
+            "row": 0,
+            "art": 1.0
+          }
+        ],
+        [
+          {
+            "role": "l",
+            "column": 3,
+            "row": 1,
+            "art": 1.0
+          },
+          {
+            "role": "c",
+            "column": 4,
+            "row": 1,
+            "art": 1.0
+          },
+          {
+            "role": "r",
+            "column": 5,
+            "row": 1,
+            "art": 1.0
+          }
+        ],
+        [
+          {
+            "role": "bl",
+            "column": 3,
+            "row": 2,
+            "art": 1.0
+          },
+          {
+            "role": "b",
+            "column": 4,
+            "row": 2,
+            "art": 1.0
+          },
+          {
+            "role": "br",
+            "column": 5,
+            "row": 2,
+            "art": 1.0
+          }
+        ]
+      ],
+      "extras": [
+        {
+          "column": 3,
+          "row": 3,
+          "art": 1.0
+        },
+        {
+          "column": 4,
+          "row": 3,
+          "art": 1.0
+        },
+        {
+          "column": 5,
+          "row": 3,
+          "art": 1.0
+        },
+        {
+          "column": 3,
+          "row": 4,
+          "art": 1.0
+        },
+        {
+          "column": 4,
+          "row": 4,
+          "art": 1.0
+        },
+        {
+          "column": 3,
+          "row": 5,
+          "art": 1.0
+        },
+        {
+          "column": 5,
+          "row": 5,
+          "art": 1.0
+        },
+        {
+          "column": 4,
+          "row": 6,
+          "art": 1.0
+        },
+        {
+          "column": 3,
+          "row": 7,
+          "art": 1.0
+        },
+        {
+          "column": 4,
+          "row": 7,
+          "art": 1.0
+        },
+        {
+          "column": 5,
+          "row": 7,
+          "art": 1.0
+        },
+        {
+          "column": 4,
+          "row": 8,
+          "art": 1.0
+        },
+        {
+          "column": 4,
+          "row": 9,
+          "art": 1.0
+        },
+        {
+          "column": 3,
+          "row": 10,
+          "art": 1.0
+        },
+        {
+          "column": 5,
+          "row": 10,
+          "art": 1.0
+        },
+        {
+          "column": 4,
+          "row": 11,
+          "art": 1.0
+        },
+        {
+          "column": 4,
+          "row": 12,
+          "art": 1.0
+        },
+        {
+          "column": 3,
+          "row": 13,
+          "art": 1.0
+        },
+        {
+          "column": 5,
+          "row": 13,
+          "art": 1.0
+        }
+      ]
+    },
+    "ground": {
+      "base": {
+        "column": 12,
+        "row": 0
+      },
+      "core": [
+        [
+          {
+            "role": "tl",
+            "column": 12,
+            "row": 0,
+            "art": 1.0
+          },
+          {
+            "role": "t",
+            "column": 13,
+            "row": 0,
+            "art": 1.0
+          },
+          {
+            "role": "tr",
+            "column": 14,
+            "row": 0,
+            "art": 1.0
+          }
+        ],
+        [
+          {
+            "role": "l",
+            "column": 12,
+            "row": 1,
+            "art": 1.0
+          },
+          {
+            "role": "c",
+            "column": 13,
+            "row": 1,
+            "art": 1.0
+          },
+          {
+            "role": "r",
+            "column": 14,
+            "row": 1,
+            "art": 1.0
+          }
+        ],
+        [
+          {
+            "role": "bl",
+            "column": 12,
+            "row": 2,
+            "art": 1.0
+          },
+          {
+            "role": "b",
+            "column": 13,
+            "row": 2,
+            "art": 1.0
+          },
+          {
+            "role": "br",
+            "column": 14,
+            "row": 2,
+            "art": 1.0
+          }
+        ]
+      ],
+      "extras": [
+        {
+          "column": 12,
+          "row": 3,
+          "art": 1.0
+        },
+        {
+          "column": 13,
+          "row": 3,
+          "art": 1.0
+        },
+        {
+          "column": 14,
+          "row": 3,
+          "art": 1.0
+        },
+        {
+          "column": 12,
+          "row": 4,
+          "art": 1.0
+        },
+        {
+          "column": 13,
+          "row": 4,
+          "art": 1.0
+        },
+        {
+          "column": 12,
+          "row": 5,
+          "art": 1.0
+        },
+        {
+          "column": 14,
+          "row": 5,
+          "art": 1.0
+        },
+        {
+          "column": 13,
+          "row": 6,
+          "art": 1.0
+        },
+        {
+          "column": 12,
+          "row": 7,
+          "art": 1.0
+        },
+        {
+          "column": 13,
+          "row": 7,
+          "art": 1.0
+        },
+        {
+          "column": 14,
+          "row": 7,
+          "art": 1.0
+        },
+        {
+          "column": 13,
+          "row": 8,
+          "art": 1.0
+        },
+        {
+          "column": 13,
+          "row": 9,
+          "art": 1.0
+        },
+        {
+          "column": 12,
+          "row": 10,
+          "art": 1.0
+        },
+        {
+          "column": 14,
+          "row": 10,
+          "art": 1.0
+        },
+        {
+          "column": 13,
+          "row": 11,
+          "art": 1.0
+        },
+        {
+          "column": 13,
+          "row": 12,
+          "art": 1.0
+        },
+        {
+          "column": 12,
+          "row": 13,
+          "art": 1.0
+        },
+        {
+          "column": 14,
+          "row": 13,
+          "art": 1.0
+        }
+      ]
+    }
+  },
+  "atlas": {
+    "path": "assets/pmd/dungeons/sky/atlas/icicle_forest_atlas.png",
+    "sha256": "6de5b64ce777a9cbbaf29253634d8d3e81b7cdee78336012f48674203cb824ae",
+    "tile_size": 48,
+    "columns": 30,
+    "rows": 1
+  },
+  "roles": {
+    "wall_tl": 0,
+    "wall_t": 1,
+    "wall_tr": 2,
+    "wall_l": 3,
+    "wall_c": 4,
+    "wall_r": 5,
+    "wall_bl": 6,
+    "wall_b": 7,
+    "wall_br": 8,
+    "ground_tl": 9,
+    "ground_t": 10,
+    "ground_tr": 11,
+    "ground_l": 12,
+    "ground_c": 13,
+    "ground_r": 14,
+    "ground_bl": 15,
+    "ground_b": 16,
+    "ground_br": 17,
+    "ground_alt_1": 18,
+    "ground_alt_2": 19,
+    "wall_strip_h": 20,
+    "wall_strip_v": 21,
+    "wall_inner_br": 22,
+    "wall_inner_bl": 23,
+    "wall_inner_tr": 24,
+    "wall_inner_tl": 25,
+    "ground_inner_tl": 26,
+    "ground_inner_tr": 27,
+    "ground_inner_bl": 28,
+    "ground_inner_br": 29
+  },
+  "profile": "assets/pmd/dungeons/sky/atlas/icicle_forest_profile.json",
+  "contact_sheet": "docs/referencias/tilesets/icicle_forest_contact.png",
+  "labeled_atlas": "docs/referencias/tilesets/icicle_forest_atlas_labeled.png",
+  "labels": "docs/referencias/tilesets/icicle_forest_labels.png",
+  "preview": "docs/referencias/tilesets/icicle_forest_preview.png",
+  "validation": {
+    "tiles": 30,
+    "unique_tiles": 30,
+    "duplicates": [],
+    "seam": {
+      "wall_c": {
+        "left_right": 0.667,
+        "top_bottom": 0.75
+      },
+      "ground_c": {
+        "left_right": 0.542,
+        "top_bottom": 0.417
+      }
+    },
+    "warnings": [
+      "icicle_forest: wall_c does not self-tile perfectly (L/R 67%, T/B 75%); the 3x3 block is a border set, so this is diagnostic",
+      "icicle_forest: ground_c does not self-tile perfectly (L/R 54%, T/B 42%); the 3x3 block is a border set, so this is diagnostic"
+    ]
+  }
+}

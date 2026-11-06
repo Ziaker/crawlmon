@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bubble Shield · Babylon Lab</title>
+  <style>/*__CSS__*/</style>
+</head>
+<body>
+  <div id="app">
+    <canvas id="scene" touch-action="none"></canvas>
+
+    <header class="hud-title">
+      <div class="eyebrow">BUBBLE SHIELD · BABYLON LAB</div>
+      <h1>D · AEGIS AQUÁTICA</h1>
+      <p>wind-up volumétrico + formação da bolha</p>
+    </header>
+
+    <div class="hud-panel">
+      <div class="hud-row">
+        <button id="replay" class="btn primary">REPLAY</button>
+        <button id="play" class="btn">PAUSE</button>
+        <button id="speed" class="btn">0.25×</button>
+        <div class="track"><i id="fill"></i></div>
+        <span id="phase" class="phase">WIND-UP</span>
+        <span id="time" class="time">0.00 s</span>
+      </div>
+      <div class="hud-note">look-dev · arraste para orbitar · roda para zoom</div>
+    </div>
+
+    <div id="loading" class="loading">CARREGANDO</div>
+  </div>
+  <script>/*__APP__*/</script>
+</body>
+</html>

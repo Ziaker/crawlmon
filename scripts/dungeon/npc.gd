@@ -16,9 +16,11 @@ var _sprite: Sprite2D
 var _prompt: PanelContainer
 var _tex_frame1: Texture2D
 var _tex_frame2: Texture2D
+var _dir_tex: Dictionary = {}  ## left/right/up quando existirem
 var _pmd_portrait: Texture2D
 var _anim_timer := 0.0
 var _current_frame := 1
+var _facing := "down"
 var _is_player_near := false
 
 
@@ -42,6 +44,10 @@ func _load_assets() -> void:
 		_tex_frame2 = load(path_f2)
 	else:
 		_tex_frame2 = _tex_frame1
+	for dir in ["left", "right", "up"]:
+		var dir_path := "res://personagens/overworld/%s/%s.png" % [dir, pokemon_id]
+		if ResourceLoader.exists(dir_path):
+			_dir_tex[dir] = load(dir_path)
 		
 	# Retrato de Mystery Dungeon (40x40 emotion portrait)
 	if ResourceLoader.exists(path_portrait):
@@ -106,7 +112,36 @@ func _process(delta: float) -> void:
 	if _anim_timer >= 0.55:
 		_anim_timer = 0.0
 		_current_frame = 2 if _current_frame == 1 else 1
+		if _facing == "down":
+			_apply_facing()
+	_update_facing()
+
+
+## Olha para o lado do jogador quando ele se aproxima (D-313).
+func _update_facing() -> void:
+	if _sprite == null or player == null or not _is_player_near:
+		return
+	var delta := player.position - position
+	var dir := "down"
+	if absf(delta.x) > absf(delta.y):
+		dir = "right" if delta.x > 0 else "left"
+	else:
+		dir = "down" if delta.y > 0 else "up"
+	if dir != _facing:
+		_facing = dir
+		_apply_facing()
+
+
+func _apply_facing() -> void:
+	if _facing == "down":
 		_sprite.texture = _tex_frame2 if (_current_frame == 2 and _tex_frame2) else _tex_frame1
+		_sprite.flip_h = false
+	elif _dir_tex.has(_facing):
+		_sprite.texture = _dir_tex[_facing]
+		_sprite.flip_h = false
+	else:
+		_sprite.texture = _tex_frame1
+		_sprite.flip_h = _facing == "left"
 
 
 func _unhandled_input(event: InputEvent) -> void:

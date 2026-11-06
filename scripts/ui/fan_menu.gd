@@ -18,6 +18,7 @@ const GOLD := Color("f7cb78")
 const INK := Color("080e18")
 const CREAM := Color("f0eedf")
 const NAVY := Color("0a1929")
+const GUARD_BLUE := Color("1f6fd6")  ## D-272: the Guard block (flat blue instead of the green highlight).
 
 const FAN_W := 232.0
 const FAN_H := 38.0
@@ -34,6 +35,8 @@ var _texts: Array[String] = []
 var _details: Array[String] = []
 var _enabled: Array[bool] = []
 var _accents: Array[Color] = []  ## Row text color when not highlighted (alpha 0 = default)
+var _hilite: Array[Color] = []  ## Highlight color of the row (alpha 0 = the default green).
+var _shield: Array[bool] = []  ## The row draws a shield icon instead of the diamond (D-272).
 static var _title_font: Font
 static var _body_font: Font
 
@@ -65,17 +68,23 @@ func set_entries(entries: Array, keep_index := false) -> void:
 	_details.clear()
 	_enabled.clear()
 	_accents.clear()
+	_hilite.clear()
+	_shield.clear()
 	for e in entries:
 		if e is Dictionary:
 			_texts.append(e["text"])
 			_details.append(e.get("detail", ""))
 			_enabled.append(e.get("enabled", true))
 			_accents.append(e.get("accent", Color(0, 0, 0, 0)))
+			_hilite.append(e.get("hilite", Color(0, 0, 0, 0)))
+			_shield.append(e.get("shield", false))
 		else:
 			_texts.append(str(e))
 			_details.append("")
 			_enabled.append(true)
 			_accents.append(Color(0, 0, 0, 0))
+			_hilite.append(Color(0, 0, 0, 0))
+			_shield.append(false)
 	index = clampi(index if keep_index else 0, 0, maxi(_texts.size() - 1, 0))
 	queue_redraw()
 	moved.emit(index)
@@ -153,13 +162,20 @@ func _draw_fan() -> void:
 		var x := i * 8.0 + (9.0 if active else 0.0)
 		var r := Rect2(x, 22 + i * FAN_STEP, FAN_W, FAN_H)
 		_slant(Rect2(r.position + Vector2(5, 5), r.size), 8.0, Color(0, 0, 0, 0.45))
-		_slant(r, 8.0, LIME if active else Color(INK, 0.92))
-		var fg := INK if active else Color("e4e9e4")
+		var blue: bool = _hilite[i].a > 0.0
+		_slant(r, 8.0, (_hilite[i] if blue else LIME) if active else Color(INK, 0.92))
+		var fg := (Color.WHITE if blue else INK) if active else Color("e4e9e4")
 		var alpha := 1.0 if _enabled[i] else 0.4
 		var cy := r.position.y + r.size.y * 0.5
-		draw_colored_polygon(PackedVector2Array([
-			Vector2(r.position.x + 24, cy - 8), Vector2(r.position.x + 32, cy),
-			Vector2(r.position.x + 24, cy + 8), Vector2(r.position.x + 16, cy)]), Color(INK if active else CORAL, alpha))
+		if _shield[i]:
+			var sx := r.position.x + 24
+			draw_colored_polygon(PackedVector2Array([
+				Vector2(sx - 9, cy - 9), Vector2(sx + 9, cy - 9), Vector2(sx + 9, cy + 1),
+				Vector2(sx, cy + 10), Vector2(sx - 9, cy + 1)]), Color(Color.WHITE if active else GUARD_BLUE, alpha))
+		else:
+			draw_colored_polygon(PackedVector2Array([
+				Vector2(r.position.x + 24, cy - 8), Vector2(r.position.x + 32, cy),
+				Vector2(r.position.x + 24, cy + 8), Vector2(r.position.x + 16, cy)]), Color(INK if active else CORAL, alpha))
 		draw_string(title_font(), Vector2(r.position.x + 44, cy + 9), _texts[i].to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color(fg, alpha))
 		if _details[i] != "":
 			BattleHud.text_right(self, small, r.end.x - 18, cy + 4, _details[i], 10, Color(fg, 0.75 * alpha))

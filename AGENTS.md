@@ -36,3 +36,18 @@
 ## 6. Antes de dizer "pronto"
 
 Releia as decisões aplicáveis e confirme, uma a uma, que nenhuma foi violada. Diga o que **não** foi verificado.
+
+## 7. Moves e efeitos são independentes de personagem, de lado e de posição (OBRIGATÓRIO, inclusive em protótipos)
+
+Fonte: D-235. Esta regra vale para **qualquer** trabalho com Moves, VFX, animação, câmera, UI e testes, e também para protótipos, laboratórios e salas de debug.
+
+1. **Todo Move pode ser usado por qualquer personagem**, de qualquer time (aliado ou inimigo), em qualquer lado do campo (perto ou longe da câmera) e contra qualquer alvo. O mesmo Move equipado em dois personagens tem de funcionar igual. Não existe "move de um personagem só".
+2. **Nada pode depender de um personagem, de um time ou de um lado**: nome, espécie, modelo, `is_player`, "o jogador fica aqui e o inimigo ali", direção fixa da câmera, posições ou coordenadas fixas (inclusive as de protótipos HTML) são proibidos. Derive tudo do atacante e do alvo reais: eixo atacante→alvo, altura, raio e centro medidos do modelo, distância e escala da câmera.
+3. **O comportamento é por `move_id`**, nunca por personagem. Nomes e arquivos com o nome de um personagem (por exemplo "Abra") são só rótulos históricos.
+4. **O inimigo distante também usa o mesmo Move** e o efeito tem de aparecer certo do lado dele, com o alvo perto da câmera ou longe dela.
+5. **Antes de dizer "pronto"**, teste o Move com: (a) outro atacante que o tenha ou possa tê-lo, (b) o lado espelhado (atacante inimigo e distante, alvo aliado e próximo), (c) alvos de tamanhos diferentes. Diga o que **não** foi testado.
+
+## 8. VFX: protocolo obrigatório, 100% do tempo, para QUALQUER efeito (D-308)
+
+**Antes de qualquer efeito visual, por menor que seja, leia e siga `docs/vfx/PROTOCOLO_VFX_OBRIGATORIO.md`.** Em resumo: (1) cite as decisões aplicáveis e leia os protótipos HTML e a especificação do Motion Composer; (2) carregue com a ferramenta Skill `scenario-godot-vfx` e `scenario-godot-shaders`; (3) todo efeito é construído **sobre o Motion Composer** (`MotionEffect` + `MotionPresets` + representações), e se ele não der conta, **atualize o Motion Composer primeiro** (V1.1, V1.2, sem limite de versões), nunca contorne com código à mão; (4) quatro fases (Wind-up, Release, Trajeto, Impacto) com transição contínua; (5) checklist literal das frases do criador, verificado em **quadros em tamanho real, nas duas vistas (normal e espelhada)**, procurando também o que não deveria existir; (6) entregue **um vídeo com as duas vistas** e diga o que não foi verificado; (7) um ajuste por vez, esperando aprovação. Quando o criador disser que está ruim: não remende, ache a causa com dados.
+

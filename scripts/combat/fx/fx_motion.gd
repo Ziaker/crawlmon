@@ -15,22 +15,25 @@ func _init(p_fx: BattleFx) -> void:
 
 ## Cancel any walk in progress and face the opponent again.
 func _add_ready_ring(model: Node3D) -> void:
+	# D-240: it used to be a cyan ring that showed while the character could act. Now it is a basic, cheap
+	# shadow (a low-poly black disc with low opacity) that is always there under the character.
 	var ring := MeshInstance3D.new()
-	ring.name = "ReadyRing"
-	var torus := TorusMesh.new()
-	torus.inner_radius = 0.95
-	torus.outer_radius = 1.08
-	ring.mesh = torus
+	ring.name = "ReadyRing"  # (the name is kept: other code skips it when it measures the model)
+	var disc := CylinderMesh.new()
+	disc.top_radius = 0.95
+	disc.bottom_radius = 0.95
+	disc.height = 0.01
+	disc.radial_segments = 20
+	disc.rings = 1
+	ring.mesh = disc
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_color = Color(0.45, 0.92, 1.0)
-	mat.emission_enabled = true
-	mat.emission = Color(0.45, 0.92, 1.0)
-	mat.emission_energy_multiplier = 1.5
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_color = Color(0.0, 0.0, 0.0, 0.32)
 	ring.material_override = mat
 	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	ring.position.y = 0.05
-	ring.visible = false
+	ring.position.y = 0.03
+	ring.visible = true
 	model.add_child(ring)
 
 
@@ -213,7 +216,7 @@ func _drive_travel_move(inc, data: Dictionary, model: Node3D, phase_time: float)
 	var k := clampf((phase_time - 0.12) / run_t, 0.0, 1.0)
 	match String(data.get("move_id", "")):
 		"soco_rapido":
-			var cone: Node3D = data.get("quick_cone")
+			var cone = data.get("quick_cone")  # untyped: a freed cone (after an interruption) must not error on assignment
 			if is_instance_valid(cone):
 				cone.position = model.position + (data["dir"] as Vector3) * 0.9 + Vector3(0, 0.9, 0)
 			for i in 3:
@@ -318,6 +321,7 @@ func on_phase(inc, phase: int) -> void:
 				d["from"] = Vector3(m.position.x, 0.0, m.position.z)
 				d["vis_off"] = (d["from"] as Vector3) - inc.from
 				_play(a, "run")
+				_match_run_stride(a, m, d, inc)  # D-341
 				_spawn_takeoff_dust(d["from"], d.get("dir", Vector3.FORWARD))
 				if not move_owns_travel:
 					_dust_trail(m, d["run_t"] + 0.12, d.get("dir", Vector3.FORWARD))
@@ -366,7 +370,7 @@ func on_phase(inc, phase: int) -> void:
 				m.visible = true
 				m.position = d.get("teleport_origin", fx._home[a])
 				m.rotation.y = fx._home_yaw[a]
-				m.scale = d.get("teleport_base_scale", fx._base_scale.get(a, Vector3.ONE))
+				m.scale = fx._base_scale.get(a, Vector3.ONE)
 				fx._displaced[a] = false
 				_reset_idle(a)
 			if not a.is_alive():
@@ -379,7 +383,7 @@ func on_phase(inc, phase: int) -> void:
 					var h_int: Vector3 = fx._home[a]
 					m.position = Vector3(h_int.x, 0.0, h_int.z)
 					m.rotation.y = fx._home_yaw[a]
-					m.scale = d["base_scale"]
+					m.scale = fx._base_scale.get(a, d["base_scale"])
 					fx._displaced[a] = false
 					_reset_idle(a)
 				fx.fx_projectiles.finish(inc)
@@ -387,12 +391,12 @@ func on_phase(inc, phase: int) -> void:
 			if melee and d.get("engaged", false):
 				m.position = fx.rest_pos(a)
 				m.position.y = 0.0
-				m.scale = d["base_scale"]
+				m.scale = fx._base_scale.get(a, d["base_scale"])
 			elif melee:
 				var h: Vector3 = fx._home[a]
 				m.position = Vector3(h.x, 0.0, h.z)
 				m.rotation.y = fx._home_yaw[a]
-				m.scale = d["base_scale"]
+				m.scale = fx._base_scale.get(a, d["base_scale"])
 				fx._displaced[a] = false
 				fx._shock(fx._home[a], Color(0.8, 0.95, 1.0), 2.2, 0.25)
 				fx._smoke((fx._home[a] as Vector3) + Vector3(0, 0.2, 0), Color(0.75, 0.85, 0.9), 6, Vector2(0.9, 1.5), 0.45, 0.3)
@@ -474,7 +478,7 @@ func drive() -> void:
 		d["dir"] = dir
 		if inc.phase != Battle.Phase.RETURN and inc.motion != "return":
 			d["yaw_out"] = atan2(dir.x, dir.z)
-		var base_scale: Vector3 = d["base_scale"]
+		var base_scale: Vector3 = fx._base_scale.get(a, d["base_scale"])  # A buff may land mid-attack (D-167).
 		var e: float = inc.phase_time
 		var body: Vector3 = a.pos
 		match inc.phase:
@@ -485,6 +489,8 @@ func drive() -> void:
 				var off: Vector3 = d.get("vis_off", Vector3.ZERO) * (1.0 - clampf(e / (0.12 + inc.run_t), 0.0, 1.0))
 				m.position = Vector3(body.x + off.x, 0.0, body.z + off.z)
 				_drive_travel_move(inc, d, m, e)
+				if inc.clash:  # D-279: the bump hop (the height is only drawing)
+					m.position.y = sin(clampf((e - inc.clash_start) / BattleSpace.CLASH_HOP_T, 0.0, 1.0) * PI) * BattleSpace.CLASH_HOP_H
 			Battle.Phase.STRIKE:
 				m.rotation.y = d["yaw_out"]
 				var antic: float = inc.antic
@@ -493,6 +499,7 @@ func drive() -> void:
 					if not d.get("swung", false):
 						d["swung"] = true
 						_play(a, "attack")
+						_boost_strike(a, inc.strike_speed)  # D-241
 					_on_strike_move(inc, d, m)
 					# Blade/claw trail slightly before the contact frame.
 					if not d.get("move_strike_started", false) and not d.get("slashed", false) and e - antic >= maxf(inc.hit - 0.06, 0.02):
@@ -601,8 +608,16 @@ func _unfreeze(ap: AnimationPlayer) -> void:
 	_frozen[ap][1] -= 1
 	if _frozen[ap][1] <= 0:
 		if is_instance_valid(ap):
-			ap.speed_scale = _frozen[ap][0]
+			ap.speed_scale = _speed_after_freeze(ap)
 		_frozen.erase(ap)
+
+
+## A SPD buff may have changed the speed while it was frozen: the current one wins (D-158).
+func _speed_after_freeze(ap: AnimationPlayer) -> float:
+	for c in fx._models:
+		if _anim_player(c) == ap and fx._base_speed.has(c):
+			return fx._base_speed[c]
+	return _frozen[ap][0]
 
 
 ## Plays the authentic "damage" reaction clip with a sharp upper-body flinch tilt.
@@ -613,7 +628,7 @@ func _hit_react(c: Combatant) -> void:
 	var m: Node3D = fx._models.get(c)
 	var ap := _anim_player(c)
 	_stop_moving(c)
-	fx._busy_for(c, 0.42)
+	fx._busy_for(c, 0.42 + AttackMotion.HIT_STUN_EXTRA)  # D-272: +0.30 s of recoil.
 	var token: int = _react_token.get(c, 0) + 1
 	_react_token[c] = token
 	# Quick torso/root flinch tilt
@@ -628,16 +643,57 @@ func _hit_react(c: Combatant) -> void:
 		var dur := 0.36
 		if ap.has_animation("damage"):
 			dur = clampf(ap.get_animation("damage").length, 0.25, 0.55)
-		await fx.get_tree().create_timer(dur, false).timeout
+		await fx.get_tree().create_timer(dur + AttackMotion.HIT_STUN_EXTRA, false).timeout
 	else:
-		await fx.get_tree().create_timer(0.3, false).timeout
+		await fx.get_tree().create_timer(0.3 + AttackMotion.HIT_STUN_EXTRA, false).timeout
 	if token == _react_token.get(c, 0) and c.is_alive():
 		_reset_idle(c)
+
+
+## D-241: the attack clip plays faster (Mach Punch) so its contact frame falls on the shortened hit time.
+func _boost_strike(c: Combatant, speed: float) -> void:
+	var ap := _anim_player(c)
+	if ap != null and speed > 1.001 and ap.current_animation == "attack":
+		ap.speed_scale = float(fx._base_speed.get(c, 1.0)) * speed
+		ap.set_meta("strike_boost", true)
+
+
+## D-341: models that measured their run stride play "run" at the speed that makes
+## the feet follow the ground over this run (distance / travel time), on top of
+## the SPD speed_scale (D-165), so the body does not slide.
+const RUN_STRIDE_SHARE := 0.75  ## D-341: the creator found the fully matched speed too high; play at 75% of it.
+
+
+func _match_run_stride(c: Combatant, m: Node3D, d: Dictionary, inc) -> void:
+	if not m.has_meta("run_stride_speed"):
+		return
+	var ap := _anim_player(c)
+	var sk := m.get_meta("run_skeleton") as Skeleton3D
+	if ap == null or sk == null or not is_instance_valid(sk) or ap.current_animation != "run":
+		return
+	var travel := 0.0
+	for step in inc.plan:
+		if int(step[0]) == Battle.Phase.TRAVEL:
+			travel = float(step[1])
+			break
+	var from: Vector3 = d.get("from", m.position)
+	var stand: Vector3 = d.get("stand", m.position)
+	var dist := Vector2(stand.x - from.x, stand.z - from.z).length()
+	if travel <= 0.01 or dist <= 0.01:
+		return
+	var world_scale := sk.global_transform.basis.get_scale().x
+	var feet_speed := float(m.get_meta("run_stride_speed")) * world_scale  # world units / clip second
+	var spd := maxf(ap.speed_scale, 0.01)
+	var k := (dist / travel) / (feet_speed * spd) * RUN_STRIDE_SHARE
+	ap.play("run", 0.08, clampf(k, 0.2, 6.0))
 
 
 func _play(c: Combatant, anim: String) -> void:
 	var ap := _anim_player(c)
 	if ap != null and ap.has_animation(anim):
+		if ap.has_meta("strike_boost") and anim != "attack":
+			ap.remove_meta("strike_boost")  # any other clip plays at the normal speed again
+			ap.speed_scale = float(fx._base_speed.get(c, 1.0))
 		ap.play(anim, 0.08)
 
 
@@ -663,7 +719,7 @@ func _reset_idle(c: Combatant) -> void:
 ## Physical knockback proportional to the hit's force (`mult`), with foot skid dust. Only a
 ## drawing recoil around the rules' rest spot: a target hit on its own attack is knocked
 ## back by the rules (AttackMotion.begin_hit_return) and never reaches this.
-func knock(target: Combatant, from_pos: Vector3, mult := 1.0) -> void:
+func knock(target: Combatant, from_pos: Vector3, mult := 1.0, push_len := -1.0) -> void:
 	if is_driven(target):
 		return  # Its own attack is posing it; no knockback tween fighting that.
 	var m: Node3D = fx._models[target]
@@ -676,7 +732,7 @@ func knock(target: Combatant, from_pos: Vector3, mult := 1.0) -> void:
 	var back_dir := hit_push if (start_pos.distance_to(from_pos) > 0.25 and hit_push.dot(own_back) > 0.15) else own_back
 	back_dir.y = 0.0
 	back_dir = own_back if back_dir.length() < 0.01 else back_dir.normalized()
-	var push_pos := start_pos + back_dir * clampf(1.5 * mult, 1.1, 2.4)
+	var push_pos := start_pos + back_dir * (push_len if push_len > 0.0 else clampf(1.5 * mult, 1.1, 2.4))
 	push_pos.y = 0.0
 	fx._smoke(start_pos + Vector3(0, 0.12, 0), Color(0.75, 0.85, 0.9), 6 if mult > 1.2 else 4, Vector2(0.75, 1.35), 0.38, 0.28)
 	var tw := fx._move(target)
@@ -686,9 +742,18 @@ func knock(target: Combatant, from_pos: Vector3, mult := 1.0) -> void:
 	tw.tween_property(m, "position", origin_pos, 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
-## Cinematic ballistic K.O. launch for defeated enemies (D-049).
-## Arcs backward into the air with spin and smoke trail, landing away before dissipating.
-func launch_ko(target: Combatant, from_pos: Vector3, strike_dir: Vector3) -> void:
+## Always away from where the players stand, whatever hit it (D-160).
+func _away_from_players(target: Combatant) -> Vector3:
+	var party: Array[Combatant] = fx.battle.party
+	var center := Vector3.ZERO
+	for p in party:
+		center += p.home
+	return fx._flat_dir(center / float(party.size()), target.home)
+
+
+## Cinematic ballistic K.O. launch for defeated enemies (D-049 / D-157 / D-160).
+## Arcs backward far into the air with controlled tumble and smoke trail, blasted out of the arena.
+func launch_ko(target: Combatant) -> void:
 	if not fx._models.has(target):
 		return
 	var m: Node3D = fx._models[target]
@@ -696,21 +761,30 @@ func launch_ko(target: Combatant, from_pos: Vector3, strike_dir: Vector3) -> voi
 		return
 
 	var start_pos := m.position
-	var launch_dir := fx._flat_dir(from_pos, start_pos)
-	if launch_dir.length_squared() < 0.01:
-		launch_dir = strike_dir.normalized()
-	if launch_dir.length_squared() < 0.01:
-		launch_dir = Vector3.RIGHT
+	var base_scale: Vector3 = fx._base_scale.get(target, m.scale)
+	var start_quat := m.quaternion
 
-	var launch_dist := 9.0
-	var peak_height := 3.0
-	var flight_dur := 0.85
+	# Biased outward laterally so it clearly displays on camera
+	var launch_dir := _away_from_players(target)
+
+	# Lateral outward deflection: if on the right, fling right; if on the left, fling left
+	var lateral_bias := 0.35 if start_pos.x >= 0.0 else -0.35
+	launch_dir = Vector3(launch_dir.x + lateral_bias, 0.0, launch_dir.z).normalized()
+
+	# Large ballistic parameters (D-157: "lançado longe")
+	var launch_dist := 32.0  ## Blasted clean across the arena field
+	var peak_height := 8.5   ## High dramatic arc into the upper sky
+	var flight_dur := 1.05   ## Full cinematic flight duration
+
+	# Tumble axis perpendicular to the trajectory for a clean backflip/roll
 	var tumble_axis := launch_dir.cross(Vector3.UP).normalized()
 	if tumble_axis.length_squared() < 0.01:
 		tumble_axis = Vector3.FORWARD
+	var total_tumble := TAU * 1.35  ## ~1.35 clean rotations over the ENTIRE flight (no blender spin)
 
 	# Initial burst at takeoff
 	_spawn_takeoff_dust(start_pos, -launch_dir)
+	fx._ring(start_pos + Vector3(0, 0.08, 0), Color.WHITE, Vector3.ONE * 0.4, Vector3.ONE * 3.5, 0.3, Vector3(90, 0, 0))
 
 	var tw := fx._move(target)
 	tw.set_parallel(false)
@@ -719,43 +793,46 @@ func launch_ko(target: Combatant, from_pos: Vector3, strike_dir: Vector3) -> voi
 	tw.tween_method(func(prog: float) -> void:
 		if not is_instance_valid(m):
 			return
-		# Parabola: h(prog) = 4 * peak * prog * (1 - prog)
-		var h := 4.0 * peak_height * prog * (1.0 - prog)
-		var xz := start_pos + launch_dir * (launch_dist * prog)
+		# Explosive initial impulse with ease-out: blasts away fast on hit, decelerates as it reaches the peak
+		var horiz_k := 1.0 - pow(1.0 - prog, 1.7)
+		var h := peak_height * sin(prog * PI)
+		var xz := start_pos + launch_dir * (launch_dist * horiz_k)
 		m.position = Vector3(xz.x, h, xz.z)
-		m.rotate(tumble_axis, 0.18)
 
-		if prog - last_smoke_prog[0] >= 0.12:
+		# Deterministic rotation locked to flight progress (eliminates excessive spinning in place)
+		var rot_quat := Quaternion(tumble_axis, total_tumble * prog)
+		m.quaternion = rot_quat * start_quat
+
+		# Smooth scale-down as it hurtles into the distant horizon
+		if prog > 0.60:
+			var shrink := 1.0 - (prog - 0.60) / 0.40
+			m.scale = base_scale * clampf(shrink, 0.0, 1.0)
+
+		# Smoke puffs trailing the flight
+		if prog - last_smoke_prog[0] >= 0.09 and prog < 0.90:
 			last_smoke_prog[0] = prog
-			VfxLib.flipbook(fx, m.position + Vector3(0, 0.2, 0), "smoke", Color(0.85, 0.82, 0.78, 0.65), 1.6, 0.35, randf_range(-25.0, 25.0), 1.5, false)
+			VfxLib.flipbook(fx, m.position + Vector3(0, 0.2, 0), "smoke", Color(0.85, 0.82, 0.78, 0.65), 1.8, 0.35, randf_range(-25.0, 25.0), 1.5, false)
 			VfxLib.burst(fx, m.position, {
 				"tex": VfxLib.smoke_tex(), "additive": false, "amount": 3, "life": 0.40,
 				"speed": Vector2(0.5, 1.8), "dir": Vector3.UP * 0.5 - launch_dir * 0.3, "spread": 35.0,
-				"size": Vector2(0.3, 0.6), "end_scale": 1.4, "gravity": Vector3(0, 0.3, 0),
+				"size": Vector2(0.35, 0.7), "end_scale": 1.5, "gravity": Vector3(0, 0.3, 0),
 				"ramp": VfxLib.ramp([Color(0.85, 0.82, 0.78, 0.7), Color(0.85, 0.82, 0.78, 0.0)], [0.0, 1.0])
 			})
 	, 0.0, 1.0, flight_dur).set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
 
-	# Impact on landing
+	# Impact / twinkle in the distance
 	tw.tween_callback(func() -> void:
 		if not is_instance_valid(m):
 			return
 		var land_pos := m.position
-		land_pos.y = 0.0
-		m.position = land_pos
-		_spawn_takeoff_dust(land_pos, launch_dir)
-		fx._ring(land_pos + Vector3(0, 0.05, 0), Color(0.9, 0.85, 0.8, 0.8), Vector3.ONE * 0.3, Vector3.ONE * 2.8, 0.35, Vector3(90, 0, 0))
-		var ap: AnimationPlayer = m.get_meta("anim_player") if m.has_meta("anim_player") else null
-		if ap != null and ap.has_animation("down"):
-			ap.play("down")
-	)
-
-	# Dissipate into dust / scale to zero
-	tw.tween_interval(0.12)
-	tw.tween_property(m, "scale", Vector3.ZERO, 0.32).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
-	tw.tween_callback(func() -> void:
-		if is_instance_valid(m):
-			m.visible = false
+		# Distant flash burst (Smash Bros star K.O. feel in the distance)
+		VfxLib.burst(fx, land_pos, {
+			"amount": 16, "life": 0.35, "speed": Vector2(2.0, 7.0),
+			"dir": Vector3.UP, "spread": 70.0,
+			"size": Vector2(0.2, 0.5), "end_scale": 0.0,
+			"ramp": VfxLib.ramp([Color.WHITE, Color(1.0, 0.9, 0.4), Color(1, 1, 1, 0)], [0.0, 0.3, 1.0])
+		})
+		m.visible = false
 	)
 
 

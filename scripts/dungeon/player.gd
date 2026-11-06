@@ -1,9 +1,10 @@
 extends CharacterBody2D
 ## Top-down player. Built in code by exploration.gd.
 
-const SPEED := 180.0
+const SPEED := 180.0  ## 48 px grid: 3,75 tiles/s.
 
 var can_move := true
+var species_id := "abra"  ## Set by exploration.gd from the party leader.
 var _sprite: Sprite2D
 var _last_dir := "down"
 var _anim_timer := 0.0
@@ -18,17 +19,18 @@ func _ready() -> void:
 	add_child(shape)
 	
 	var cam := Camera2D.new()
-	cam.zoom = Vector2(1.5, 1.5)
+	cam.zoom = Vector2(2.3, 2.3)
 	cam.position_smoothing_enabled = true
 	cam.position_smoothing_speed = 8.0
 	add_child(cam)
 	
-	# Sprite do protagonista (Pikachu ou fallback gráfico)
-	if ResourceLoader.exists("res://personagens/overworld/down/pikachu.png"):
+	# Sprite do protagonista (líder da party) ou fallback gráfico.
+	var start_path := "res://personagens/overworld/down/%s.png" % species_id
+	if ResourceLoader.exists(start_path):
 		_sprite = Sprite2D.new()
 		_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		_sprite.scale = Vector2(1.2, 1.2)
-		_sprite.texture = load("res://personagens/overworld/down/pikachu.png")
+		_sprite.texture = load(start_path)
 		add_child(_sprite)
 
 
@@ -71,7 +73,7 @@ func _update_animation(input_vec: Vector2, delta: float) -> void:
 		_anim_frame = 1
 		
 	var frame_suffix := "frame2/" if _anim_frame == 2 else ""
-	var path := "res://personagens/overworld/%s/%s%s.png" % [_last_dir, frame_suffix, "pikachu"]
+	var path := "res://personagens/overworld/%s/%s%s.png" % [_last_dir, frame_suffix, species_id]
 	if ResourceLoader.exists(path):
 		_sprite.texture = load(path)
 

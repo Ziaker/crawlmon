@@ -56,15 +56,14 @@ func _init() -> void:
 
 	# 4. Contact: damage reduced (rounded up) and the Guard ends.
 	ended.clear()
-	hero.hp = 100
-	hero.target_hp = 100
+	hero.set_hp_instant(100)
 	hero.atb = 3.0
 	assert(b.use_guard(hero))
 	var info := b._hit(foe, hero, 1.0, Element.Type.FISICO, "Tackle")
 	assert(int(info["dmg"]) == 5, "10 de dano com redução provisória de 50% = 5")
 	assert(info["guard"] == "absorbed")
 	assert(not hero.is_guarding() and ended == ["hit"], "O contato destrói o Guard")
-	assert(hero.target_hp == 95, "O HP do jogador desce pelo odômetro (D-048): confere o alvo")
+	assert(hero.hp == 95, "O HP do jogador desce imediatamente (D-347): 95")
 	# Rounded up: 3 of damage -> ceil(1.5) = 2.
 	hero.atb = 3.0
 	foe.base_attack = 3
@@ -81,8 +80,7 @@ func _init() -> void:
 
 	# 6. Brick Break: breaks the Guard, deals the normal damage, +1 ATB to the attacker.
 	ended.clear()
-	hero.hp = 100
-	hero.target_hp = 100
+	hero.set_hp_instant(100)
 	hero.atb = 3.0
 	foe.atb = 0.0
 	foe.extra = 0.0

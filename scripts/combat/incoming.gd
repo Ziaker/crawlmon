@@ -33,7 +33,8 @@ var phase_time := 0.0  ## Seconds spent in the current phase.
 var impacted := false
 var interrupted := false  ## Stopped on its way by a manual Evade: it never hits.
 var evader_home := false  ## Dodged by a non-perfect Evade during the evader's run: it went home (D-029).
-var perfect := false  ## Dodged by a perfect Evade during the evader's own run (D-027).
+var perfect := false  ## Dodged by a perfect Evade, standing still or on its own run (D-164).
+var evader_teleported := false  ## The perfect Evade came during the evader's own run: it jumped to the opponent (D-027).
 var ghost := false  ## Not an attack: only the return of an engaged character.
 var ai_evade_at := -1.0  ## Seconds into TRAVEL when an AI target will try to evade (-1: never).
 ## Kinematics, planned by AttackPlanner when the wind-up ends (flat x/z, seconds):
@@ -44,6 +45,7 @@ var stand := Vector3.ZERO  ## Where it stops in front of the target (follows the
 var dir := Vector3.RIGHT
 var run_t := 0.0
 var antic := 0.0
+var strike_speed := 1.0  ## D-241: playback speed of the attack clip during the strike, so its contact frame falls on `hit`
 var hit := 0.0  ## Seconds into the strike phase after the anticipation when the clip makes contact
 var hold := 0.0
 var hop_t := 0.3
@@ -55,6 +57,13 @@ var aim := Vector3.ZERO  ## Where a projectile is heading now (the live target, 
 var proj_pos := Vector3.ZERO  ## Where the projectile is now
 var blink := false  ## Teleporte Rapido: the caster itself blinks to `dest` and back.
 var dest := Vector3.ZERO
+var ai_guard_eta := -1.0  ## D-285: seconds before the impact when the AI target raises its Guard (-1: it will not)
+var catching := false  ## D-286: the attacker is sliding to a target that moved during the strike
+var clash := false  ## D-279: bumped into an opposing runner; the run is replaced by the bump hop.
+var clash_start := 0.0  ## Seconds into TRAVEL when it bumped.
+var clash_from := Vector3.ZERO
+var clash_land := Vector3.ZERO
+var clash_mode := ""  ## "strike" (both were running at each other: both strike from here) or "cancel" (different targets: back home)
 var arrived := false  ## An engaged evader's first attack: the rules just moved it next to its opponent.
 var data := {}  ## Drawing data owned by BattleFx (positions, clip times); logic never reads it.
 
@@ -71,8 +80,13 @@ func progress() -> float:
 
 ## The manual Evade works only while the attack is on its way (the run or the projectile).
 func can_evade_now() -> bool:
-	# Only during the strike itself: the phase that ends with the hit (D-030). Status moves
-	# and friendly moves are never dodged (D-012).
+	# D-283: only in the last Battle.PERFECT_WINDOW seconds of the strike, and then it is always perfect.
+	return in_strike_window() and phase_len() - phase_time <= Battle.PERFECT_WINDOW
+
+
+## The strike itself: the phase that ends with the hit (D-030), where the Evade prompt is shown. Status moves
+## and friendly moves are never dodged (D-012).
+func in_strike_window() -> bool:
 	if kind == Skill.Kind.STATUS or is_friendly:
 		return false
 	return resolved and not impacted and not interrupted and not ghost and phase == impact_phase
@@ -80,7 +94,7 @@ func can_evade_now() -> bool:
 
 ## Seconds of travel left (the Evade window); large when it is not travelling.
 func travel_left() -> float:
-	return phase_len() - phase_time if can_evade_now() else 99.0
+	return phase_len() - phase_time if in_strike_window() else 99.0
 
 
 ## Seconds until the hit reaches the target. Evading only counts near this moment.

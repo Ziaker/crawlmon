@@ -7,6 +7,17 @@ const STEP_DIST := 1.5  ## World units per position step (kept short: the party 
 const RUN_SPEED := 30.0  ## Units per second while running at a target (slow enough to read as a run, not a teleport).
 const STAND_GAP := 2.6  ## Where a melee attacker stops, in front of its target.
 const ANTICIP_T := 0.08  ## Brief crouch/pull-back anticipation before melee swing.
+## D-241: melee moves whose hit lands this many seconds after the anticipation (instead of the attack clip's own contact
+## time, ~0.8 s); the attack clip is sped up so its contact frame falls on that time. Mach Punch also drops the anticipation.
+const STRIKE_HIT := {"soco_rapido": 0.20, "golpe_carate": 0.45, "quebra_telha": 0.45}
+## D-281: melee moves (wind-up 1.5 s) whose attacker waits this long (total) at the target before hopping back.
+const RETURN_HOLD := {"tackle": 0.7, "quebra_telha": 0.7, "garra_dragao": 0.7, "hassou_tobi": 0.7, "titanomachia": 0.7}
+const RETURN_HOLD_DEFAULT := 0.2
+## D-279: two opposing runners that meet bump back and hop; these are the calls made for the numbers the creator left open.
+const CLASH_DIST := 3.6  ## They clash when the two runners get this close (a little before the 2.6 contact gap, which both reach only as the run ends).
+const CLASH_BACK := 2.0  ## How far each is thrown back along the clash axis.
+const CLASH_HOP_T := 0.26  ## Duration of the bump hop (the shortest return hop).
+const CLASH_HOP_H := 1.2  ## Height of the bump hop (the lowest return hop), drawing only.
 const HIT_AT := 0.45  ## Seconds into the attack clip when the strike lands.
 const CAST_AT := 0.5  ## Seconds into a cast when the effect leaves the caster.
 const FLY_TIME := 0.25  ## Shortest projectile flight.

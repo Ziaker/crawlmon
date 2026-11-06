@@ -121,7 +121,13 @@ func _draw_unit(c: Combatant, r: Rect2) -> void:
 	y += 26.0
 	# Stats.
 	var atk_str := str(c.attack) + (" (+%d)" % c.atk_buff if c.atk_buff > 0 else (" (%d)" % c.atk_buff if c.atk_buff < 0 else ""))
-	var def_str := ("+50%" if c.def_buff == 2 else ("+25%" if c.def_buff == 1 else ("-25%" if c.def_buff == -1 else ("-50%" if c.def_buff == -2 else "PADRÃO"))))
+	var def_str := "PADRÃO"
+	if c.def_buff > 0:
+		var mit := (1.0 - 1.0 / (1.0 + float(c.def_buff) * 0.25)) * 100.0
+		def_str = "+%d%% mitigação (+%d)" % [roundi(mit), c.def_buff]
+	elif c.def_buff < 0:
+		var vuln := float(abs(c.def_buff)) * 25.0
+		def_str = "-%d%% defesa (%d)" % [roundi(vuln), c.def_buff]
 	var spd_str := "%.2f blocos/s" % c.speed + (" (+%d)" % c.speed_buff if c.speed_buff > 0 else (" (%d)" % c.speed_buff if c.speed_buff < 0 else ""))
 	# Status effects.
 	var status_list: Array[String] = []

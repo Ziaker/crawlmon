@@ -16,6 +16,10 @@ const TILE := 48
 const RADIUS := 7.5  ## Tiles of sight.
 const EXPLORED_ALPHA := 0.0  ## Visited tiles are fully lit (D-033).
 const FOG_COLOR := Color(0, 0, 0, 1)
+## The visibility grid is still one value per tile, but the mask is written at
+## 2x so the linear filter and the shader blur can round the tile edge.
+const MASK_SCALE := 2
+const FOG_SHADER := preload("res://shaders/fog_smooth.gdshader")
 
 var _map: Array[String] = []
 var _player: Node2D
@@ -32,7 +36,21 @@ var _last_cell := Vector2i(-1, -1)
 func _ready() -> void:
 	z_index = 100
 	light_mask = 0
-	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	var mat := ShaderMaterial.new()
+	mat.shader = FOG_SHADER
+	# Ruído seamless para o domain warp e a textura da névoa.
+	var fast := FastNoiseLite.new()
+	fast.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	fast.frequency = 0.035
+	fast.fractal_octaves = 3
+	var noise := NoiseTexture2D.new()
+	noise.noise = fast
+	noise.width = 256
+	noise.height = 256
+	noise.seamless = true
+	mat.set_shader_parameter("noise_tex", noise)
+	material = mat
 
 
 ## Called by exploration.gd after the player exists. `state` is GameState (or
@@ -56,7 +74,7 @@ func setup(grid: Array[String], player: Node2D, state: Object = null) -> void:
 		_explored.resize(_w * _h)
 		_explored.fill(0)
 
-	_img = Image.create(_w, _h, false, Image.FORMAT_RGBA8)
+	_img = Image.create(_w * MASK_SCALE, _h * MASK_SCALE, false, Image.FORMAT_RGBA8)
 	_img.fill(FOG_COLOR)
 	_tex = ImageTexture.create_from_image(_img)
 	_refresh()
@@ -106,7 +124,10 @@ func _rebuild_texture() -> void:
 		for x in _w:
 			var i := y * _w + x
 			var alpha := 0.0 if _visible[i] == 1 else (EXPLORED_ALPHA if _explored[i] == 1 else 1.0)
-			_img.set_pixel(x, y, Color(FOG_COLOR, alpha))
+			var c := Color(FOG_COLOR, alpha)
+			for sy in range(MASK_SCALE):
+				for sx in range(MASK_SCALE):
+					_img.set_pixel(x * MASK_SCALE + sx, y * MASK_SCALE + sy, c)
 	_tex.update(_img)
 
 

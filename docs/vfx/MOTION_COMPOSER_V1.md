@@ -1003,3 +1003,136 @@ Revisão feita a pedido do criador. Achados e correções:
 | 7 | Regressão do combate nunca havia sido rodada. | `test_d040_1atb`, `test_battle_load` e `test_attack_motion` rodam sem falha (árvore local com alterações de terceiros; nenhum arquivo de combate foi alterado por estas etapas). |
 
 **Continua pendente (não esquecido, não autorizado):** M19 e M20 e o histórico (Etapa 4); laboratório visual, presets e representações (Etapa 5); validação completa, GL Compatibility, orçamento de desempenho e aprovação artística (Etapa 6). 18 dos 20 comportamentos existem.
+
+## 25. V1.1 — geometria de tubo, esfera de fogo, flipbooks e anel (D-322, 2026-11-05)
+
+Motivo: o fogo anterior era feito de quads planos (`fire_flame`) e fitas finas, o "HTML genérico" que o criador reprovou (D-308). O Motion Composer não tinha uma representação com **volume**. Acrescentado, sem mudar nenhum contrato das Etapas 1–3 nem nenhum comportamento M01–M18:
+
+| Peça | Arquivo | O que faz |
+|---|---|---|
+| `MotionMesh.tube` | `scripts/motion_composer/representations/motion_mesh.gd` | Pontos de um fluxo → **tubo fechado** (quadro de transporte paralelo, sem torção; tampa arredondada na cabeça). UV.y em **metros**, cor de vértice = posição, intensidade, progresso de dissolução. Dado puro, sem Node. |
+| `MotionPainter.tube / bulb / flipbook` | `motion_painter.gd` | Pincéis em pool: malha de tubo reenviada a cada quadro, esfera/fuso com o shader de chama, sprite de flipbook do jogo. |
+| Representações `tube`, `bulb`, `flipbook`, `ring` | `motion_rep.gd` | `tube` agrupa por **ramo** (M14 vira vários tubos), `flip` inverte base/ponta (línguas que nascem num ponto de contato). |
+| Shader `mc_flame_body` | `shaders/mc_flame_body.gdshader` | Chama em cel-shading (bandas duras) **volumétrica**: silhueta empurrada por ruído que escorre e sobe, centro quente/borda vermelha, cauda corroída por ruído. Opaco (alpha-test), sem ordenação, serve ao GL Compatibility. Tempo explícito. |
+| `MotionEffect`: itens com `branch`; opção `z_offset` | `motion_effect.gd` | Centraliza uma hélice sobre a bola; as representações sabem a qual ramo cada amostra pertence. |
+
+Teste: `tests/motion_composer/test_v11_tubos_e_receitas.gd` (geometria, casos degenerados, espelhamento, camadas do fogo).
+
+```bash
+godot --headless --path . --script res://tests/motion_composer/test_v11_tubos_e_receitas.gd
+```
+
+Não verificado nesta versão: desempenho em hardware-alvo e a aprovação artística (humana).
+
+## 26. V1.2 — formas, materiais estilizados, campos, partículas e laboratório de avaliação (D-323, 2026-11-05)
+
+Pedido do criador (D-323): melhorar o Composer **antes de qualquer efeito**, para fogo, água, terra e ar saírem direito, **estilizados** (cel-shading em bandas duras, o estilo do jogo, D-038; "semi-realista" foi descartado). Nenhum efeito, Move ou regra existente foi tocado. M01–M20 intactos; o conjunto fechado V1 (`V1_IDS`) não mudou.
+
+| Área | O que entrou | Onde |
+|---|---|---|
+| **Campos de movimento** (V1.2, fora do `V1_IDS`) | **M21** fluxo direcional (centro limpo, borda turbulenta), **M22** arrasto (`v0(1-e^{-kt})/k`), **M23** gravidade visual (`½gt²`), **M24** turbulência coerente (rotacional de potencial analítico: sem divergência), **M25** repulsão. Todos OFFSET analíticos, sem estado, determinísticos. Registro: `MotionBehaviors.register_v12`. | `scripts/motion_composer/behaviors/m21..m25_*.gd` |
+| **Geradores de forma** | `MotionShapes`: **fita**, **lâmina** (fita de folha), **arco**, **casca** (cone/cúpula) e **conjunto de fragmentos** (blocos de faces planas, com giro vindo do compositor); o **tubo curvo** segue em `MotionMesh`. Mesmo layout de vértice para todos. | `representations/motion_shapes.gd` |
+| **Materiais estilizados** | `mc_surface`: rampa de 5 cores com **bandas duras**, **volume** (lado sombreado em degraus, borda clara/espuma), **gradiente por idade**, **erosão** da silhueta com beira, **deformação de vértices** (lambida, ondulação, pulsação), detalhe de textura que escorre. Opaco (alpha-test), GL Compatibility. Função comum em `mc_common.gdshaderinc`. | `shaders/mc_surface.gdshader` |
+| **Partículas e resíduos** (representações novas, com shaders próprios) | `spark` (fagulha/gota brilhante esticada), `puff` (fumaça/vapor/poeira/névoa em 3 degraus), `drops` (gotas/bolhas/pedrinhas), `halo`, `mark` (queimado/poça/rachadura/arrasto no chão, sem Decal), `surface` (qualquer forma acima). | `representations/motion_rep.gd`, `motion_painter.gd`, `shaders/mc_spark/puff/halo/mark` |
+| **Acabamento por elemento** | `MotionLooks`: fogo, água, terra e ar, só dados (uniforms). O **mesmo movimento** troca de linguagem visual só mudando `element`. | `representations/motion_looks.gd` |
+| **Ferramentas de avaliação** | `MotionGallery` (8 amostras neutras, não são Moves) + `tests/vfx/mc_lab.gd`: fundo escuro e claro, vista normal e **espelhada**, instantes exatos, **A/B com a mesma semente**, tempo de avaliação, nós e triângulos, sobras aos 4 s. `MotionPainter.stats()`. | `lab/motion_gallery.gd`, `tests/vfx/mc_lab.gd` |
+
+Rodar o laboratório (janela, não headless): `godot --path . --script res://tests/vfx/mc_lab.gd --resolution 1280x720 -- --out=<pasta>`. Imagens de referência em `docs/vfx/galeria/`.
+
+Testes novos: `test_v12_campos` (34), `test_v12_formas` (34), `test_v12_looks` (uniformes de cada look existem no shader; olhares distintos; galeria sem erro), `test_v11_tubos_e_receitas`. Mais as 4 suítes anteriores (133, 124, 57, 71 verificações), todas sem falhas.
+
+**Medido (RTX 2050, GL Compatibility, GDScript):** a galeria inteira (8 células, até 77 nós e ~17,9 mil triângulos) custa 13–40 ms por quadro só de avaliação e montagem; o tubo é a célula mais cara (~8 ms). Repetibilidade com a mesma semente: diferença de imagem 0,000000; semente diferente: 0,015–0,024. Aos 4 s: 0 nós desenhados nos quatro elementos.
+
+**Não feito (não escolhido pelo criador nesta rodada):** cache de histórico, invalidação por dependência e amostragem adaptativa (D-274 item 7); interface de edição (grupos de camadas, solo, visibilidade); o custo acima é a razão provável para o item 7 ser o próximo. **Não verificado:** aprovação artística (humana), desempenho em outro hardware, uso dentro de um Move na batalha real.
+
+## 27. V1.3 — fogo estilizado por shader + flipbook (D-332, 2026-11-05)
+
+Pedido do criador: o fogo deixa de ser modelo 3D e passa a ser **shader + flipbook + Composer**, com **Persona, Genshin Impact e Pokémon** como referência. Nenhum efeito existente foi alterado.
+
+| Peça | Arquivo | O que faz |
+|---|---|---|
+| Shader `mc_fire_cel` | `shaders/mc_fire_cel.gdshader` | Chama de **contorno nítido**: 5 línguas em gota (base redonda, ponta fina que se curva) desenhadas por funções de distância, **3 camadas de cor chapada** (casca, miolo, núcleo) e contorno escuro. Balanço **periódico** em `phase` (0..1 = um ciclo): serve ao vivo e ao flipbook. `fade` encolhe pelas pontas. Sem textura, sem ruído; tempo explícito. |
+| Flipbook `fire_cel` | `assets/vfx/flipbook_fire_cel.png` | 16 quadros (4x4, 256 px) **assados do mesmo shader** por `tests/vfx/bake_fire_cel.gd`, em ciclo (o último volta ao primeiro). |
+| Shader `mc_sprite` | `shaders/mc_sprite.gdshader` | Sprite de flipbook com **mistura alfa** (o aditivo antigo lava cores chapadas em fundo claro). |
+| Representações `cel_flame`, `sprite` | `motion_rep.gd`, `motion_painter.gd` (`cel_flame`, `sprite`) | `cel_flame`: uma chama por amostra do compositor, ponta para cima (`follow` vira a ponta para o movimento), fase de balanço por amostra. `sprite`: o flipbook por amostra. |
+| Demonstrações | `tests/vfx/cel_fire_lab.gd`, `tests/vfx/cel_fire_mc.gd` | Chamas soltas (sementes, tamanhos, fades, rotações) e um **rastro conduzido pelo Composer** (M03 + M24, nasce M17, apaga M18) com brasas (M16 + M22 + M23) e o flipbook. Fundo escuro e claro. |
+
+**Verificado:** renderização em GL Compatibility, fundo escuro e claro; as 4 suítes V1.1/V1.2 seguem sem falhas. **Não verificado:** semelhança com Persona/Genshin/Pokémon (as imagens de referência não foram fornecidas; é uma interpretação), desempenho, uso dentro do Flame Stream na batalha real, a aprovação artística.
+
+## 28. V1.4 — fogo como efeito: campo de calor, faíscas com rastro, fuligem (D-332, 2026-11-05)
+
+O criador reprovou as chamas "todas iguais" (seção 27) e pediu um fogo que **não seja modelo**, "fogo real, com faísca, com rastro, com alta disparidade de opacidade, visual flat decente, mistura de laranja, vermelho, amarelo, cores queimadas e preto".
+
+| Peça | Arquivo | O que faz |
+|---|---|---|
+| Shader `mc_fire_flow` | `shaders/mc_fire_flow.gdshader` | Campo de calor **turbulento que sobe** (ruído fractal levado para cima), cortado em **degraus chapados**: amarelo, laranja, vermelho, vermelho queimado e **preto de fuligem**. A borda se rompe em lambidas soltas; a **opacidade varia muito** (núcleo sólido, periferia translúcida). Cada instância tem semente, velocidade e largura próprias. Base arredondada. Tempo explícito. |
+| Rastro de movimento | `MotionEffect` (opção `trail_dt`) + representação `spark` (`trail`, `trail_gain`) | Cada amostra recebe `prev` = onde estava `trail_dt` s antes (reavaliação determinística do compositor, sem estado): a faísca vira um **risco** do ponto anterior ao atual. |
+| Representação `fire_flow` | `motion_rep.gd`, `motion_painter.gd` (`fire_flow`) | Uma língua de fogo por amostra, com variação de largura, tamanho e velocidade. |
+| Demonstração | `tests/vfx/fire_real.gd` (`--video` grava 3 s) | Corpo (6 línguas, M03 + M24), fuligem (M16 + M24, `puff` escuro), faíscas com rastro (M16 + M22 + M24), halo. Fundo escuro e claro. |
+
+**Verificado:** renderização em GL Compatibility, fundo escuro e claro, três instantes e um vídeo de 3 s. **Não verificado:** faíscas em fundo claro (mistura aditiva: ficam brancas), desempenho, ligação ao Flame Stream na batalha real, e a aprovação artística.
+
+## 29. V1.5 — cada chama diferente: ciclo de vida por chama (D-332, 2026-11-05)
+
+O criador reprovou as chamas "todas iguais" e mandou **pesquisar tutoriais**. O que se aprendeu e onde entrou:
+
+| Lição (fonte) | Onde entrou |
+|---|---|
+| Fogo sobe; base grossa e pontas finas; comece pela **curva em S** (rumo do vento) e varie a força das rajadas ([vfxapprentice](https://www.vfxapprentice.com/blog/how-to-draw-stylized-fire-flames)) | `mc_flame_one`: linha central com S + gancho na ponta, largura que afina; balanço por chama |
+| **Cortes em C** no contorno e ganchos nas pontas evitam a chama virar "pasta de dente"; misture tamanhos (vfxapprentice) | 1 a 3 mordidas em C por chama, de tamanho, lado e altura sorteados |
+| **Tempo quantizado** imita flipbook desenhado à mão ([Mirza Beig, 80.lv](https://80.lv/articles/check-out-this-fully-procedural-stylized-fire-vfx-made-with-shaders/)) | cada chama anima a 7–13 quadros/s (valor próprio) |
+| Partículas procedurais com **ciclo 0–1 por partícula**, semente nova a cada ciclo, cor misturada pela **idade** e brilho que cai com ela ([godotshaders: tocha/vela](https://godotshaders.com/?p=13210)) | `flame_life`: idade e semente saem do relógio e do id, sem estado; a cor depende da idade (amarelo → laranja → vermelho → queimado → preto) |
+| Rasgar o fogo em línguas: erosão de opacidade, distorção, flowmaps e muito timing manual ([realtimevfx, FFXVI](https://realtimevfx.com/t/final-fantasy-xvi-how-to-get-fire-to-tear-apart/27700)) | erosão pela idade e pelas mordidas em C |
+| Faixas por `step` entre ruído e gradiente ([godotshaders, fogo 2D](https://godotshaders.com/shader/best-2d-fire/)) | degraus chapados de cor no calor |
+
+| Peça | Arquivo |
+|---|---|
+| Shader de UMA chama com vida | `shaders/mc_flame_one.gdshader` (forma, balanço, FPS, mordidas, ganchos e velocidade sorteados pela semente) |
+| Pincel e representação `flame_life` | `motion_painter.gd` (`flame_one`), `motion_rep.gd` |
+| Demonstração e vídeo | `tests/vfx/fire_real.gd` (`--video`), `test_captures/fogo_efeito_v2.mp4` |
+
+**Não verificado:** o fogo ainda tem uma lacuna entre o corpo de baixo e as línguas de cima; faíscas em fundo claro; desempenho; uso no Flame Stream; aprovação artística.
+
+## 30. V1.6 — fogo do Flame Stream: cada chama é uma composição do Composer, no preset e na batalha real (D-332, 2026-11-05)
+
+O criador reclamou que as chamas seguiam iguais e que eu **não usava o Composer** (a forma e o movimento estavam sorteados dentro de um shader meu; o efeito vivia em scripts de teste, não no preset). Correção:
+
+| Peça | Onde | O que faz |
+|---|---|---|
+| **Ciclo de vida por camada** | `MotionEffect` (opções `factory`, `loop`, `cycle_phase`, `once`, `offset_fn`, `rot_fn`, `dir`, `length: "keep"`) | Uma camada pode repetir um ciclo construindo **uma composição nova a cada ciclo** (semente, altura, vida, posição e inclinação próprias). |
+| **Uma chama = uma composição** | `MotionPresets.flame_comp` | M03 (curva em S), M09 (inclinação), M24 (fluxo orgânico), M12 (inchaço que viaja, "respirar"), M17 (nasce), M18 (morre pela ponta), todos com parâmetros sorteados. |
+| **Fogo do Flame Stream** | `MotionPresets.fire_effect` (usado por `ElementMoveVfx`) | Carga: 9 chamas + faíscas com rastro. Voo: 8 chamas na cabeça e 10 de rastro apontando para trás, 3 vórtices (D-308: 0,2 s + 0,5 s), faíscas, fumaça. Impacto: cone de 9 chamas, 4 chamas subindo, faíscas, fuligem, marca no chão. |
+| **Material** | `shaders/mc_fire_ribbon.gdshader` + `MotionRep` (`shape: "flame"`, `shader`) | Só pinta a fita que o Composer desenha: degraus chapados, preto de fuligem, opacidade variável, mordidas em C e FPS próprio por chama. |
+
+**Verificado:** batalha real (`vfx_room`), vista normal e espelhada, quadros 1280x720 nos instantes de carga, voo e impacto; vídeo `test_captures/flame_stream_v3.mp4`; sem erro de script. **Não verificado:** desempenho, outros atacantes/alvos, o checklist da D-308 item a item (cone no impacto nos dois lados, vórtices), a aprovação artística. **Fraco:** com tamanho fixo em metros, o impacto na vista normal (alvo a ~37 m) quase não aparece; na espelhada o corpo do alvo tapa parte do cone.
+
+## 31. V1.7 — Splitter Flames do atelier.html no Godot (D-335, 2026-11-05)
+
+Portado do `prototypes/vfx_atelier` (Splitter Flames) mantendo o visual e melhorando com shaders do Godot (fbm no lugar de simplex, cel-shading opcional, tempo explícito). Tudo sobre o Composer: `MotionPresets.splitter_effect`, escolhido por `MotionPresets.effect_for(move_id)`.
+
+| Peça | Arquivo |
+|---|---|
+| Bola de fogo (esfera com seno no vértice, cor por fresnel) | `shaders/mc_fireball.gdshader`, representação `fireball` |
+| Vórtice do release (espiral achatada, parada na mão, 0,30 s) | `shaders/mc_vortex_disc.gdshader`, representação `vortex_disc` |
+| Pilar de fogo do impacto (cilindro aberto, vira cinza) | `shaders/mc_pillar.gdshader`, representação `pillar` |
+| Dois punhos, arco para cada lado, chão | `MotionEffect`: `local_offset`, `side_start` / `arc_rel` / `arc_up`, `ground`; itens com `lt` |
+| Laboratório de um Move de elemento | `tests/vfx/effect_lab.gd` (4 fases, 2 câmeras, fora da batalha) |
+
+**Verificado:** batalha real, vista normal e espelhada (`test_captures/splitter_flames_v1.mp4`). **Não verificado:** dois alvos e redirecionamento, desempenho, aprovação artística.
+
+## 32. V1.9 — flipbook dirigido pela idade do M26 e preset do Heal Gain (D-343, 2026-11-06)
+
+Pedido do criador: aplicar no jogo a **opção 2 (Persona Kinetic Cross)** do protótipo de Heal Gain, com **cruzes verdes subindo brilhando junto**, usando o flipbook do Godot e o Motion Composer.
+
+| Peça | Arquivo | O que faz |
+|---|---|---|
+| `MotionRep.progress_source` | `scripts/motion_composer/representations/motion_rep.gd` | O flipbook pode escolher o quadro por `intensity` (a idade normalizada que o M26 grava em cada amostra) em vez de `1 - opacity` ou `u`. Assim a cruz anima do nascimento à morte mesmo com a curva de alfa do emissor. Vazio = comportamento antigo, sem alterar os efeitos existentes. |
+| Flipbook `heal_cross` | `assets/vfx/flipbook_heal_cross.png` | 16 quadros (4×4, 256 px) de uma cruz verde (`#78F0A4` no corpo, `#B7FFC9` no núcleo), halo `#53E28B` e faíscas brancas; reproduzível por `tests/vfx/bake_heal_cross.gd`. |
+| Preset `heal_gain_effect` | `scripts/motion_composer/runtime/motion_presets.gd` | Uma camada M26 (anel de 12 amostras, subida, órbita, arrasto e atraso) pintada pela representação `flipbook` com `progress_source: "intensity"`. A origem é o âncora real do número de cura, passado a cada quadro; a escala vem da distância da câmera (referência 4 m, limites 0,5–2,2) para o anel e as cruzes lerem igual nas duas vistas; nenhum personagem/time/lado (D-235). |
+| Reprodução | `scripts/combat/fx/heal_gain_fx.gd` | Entrega ao `MotionEffect` o relógio explícito, o âncora atual (que sobe com o número) e a escala de câmera; não desenha nada por conta própria. |
+| Número `+HP` | `scripts/combat/fx/heal_gain_mark.gd` | A opção 2 é desenhada num `SubViewport` e exibida numa `CanvasLayer` 2D abaixo do HUD, projetando o alvo real. As cores do HTML ficam exatas (sem o tonemap Filmic do quad 3D) e o número continua com tamanho fixo na tela. |
+| Verificação isolada | `tests/vfx/heal_gain_lab.gd`, `tests/vfx/probe_heal_gain.gd` | Laboratório de aparência e sonda determinística das amostras do M26. |
+
+**D-347 (2026-11-06):** o **número** passou a aparecer acima do `UnitCard`/`EnemyTag` (fora da ficha, perto do HP), com rotação de ±6° e deslocamento diagonal para cima na direção do lado (inimigo à direita, aliado à esquerda), em 1,4 s. As **cruzes continuam no personagem** como VFX 3D do M26. O odômetro de HP foi arquivado e o HP/barra são imediatos.
+
+**Verificado:** batalha real (`vfx_room`) nas duas vistas, 1280×720: o número com as cores exatas acima das fichas e as cruzes verdes no personagem, o lado direito do HUD fica limpo e tudo some ao fim. Vídeo: `test_captures/HealGain_option2_normal_espelhado.mp4` e teste do inimigo em `test_captures/HealGain_enemy_tag.mp4`. **Não verificado:** desempenho em hardware fraco, aprovação artística do criador.

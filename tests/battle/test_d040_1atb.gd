@@ -55,7 +55,8 @@ func _init() -> void:
 	assert(Battle.min_skill_cost(enemy) == 1.0, "Inimigo com Rakunda deve ter custo mínimo 1.0")
 	assert(enemy.can_pay(Battle.min_skill_cost(enemy)), "Inimigo com 1 ATB deve poder pagar seu golpe de 1 ATB")
 
-	var sk := b._pick_skill(enemy)
+	b._ai._decide(enemy)
+	var sk: Skill = b.incoming.back().skill if not b.incoming.is_empty() else null
 	assert(sk != null and sk.cost == 1, "IA deve escolher o golpe de 1 ATB quando possui 1 ATB")
 	print("  [PASS] IA com 1 ATB escolhe e executa seu golpe de 1 ATB (simetria D-021).")
 

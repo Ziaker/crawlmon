@@ -237,11 +237,23 @@ func _apply(delta := 0.0) -> void:
 	camera.rotate_object_local(Vector3.BACK, deg_to_rad(TILT_DEG))
 
 
-## Epic K.O. directional trauma shake and FOV punch (D-049).
+## Directional hit shake for regular attacks with lower intensity than K.O. (D-157).
+func hit_shake(hit_dir: Vector3, heavy := false, mult := 1.0) -> void:
+	if _shake_trauma >= 0.75:
+		return  # Don't downgrade an active K.O. shake
+	var base_trauma := 0.55 if heavy else 0.35
+	_shake_trauma = maxf(_shake_trauma, clampf(base_trauma * mult, 0.25, 0.65))
+	_shake_dir = -hit_dir.normalized() if hit_dir.length_squared() > 0.001 else Vector3.BACK
+	_fov_kick = maxf(_fov_kick, 1.5 if heavy else 0.5)
+	_shake_decay = 4.5
+
+
+## Epic K.O. directional trauma shake and FOV punch (D-049 / D-157).
 func ko_shake(hit_dir: Vector3, world_pos: Vector3, elem_color: Color) -> void:
 	_shake_trauma = 1.0
 	_shake_dir = -hit_dir.normalized() if hit_dir.length_squared() > 0.001 else Vector3.BACK
 	_fov_kick = 4.5
+	_shake_decay = 3.0
 	impact_post(world_pos, elem_color, true, true)
 	if _lines != null:
 		_lines.burst()

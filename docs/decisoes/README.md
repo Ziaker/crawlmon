@@ -37,9 +37,9 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-029](D-029-desvio-nao-perfeito-na-corrida-e-lado.md) | Combate | Desvio não perfeito na corrida cancela o ataque e volta à origem; parado vai para o lado por 0,5 s; automático só pisca no lugar | Implementado |
 | [D-030](D-030-evade-so-no-golpe.md) | Combate | O Evade só no golpe em si (a fase que termina com o acerto), não no anúncio nem na corrida | Implementado (projétil = voo, confirmado) |
 | [D-031](D-031-status-pausa-o-motor.md) | Combate | Status: não desviável; preparo 0,5 s; motor pausado desde o preparo (animações e efeitos seguem); Media/Tarukaja 2 ATB, demais 1 | Implementado |
-| [D-032](D-032-balanceamento-moves-ingles-e-status.md) | Combate | Nomes em inglês, rebalanceamento de moves, invulnerabilidade e novos status | Em implementação |
+| [D-032](D-032-balanceamento-moves-ingles-e-status.md) | Combate | Nomes em inglês, rebalanceamento de moves, invulnerabilidade e novos status | Implementado |
 | [D-033](D-033-overworld-mais-claro-e-consumiveis-no-mapa.md) | Exploração | Overworld mais claro, já visitado 100% iluminado e Poções no mapa (2–4 por andar, coleta automática, persistem) | Implementado |
-| [D-034](D-034-teleport-sumir-apos-windup-e-sem-deslocamento.md) | Combate | Teleport: sumir após o wind-up, sem deslocamento e reaparecer na origem | Em implementação |
+| [D-034](D-034-teleport-sumir-apos-windup-e-sem-deslocamento.md) | Combate | Teleport: sumir após o wind-up, sem deslocamento e reaparecer na origem | Implementado |
 | [D-035](D-035-vfx-smt-kaja-kunda.md) | Visual / VFX | VFX 3D e Shaders para Buffs/Debuffs SMT (Tarukaja, Rakunda, Sukunda amarelo) | Implementado |
 | [D-036](D-036-smt-vfx-pilares-auras-volumetricas.md) | Visual / VFX | Pilares e Auras de Energia Volumétricas para Buffs/Debuffs SMT | **Revogado** a pedido do criador |
 | [D-037](D-037-smt-vfx-selos-impacto-e-estase.md) | Visual / VFX | VFX SMT Avançado: Selos Rúnicos, Ruptura de Escudo e Estase Temporal | Implementado |
@@ -53,14 +53,37 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-045](D-045-motion-composer-pasta-fixa-presets.md) | Motion Composer / persistência | Salvar e carregar presets em pasta fixa do laboratório | Especificado; não implementado |
 | [D-046](D-046-motion-composer-escopo-especificacao.md) | Motion Composer / escopo | Catálogo M01–M20 e consolidação da especificação com propostas técnicas identificadas | Documentado; não implementado |
 | [D-047](D-047-camera-lenta-3s-decisao-menu.md) | Combate / UI / Game Feel | Câmera Lenta de 3 Segundos para Decisão nos Menus Fight e Itens | Implementado |
-| [D-048](D-048-rolling-hp-mother3-odometro.md) | Combate / UI / Game Feel / Configurações | Mecânica de Vida Rolante (Rolling HP / Odômetro estilo Mother 3 / EarthBound) | Implementado |
+| [D-048](D-048-rolling-hp-mother3-odometro.md) | Combate / UI / Game Feel / Configurações | Mecânica de Vida Rolante (Rolling HP / Odômetro estilo Mother 3 / EarthBound) | **Arquivado por D-347** (código em `scripts/legacy/`; D-203 já o excluía do jogo principal) |
 | [D-049](D-049-knockback-final-e-screen-shake-ko.md) | Combate / Visual / Game Feel / Câmera | Impacto de K.O.: Lançamento Balístico do Inimigo, Shake Épico e VFX de Derrota | Implementado |
+| [D-157](D-157-retorno-hitshake-e-correcao-lancamento-ko.md) | Combate / Game Feel / Câmera / VFX | Retorno do Hit Shake nos Ataques (menos intenso que KO) e Correção do Lançamento de K.O. à Distância | Implementado |
+| [D-158](D-158-buffs-escalamento-tamanho-velocidade-e-defesa.md) | Visual / Combate / Game Feel / Shaders | Efeitos Visuais Físicos de Buffs/Debuffs: Tamanho (ATK), Velocidade de Animação (SPD) e Armadura (DEF) | Implementado |
+| [D-159](D-159-limite-de-buffs-5-e-calculo-fracionario.md) | Combate / Atributos / Balanceamento / Visual | Limite de Buffs/Debuffs Ampliado para ±5, Acumulação Aditiva Unificada, Cálculo Fracionário e Teto Visual em 3 Stacks | Implementado |
+| [D-160](D-160-lancamento-ko-sempre-para-tras.md) | Combate / Visual / Game Feel | Lançamento de K.O. sempre para longe de onde os jogadores estão | Implementado |
+| [D-161](D-161-buffer-de-selecao-de-move.md) | Combate / Menu | Seleção de Move na pausa de status e buffer de seleção (uma vaga, paga ao executar; começa após o retorno) | Implementado |
+| [D-162](D-162-camera-lenta-fight-2s.md) | Combate / UI / Game Feel | Câmera lenta de decisão: 2 s no Fight; Itens continua com 3 s | Implementado |
+| [D-163](D-163-windup-em-loop.md) | Combate / Animação | A animação de wind-up fica em loop até o fim do preparo | Implementado |
+| [D-164](D-164-contra-ataque-em-todo-desvio-perfeito.md) | Combate | Todo desvio perfeito dá contra-ataque de wind-up instantâneo | Implementado |
+| [D-165](D-165-spd-vale-para-todos-os-clipes.md) | Visual / Combate / Animação | A velocidade de animação por SPD vale para todos os clipes | Em vigor |
+| [D-166](D-166-ko-encolhe-e-some-no-ar.md) | Combate / Visual / Game Feel | O inimigo lançado encolhe e some ainda no ar | Em vigor |
+| [D-167](D-167-correcoes-da-auditoria-buffs.md) | Combate / Visual | Correções da auditoria de buffs (D-158/D-159), incluindo a rachadura do `-def` | Implementado |
+| [D-168](D-168-ia-estrategica-e-desvios.md) | Combate / IA | IA estratégica: variedade de Moves, desvios e reserva de ATB | Implementado; pesos delegados (D-116) |
+| [D-169](D-169-karate-chop-e-dragon-claw-mais-lentos.md) | Combate / Animação | Karate Chop e Dragon Claw correm mais devagar (0,45 s) | Implementado |
+| [D-170](D-170-vfx-dos-4-moves-do-abra-prototipo-v9.md) | Visual / VFX | VFX dos 4 moves do Abra conforme o protótipo v9 (só desenho; prisma do Teleport trocado por speedlines roxas) | Implementado (4 moves; Teleport com speedlines roxas no lugar do prisma) |
 | [D-269](D-269-sem-escala-1-100-e-niveis-baixos-sem-valores-altos.md) | Personagens / atributos | Sem escala 1–100; sem valores exorbitantes em níveis baixos; o "limite de 10" NÃO é regra | Registrada; sem implementação (ambiguidades abertas) |
 | [D-270](D-270-atributos-convertidos-dos-valores-originais-pelo-assistente.md) | Personagens / atributos | Atributos vêm da conversão dos valores originais, criada pelo assistente | Registrada; proposta em `docs/PROPOSTA_ATRIBUTOS_NIVEL_XP.md` (inválida: refazer); sem implementação |
 | [D-271](D-271-nature-valores-flat-sem-porcentagem.md) | Personagens / Natures | Nature em valores flat de −3 a +3, soma 0, de 2 a 6 atributos; só atributos e formas de agir em combate, sem crescimento | Registrada; **Natures adiadas** pelo criador (precisam de mais planejamento); sem implementação |
 | [D-272](D-272-guard-escudo-de-1-atb.md) | Combate / HUD | Guard: ação de 1 ATB, 2 s, escudo azul, hotkey Shift, quebrado por Brick Break; hit stun +0,30 s global | Implementado; aguardando aprovação visual |
 | [D-273](D-273-barreira-hexagonal-reservada-para-protect.md) | Combate / VFX | A barreira em cúpula hexagonal fica guardada para um futuro Move Protect | Preservada (`fx_barrier.gd`), sem uso |
 | [D-274](D-274-proposta-compositor-de-efeitos-em-camadas-pendente.md) | VFX / Laboratório | Proposta: evoluir o laboratório para um compositor de efeitos em camadas (7 itens; 4 receitas de referência) | PROPOSTA registrada, não aprovada, sem implementação |
+| [D-308](D-308-videos-fases-e-qualidade-dos-efeitos-de-elemento.md) | VFX / Processo | Efeitos de elemento: sempre vídeo (normal e espelhado), 4 fases (Wind-up, Release, Trajeto, Impacto), qualidade real do Godot, melhorar o Motion Composer | Regras registradas; receitas V1 reprovadas |
+| [D-275](D-275-overworld-2d-referencia-arena.md) | Exploração / visual | Overworld 2D com linguagem visual coerente e referência no combate 3D | Direção definida |
+| [D-276](D-276-mystery-dungeon-referencia-overworld.md) | Exploração / visual | Pokémon Mystery Dungeon como referência para refazer os tiles e retirar os sinais de “+” do chão | Direção definida |
+| [D-277](D-277-ruinas-suspensas-overworld.md) | Exploração / visual | Ruínas suspensas em 2D e correção da folga de passagem | Direção aprovada |
+| [D-278](D-278-restaurar-overworld-e-ajustar-paleta.md) | Exploração / visual | Restauração do overworld original com alteração apenas de paleta | Direção vigente |
+| [D-230](D-230-motion-composer-etapa-1-autorizada.md) | Motion Composer / implementação | Etapa 1 (contratos e avaliação) autorizada, isolada do combate; usar skills de Godot | Etapa 1 implementada e testada; Etapas 2–6 não autorizadas |
+| [D-231](D-231-motion-composer-etapa-2-autorizada.md) | Motion Composer / implementação | Etapa 2 (M01–M13) autorizada; M16–M18 sem etapa definida | M01–M13 implementados e testados; M16–M18 pendentes |
+| [D-232](D-232-motion-composer-etapa-2b-m16-m18.md) | Motion Composer / implementação | Etapa 2b: M16, M17 e M18 | M16–M18 implementados e testados; Etapas 3–6 não autorizadas |
+| [D-233](D-233-motion-composer-etapa-3-composicao-espacial.md) | Motion Composer / implementação | Etapa 3: M14 Bifurcação e M15 Recombinação; ordem, máscaras e defasagens validadas | M14–M15 implementados e testados; Etapas 4–6 não autorizadas |
 
 ## Decisões Documentais de Design / Rodadas R39–R61 (GDD e REGRAS_DO_JOGO)
 
@@ -193,3 +216,64 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-154](D-154-r61-q3-trajeto-calculo-inicio-windup.md) | Combate / R61 | Q3A: capturar duração do trajeto ao entrar efetivamente em WINDUP | Aprovada expressamente; sem código |
 | [D-155](D-155-r61-q4-trajeto-recalculo-cada-troca-windup.md) | Combate / R61 | Q4A: recálculo uma vez em cada troca automática de alvo no WINDUP | Aprovada expressamente; sem código |
 | [D-156](D-156-r61-q5-luk-no-instante-da-rolagem.md) | Combate / R61 | Q5A: consultar LUK efetiva na resolução de cada evento probabilístico | Aprovada expressamente; sem código |
+| [D-235](D-235-moves-e-vfx-independentes-de-personagem-e-lado.md) | Processo / Combate / VFX | Moves e efeitos independentes de personagem, de lado e de posição (obrigatório, inclusive em protótipos) | Em vigor; regra também em `AGENTS.md` (seção 7) |
+| [D-241](D-241-mach-punch-acerta-0-20-s-depois-de-chegar.md) | Combate / animação | Mach Punch acerta 0,20 s depois de chegar ao alvo, com o clipe de ataque acelerado; Karate Chop e Brick Break seguem em 0,87 s | Implementado |
+| [D-240](D-240-hud-sem-textos-sombra-basica-e-aneis-de-windup.md) | HUD / Visual | Sem logo nem linha de título nos cartões, badges acima do cartão, sombra preta básica no lugar do anel ciano, anéis de wind-up mais baixos e centrados | Implementado |
+| [D-239](D-239-burn-hud-real.md) | HUD / combate | HUD real do Burn: fundo dos cartões chamuscado, barra de vida intacta com trecho pendente, etiqueta BURN e "-2" | Implementado; sem Motion Composer no jogo |
+| [D-238](D-238-burn-regras-e-aplicacao-pelo-fire-bullet.md) | Combate | Burn: 1º tick 1 s depois, reaplicação renova os 4 s, o tick pode matar (animação de morte, sem lançamento), aplicado quando o Fire Bullet interrompe; sem HUD/3D | Registrada; implementação em andamento |
+| [D-237](D-237-burn-opcao-2-barra-de-vida-em-chamas.md) | Combate / HUD / VFX | Burn opção 2 (dano pendente no HUD) e barra de vida em chamas para jogador e aliado (laranja escuro pulsante); só protótipo em vídeo | Registrada; só protótipo, sem mudança no jogo |
+| [D-236](D-236-moves-fire-bullet-e-splitter-flames.md) | Combate / VFX | Moves de Fogo Fire Bullet e Splitter Flames: só visual + Skill básico, dois alvos incluídos, só na sala de VFX; pendências da ficha em aberto | Registrada; implementação em etapas |
+
+- [D-331 — Atelier HTML: Quarks, detalhe moderado e sincronia](D-331-atelier-html-quarks-e-sincronia.md) — HTML testado; aprovação artística pendente.
+| [D-279](D-279-choque-de-corridas-pulinho-e-golpes-simultaneos.md) | Combate / trajeto | Choque de corridas: pulinho para trás e golpes ao mesmo tempo; o mais rápido interrompe; alvos distintos cancelam e voltam | Implementado (valores escolhidos pelo assistente; ver o arquivo) |
+| [D-280](D-280-perseguicao-do-visual-e-strike-fixo.md) | Combate / trajeto / visual | O atacante persegue o ponto desenhado do alvo (lógica inalterada); STRIKE com trajetória fixa (restaura D-054) | STRIKE fixo implementado; mira no ponto desenhado pendente |
+| [D-281](D-281-espera-de-0-7-s-antes-do-retorno-no-tackle.md) | Combate / retorno | Espera total de 0,7 s no alvo antes do pulo de volta, só nos 5 Moves melee de wind-up 1,5 s | Implementado |
+| [D-282](D-282-estado-de-prisao-no-idle-pos-golpe.md) | Combate / retorno | Estado de prisão: o idle pós-golpe (melee) não pula enquanto outro ataque melee estiver no golpe contra ele; solta no impacto, desvio ou Guard; Evade/Guard manuais permitidos | Implementado |
+
+| [D-309](D-309-aliados-em-fila-no-overworld.md) | Exploração | Aliados seguem em fila | Não implementado |
+| [D-310](D-310-niveis-de-ameaca-dos-inimigos-no-overworld.md) | Exploração / IA | 4 níveis de ameaça (medroso, fraco, valente, perigoso) com tamanho e ícone; relativo ao nível | Não implementado |
+| [D-311](D-311-pontos-de-descanso-por-andar.md) | Exploração | Descanso cura todo HP/MP; 2 por andar (raramente 3); uso único | Não implementado |
+| [D-312](D-312-biomas-floresta-fortaleza-caverna.md) | Exploração / visual | Biomas: floresta, fortaleza (atual), caverna | Não implementado |
+| [D-283](D-283-evade-so-perfeito-nos-ultimos-0-25-s.md) | Combate / Evade | O Evade só existe como desvio perfeito, nos últimos 0,25 s do golpe; antes disso o botão não tem efeito; a IA desvia dentro da janela | Implementado |
+| [D-284](D-284-contra-ataque-com-wind-up-de-0-3-s.md) | Combate / contra-ataque | Contra-ataque pós-desvio perfeito com wind-up de 0,3 s, independente do Move (status continua instantâneo) | Implementado |
+| [D-313](D-313-overworld-tiles-refeitos-e-efeitos-visuais.md) | Exploração / visual | Tiles podem ser refeitos; poeira, tochas cintilando, NPC olha para o jogador e sprites de Pokémon autorizados; sombra não escolhida | Não implementado |
+| [D-314](D-314-fila-de-aliados-rastro-exato-sem-atravessar.md) | Exploração | Fila com rastro exato, sem atravessar; se travar, espera ou vai ao ponto livre mais próximo | Não implementado |
+| [D-315](D-315-niveis-de-ameaca-referencia-escala-e-distancias.md) | Exploração / IA | Ameaça pela soma do grupo vs soma da equipe; nível = média +1..+4; 3/6/9 tiles e 40/70/110/150 px/s; faixas −40%/−10%/+30% confirmadas; ícones a desenhar | Não implementado |
+| [D-316](D-316-descanso-ao-pisar-e-expedicao-de-5-andares.md) | Exploração | Descanso ao pisar cura a equipe ativa; 3º ponto em 10%; expedição de 5 andares e nova expedição completa no fim | Não implementado |
+| [D-317](D-317-bioma-a-cada-5-andares.md) | Exploração / visual | Bioma muda a cada 5 andares; espécies pendentes | Não implementado |
+| [D-318](D-318-f6-eventos-primeiro.md) | Exploração / conteúdo | F6 começa por eventos; ordem restante pendente | Não implementado |
+| [D-319](D-319-f3-so-no-overworld-batalha-continua-gible.md) | Exploração / escopo | F3 só no overworld; batalha 3D continua Gible fixo | Não implementado |
+| [D-320](D-320-publicacao-de-docs-autorizada.md) | Processo / Git | Commit + push só de docs autorizado; worktree limpo do `origin/main` | Pendente de execução |
+| [D-321](D-321-inimigos-tambem-andam-em-grupo.md) | Exploração / IA | Inimigos também andam em grupo (solto, máx. 3); soma define a ameaça do grupo; líder derrotado → próximo vira líder | Não implementado |
+| [D-322](D-322-refazer-os-efeitos-de-elemento-do-zero.md) | VFX / Motion Composer | Refazer do zero fogo, água, terra e ar com qualidade visual extrema; melhorar o Motion Composer se preciso | Fogo refeito (aguarda aprovação); água, terra e ar não iniciados |
+| [D-323](D-323-melhorar-o-motion-composer-antes-de-qualquer-efeito.md) | VFX / Motion Composer | Melhorar o Composer (elementos estilizados e semi-realistas) antes de qualquer efeito; não trocar peças do fogo agora | Registrada; escopo das melhorias em aberto; sem código |
+| [D-327](D-327-composer-precisa-de-modelos-3d-dos-elementos.md) | VFX / Motion Composer | A galeria da V1.2 foi reprovada: o Composer precisa de malhas/modelos 3D dos objetos elementais, não só texturas e formas procedurais | Registrada; origem dos modelos em aberto; sem código |
+| [D-332](D-332-fogo-por-shader-flipbook-e-composer-referencias.md) | VFX / Motion Composer | Fogo por shader + flipbook + Composer (não mais modelo 3D); referências: Persona, Genshin Impact, Pokémon | Registrada; implementação em andamento |
+| [D-335](D-335-implementar-no-godot-os-efeitos-do-atelier.md) | VFX / Motion Composer | Implementar no Godot os efeitos do atelier.html, um de cada, melhorando com shaders sem arruinar o visual | 1 de 8 (Splitter Flames); aguarda aprovação |
+| [D-323](D-323-remover-seis-especies-sem-overworld.md) | Exploração / Pokédex | Remove simisear, simipour, throh, amoonguss, stunfisk e aromatisse da lista usável (sem overworld); usável 297 | Aplicado no manifesto |
+| [D-324](D-324-hub-2d-extracao-e-vila-compacta.md) | Exploração / campanha / visual | Hub 2D jogável: base compacta que cresce para vila, uma tela sem interiores, serviços como NPCs; modelo de extração | Direção aceita; detalhes pendentes; não implementado |
+| [D-325](D-325-usar-assets-2d-de-mystery-dungeon.md) | Visual / assets / exploração | Usar assets 2D não-Pokémon de Explorers of Time/Darkness e Sky: dungeons, backgrounds, itens, UI e props; Pokémon do site ficam de fora por ora | Autorizado; nada importado; escala e uso pendentes |
+| [D-326](D-326-ordem-dos-assets-tilesets-e-24px.md) | Visual / assets / exploração | Ordem: Time/Darkness primeiro, Sky depois; dungeons com tilesets modulares sobre a geração procedural; 24 px por tile por ora | Registrada; conversão 24 px proposta; nada implementado |
+| [D-328](D-328-24px-no-jogo-inteiro-e-cena-de-teste-do-hub.md) | Exploração / visual / implementação | 24 px no jogo inteiro e cena de teste do hub autorizada | **Revertida por D-329**; cena do hub permanece em 48 px |
+| [D-329](D-329-voltar-para-48px.md) | Exploração / visual | Voltar para 48 px; a perda de qualidade do teste de 24 px foi imensa | Revertido; testar e capturar de novo |
+| [D-330](D-330-dungeon-tiles-do-sky-e-troca-do-atlas.md) | Exploração / visual / assets | Importar os 16 Dungeon Tiles do Sky e trocar o atlas procedural pelo tileset do Temporal Tower, mantendo a geração procedural | Implementado e testado em Godot 4.7.2; aguarda aprovação visual |
+| [D-285](D-285-ia-levanta-o-guard-perto-do-impacto.md) | Combate / IA / Guard | A IA levanta o Guard quando faltam 0,8–1,3 s para o impacto, não no começo do wind-up | Implementado |
+| [D-286](D-286-contato-sem-teleporte-quando-o-alvo-se-move.md) | Combate / contato | Se o alvo se move durante o golpe, o atacante o alcança deslizando (máx. 45 u/s) em vez de teleportar no impacto; suaviza D-054 | Implementado |
+
+- [D-333 — Exceção: atelier HTML com Quarks.js](D-333-excecao-atelier-html-quarks.md) — aprovado, somente este protótipo.
+- [D-334 — Atelier: tamanho fixo no mundo](D-334-atelier-tamanho-fixo-no-mundo.md) — implementado; invariância verificada nos oito efeitos.
+- [D-336 — Batalha DQT: modelos 30% menores, centralizados e chão mais largo](D-336-batalha-dqt-tamanho-posicoes-e-chao.md) — só a batalha de teste DQT; implementando.
+- [D-337 — Auditoria extrema e implementação fiel dos 6 Moves já codados do Atelier HTML](D-337-auditoria-e-fidelidade-6-moves-atelier.md) — em implementação; Psychic Cannon e Psycho Orb por último para brainstorm.
+- [D-338 — Inimigos alinhados para a esquerda, 6 entre eles, e chão de largura 60](D-338-inimigos-alinhados-a-esquerda-e-chao-60.md) — todas as batalhas; implementando.
+- [D-339 — Inimigos 20% maiores em todas as batalhas](D-339-inimigos-20-porcento-maiores.md) — `ENEMY_SCALE` 1,8 → 2,16; trajeto preservado.
+- [D-340 — Piscar próprio dos monstros DQT e regra de olhos do jogo](D-340-piscar-proprio-dos-monstros-dqt.md) — 0,12 s a cada 3–6 s, sempre que os olhos estão abertos.
+- [D-341 — Cyclops lento: +0,8 s na ida e passo casado com o chão](D-341-cyclops-lento-mais-0-8s-e-passo-casado.md) — provisório até a AGI existir.
+- [D-342 — Orc e Cyclops 1,2× maiores no lado do jogador](D-342-orc-e-cyclops-1-2x-no-lado-do-jogador.md) — lado do oponente sem mudança.
+- [D-343 — Heal Gain: opção 2, cruzes verdes em flipbook e lado direito limpo](D-343-heal-gain-opcao-2-cruzes-verdes-flipbook.md) — implementado (número em `CanvasLayer` 2D com as cores exatas; cruzes com escala de câmera); aguardando aprovação visual.
+- [D-344 — Câmera do dungeon em 2,3×](D-344-camera-do-dungeon-em-2-3x.md) — 1,5× → 2,0× → 2,3×; só exploração 2D.
+- [D-345 — Pipeline de tilesets: medir, validar e testar antes de usar](D-345-pipeline-de-tilesets-medir-validar-testar.md) — as 10 propostas viram padrão do importador.
+- [D-346 — Terrain nativo e seletor de bioma por andar (Bloco 1)](D-346-terrain-nativo-e-seletor-de-bioma.md) — seletor implementado; terrain nativo no laboratório (9 peças reais; 0/0 não alcançado); jogo mantém o renderer aprovado.
+- [D-347 — Piso orgânico com Ground Alt. 1/2 (Bloco 2)](D-347-piso-organico-ground-alt.md) — 18 núcleo + 2 alts; só no centro do chão; 92/4/4; decals, não piso seamless.
+- [D-348 — Parede de 1 tile: strip de dois lados e máscara de 8 vizinhos](D-348-parede-strip-dois-lados-e-mascara.md) — fora do mapa é aberto; `wall_strip_h/v` fecham os dois lados; lado aberto só para interseção.
+- [D-347 — Heal Gain acima da ficha, torto por lado e odômetro guardado](D-347-heal-gain-acima-da-ficha-e-odometro-guardado.md) — número acima do `UnitCard`/`EnemyTag`, rotação e diagonal por lado, 1,4 s; odômetro arquivado em `legacy`; HP/barra imediatos; aguardando aprovação visual.
+- [D-348 — Heal Gain na frente, visível desde o começo, e o atraso correto do ganho](D-348-heal-gain-na-frente-e-atraso-do-ganho.md) — número na frente, fora da ficha, visível no primeiro quadro; cruzes no personagem; Heal Gain espera 0,10 s depois do `healed`; pilares do Media revertidos; aguardando aprovação visual.

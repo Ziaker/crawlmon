@@ -23,3 +23,7 @@ Após o lançamento e a queda fatal, **o inimigo desaparece em uma explosão vis
 - **Decisões relacionadas:** D-056, D-068, D-079.
 - **Pendência:** Duração, escala, cores, intensidade e composição do efeito ainda não foram especificadas. Não inventar desaparecimento para aliados.
 - **Escopo:** documentação somente, sem mudança de código, FX, configurações ou testes.
+
+## Complemento posterior (2026-11-03)
+
+**D-166:** para inimigos, o desaparecimento é o encolhimento no ar com brilho de faíscas, sem explosão de fumaça após a queda.

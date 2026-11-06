@@ -23,7 +23,7 @@ func _vis_tween(c: Combatant) -> Tween:
 ## attack arrives (see fx.resolve_attack), never before the enemy has struck.
 func manual_evade(actor: Combatant, inc) -> void:
 	fx.clear_telegraph(inc)
-	if not inc.perfect and not inc.evader_home:
+	if not inc.evader_teleported and not inc.evader_home:
 		dodge(actor, "", false)  # The usual dodge (or just MISS! while its own run owns the body).
 
 

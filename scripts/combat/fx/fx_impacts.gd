@@ -410,9 +410,6 @@ func _status_impact_move(move_id: String, pos: Vector3) -> bool:
 				tw.tween_property(mark, "modulate:a", 0.0, 0.25).set_delay(0.48 + float(i) * 0.08)
 				tw.chain().tween_callback(mark.queue_free)
 			return true
-		"media":
-			_media_impact(pos)
-			return true
 		"tarukaja":
 			_tarukaja_impact(pos)
 			return true
@@ -450,113 +447,25 @@ func _sukunda_impact(pos: Vector3) -> void:
 	_ring_cam(pos + Vector3(0, 0.3, 0), Color("00e5ff"), 2.4, 0.4)
 
 
-func _confusion_impact(pos: Vector3, big: bool) -> Array[Node3D]:
-	var k := 1.2 if big else 1.0
-	var root := Node3D.new()
-	root.name = "ConfusionGravityField"
-	root.position = pos
-	fx.add_child(root)
-	var nodes: Array[Node3D] = [root]
-	for i in 3:
-		var ring_pos := pos + Vector3.UP * (float(i) - 1.0) * 0.65
-		var ring_color := Color("63d9ec", 0.82) if i % 2 == 0 else Color("bd9afd", 0.86)
-		var ring := _tackle_torus("ConfusionCompressionRing%d" % i, ring_pos, ring_color, 2.8, 1.45 - i * 0.14, 0.45, 0.34, Vector3.UP)
-		nodes.append(ring)
-		var ring_tw := ring.create_tween()
-		ring_tw.tween_property(ring, "position:y", pos.y, 0.28).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
-
-	# 6 orbiting dizziness stars / psychic spheres above target's head
-	for i in 6:
-		var orb := fx._node(fx._sphere(0.18), Color("63d9ec") if i % 2 == 0 else Color("bd9afd"), Vector3.ZERO)
-		orb.name = "PsychicOrb%d" % i
-		fx.remove_child(orb)
-		root.add_child(orb)
-		var start_angle := float(i) * TAU / 6.0
-		var tw := orb.create_tween()
-		tw.tween_method(func(t: float) -> void:
-			var angle := start_angle + t * TAU * 3.5
-			var radius := 0.85 * k
-			orb.position = Vector3(cos(angle) * radius, 1.45 + sin(t * TAU * 2.0 + float(i)) * 0.15, sin(angle) * radius),
-			0.0, 1.0, 0.75).set_trans(Tween.TRANS_LINEAR)
-		var tw_fade := orb.create_tween()
-		tw_fade.tween_interval(0.55)
-		tw_fade.tween_property((orb.material_override as StandardMaterial3D), "albedo_color:a", 0.0, 0.20)
-
-	var finish := root.create_tween()
-	finish.tween_interval(0.32)
-	finish.tween_callback(func() -> void: VfxLib.flash_star(fx, root.global_position, Color("ff36ab"), 4.0 * k, 0.20))
-	finish.tween_interval(0.48)
-	finish.tween_callback(root.queue_free)
+## Abra's four moves draw their impact from the HTML prototype v9 (D-170); the old
+## ring / flipbook / cone effects were removed on the creator's order. The layer frees itself.
+func _abra_impact(move_id: String, pos: Vector3, dir: Vector3, big: bool) -> Array[Node3D]:
+	AbraMoveVfx.impact(fx, move_id, pos, big, dir)
+	var nodes: Array[Node3D] = []
 	return nodes
 
 
-func _psybeam_impact(pos: Vector3, dir: Vector3, big: bool) -> Array[Node3D]:
-	var k := 1.25 if big else 1.0
-	var root := Node3D.new()
-	root.name = "PsybeamPrismImpact"
-	root.position = pos
-	fx.add_child(root)
-	var nodes: Array[Node3D] = [root]
-	VfxLib.flash_star(fx, pos, Color.WHITE, 4.4 * k, 0.22)
-	VfxLib.flipbook(fx, pos, "impact", Color("bd9afd"), 5.2 * k, 0.34, 12.0, 3.5)
-	for i in 3:
-		var col: Color = [Color("63d9ec"), Color("d6fa66"), Color("bd9afd")][i]
-		var ring := _tackle_torus("PsybeamPrismRing%d" % i, pos, Color(col, 0.78), 2.8, 0.18 + i * 0.08, (2.0 + i * 0.38) * k, 0.36, dir)
-		ring.reparent(root)  # (the helper already parented it to the FX node)
-	VfxLib.burst(fx, pos, {"amount": 28, "life": 0.46, "speed": Vector2(4.0, 9.0), "size": Vector2(0.10, 0.28), "ramp": VfxLib.ramp([Color.WHITE, Color("63d9ec"), Color("d6fa66"), Color("bd9afd", 0.0)])})
-	var cleanup := root.create_tween()
-	cleanup.tween_interval(0.42)
-	cleanup.tween_callback(root.queue_free)
+## Element Moves (D-308): the layer frees itself.
+func _element_impact(move_id: String, pos: Vector3, dir: Vector3, big: bool) -> Array[Node3D]:
+	ElementMoveVfx.impact(fx, move_id, pos, big, dir)
+	var nodes: Array[Node3D] = []
 	return nodes
 
 
-func _add_lightning_path(root: Node3D, top: Vector3, bottom: Vector3, color: Color, offset: float) -> void:
-	var points: Array[Vector3] = [top]
-	for i in range(1, 8):
-		var p := top.lerp(bottom, float(i) / 7.0)
-		if i < 7:
-			p += Vector3(sin(float(i) * 2.8 + offset) * 0.55, 0, cos(float(i) * 1.9 + offset) * 0.42)
-		points.append(p)
-	for i in range(1, points.size()):
-		var glow := fx._line(points[i - 1], points[i], Color(color, 0.38), 0.42)
-		var core := fx._line(points[i - 1], points[i], Color.WHITE, 0.11)
-		for segment in [glow, core]:
-			fx.remove_child(segment)
-			root.add_child(segment)
-
-
-func _shock_wave_impact(pos: Vector3, big: bool) -> Array[Node3D]:
-	var k := 1.25 if big else 1.0
-	var root := Node3D.new()
-	root.name = "ShockWavePillar"
-	fx.add_child(root)
-	_add_lightning_path(root, pos + Vector3(-0.45, 8.0, 0.25), pos, Color("63d9ec"), 0.0)
-	_add_lightning_path(root, pos + Vector3(0.55, 8.5, -0.35), pos, Color("d6fa66"), 1.7)
-	for i in 3:
-		var fb := VfxLib.flipbook(fx, pos + Vector3.UP * (0.35 + i * 0.55), "lightning", Color("d6fa66") if i % 2 == 0 else Color("63d9ec"), (4.8 + i * 0.55) * k, 0.30, i * 67.0, 3.8)
-		fb.name = "ShockWaveFlipbook%d" % i
-	_shock(Vector3(pos.x, 0.05, pos.z), Color("63d9ec"), 6.0 * k, 0.38)
-	var cone := VfxLib.mesh_slash(fx, pos, Vector3.UP, Color("d6fa66"), 0.0, 1.55 * k, 0.28, "shock_cone", 3.8)
-	cone.name = "ShockWaveUpCone"
-	var cleanup := root.create_tween()
-	cleanup.tween_interval(0.34)
-	cleanup.tween_callback(root.queue_free)
-	var nodes: Array[Node3D] = [root, cone]
-	return nodes
-
-
-func _rapid_teleport_impact(pos: Vector3) -> Array[Node3D]:
-	var root := Node3D.new()
-	root.name = "RapidTeleportImpact"
-	root.position = pos
-	fx.add_child(root)
-	VfxLib.flash_star(fx, pos, Color("63d9ec"), 3.2, 0.18)
-	_tackle_torus("TeleportImpactRingCyan", pos, Color("63d9ec", 0.78), 2.8, 0.18, 2.2, 0.30, Vector3.FORWARD)
-	_tackle_torus("TeleportImpactRingViolet", pos, Color("bd9afd", 0.78), 2.8, 0.14, 1.8, 0.28, Vector3.UP)
-	var cleanup := root.create_tween()
-	cleanup.tween_interval(0.32)
-	cleanup.tween_callback(root.queue_free)
-	var nodes: Array[Node3D] = [root]
+## Fire Moves (D-236): the layer frees itself; the hit tells it whether an action of the target was interrupted.
+func _fire_impact(move_id: String, pos: Vector3, dir: Vector3, big: bool) -> Array[Node3D]:
+	FireMoveVfx.impact(fx, move_id, pos, big, dir, bool(fx.last_hit_info.get("interrupted", false)))
+	var nodes: Array[Node3D] = []
 	return nodes
 
 
@@ -698,13 +607,18 @@ func _impact_move(move_id: String, pos: Vector3, _color: Color, big: bool, dir: 
 		"quebra_telha":
 			return {"handled": true, "nodes": _brick_break_impact(pos, dir, big)}
 		"confusao":
-			return {"handled": true, "nodes": _confusion_impact(pos, big)}
+			return {"handled": true, "nodes": _abra_impact("confusao", pos, dir, big)}
 		"raio_psiquico":
-			return {"handled": true, "nodes": _psybeam_impact(pos, dir, big)}
+			return {"handled": true, "nodes": _abra_impact("raio_psiquico", pos, dir, big)}
 		"onda_choque":
-			return {"handled": true, "nodes": _shock_wave_impact(pos, big)}
+			return {"handled": true, "nodes": _abra_impact("onda_choque", pos, dir, big)}
 		"teleporte_rapido":
-			return {"handled": true, "nodes": _rapid_teleport_impact(pos)}
+			return {"handled": true, "nodes": _abra_impact("teleporte_rapido", pos, dir, big)}
+		"flame_stream", "splitter_flames":
+			return {"handled": true, "nodes": _element_impact(move_id, pos, dir, big)}
+		"fire_bullet":
+			# D-236: the hit decides the impact: an interrupted action gets the 0.35 s wrap of flames, no ricochet.
+			return {"handled": true, "nodes": _fire_impact(move_id, pos, dir, big)}
 		"mordida":
 			return {"handled": true, "nodes": _bite_impact(pos, dir)}
 		"tiro_areia":

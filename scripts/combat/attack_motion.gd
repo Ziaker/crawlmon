@@ -11,7 +11,10 @@ const LUNGE_MAX := 0.18
 const COIL := 0.38
 const LUNGE_OVERSHOOT := 0.22
 const PUSH_TIME := 0.11
-const HIT_HOLD := 0.15
+const CATCHUP_SPEED := 45.0  ## D-286: top speed of the slide to a target that moved during the strike.
+const CATCHUP_MIN := 1.0  ## D-286: it only slides when the contact spot moved farther than this (the strike's own lunge is smaller).
+const HIT_STUN_EXTRA := 0.30  ## D-272: every hit recoil/stagger lasts this much longer, globally.
+const HIT_HOLD := 0.15 + HIT_STUN_EXTRA
 
 
 ## True while this attack moves its attacker's body.
@@ -30,7 +33,7 @@ static func on_phase(inc: Incoming) -> void:
 
 
 ## Moves inc.attacker.pos to where this attack puts it at inc.phase_time.
-static func update(inc: Incoming) -> void:
+static func update(inc: Incoming, delta := 0.0) -> void:
 	if not carries(inc):
 		return
 	var a := inc.attacker
@@ -40,6 +43,10 @@ static func update(inc: Incoming) -> void:
 		return
 	match inc.phase:
 		Phase.TRAVEL:
+			if inc.clash:
+				var kc := clampf((e - inc.clash_start) / BattleSpace.CLASH_HOP_T, 0.0, 1.0)
+				a.pos = inc.clash_from.lerp(inc.clash_land, BattleSpace.ease_quad_out(kc))
+				return
 			_track(inc)
 			if e <= RUN_START:
 				a.pos = inc.from
@@ -47,13 +54,20 @@ static func update(inc: Incoming) -> void:
 				var k := clampf((e - RUN_START) / maxf(inc.run_t, 0.01), 0.0, 1.0)
 				a.pos = inc.from.lerp(inc.stand, 0.5 - 0.5 * cos(k * PI))  # Sine in/out
 		Phase.STRIKE:
-			_track(inc)
-			var coil := inc.stand if inc.antic <= 0.0 else inc.stand - inc.dir * COIL
+			# D-054/D-280: the path is fixed during the strike, except for a capped slide when the target moved away (D-286);
+			# the exact contact is corrected at the impact (arrive()).
 			# The lunge is timed to END at the contact frame (antic + hit), when the damage lands.
 			var lunge_t := maxf(minf(inc.hit, LUNGE_MAX), 0.001)
 			var lunge_start := inc.antic + maxf(inc.hit - lunge_t, 0.0)
+			if inc.clash_mode == "" and delta > 0.0:
+				_catch_up(inc, delta)
+			var st := inc.stand
+			if inc.clash_mode == "strike":
+				# D-279: after the bump it drifts slowly to the 2.6-unit contact spot while the move's animation plays.
+				st = inc.clash_land.lerp(inc.stand, BattleSpace.ease_quad_out(clampf(e / maxf(lunge_start, 0.05), 0.0, 1.0)))
+			var coil := st if inc.antic <= 0.0 else st - inc.dir * COIL
 			if e < inc.antic:
-				a.pos = inc.stand.lerp(coil, BattleSpace.ease_quad_out(e / inc.antic))
+				a.pos = st.lerp(coil, BattleSpace.ease_quad_out(e / inc.antic))
 			elif e < lunge_start:
 				a.pos = coil
 			else:
@@ -67,6 +81,18 @@ static func update(inc: Incoming) -> void:
 				a.pos = start.lerp(a.stand_pos(), k)
 
 
+## D-286: the target moved during the strike: the anchor slides to the new contact spot at a capped speed (never a jump).
+static func _catch_up(inc: Incoming, delta: float) -> void:
+	if inc.motion != "melee" or inc.dodged or inc.auto_dodged or inc.interrupted or inc.ghost or inc.impacted:
+		return
+	var goal := inc.target.pos - inc.dir * BattleSpace.STAND_GAP
+	var gap := inc.stand.distance_to(goal)
+	if not inc.catching and gap <= CATCHUP_MIN:
+		return
+	inc.catching = gap > 0.05
+	inc.stand = inc.stand.move_toward(goal, CATCHUP_SPEED * delta)
+
+
 ## The hit lands this very frame: put the striker (or the projectile) exactly at the contact
 ## point, so the damage never happens a frame short of it.
 static func arrive(inc: Incoming) -> void:
@@ -77,6 +103,8 @@ static func arrive(inc: Incoming) -> void:
 			inc.aim = inc.target.pos
 		inc.proj_pos = inc.aim
 	elif (inc.motion == "melee" or inc.motion == "engaged") and inc.phase == Phase.STRIKE and not inc.blink:
+		if inc.clash_mode != "":
+			return  # D-279: after a clash the contact spot is the one agreed in the bump; nothing snaps at the impact.
 		_track(inc)
 		inc.attacker.pos = inc.stand + inc.dir * LUNGE_OVERSHOOT
 
@@ -94,8 +122,9 @@ static func _blink_pos(inc: Incoming) -> Vector3:
 			return inc.dest if p < 0.35 else inc.from
 
 
-## While it still runs or swings at a target that will really be hit, the stand spot follows
-## the target's live position (so a target that moves is still reached, never struck air).
+## While it runs (TRAVEL) at a target that will really be hit, the stand spot follows the
+## target's live position (D-044). In the strike it is called only by arrive(): the contact
+## is corrected at the impact instant, never continuously (D-054).
 static func _track(inc: Incoming) -> void:
 	if inc.motion != "melee" or inc.dodged or inc.auto_dodged or inc.interrupted or inc.ghost or inc.impacted:
 		return

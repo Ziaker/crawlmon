@@ -38,3 +38,7 @@ Nenhuma (alinhadas detalhadamente via /grill-me).
 ## Estado no código
 
 Implementado e validado por testes automatizados (`tests/battle/test_d047_decision_slowmo.gd`).
+
+## Complemento posterior (2026-11-03)
+
+**D-162:** o timer passa a 2 s no Fight; Itens continua com 3 s. O resto desta decisão permanece.

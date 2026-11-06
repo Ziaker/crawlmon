@@ -1,0 +1,71 @@
+{
+  "pipeline_version": "2.4.0",
+  "floors_per_biome": 5,
+  "fallback": "temporal_tower",
+  "profiles": [
+    {
+      "name": "4th_station_pass",
+      "profile": "res://assets/pmd/dungeons/sky/atlas/4th_station_pass_profile.json"
+    },
+    {
+      "name": "7th_station_pass",
+      "profile": "res://assets/pmd/dungeons/sky/atlas/7th_station_pass_profile.json"
+    },
+    {
+      "name": "barren_valley",
+      "profile": "res://assets/pmd/dungeons/sky/atlas/barren_valley_profile.json"
+    },
+    {
+      "name": "dark_ice_mountain",
+      "profile": "res://assets/pmd/dungeons/sky/atlas/dark_ice_mountain_profile.json"
+    },
+    {
+      "name": "dark_ice_mountain_peak",
+      "profile": "res://assets/pmd/dungeons/sky/atlas/dark_ice_mountain_peak_profile.json"
+    },
+    {
+      "name": "dark_wasteland",
+      "profile": "res://assets/pmd/dungeons/sky/atlas/dark_wasteland_profile.json"
+    },
+    {
+      "name": "deep_boulder_quarry",
+      "profile": "res://assets/pmd/dungeons/sky/atlas/deep_boulder_quarry_profile.json"
+    },
+    {
+      "name": "deep_limestone_cavern",
+      "profile": "res://assets/pmd/dungeons/sky/atlas/deep_limestone_cavern_profile.json"
+    },
+    {
+      "name": "icicle_forest",
+      "profile": "res://assets/pmd/dungeons/sky/atlas/icicle_forest_profile.json"
+    },
+    {
+      "name": "limestone_cavern",
+      "profile": "res://assets/pmd/dungeons/sky/atlas/limestone_cavern_profile.json"
+    },
+    {
+      "name": "murky_forest",
+      "profile": "res://assets/pmd/dungeons/sky/atlas/murky_forest_profile.json"
+    },
+    {
+      "name": "spacial_cliffs",
+      "profile": "res://assets/pmd/dungeons/sky/atlas/spacial_cliffs_profile.json"
+    },
+    {
+      "name": "temporal_spire",
+      "profile": "res://assets/pmd/dungeons/sky/atlas/temporal_spire_profile.json"
+    },
+    {
+      "name": "temporal_tower",
+      "profile": "res://assets/pmd/dungeons/sky/atlas/temporal_tower_profile.json"
+    },
+    {
+      "name": "vast_ice_mountain",
+      "profile": "res://assets/pmd/dungeons/sky/atlas/vast_ice_mountain_profile.json"
+    },
+    {
+      "name": "vast_ice_mountain_peak",
+      "profile": "res://assets/pmd/dungeons/sky/atlas/vast_ice_mountain_peak_profile.json"
+    }
+  ]
+}

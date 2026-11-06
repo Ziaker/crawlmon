@@ -26,6 +26,8 @@ var home := Vector2.ZERO
 ## Optional predicate from exploration.gd; when it returns false the enemy
 ## freezes (used while a dialogue is open).
 var can_act: Callable = Callable()
+## Aliados que também iniciam batalha por contato (R37-Q1).
+var followers: Array[Node2D] = []
 
 var _grid: Array[String] = []
 var _astar: AStarGrid2D
@@ -138,6 +140,11 @@ func _pick_patrol_target() -> Vector2i:
 func _check_contact() -> void:
 	if position.distance_to(_player.position) <= CONTACT_RADIUS:
 		touched.emit(self)
+		return
+	for follower in followers:
+		if is_instance_valid(follower) and position.distance_to(follower.position) <= CONTACT_RADIUS:
+			touched.emit(self)
+			return
 
 
 # --- Movement ----------------------------------------------------------------

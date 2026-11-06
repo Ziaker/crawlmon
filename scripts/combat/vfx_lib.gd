@@ -325,6 +325,7 @@ static func meshes_of(model: Node) -> Array[MeshInstance3D]:
 ## Adds an inverted-hull outline and calibrates toon specular shading (D-038).
 static func outline_model(model: Node, width := 0.0016, color := Color(0.02, 0.04, 0.08)) -> void:
 	var line := shader_mat("outline", {"color": color, "width": width})
+	line.next_pass = shader_mat("def_crack", {"amount": 0.0})
 	for mi in meshes_of(model):
 		if mi.name == "BurstRing" or mi.mesh == null:
 			continue

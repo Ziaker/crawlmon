@@ -41,6 +41,8 @@ func play_move_by_id(move_id: String, target_node: Node3D, duration: float = 1.0
 	return false
 
 func on_hit_resolved(_attacker: Object, target: Object, _element: int, info: Dictionary) -> void:
+	if info.get("capped", false):
+		return  # Already at the limit: nothing changed, so nothing to show (D-167).
 	var move_name: String = str(info.get("skill_name", ""))
 	var mid := _normalize(move_name)
 	if mid.is_empty():

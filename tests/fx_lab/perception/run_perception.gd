@@ -9,6 +9,7 @@ extends SceneTree
 ## perception.json with the numbers and warnings.
 
 const TIMES := [0.1, 0.25, 0.4, 0.6, 0.9]
+const ELEMENT_TIMES := [0.12, 0.3, 0.5, 0.7, 1.0, 1.4, 2.05]
 const GUARD_TIMES := [0.15, 0.4, 0.85, 0.97, 1.3, 1.9, 2.3]
 
 
@@ -24,6 +25,13 @@ func _go() -> void:
 	var variants: Array = []
 	var times: Array = TIMES
 	match which:
+		"fire", "water", "earth", "air":  # One element reference recipe on every layout and two sizes (D-235).
+			times = ELEMENT_TIMES
+			var r := "el_" + which
+			for layout in VfxPerception.LAYOUTS:
+				variants.append(_variant(r, layout, 1.4))
+			variants.append(_variant(r, "side_rl", 0.8))
+			variants.append(_variant(r, "side_lr", 2.4))
 		"guard":  # The real Guard shield (FxGuard) on every layout and two sizes (D-235).
 			times = GUARD_TIMES
 			variants = [
@@ -43,7 +51,7 @@ func _go() -> void:
 				variants.append(_variant("slash", "near_to_far", h))
 	var res: Dictionary = await VfxPerception.run(self, {
 		"out_dir": out_dir, "times": times, "fps": 30, "seed": 7,
-		"variants": variants, "check_repeat": which == "repeat" or which == "",
+		"variants": variants, "check_repeat": which in ["repeat", "", "fire", "water", "earth", "air"],
 	})
 	print("PERCEPTION_DONE ", JSON.stringify({"sheet": res["sheet"], "json": res["json"]}))
 	for k in res["variants"]:

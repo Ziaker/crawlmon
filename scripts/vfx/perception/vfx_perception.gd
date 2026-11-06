@@ -66,6 +66,9 @@ static func run(tree: SceneTree, spec: Dictionary) -> Dictionary:
 		sheet_rows.append(_row_image(closeup, times.size()))
 		sheet_rows.append(_row_image(analysed["silhouettes"], times.size()))
 		_save_png(_row_image(closeup, times.size()), "%s/%s_closeup.png" % [out_dir, vname])
+		var detail := _closeup_images(frames["beauty"], analysed["metrics"], true)
+		sheet_rows.insert(sheet_rows.size() - 2, _row_image(detail, times.size()))
+		_save_png(_row_image(detail, times.size()), "%s/%s_detail.png" % [out_dir, vname])
 		_save_png(_row_image(frames["beauty"], times.size()), "%s/%s_beauty.png" % [out_dir, vname])
 		_save_png(_row_image(analysed["silhouettes"], times.size()), "%s/%s_silhouette.png" % [out_dir, vname])
 	var sheet := _stack(sheet_rows)
@@ -324,7 +327,7 @@ static func _analyse(frames: Dictionary, times: Array, info: Dictionary) -> Dict
 
 
 ## Crops each beauty frame to the union of the effect's boxes (padded, 16:9), so small effects can be judged.
-static func _closeup_images(beauty: Array, metrics: Array) -> Array[Image]:
+static func _closeup_images(beauty: Array, metrics: Array, per_frame := false) -> Array[Image]:
 	var x0 := 1.0
 	var y0 := 1.0
 	var x1 := 0.0
@@ -338,8 +341,19 @@ static func _closeup_images(beauty: Array, metrics: Array) -> Array[Image]:
 		x1 = maxf(x1, b[2])
 		y1 = maxf(y1, b[3])
 	var out: Array[Image] = []
+	var idx := -1
 	for img in beauty:
+		idx += 1
 		var im: Image = img
+		if per_frame:  # Each frame cropped to its OWN box, to judge the detail of the effect.
+			var fb: Array = metrics[idx]["bbox"]
+			if fb.is_empty():
+				out.append(im.get_region(Rect2i(0, 0, 160, 90)))
+				continue
+			x0 = fb[0]
+			y0 = fb[1]
+			x1 = fb[2]
+			y1 = fb[3]
 		if x1 <= x0 or y1 <= y0:
 			out.append(im)
 			continue

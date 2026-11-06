@@ -69,19 +69,19 @@ func _test_classic_moves_vfx(battle_fx: BattleFx) -> void:
 
 	# Abra moves
 	var conf := battle_fx.fx_impacts._impact(Element.Type.PSIQUICO, pos, Color.PURPLE, false, dir, "confusao")
-	_expect(_has_named(conf, "ConfusionGravityField"), "Confusao deve ter ConfusionGravityField")
+	_expect(battle_fx.get_node_or_null("AbraConfusaoImpact") != null, "Confusao deve ter a camada AbraConfusaoImpact (D-170: efeitos antigos removidos)")
 	_clean(conf)
 
 	var beam := battle_fx.fx_impacts._impact(Element.Type.PSIQUICO, pos, Color.PURPLE, false, dir, "raio_psiquico")
-	_expect(_has_named(beam, "PsybeamPrismImpact"), "Raio Psiquico deve ter PsybeamPrismImpact")
+	_expect(battle_fx.get_node_or_null("AbraRaioPsiquicoImpact") != null, "Raio Psiquico deve ter a camada AbraRaioPsiquicoImpact (D-170)")
 	_clean(beam)
 
 	var shock := battle_fx.fx_impacts._impact(Element.Type.RAIO, pos, Color.YELLOW, false, dir, "onda_choque")
-	_expect(_has_named(shock, "ShockWavePillar"), "Onda de Choque deve ter ShockWavePillar")
+	_expect(battle_fx.get_node_or_null("AbraOndaChoqueImpact") != null, "Onda de Choque deve ter a camada AbraOndaChoqueImpact (D-170)")
 	_clean(shock)
 
 	var tele := battle_fx.fx_impacts._impact(Element.Type.PSIQUICO, pos, Color.CYAN, false, dir, "teleporte_rapido")
-	_expect(_has_named(tele, "RapidTeleportImpact"), "Teleporte Rapido deve ter RapidTeleportImpact")
+	_expect(battle_fx.get_node_or_null("AbraTeleporteRapidoImpact") != null, "Teleporte Rapido deve ter a camada AbraTeleporteRapidoImpact (D-170)")
 	_clean(tele)
 
 	# Gible moves

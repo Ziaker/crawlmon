@@ -50,6 +50,24 @@ static func basic() -> Skill:
 	return Skill.new("Tackle", 1.0, 2, Element.Type.FISICO, Kind.MELEE, false, false, false, 1.5)
 
 
+## Fire Moves of D-236. Basic Skills only: element, how they travel, ATB cost and wind-up from the sheet.
+## `power` is PROVISIONAL (1.0, like Tackle): the sheet's `10 + MAG` formula, MP, Burn and the Burn chances
+## are not implemented yet (creator's choice, D-236). Nobody in the party owns them: only the VFX room lists them.
+static func fire_skills() -> Array[Skill]:
+	return [
+		Skill.new("Fire Bullet", 1.0, 2, Element.Type.FOGO, Kind.PROJECTILE, false, false, false, 0.5),
+	]
+
+
+## Element Moves of D-308 (reference VFX). Basic Skills only, like the fire Moves: nobody in the party owns them,
+## only the VFX room lists them. `power` is PROVISIONAL (1.0, like Tackle); no damage formula is approved for them.
+static func element_skills() -> Array[Skill]:
+	return [
+		Skill.new("Flame Stream", 1.0, 2, Element.Type.FOGO, Kind.PROJECTILE, false, false, false, 0.5),
+		Skill.new("Splitter Flames", 1.0, 2, Element.Type.FOGO, Kind.PROJECTILE, false, false, false, 0.7),
+	]
+
+
 ## 8 Shin Megami Tensei inspired moves (4 Status, 2 AoE Projectile, 2 AoE Physical).
 static func smt_skills() -> Array[Skill]:
 	return [

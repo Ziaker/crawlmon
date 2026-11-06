@@ -44,6 +44,7 @@ func plan(inc: Incoming) -> float:
 	elif inc.kind == Skill.Kind.MELEE and a.engaged_with == t:
 		# Already standing next to it: no travel, no return.
 		var hit0 := clip_hit(a, "attack", BattleSpace.HIT_AT)
+		hit0 = _strike_override(inc, hit0)  # D-241
 		# Its first action after the Evade: it appears next to the attacker it interrupted.
 		# Later actions are already there.
 		if not a.has_rest:
@@ -68,23 +69,27 @@ func plan(inc: Incoming) -> float:
 		var run_t := Battle.travel_seconds(base_run(a0, t0), a, t)
 		match inc.move_id:
 			"soco_rapido": run_t = Battle.travel_seconds(0.18, a, t)
-			"golpe_carate": run_t = Battle.travel_seconds(0.22, a, t)
+			"golpe_carate": run_t = Battle.travel_seconds(0.45, a, t)  # D-169
 			"quebra_telha": run_t = Battle.travel_seconds(0.24, a, t)
-			"garra_dragao": run_t = Battle.travel_seconds(0.22, a, t)
+			"garra_dragao": run_t = Battle.travel_seconds(0.45, a, t)  # D-169
 			"investida_escavadora": run_t = Battle.travel_seconds(0.26, a, t)
 			"hassou_tobi": run_t = Battle.travel_seconds(0.18, a, t)
 			"titanomachia": run_t = Battle.travel_seconds(0.24, a, t)
+		run_t += a.travel_extra  # D-341: slow character, only the run to the target
 		var hop_dist := stand.distance_to(a_home)
 		inc.motion = "melee"
 		inc.stand = stand
 		inc.run_t = run_t
 		inc.antic = 0.0 if inc.instant else BattleSpace.ANTICIP_T
 		inc.hit = clip_hit(a, "attack", BattleSpace.HIT_AT)
-		inc.hold = 0.2
+		inc.hit = _strike_override(inc, inc.hit)  # D-241: Mach Punch 0.20 s, Karate Chop and Brick Break 0.45 s (clip sped up to match)
+		if inc.move_id == "soco_rapido":
+			inc.antic = 0.0  # the jab lands straight on arrival
+		inc.hold = float(BattleSpace.RETURN_HOLD.get(inc.move_id, BattleSpace.RETURN_HOLD_DEFAULT))  # D-281
 		inc.hop_t = clampf(hop_dist / 70.0, 0.22, 0.4)
 		inc.hop_h = clampf(hop_dist * 0.12, 1.2, 3.0)
 		inc.from = a.pos
-		inc.plan = [[Phase.TRAVEL, 0.12 + run_t], [Phase.STRIKE, inc.antic + inc.hit], [Phase.RETURN, 0.2 + inc.hop_t]]
+		inc.plan = [[Phase.TRAVEL, 0.12 + run_t], [Phase.STRIKE, inc.antic + inc.hit], [Phase.RETURN, inc.hold + inc.hop_t]]
 		inc.impact_phase = Phase.STRIKE
 	else:
 		var hit := 0.15 if inc.instant else clip_hit(a, "attack_special", BattleSpace.CAST_AT)
@@ -161,6 +166,16 @@ func arrive_next_to(actor: Combatant, opponent: Combatant) -> void:
 	actor.set_rest(opp_pos + away * BattleSpace.STAND_GAP)
 
 
+## D-241: a move listed in BattleSpace.STRIKE_HIT lands at that time; the attack clip then runs `hit / new` times
+## faster so its contact frame falls on it. Moves not in the table keep the clip's own contact time.
+func _strike_override(inc: Incoming, hit: float) -> float:
+	var t: float = float(BattleSpace.STRIKE_HIT.get(inc.move_id, -1.0))
+	if t <= 0.0:
+		return hit
+	inc.strike_speed = hit / t
+	return t
+
+
 ## When the strike lands: the middle of the model's own clip (fallback: the constant).
 static func clip_hit(c: Combatant, anim: String, fallback: float) -> float:
 	var len := c.clip_len(anim)
@@ -179,7 +194,7 @@ static func base_fly(a0: Vector3, t0: Vector3) -> float:
 ## Seconds a move of `kind` would take to reach `t` from `a` (for the Fight menu); 0 = none.
 static func preview_travel(a: Combatant, t: Combatant, kind: int) -> float:
 	if kind == Skill.Kind.MELEE:
-		return 0.12 + Battle.travel_seconds(base_run(a.home, t.home), a, t)
+		return 0.12 + Battle.travel_seconds(base_run(a.home, t.home), a, t) + a.travel_extra  # D-341
 	if kind == Skill.Kind.PROJECTILE:
 		return Battle.travel_seconds(base_fly(a.home, t.home), a, t)
 	return 0.0

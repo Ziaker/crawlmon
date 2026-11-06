@@ -29,3 +29,7 @@
 ## Complemento posterior — Rodada 53
 
 **D-114 (Rodada 53):** preserva a escolha aleatória de **alvo** entre adversários vivos elegíveis, respeitando engajamento. Na hora de decidir qual habilidade executar, a IA primeiro fixa esse alvo e depois avalia taticamente o **Move** adequado a ele (D-112/D-114). Não se transforma a escolha do alvo em decisão tática.
+
+## Complemento posterior (2026-11-03)
+
+**D-168:** implementado em `scripts/combat/battle_ai.gd`.

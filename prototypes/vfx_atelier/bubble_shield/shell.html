@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Bubble Shield — protótipo visual (4 opções)</title>
+<style>/*__CSS__*/</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+
+<header class="top">
+  <div class="brand">
+    <div class="eyebrow">CRAWL<span>MON</span> · PROTÓTIPO VISUAL · D-323</div>
+    <h1>Bubble Shield</h1>
+    <div class="tags">
+      <span>ÁGUA</span><span>STATUS</span><span>ALL ALLIES</span><span>3 ATB</span><span>0,7 s</span><span class="untyped">SEM TIPO</span>
+    </div>
+  </div>
+
+  <nav class="options" id="options">
+    <button data-option="A" class="active"><b>A</b><span>Bolha de sabão</span></button>
+    <button data-option="B"><b>B</b><span>Colmeia de bolhas</span></button>
+    <button data-option="C"><b>C</b><span>Bolha prismática</span></button>
+    <button data-option="D"><b>D</b><span>Aegis aquática</span></button>
+  </nav>
+</header>
+
+<aside class="sheet">
+  <div class="sheet-title">FICHA <span>D-323</span></div>
+  <dl>
+    <div><dt>Proteção</dt><dd>25 + MAG <em>por aliado</em></dd></div>
+    <div><dt>Duração</dt><dd>8,0 s</dd></div>
+    <div><dt>Alcance</dt><dd>todos os aliados</dd></div>
+    <div><dt>Tipagem</dt><dd class="mint">SEM TIPO</dd></div>
+  </dl>
+  <div class="sheet-note">MAG demo <b>9</b> → escudo <b>34</b>. Valor ilustrativo; o atributo real ainda não foi ligado ao jogo.</div>
+</aside>
+
+<div class="allies" id="allies"></div>
+
+<div class="phasebar">
+  <div class="phase" id="phaseLabel">PRONTO</div>
+  <div class="track"><div class="fill" id="phaseFill"></div><div class="mark" id="phaseMark"></div></div>
+  <div class="clock" id="clock">0,0 s</div>
+</div>
+
+<footer class="controls">
+  <button id="castBtn" class="primary">Conjurar <kbd>Espaço</kbd></button>
+  <button id="hitBtn">Acertar <kbd>H</kbd></button>
+  <button id="breakBtn">Quebrar <kbd>B</kbd></button>
+  <button id="expireBtn">Expirar <kbd>E</kbd></button>
+  <button id="mirrorBtn">Espelhar <kbd>M</kbd></button>
+  <button id="resetBtn">Reiniciar <kbd>R</kbd></button>
+</footer>
+
+<div class="toast" id="toast"></div>
+<div class="help">Arraste para orbitar · roda para zoom · 1/2/3 trocam a opção</div>
+
+<script>/*__APP__*/</script>
+</body>
+</html>

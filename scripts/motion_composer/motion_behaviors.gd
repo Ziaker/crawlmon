@@ -19,3 +19,15 @@ static func register_all(catalog: MotionCatalog) -> Array[MotionDiagnostic]:
 	for b in all():
 		out.append_array(catalog.register(b))
 	return out
+
+
+## V1.2 (D-323) e V1.8 (D-337): campos e geradores acrescentados depois da V1 fechada (M01-M20 intactos). Não entram em `V1_IDS`.
+static func v12() -> Array[MotionBehavior]:
+	return [MotionM21Flow.new(), MotionM22Drag.new(), MotionM23Gravity.new(), MotionM24CurlNoise.new(), MotionM25Repulsion.new(), MotionM26AtelierEmitter.new()]
+
+
+static func register_v12(catalog: MotionCatalog) -> Array[MotionDiagnostic]:
+	var out: Array[MotionDiagnostic] = []
+	for b in v12():
+		out.append_array(catalog.register(b))
+	return out

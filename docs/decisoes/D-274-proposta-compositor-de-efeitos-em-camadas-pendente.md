@@ -116,6 +116,12 @@ Perguntado por onde iniciar e onde o trabalho deve viver, o criador respondeu:
 
 **Observação verificada:** o Motion Composer V1 versionado tem a biblioteca de comportamentos (`scripts/motion_composer/`), mas **não tem o laboratório visual** (a cena `motion_lab` só existe em `scratch/`, ignorado pelo Git). O `tests/fx_lab/` existente é um palco com efeitos candidatos do Abra, não um compositor.
 
+## Autorização das receitas de elementos (2026-11-05)
+
+> agora começa a fazer os efeitos visuais dos elementos como pedido no prompt, use suas skills
+
+**Decisão:** iniciar os efeitos dos quatro elementos da proposta (itens 1, 2 e 4), como **receitas de referência reutilizáveis**: **fogo** (chama projetada), **água** (jato com respingo), **terra** (erupção de fragmentos) e **ar** (rajada curva). Vivem em `scripts/vfx/elements/` e `shaders/el_*.gdshader`, **não substituem nenhum efeito existente** (inclusive o Fire Bullet da D-236) e **não são ligadas a nenhum Move**; ligar a um Move exige decisão própria. Todas derivam origem, destino, direção e escala de um contexto (`ctx`), nunca de personagem, time ou lado (D-235), e são conduzidas por um **tempo explícito** (`set_time`), sem sorteio fora de uma semente. Avaliação pelas ferramentas de percepção (4 layouts, 2 tamanhos de alvo). Estilo: o do jogo (cel-shading chapado), a confirmar pelo criador ao ver.
+
 ## Regras que continuam valendo (não são propostas)
 
 - Os controles artísticos e os campos **só mudam a aparência**: nunca dano, alcance lógico, duração do ataque, acerto ou colisão (a própria proposta afirma isso).
@@ -133,3 +139,5 @@ Perguntado por onde iniciar e onde o trabalho deve viver, o criador respondeu:
 ## Estado no código
 
 **Item 6, primeira parte (2026-11-05):** criadas as ferramentas de percepção: `scripts/vfx/perception/vfx_perception.gd`, `tests/fx_lab/perception/` e `docs/vfx/PERCEPTION_TOOLS.md`. Verificadas em 8 variantes (4 layouts, 2 tamanhos de alvo) com repetibilidade 0,0. Nenhum efeito, Move ou regra existente foi alterado. Itens 1–5 e 7 seguem não iniciados.
+
+**Receitas dos elementos (2026-11-05):** criadas fogo, água, terra e ar (`scripts/vfx/elements/`, `shaders/el_*`, `docs/vfx/ELEMENTOS_V1.md`), avaliadas pelo kit em 4 layouts e 3 tamanhos, repetíveis e sem erro. **Aguardam aprovação visual do criador**; nenhuma está ligada a Move.

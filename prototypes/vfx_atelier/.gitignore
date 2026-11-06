@@ -1,0 +1,4 @@
+node_modules/
+original.html
+*.png
+quarks-package.json

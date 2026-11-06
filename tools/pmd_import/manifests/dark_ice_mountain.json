@@ -1,0 +1,464 @@
+{
+  "pipeline_version": "2.5.0",
+  "name": "dark_ice_mountain",
+  "source": "assets/pmd/dungeons/sky/raw/dark_ice_mountain.png",
+  "source_sha256": "959c4267bad50a4b6f30718b0db5978c49b5d1659f4adc9bc795fd874079031d",
+  "grid": {
+    "width": 691,
+    "height": 770,
+    "origin_x": 9,
+    "origin_y": 163,
+    "pitch": 25,
+    "tile": 24,
+    "shared_columns": 24,
+    "physical_columns": 27,
+    "rows": 24
+  },
+  "categories": {
+    "legend": [
+      0,
+      2
+    ],
+    "walls": [
+      3,
+      5
+    ],
+    "wall_alt_1": [
+      6,
+      8
+    ],
+    "wall_alt_2": [
+      9,
+      11
+    ],
+    "ground": [
+      12,
+      14
+    ],
+    "ground_alt_1": [
+      15,
+      17
+    ],
+    "ground_alt_2": [
+      18,
+      20
+    ],
+    "unused_ground": [
+      21,
+      23
+    ],
+    "water": [
+      24,
+      26
+    ]
+  },
+  "autotile": {
+    "walls": {
+      "base": {
+        "column": 3,
+        "row": 0
+      },
+      "core": [
+        [
+          {
+            "role": "tl",
+            "column": 3,
+            "row": 0,
+            "art": 1.0
+          },
+          {
+            "role": "t",
+            "column": 4,
+            "row": 0,
+            "art": 1.0
+          },
+          {
+            "role": "tr",
+            "column": 5,
+            "row": 0,
+            "art": 1.0
+          }
+        ],
+        [
+          {
+            "role": "l",
+            "column": 3,
+            "row": 1,
+            "art": 1.0
+          },
+          {
+            "role": "c",
+            "column": 4,
+            "row": 1,
+            "art": 1.0
+          },
+          {
+            "role": "r",
+            "column": 5,
+            "row": 1,
+            "art": 1.0
+          }
+        ],
+        [
+          {
+            "role": "bl",
+            "column": 3,
+            "row": 2,
+            "art": 1.0
+          },
+          {
+            "role": "b",
+            "column": 4,
+            "row": 2,
+            "art": 1.0
+          },
+          {
+            "role": "br",
+            "column": 5,
+            "row": 2,
+            "art": 1.0
+          }
+        ]
+      ],
+      "extras": [
+        {
+          "column": 3,
+          "row": 3,
+          "art": 1.0
+        },
+        {
+          "column": 4,
+          "row": 3,
+          "art": 1.0
+        },
+        {
+          "column": 5,
+          "row": 3,
+          "art": 1.0
+        },
+        {
+          "column": 3,
+          "row": 4,
+          "art": 1.0
+        },
+        {
+          "column": 4,
+          "row": 4,
+          "art": 1.0
+        },
+        {
+          "column": 3,
+          "row": 5,
+          "art": 1.0
+        },
+        {
+          "column": 5,
+          "row": 5,
+          "art": 1.0
+        },
+        {
+          "column": 4,
+          "row": 6,
+          "art": 1.0
+        },
+        {
+          "column": 3,
+          "row": 7,
+          "art": 1.0
+        },
+        {
+          "column": 4,
+          "row": 7,
+          "art": 1.0
+        },
+        {
+          "column": 5,
+          "row": 7,
+          "art": 1.0
+        },
+        {
+          "column": 4,
+          "row": 8,
+          "art": 1.0
+        },
+        {
+          "column": 4,
+          "row": 9,
+          "art": 1.0
+        },
+        {
+          "column": 3,
+          "row": 10,
+          "art": 1.0
+        },
+        {
+          "column": 5,
+          "row": 10,
+          "art": 1.0
+        },
+        {
+          "column": 4,
+          "row": 11,
+          "art": 1.0
+        },
+        {
+          "column": 4,
+          "row": 12,
+          "art": 1.0
+        },
+        {
+          "column": 3,
+          "row": 13,
+          "art": 1.0
+        },
+        {
+          "column": 5,
+          "row": 13,
+          "art": 1.0
+        }
+      ]
+    },
+    "ground": {
+      "base": {
+        "column": 12,
+        "row": 0
+      },
+      "core": [
+        [
+          {
+            "role": "tl",
+            "column": 12,
+            "row": 0,
+            "art": 1.0
+          },
+          {
+            "role": "t",
+            "column": 13,
+            "row": 0,
+            "art": 1.0
+          },
+          {
+            "role": "tr",
+            "column": 14,
+            "row": 0,
+            "art": 1.0
+          }
+        ],
+        [
+          {
+            "role": "l",
+            "column": 12,
+            "row": 1,
+            "art": 1.0
+          },
+          {
+            "role": "c",
+            "column": 13,
+            "row": 1,
+            "art": 1.0
+          },
+          {
+            "role": "r",
+            "column": 14,
+            "row": 1,
+            "art": 1.0
+          }
+        ],
+        [
+          {
+            "role": "bl",
+            "column": 12,
+            "row": 2,
+            "art": 1.0
+          },
+          {
+            "role": "b",
+            "column": 13,
+            "row": 2,
+            "art": 1.0
+          },
+          {
+            "role": "br",
+            "column": 14,
+            "row": 2,
+            "art": 1.0
+          }
+        ]
+      ],
+      "extras": [
+        {
+          "column": 12,
+          "row": 3,
+          "art": 1.0
+        },
+        {
+          "column": 13,
+          "row": 3,
+          "art": 1.0
+        },
+        {
+          "column": 14,
+          "row": 3,
+          "art": 1.0
+        },
+        {
+          "column": 12,
+          "row": 4,
+          "art": 1.0
+        },
+        {
+          "column": 13,
+          "row": 4,
+          "art": 1.0
+        },
+        {
+          "column": 12,
+          "row": 5,
+          "art": 1.0
+        },
+        {
+          "column": 14,
+          "row": 5,
+          "art": 1.0
+        },
+        {
+          "column": 13,
+          "row": 6,
+          "art": 1.0
+        },
+        {
+          "column": 12,
+          "row": 7,
+          "art": 1.0
+        },
+        {
+          "column": 13,
+          "row": 7,
+          "art": 1.0
+        },
+        {
+          "column": 14,
+          "row": 7,
+          "art": 1.0
+        },
+        {
+          "column": 13,
+          "row": 8,
+          "art": 1.0
+        },
+        {
+          "column": 13,
+          "row": 9,
+          "art": 1.0
+        },
+        {
+          "column": 12,
+          "row": 10,
+          "art": 1.0
+        },
+        {
+          "column": 14,
+          "row": 10,
+          "art": 1.0
+        },
+        {
+          "column": 13,
+          "row": 11,
+          "art": 1.0
+        },
+        {
+          "column": 13,
+          "row": 12,
+          "art": 1.0
+        },
+        {
+          "column": 12,
+          "row": 13,
+          "art": 1.0
+        },
+        {
+          "column": 14,
+          "row": 13,
+          "art": 1.0
+        }
+      ]
+    }
+  },
+  "atlas": {
+    "path": "assets/pmd/dungeons/sky/atlas/dark_ice_mountain_atlas.png",
+    "sha256": "f130113b23c035ff9b8c56594f941b90689021e26554d1a11f427c06bd2148cd",
+    "tile_size": 48,
+    "columns": 30,
+    "rows": 1
+  },
+  "roles": {
+    "wall_tl": 0,
+    "wall_t": 1,
+    "wall_tr": 2,
+    "wall_l": 3,
+    "wall_c": 4,
+    "wall_r": 5,
+    "wall_bl": 6,
+    "wall_b": 7,
+    "wall_br": 8,
+    "ground_tl": 9,
+    "ground_t": 10,
+    "ground_tr": 11,
+    "ground_l": 12,
+    "ground_c": 13,
+    "ground_r": 14,
+    "ground_bl": 15,
+    "ground_b": 16,
+    "ground_br": 17,
+    "ground_alt_1": 18,
+    "ground_alt_2": 19,
+    "wall_strip_h": 20,
+    "wall_strip_v": 21,
+    "wall_inner_br": 22,
+    "wall_inner_bl": 23,
+    "wall_inner_tr": 24,
+    "wall_inner_tl": 25,
+    "ground_inner_tl": 26,
+    "ground_inner_tr": 27,
+    "ground_inner_bl": 28,
+    "ground_inner_br": 29
+  },
+  "profile": "assets/pmd/dungeons/sky/atlas/dark_ice_mountain_profile.json",
+  "contact_sheet": "docs/referencias/tilesets/dark_ice_mountain_contact.png",
+  "labeled_atlas": "docs/referencias/tilesets/dark_ice_mountain_atlas_labeled.png",
+  "labels": "docs/referencias/tilesets/dark_ice_mountain_labels.png",
+  "preview": "docs/referencias/tilesets/dark_ice_mountain_preview.png",
+  "validation": {
+    "tiles": 30,
+    "unique_tiles": 27,
+    "duplicates": [
+      [
+        11,
+        13
+      ],
+      [
+        11,
+        27
+      ],
+      [
+        11,
+        29
+      ]
+    ],
+    "seam": {
+      "wall_c": {
+        "left_right": 0.292,
+        "top_bottom": 0.333
+      },
+      "ground_c": {
+        "left_right": 0.583,
+        "top_bottom": 0.5
+      }
+    },
+    "warnings": [
+      "dark_ice_mountain: repeated atlas tiles [[11, 13], [11, 27], [11, 29]]",
+      "dark_ice_mountain: wall_c does not self-tile perfectly (L/R 29%, T/B 33%); the 3x3 block is a border set, so this is diagnostic",
+      "dark_ice_mountain: ground_c does not self-tile perfectly (L/R 58%, T/B 50%); the 3x3 block is a border set, so this is diagnostic"
+    ]
+  }
+}

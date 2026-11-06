@@ -51,9 +51,7 @@ func setup(p_type: MoveType, p_target: Node3D, p_duration: float = 1.0) -> void:
 	_active = true
 
 func _exit_tree() -> void:
-	if is_instance_valid(_target):
-		_target.position = _target_orig_pos
-		_target.scale = _target_orig_scale
+	pass
 
 func _build_vfx() -> void:
 	var shader := preload("res://shaders/smt_stage_vfx.gdshader")
@@ -399,7 +397,8 @@ func _process(delta: float) -> void:
 		_active = false
 		if is_instance_valid(_target):
 			_target.position = _target_orig_pos
-			_target.scale = _target_orig_scale
+			if move_type == MoveType.RAKUNDA:  # Only its squash touches the scale; a buff may have just changed it (D-158).
+				_target.scale = _target_orig_scale
 		queue_free()
 
 func _update_overlay(p: float, alpha_curve: float) -> void:

@@ -215,6 +215,7 @@ func _test_sand_attack_blind() -> void:
 	print("[*] Testando Sand Attack & Cegueira (D-032)...")
 	var ctx := _arena()
 	var b: Battle = ctx["b"]
+	b.debug_roll = 1  # hit without a random automatic dodge (10%), which made this test flaky
 	var p1: Combatant = ctx["p1"]
 	var e1: Combatant = ctx["e1"]
 	p1.add_atb(3.0)

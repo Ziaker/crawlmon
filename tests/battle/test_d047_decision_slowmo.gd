@@ -24,6 +24,9 @@ func _run() -> void:
 	var battle: Battle = bs.get_node("Battle")
 	while not battle.running:
 		await process_frame
+	for c in battle.party + battle.enemies:
+		c.act_policy = Combatant.Act.HOLD  # Only what this test does may change the state.
+		c.react_policy = Combatant.React.NONE
 
 	for i in 5:
 		await process_frame

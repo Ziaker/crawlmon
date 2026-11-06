@@ -91,7 +91,11 @@ func _build_tab() -> void:
 	var names := PackedStringArray()
 	for i in TABS.size():
 		names.append("[%s]" % TABS[i] if i == tab else TABS[i])
-	_title.text = "  ".join(names) + "      (←/→ troca aba, Z escolhe, X fecha)"
+	var header := "  ".join(names)
+	if tab == 0:
+		# R35-Q3: non-held items in the shared bag vs. the active party's capacity.
+		header += "   [%d/%d]" % [GameState.total_item_count(), GameState.max_inventory_capacity()]
+	_title.text = header + "      (←/→ troca aba, Z escolhe, X fecha)"
 	var entries: Array = []
 	_shown_items.clear()
 	match tab:
@@ -158,9 +162,7 @@ Fraquezas: %s" % [
 func _build_settings(keep_index: bool) -> void:
 	mode = Mode.SETTINGS
 	_title.text = "Configurações  (X ou C fecha)"
-	var rolling_label := "Vida Rolante (Mother 3): [LIGADO]" if GameState.rolling_hp_enabled else "Vida Rolante (Mother 3): [DESLIGADO]"
 	_list.set_entries([
-		{"text": rolling_label},
 		{"text": "Debug: iniciar batalha agora  (F9 em qualquer tela)"}
 	], keep_index)
 
@@ -171,9 +173,6 @@ func _on_chosen(i: int) -> void:
 	match mode:
 		Mode.SETTINGS:
 			if i == 0:
-				GameState.rolling_hp_enabled = not GameState.rolling_hp_enabled
-				_build_settings(true)
-			elif i == 1:
 				_close()
 				GameState._debug_battle()
 		Mode.TABS:

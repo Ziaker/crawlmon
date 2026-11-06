@@ -61,7 +61,7 @@ func _run() -> void:
 	_expect(enemy_model != null, "Modelo do inimigo encontrado na cena")
 
 	# Dispara o lançamento balístico de K.O.
-	fx.fx_motion.launch_ko(enemy, Vector3.ZERO, Vector3.RIGHT)
+	fx.fx_motion.launch_ko(enemy)
 
 	# Aguarda 0.45s (próximo ao ápice parabólico)
 	await create_timer(0.45, true, false, true).timeout

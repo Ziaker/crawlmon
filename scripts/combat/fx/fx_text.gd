@@ -10,12 +10,19 @@ func _init(p_fx: BattleFx) -> void:
 	fx = p_fx
 
 
-func heal_fx(_actor: Combatant, target: Combatant, amount: int) -> void:
+func heal_fx(_actor: Combatant, target: Combatant, amount: int, ring := true) -> void:
+	# D-348: let the HP/bar update first; the visual gain starts a beat after the real gain.
+	await fx.get_tree().create_timer(0.10).timeout
+	if not is_instance_valid(fx) or not is_instance_valid(target):
+		return
 	var home: Vector3 = fx._home[target]
 	var green := Color(0.3, 1.0, 0.4)
-	fx._ring(home + Vector3(0, 0.05, 0), green, Vector3.ONE * 2.0, Vector3.ONE * 0.5, 0.6)
-	fx._burst(home + Vector3(0, 0.3, 0), green, 22, 2.0, Vector3(0, 4, 0), 0.08, 0.9)
-	float_text(home + Vector3(0, 2.4, 0), "+%d" % amount, green, 64)
+	if ring:
+		fx._ring(home + Vector3(0, 0.05, 0), green, Vector3.ONE * 2.0, Vector3.ONE * 0.5, 0.6)
+		fx._burst(home + Vector3(0, 0.3, 0), green, 22, 2.0, Vector3(0, 4, 0), 0.08, 0.9)
+	# D-347: the number is HUD above the owner's HP card (spawned by BattleHud); the green crosses
+	# stay at the character, rising from its head.
+	HealGainFx.spawn(fx, home + Vector3(0, 2.4, 0))
 
 
 ## The damage points, shown the instant the hit lands: a screen-sized number that pops,

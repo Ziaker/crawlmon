@@ -29,10 +29,14 @@ func own_run(actor: Combatant) -> Incoming:
 ## Standing still, preparing or casting, or running in its own melee attack. Not while
 ## its body is swinging or hopping back.
 func _can_act(actor: Combatant) -> bool:
+	if actor.is_guarding():
+		return false  # D-272: a guarding character does nothing else.
 	if actor.engaged_with != null:
 		return false
 	if own_run(actor) != null:
 		return true
+	if b.is_held(actor):
+		return true  # D-282: held in its idle by an attack that is striking it, it may Evade
 	for inc in b._landing:
 		if inc.attacker == actor and AttackMotion.carries(inc):
 			return false
@@ -49,14 +53,14 @@ func find_evadable(actor: Combatant) -> Incoming:
 	for inc in b.active_attacks():
 		if inc.target != actor or inc.dodged or inc.evade_tried or inc.interrupted or inc.is_friendly:
 			continue
-		if inc.can_evade_now():
+		if inc.in_strike_window():  # the prompt shows during the whole strike; the press only counts in the last 0.25 s (D-283)
 			return inc
 	return null
 
 
-## D-027: a successful Evade never teleports, except a PERFECT one (last PERFECT_WINDOW
-## seconds of the attacker's run or flight, the Evade window) made while its own melee attack runs: then it appears in front of the attacker,
-## its own attack carries on, and its next attack has no wind-up.
+## D-164: a PERFECT Evade (last PERFECT_WINDOW seconds of the Evade window) makes the next attack
+## have no wind-up, wherever it was made. D-027: it only teleports when made while its own melee
+## attack runs: then it appears in front of the attacker and its own attack carries on.
 func try_evade(actor: Combatant, inc: Incoming) -> bool:
 	if inc == null or inc.is_friendly or not actor.is_alive() or not _can_act(actor):
 		return false
@@ -66,6 +70,7 @@ func try_evade(actor: Combatant, inc: Incoming) -> bool:
 	if not inc.can_evade_now():
 		return false  # During the call (the wind-up) there is no Evade at all (D-028).
 	var run := own_run(actor)
+	var is_perfect := inc.travel_left() <= Battle.PERFECT_WINDOW and inc.attacker.is_alive()
 	actor.spend(price)
 	inc.evade_tried = true
 	inc.dodged = true
@@ -73,9 +78,11 @@ func try_evade(actor: Combatant, inc: Incoming) -> bool:
 	actor.burst = mini(actor.burst + 1, Combatant.BURST_MAX)
 	if actor.burst > burst_before:
 		b.grant_burst(actor, actor)
-	if run != null and inc.travel_left() <= Battle.PERFECT_WINDOW and inc.attacker.is_alive():
+	if is_perfect:
 		inc.perfect = true
 		actor.counter_ready = true
+	if run != null and is_perfect:
+		inc.evader_teleported = true
 		var from := actor.pos
 		_teleport_into_run(run, inc.attacker)
 		b.log_message.emit("%s desvia perfeitamente e surge diante de %s! BURST!" % [actor.name, inc.attacker.name])
@@ -88,6 +95,8 @@ func try_evade(actor: Combatant, inc: Incoming) -> bool:
 		inc.evader_home = true
 		b.log_message.emit("%s desvia de %s e volta ao seu lugar! BURST!" % [actor.name, inc.attacker.name])
 		b.evade_returned.emit(actor, from)
+	elif is_perfect:
+		b.log_message.emit("%s desvia perfeitamente de %s! BURST!" % [actor.name, inc.attacker.name])
 	else:
 		b.log_message.emit("%s desvia do ataque de %s! BURST!" % [actor.name, inc.attacker.name])
 	b.manual_evaded.emit(actor, inc)

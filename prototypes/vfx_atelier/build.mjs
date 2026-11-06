@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import {build} from 'esbuild';
+import {execFileSync} from 'node:child_process';
+execFileSync('python', ['prepare.py'], {stdio: 'inherit'});
+execFileSync(process.execPath, ['node_modules/tailwindcss/lib/cli.js','-i','tailwind.css','-o','compiled.css','--content','shell.html,app.js','--minify'], {stdio:'inherit'});
+const result = await build({entryPoints:['app.js'],bundle:true,write:false,format:'iife',minify:true,legalComments:'inline',loader:{'.glsl':'text'}});
+let html = fs.readFileSync('shell.html','utf8');
+html = html.replace('/* BUNDLED_CSS */', () => fs.readFileSync('compiled.css','utf8'));
+html = html.replace('/* BUNDLED_APP */', () => result.outputFiles[0].text.replaceAll('</script','<\\/script'));
+const licenseFiles=['node_modules/three/LICENSE','node_modules/three.quarks/LICENSE','node_modules/quarks.core/LICENSE','node_modules/tailwindcss/LICENSE','LICENSE-noise.txt'];
+const notices=licenseFiles.filter(f=>fs.existsSync(f)).map(f=>f+'\n'+fs.readFileSync(f,'utf8')).join('\n\n');
+html += '\n<!-- Third-party licenses\n'+notices.replaceAll('-->','-- >')+'\n-->\n';
+fs.writeFileSync('THIRD_PARTY_LICENSES.txt',notices);
+fs.writeFileSync('atelier.html', html);
+console.log('Built standalone atelier.html', Buffer.byteLength(html));

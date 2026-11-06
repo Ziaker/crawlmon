@@ -43,4 +43,4 @@ Nenhuma (todas as ramificações alinhadas via /grill-me).
 
 ## Estado no código
 
-Implementado e validado por testes automatizados (`tests/battle/test_d048_rolling_hp.gd`).
+**Arquivado em 2026-11-06 por D-347.** O odômetro saiu do fluxo ativo: o HP e a barra atualizam imediatamente, o toggle saiu do menu e o sistema foi guardado em `scripts/legacy/rolling_hp_odometer.gd`, com o teste em `tests/legacy/test_d048_rolling_hp.gd`. Quando o criador pedir, o sistema volta a partir desse módulo.

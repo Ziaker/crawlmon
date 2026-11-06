@@ -25,10 +25,37 @@ func spawn(inc) -> void:
 	# A shot that will hit is guided: it follows the target's body (it may be running or
 	# hopping itself), so it always lands on it. A missed one sails past the spot it aimed at.
 	inc.data["proj"] = {"node": node, "from": from, "to": end, "lift": lift, "homing": not missed}
+	# D-170: extra prototype-v9 layer (cubes, helix, prisms) that follows the same projectile phase.
+	if move_id in ["confusao", "raio_psiquico", "onda_choque"]:
+		var held := AbraMoveVfx.take_held(inc.attacker)
+		if held != null:
+			held.launch(from, end)  # the wind-up cubes and Tesseract fly off from where they gathered
+			inc.data["proj"]["abra"] = held
+		else:
+			inc.data["proj"]["abra"] = AbraMoveVfx.travel(fx, move_id, from, end)
+	elif move_id in ElementMoveVfx.IDS:
+		# D-308: the element flight layer (release blast, Motion Composer body, head); the impact is its own layer.
+		var charged := ElementMoveVfx.take_held(inc.attacker)
+		if charged != null:
+			charged.launch(from, end)  # the charge itself leaves: same fireball, no cut between wind-up and shot
+		else:
+			charged = ElementMoveVfx.travel(fx, move_id, from, end)
+		inc.data["proj"]["element"] = charged
+	elif move_id in FireMoveVfx.IDS:
+		# D-236: the fire hand becomes the flight layer: bullet, three fire rings and a trail that turns to ash.
+		var fire := FireMoveVfx.take_held(inc.attacker)
+		if fire != null:
+			fire.launch(from, end)
+		else:
+			fire = FireMoveVfx.travel(fx, move_id, from, end)
+		inc.data["proj"]["fire"] = fire
 
 
 func drive(inc) -> void:
 	var move_id := String(inc.data.get("move_id", ""))
+	if move_id in FireMoveVfx.IDS and inc.phase == Battle.Phase.STRIKE:
+		# D-236: the held fire hand learns how long is left before the shot (its spark rings appear a little earlier)
+		FireMoveVfx.notify_launch_in(inc.attacker, float(inc.plan[inc.plan_i][1]) - float(inc.phase_time))
 	if move_id == "teleporte_rapido":
 		_drive_rapid_teleport(inc, {}, null)
 		return
@@ -37,6 +64,15 @@ func drive(inc) -> void:
 		return
 	var node := p["node"] as Node3D
 	var to: Vector3 = inc.aim + (p["lift"] as Vector3)  # The rules aim it (live target, or the spot it misses).
+	var abra: Variant = p.get("abra")
+	if is_instance_valid(abra):
+		(abra as AbraMoveVfx).set_travel(p["from"], to, inc.progress(), inc.phase != Battle.Phase.TRAVEL)
+	var element: Variant = p.get("element")
+	if is_instance_valid(element):
+		(element as ElementMoveVfx).set_travel(p["from"], to, inc.progress(), inc.phase != Battle.Phase.TRAVEL)
+	var fire: Variant = p.get("fire")
+	if is_instance_valid(fire):
+		(fire as FireMoveVfx).set_travel(p["from"], to, inc.progress(), inc.phase != Battle.Phase.TRAVEL)
 	if _drive_move(inc, move_id, p, node, to):
 		return
 	if inc.phase != Battle.Phase.TRAVEL:
@@ -52,16 +88,32 @@ func finish(inc) -> void:
 	var p: Dictionary = inc.data.get("proj", {})
 	if not p.is_empty() and is_instance_valid(p["node"]):
 		(p["node"] as Node3D).queue_free()
+	var abra: Variant = p.get("abra")
+	if is_instance_valid(abra):
+		var layer := abra as AbraMoveVfx
+		if layer.move_id == "raio_psiquico":
+			layer.ext_returning = true  # the laser dissipates slowly by itself (it frees itself when gone)
+		else:
+			layer.queue_free()
+	var element: Variant = p.get("element")
+	if is_instance_valid(element):
+		(element as ElementMoveVfx).end_flight()
+	var fire: Variant = p.get("fire")
+	if is_instance_valid(fire):
+		(fire as FireMoveVfx).end_flight()  # the bullet is gone; the trail and the ashes finish by themselves
 	inc.data.erase("proj")
 
 
 ## Return a custom projectile root, or null to use the elemental fallback.
 func _spawn_move(_inc, _move_id: String, _from: Vector3, _to: Vector3, _color: Color) -> Node3D:
 	match _move_id:
-		"confusao": return _make_confusion_waves(_from, _to)
-		"raio_psiquico": return _make_psybeam(_from, _to)
-		"onda_choque": return _make_shock_wave_travel(_from, _to)
-		"teleporte_rapido": return _make_rapid_teleport(_from, _to)
+		"confusao": return _empty_root("AbraConfusionTravel")
+		"raio_psiquico": return _empty_root("AbraPsybeamTravel")
+		"onda_choque": return _empty_root("AbraShockWaveTravel")
+		"teleporte_rapido": return _empty_root("AbraTeleportTravel")
+		"fire_bullet": return _empty_root("FireBulletTravel")
+		"flame_stream": return _empty_root("ElementFlameStreamTravel")
+		"splitter_flames": return _empty_root("ElementSplitterFlamesTravel")
 		"tiro_areia": return _make_sand_spiral_jet(_from, _to)
 		"furia_dragao": return _make_dragon_rage_comet(_from, _to)
 		"provocacao": pass
@@ -88,6 +140,8 @@ func _spawn_move(_inc, _move_id: String, _from: Vector3, _to: Vector3, _color: C
 
 ## Return true when a move has positioned its projectile for this Battle frame.
 func _drive_move(_inc, _move_id: String, _projectile: Dictionary, _node: Node3D, _to: Vector3) -> bool:
+	if _move_id == "fire_bullet" or _move_id in ElementMoveVfx.IDS:
+		return true  # FireMoveVfx / ElementMoveVfx draw the whole flight; the empty root stays put
 	if _move_id == "confusao":
 		if _inc.phase != Battle.Phase.TRAVEL:
 			return true
@@ -170,16 +224,14 @@ func _drive_rapid_teleport(inc, _projectile: Dictionary = {}, _node: Node3D = nu
 	var attack_dir := BattleSpace.flat_dir(origin, target_pos)
 	var dest: Vector3 = target_pos + attack_dir * 1.35
 	inc.dest = dest
-	var base_scale: Vector3 = inc.data.get("teleport_base_scale", fx._base_scale.get(inc.attacker, Vector3.ONE))
+	var base_scale: Vector3 = fx._base_scale.get(inc.attacker, Vector3.ONE)
 	inc.data["teleport_origin"] = origin
-	inc.data["teleport_base_scale"] = base_scale
 	fx._displaced[a] = true
 
 	if inc.phase == Battle.Phase.TRAVEL:
 		if not inc.data.get("teleport_vanish_flash", false):
 			inc.data["teleport_vanish_flash"] = true
-			VfxLib.flash_star(fx, origin + Vector3.UP, Color("63d9ec"), 2.2, 0.20)
-			fx._ring(origin + Vector3(0, 0.05, 0), Color("63d9ec"), Vector3(0.2, 1, 0.2), Vector3(1.5, 1, 1.5), 0.28, Vector3.ZERO, 0.0, false)
+			AbraPops.teleport_pop(fx, Vector3(origin.x, 0.0, origin.z), true, model)
 		model.visible = false
 	elif inc.phase == Battle.Phase.STRIKE:
 		model.visible = true
@@ -188,16 +240,15 @@ func _drive_rapid_teleport(inc, _projectile: Dictionary = {}, _node: Node3D = nu
 		model.scale = base_scale
 		if not inc.data.get("teleport_arrival_flash", false):
 			inc.data["teleport_arrival_flash"] = true
-			VfxLib.flash_star(fx, dest + Vector3.UP, Color("63d9ec"), 2.4, 0.20)
-			fx._ring(dest + Vector3(0, 0.05, 0), Color("63d9ec"), Vector3(0.2, 1, 0.2), Vector3(1.6, 1, 1.6), 0.28, Vector3.ZERO, 0.0, false)
+			AbraPops.teleport_pop(fx, Vector3(dest.x, 0.0, dest.z), false, model)
+			AbraMoveVfx.release_held(inc.attacker)  # the arrival seal ends when Abra appears
 			fx._play(inc.attacker, "attack")
 	elif inc.phase == Battle.Phase.RETURN:
 		var p: float = inc.progress()
 		if p < 0.35:
 			if not inc.data.get("teleport_exit_flash", false):
 				inc.data["teleport_exit_flash"] = true
-				VfxLib.flash_star(fx, dest + Vector3.UP, Color("63d9ec"), 2.0, 0.18)
-				fx._ring(dest + Vector3(0, 0.05, 0), Color("63d9ec"), Vector3(0.2, 1, 0.2), Vector3(1.5, 1, 1.5), 0.28, Vector3.ZERO, 0.0, false)
+				AbraPops.teleport_pop(fx, Vector3(dest.x, 0.0, dest.z), true, model)
 			model.visible = false
 		else:
 			model.visible = true
@@ -206,134 +257,18 @@ func _drive_rapid_teleport(inc, _projectile: Dictionary = {}, _node: Node3D = nu
 			model.scale = base_scale
 			if not inc.data.get("teleport_home_flash", false):
 				inc.data["teleport_home_flash"] = true
-				VfxLib.flash_star(fx, origin + Vector3.UP, Color("63d9ec"), 2.2, 0.20)
-				fx._ring(origin + Vector3(0, 0.05, 0), Color("63d9ec"), Vector3(0.2, 1, 0.2), Vector3(1.5, 1, 1.5), 0.32, Vector3.ZERO, 0.0, false)
+				AbraPops.teleport_pop(fx, Vector3(origin.x, 0.0, origin.z), false, model)
 				fx._displaced[a] = false
 				fx._reset_idle(inc.attacker)
 	return true
 
 
-func _make_confusion_waves(from: Vector3, to: Vector3) -> Node3D:
+## The four Abra moves draw their flight in AbraMoveVfx; this root only carries the
+## projectile bookkeeping (D-170: the old rings, beam and warp were removed).
+func _empty_root(root_name: String) -> Node3D:
 	var root := Node3D.new()
-	root.name = "ConfusionMentalWaves"
+	root.name = root_name
 	fx.add_child(root)
-	var dir := fx._flat_dir(from, to)
-	for i in 3:
-		var torus := TorusMesh.new()
-		torus.inner_radius = 0.58 + i * 0.08
-		torus.outer_radius = 0.72 + i * 0.08
-		var ring := MeshInstance3D.new()
-		ring.name = "MentalWave%d" % i
-		ring.mesh = torus
-		ring.material_override = fx.fx_impacts._tackle_material(Color("63d9ec", 0.82) if i % 2 == 0 else Color("bd9afd", 0.82), 2.8)
-		ring.quaternion = Quaternion(Vector3.UP, dir)
-		ring.position = from
-		ring.visible = false
-		root.add_child(ring)
-	return root
-
-
-func _helix_mesh(length: float, radius: float, phase: float) -> ArrayMesh:
-	var vertices := PackedVector3Array()
-	var indices := PackedInt32Array()
-	var segments := 36
-	for i in segments + 1:
-		var t := float(i) / float(segments)
-		var angle := t * TAU * 3.0 + phase
-		var radial := Vector3(cos(angle), 0, sin(angle))
-		var center := radial * radius + Vector3.UP * (length * t)
-		vertices.append(center - radial * 0.07)
-		vertices.append(center + radial * 0.07)
-		if i < segments:
-			var n := i * 2
-			indices.append_array(PackedInt32Array([n, n + 1, n + 2, n + 1, n + 3, n + 2]))
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = vertices
-	arrays[Mesh.ARRAY_INDEX] = indices
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	return mesh
-
-
-func _make_psybeam(from: Vector3, to: Vector3) -> Node3D:
-	var root := Node3D.new()
-	root.name = "PsybeamContinuous"
-	root.position = from
-	var delta := to - from
-	var length := delta.length()
-	root.quaternion = Quaternion(Vector3.UP, delta.normalized())
-	root.scale = Vector3(1, 0.01, 1)
-	fx.add_child(root)
-	for spec in [["PsybeamCore", 0.13, Color.WHITE, 4.2], ["PsybeamHalo", 0.34, Color("bd9afd", 0.34), 2.4]]:
-		var mesh := CylinderMesh.new()
-		mesh.top_radius = spec[1]
-		mesh.bottom_radius = spec[1]
-		mesh.height = length
-		mesh.radial_segments = 16
-		var beam := MeshInstance3D.new()
-		beam.name = spec[0]
-		beam.mesh = mesh
-		beam.position.y = length * 0.5
-		beam.material_override = fx.fx_impacts._tackle_material(spec[2], spec[3])
-		beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		root.add_child(beam)
-	for i in 2:
-		var helix := MeshInstance3D.new()
-		helix.name = "PsybeamHelix%d" % i
-		helix.mesh = _helix_mesh(length, 0.46, float(i) * PI)
-		helix.material_override = fx.fx_impacts._tackle_material(Color("63d9ec") if i == 0 else Color("d6fa66"), 3.2)
-		helix.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		root.add_child(helix)
-	return root
-
-
-func _make_shock_wave_travel(from: Vector3, to: Vector3) -> Node3D:
-	var root := Node3D.new()
-	root.name = "ShockWaveTravel"
-	fx.add_child(root)
-	var previous := from
-	for i in 6:
-		var p := from.lerp(from + Vector3.UP * 6.0, float(i + 1) / 6.0)
-		p += Vector3((1.0 if i % 2 == 0 else -1.0) * 0.42, 0, 0.18 * i)
-		var segment := fx._line(previous, p, Color("d6fa66", 0.90), 0.13)
-		fx.remove_child(segment)
-		root.add_child(segment)
-		previous = p
-	var torus := TorusMesh.new()
-	torus.inner_radius = 1.05
-	torus.outer_radius = 1.18
-	var lock := MeshInstance3D.new()
-	lock.name = "ShockWaveTargetLock"
-	lock.mesh = torus
-	lock.position = Vector3(to.x, 0.06, to.z)
-	lock.material_override = fx.fx_impacts._tackle_material(Color("63d9ec", 0.88), 2.8)
-	root.add_child(lock)
-	return root
-
-
-func _make_rapid_teleport(from: Vector3, to: Vector3) -> Node3D:
-	var root := Node3D.new()
-	root.name = "RapidTeleportWarp"
-	fx.add_child(root)
-	var dir := fx._flat_dir(from, to)
-	var right := Vector3(dir.z, 0, -dir.x)
-	var dest := from + right * 2.2 + dir * 0.55
-	for i in 4:
-		var torus := TorusMesh.new()
-		torus.inner_radius = 0.62
-		torus.outer_radius = 0.82
-		var ring := MeshInstance3D.new()
-		ring.name = "WarpRing%d" % i
-		ring.mesh = torus
-		ring.position = (from if i < 2 else dest) + Vector3.UP * (0.25 + float(i % 2) * 0.65)
-		ring.material_override = fx.fx_impacts._tackle_material(Color("63d9ec", 0.82) if i % 2 == 0 else Color("bd9afd", 0.82), 3.0)
-		root.add_child(ring)
-		var tw := ring.create_tween().set_parallel(true)
-		tw.tween_property(ring, "scale", Vector3.ONE * 1.8, 0.30).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
-		tw.tween_property((ring.material_override as StandardMaterial3D), "albedo_color:a", 0.0, 0.30)
-	VfxLib.burst(fx, from, {"amount": 18, "life": 0.35, "speed": Vector2(2.0, 5.0), "size": Vector2(0.12, 0.28), "ramp": VfxLib.ramp([Color.WHITE, Color("63d9ec"), Color("63d9ec", 0.0)])})
-	VfxLib.burst(fx, dest, {"amount": 18, "life": 0.35, "speed": Vector2(2.0, 5.0), "size": Vector2(0.12, 0.28), "ramp": VfxLib.ramp([Color.WHITE, Color("bd9afd"), Color("bd9afd", 0.0)])})
 	return root
 
 

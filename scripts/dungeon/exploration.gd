@@ -5,10 +5,12 @@ extends Node2D
 
 const DungeonNPCClass = preload("res://scripts/dungeon/npc.gd")
 const DungeonEnemyClass = preload("res://scripts/dungeon/enemy.gd")
+const DungeonFollowerClass = preload("res://scripts/dungeon/follower.gd")
 const DungeonPickupClass = preload("res://scripts/dungeon/pickup.gd")
 const FogOfWarClass = preload("res://scripts/dungeon/fog_of_war.gd")
 const DialogueBoxClass = preload("res://scripts/ui/dialogue_box.gd")
 const NPCData = preload("res://scripts/dungeon/npc_data.gd")
+const BiomeSelectorScript = preload("res://scripts/dungeon/biome_selector.gd")
 
 const TILE := 48
 
@@ -17,6 +19,7 @@ const TILE := 48
 const POST_BATTLE_GRACE := 1.25
 
 var player: CharacterBody2D
+var followers: Array[Node2D] = []  ## Aliados ativos atrás do protagonista.
 var enemies: Dictionary = {}  ## id -> DungeonEnemy
 var fog: Node2D
 var entities: Node2D  ## Y-sorted container for the player, enemies and NPCs.
@@ -31,7 +34,9 @@ func _ready() -> void:
 	# Generates the floor once; revisiting it (after a battle) reuses the cache.
 	GameState.ensure_dungeon()
 	_map = GameState.dungeon_layout
-	$Visuals.setup(_map)
+	var biome := BiomeSelectorScript.pick(GameState.visual_floor, GameState.biome_seed)
+	GameState.visual_biome = str(biome.get("name", BiomeSelectorScript.FALLBACK_NAME))
+	$Visuals.setup(_map, str(biome.get("profile", BiomeSelectorScript.FALLBACK_PROFILE)), GameState.dungeon_seed)
 	
 	# Cria a caixa de diálogo do mapa
 	dialogue_box = DialogueBoxClass.new()
@@ -72,7 +77,10 @@ func _ready() -> void:
 	player = CharacterBody2D.new()
 	player.set_script(load("res://scripts/dungeon/player.gd"))
 	player.position = _resolve_spawn(spawn)
+	if not GameState.party.is_empty():
+		player.set("species_id", GameState.party[0].species_id)
 	entities.add_child(player)
+	_spawn_followers()
 	
 	# Cria os NPCs com sprites aleatórios e ícones respectivos
 	_spawn_npcs(npc_spots)
@@ -83,7 +91,20 @@ func _ready() -> void:
 	fog = FogOfWarClass.new()
 	add_child(fog)
 	fog.setup(_map, player, GameState)
-	
+
+	# Vinheta suave de tela; fica abaixo do diálogo (layer 15) e dos menus (10).
+	var vignette := CanvasLayer.new()
+	vignette.name = "Vignette"
+	vignette.layer = 1
+	var vignette_rect := ColorRect.new()
+	vignette_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	vignette_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var vignette_mat := ShaderMaterial.new()
+	vignette_mat.shader = load("res://shaders/vignette.gdshader")
+	vignette_rect.material = vignette_mat
+	vignette.add_child(vignette_rect)
+	add_child(vignette)
+
 	# Coming back from a battle: give the player time to walk away.
 	if GameState.player_pos != Vector2.INF:
 		_grace = POST_BATTLE_GRACE
@@ -148,6 +169,28 @@ func _add_wall(center: Vector2) -> void:
 	add_child(body)
 
 
+func _spawn_followers() -> void:
+	if GameState.party.size() <= 1:
+		return
+	for i in range(1, GameState.party.size()):
+		var member: Combatant = GameState.party[i]
+		if member.species_id == "":
+			continue
+		var follower = DungeonFollowerClass.new()
+		follower.setup(member.species_id, player)
+		follower.position = _follower_spawn(player.position)
+		entities.add_child(follower)
+		followers.append(follower)
+
+
+## Um tile atrás do líder; se estiver bloqueado, tenta as outras direções.
+func _follower_spawn(origin: Vector2) -> Vector2:
+	for offset in [Vector2(0, TILE), Vector2(0, -TILE), Vector2(-TILE, 0), Vector2(TILE, 0)]:
+		if not _is_wall_at(origin + offset):
+			return origin + offset
+	return origin
+
+
 func _spawn_enemies(cells: Dictionary) -> void:
 	if cells.is_empty():
 		return
@@ -155,6 +198,7 @@ func _spawn_enemies(cells: Dictionary) -> void:
 	for id in cells:
 		var enemy := DungeonEnemyClass.new()
 		enemy.setup(id, cells[id], _map, astar, player)
+		enemy.followers = followers
 		enemy.can_act = func() -> bool:
 			return dialogue_box == null or not ("is_open" in dialogue_box and dialogue_box.is_open)
 		enemy.touched.connect(_on_enemy_touched)
@@ -176,8 +220,9 @@ func _spawn_items(spots: Array[Dictionary]) -> void:
 ## Coleta automática (D-033): soma a Poção ao inventário e registra no GameState
 ## para ela não reaparecer ao voltar de uma batalha.
 func _on_item_collected(pickup) -> void:
+	if not GameState.add_item(DungeonPickupClass.ITEM_ID):
+		return
 	GameState.dungeon_items_collected.append(pickup.id)
-	GameState.add_item(DungeonPickupClass.ITEM_ID)
 
 
 ## Cardinal pathfinding grid: walls and NPCs are solid, everything else is

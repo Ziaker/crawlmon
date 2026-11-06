@@ -25,3 +25,7 @@
 - Atualmente `Battle._run_ai()` em `scripts/combat/battle.gd` prioriza poção com `hp <= max_hp * AI_HEAL_BELOW` (`AI_HEAL_BELOW := 0.5`) e ATB suficiente, **antes** de avaliar a escolha de Move ou a Tactic de ataque. A recomendação aceita é **requisito de comportamento futuro**, não estado atual.
 - A resposta não especifica novo valor de limiar, pesos, regras de empate ou priorização exata entre cura e ataque. **Não inventar**.
 - **Escopo:** documentação somente; não modificar código nem testes.
+
+## Complemento posterior (2026-11-03)
+
+**D-168:** implementado em `scripts/combat/battle_ai.gd`; a Tactic "Segurar" mantém a regra antiga de 50%.

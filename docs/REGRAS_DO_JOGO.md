@@ -174,6 +174,7 @@ Hierarquia usada para *ler*, não para decidir: o que o criador disse por últim
 - **Sorte [GDD R11-Q5]:** influencia probabilidades de combate (crítico etc.). **[PENDENTE]** o que exatamente e fórmulas. **[CÓDIGO]** hoje o crítico é fixo em 10%.
 - **Buffs/debuffs [GDD R10-Q4]:** por **estágios discretos**, não percentuais arbitrários. **[CÓDIGO]** estágios −2..+2 para ataque, defesa e velocidade, **25% por estágio** (ataque ×0,4 mín., velocidade ×0,3 mín.), zerados no fim da batalha. **[PENDENTE]** duração, acumulação e demais atributos.
 - **Atributos [GDD R10–R11]:** cinco atributos inspirados em SMT III (Força, Magia, Vitalidade, Agilidade, Sorte), escala base **1–100**; Agilidade = Velocidade do ATB (atributo único); HP máx derivado de Vitalidade + nível; MP máx de Magia + nível; nível sobe atributos. **[CÓDIGO]** hoje só existem HP, ataque e velocidade por personagem (valores fixos).
+- **[CONVERSA 2026-11-06] [D-347]** O HP e a barra atualizam **imediatamente** ao receber dano ou cura. O odômetro rolante (D-048) saiu do fluxo ativo e foi guardado em `scripts/legacy/rolling_hp_odometer.gd`, com teste em `tests/legacy/`; o toggle saiu do menu.
 
 ---
 
@@ -255,16 +256,20 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 ## 14. Exploração 2D e campanha (GDD; aprovados)
 
 ### 14.1 Mapa e movimento
+
+- **[D-278, D-313]** O overworld mantém a estrutura e a colisão originais e continua 2D; a paleta usa a arena 3D como referência. A D-313 relaja a restrição “somente paleta”: os tiles podem ser refeitos/melhorados para encaixar melhor entre si, e ficam autorizados poeira/partículas, tochas cintilando, NPC olhando para o jogador e sprites de Pokémon. Sombra sob as entidades **não** foi autorizada.
 - **[GDD R7-Q5, R8-Q3/Q4]** Mapas **gerados proceduralmente por exploração/andar**, com salas e corredores; **seed reutilizável** reproduz o mesmo layout (mesma seed + regras + versão do gerador); formas, posições e conexões algorítmicas.
 - **[GDD R9-Q2, R36-Q3]** Ao **revisitar um andar** na mesma exploração, o layout **não muda**; itens já coletados e eventos concluídos **mantêm o estado**; inimigos derrotados **continuam removidos** (R9-Q4). Sem respawn ao subir/descer escadas.
 - **[GDD R9-Q5, R23-Q1]** Movimento **contínuo e livre nas 4 direções cardeais**, sem diagonal direta.
 - **[GDD R32-Q4]** O mapa do andar é **revelado progressivamente**. **[CÓDIGO]** névoa de guerra com raio de visão 7,5 tiles; o explorado fica na memória e sobrevive às batalhas.
 - **[CÓDIGO]** Geração: 7–11 salas (4×4 a 9×7), 4–6 inimigos, 2–3 NPCs; tile de 48 px; o layout fica em cache no `GameState`.
+- **[D-314]** Aliados ativos seguem em **fila**, no **rastro exato** do protagonista, sem atravessar paredes/obstáculos; se travar, espera ou vai ao ponto livre mais próximo.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).
 - **[CÓDIGO]** Patrulha 42 px/s, perseguição 105 px/s; detecção por visão a 6,5 tiles (precisa de linha de visão), audição a 3 tiles, perde o rastro a 9 tiles; contato a 26 px; desiste após 4 s; raio de patrulha 4 tiles; **graça pós-batalha de 1,25 s**. Jogador 180 px/s.
 - **[GDD R9-Q4]** Inimigo derrotado é removido do andar nesta exploração.
+- **[D-310, D-315, D-321]** Substitui a detecção por visão atual: quatro níveis de ameaça (0 Medroso, 1 Fraco, 2 Valente, 3 Perigoso). A **soma dos níveis do grupo inimigo** (máx. 3 membros) é comparada com a **soma dos níveis dos membros vivos da equipe**; cada membro usa o próprio nível para ícone e tamanho. Inimigos podem andar **em grupo solto** (cada um calcula o próprio caminho, mas ficam próximos) ou sozinhos; a composição é aleatória; se o líder cai, o próximo vira líder. O nível de cada inimigo é **média da equipe + 1 a +4**. Distâncias: Fraco 3, Valente 6, Perigoso 9 tiles. Velocidades: Medroso 40, Fraco 70, Valente 110, Perigoso 150 px/s. Medroso foge a **3 tiles** e patrulha a **42 px/s**; tocado, inicia batalha normal. Faixas confirmadas: diferença percentual `(soma_inimiga - soma_equipe) / soma_equipe` com cortes **−0,40 / −0,10 / +0,30**. Tamanhos/ícones serão escolhidos após desenhos.
 
 ### 14.3 Dungeon, campanha e desfechos
 - **[GDD R23-Q2, R24-Q1]** Concluir uma dungeon = chegar ao **último andar e vencer o chefe**; avança-se de andar pela **escada/saída sem precisar matar todos**. Progressão entre andares **sequencial** (R34-Q3). Quantidade de andares **varia** entre expedições (R33-Q3). Chefe pode variar entre expedições (R34-Q4). Chefes: inimigos mais difíceis dentro das regras usuais, podem vir com apoio, máximo 3 inimigos ativos (R29-Q4, R30-Q3). **Missões/eventos secundários nunca impedem o acesso ao chefe** (R36-Q2).
@@ -276,6 +281,10 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[GDD R27-Q3, R28-Q4, R36-Q5]** Dungeons com **biomas mistos** que alteram inimigos/eventos/recompensas; cada dungeon tem espécies características. **[GDD R29-Q5]** Dificuldade cresce nos andares avançados e nas dungeons novas.
 - **[GDD R29-Q2, R30-Q2]** Eventos narrativos oferecem escolhas, com consequências **principalmente na expedição atual**. **[GDD R26-Q5, R33-Q4]** Salas secretas: opcionais, reveladas por pistas/mapas/NPCs/eventos.
 - **[GDD R30-Q5, R24-Q3, R25-Q2]** Recrutado entra na equipe ativa se houver vaga (máx. 3); senão vai para a **reserva**. Troca ativa↔reserva é **provisoriamente** permitida na exploração (um hub virá depois). **[GDD R26-Q1/Q2, R27-Q2]** O jogador **escolhe o protagonista** entre iniciais e **começa sozinho**; forma a equipe por recrutamento.
+- **[D-316]** A expedição tem **5 andares**; a escada do último andar inicia uma **nova expedição completa** (andar 1, nova seed, MP cheio, Natures novas; mantém equipe, itens e HP). O ponto de descanso ativa **ao pisar**, cura a **equipe ativa**, é de uso único e cada andar tem **2 pontos**, com **10% de chance** de um terceiro.
+- **[D-317]** O bioma é **sorteado por dungeon**; os 4 primeiros andares usam um bioma e o **5º andar usa outro bioma sorteado**, com o qual a nova dungeon continua. Não é necessário definir espécies por bioma agora e **não serão importados novos modelos**; usar os sprites overworld existentes.
+- **[D-318]** A F6 começa por **eventos**; a ordem dos demais conteúdos está pendente.
+- **[D-319]** A F3 mexe **só no overworld**; a batalha 3D continua com o Gible fixo.
 
 ### 14.4 Recrutamento
 - **[GDD R23-Q4, R24-Q2, R35-Q2]** Exige **interação voluntária explícita** (nunca automático por aproximação). Pokémon **especiais** exigem uma tarefa/evento antes (R32-Q5). Hostis normais seguem iniciando combate. Candidatos especiais são identificados no mapa (R26-Q2).
@@ -285,6 +294,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[GDD R11-Q4, R12-Q5, R13-Q4/Q5, R14-Q4]** Subir de nível: o **protagonista** recebe **1 ponto por nível** e **é obrigado a distribuí-lo** na hora; **aliados** crescem automaticamente por curvas da espécie, influenciadas por **Tactic e ações executadas**, e por Natures. Evolução de espécie: o jogador escolhe **quando** (R25-Q3).
 - **[GDD R27-Q4]** O nível/progressão é a fonte principal de novos Moves; mestres, HMs/TMs (**só para combate por enquanto**, R24-Q4) e outras fontes também (R23-Q5).
 - **[GDD R27-Q5, R28-Q1, R29-Q1]** Recompensas de batalha: **moedas, recursos, itens**; moedas compram itens/recursos de NPCs e lojas, que existem dentro das dungeons e fora delas. **[R33-Q5 REJEITADA]** recursos materiais genéricos/crafting **não estão definidos**.
+- **[D-323]** **simisear, simipour, throh, amoonguss, stunfisk e aromatisse** saem da lista usável do manifesto por não terem sprite overworld; continuam no histórico e nenhum asset é apagado. Contagem usável: **297**.
 
 ### 14.6 MP, HP e descanso
 - **[GDD R11-Q3, R12-Q1/Q2/Q3, R13-Q1/Q2/Q3, R14-Q1/Q2/Q3, R15–R17]** Existe **MP** separado: Moves mágicos/especiais gastam MP **além** de ATB/Burst; custo-base comum com exceções; MP máx = Magia + nível; MP e HP **persistem entre combates da mesma dungeon**; MP é restaurado ao máximo no **início de cada exploração** e nos **pontos de descanso** (que também recuperam HP, quantidade pendente — R32-Q2); MP descontado na ativação (R14-Q1).
@@ -293,6 +303,21 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 
 ### 14.7 Natures
 - **[GDD R14-Q5, R15-Q4/Q5, R16-Q4, R17-Q4, R18-Q4/Q5, R19-Q4/Q5, R20-Q4/Q5, R21-Q4/Q5, R22-Q4/Q5]** Natures modificam atributos-base (bônus e penalidades flexíveis; podem ser neutras), influenciam crescimento e tendências táticas. Sorteadas na geração de recrutáveis aleatórios, do protagonista (**de novo no início de cada exploração**, preservando os pontos distribuídos e a proporção de HP/MP, arredondando para baixo, mínimo de HP positivo) e de Pokémon de evento. Atributos finais ficam em **1–100**. A Tactic escolhida **prevalece** sobre Natures no comportamento da IA.
+
+### 14.8 Hub (D-324)
+- **[D-324] Direção aceita:** o hub é um lugar 2D jogável (não um menu), numa tela fixa sem interiores, com fachadas, praça e serviços em bancas/NPCs; começa como base compacta e cresce para vila por plots/NPCs. O modelo é o de **extração**: o hub é a base da campanha; a escada continua a expedição; extrair volta ao hub; o chefe abre a próxima dungeon. O visual usa a linguagem 2D do overworld, sprites existentes, sem modelos novos e sem sombra elíptica (D-313); o portão enquadra o bioma atual. **Pendente:** se o hub substitui a seleção de campanha ou é opcional; o conjunto de serviços da V1; economia/preços; armazém; estalagem/cura; save; protagonista; fila de aliados no hub; recrutas físicos; iluminação; planta/câmera; nome. Nada implementado.
+
+### 14.9 Assets 2D externos (D-325)
+- **[D-325] Autorizado:** usar assets 2D não-Pokémon das páginas de **Explorers of Time/Darkness** e **Explorers of Sky** do The Spriters Resource: **dungeons**, **backgrounds**, **sprites de itens** e **outros** (UI, murais, fundos de menu, céus, estátuas, props, fontes, mapa). **Pokémon do site ficam de fora por ora**; os sprites/retratos existentes no projeto continuam. A D-313 é relaxada só para esses assets não-Pokémon; a proibição de sombra elíptica continua. A batalha 3D e a D-319 não mudam; VFX novo segue D-308. **Pendente:** importação direta vs. referência; lista exata de "outras coisas"; créditos/proveniência; pastas. Nada importado.
+- **[D-326] Ordem e escala:** usar **Time/Darkness primeiro**, **Sky depois**; dungeons com **tilesets modulares** sobre a geração procedural, sem trocar por mapas completos; adotar **24 px por tile por ora**. Conversão proposta para preservar o comportamento em tiles: TILE 48→24, velocidade do jogador 180→90 px/s, zoom 1.5→3.0, colisões pela metade, névoa e dimensões do andar em tiles inalteradas. **Pendente:** escala visual dos sprites; primeira leva de assets; tilesets por bioma. Nada implementado.
+- **[D-328] 24 px no jogo inteiro + cena de teste:** o 24 px valia para a exploração 2D, a dungeon, o hub e os sistemas de mapa; o combate 3D não mudava. A cena isolada `scenes/hub_test.tscn` abre por **F10** e volta por **ESC**; usa a Treasure Town limpa, colisão básica e NPCs de teste, sem serviços. **Revertida por D-329:** o jogo voltou a 48 px; a cena do hub permanece, em 48 px.
+- **[D-329] Voltar para 48 px:** a conversão para 24 px foi cancelada porque a perda de qualidade foi imensa. `TILE` 24→48; jogador 90→180 px/s, colisão 7→14, câmera 3.0→1.5; NPC 14×14→28×28 e interação 18→36; inimigos 21/52,5→42/105 e contato 13→26; pickup 12→24; seguidores 100→200 e gap 24→48; `map_visuals` sem downscale; tochas/brasas/poeira/sombras de volta a 48 px. Os tilesets do PMD (~24 px) precisarão de escala 2× ou tratamento próprio.
+- **[D-330] Dungeon Tiles:** os 16 tilesets do Sky foram importados para `assets/pmd/dungeons/sky/raw/` e os atlas para `assets/pmd/dungeons/sky/atlas/`; o sheet do Time/Darkness está em `assets/pmd/dungeons/time_darkness/raw/` e `docs/referencias/` como referência. **Estado atual:** o atlas ativo é o **Sky Temporal Tower de 18 tiles** (Walls 3×3 + Ground 3×3), alinhado à grade real da folha: **pitch de 25 px** (1 px de linha ciano + 24×24 de arte), origem `(9, 163)`, recorte 24×24 e escala nearest para 48. O recorte antigo de 19×19 em `(+4,+3)` com pitch 24 deslocava 1 px por coluna e foi a causa dos resultados ruins. A geração procedural (GDD R7-Q5) continua; troca somente visual; nenhum VFX novo.
+- **[D-344] Câmera do dungeon em 2,3×:** a câmera da exploração 2D passa de **1,5×** para **2,0×** e depois para **2,3×** (`scripts/dungeon/player.gd`), para ficar mais perto dos personagens. Velocidade, suavização, limites e colisão não mudam; o teste do hub já estava em 2,0×; a câmera 3D de batalha não é afetada.
+- **[D-345] Pipeline de tilesets:** medir a grade real de cada folha (linhas ciano, pitch, origem, célula), gerar manifesto e perfil papel → índice, recortar a célula inteira, validar o atlas (dimensões, vazio, ciano/teal, costura, hash), gerar folha de contato e testar no laboratório do Godot antes de usar. O visual aprovado (Walls + Ground, 1 linha, 2,3×) não muda.
+- **[D-346] Terrain nativo e bioma por andar (Bloco 1):** o seletor usa os 16 perfis, mantém Temporal Tower nos andares 1–4, troca no 5º andar (`floor / 5`), não repete o passo anterior e tem fallback `temporal_tower`; o contador visual avança em `new_dungeon`; na derrota a expedição é encerrada e recomeça no andar 1 com nova seed/bioma (R23-Q3/R33-Q1, D-316/D-317). O terrain nativo de 8 bits foi implementado no laboratório, mas **não entrou no jogo**: a folha tem 9 peças reais de borda, não um blob 47; as extras são formas prontas. A auditoria do lab dá 27 side / 49 corner (Temporal) e 26 / 53 (demais), e o resultado ficou pior que o renderer aprovado. O `map_visuals.gd` do jogo mantém a máscara manual de 4 vizinhos (D-330). Para 0/0 é preciso decodificar as extras (Bloco 2). Câmera 2,3×, 48 px, combate e colisão não mudam.
+- **[D-347] Piso orgânico (Bloco 2):** `Ground Alt. 1` (C16 R1) e `Ground Alt. 2` (C19 R1) entram no atlas/perfil onde existirem. Só células de chão **interiores** (sem parede nos 4 lados) recebem variantes; bordas/cantos mantêm a máscara de 4 vizinhos. Distribuição determinística pelo `dungeon_seed`: 92% `ground_c`, 4% alt 1, 4% alt 2; as alts são decals de chão (flores/árvores/pedras), não piso seamless.
+- **[D-348] Parede de 1 tile:** fora do mapa conta como **aberto**, não parede (`_is_solid`); `wall_strip_h`/`wall_strip_v` são **sintetizadas** das 9 peças (bordas de `wall_t/b/l/r` sobre `wall_c`) e fecham os dois lados opostos sem as juntas das formas do frame; o tile de borda de um lado só é usado quando o outro lado continua em parede `#`. Atlas ativo com 22 tiles. O laboratório ganhou overlay de célula/índice/papel. Cantos usam os 4 cantos do 3×3; pontas de 3 lados ainda faltam na folha. Câmera 2,3×, 48 px, combate, movimento e colisão não mudam. O laboratório mostra o renderer manual com esse piso e alterna os 16 perfis; o terrain nativo do Bloco 1 sai do atlas ativo. Câmera 2,3×, 48 px, combate e colisão não mudam.
 
 ---
 
@@ -314,6 +339,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - Toda decisão nova do criador entra aqui **no mesmo dia**, com a etiqueta e, quando possível, a frase literal.
 - Toda mudança de código que altere uma regra da §3–§9 atualiza a tabela de conflitos da §12.
 - Antes de mexer em combate, ler as seções 3 a 9 e 12.
+- **D-320:** o criador autorizou commit + push **somente de documentação** nesta rodada; a `main` local está divergente de `origin/main` (ahead 11 / behind 56), então o push exige decisão sobre merge/rebase antes de acontecer.
 
 ---
 
@@ -1221,6 +1247,60 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 
 ---
 
+## 42. Decisão D-157 — Retorno do Hit Shake e Correção do Lançamento de K.O.
+
+- **Hit Shake nos Ataques (D-157):** Ataques que atingem o alvo disparam tremor direcional de câmera calibrado em escala menor que o K.O. final:
+  - Golpes comuns: trauma ~0.35, decaimento rápido (~0.12s), micro tremor seco e responsivo.
+  - Golpes pesados (Fraqueza, Crítico ou Poder >= 1.4): trauma ~0.55, micro FOV-kick de ~1.5°, decaimento ágil (~0.18s).
+  - K.O. final: preserva trauma 1.0, FOV-kick 4.5° e tremor épico estendido.
+- **Lançamento de K.O. Longe (D-157):**
+  - Distância ampliada para 28–36 metros (substituindo o antigo curso curto de 9m).
+  - Arco balístico com altura máxima de 7.0–9.5 metros com impulso explosivo inicial (curva ease-out).
+  - Rotação do modelo vinculada estritamente ao progresso de voo (`prog`), executando capotamento limpo de ~1.25 a 1.5 voltas ao longo do trajeto (eliminando o giro contínuo no mesmo ponto).
+  - Deslocamento direcionado para longe do atacante com leve abertura lateral.
+
+---
+
+## 43. Decisão D-158 — Efeitos Visuais Físicos de Buffs e Debuffs: Tamanho, Velocidade de Animação e Armadura
+
+- **Tamanho por ATK (+atk / -atk):** O modelo do personagem escala em $\pm 0.15$ por stack (+15% em +1, +30% em +2; -15% em -1, -30% em -2; 1.0 em 0). A transição utiliza tween suave (~0.35s) com leve amortecimento elástico. `_base_scale` do motor acompanha a nova escala para manter compatibilidade com hit-stops e ataques.
+- **Velocidade de Animação por SPD (+spd / -spd):** A velocidade de reprodução (`speed_scale`) das animações (idle e corrida de investida) varia em $\pm 0.15x$ por stack (1.15x em +1, 1.30x em +2; 0.85x em -1, 0.70x em -2; 1.0x em 0). Transição suave via tween.
+- **Armadura e Contorno por DEF (+def / -def):**
+  - `+def`: contorno anime engrossado em +35% por stack com brilho metálico/cristalino adicionado ao shader.
+  - `-def`: contorno anime adelgaçado em -35% por stack com aspecto fragilizado.
+- **Limpeza:** Ao expirar ou limpar buffs (`clear_buffs`), escala, velocidade e shader retornam suavemente aos valores nominais padrão.
+
+---
+
+## 44. Decisão D-159 — Limite de Buffs/Debuffs Ampliado para ±5, Acumulação Aditiva Unificada, Cálculo Fracionário e Teto Visual em 3 Stacks
+
+- **Limite de Stacks (±5):** O intervalo de estágios acumuláveis de buffs e debuffs de combate é expandido para o patamar de `-5` até `+5` (substituindo o antigo `-2` a `+2`), aplicado a Ataque (`atk_buff`), Defesa (`def_buff`) e Agilidade/Velocidade (`speed_buff`).
+- **Acumulação Aditiva Unificada:** Buffs e debuffs compartilham o mesmo registrador numérico e se anulam diretamente. Um combatente com `ATK -3` que recebe um buff de `ATK +1` passa para `ATK -2`. Tentativas de ultrapassar `+5` ou `-5` mantêm o valor travado no limite e geram mensagem informativa no log.
+- **Cálculo de Combate (Fórmula Relativa Fracionária):**
+  - Passo percentual padrão de 25% ($0.25$).
+  - **Ataque:** Para $s \ge 0$, $\text{mult} = 1.0 + s \times 0.25$; para $s < 0$, $\text{mult} = 1.0 / (1.0 + |s| \times 0.25)$.
+  - **Velocidade (ATB):** Para $s \ge 0$, $\text{mult} = 1.0 + s \times 0.25$; para $s < 0$, $\text{mult} = 1.0 / (1.0 + |s| \times 0.25)$.
+  - **Defesa:** Para $s \ge 0$, dano recebido é mitigado dividindo por $(1.0 + s \times 0.25)$ (em $+5$, recebe $\sim 44.4\%$ do dano, mitigando $55.6\%$); para $s < 0$, dano recebido é amplificado multiplicando por $(1.0 + |s| \times 0.25)$ (em $-5$, recebe $225\%$ do dano).
+- **Teto Visual em 3 Stacks (D-158):** A deformação física do modelo (escala de tamanho, aceleração de animação idle/corrida, largura de contorno anime e reflexos metálicos) é limitada estritamente ao patamar de $\pm 3$ stacks (clamped em `[-3, 3]`), de modo que stacks adicionais (+4 e +5, ou -4 e -5) atuam na matemática de combate sem distorcer o modelo além do limite estético.
+- **Feedback Visual (Popups e HUD):** O popup 2D flutuante (`SmtStageVfx`) indica o delta pontual aplicado (ex: `↗ ATK +1`), enquanto as tags e badges no HUD exibem o saldo consolidado acumulado (ex: `ATK -2`).
+
+---
+
+## 45. Decisões D-160 a D-164 — Correções de combate
+
+- **D-160:** o inimigo derrotado é lançado sempre para longe de onde os jogadores estão, qualquer que seja o golpe. Substitui D-079 para inimigos.
+- **D-161:** o líder pode escolher um Move durante a pausa de status e durante a própria ação. Há uma vaga; escolher outro substitui. O custo é pago na execução; sem ATB nessa hora, o Move é descartado. O Move começa quando o golpe atual termina tudo, incluindo o pulo de volta; na pausa de status, espera a pausa acabar.
+- **D-162:** a câmera lenta de decisão dura 2 s no Fight e 3 s em Itens.
+- **D-163:** o clipe de wind-up repete até o fim do preparo; se o preparo for cancelado, o personagem volta ao idle.
+- **D-164:** todo Evade manual nos últimos 0,22 s é perfeito e dá contra-ataque sem preparo, inclusive parado. O teleporte continua só no próprio trajeto.
+- **D-165:** a velocidade de animação por SPD vale para todos os clipes, não só idle e corrida.
+- **D-166:** no K.O., o inimigo encolhe durante o voo e some com faíscas, sem queda ao chão nem explosão de fumaça.
+- **D-167:** no limite de ±5, nenhum efeito ou popup de alteração aparece e o log avisa; o bônus do Taunt não passa de +5; o `-def` mostra rachaduras até -3; os sobreviventes voltam ao visual normal ao fim da batalha.
+- **D-168:** a IA escolhe primeiro o alvo (aleatório, respeitando engajamento) e depois o Move por nota situacional, com sorteio entre os melhores e penalidade por repetição. Quem reage com Esquivar guarda ATB para o Evade. No próprio trajeto, a IA só desvia na janela perfeita. Pancham começa com Habilidades e Esquivar.
+- **D-169:** o tempo-base de corrida de Karate Chop e Dragon Claw é 0,45 s.
+
+---
+
 ## 69. Decisões D-269 a D-273 — atributos sem escala 1–100 e conversão dos valores originais
 
 > Renumerado em 2026-11-05 (antes D-192 a D-196, seção 49), por escolha do criador, para não colidir com as Rodadas 68–82 do GitHub (D-192 a D-268, seções 49–68). O Guard (D-272) tem regras completas em `docs/decisoes/D-272-guard-escudo-de-1-atb.md`.
@@ -1231,3 +1311,26 @@ Exemplos baseados nas escolhas da Rodada 61. A fórmula do **crítico** continua
 - **Natures adiadas (2026-11-04):** o criador mandou deixar as Natures para implementar outra hora, por precisarem de mais planejamento (D-271).
 - **D-272 (Guard):** ação de 1 ATB (Burst não paga), dura 2 s, sem cancelar; impede outras ações e pausa o ATB de quem a faz; reduz o dano do contato (arredondando para cima) e termina; o recuo do alvo ganha +0,30 s globalmente, menos quem está em Guard; Brick Break quebra o Guard, causa dano normal e dá 1 ATB; Mold Break é habilidade futura.
 - **D-273:** a barreira em cúpula hexagonal não foi descartada: fica guardada (`fx_barrier.gd`) para um eventual Move Protect; o Guard usa o escudo (D-272).
+
+## Protótipo HTML de VFX — D-331
+Correções e acabamento autorizados no HTML de oito Moves: Quarks.js real, shaders, detalhe moderado, independência dos participantes (D-235) e relógio único (D-019). Os valores demonstrativos não alteram as regras do combate Godot.
+
+## Decisões D-279 a D-281 — choque de corridas, perseguição do visual e espera antes do retorno (2026-11-05)
+- **D-279 (choque):** quando duas corridas se cruzam (inclusive alvos diferentes), os dois se chocam e dão um pulinho para trás (mesmo salto do retorno de cada ataque). Se correm um no outro, os golpes saem ao mesmo tempo do ponto do pulinho, aproximando-se lentamente até 2,6 un se ficarem distantes; cada Move usa sua antecipação e seu tempo de acerto e o mais rápido interrompe o outro (regra de interrupção existente). Alvos diferentes: os dois cancelam a corrida e voltam à origem. Em aberto: distância e eixo do choque, velocidade da aproximação, custo do ataque cancelado, 3+ corredores, golpes no mesmo quadro.
+- **D-280 (perseguição):** o atacante persegue o ponto onde o modelo do alvo está desenhado (desvio, recuo, pulo de volta); a posição lógica do alvo não muda (D-045, D-019). No STRIKE a trajetória fica fixa e o contato é corrigido só no impacto (restaura D-044/D-054; o código atual contradiz). Causa do arrasto "colado": `AttackMotion._track` no STRIKE.
+- **D-281 (retorno):** depois do golpe o atacante espera 0,7 s no alvo (total, no lugar dos 0,2 s) antes do pulo de volta, apenas em Tackle, Brick Break, Dragon Claw, Hassou Tobi e Titanomachia (melee com wind-up de 1,5 s), por `move_id`.
+- **D-282 (estado de prisão):** quem está no idle pós-golpe de um Move corpo a corpo não pula de volta enquanto outro ataque corpo a corpo já estiver na fase de golpe contra ele; o pulo fica suspenso (não é um idle maior). Solta no impacto, em desvio, Guard, interrupção ou cancelamento. Evade e Guard manuais são permitidos durante a prisão. Projéteis não entram.
+- **D-283 (Evade):** o Evade manual só funciona nos últimos 0,25 s do golpe e é sempre perfeito; antes da janela o botão não tem efeito; não existe Evade "cedo". A IA desvia dentro da janela. Substitui os 0,22 s de D-164/D-075 e deixa sem uso os ramos de desvio não perfeito (D-029, D-066).
+- **D-284 (contra-ataque):** o golpe depois de um desvio perfeito tem wind-up de 0,3 s, independente do Move; Moves de status continuam instantâneos.
+- **D-285 (IA e Guard):** a IA sorteia o Guard na declaração do ataque, mas só o levanta quando faltam 0,8–1,3 s para o impacto.
+- **D-286 (contato):** se o alvo sai do lugar durante o golpe do atacante, ele o alcança deslizando a no máximo 45 u/s (só se o contato se afastou mais de 1 un); suaviza D-054.
+
+### Atelier HTML — D-333 e D-334
+Para o HTML dos oito Moves, o criador confirmou a entrega com Quarks.js como exceção aos requisitos de Motion Composer e batalha Godot. Cada efeito tem tamanho fixo em unidades do mundo; origem e contato seguem os modelos reais. Não modifica VFX nem regras do jogo Godot.
+
+## Decisão D-343 — Heal Gain: opção 2, cruzes verdes e lado direito limpo (2026-11-06)
+- O número de cura flutuante usa a **opção 2 (Persona Kinetic Cross)** do protótipo HTML: Kanit Black Italic, dígitos `#B7FFC9`, cruz assimétrica `#A8FFC4`, sombra sólida `#08150E` e barra inferior tática.
+- O texto exibido **não muda**: a cruz é o sinal de mais e os dígitos são o valor real da cura; sem `+` extra.
+- Junto do número sobem **cruzes verdes brilhantes** por **flipbook** (4×4) sobre o **Motion Composer**.
+- O **lado direito do HUD fica limpo**: a notificação/log à direita não é exibida.
+- O número é HUD ancorado no alvo real; as cruzes são VFX de tamanho fixo e independentes de personagem/time/lado (D-235). O efeito é visual e segue o sinal `healed` (D-019).

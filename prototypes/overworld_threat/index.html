@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ameaça — sprites reais no overworld</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #070c10; }
+  body { display: grid; place-items: center; font-family: Consolas, "Courier New", monospace; color: #d8e6ee; }
+  #stage {
+    position: relative;
+    width: min(100vw, 177.78vh);
+    aspect-ratio: 16 / 9;
+    max-height: 100vh;
+    overflow: hidden;
+    background: #0d1419;
+    box-shadow: 0 0 0 1px #1b2a33;
+  }
+  #stage canvas { display: block; width: 100%; height: 100%; }
+  #hud { position: absolute; inset: 0; pointer-events: none; }
+  .badge {
+    position: absolute; left: 12px; top: 10px;
+    background: rgba(7,12,16,.82); border: 1px solid #2a3f4b; border-radius: 6px;
+    padding: 6px 9px; font-size: 12px; letter-spacing: .2px;
+  }
+  .badge b { color: #f2b35c; font-weight: 700; }
+  .panel {
+    position: absolute; right: 12px; top: 12px; width: 252px;
+    background: rgba(8,15,20,.9); border: 1px solid #2a3f4b; border-radius: 8px;
+    padding: 10px 11px 12px; pointer-events: auto;
+    box-shadow: 0 8px 28px rgba(0,0,0,.45);
+  }
+  .panel h1 { font-size: 12px; margin: 0 0 8px; color: #f2b35c; font-weight: 700; letter-spacing: .4px; }
+  .row { display: flex; gap: 5px; margin: 6px 0 10px; }
+  .seg {
+    flex: 1; padding: 5px 0; font: 12px Consolas, monospace; color: #9fb6c2;
+    background: #101c24; border: 1px solid #2a3f4b; border-radius: 4px; cursor: pointer;
+  }
+  .seg.active { color: #071018; background: #f2b35c; border-color: #f2b35c; font-weight: 700; }
+  label { display: block; font-size: 11px; color: #87a0af; margin: 8px 0 3px; }
+  input[type=range] { width: 100%; accent-color: #f2b35c; }
+  select {
+    width: 100%; margin-top: 2px; background: #101c24; color: #d8e6ee;
+    border: 1px solid #2a3f4b; border-radius: 4px; font: 12px Consolas, monospace; padding: 4px;
+  }
+  .check { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #b7c9d3; margin-top: 8px; }
+  .check input { accent-color: #f2b35c; }
+  .hint { font-size: 10px; line-height: 1.4; color: #6f8794; margin-top: 9px; }
+  #legend {
+    position: absolute; left: 12px; bottom: 10px; right: 276px;
+    background: rgba(7,12,16,.84); border: 1px solid #243842; border-radius: 6px;
+    padding: 7px 10px; font-size: 11px; line-height: 1.6; color: #b7c9d3;
+  }
+  #legend b { color: #f2b35c; }
+  #legend.hidden { display: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="hud">
+    <div class="badge"><b>AMEAÇA</b> · sprites reais do overworld · <span id="engine">2 frames</span></div>
+    <div class="panel">
+      <h1>VISÃO REAL · ZOOM 1,5×</h1>
+      <div class="row" id="options">
+        <button class="seg active" data-option="0">A · limpo</button>
+        <button class="seg" data-option="1">B · medalha</button>
+        <button class="seg" data-option="2">C · anel</button>
+      </div>
+      <label>Espécie</label>
+      <select id="species">
+        <option value="pancham">Pancham</option>
+        <option value="abra">Abra</option>
+        <option value="gible">Gible</option>
+        <option value="pikachu">Pikachu</option>
+      </select>
+      <label>Ícone <span id="iconVal">32 px</span></label>
+      <input id="iconSize" type="range" min="20" max="48" value="32">
+      <label>Escala da ameaça <span id="sizeVal">1,00×</span></label>
+      <input id="sizeScale" type="range" min="0.7" max="1.4" step="0.01" value="1">
+      <label>Velocidade da animação <span id="animVal">1,0×</span></label>
+      <input id="anim" type="range" min="0" max="2" step="0.05" value="1">
+      <div class="check"><input id="animateSprites" type="checkbox" checked><label for="animateSprites" style="margin:0">Animar sprites (2 frames)</label></div>
+      <div class="check"><input id="showLegend" type="checkbox" checked><label for="showLegend" style="margin:0">Mostrar legenda</label></div>
+      <div class="check"><input id="pause" type="checkbox"><label for="pause" style="margin:0">Pausar</label></div>
+      <div class="hint">Sprites reais do overworld, 2 frames, andando de um lado para o outro. Sem partículas. Só o ícone de reticências foi mantido; os outros aguardam novos sprites.</div>
+    </div>
+    <div id="legend">
+      <b>1 Fraco</b> (reticências animadas) · os outros ícones foram removidos; aguardando novos sprites<br>
+      tamanhos 0,78 / 1,00 / 1,22 / 1,45 · a legenda não aparece no jogo
+    </div>
+  </div>
+</div>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.169.0/build/three.module.js"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const stage = document.getElementById('stage');
+const W = 1280, H = 720;
+const BASE = 32 * 1.2 * 1.5;
+const SIZES = [0.78, 1.00, 1.22, 1.45];
+const XS = [430, 560, 700, 840];
+const GROUND = 225;
+const COLORS = [
+  [0.435, 0.780, 0.909],
+  [0.604, 0.655, 0.690],
+  [0.949, 0.702, 0.361],
+  [0.937, 0.353, 0.353]
+];
+const SPECIES = ['pancham', 'abra', 'gible', 'pikachu'];
+
+const state = {
+  option: 0,
+  iconSize: 32,
+  sizeScale: 1,
+  anim: 1,
+  species: 'pancham',
+  animateSprites: true,
+  paused: false
+};
+
+const wx = (sx) => sx - W / 2;
+const wy = (sy) => H / 2 - sy;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(W, H, false);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+stage.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d1419);
+const camera = new THREE.OrthographicCamera(-W / 2, W / 2, H / 2, -H / 2, 0.1, 100);
+camera.position.set(0, 0, 10);
+
+const loader = new THREE.TextureLoader();
+const tex = (path) => {
+  const t = loader.load(path);
+  t.magFilter = THREE.NearestFilter;
+  t.minFilter = THREE.NearestFilter;
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+};
+
+const bg = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex('bg.png'), depthWrite: false }));
+bg.scale.set(W, H, 1);
+bg.position.set(0, 0, 0);
+scene.add(bg);
+
+const speciesTex = {};
+for (const id of SPECIES) {
+  speciesTex[id] = {
+    down: [tex(`${id}_down.png`), tex(`${id}_down2.png`)],
+    left: [tex(`${id}_left.png`), tex(`${id}_left2.png`)],
+    right: [tex(`${id}_right.png`), tex(`${id}_right2.png`)]
+  };
+}
+
+function ellipsisTexture(count) {
+  const size = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
+  g.translate(size / 2, size / 2);
+  g.scale(size / 16, size / 16);
+  g.translate(-8, -8);
+  g.fillStyle = '#9aa7b0';
+  g.strokeStyle = '#3a4650';
+  g.lineWidth = 0.7;
+  const xs = [3, 7, 11];
+  for (let i = 0; i < count; i++) {
+    g.beginPath();
+    g.roundRect(xs[i], 7, 2.4, 2.4, 0.6);
+    g.fill();
+    g.stroke();
+  }
+  return new THREE.CanvasTexture(c);
+}
+
+function medalTexture(level) {
+  const size = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
+  const col = `rgb(${COLORS[level][0] * 255},${COLORS[level][1] * 255},${COLORS[level][2] * 255})`;
+  g.strokeStyle = col; g.shadowColor = col; g.shadowBlur = 18;
+  g.lineWidth = 8; g.beginPath(); g.arc(64, 64, 46, 0, Math.PI * 2); g.stroke();
+  g.lineWidth = 2; g.globalAlpha = 0.65;
+  g.beginPath(); g.arc(64, 64, 54, 0, Math.PI * 2); g.stroke();
+  return new THREE.CanvasTexture(c);
+}
+
+function ringTexture(level) {
+  const w = 192, h = 96;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  const col = `rgb(${COLORS[level][0] * 255},${COLORS[level][1] * 255},${COLORS[level][2] * 255})`;
+  g.strokeStyle = col; g.shadowColor = col; g.shadowBlur = 16;
+  g.lineWidth = 5; g.beginPath(); g.ellipse(w / 2, h / 2, w * 0.42, h * 0.32, 0, 0, Math.PI * 2); g.stroke();
+  g.lineWidth = 2; g.globalAlpha = 0.55;
+  g.beginPath(); g.ellipse(w / 2, h / 2, w * 0.48, h * 0.4, 0, 0, Math.PI * 2); g.stroke();
+  return new THREE.CanvasTexture(c);
+}
+
+const ellipsisTex = [ellipsisTexture(1), ellipsisTexture(2), ellipsisTexture(3), ellipsisTexture(3)];
+
+const enemies = [];
+for (let level = 0; level < 4; level++) {
+  const body = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: speciesTex[state.species].down[0], transparent: true, depthWrite: false, alphaTest: 0.02
+  }));
+  body.position.set(wx(XS[level]), wy(GROUND), 1);
+  scene.add(body);
+
+  const hasIcon = level === 1;
+  const icon = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: hasIcon ? ellipsisTex[0] : null, transparent: true, depthWrite: false
+  }));
+  icon.visible = hasIcon;
+  icon.position.set(wx(XS[level]), wy(GROUND), 2);
+  scene.add(icon);
+
+  const medal = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: medalTexture(level), transparent: true, depthWrite: false,
+    blending: THREE.AdditiveBlending
+  }));
+  medal.visible = false;
+  medal.position.z = 1.8;
+  scene.add(medal);
+
+  const ring = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: ringTexture(level), transparent: true, depthWrite: false,
+    blending: THREE.AdditiveBlending
+  }));
+  ring.visible = false;
+  ring.position.z = 0.9;
+  scene.add(ring);
+
+  enemies.push({
+    level, body, icon, medal, ring,
+    x: XS[level],
+    dir: level % 2 === 0 ? 1 : -1,
+    speed: 16 + level * 4
+  });
+}
+
+function setSpecies(id) {
+  state.species = id;
+  for (const e of enemies) {
+    const map = speciesTex[id].down[0];
+    e.body.material.map = map;
+    e.body.material.needsUpdate = true;
+  }
+}
+
+const optionButtons = [...document.querySelectorAll('#options button')];
+function setOption(option) {
+  state.option = option;
+  optionButtons.forEach((b) => b.classList.toggle('active', Number(b.dataset.option) === option));
+  for (const e of enemies) {
+    e.medal.visible = option === 1 && e.level === 1;
+    e.ring.visible = option === 2 && e.level === 1;
+  }
+}
+optionButtons.forEach((b) => b.addEventListener('click', () => setOption(Number(b.dataset.option))));
+
+document.getElementById('species').addEventListener('change', (ev) => setSpecies(ev.target.value));
+
+const iconSize = document.getElementById('iconSize');
+const iconVal = document.getElementById('iconVal');
+iconSize.addEventListener('input', () => {
+  state.iconSize = Number(iconSize.value);
+  iconVal.textContent = `${state.iconSize} px`;
+});
+
+const sizeScale = document.getElementById('sizeScale');
+const sizeVal = document.getElementById('sizeVal');
+sizeScale.addEventListener('input', () => {
+  state.sizeScale = Number(sizeScale.value);
+  sizeVal.textContent = `${state.sizeScale.toFixed(2).replace('.', ',')}×`;
+});
+
+const anim = document.getElementById('anim');
+const animVal = document.getElementById('animVal');
+anim.addEventListener('input', () => {
+  state.anim = Number(anim.value);
+  animVal.textContent = `${state.anim.toFixed(1).replace('.', ',')}×`;
+});
+
+const animateSprites = document.getElementById('animateSprites');
+animateSprites.addEventListener('change', () => { state.animateSprites = animateSprites.checked; });
+
+const showLegend = document.getElementById('showLegend');
+showLegend.addEventListener('change', () => {
+  document.getElementById('legend').classList.toggle('hidden', !showLegend.checked);
+});
+
+const pause = document.getElementById('pause');
+pause.addEventListener('change', () => { state.paused = pause.checked; });
+
+const clock = new THREE.Clock();
+let t = 0;
+
+function updateEnemies(dt) {
+  t += dt * state.anim;
+  for (const e of enemies) {
+    const level = e.level;
+    const size = Math.min(150, BASE * SIZES[level] * state.sizeScale);
+    let shake = 0, bob = 0, pulse = 1;
+    if (level === 0) {
+      shake = Math.sin(t * 24) * 1.1 * state.anim;
+      bob = Math.sin(t * 6) * 1.0 * state.anim;
+    } else if (level === 1) {
+      pulse = 1 + 0.008 * Math.sin(t * 4) * state.anim;
+      bob = Math.sin(t * 4) * 0.6 * state.anim;
+    } else if (level === 2) {
+      bob = Math.sin(t * 5) * 1.2 * state.anim;
+    } else {
+      shake = Math.sin(t * 30) * 1.4 * state.anim;
+      pulse = 1 + 0.018 * Math.sin(t * 8) * state.anim;
+      bob = Math.sin(t * 10) * 0.8 * state.anim;
+    }
+
+    let dirName = 'down';
+    let frame = 0;
+    if (state.animateSprites) {
+      e.x += e.dir * e.speed * dt * state.anim;
+      const min = XS[level] - 26;
+      const max = XS[level] + 26;
+      if (e.x < min) { e.x = min; e.dir = 1; }
+      if (e.x > max) { e.x = max; e.dir = -1; }
+      dirName = e.dir > 0 ? 'right' : 'left';
+      frame = Math.floor(t / 0.18) % 2;
+    } else {
+      e.x = XS[level];
+    }
+
+    const map = speciesTex[state.species][dirName][frame];
+    if (e.body.material.map !== map) {
+      e.body.material.map = map;
+      e.body.material.needsUpdate = true;
+    }
+
+    const s = size * pulse;
+    e.body.scale.set(s, s, 1);
+    e.body.position.x = wx(e.x) + shake;
+    e.body.position.y = wy(GROUND) + s / 2 + bob;
+
+    if (level === 1) {
+      const iconSizeNow = state.iconSize;
+      const iconBob = Math.sin(t * 4) * 0.6 * state.anim;
+      const iconFrame = state.animateSprites ? [0, 1, 2, 2][Math.floor(t / 0.35) % 4] : 0;
+      const iconMap = ellipsisTex[iconFrame];
+      if (e.icon.material.map !== iconMap) {
+        e.icon.material.map = iconMap;
+        e.icon.material.needsUpdate = true;
+      }
+      const headWorld = wy(GROUND - 0.71875 * s);
+      e.icon.scale.set(iconSizeNow, iconSizeNow, 1);
+      e.icon.position.set(
+        wx(e.x) + shake * 0.5,
+        headWorld + 4 + iconSizeNow / 2 + iconBob,
+        2
+      );
+      if (e.medal.visible) {
+        const mr = iconSizeNow * 1.7;
+        e.medal.scale.set(mr, mr, 1);
+        e.medal.position.copy(e.icon.position);
+        e.medal.position.z = 1.8;
+        e.medal.material.opacity = 0.78 + 0.16 * Math.sin(t * 6 + level);
+      }
+      if (e.ring.visible) {
+        const rw = s * 1.15;
+        const rh = s * 0.42;
+        e.ring.scale.set(rw, rh, 1);
+        e.ring.position.set(wx(e.x), wy(GROUND) - 5, 0.9);
+        e.ring.material.opacity = 0.65 + 0.25 * Math.sin(t * 5 + level);
+      }
+    }
+  }
+}
+
+function tick() {
+  requestAnimationFrame(tick);
+  const raw = Math.min(clock.getDelta(), 0.05);
+  const dt = state.paused ? 0 : raw;
+  updateEnemies(dt);
+  scene.updateMatrixWorld(true);
+  renderer.render(scene, camera);
+}
+
+tick();
+</script>
+</body>
+</html>

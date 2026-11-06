@@ -3,8 +3,8 @@ extends Control
 ## Out-of-combat team status ("Vitrine" prototype): roster on the left, the
 ## selected character's art in the middle, combat panel on the right and the
 ## equipped moves along the bottom. Reads live data from GameState.party; any
-## value the game does not track yet (level, EXP, MP, DEF, passive ability)
-## is shown as N/D instead of an invented number.
+## value the game does not track yet (MP, DEF, passive ability) is shown as N/D
+## instead of an invented number.
 ##
 ## Up/Down: character. Left/Right: move. Z: details. X: close.
 
@@ -191,7 +191,7 @@ func _draw_roster() -> void:
 		draw_rect(face, Color(0.137, 0.25, 0.34), false, 2.0)
 		var tx := r.position.x + 70
 		_text(title, Vector2(tx, r.position.y + 28), u.name.to_upper(), 20, Color("0a1a27"))
-		_text_right(body, r.end.x - 14, r.position.y + 26, "NV. —", 10, Color("536f80"))
+		_text_right(body, r.end.x - 14, r.position.y + 26, "NV. %d" % u.level, 10, Color("536f80"))
 		_stat_bar(Vector2(tx, r.position.y + 38), 128.0, "HP", float(u.hp) / u.max_hp, CORAL, "%d/%d" % [u.hp, u.max_hp], r.end.x - 14)
 		_stat_bar(Vector2(tx, r.position.y + 52), 128.0, "MP", 0.0, Color("5f88f5"), "N/D", r.end.x - 14)
 
@@ -263,13 +263,13 @@ func _draw_panel(c: Combatant) -> void:
 	draw_rect(Rect2(x, y, 3, 16), CORAL)
 	_text(body, Vector2(x + 10, y + 12), "PROTAGONISTA" if is_leader else "ALIADO", 9, LIME)
 	_text(title, Vector2(x, y + 62), c.name.to_upper(), 50, PAPER)
-	# Level / EXP (not tracked yet).
+	# Level / EXP (read from Combatant; XP/level-up rules are not active yet).
 	var lv := Rect2(x, y + 82, w, 56)
 	draw_rect(lv, Color(0.035, 0.12, 0.17, 0.86))
 	draw_rect(lv, Color("4f7387"), false, 1.0)
 	_text(body, Vector2(x + 14, y + 107), "NÍVEL", 11, PAPER)
-	_text(title, Vector2(x + 66, y + 112), "—", 28, Color(LIME, 0.6))
-	_text_right(body, lv.end.x - 14, y + 105, "EXP  N/D", 10, Color("9ec0cc"))
+	_text(title, Vector2(x + 66, y + 112), "%d" % c.level, 28, Color(LIME, 0.6))
+	_text_right(body, lv.end.x - 14, y + 105, "EXP  %d" % c.xp, 10, Color("9ec0cc"))
 	draw_rect(Rect2(x + 14, y + 120, w - 28, 8), Color("355060"))
 	# Combat bars + stats.
 	var sy := y + 152

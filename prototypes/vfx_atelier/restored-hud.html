@@ -1,0 +1,184 @@
+  <!-- ===================================================================== -->
+  <!-- FLOATING COMBAT POPUPS & 3D ENEMY HUDS LAYER                          -->
+  <!-- ===================================================================== -->
+  <div id="popups-container" class="fixed inset-0 pointer-events-none z-40 overflow-hidden"></div>
+
+  <!-- Skill Cast Announcement Banner (Top-Left Center) -->
+  <div id="skill-cast-banner" class="hidden fixed top-16 left-6 z-40 pointer-events-none nocturne-skew"></div>
+
+  <!-- Splitter Flames Cast / Vortex Telemetry Widget -->
+  <div id="cast-timer-widget" class="hidden fixed top-32 left-6 z-40 pointer-events-none nocturne-skew bg-[#120b0a]/95 border-l-4 border-[#ff5722] border-t border-r border-b border-orange-500/40 px-4 py-2 shadow-2xl">
+    <div class="nocturne-unskew">
+      <div id="cast-stage-label" class="text-[9px] font-mono-tech text-orange-400 font-bold uppercase tracking-widest">WINDUP • 2 ESFERAS DE FOGO</div>
+      <div id="cast-time-numeric" class="font-display font-black text-base text-white">0.00s / 0.70s</div>
+      <div class="w-44 h-1.5 bg-slate-900 mt-1 overflow-hidden border border-orange-500/30">
+        <div id="cast-progress-fill" class="h-full bg-gradient-to-r from-orange-500 to-yellow-300 w-0"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Telemetry & Camera Director Header -->
+  <div class="fixed top-3 inset-x-4 z-30 flex items-start justify-between pointer-events-none">
+    <!-- Left Telemetry Readout -->
+    <div class="nocturne-skew bg-[#071521]/90 border-l-4 border-[#2de2e6] border-t border-r border-b border-cyan-500/30 px-3.5 py-1.5 shadow-lg pointer-events-auto">
+      <div class="nocturne-unskew flex items-center gap-3">
+        <div>
+          <div class="text-[9px] font-mono-tech text-cyan-300/80 uppercase tracking-widest">CRAWLMON • QUARKS VFX ATELIER</div>
+          <div id="particle-count-readout" class="text-[11px] font-mono-tech font-bold text-[#d8ff00]">0 PTCL • 0 EMITTERS</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Camera Director (100% Static Presets) -->
+    <div class="flex flex-col items-end gap-1 pointer-events-auto">
+      <div class="flex items-center gap-3 text-[9px] font-mono-tech tracking-widest uppercase px-1">
+        <span class="text-slate-300 font-bold">DIREÇÃO DE CÂMERA</span>
+        <span class="text-[#d8ff00] font-extrabold">TRAVADA (ESTÁTICA)</span>
+      </div>
+      <div class="flex items-center gap-1.5 nocturne-skew">
+        <button data-cam="cinema" class="cam-btn active px-3.5 py-1.5 text-center min-w-[74px]">
+          <div class="nocturne-unskew">
+            <div class="font-display font-black text-sm leading-none">01</div>
+            <div class="text-[8px] font-bold tracking-wider uppercase mt-0.5">CINEMA</div>
+          </div>
+        </button>
+        <button data-cam="tatica" class="cam-btn px-3.5 py-1.5 text-center min-w-[74px]">
+          <div class="nocturne-unskew">
+            <div class="font-display font-black text-sm leading-none">02</div>
+            <div class="text-[8px] font-bold tracking-wider uppercase mt-0.5">TÁTICA</div>
+          </div>
+        </button>
+        <button data-cam="impacto" class="cam-btn px-3.5 py-1.5 text-center min-w-[74px]">
+          <div class="nocturne-unskew">
+            <div class="font-display font-black text-sm leading-none">03</div>
+            <div class="text-[8px] font-bold tracking-wider uppercase mt-0.5">IMPACTO</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3D Projected Floating Enemy HUDs (Gible Main [0], Alpha [-2], Beta [+2]) -->
+  <div id="enemy-hud-0" class="fixed z-20 -translate-x-1/2 -translate-y-full pointer-events-none flex flex-col items-center">
+    <div class="hud-card-enemy nocturne-skew px-3.5 py-1.5 min-w-[168px]">
+      <div class="nocturne-unskew">
+        <div class="flex items-center justify-between gap-2 mb-1">
+          <span class="font-display font-black text-xs tracking-wider text-[#ff5733]" data-name>GIBLE</span>
+          <div class="flex items-center gap-1">
+            <span id="enemy-0-freeze-pill" class="hidden px-1.5 py-0.2 bg-cyan-500/30 border border-cyan-300 text-[8px] font-mono-tech font-bold text-cyan-100">❄️ FREEZE</span>
+            <span id="enemy-0-acc-pill" class="hidden px-1.5 py-0.2 bg-yellow-500/30 border border-yellow-300 text-[8px] font-mono-tech font-bold text-yellow-100">ACC ↓</span>
+            <span id="enemy-0-burn-pill" class="hidden px-1.5 py-0.2 bg-orange-600/40 border border-orange-400 text-[8px] font-mono-tech font-bold text-orange-100">
+              <span id="enemy-0-burn-text">🔥 BURN 4.0s</span>
+            </span>
+          </div>
+        </div>
+        <div class="w-full h-2 bg-slate-950/90 relative overflow-hidden border border-slate-700/80">
+          <div id="enemy-0-hp-ghost" class="hp-ghost-fill absolute inset-y-0 left-0 bg-amber-300/80 w-full"></div>
+          <div id="enemy-0-hp-bar" class="hp-fill-smooth relative h-full bg-gradient-to-r from-[#ff4d4d] to-[#ff7676] w-full"></div>
+        </div>
+        <div class="flex items-center justify-between mt-1">
+          <span id="enemy-0-hp-text" class="font-mono-tech font-bold text-[10px] text-slate-200">HP 60 / 60</span>
+          <span class="px-1 bg-slate-800 text-[8px] font-mono-tech text-slate-400 border border-slate-700">B</span>
+        </div>
+      </div>
+    </div>
+    <div class="enemy-reticle-diamond mt-2"></div>
+  </div>
+
+  <!-- Extra Enemy Clone Alpha (Slot -2) -->
+  <div id="enemy-hud-1" style="display:none;" class="fixed z-20 -translate-x-1/2 -translate-y-full pointer-events-none flex-col items-center">
+    <div class="hud-card-enemy nocturne-skew px-3 py-1 min-w-[144px]">
+      <div class="nocturne-unskew">
+        <div class="flex items-center justify-between gap-1 mb-0.5">
+          <span class="font-display font-black text-[11px] tracking-wider text-rose-400" data-name>GIBLE α [-2]</span>
+          <span id="enemy-1-ko-pill" class="hidden px-1 bg-rose-700 text-[8px] font-mono-tech font-black text-white">K.O.</span>
+          <span id="enemy-1-burn-pill" class="hidden px-1 bg-orange-600/40 border border-orange-400 text-[8px] font-mono-tech font-bold text-orange-100">
+            <span id="enemy-1-burn-text">🔥 BURN</span>
+          </span>
+        </div>
+        <div class="w-full h-1.5 bg-slate-950 relative overflow-hidden border border-slate-700">
+          <div id="enemy-1-hp-bar" class="hp-fill-smooth h-full bg-[#ff4d4d] w-full"></div>
+        </div>
+        <div id="enemy-1-hp-text" class="font-mono-tech font-bold text-[9px] text-slate-300 mt-0.5">HP 34 / 34</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Extra Enemy Clone Beta (Slot +2) -->
+  <div id="enemy-hud-2" style="display:none;" class="fixed z-20 -translate-x-1/2 -translate-y-full pointer-events-none flex-col items-center">
+    <div class="hud-card-enemy nocturne-skew px-3 py-1 min-w-[144px]">
+      <div class="nocturne-unskew">
+        <div class="flex items-center justify-between gap-1 mb-0.5">
+          <span class="font-display font-black text-[11px] tracking-wider text-rose-400" data-name>GIBLE β [+2]</span>
+          <span id="enemy-2-burn-pill" class="hidden px-1 bg-orange-600/40 border border-orange-400 text-[8px] font-mono-tech font-bold text-orange-100">
+            <span id="enemy-2-burn-text">🔥 BURN</span>
+          </span>
+        </div>
+        <div class="w-full h-1.5 bg-slate-950 relative overflow-hidden border border-slate-700">
+          <div id="enemy-2-hp-bar" class="hp-fill-smooth h-full bg-[#ff4d4d] w-full"></div>
+        </div>
+        <div id="enemy-2-hp-text" class="font-mono-tech font-bold text-[9px] text-slate-300 mt-0.5">HP 34 / 34</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Left Player HUD V9 Card: ABRA (Matches Reference Screenshot) -->
+  <div class="fixed bottom-28 left-4 z-30 pointer-events-none hidden sm:block">
+    <div class="hud-card-player nocturne-skew px-4 py-2.5 w-[270px]">
+      <div class="nocturne-unskew flex items-center gap-3">
+        <div class="w-11 h-11 bg-[#1b2838] border-2 border-[#2de2e6] flex items-center justify-center font-display font-black text-lg text-[#ffd32a] shadow-inner shrink-0">
+          AB
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-baseline justify-between">
+            <span class="font-display font-black text-base tracking-wide text-slate-900" id="abra-name">ABRA</span>
+            <span class="text-[8px] font-mono-tech font-bold uppercase tracking-wider text-slate-500">JOGADOR</span>
+          </div>
+          <div class="flex items-center gap-2 mt-1">
+            <div class="flex-1 h-2 bg-slate-300 relative overflow-hidden">
+              <div id="abra-hp-heal-preview" class="hp-fill-smooth absolute inset-y-0 left-0 bg-[#00ff9d] w-full"></div>
+              <div id="abra-hp-bar" class="hp-fill-smooth relative h-full bg-[#ff5252] w-full"></div>
+            </div>
+            <span id="abra-hp-text" class="font-mono-tech font-extrabold text-[10px] text-slate-800 shrink-0">HP 32/32</span>
+          </div>
+          <div class="flex items-center justify-between mt-1.5">
+            <span class="text-[8px] font-mono-tech font-extrabold text-slate-600">ATB</span>
+            <div class="flex gap-1 flex-1 mx-2">
+              <div class="h-1.5 flex-1 bg-[#2898b8]"></div>
+              <div class="h-1.5 flex-1 bg-[#2898b8]"></div>
+              <div class="h-1.5 flex-1 bg-[#2898b8]"></div>
+              <div class="h-1.5 flex-1 bg-[#2898b8]"></div>
+              <div class="h-1.5 flex-1 bg-slate-400"></div>
+            </div>
+            <span class="px-1 bg-slate-800 text-white text-[8px] font-mono-tech font-bold">B</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Ally HUD V9 Card: PANCHAM (Matches Reference Screenshot) -->
+  <div class="fixed bottom-28 right-4 z-30 pointer-events-none hidden sm:block">
+    <div class="hud-card-ally nocturne-skew px-4 py-2.5 w-[250px]">
+      <div class="nocturne-unskew flex items-center gap-3">
+        <div class="w-10 h-10 bg-slate-800 border-2 border-[#9c88ff] flex items-center justify-center font-display font-black text-base text-white shrink-0">
+          PA
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-baseline justify-between">
+            <span class="font-display font-black text-sm tracking-wide text-white" id="pancham-name">PANCHAM</span>
+            <span class="text-[8px] font-mono-tech font-bold uppercase tracking-wider text-slate-400">ALIADO • IA</span>
+          </div>
+          <div class="flex items-center gap-2 mt-1">
+            <div class="flex-1 h-2 bg-slate-800 relative overflow-hidden">
+              <div id="pancham-hp-heal-preview" class="hp-fill-smooth absolute inset-y-0 left-0 bg-[#00ff9d] w-full"></div>
+              <div id="pancham-hp-bar" class="hp-fill-smooth relative h-full bg-[#9c88ff] w-full"></div>
+            </div>
+            <span id="pancham-hp-text" class="font-mono-tech font-extrabold text-[10px] text-slate-200 shrink-0">HP 45/45</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
