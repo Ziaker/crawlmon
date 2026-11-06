@@ -422,6 +422,11 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-375](D-375-r88b-q3-resultados-terminais-ocorrencias-condicionais.md) | Engine de Moves / R88B | Q3A: resultado terminal determinístico por ocorrência condicional reservada (executada, cancelada, não acionada), sem efeitos/RNG pela não ativação | Aprovada; formato pendente |
 | [D-376](D-376-r88b-q4-resource-visual-invalido-indisponibilidade-pos-migracao.md) | Engine de Moves / R88B | Q4A: Move migrado com visual obrigatório ausente ou inválido fica indisponível na nova engine, com diagnóstico e sem fallback silencioso | Aprovada; implementação pendente |
 
+| [D-377](D-377-r90-q1-terreno-tatico-por-bioma-arena.md) | Gameplay / R90 | Q1B: biomas podem permitir obstáculos, zonas perigosas e características de terreno que afetam posicionamento e combate por arena | Aprovada; arena concreta pendente |
+| [D-378](D-378-r90-q2-habilidades-especie-duas-uma-combate-ficha.md) | Espécies / R90 | Q2D própria: passivas de espécie são as habilidades ainda não implementadas; duas por Pokémon, uma selecionada para combate fora de batalha na ficha | Aprovada; habilidades concretas pendentes |
+| [D-379](D-379-r90-q3-desafios-opcionais-sequenciais-individuais.md) | Dungeons / R90 | Q3C: dungeons opcionais podem combinar desafios consecutivos e encontros especiais individuais | Aprovada; conteúdo pendente |
+| [D-380](D-380-r90-q4-sinergias-condicionais-moves-aliados-consecutivos.md) | Combate / R90 | Q4B: efeitos condicionais próprios de sinergias entre Moves consecutivos de aliados quando requisitos forem satisfeitos | Aprovada; pares/efeitos pendentes |
+
 ## Decisões locais reconciliadas — 2026-11-06
 
 As decisões locais que colidiam com IDs do `origin/main` foram renumeradas para a faixa reservada **D-900–D-952**. As que não colidiam mantiveram o ID. O mapa completo está em [MAPA_RENUMERACAO_2026-11-06.md](MAPA_RENUMERACAO_2026-11-06.md).

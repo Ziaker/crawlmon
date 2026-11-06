@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.72 — Rodada 89B: âncoras de efeitos, avaliação temporal de condições, validação agregada e fluxo determinístico de eventos (2026-11-06); histórico preservado.  
+> **Revisão:** 1.73 — Rodada 90: biomas táticos, habilidades de espécie, dungeons e sinergias de aliados (2026-11-06); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1780,6 +1780,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.72 | 2026-11-06 | Rodada 89B: inserção de efeitos em variantes por âncora de ID e antes/depois; condições avaliadas no instante mecânico próprio com resultado rastreável; rejeição e diagnóstico agregado de IDs/referências/tipos inválidos sem correção automática; eventos estruturados em fluxo determinístico para consumidores VFX/diagnóstico independentes. D-953–D-956. | Rodada 89B fechada / Rodada 90B proposta |
 
+| 1.73 | 2026-11-06 | Rodada 90: biomas podem introduzir terreno que afeta posicionamento e combate; passivas de espécie são as duas habilidades ainda não implementadas de cada Pokémon, apenas uma selecionada para combate fora da batalha na ficha; dungeons opcionais podem combinar desafios consecutivos e encontros individuais; sinergias condicionais entre Moves consecutivos de aliados. D-377–D-380. | Rodada 90 registrada / Rodada 91 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2524,4 +2526,19 @@ A engine deverá **demonstrar por validação e testes reproduzíveis** que even
 **Exemplos abstratos, sem aprovar novos efeitos:** com efeitos A,B,C, variante com D antes de B preserva A,D,B,C; um predicado relacionado à interrupção é avaliado no instante mecânico aprovado para seu efeito, não no relógio visual; um impacto do plano produz um evento com identidade/tempo que pode ser consultado por VFX e rastreamento sem reaplicar o golpe.
 
 **Pendências:** IDs e tipos concretos, semântica de múltiplas inserções conflitantes, predicados/operadores concretos, formato de resultado de condição, integração dos Resources e distribuição de eventos, testes e tolerâncias. A divergência entre planejamento legado posterior ao Windup e D-226 (reserva na declaração) segue aberta. A referência incorreta da D-363 à D-358 é reconhecida, mas não corrigida; referência apropriada é D-362. Conflito histórico de LUK da Rodada 60 (§12.13) preservado. **Somente documentos; nenhum código, Resource, Move, IA, HUD, VFX, cena, asset ou teste modificado, e nenhum teste Godot realizado.**
+
+### 12.48 Rodada 90 — terreno do bioma, habilidades selecionáveis, desafios opcionais e sinergias (revisão 1.73)
+
+> **2026-11-06.** Escolhas expressas do criador: **1B, 2D (regra própria), 3C e 4B**. Decisões individuais **D-377–D-380**, consolidadas em **§87** de `docs/REGRAS_DO_JOGO.md`. Não considerar aprovadas 2A/2B/2C. Preservar a Rodada 89B (D-953–D-956), demais decisões locais reconciliadas e série B; D-001 mantém o GDD não normativo para combate.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R90-Q1 | **1B** | **Biomas podem incluir obstáculos, zonas perigosas e outras características táticas de terreno** que afetam posicionamento/combate por arena | [D-377](decisoes/D-377-r90-q1-terreno-tatico-por-bioma-arena.md) |
+| R90-Q2 | **2D própria** | **Passivas de espécie são as habilidades futuras**; cada Pokémon tem **duas habilidades**, mas seleciona **somente uma para uso em combate na ficha fora do combate** | [D-378](decisoes/D-378-r90-q2-habilidades-especie-duas-uma-combate-ficha.md) |
+| R90-Q3 | **3C** | **Dungeons opcionais** podem ter combinação própria de **desafios consecutivos e encontros especiais individuais** | [D-379](decisoes/D-379-r90-q3-desafios-opcionais-sequenciais-individuais.md) |
+| R90-Q4 | **4B** | **Sinergias condicionais entre Moves consecutivos de aliados**, com efeitos próprios somente sob requisitos de combinação aprovados | [D-380](decisoes/D-380-r90-q4-sinergias-condicionais-moves-aliados-consecutivos.md) |
+
+**Exemplos hipotéticos, sem aprovar conteúdo específico:** terreno de caverna pode influenciar rota ou posicionamento; ficha de um Pokémon com habilidades A/B permite selecionar só uma para combate antes da batalha, sem criar sistema adicional de passivas; dungeon opcional pode oferecer combates sucessivos e encontro único; dois Moves usados consecutivamente por aliados **podem** disparar efeito extra apenas se a ficha aprovar o gatilho. Nenhum valor, nome, efeito ou conteúdo real foi criado.
+
+**Compatibilidade e pendências:** GDD R38-Q2 permanece fonte do vínculo visual arena–bioma; D-331/D-275/D-368 continuam independentes da preparação das habilidades; D-235 e D-361/D-373/D-374/D-953/D-954 regem Moves e efeitos declarativos sem exclusividade por personagem/lado. Não foram especificadas habilidades por espécie, locais adicionais de seleção, obstáculos reais, condições de combos, janelas de tempo, desafios concretos, custos e recompensas. A divergência histórica de LUK (GDD §12.13) e demais conflitos permanecem. **Somente documentação; nenhum código, Resource, Move, IA, habilidade, ficha, HUD, cena, teste, asset ou VFX alterado.**
 

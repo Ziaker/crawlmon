@@ -2748,3 +2748,34 @@ As regras completas de cada item ficam no arquivo da decisão; esta lista é o �
 - **Histórico:** preservar D-001/D-061/D-235, as séries B anteriores (D-331–D-376), D-372 (Badge Steal), os registros locais renumerados D-900–D-952, divergência histórica de LUK da Rodada 60 no GDD §12.13 e todo conteúdo não solicitado.
 - **Escopo:** quatro D novos, índice, este adendo ao consolidado e adendo do GDD. **Nenhum código, Resource, Move operacional, IA, HUD, VFX, cena, asset ou teste modificado; nenhum teste Godot executado.**
 
+---
+
+## 87. Rodada 90 — terreno tático, habilidades de espécie, desafios opcionais e combos de Moves
+
+> **2026-11-06.** O criador aprovou **1B, 2D (regra própria), 3C e 4B**, sem outras observações. D-377–D-380 conforme D-061. A série paralela da engine **R89B D-953–D-956, §86**, bem como decisões locais D-900–D-956 e todo histórico, permanece intacta.
+
+### 87.1 Regras aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-377](decisoes/D-377-r90-q1-terreno-tatico-por-bioma-arena.md) | **1B** | **Biomas podem introduzir** obstáculos, zonas perigosas e características de terreno que afetam **posicionamento e combate em cada arena** |
+| [D-378](decisoes/D-378-r90-q2-habilidades-especie-duas-uma-combate-ficha.md) | **2D própria** | **Passivas de espécie = habilidades ainda não implementadas**; **duas por Pokémon**, **uma selecionada para combate** fora da batalha na **ficha** |
+| [D-379](decisoes/D-379-r90-q3-desafios-opcionais-sequenciais-individuais.md) | **3C** | **Cada dungeon opcional pode mesclar** desafios consecutivos e encontros especiais individuais |
+| [D-380](decisoes/D-380-r90-q4-sinergias-condicionais-moves-aliados-consecutivos.md) | **4B** | **Sinergias condicionais** entre **Moves consecutivos de aliados**, com efeitos próprios apenas quando **requisitos explícitos** forem satisfeitos |
+
+### 87.2 Exemplos e conciliações
+
+- **Terreno (D-377):** GDD R38-Q2 já exige a arena 3D visualmente vinculada ao bioma. Agora cada arena **pode** afetar também o posicionamento/combate por obstáculos ou zonas perigosas. **Não obriga** qualquer perigo em todas as arenas, não inventa dados e preserva D-235 (neutralidade de atacante/lado).
+- **Habilidades (D-378):** observação própria literal: **"passivas de especie na verdade sao as abilidades que ainda vao ser implementadas e cada um tem 2 mas so pode usar 1 no combate (seleciona fora de combate nas fichas)"**. **Não aprovar sistema paralelo de passivas**; o Pokémon tem duas habilidades e escolhe só uma para combate, **na ficha fora da batalha**. Não impor local seguro extra ou inventar nomes/efeitos. Preservar D-331 (espécies/formas), D-275 (Moves equipados) e D-368 (itens segurados).
+- **Desafios opcionais (D-379):** uma dungeon poderá ter sequência de batalhas, encontro individual ou ambos. Preservar D-367 (procedural com conteúdo autoral), D-354 (risco/recompensa), D-346 (Moves/builds) e D-371 (revisita após desbloqueio), sem criar quantidades ou recompensas.
+- **Sinergias (D-380):** dois aliados podem realizar Moves consecutivos cujo efeito adicional dependa de **condição declarada na ficha**; **sem combo automático universal, sem ação conjunta e sem custo extra assumido**. Preservar D-235 e D-361/D-373/D-374/D-953/D-954, além das regras de ATB/MP/status/RNG.
+
+### 87.3 Pendências e escopo
+
+- **Biomas:** perigos/obstáculos reais, valores, rotas, IA e colisões ainda não decididos.
+- **Habilidades:** quais são as duas habilidades de cada espécie, efeitos, gatilhos, seleção por IA, evolução e persistência ainda não definidos. A escolha **fora de combate na ficha** não decide se exige hub/ponto seguro.
+- **Dungeons:** composições específicas de encontros, sucessão/recuperação/recompensas ainda pendentes.
+- **Sinergias:** Moves que combinam, requisito, janela de consecutividade, acerto, interrupções, custos e efeitos próprios pendentes.
+- **Histórico preservado:** D-235, D-275, D-331, D-346, D-354, D-367, D-368, D-371, D-372–D-376, D-953–D-956 e demais decisões. A divergência de LUK R60 (GDD §12.13) não foi conciliada.
+- **Somente documentação:** quatro D, índice, consolidado e adendo GDD; **nenhum código, Move, Resource, habilidade, ficha operacional, IA, HUD, cena, VFX, asset ou teste alterado; nenhum teste de gameplay executado**.
+
