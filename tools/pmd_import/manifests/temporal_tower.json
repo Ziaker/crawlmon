@@ -543,7 +543,6 @@
       }
     },
     "warnings": [
-      "temporal_tower: no human component approval yet; run audit_components.py --only temporal_tower --approve after reviewing the component sheet",
       "temporal_tower: wall_c does not self-tile perfectly (L/R 50%, T/B 21%); the 3x3 block is a border set, so this is diagnostic",
       "temporal_tower: ground_c does not self-tile perfectly (L/R 83%, T/B 21%); the 3x3 block is a border set, so this is diagnostic"
     ]
