@@ -265,8 +265,9 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[CÓDIGO]** Geração: 7–11 salas (4×4 a 9×7), 4–6 inimigos, 2–3 NPCs; tile de 48 px; o layout fica em cache no `GameState`.
 - **[D-314]** Aliados ativos seguem em **fila**, no **rastro exato** do protagonista, sem atravessar paredes/obstáculos; se travar, espera ou vai ao ponto livre mais próximo.
 - **[D-361] Seguidor mais perto:** o gap do rastro passa de **48 px** para **32 px** (2/3 de tile); rastro exato, velocidade, espera e reposicionamento de D-314 não mudam; se ainda parecer longe, o próximo valor é 24 px.
-- **[D-381] Clima de exploração (só visual):** os eventos temporais não alteram movimento, combate, colisão, câmera, geração, raio de visão 7,5, LOS nem o explorado; entram neblina maior (véu mais denso, sem aumentar o raio), calor ondulado, chuva/neve com respingo e distorção temporal em Temporal/Spire; frequência **rara** (cadência exata pendente). D-308 (Motion Composer) continua; nada implementado.
-- **[D-382] Cadência do clima:** 20% de chance por andar (1 em 5), no máximo um evento por andar, 20–40 s com fade; o mapeamento de biomas de D-362 fica mantido; continua só visual.
+- **[D-381] Clima de exploração (só visual):** os eventos temporais não alteram movimento, combate, colisão, câmera, geração, raio de visão 7,5, LOS nem o explorado; entram neblina maior (véu mais denso, sem aumentar o raio), calor ondulado, chuva/neve com respingo e distorção temporal em Temporal/Spire; frequência **rara** (cadência exata pendente). Clima fora do Motion Composer (D-383); nada implementado.
+- **[D-382] Cadência do clima:** 20% de chance por andar (1 em 5), no máximo um evento por andar, 20–40 s com fade; o mapeamento de biomas de D-362 fica mantido; clima fora do Motion Composer (D-383); continua só visual.
+- **[D-383] Clima fora do Motion Composer:** névoa, calor, chuva/neve e distorção temporal são camadas 2D de ambiente e não usam o Composer nem o protocolo de 4 fases; D-308 fica restrito a VFX de Move/elemento em combate; o Composer não é gate para clima.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).

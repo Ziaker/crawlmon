@@ -3,7 +3,7 @@
 - **Data:** 2026-11-06
 - **Área:** Exploração / visual / clima
 - **Origem:** respostas do criador às pendências de D-381.
-- **Status:** números definidos; nada implementado.
+- **Status:** números definidos; clima fora do Motion Composer (D-383); nada implementado.
 
 ## O que o criador escolheu (literal)
 
@@ -24,7 +24,7 @@
    - **neblina:** murky forest, spacial cliffs, 7th station pass, icicle forest, vast ice mountain/peak, temporal spire/tower;
    - **distorção temporal:** temporal tower/spire.
 4. **Início:** o evento entra no começo do andar, depois do fade de entrada; a batalha é outra cena, então o clima não roda durante o combate. Se o criador preferir no meio do andar, é um ajuste de implementação, não uma regra fechada.
-5. **Continua só visual:** nada de regra (D-381); D-308/Motion Composer; chuva/neve com CPUParticles2D sob GL Compatibility.
+5. **Continua só visual:** nada de regra (D-381); clima fora do Motion Composer (D-383); D-308 fica restrito a VFX de Move/elemento em combate; chuva/neve com CPUParticles2D sob GL Compatibility.
 6. **Ordem:** neblina → calor → chuva/neve → distorção temporal; um efeito por vez, com aprovação visual antes do próximo.
 
 ## Ambiguidades

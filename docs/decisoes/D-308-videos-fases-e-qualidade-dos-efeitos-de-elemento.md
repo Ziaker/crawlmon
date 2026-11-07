@@ -6,6 +6,8 @@
 - **Estado:** regras registradas; as receitas atuais foram **reprovadas** e serão refeitas. **Aguardando o próximo vídeo.**
 - **Numeração:** D-308 evita os números já usados no GitHub (até D-307) e nas sessões locais (até D-282).
 
+> **Escopo (D-383, 2026-11-06):** estas regras valem para **VFX de Move/elemento em combate**. Clima/exploração (névoa, calor ondulado, chuva/neve, distorção temporal) é camada 2D de ambiente, não é Move e **não usa o Motion Composer**.
+
 ## Declaração literal do criador
 
 > eu preciso que sempre coloque os videos deles funcionando, no mesmo video mostrar angulos diferentes que serão visíveis no jogo, ou seja, o normal e o espelhado.

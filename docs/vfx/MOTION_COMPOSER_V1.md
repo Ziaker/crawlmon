@@ -1,5 +1,7 @@
 # Crawlmon — Especificação do Motion Composer V1
 
+> **Escopo (D-383, 2026-11-06):** esta especificação é do Motion Composer para **VFX de Move/combate**. Clima/exploração (névoa, calor, chuva/neve, distorção temporal) não usa o Composer.
+
 Escopo aprovado: 20 comportamentos procedurais, combináveis entre si, com laboratório visual independente e preservação integral dos VFX atuais.
 
 A primeira versão será especificada como uma biblioteca de movimentos para criar efeitos visuais, não como uma coleção de 20 efeitos prontos.

@@ -1,10 +1,10 @@
 # Protocolo obrigatório de VFX (D-308, ordem do criador, 2026-11-05)
 
-**Vale para QUALQUER efeito visual deste projeto, de qualquer tamanho, sem exceção: Move, impacto, partícula, brilho, rastro, HUD animado, protótipo.** Um efeito feito fora deste protocolo está errado, mesmo que "pareça funcionar".
+**Vale para VFX de Move/elemento em combate: impacto, partícula, brilho e rastro de um Move.** Um VFX de Move feito fora deste protocolo está errado, mesmo que "pareça funcionar". **Não vale para clima/exploração** (névoa, calor ondulado, chuva/neve, distorção temporal): essas são camadas 2D de ambiente e não usam o Motion Composer (D-383).
 
 ## 0. Regra-mãe
 
-Todo efeito é construído **sobre o Motion Composer**, usando **as duas skills** (`scenario-godot-vfx` e `scenario-godot-shaders`). Se o Motion Composer não consegue fazer o que o efeito precisa, **o Motion Composer é atualizado primeiro** (nova versão: V1.1, V1.2, ... sem limite), documentado e testado, e só depois o efeito é feito. É proibido contornar o Motion Composer com código de partículas, rastros ou trajetórias escrito à mão dentro da classe do Move.
+Todo **VFX de Move/elemento em combate** é construído **sobre o Motion Composer**, usando **as duas skills** (`scenario-godot-vfx` e `scenario-godot-shaders`). Se o Motion Composer não consegue fazer o que o efeito precisa, **o Motion Composer é atualizado primeiro** (nova versão: V1.1, V1.2, ... sem limite), documentado e testado, e só depois o efeito é feito. É proibido contornar o Motion Composer com código de partículas, rastros ou trajetórias escrito à mão dentro da classe do Move. **Clima/exploração não é Move e fica fora deste protocolo (D-383).**
 
 ## 1. Antes de escrever uma linha (em ordem, sem pular)
 

@@ -3,7 +3,7 @@
 - **Data:** 2026-11-06
 - **Área:** Exploração / visual / clima / VFX
 - **Origem:** O criador pediu ideias de eventos temporais depois de a névoa/ambiente por bioma entrar.
-- **Status:** **escopo aprovado (D-381):** só visual, os três eventos, frequência rara e distorção temporal. A cadência exata de "raramente", a duração e o mapeamento por bioma ainda estão pendentes. Nada implementado.
+- **Status:** **escopo aprovado (D-381), números definidos (D-382) e clima fora do Motion Composer (D-383).** Só visual, os três eventos, 20% por andar, 20–40 s e mapa de biomas de D-362. Nada implementado.
 
 ## O que o criador disse (literal)
 
@@ -48,7 +48,7 @@ Um `WeatherController` na cena de exploração escolhe um clima por bioma/andar,
 
 ## Limites e protocolo
 
-- **D-308 (VFX):** calor/chuva/neblina são efeitos de ambiente, não Moves. Antes de implementar, eu verifico se o Motion Composer cobre uma representação de tela/partículas de clima; se não cobrir, **atualizo o Motion Composer primeiro** (D-323/D-327), em vez de fazer um efeito avulso. Se o criador considerar que o protocolo de 4 fases não se aplica a clima, preciso da exceção explícita.
+- **D-383 (clima fora do Motion Composer):** calor/chuva/neblina são camadas 2D de ambiente, não Moves. **Não usam o Motion Composer nem o protocolo de 4 fases.** D-308 fica restrito a VFX de Move/elemento em combate. A exceção foi dada pelo criador em 2026-11-06.
 - **D-235:** nada depende de personagem, time, lado ou posição fixa; a chuva cai no mundo e o calor é de tela.
 - **D-344/D-329:** câmera 2,3×, 48 px, geração e colisão intactas.
 - **Performance:** um overlay de tela + no máximo dois sistemas de partículas; medir antes/depois.
