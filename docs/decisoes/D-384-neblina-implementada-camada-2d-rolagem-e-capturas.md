@@ -22,6 +22,7 @@
 - Antes/depois: `docs/referencias/exploracao/weather_mist_before_after.png` (mesmo seed/andar, sem clima × com neblina).
 - O shader compilou e desenhou no **GL Compatibility** durante a captura; não houve erro de shader.
 - A captura de rolagem real e a de "sem clima" foram feitas no **worktree principal** (seed 2, andar 1); a cena abriu e desenhou sem erro de shader.
+- As capturas de bioma/tileset usam `debug_disable = true` para não misturar clima com o atlas.
 
 ## O que não foi verificado
 
