@@ -3,7 +3,7 @@
 - **Data:** 2026-11-06
 - **Área:** Exploração / visual / clima / VFX
 - **Origem:** respostas do criador às quatro perguntas da proposta D-362.
-- **Status:** escopo aprovado; cadência e duração definidas em D-382; clima fora do Motion Composer (D-383); neblina implementada (D-384); calor/chuva/neve/distorção pendentes.
+- **Status:** escopo aprovado; cadência e duração definidas em D-382; clima fora do Motion Composer (D-383); neblina (D-384), chuva (D-386) e calor (D-387) implementados; neve/cinza/distorção pendentes.
 
 ## O que o criador disse (literal)
 

@@ -20,7 +20,7 @@ E, na proposta original (D-362):
 3. **Respingos:** `CPUParticles2D` com `EMISSION_SHAPE_POINTS`; os pontos são as células de **chão** em volta do jogador (paredes ficam fora), com anéis curtos. Não há colisão real de partícula com o tilemap; o respingo é dirigido pelo mapa.
 4. **GL Compatibility:** `CPUParticles2D`; sem GPUParticles, trails ou sub-emitters (D-308).
 5. **Fora do Motion Composer** (D-383). Sem áudio; só visual.
-6. A ordem de D-362 era neblina → calor → chuva; o criador pediu chuva agora, então o **calor fica pendente**.
+6. A ordem de D-362 era neblina → calor → chuva; o criador pediu chuva agora; o calor foi implementado em D-387.
 
 ## Testes
 
@@ -35,7 +35,7 @@ E, na proposta original (D-362):
 - Colisão real das gotas com paredes/teto; o respingo é aproximado pelas células de chão.
 - O vídeo força chuva em **Temporal Tower** (bioma de demonstração); no jogo ela sai nos biomas de chuva de D-362.
 - O ciclo real de 20–40 s não foi gravado inteiro; o vídeo usa 10 s.
-- Calor, neve, cinza e distorção temporal continuam pendentes.
+- Neve, cinza e distorção temporal continuam pendentes.
 
 ## Estado
 

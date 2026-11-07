@@ -52,6 +52,10 @@ var _player: Node2D
 var _layer: CanvasLayer
 var _rect: ColorRect
 var _mat: ShaderMaterial
+var _heat_layer: CanvasLayer
+var _heat_rect: ColorRect
+var _heat_mat: ShaderMaterial
+var _heat_dust: CPUParticles2D
 var _event_type := ""
 var _active := false
 var _pending_key := ""
@@ -76,6 +80,11 @@ func is_active() -> bool:
 	return _active
 
 
+func _process(_delta: float) -> void:
+	if _heat_dust != null and is_instance_valid(_heat_dust) and _player != null:
+		_heat_dust.position = _player.position
+
+
 func _resolve_and_start() -> void:
 	if debug_disable:
 		return
@@ -94,11 +103,11 @@ func _resolve_and_start() -> void:
 		if not roll_for(seed_value, floor_value):
 			return
 		_event_type = weather_for(biome, seed_value, floor_value)
-		if _event_type != "mist" and _event_type != "rain":
-			# Calor/neve/cinza/distorção ainda não implementados.
+		if _event_type != "mist" and _event_type != "rain" and _event_type != "heat":
+			# Neve/cinza/distorção ainda não implementados.
 			return
 
-	if _event_type != "mist" and _event_type != "rain":
+	if _event_type != "mist" and _event_type != "rain" and _event_type != "heat":
 		return
 
 	_pending_key = key
@@ -118,6 +127,8 @@ func _on_start_delay() -> void:
 		_played[_pending_key] = true
 	if _event_type == "rain":
 		_start_rain(_pending_seed, _pending_floor)
+	elif _event_type == "heat":
+		_start_heat(_pending_seed, _pending_floor)
 	else:
 		_start_mist(_pending_biome, _pending_seed, _pending_floor)
 
@@ -249,3 +260,90 @@ func _start_rain(seed_value: int, floor_value: int) -> void:
 
 func _on_rain_finished() -> void:
 	_active = false
+
+
+func _start_heat(seed_value: int, floor_value: int) -> void:
+	if _active:
+		return
+	_active = true
+
+	_heat_layer = CanvasLayer.new()
+	_heat_layer.name = "HeatLayer"
+	_heat_layer.layer = 1
+	add_child(_heat_layer)
+
+	_heat_rect = ColorRect.new()
+	_heat_rect.name = "Heat"
+	_heat_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_heat_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_heat_rect.light_mask = 0
+	_heat_mat = ShaderMaterial.new()
+	_heat_mat.shader = load("res://shaders/weather_heat.gdshader") as Shader
+	_heat_mat.set_shader_parameter("amount", 0.0)
+	_heat_rect.material = _heat_mat
+	_heat_layer.add_child(_heat_rect)
+
+	_heat_dust = _make_heat_dust()
+	if _player != null:
+		_heat_dust.position = _player.position
+	_heat_dust.modulate = Color(1, 1, 1, 0)
+	add_child(_heat_dust)
+	_heat_dust.emitting = true
+
+	var duration := _duration_for(seed_value, floor_value)
+	var hold := maxf(duration - FADE * 2.0, 0.1)
+	var tween := create_tween()
+	tween.tween_property(_heat_mat, "shader_parameter/amount", 1.0, FADE)
+	tween.parallel().tween_property(_heat_dust, "modulate:a", 1.0, FADE)
+	tween.tween_interval(hold)
+	tween.tween_property(_heat_mat, "shader_parameter/amount", 0.0, FADE)
+	tween.parallel().tween_property(_heat_dust, "modulate:a", 0.0, FADE)
+	tween.finished.connect(_on_heat_finished)
+
+
+func _make_heat_dust() -> CPUParticles2D:
+	var p := CPUParticles2D.new()
+	p.name = "HeatDust"
+	p.amount = 32
+	p.lifetime = 3.2
+	p.one_shot = false
+	p.explosiveness = 0.0
+	p.randomness = 0.7
+	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	p.emission_rect_extents = Vector2(300, 80)
+	p.direction = Vector2(0, -1)
+	p.spread = 25.0
+	p.gravity = Vector2(0, -8)
+	p.initial_velocity_min = 8
+	p.initial_velocity_max = 22
+	p.scale_amount_min = 0.5
+	p.scale_amount_max = 1.1
+	p.color = Color(1.0, 0.78, 0.45, 0.55)
+	p.texture = _heat_dust_texture()
+	p.local_coords = false
+	p.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	p.z_index = 96
+	return p
+
+
+func _heat_dust_texture() -> Texture2D:
+	var img := Image.create(3, 3, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	img.set_pixel(1, 1, Color(1.0, 0.85, 0.55, 1.0))
+	img.set_pixel(0, 1, Color(1.0, 0.85, 0.55, 0.35))
+	img.set_pixel(2, 1, Color(1.0, 0.85, 0.55, 0.35))
+	img.set_pixel(1, 0, Color(1.0, 0.85, 0.55, 0.35))
+	img.set_pixel(1, 2, Color(1.0, 0.85, 0.55, 0.35))
+	return ImageTexture.create_from_image(img)
+
+
+func _on_heat_finished() -> void:
+	_active = false
+	if is_instance_valid(_heat_layer):
+		_heat_layer.queue_free()
+	if is_instance_valid(_heat_dust):
+		_heat_dust.queue_free()
+	_heat_layer = null
+	_heat_rect = null
+	_heat_mat = null
+	_heat_dust = null

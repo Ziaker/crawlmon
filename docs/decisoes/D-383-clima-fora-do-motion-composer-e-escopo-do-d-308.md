@@ -25,4 +25,4 @@
 
 ## Estado
 
-Documentação atualizada: D-308, `docs/vfx/PROTOCOLO_VFX_OBRIGATORIO.md`, `docs/vfx/MOTION_COMPOSER_V1.md`, D-362, D-381, D-382, `AGENTS.md`, índice e `docs/REGRAS_DO_JOGO.md`. Neblina implementada (D-384); calor/chuva/neve/distorção pendentes. Nada publicado.
+Documentação atualizada: D-308, `docs/vfx/PROTOCOLO_VFX_OBRIGATORIO.md`, `docs/vfx/MOTION_COMPOSER_V1.md`, D-362, D-381, D-382, `AGENTS.md`, índice e `docs/REGRAS_DO_JOGO.md`. Neblina (D-384), chuva (D-386) e calor (D-387) implementados; neve/cinza/distorção pendentes. Nada publicado.

@@ -24,6 +24,8 @@ func _init() -> void:
 		"seed 2, andar 1 escolhe neblina")
 	_check(weather_script.weather_for("4th_station_pass", 12345, 1) == "rain",
 		"4th Station escolhe chuva")
+	_check(weather_script.weather_for("barren_valley", 12345, 1) == "heat",
+		"barren escolhe calor")
 
 	var biomes := [
 		"temporal_tower", "murky_forest", "barren_valley", "4th_station_pass",
