@@ -26,7 +26,7 @@
 
 ## Vídeos
 
-Regravados em D-385 com a névoa mais densa.
+Regravados em D-385 (densidade e cantos).
 
 - `docs/referencias/exploracao/weather_mist_cycle.mp4` — 12 s, 1280×720, 30 fps; ciclo completo com `debug_duration = 10 s` (2 s de fade-in + 6 s de espera + 2 s de fade-out).
 - `docs/referencias/exploracao/weather_mist_before_after.mp4` — 12 s, 1280×360, lado a lado sem clima × neblina.

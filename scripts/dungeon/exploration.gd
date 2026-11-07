@@ -98,7 +98,7 @@ func _ready() -> void:
 	var weather = WeatherControllerClass.new()
 	weather.name = "Weather"
 	add_child(weather)
-	weather.setup(GameState, fog)
+	weather.setup(GameState, fog, _map, player)
 
 	# Vinheta suave de tela; fica abaixo do diálogo (layer 15) e dos menus (10).
 	var vignette := CanvasLayer.new()

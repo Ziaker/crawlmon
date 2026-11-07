@@ -4,13 +4,14 @@ extends Node
 ##
 ## Só visual: não altera movimento, combate, colisão, câmera, geração, raio de
 ## visão, LOS nem o explorado. É uma camada 2D de ambiente, fora do Motion
-## Composer. A primeira entrega é a neblina; calor/chuva/neve e distorção
+## Composer. Neblina e chuva implementadas; calor/neve/cinza e distorção
 ## temporal entram depois, na ordem de D-362.
 ##
 ## A rolagem é determinística por andar: 20% de chance (1 em 5), no máximo um
 ## evento por andar. O evento começa no início do andar e dura 20–40 s.
 
 const BiomeVisuals := preload("res://scripts/dungeon/biome_visuals.gd")
+const WeatherRainClass := preload("res://scripts/dungeon/weather_rain.gd")
 
 const CHANCE := 0.20
 const DURATION_MIN := 20.0
@@ -35,7 +36,7 @@ const SNOW_BIOMES := [
 ]
 const TEMPORAL_BIOMES := ["temporal_tower", "temporal_spire"]
 
-## Debug/captura: "mist" força a neblina, ignorando a rolagem e o bioma.
+## Debug/captura: "mist" ou "rain" força o clima, ignorando a rolagem e o bioma.
 static var debug_force := ""
 ## Debug/captura: true desliga o clima para a captura "antes".
 static var debug_disable := false
@@ -46,6 +47,8 @@ static var _played: Dictionary = {}
 
 var _state: Object
 var _fog: Node2D
+var _map: Array[String] = []
+var _player: Node2D
 var _layer: CanvasLayer
 var _rect: ColorRect
 var _mat: ShaderMaterial
@@ -57,9 +60,11 @@ var _pending_seed := 0
 var _pending_floor := 0
 
 
-func setup(state: Object, fog: Node2D) -> void:
+func setup(state: Object, fog: Node2D, map: Array[String], player: Node2D) -> void:
 	_state = state
 	_fog = fog
+	_map = map
+	_player = player
 	_resolve_and_start()
 
 
@@ -89,11 +94,11 @@ func _resolve_and_start() -> void:
 		if not roll_for(seed_value, floor_value):
 			return
 		_event_type = weather_for(biome, seed_value, floor_value)
-		if _event_type != "mist":
-			# Calor/chuva/neve/distorção ainda não implementados.
+		if _event_type != "mist" and _event_type != "rain":
+			# Calor/neve/cinza/distorção ainda não implementados.
 			return
 
-	if _event_type != "mist":
+	if _event_type != "mist" and _event_type != "rain":
 		return
 
 	_pending_key = key
@@ -111,7 +116,10 @@ func _resolve_and_start() -> void:
 func _on_start_delay() -> void:
 	if debug_force == "":
 		_played[_pending_key] = true
-	_start_mist(_pending_biome, _pending_seed, _pending_floor)
+	if _event_type == "rain":
+		_start_rain(_pending_seed, _pending_floor)
+	else:
+		_start_mist(_pending_biome, _pending_seed, _pending_floor)
 
 
 ## Rolagem determinística: 20% por andar (1 em 5).
@@ -180,7 +188,7 @@ func _start_mist(biome: String, seed_value: int, floor_value: int) -> void:
 	_mat.set_shader_parameter("density", 0.85)
 	_mat.set_shader_parameter("drift", 0.006)
 	_mat.set_shader_parameter("noise_scale", 1.7)
-	_mat.set_shader_parameter("edge_mist", 0.55)
+	_mat.set_shader_parameter("edge_mist", 0.75)
 	_mat.set_shader_parameter("noise_tex", _noise_texture())
 	_rect.material = _mat
 	_layer.add_child(_rect)
@@ -226,3 +234,18 @@ func _on_mist_finished() -> void:
 	_layer = null
 	_rect = null
 	_mat = null
+
+
+func _start_rain(seed_value: int, floor_value: int) -> void:
+	if _active:
+		return
+	_active = true
+	var rain = WeatherRainClass.new()
+	rain.setup(_map, _player)
+	rain.finished.connect(_on_rain_finished)
+	add_child(rain)
+	rain.start(_duration_for(seed_value, floor_value))
+
+
+func _on_rain_finished() -> void:
+	_active = false

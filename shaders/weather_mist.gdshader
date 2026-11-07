@@ -11,7 +11,7 @@ uniform float max_alpha : hint_range(0.0, 0.8) = 0.40;
 uniform float density : hint_range(0.0, 1.0) = 0.85;
 uniform float drift : hint_range(0.0, 0.02) = 0.006;
 uniform float noise_scale : hint_range(0.5, 8.0) = 1.7;
-uniform float edge_mist : hint_range(0.0, 1.0) = 0.55;
+uniform float edge_mist : hint_range(0.0, 1.0) = 0.75;
 
 void fragment() {
 	vec2 uv = UV;
@@ -19,7 +19,7 @@ void fragment() {
 	float n2 = texture(noise_tex, uv * noise_scale * 1.8 - vec2(TIME * drift * 0.8, TIME * drift * 0.4)).r;
 	float veil = smoothstep(0.18, 0.82, n1 * 0.55 + n2 * 0.45);
 	float d = distance(uv, vec2(0.5));
-	float edge = smoothstep(0.24, 0.80, d) * edge_mist;
+	float edge = smoothstep(0.14, 0.78, d) * edge_mist * (0.75 + 0.25 * n1);
 	float base = mix(1.0 - density * 0.65, 1.0, veil);
 	float a = mist * max_alpha * (base + edge);
 	COLOR = vec4(mist_color.rgb, clamp(a, 0.0, 1.0));

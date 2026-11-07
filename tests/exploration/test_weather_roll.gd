@@ -22,6 +22,8 @@ func _init() -> void:
 	_check(weather_script.roll_for(2, 1), "seed 2, andar 1 passa na rolagem")
 	_check(weather_script.weather_for("temporal_tower", 2, 1) == "mist",
 		"seed 2, andar 1 escolhe neblina")
+	_check(weather_script.weather_for("4th_station_pass", 12345, 1) == "rain",
+		"4th Station escolhe chuva")
 
 	var biomes := [
 		"temporal_tower", "murky_forest", "barren_valley", "4th_station_pass",
