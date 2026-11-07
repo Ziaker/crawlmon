@@ -2810,3 +2810,33 @@ As regras completas de cada item ficam no arquivo da decisão; esta lista é o �
 - **Histórico:** D-235, D-331, D-369, D-377–D-380, D-911, D-953–D-956 e demais decisões não foram modificadas. A divergência histórica de LUK na Rodada 60 (GDD §12.13) permanece sem conciliação.
 - **Escopo:** quatro documentos D, índice, consolidado e adendo GDD; **nenhum código, Resource, Move, ficha, IA, HUD, cena, VFX, asset ou teste modificado; nenhum teste Godot executado.**
 
+---
+
+## 89. Rodada 90B — ciclo de vida, configuração da execução, deduplicação de eventos e compatibilidade de schemas
+
+> **2026-11-06.** O criador aprovou expressamente as quatro alternativas **1A, 2A, 3A e 4A** da Rodada **90B** sobre a engine de Moves, sem observações extras. Registros individuais **D-957–D-960** conforme D-061. **Preservadas** a Rodada 90 de gameplay (§87, D-377–D-380), a Rodada 91 de gameplay (§88, D-381–D-384), as Rodadas B anteriores e as decisões de outras sessões D-900–D-952. Registro exclusivamente documental.
+
+### 89.1 Regras aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-957](decisoes/D-957-r90b-q1-validacao-resource-carregamento-alteracao-recarregamento.md) | **1A** | **Validar Resources mecânico e visual** ao carregar e após alterações/recarregamentos **antes de disponibilizar** à engine; **invalidar resultado anterior** quando os dados mudarem |
+| [D-958](decisoes/D-958-r90b-q2-configuracao-resolvida-fixa-declaracao-estado-combatentes-dinamico.md) | **2A** | **Fixar configuração mecânica resolvida e variante ao declarar o Move** para aquela execução; consultar **estado dos combatentes** dinamicamente nos **instantes mecânicos definidos** |
+| [D-959](decisoes/D-959-r90b-q3-identidade-deterministica-individual-evento-deduplicacao-consumidores.md) | **3A** | **ID próprio determinístico por evento**; distinguir vários eventos legítimos da mesma ocorrência e detectar **entregas repetidas** sem reproduzir VFX/diagnósticos duplicados |
+| [D-960](decisoes/D-960-r90b-q4-versionamento-explicito-schemas-resources-migracao-controlada.md) | **4A** | **Versionar esquemas dos Resources mecânico/visual**, detectar incompatibilidades e exigir **migração de dados controlada, verificável e sem reescrever automaticamente fichas originais** |
+
+### 89.2 Compatibilidade, exemplos e limites
+
+- **D-957** complementa **D-339/D-343/D-349/D-350/D-955/D-376**: nenhuma validação antiga subsiste depois de alterações do par de Resources; um Move já migrado com visual obrigatório inválido continua indisponível conforme D-376. **Exemplo hipotético:** modificar os anéis visuais de Fire Bullet requer revalidar o par pertinente antes de disponibilizar a nova configuração.
+- **D-958** fixa **apenas a configuração mecânica resolvida**, preservando variante, efeitos e regras escolhidos na declaração; **não congela indiscriminadamente atributos ou estados dos combatentes**. A consulta ao estado nos instantes de efeito mantém **D-954** e quaisquer congelamentos pontuais de AGI/tempos já aprovados. Exemplo: Splitter Flames mantém a variante declarada e reage a acontecimentos reais nos momentos mecânicos aprovados, sem inventar retarget ou dano.
+- **D-959** completa **D-362/D-956**: identidade determinística individual por evento permite entrega repetida sem criar efeitos visuais/diagnósticos duplicados. **Não confundir evento, ocorrência, efeito da ficha ou ID de diagnóstico excedente** (D-218/D-226/D-266/D-373). Não criar RNG novo nem prioridade mecânica diferente.
+- **D-960** versiona o contrato de dados e exige **migração de esquema** verificável, sem alterar arquivos originais automaticamente. Não confundir **conversão do formato de Resource** com a **migração do Move legado para a engine** aprovada em D-342.
+- **D-235** continua obrigatória para personagens, aliados/inimigos, lados e anatomias distintos. **D-351** continua exigindo testes automatizados e integração visual; estas escolhas não equivalem à execução de tais testes.
+- **D-380** (sinergias condicionais entre Moves de aliados) e **D-381** (interações arena/Move expressamente definidas) permanecem válidas, mas **nenhuma condição, combo, efeito ambiental ou Move específico foi criado**.
+
+### 89.3 Pendências e integridade histórica
+
+- Faltam decidir mecanismo de invalidação de cache, comportamento de VFX em andamento durante recarregamento, representação concreta de snapshot da configuração, composição/armazenamento dos IDs de evento, tolerâncias e testes, versão/formato dos schemas e processo de aprovação da migração de dados.
+- **Conflitos históricos preservados**, sem resolução unilateral: plano legado pós-Windup versus D-226 (ocorrências reservadas na declaração); D-363 cita D-358 onde o contrato pertinente de eventos é D-362; divergência de LUK na Rodada 60 (GDD §12.13).
+- **Somente documentação:** quatro D novos, índice, consolidado e adendo GDD. Nenhum código, Resource, Move, VFX, teste, cena, HUD, IA ou asset modificado e nenhum teste Godot executado.
+

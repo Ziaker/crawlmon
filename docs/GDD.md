@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.74 — Rodada 91: ambiente interativo, evolução de habilidades, furtividade e IA adaptativa (2026-11-06); histórico preservado.  
+> **Revisão:** 1.75 — Rodada 90B: validação de Resources, configuração mecânica por execução, IDs de eventos e versões de esquemas (2026-11-06); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1783,6 +1783,7 @@ C. Outro comportamento, descrito pelo criador.
 | 1.73 | 2026-11-06 | Rodada 90: biomas podem introduzir terreno que afeta posicionamento e combate; passivas de espécie são as duas habilidades ainda não implementadas de cada Pokémon, apenas uma selecionada para combate fora da batalha na ficha; dungeons opcionais podem combinar desafios consecutivos e encontros individuais; sinergias condicionais entre Moves consecutivos de aliados. D-377–D-380. | Rodada 90 registrada / Rodada 91 proposta |
 
 | 1.74 | 2026-11-06 | Rodada 91: Moves podem alterar/destruir cenário quando Move e arena declarem interação correspondente; habilidades são conservadas/substituídas conforme ficha da linha evolutiva, mantendo duas e uma selecionada; furtividade ambiental na exploração com coberturas antes do contato hostil; IA adaptativa apenas às ações observadas na batalha atual. D-381–D-384. | Rodada 91 registrada / Rodada 92 proposta |
+| 1.75 | 2026-11-06 | Rodada 90B: Resources mecânico/visual revalidados ao carregar e após mudar; configuração mecânica/variante congelada por execução na declaração, com estado dos combatentes dinâmico; IDs individuais determinísticos por evento e detecção de entregas repetidas; schemas explicitamente versionados e migração de dados controlada sem regravar originais. D-957–D-960. | Rodada 90B registrada / Rodada 91B proposta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
@@ -2558,4 +2559,19 @@ A engine deverá **demonstrar por validação e testes reproduzíveis** que even
 **Compatibilidades e exemplos não normativos:** uma arena pode declarar pilar destrutível por Move que declare a interação correspondente, sem destruição universal (D-377/D-235); linha evolutiva hipotética conserva habilidade A e substitui B por C, mantendo duas disponíveis/uma selecionada fora do combate (D-378/D-331/D-369); jogador pode usar cobertura para evitar detecção, **sem revogar a percepção principalmente por proximidade** (D-205/GDD R38-Q1) e o encontro por contato hostil (R37-Q1); a IA pode reagir a ações repetidas **da batalha atual**, preservando elegibilidade, custos, seleção de alvo e critérios de IA (D-911). Nenhum Move, espécie, habilidade, arena ou comportamento concreto foi criado.
 
 **Pendências:** interações ambientais específicas, efeitos e gatilhos, mudança da habilidade selecionada quando substituída, regras de furtividade/alcance/percepção, critérios/limiares de adaptação de IA e seus visuais. Permanecem intactas D-235, D-331, D-369, D-377–D-380, D-953–D-956, demais decisões locais e a divergência histórica de LUK da Rodada 60 (§12.13). **Somente documentação; nenhum código, Move, Resource, ficha, IA, cena, HUD, VFX, asset ou teste alterado; nenhum teste de gameplay executado.**
+
+### 12.50 Rodada 90B — ciclo de vida, configuração fixa, identidade de eventos e versionamento (revisão 1.75)
+
+> **2026-11-06.** O criador aprovou expressamente **1A–4A** da **Rodada 90B**, sem observações adicionais. Registros **D-957–D-960**, consolidado em **§89** de `docs/REGRAS_DO_JOGO.md`. Preservadas a **Rodada 91 de gameplay (D-381–D-384, §88, adendo 12.49)** e as demais decisões. D-001 mantém a norma de combate no consolidado/decisões, não no GDD histórico.
+
+| Questão | Escolha | Regra | Documento |
+|---|---|---|---|
+| R90B-Q1 | **1A** | Validar **Resources mecânico/visual** ao carregar e após alterações/recarregamentos; invalidar avaliações anteriores se dados mudarem, antes de disponibilizar | [D-957](decisoes/D-957-r90b-q1-validacao-resource-carregamento-alteracao-recarregamento.md) |
+| R90B-Q2 | **2A** | **Fixar configuração mecânica e variante na declaração**, mas consultar estado dos combatentes em instantes mecânicos definidos | [D-958](decisoes/D-958-r90b-q2-configuracao-resolvida-fixa-declaracao-estado-combatentes-dinamico.md) |
+| R90B-Q3 | **3A** | **IDs individuais determinísticos por evento**, distinguindo eventos da mesma ocorrência e permitindo detectar reentregas sem VFX/diagnóstico duplicado | [D-959](decisoes/D-959-r90b-q3-identidade-deterministica-individual-evento-deduplicacao-consumidores.md) |
+| R90B-Q4 | **4A** | **Esquemas mecânico/visual versionados**, incompatibilidade detectada e **migração de dados controlada/verificável**, sem reescrever automaticamente fichas originais | [D-960](decisoes/D-960-r90b-q4-versionamento-explicito-schemas-resources-migracao-controlada.md) |
+
+**Relações e limitações:** preservar D-235, D-333–D-343, D-348–D-351, D-360–D-363, D-373–D-376 e D-953–D-956. Exemplo ilustrativo: Fire Bullet com arquivo visual editado demanda revalidação antes de disponibilizar a nova configuração; um Splitter Flames em execução mantém a variante com que foi declarado, mas condições e atributos dos participantes seguem os instantes mecânicos apropriados. Entrega repetida do **mesmo evento** não multiplica VFX, enquanto eventos **distintos** da mesma ocorrência continuam válidos. A migração controlada de **schemas** não é a migração da execução do Move. Não escolher ID, formato de versão, transporte ou mecanismo de cache sem nova aprovação.
+
+**Pendências:** destino visual de execuções já em andamento após recarregamento, algoritmo de detecção de mudanças, política de migração e critérios de testes. **Conflitos preservados:** D-226 versus plano do código após Windup, D-363 citando D-358 em lugar de D-362 e a divergência de LUK da Rodada 60 (§12.13). **Somente documentação: nenhum código, Resource, Move, IA, HUD, VFX, cena, teste ou asset modificado; nenhum teste Godot executado.**
 
