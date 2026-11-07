@@ -2897,3 +2897,33 @@ As regras completas de cada item ficam no arquivo da decisão; esta lista é o �
 - **Histórico:** preservar D-235, D-321, D-377–D-384, D-957–D-964 e demais decisões. A divergência histórica de LUK R60 (GDD §12.13), o conflito do plano pós-Windup versus D-226 e referências incorretas antigas permanecem sem alteração.
 - **Somente documentação:** quatro D individuais, índice, consolidado e adendo GDD. **Nenhum código, Resource, Move, habilidade, ficha, IA, HUD, cena, teste, asset ou VFX alterado; nenhum teste Godot executado.**
 
+---
+
+## 92. Rodada 92B — ativação atômica, dependências, rastros reproduzíveis e testes de conformidade
+
+> **2026-11-07.** O criador aprovou expressamente **1A, 2A, 3A e 4A** da **Rodada 92B**, exclusiva sobre contratos da engine de Moves, sem observações extras. Documentos **D-965–D-968**, conforme D-061. A **Rodada 92 de gameplay** (D-385–D-388, §91) e todas as decisões anteriores permanecem preservadas. **Somente documentação, não implementação.**
+
+### 92.1 Regras aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-965](decisoes/D-965-r92b-q1-ativacao-atomica-par-resources-validado.md) | **1A** | **Ativar atomicamente um par consistente e validado de Resources mecânico/visual** para **novas execuções**, sem expor combinação parcial de versões |
+| [D-966](decisoes/D-966-r92b-q2-rastrear-dependencias-compartilhadas-revalidacao-seletiva.md) | **2A** | **Manter dependências explícitas**; alteração de componente compartilhado **invalida e exige revalidação dos Moves efetivamente dependentes** antes de disponibilizar novas configurações |
+| [D-967](decisoes/D-967-r92b-q3-rastros-reproduziveis-versoes-estados-seeds.md) | **3A** | **Rastros reproduzíveis** com **IDs, versões, resultados de condições/ocorrências, eventos, estados e seeds necessários**, **sem novas rolagens de RNG** |
+| [D-968](decisoes/D-968-r92b-q4-testes-exatos-mecanica-criterios-visuais-aprovados.md) | **4A** | **Conformidade determinística exata** de identidades, ordem e marcos mecânicos; **apresentação visual mensurável por critérios específicos previamente aprovados**, sem tolerâncias inventadas |
+
+### 92.2 Compatibilidades e exemplos não normativos
+
+- **D-965 e D-343/D-349/D-955/D-957/D-958/D-961:** alterar apenas Resource mecânico ou visual continua permitido; o **par efetivo** só é ativado quando sua correspondência estiver validada. Execuções anteriores **não trocam de receita nem de configuração mecânica** por uma atualização posterior. **Exemplo hipotético:** Fire Bullet com revisão visual e mecânica só usa o novo par validado em próximas declarações.
+- **D-966 e D-340/D-341/D-957:** componentes reutilizáveis têm dependências explícitas; quando mudam, os Moves realmente dependentes devem ser invalidados e revalidados, mesmo que seus dois arquivos próprios não tenham mudado. **Não presumir** algoritmo de grafo, cache, revalidação global nem ignorar dependências indiretas.
+- **D-967 e D-218/D-226/D-375/D-954/D-956/D-959/D-962/D-960:** rastro de execução inclui identidades, **versão de configuração efetivamente utilizada**, avaliações de condições, estados finais das ocorrências, eventos e dados/seeds necessários a reproduzir o caso. **Não criar RNG adicional ou evento mecânico falso** em ocorrências não acionadas.
+- **D-968 e D-351/D-235/D-348/D-362:** testes de **identidade, ordem e marcos mecânicos** devem conferir o determinismo **exatamente**; os visuais devem ter **critérios mensuráveis específicos e homologados**. Não usar uma tolerância cosmética para desculpar divergência mecânica, nem inventar frames, duração de impacto ou limites de sincronismo.
+- Preservar **D-376** (Move migrado inválido indisponível), **D-963** (falha de consumidor visual isolada da mecânica) e **D-964** (schema migrado apenas após prévia/aprovação de lote). A validação documental não se confunde com testes de Godot realizados.
+
+### 92.3 Pendências de implementação e conflitos históricos
+
+- **Ainda não especificados como contratos executáveis:** campos/classes e formato exato dos Resources tipados, representações de referência e operadores declarativos, mecanismo de ativação atômica, dependências e invalidação, formato de replay, contratos de armazenamento, definição concreta das tolerâncias **visuais** e piloto de migração. Esses detalhes não podem ser escolhidos como decisões já aprovadas.
+- **Revisão objetiva de prontidão:** contratos gerais são suficientes para **projetar e testar uma fundação isolada de dados/validação**, sem alegar engine operacional; integrar ao `Battle` legado e migrar Moves ainda requer análise dos sistemas de atributos/MP, testes de conformidade, contratos de API e autorização específica. O código da `main` inspecionada em `4769f01e535c775da3ade833060b60b6f0549446` continua com `Skill extends RefCounted` e roteamentos específicos em `Battle`/`BattleFx`; não existe prova de execução da nova engine.
+- **Histórico preservado:** D-363 cita D-358 em vez de D-362 no contrato de eventos; D-226 exige reserva de ocorrências na declaração, mas o planner legado é invocado depois do Windup; divergência histórica da Rodada 60 sobre LUK no GDD §12.13. Preservar D-385–D-388 e demais regras da exploração.
+- **Escopo:** quatro decisões individuais, índice, consolidado e adendo do GDD. **Nenhum código, Resource executável, Move, VFX, IA, HUD, cena, teste ou asset alterado; nenhum teste Godot executado.**
+

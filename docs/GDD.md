@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.77 — Rodada 92: arena temporária, habilidades na exploração, vantagem furtiva e alerta de grupos (2026-11-07); histórico preservado.  
+> **Revisão:** 1.78 — Rodada 92B: ativação atômica, dependências explícitas, rastros reproduzíveis e conformidade mecânica/visual (2026-11-07); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1787,6 +1787,7 @@ C. Outro comportamento, descrito pelo criador.
 | 1.76 | 2026-11-07 | Rodada 91B: preservar receita visual validada de execução em andamento; eventos com identidades estáveis e referências espaciais do instante mecânico; isolar falhas de consumidores VFX/diagnóstico sem alterar mecânica; prévia de migração de schema com diffs por Resource, aprovação explícita do lote, cópias separadas e revalidação. D-961–D-964. | Rodada 91B registrada / Rodada 92B proposta |
 
 | 1.77 | 2026-11-07 | Rodada 92: alterações na arena apenas até o fim da batalha sem afetar overworld; habilidades podem agir na exploração quando expressamente declaradas; furtividade bem-sucedida pode dar vantagem de posicionamento segundo o encontro; grupos próximos alertados podem perseguir no overworld, sem entrar automaticamente no mesmo combate. D-385–D-388. | Rodada 92 registrada / Rodada 93 proposta |
+| 1.78 | 2026-11-07 | Rodada 92B: ativação atômica do par mecânico/visual validado; invalidação/revalidação dos Moves dependentes de componentes compartilhados; rastros reproduzíveis de IDs, versões, condições, ocorrências, eventos, estados e seeds necessários; testes mecânicos determinísticos exatos e critérios visuais mensuráveis específicos previamente aprovados. D-965–D-968. | Rodada 92B registrada / Rodada 93B condicionada às lacunas reais |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
@@ -2607,4 +2608,23 @@ A engine deverá **demonstrar por validação e testes reproduzíveis** que even
 **Exemplos não normativos:** obstáculo destruído em combate não se transfere para o overworld (D-377/D-381); uma habilidade com efeito de exploração declarado pode utilizá-lo, porém não foi decidido se precisa estar selecionada para combate (D-378/D-382); encontro com furtividade válida pode oferecer posição vantajosa, sem alterar ATB inicial (D-031/D-383); patrulha pode alertar outra no mapa, sem convocá-la automaticamente ao mesmo combate (D-321).
 
 **Pendências e histórico:** ainda faltam definir objetos/Moves concretos, habilidades exploratórias e atuação das não selecionadas, condições de furtividade, posições e regras de alerta. Preservar D-235, D-321, D-377–D-384, D-957–D-964 e demais decisões; conflitos históricos continuam sem resolução unilateral. **Somente documentação; nenhum código, Move, Resource, ficha, IA, HUD, cena, VFX, asset ou teste alterado.**
+
+### 12.53 Rodada 92B — ativação do par, dependências, reprodutibilidade e testes (revisão 1.78)
+
+> **2026-11-07.** O criador aprovou **1A, 2A, 3A e 4A** da série B sobre a engine de Moves, sem observações extras. **D-965–D-968**, consolidados em **§92** de `docs/REGRAS_DO_JOGO.md`. A **Rodada 92 tradicional (D-385–D-388, adendo 12.52)** e todo o histórico anterior permanecem intactos. **D-001** mantém as regras normativas de combate nas decisões/consolidado; o GDD documenta requisitos, não implementação.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R92B-Q1 | **1A** | **Par mecânico/visual ativado atomicamente após validação**, somente em **novas execuções**, sem combinações parciais incompatíveis | [D-965](decisoes/D-965-r92b-q1-ativacao-atomica-par-resources-validado.md) |
+| R92B-Q2 | **2A** | **Dependências explícitas** de componentes compartilhados, com **invalidação e revalidação seletiva** dos Moves efetivamente afetados | [D-966](decisoes/D-966-r92b-q2-rastrear-dependencias-compartilhadas-revalidacao-seletiva.md) |
+| R92B-Q3 | **3A** | **Rastros reproduzíveis de execução** com identidades, versões, resultados, eventos e estados/seeds necessários, **sem novos RNGs** | [D-967](decisoes/D-967-r92b-q3-rastros-reproduziveis-versoes-estados-seeds.md) |
+| R92B-Q4 | **4A** | **Identidades, ordem e marcos mecânicos com correspondência exata**; **visual verificado por critérios mensuráveis previamente aprovados**, sem tolerâncias universais inventadas | [D-968](decisoes/D-968-r92b-q4-testes-exatos-mecanica-criterios-visuais-aprovados.md) |
+
+**Compatibilidades:** D-235/D-339–D-343/D-348–D-351/D-360–D-363/D-373–D-376/D-953–D-964. Os Resources continuam editáveis independentemente, mas um **novo par efetivo** só é disponibilizado como unidade consistente e validada; as execuções antigas preservam suas versões. A revalidação de dependências não cria novas regras mecânicas; registros de diagnóstico não consomem RNG. Sem parâmetros ou tolerâncias visuais aprovados para o caso, a aprovação dos testes visuais permanece pendente.
+
+**Exemplos hipotéticos:** atualizar receita visual de Fire Bullet aciona revalidação do seu par efetivo; alterar operador compartilhado invalida os Moves dependentes; diagnosticar Splitter Flames interrompido exige correlacionar versão, condições, ocorrências e eventos para reprodução. Nenhum exemplo cria efeito, duração ou Move executável.
+
+**Avaliação da fundação:** o conjunto de decisões oferece requisitos para **iniciar o desenho detalhado e a implementação isolada de infraestrutura de dados/validação após autorização específica e fechamento do escopo**. Ainda não comprova engine completa ou migração de Move: faltam API/esquema executável concreto, integração com `Battle`, dependências de MP/seis atributos, seleção de piloto e ferramentas/testes reais. Conflitos históricos preservados: planner legado posterior ao Windup versus D-226, referência errada D-363/D-358 (correta D-362), LUK R60 (§12.13).
+
+**Estado real:** atualização exclusivamente documental. Nenhum script, Resource, Move, cena, VFX, HUD, IA, teste ou asset modificado; nenhum teste Godot executado.
 
