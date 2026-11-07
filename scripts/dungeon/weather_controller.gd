@@ -39,6 +39,8 @@ const TEMPORAL_BIOMES := ["temporal_tower", "temporal_spire"]
 static var debug_force := ""
 ## Debug/captura: true desliga o clima para a captura "antes".
 static var debug_disable := false
+## Debug/vídeo: duração fixa do evento (0 = usa 20–40 s).
+static var debug_duration := 0.0
 ## Andares que já mostraram o evento nesta execução (seed + andar).
 static var _played: Dictionary = {}
 
@@ -148,6 +150,8 @@ static func _hash_seed(seed_value: int, floor_value: int, salt: int) -> int:
 
 
 func _duration_for(seed_value: int, floor_value: int) -> float:
+	if debug_duration > 0.0:
+		return maxf(debug_duration, FADE * 2.0 + 0.5)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = _hash_seed(seed_value, floor_value, 37)
 	return rng.randf_range(DURATION_MIN, DURATION_MAX)
