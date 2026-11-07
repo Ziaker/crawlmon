@@ -49,6 +49,10 @@ var _rect: ColorRect
 var _mat: ShaderMaterial
 var _event_type := ""
 var _active := false
+var _pending_key := ""
+var _pending_biome := ""
+var _pending_seed := 0
+var _pending_floor := 0
 
 
 func setup(state: Object, fog: Node2D) -> void:
@@ -90,12 +94,22 @@ func _resolve_and_start() -> void:
 	if _event_type != "mist":
 		return
 
-	await get_tree().create_timer(START_DELAY).timeout
-	if not is_inside_tree():
-		return
+	_pending_key = key
+	_pending_biome = biome
+	_pending_seed = seed_value
+	_pending_floor = floor_value
+	var timer := Timer.new()
+	timer.one_shot = true
+	timer.wait_time = START_DELAY
+	timer.timeout.connect(_on_start_delay)
+	add_child(timer)
+	timer.start()
+
+
+func _on_start_delay() -> void:
 	if debug_force == "":
-		_played[key] = true
-	_start_mist(biome, seed_value, floor_value)
+		_played[_pending_key] = true
+	_start_mist(_pending_biome, _pending_seed, _pending_floor)
 
 
 ## Rolagem determinística: 20% por andar (1 em 5).
