@@ -115,7 +115,7 @@ A folha usa **pitch de 25 px**: 1 px de linha ciano + célula de arte de 24×24.
 
 ## Pendências
 
-- Os 16 foram capturados no laboratório e **no jogo** na mesma seed/mapa (`scratch/exploration_biomes/`, contato `docs/referencias/tilesets/biomes_ingame_contact.png`); só o **Temporal Tower** está aprovado visualmente. O `MapVisuals.setup` virou re-entrante (`_clear_visuals`) para o teste in-game não travar após ~9 perfis.
+- Os 16 foram capturados no laboratório e **no jogo** na mesma seed/mapa (`scratch/tilesets/` e `scratch/exploration_biomes/`, contatos `biomes_contact.png` e `biomes_ingame_contact.png`); o laboratório também aplica o `AMBIENT` do bioma, então os dois contatos são coloridos. A **névoa** (camada de explorado) só existe na cena do jogo. O `MapVisuals.setup` virou re-entrante (`_clear_visuals`) para o teste in-game não travar após ~9 perfis.
 - A **névoa e o overlay** são por bioma (`scripts/dungeon/biome_visuals.gd`, D-358/D-359): 16 cores fortes de `AMBIENT` e 16 presets de névoa (cor/densidade/warp/drift). As luzes amarelas de tocha e a luz do jogador foram removidas; a única `PointLight2D` é a vermelha dos inimigos.
 - O contrato de face passa no Temporal Tower; as outras 12 folhas têm arte ambígua (o lado escuro não é consistente) e ficam com `side_contract_ok=false`. Para elas o jogo usa o **fallback por papel** (strips, tips, island, cross e alt) e o `murky_forest` foi testado com 688 células e 0 divergências (D-356).
 - O renderizador escolhe a parede pela assinatura de lado medida; o “Legend” da folha ainda não é lido como máscara automática.

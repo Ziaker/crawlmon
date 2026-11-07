@@ -9,6 +9,7 @@ extends Node2D
 const TILE := 48
 const ACTIVE_PROFILE := "res://assets/pmd/dungeons/sky/atlas/temporal_tower_profile.json"
 const POOL_PATH := "res://assets/pmd/dungeons/sky/atlas/biome_pool.json"
+const BiomeVisuals := preload("res://scripts/dungeon/biome_visuals.gd")
 ## Room embedded in a wall mass (the same case the game generates), so the
 ## sides use the core side pieces instead of the free-standing border strips.
 const ROOM := Vector2i(14, 10)
@@ -32,6 +33,7 @@ var _columns := 28
 var _mask_mode := false
 var _name := "tileset"
 var _atlas: Texture2D
+var _modulate: CanvasModulate
 var _camera: Camera2D
 var _catalog_layer: TileMapLayer
 var _room_layer: TileMapLayer
@@ -151,6 +153,9 @@ func setup(profile_path: String) -> void:
 		push_error("tileset lab: missing atlas " + atlas_path)
 		return
 	_atlas = _load_texture(atlas_path)
+	_modulate = CanvasModulate.new()
+	_modulate.color = BiomeVisuals.ambient(_name)
+	add_child(_modulate)
 	_build_tileset()
 	_build_catalog()
 	_build_decals()

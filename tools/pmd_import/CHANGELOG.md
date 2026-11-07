@@ -11,6 +11,8 @@
 - **Temporal/Spire compensados:** `c8dce8` e `a0b0c8` para continuarem legíveis
   sem as luzes dinâmicas.
 - **16 capturas in-game** e baseline de brilho regeneradas.
+- **Laboratório:** o `tileset_lab` também aplica o `AMBIENT` do bioma; os 16
+  contatos do laboratório deixaram de ser cinza. A névoa só existe no jogo.
 
 ## 3.1.0 — 2026-11-06
 

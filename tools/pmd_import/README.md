@@ -155,6 +155,8 @@ As imagens vão para `scratch/tilesets/<nome>_catalog.png`, `_room.png` e
 - 16 capturas de sala em `scratch/tilesets/` e **16 no jogo** em
   `scratch/exploration_biomes/` (mesma seed/mapa); contatos em
   `docs/referencias/tilesets/biomes_contact.png` e `biomes_ingame_contact.png`.
+  O laboratório também aplica o `AMBIENT` do bioma; a névoa (explorado) só
+  existe na cena do jogo.
 - O `MapVisuals.setup` é re-entrante (`_clear_visuals`), necessário para o teste
   in-game dos 16 perfis; o jogo chama uma vez.
 - O **seletor de bioma** (`scripts/dungeon/biome_selector.gd`) usa o
