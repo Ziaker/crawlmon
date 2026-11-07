@@ -432,6 +432,11 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-383](D-383-r91-q3-furtividade-ambiental-e-coberturas-na-exploracao.md) | Exploração / R91 | Q3B: furtividade ambiental com esconderijos/coberturas antes do contato hostil, preservando detecção principalmente por proximidade | Aprovada; condições pendentes |
 | [D-384](D-384-r91-q4-ia-adaptativa-padroes-da-batalha-atual-sem-memoria.md) | IA / R91 | Q4B: IA pode adaptar decisões a padrões observados na batalha corrente, sem memória entre batalhas | Aprovada; comportamento concreto pendente |
 
+| [D-385](D-385-r92-q1-arena-alteracoes-so-ate-fim-batalha.md) | Combate / R92 | Q1A: alterações e destruição de arena até final da batalha, overworld preservado | Aprovada; interações concretas pendentes |
+| [D-386](D-386-r92-q2-habilidades-exploracao-uso-expresso.md) | Habilidades / R92 | Q2B: habilidades podem atuar na exploração mediante declaração expressa da própria habilidade | Aprovada; habilidades concretas pendentes |
+| [D-387](D-387-r92-q3-furtividade-vantagem-posicionamento-por-encontro.md) | Exploração / R92 | Q3B: aproximação furtiva pode dar vantagem de posicionamento quando o encontro permitir | Aprovada; condições pendentes |
+| [D-388](D-388-r92-q4-alerta-grupos-perseguicao-sem-reforco-automatico.md) | Exploração / R92 | Q4C: grupos próximos podem ser alertados e perseguir no overworld, sem entrar automaticamente no mesmo combate | Aprovada; alcance pendente |
+
 ## Decisões locais reconciliadas — 2026-11-06
 
 As decisões locais que colidiam com IDs do `origin/main` foram renumeradas para a faixa reservada **D-900–D-952**. As que não colidiam mantiveram o ID. O mapa completo está em [MAPA_RENUMERACAO_2026-11-06.md](MAPA_RENUMERACAO_2026-11-06.md).

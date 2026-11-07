@@ -2869,3 +2869,31 @@ As regras completas de cada item ficam no arquivo da decisão; esta lista é o �
 - **Conflitos editoriais/técnicos não alterados:** D-363 cita D-358 como contrato de eventos (a referência pertinente é D-362); planejamento legado após Windup versus D-226 (reserva na declaração); divergência histórica de LUK da Rodada 60 (GDD §12.13).
 - **Somente documentos:** quatro decisões novas, índice, consolidado e GDD; **nenhum código, Move, Resource executável, VFX, IA, HUD, cena, asset ou teste modificado; nenhum teste Godot executado**.
 
+---
+
+## 91. Rodada 92 — alterações temporárias de arena, habilidades exploratórias, furtividade e alerta de grupos
+
+> **2026-11-07.** Aprovações expressas **1A, 2B, 3B e 4C**, sem observações próprias. Decisões **D-385–D-388**, registradas segundo D-061. Preservar as Rodadas **90B/91B (D-957–D-964)**, a Rodada 91 (D-381–D-384) e todas as decisões anteriores.
+
+### 91.1 Regras aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-385](decisoes/D-385-r92-q1-arena-alteracoes-so-ate-fim-batalha.md) | **1A** | **Alterações/destruições de arena duram só até o fim da batalha**; **overworld permanece inalterado** |
+| [D-386](decisoes/D-386-r92-q2-habilidades-exploracao-uso-expresso.md) | **2B** | **Habilidades de espécie podem ter efeitos exploratórios** se **a habilidade declarar expressamente** esse uso |
+| [D-387](decisoes/D-387-r92-q3-furtividade-vantagem-posicionamento-por-encontro.md) | **3B** | **Aproximação furtiva bem-sucedida pode dar vantagem de posicionamento** quando **o encontro a oferecer** |
+| [D-388](decisoes/D-388-r92-q4-alerta-grupos-perseguicao-sem-reforco-automatico.md) | **4C** | **Grupos próximos podem ser alertados e perseguir no overworld**, mas **não ingressam automaticamente no mesmo combate** |
+
+### 91.2 Compatibilidades e exemplos
+
+- **Arena:** pilar hipotético destruído por Move e cenário com interações aprovadas (D-381) permanece destruído durante a batalha, **não altera o overworld** e deixa de valer após o encerramento. Preservar D-377 (terreno tático), GDD R38-Q2 (correspondência visual da arena), e D-235 (neutralidade de Move/lado).
+- **Habilidades:** habilidade hipotética pode declarar efeito de exploração. Preservar D-378 (duas habilidades por Pokémon, uma selecionada para **combate** na ficha) e D-382 (preservação/substituição por evolução), **sem decidir se a não selecionada para combate age na exploração**. HMs/TMs conservam restrições próprias de GDD R24-Q4; não inventar poderes exploratórios.
+- **Furtividade:** encontro que permita vantagem de posicionamento pode iniciá-lo em disposição tática melhor após aproximação furtiva válida, **sem bônus automático de recursos/ATB** (D-031). Preservar D-383 (coberturas), D-205/GDD R38-Q1 (detecção principalmente por proximidade) e GDD R37-Q1 (contato hostil inicia batalha).
+- **Grupos:** patrulha pode avisar grupo próximo, que passa a perseguir no mapa **sem reforçar automaticamente o combate atual**. Preservar D-321 (grupos de até três), GDD R9-Q3 (perseguição) e D-383 (furtividade). Não criar encontros com mais de três adversários.
+
+### 91.3 Pendências, histórico e escopo
+
+- **Não foram definidos:** elementos destrutíveis reais; habilidades exploratórias, efeitos e uso de habilidade não selecionada; posições dos encontros furtivos; alcance, propagação, duração e estado de alertas.
+- **Histórico:** preservar D-235, D-321, D-377–D-384, D-957–D-964 e demais decisões. A divergência histórica de LUK R60 (GDD §12.13), o conflito do plano pós-Windup versus D-226 e referências incorretas antigas permanecem sem alteração.
+- **Somente documentação:** quatro D individuais, índice, consolidado e adendo GDD. **Nenhum código, Resource, Move, habilidade, ficha, IA, HUD, cena, teste, asset ou VFX alterado; nenhum teste Godot executado.**
+

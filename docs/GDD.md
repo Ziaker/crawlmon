@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.76 — Rodada 91B: receitas visuais em andamento, referências espaciais, isolamento de falhas e migração de schemas por lote (2026-11-07); histórico preservado.  
+> **Revisão:** 1.77 — Rodada 92: arena temporária, habilidades na exploração, vantagem furtiva e alerta de grupos (2026-11-07); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1786,6 +1786,8 @@ C. Outro comportamento, descrito pelo criador.
 | 1.75 | 2026-11-06 | Rodada 90B: Resources mecânico/visual revalidados ao carregar e após mudar; configuração mecânica/variante congelada por execução na declaração, com estado dos combatentes dinâmico; IDs individuais determinísticos por evento e detecção de entregas repetidas; schemas explicitamente versionados e migração de dados controlada sem regravar originais. D-957–D-960. | Rodada 90B registrada / Rodada 91B proposta |
 | 1.76 | 2026-11-07 | Rodada 91B: preservar receita visual validada de execução em andamento; eventos com identidades estáveis e referências espaciais do instante mecânico; isolar falhas de consumidores VFX/diagnóstico sem alterar mecânica; prévia de migração de schema com diffs por Resource, aprovação explícita do lote, cópias separadas e revalidação. D-961–D-964. | Rodada 91B registrada / Rodada 92B proposta |
 
+| 1.77 | 2026-11-07 | Rodada 92: alterações na arena apenas até o fim da batalha sem afetar overworld; habilidades podem agir na exploração quando expressamente declaradas; furtividade bem-sucedida pode dar vantagem de posicionamento segundo o encontro; grupos próximos alertados podem perseguir no overworld, sem entrar automaticamente no mesmo combate. D-385–D-388. | Rodada 92 registrada / Rodada 93 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2590,4 +2592,19 @@ A engine deverá **demonstrar por validação e testes reproduzíveis** que even
 **Compatibilidade:** manter D-235/D-343/D-348–D-351/D-362/D-376/D-954–D-960. Execuções de Fire Bullet ou Splitter Flames em andamento (exemplos) não trocam automaticamente de receita visual por recarga; consumidores não alteram a autoridade mecânica. IDs e transformações vêm dos participantes reais, independentemente de personagem, espécie ou lado. A perda real de um Resource em execução não obriga um VFX impossível: exige diagnóstico sem fallback inventado. **Migração de schema** é distinta da migração de execução legada de Moves. Não escolher algoritmo, dados espaciais, defaults ou arquivos concretos sem nova aprovação.
 
 **Pendências:** política concreta de retenção de receita, referência espacial, falha de consumidor, estrutura de relatório de migração, testes automáticos/visuais e limiares. Permanecem preservadas divergências anteriores: D-226 versus planner pós-Windup, D-363 citando D-358 em vez de D-362, e LUK da Rodada 60 (GDD §12.13). **Somente documentação; nenhum código, Resource, Move, VFX, IA, HUD, cena, asset ou teste modificado; nenhum teste Godot executado.**
+
+### 12.52 Rodada 92 — arena temporária, habilidades exploratórias, furtividade e grupos alertados (revisão 1.77)
+
+> **2026-11-07.** Escolhas **1A, 2B, 3B e 4C**, sem observações próprias. Decisões individuais **D-385–D-388**, consolidadas em **§91** de `docs/REGRAS_DO_JOGO.md`. Adendo histórico segundo D-061; D-001 mantém o GDD não normativo para combate. **D-961–D-964 da Rodada 91B e demais decisões preservadas.**
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R92-Q1 | **1A** | **Alterações/destruições na arena duram só durante a batalha**, sem alterar a exploração | [D-385](decisoes/D-385-r92-q1-arena-alteracoes-so-ate-fim-batalha.md) |
+| R92-Q2 | **2B** | **Habilidades podem ter efeito exploratório** quando a própria habilidade o **declarar expressamente** | [D-386](decisoes/D-386-r92-q2-habilidades-exploracao-uso-expresso.md) |
+| R92-Q3 | **3B** | **Aproximação furtiva pode gerar vantagem de posicionamento** quando o encontro oferecer tal possibilidade | [D-387](decisoes/D-387-r92-q3-furtividade-vantagem-posicionamento-por-encontro.md) |
+| R92-Q4 | **4C** | **Grupos próximos podem ser alertados e perseguir no overworld**, sem entrar automaticamente na mesma batalha | [D-388](decisoes/D-388-r92-q4-alerta-grupos-perseguicao-sem-reforco-automatico.md) |
+
+**Exemplos não normativos:** obstáculo destruído em combate não se transfere para o overworld (D-377/D-381); uma habilidade com efeito de exploração declarado pode utilizá-lo, porém não foi decidido se precisa estar selecionada para combate (D-378/D-382); encontro com furtividade válida pode oferecer posição vantajosa, sem alterar ATB inicial (D-031/D-383); patrulha pode alertar outra no mapa, sem convocá-la automaticamente ao mesmo combate (D-321).
+
+**Pendências e histórico:** ainda faltam definir objetos/Moves concretos, habilidades exploratórias e atuação das não selecionadas, condições de furtividade, posições e regras de alerta. Preservar D-235, D-321, D-377–D-384, D-957–D-964 e demais decisões; conflitos históricos continuam sem resolução unilateral. **Somente documentação; nenhum código, Move, Resource, ficha, IA, HUD, cena, VFX, asset ou teste alterado.**
 
