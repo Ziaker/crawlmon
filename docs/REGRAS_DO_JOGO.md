@@ -272,6 +272,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-385] Neblina mais densa:** `max_alpha` 0,40, `density` 0,85, `noise_scale` 1,7 e `edge_mist` 0,75; bancos maiores, cantos expandidos e bordas fechadas para piorar a leitura visual; raio 7,5/LOS/explorado intactos; vídeos regravados.
 - **[D-386] Chuva implementada:** gotas 2D em espaço de mundo e respingos nas células de chão perto do jogador; 20% por andar, 20–40 s, fade 2 s; só visual; CPUParticles2D (GL Compatibility); calor/neve/cinza/distorção ainda pendentes.
 - **[D-387] Calor ondulado implementado:** overlay 2D de tela cheia com senoides, RGB shift leve e tom âmbar, mais forte perto do chão; poeira de calor esparsa; 20% por andar, 20–40 s; só visual; fora do Motion Composer (D-383).
+- **[D-388] Seguidor na mesma velocidade:** `SPEED` do seguidor 200 → **180 px/s**, igual ao jogador; o spawn usa o gap de 32 px (D-361); rastro exato, espera e reposição de D-314 não mudam; o ganho de velocidade para alcançar o alvo deixa de existir.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).

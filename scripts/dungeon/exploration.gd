@@ -191,9 +191,10 @@ func _spawn_followers() -> void:
 		followers.append(follower)
 
 
-## Um tile atrás do líder; se estiver bloqueado, tenta as outras direções.
+## O gap da fila atrás do líder; se estiver bloqueado, tenta as outras direções.
 func _follower_spawn(origin: Vector2) -> Vector2:
-	for offset in [Vector2(0, TILE), Vector2(0, -TILE), Vector2(-TILE, 0), Vector2(TILE, 0)]:
+	var gap := float(DungeonFollowerClass.TRAIL_GAP)
+	for offset in [Vector2(0, gap), Vector2(0, -gap), Vector2(-gap, 0), Vector2(gap, 0)]:
 		if not _is_wall_at(origin + offset):
 			return origin + offset
 	return origin

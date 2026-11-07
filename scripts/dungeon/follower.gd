@@ -7,7 +7,7 @@ extends Node2D
 ## mantém 32 px de distância de trilha (D-361; antes 48). Se ficar preso por 1 s,
 ## ele é reposicionado no ponto livre atrás do líder.
 
-const SPEED := 200.0
+const SPEED := 180.0  ## Same as player.gd (D-388; was 200).
 const TRAIL_STEP := 4.0
 const TRAIL_GAP := 32.0  ## 2/3 tile at 48 px (D-361; was 48).
 const TRAIL_MAX := 512
