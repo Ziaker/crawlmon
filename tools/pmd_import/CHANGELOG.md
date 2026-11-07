@@ -1,5 +1,16 @@
 # Changelog — pipeline de tilesets
 
+## 3.3.0 — 2026-11-06
+
+- **Névoa de duas cores laterais:** cada bioma tem `color` (esquerda) e
+  `color_b` (direita) + `side_mix`; o shader mistura ao longo do eixo X.
+- **Ruído próprio por bioma:** `noise_type` (simplex, cellular, perlin, value
+  cubic), frequência, octaves, seed e duas escalas; o `fog_of_war` recria o
+  `NoiseTexture2D` no `apply_biome`.
+- **16 capturas in-game** regeneradas; a névoa de gelo é celular/cristalina, a
+  de areia é Perlin larga, a de floresta é simplex suave, a de caverna é cubic.
+- O laboratório continua só com o ambiente; a névoa é da cena do jogo.
+
 ## 3.2.0 — 2026-11-06
 
 - **16 paletas fortes:** o `BiomeVisuals` saiu dos tons pastel; verde, ciano,

@@ -173,7 +173,8 @@ As imagens vão para `scratch/tilesets/<nome>_catalog.png`, `_room.png` e
 - As tochas e luzes amarelas foram removidas, e D-359 removeu também a luz do
   jogador; a única `PointLight2D` restante é a vermelha dos inimigos. A
   névoa/overlay por bioma fica em `scripts/dungeon/biome_visuals.gd` com 16
-  paletas fortes (D-358/D-359).
+  paletas fortes; D-360 deu à névoa duas cores laterais e ruído/scale próprios
+  por bioma (D-358/D-359/D-360).
 - O terrain nativo/blob 47 foi descartado; o jogo usa o renderer manual
   aprovado.
 - Nada foi commitado ou publicado.

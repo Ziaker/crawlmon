@@ -19,6 +19,7 @@
 3. **Temporal e Spire compensados.** Sem as luzes dinâmicas, o `AMBIENT` do Temporal subiu para `c8dce8` e o do Spire para `a0b0c8`; os outros 14 já ficaram legíveis com as cores fortes.
 4. **Sem mexer na regra:** raio de 7,5, LOS, explorado permanente, ordem de desenho, câmera 2,3×, 48 px e geração procedural continuam iguais.
 5. **Laboratório também recebe o ambiente.** O `tileset_lab` aplica o mesmo `AMBIENT` do bioma num `CanvasModulate`; os 16 contatos do laboratório deixaram de ser cinza. A névoa em si só existe na cena do jogo (`exploration.tscn`), porque o laboratório não tem névoa/explorado.
+6. **Duas cores e ruído por bioma (D-360).** A névoa ganhou `color`/`color_b`, `side_mix` e um `NoiseTexture2D` com tipo/frequência/escala/seed próprios; o lado esquerdo e o direito são diferentes dentro do mesmo bioma, e cada bioma tem um padrão de névoa distinto.
 
 ## Estado
 

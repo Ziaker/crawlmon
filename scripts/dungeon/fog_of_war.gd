@@ -96,9 +96,28 @@ func apply_biome(biome_name: String) -> void:
 	if mat == null:
 		return
 	mat.set_shader_parameter("fog_color", preset["color"])
+	mat.set_shader_parameter("fog_color_b", preset["color_b"])
+	mat.set_shader_parameter("side_mix", preset["side_mix"])
 	mat.set_shader_parameter("density", preset["density"])
 	mat.set_shader_parameter("warp", preset["warp"])
 	mat.set_shader_parameter("drift", preset["drift"])
+	mat.set_shader_parameter("noise_scale", preset["noise_scale"])
+	mat.set_shader_parameter("noise_scale_b", preset["noise_scale_b"])
+	mat.set_shader_parameter("noise_tex", _make_noise(preset))
+
+
+func _make_noise(preset: Dictionary) -> NoiseTexture2D:
+	var fast := FastNoiseLite.new()
+	fast.noise_type = int(preset["noise_type"])
+	fast.frequency = float(preset["noise_frequency"])
+	fast.fractal_octaves = int(preset["noise_octaves"])
+	fast.seed = int(preset["noise_seed"])
+	var noise := NoiseTexture2D.new()
+	noise.noise = fast
+	noise.width = 256
+	noise.height = 256
+	noise.seamless = true
+	return noise
 
 
 func _process(_delta: float) -> void:
