@@ -264,6 +264,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[GDD R32-Q4]** O mapa do andar é **revelado progressivamente**. **[CÓDIGO]** névoa de guerra com raio de visão 7,5 tiles; o explorado fica na memória e sobrevive às batalhas.
 - **[CÓDIGO]** Geração: 7–11 salas (4×4 a 9×7), 4–6 inimigos, 2–3 NPCs; tile de 48 px; o layout fica em cache no `GameState`.
 - **[D-314]** Aliados ativos seguem em **fila**, no **rastro exato** do protagonista, sem atravessar paredes/obstáculos; se travar, espera ou vai ao ponto livre mais próximo.
+- **[D-361] Seguidor mais perto:** o gap do rastro passa de **48 px** para **32 px** (2/3 de tile); rastro exato, velocidade, espera e reposicionamento de D-314 não mudam; se ainda parecer longe, o próximo valor é 24 px.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).
