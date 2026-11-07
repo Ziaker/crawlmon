@@ -4,12 +4,12 @@ extends Node2D
 ##
 ## O rastro é uma polyline dos pontos por onde o líder passou, amostrada a cada
 ## 4 px. O seguidor anda por esses pontos (nunca corta o canto de uma parede) e
-## mantém 48 px de distância de trilha. Se ficar preso por 1 s, ele é
-## reposicionado no ponto livre atrás do líder.
+## mantém 32 px de distância de trilha (D-361; antes 48). Se ficar preso por 1 s,
+## ele é reposicionado no ponto livre atrás do líder.
 
 const SPEED := 200.0
 const TRAIL_STEP := 4.0
-const TRAIL_GAP := 48.0  ## 1 tile at 48 px (D-314).
+const TRAIL_GAP := 32.0  ## 2/3 tile at 48 px (D-361; was 48).
 const TRAIL_MAX := 512
 const STUCK_WAIT := 1.0
 
@@ -63,7 +63,7 @@ func _record_leader() -> void:
 			_index = maxi(0, _index - 1)
 
 
-## Índice do ponto que está 48 px atrás do líder ao longo da trilha.
+## Índice do ponto que está 32 px atrás do líder ao longo da trilha.
 func _target_index() -> int:
 	if _trail.is_empty():
 		return 0
