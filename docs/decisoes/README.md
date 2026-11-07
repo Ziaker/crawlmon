@@ -427,6 +427,11 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 | [D-379](D-379-r90-q3-desafios-opcionais-sequenciais-individuais.md) | Dungeons / R90 | Q3C: dungeons opcionais podem combinar desafios consecutivos e encontros especiais individuais | Aprovada; conteúdo pendente |
 | [D-380](D-380-r90-q4-sinergias-condicionais-moves-aliados-consecutivos.md) | Combate / R90 | Q4B: efeitos condicionais próprios de sinergias entre Moves consecutivos de aliados quando requisitos forem satisfeitos | Aprovada; pares/efeitos pendentes |
 
+| [D-381](D-381-r91-q1-moves-modificam-destroem-cenario-com-interacoes-declaradas.md) | Combate / R91 | Q1B: Moves podem alterar/destruir elementos de arena somente se Move e cenário tiverem interações expressas compatíveis | Aprovada; interações concretas pendentes |
+| [D-382](D-382-r91-q2-habilidades-evolucao-preservadas-ou-substituidas-por-ficha.md) | Habilidades / evolução / R91 | Q2C: fichas de cada linha evolutiva determinam habilidades conservadas/substituídas, mantendo escolha entre duas e uma selecionada | Aprovada; fichas concretas pendentes |
+| [D-383](D-383-r91-q3-furtividade-ambiental-e-coberturas-na-exploracao.md) | Exploração / R91 | Q3B: furtividade ambiental com esconderijos/coberturas antes do contato hostil, preservando detecção principalmente por proximidade | Aprovada; condições pendentes |
+| [D-384](D-384-r91-q4-ia-adaptativa-padroes-da-batalha-atual-sem-memoria.md) | IA / R91 | Q4B: IA pode adaptar decisões a padrões observados na batalha corrente, sem memória entre batalhas | Aprovada; comportamento concreto pendente |
+
 ## Decisões locais reconciliadas — 2026-11-06
 
 As decisões locais que colidiam com IDs do `origin/main` foram renumeradas para a faixa reservada **D-900–D-952**. As que não colidiam mantiveram o ID. O mapa completo está em [MAPA_RENUMERACAO_2026-11-06.md](MAPA_RENUMERACAO_2026-11-06.md).

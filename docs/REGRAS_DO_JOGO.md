@@ -2779,3 +2779,34 @@ As regras completas de cada item ficam no arquivo da decisão; esta lista é o �
 - **Histórico preservado:** D-235, D-275, D-331, D-346, D-354, D-367, D-368, D-371, D-372–D-376, D-953–D-956 e demais decisões. A divergência de LUK R60 (GDD §12.13) não foi conciliada.
 - **Somente documentação:** quatro D, índice, consolidado e adendo GDD; **nenhum código, Move, Resource, habilidade, ficha operacional, IA, HUD, cena, VFX, asset ou teste alterado; nenhum teste de gameplay executado**.
 
+---
+
+## 88. Rodada 91 — interações da arena, habilidades após evolução, furtividade e IA adaptativa
+
+> **2026-11-06.** Escolhas expressamente aprovadas **1B, 2C, 3B e 4B**, sem observações próprias. Decisões individuais **D-381 a D-384**; registro conforme D-061. Preservar D-235, D-377/D-378/D-380 e a série B (D-373–D-376; D-953–D-956), sem alterar código.
+
+### 88.1 Decisões aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-381](decisoes/D-381-r91-q1-moves-modificam-destroem-cenario-com-interacoes-declaradas.md) | **1B** | **Moves podem modificar ou destruir elementos da arena** apenas quando **Move e cenário** tiverem **interações expressamente definidas** |
+| [D-382](decisoes/D-382-r91-q2-habilidades-evolucao-preservadas-ou-substituidas-por-ficha.md) | **2C** | **Cada linha evolutiva define em suas fichas** quais habilidades são mantidas/substituídas, preservando **duas disponíveis e uma selecionada para combate** |
+| [D-383](decisoes/D-383-r91-q3-furtividade-ambiental-e-coberturas-na-exploracao.md) | **3B** | **Permitir furtividade ambiental** na exploração, inclusive **esconder-se e usar coberturas** para evitar detecção antes do contato hostil |
+| [D-384](decisoes/D-384-r91-q4-ia-adaptativa-padroes-da-batalha-atual-sem-memoria.md) | **4B** | **IA pode adaptar suas decisões aos padrões de Moves e estratégias observados na batalha atual**, **sem memória entre batalhas** |
+
+### 88.2 Compatibilidades e exemplos ilustrativos
+
+- **Terreno (D-381):** um pilar hipotético pode ser destruído por um Move se **ambos** declararem a interação correspondente. **D-377** mantém biomas com obstáculos/zonas táticas opcionais; D-235 impede dependências de personagem/time/lado. **Não** aprovar destruição universal por elemento, persistência de alteração, dano ambiental nem novos Moves reais.
+- **Evolução (D-382):** uma linha evolutiva hipotética pode conservar habilidade A e substituir B por C. **D-378** mantém duas habilidades por Pokémon, uma selecionada para combate **fora da batalha na ficha**; **D-331/D-353/D-369** mantêm fichas vinculadas, evolução voluntária e escolha entre formas elegíveis. **Não** determinar automaticamente qual habilidade fica ativa se a atualmente selecionada for substituída.
+- **Furtividade (D-383):** coberturas e esconderijos podem ajudar a evitar detecção por patrulhas. **D-205 / GDD R38-Q1** continua determinando **detecção principalmente por proximidade, sem exigência de linha de visão estrita**; **GDD R37-Q1** mantém combate por contato hostil. HMs/TMs permanecem restritos a combate (GDD R24-Q4) até aprovação em contrário; não criar furtividade invisível universal.
+- **IA (D-384):** inimigo hipotético pode ajustar seleção tática ao observar repetição de Moves na batalha atual, **sem carregar memória da estratégia para combates futuros**. Preservar D-911 e demais regras de IA, incluindo avaliação tática, recursos, variedade e elegibilidade. **Não** conceder informação privilegiada, vantagens ocultas nem revogar regras já aprovadas de seleção de alvos.
+
+### 88.3 Pendências e escopo
+
+- **Interações ambientais:** Move/cenário concretos, persistência, colisão, impacto em trajeto/projéteis, VFX e IA ainda pendentes.
+- **Habilidades:** fichas por linha, gatilhos, efeitos, procedimento se selecionada for substituída, persistência e interface ainda não definidos.
+- **Furtividade:** mecanismos e condições de cobertura, percepção por proximidade, alcance, aliados e estados de alerta pendentes.
+- **IA:** critérios para padrões observados, pesos, janela de memória da batalha, reação por tipo de inimigo e comunicação visual não especificados.
+- **Histórico:** D-235, D-331, D-369, D-377–D-380, D-911, D-953–D-956 e demais decisões não foram modificadas. A divergência histórica de LUK na Rodada 60 (GDD §12.13) permanece sem conciliação.
+- **Escopo:** quatro documentos D, índice, consolidado e adendo GDD; **nenhum código, Resource, Move, ficha, IA, HUD, cena, VFX, asset ou teste modificado; nenhum teste Godot executado.**
+

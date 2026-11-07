@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.73 — Rodada 90: biomas táticos, habilidades de espécie, dungeons e sinergias de aliados (2026-11-06); histórico preservado.  
+> **Revisão:** 1.74 — Rodada 91: ambiente interativo, evolução de habilidades, furtividade e IA adaptativa (2026-11-06); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1782,6 +1782,8 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.73 | 2026-11-06 | Rodada 90: biomas podem introduzir terreno que afeta posicionamento e combate; passivas de espécie são as duas habilidades ainda não implementadas de cada Pokémon, apenas uma selecionada para combate fora da batalha na ficha; dungeons opcionais podem combinar desafios consecutivos e encontros individuais; sinergias condicionais entre Moves consecutivos de aliados. D-377–D-380. | Rodada 90 registrada / Rodada 91 proposta |
 
+| 1.74 | 2026-11-06 | Rodada 91: Moves podem alterar/destruir cenário quando Move e arena declarem interação correspondente; habilidades são conservadas/substituídas conforme ficha da linha evolutiva, mantendo duas e uma selecionada; furtividade ambiental na exploração com coberturas antes do contato hostil; IA adaptativa apenas às ações observadas na batalha atual. D-381–D-384. | Rodada 91 registrada / Rodada 92 proposta |
+
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
 
@@ -2541,4 +2543,19 @@ A engine deverá **demonstrar por validação e testes reproduzíveis** que even
 **Exemplos hipotéticos, sem aprovar conteúdo específico:** terreno de caverna pode influenciar rota ou posicionamento; ficha de um Pokémon com habilidades A/B permite selecionar só uma para combate antes da batalha, sem criar sistema adicional de passivas; dungeon opcional pode oferecer combates sucessivos e encontro único; dois Moves usados consecutivamente por aliados **podem** disparar efeito extra apenas se a ficha aprovar o gatilho. Nenhum valor, nome, efeito ou conteúdo real foi criado.
 
 **Compatibilidade e pendências:** GDD R38-Q2 permanece fonte do vínculo visual arena–bioma; D-331/D-275/D-368 continuam independentes da preparação das habilidades; D-235 e D-361/D-373/D-374/D-953/D-954 regem Moves e efeitos declarativos sem exclusividade por personagem/lado. Não foram especificadas habilidades por espécie, locais adicionais de seleção, obstáculos reais, condições de combos, janelas de tempo, desafios concretos, custos e recompensas. A divergência histórica de LUK (GDD §12.13) e demais conflitos permanecem. **Somente documentação; nenhum código, Resource, Move, IA, habilidade, ficha, HUD, cena, teste, asset ou VFX alterado.**
+
+### 12.49 Rodada 91 — cenário interativo, habilidades evolutivas, furtividade e adaptação de IA (revisão 1.74)
+
+> **2026-11-06.** O criador aprovou **1B, 2C, 3B e 4B**, sem observações próprias. Registros **D-381–D-384**, consolidados em **§88** de `docs/REGRAS_DO_JOGO.md`. Adendo histórico conforme D-061, preservando o restante da documentação, incluindo a série paralela de Moves. **D-001 mantém o GDD não normativo para resolução de combate**.
+
+| Questão | Escolha | Regra aprovada | Documento |
+|---|---|---|---|
+| R91-Q1 | **1B** | **Moves podem modificar/destruir elementos de arena** somente com interações **expressamente declaradas no Move e no cenário** | [D-381](decisoes/D-381-r91-q1-moves-modificam-destroem-cenario-com-interacoes-declaradas.md) |
+| R91-Q2 | **2C** | **Fichas de cada linha evolutiva determinam habilidades mantidas/substituídas**, preservando duas habilidades possíveis e somente uma selecionada para combate | [D-382](decisoes/D-382-r91-q2-habilidades-evolucao-preservadas-ou-substituidas-por-ficha.md) |
+| R91-Q3 | **3B** | **Furtividade ambiental**, com esconderijos e coberturas para evitar detecção antes do contato hostil | [D-383](decisoes/D-383-r91-q3-furtividade-ambiental-e-coberturas-na-exploracao.md) |
+| R91-Q4 | **4B** | **IA pode reconhecer padrões de Moves/estratégias observados na batalha corrente**, sem memória entre encontros | [D-384](decisoes/D-384-r91-q4-ia-adaptativa-padroes-da-batalha-atual-sem-memoria.md) |
+
+**Compatibilidades e exemplos não normativos:** uma arena pode declarar pilar destrutível por Move que declare a interação correspondente, sem destruição universal (D-377/D-235); linha evolutiva hipotética conserva habilidade A e substitui B por C, mantendo duas disponíveis/uma selecionada fora do combate (D-378/D-331/D-369); jogador pode usar cobertura para evitar detecção, **sem revogar a percepção principalmente por proximidade** (D-205/GDD R38-Q1) e o encontro por contato hostil (R37-Q1); a IA pode reagir a ações repetidas **da batalha atual**, preservando elegibilidade, custos, seleção de alvo e critérios de IA (D-911). Nenhum Move, espécie, habilidade, arena ou comportamento concreto foi criado.
+
+**Pendências:** interações ambientais específicas, efeitos e gatilhos, mudança da habilidade selecionada quando substituída, regras de furtividade/alcance/percepção, critérios/limiares de adaptação de IA e seus visuais. Permanecem intactas D-235, D-331, D-369, D-377–D-380, D-953–D-956, demais decisões locais e a divergência histórica de LUK da Rodada 60 (§12.13). **Somente documentação; nenhum código, Move, Resource, ficha, IA, cena, HUD, VFX, asset ou teste alterado; nenhum teste de gameplay executado.**
 
