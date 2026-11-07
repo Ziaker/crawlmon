@@ -176,11 +176,11 @@ func _start_mist(biome: String, seed_value: int, floor_value: int) -> void:
 	_mat.shader = load("res://shaders/weather_mist.gdshader") as Shader
 	_mat.set_shader_parameter("mist", 0.0)
 	_mat.set_shader_parameter("mist_color", _mist_color(biome))
-	_mat.set_shader_parameter("max_alpha", 0.22)
-	_mat.set_shader_parameter("density", 0.65)
+	_mat.set_shader_parameter("max_alpha", 0.40)
+	_mat.set_shader_parameter("density", 0.85)
 	_mat.set_shader_parameter("drift", 0.006)
-	_mat.set_shader_parameter("noise_scale", 2.6)
-	_mat.set_shader_parameter("vignette_strength", 0.35)
+	_mat.set_shader_parameter("noise_scale", 1.7)
+	_mat.set_shader_parameter("edge_mist", 0.55)
 	_mat.set_shader_parameter("noise_tex", _noise_texture())
 	_rect.material = _mat
 	_layer.add_child(_rect)

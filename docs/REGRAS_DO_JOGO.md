@@ -269,6 +269,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-382] Cadência do clima:** 20% de chance por andar (1 em 5), no máximo um evento por andar, 20–40 s com fade; o mapeamento de biomas de D-362 fica mantido; clima fora do Motion Composer (D-383); continua só visual.
 - **[D-383] Clima fora do Motion Composer:** névoa, calor, chuva/neve e distorção temporal são camadas 2D de ambiente e não usam o Composer nem o protocolo de 4 fases; D-308 fica restrito a VFX de Move/elemento em combate; o Composer não é gate para clima.
 - **[D-384] Neblina implementada:** camada 2D de tela cheia, rolagem de 20% por andar (1 em 5), 20–40 s, fade de 2 s; não altera raio/LOS/explorado/regras; calor/chuva/neve/distorção pendentes; captura antes/depois e vídeo do ciclo em `docs/referencias/exploracao/weather_mist_before_after.png`.
+- **[D-385] Neblina mais densa:** `max_alpha` 0,40, `density` 0,85, `noise_scale` 1,7 e `edge_mist` 0,55; bancos maiores e bordas fechadas para piorar a leitura visual; raio 7,5/LOS/explorado intactos; vídeos regravados.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).

@@ -3,11 +3,11 @@
 - **Data:** 2026-11-06
 - **Área:** Exploração / visual / clima
 - **Origem:** execução da primeira leva aprovada em D-381/D-382/D-383, com a ordem do criador de usar as skills Godot instaladas.
-- **Status:** **neblina implementada e com vídeo**; calor, chuva/neve, cinza e distorção temporal ainda não. Nada publicado.
+- **Status:** **neblina implementada e com vídeo**; densidade ajustada em D-385 (vídeos regravados); calor, chuva/neve, cinza e distorção temporal ainda não. Nada publicado.
 
 ## O que foi implementado
 
-1. **Shader `shaders/weather_mist.gdshader`:** véu 2D de tela cheia, com `mist` (0–1), `mist_color` vindo do ambiente do bioma, ruído do próprio bioma, drift lento, densidade e vinheta. Fade de 2 s na entrada e na saída. É uma camada de ambiente, **fora do Motion Composer** (D-383).
+1. **Shader `shaders/weather_mist.gdshader`:** véu 2D de tela cheia, com `mist` (0–1), `mist_color` vindo do ambiente do bioma, ruído do próprio bioma, drift lento, densidade e borda fechada (D-385). Fade de 2 s na entrada e na saída. É uma camada de ambiente, **fora do Motion Composer** (D-383).
 2. **`scripts/dungeon/weather_controller.gd`:** rolagem determinística de **20% por andar** (1 em 5) usando `dungeon_seed` + `visual_floor`; no máximo **um evento por andar**; duração **20–40 s**; início **0,8 s** depois de o andar carregar; `_played` evita repetir o mesmo evento ao voltar de uma batalha. O tipo sai do mapa de D-362; **só a neblina está implementada**.
 3. **`scripts/dungeon/exploration.gd`:** instancia o controller depois da névoa de guerra e antes da vinheta. A camada fica em `CanvasLayer` 1, abaixo do diálogo (15) e dos menus (10), com `light_mask = 0`.
 4. **Sem regra:** não altera movimento, combate, colisão, câmera, geração, raio de visão 7,5, LOS nem o explorado permanente. A neblina é um véu de **tela cheia**; ela não mexe na máscara de explorado, apenas cobre a cena com baixa alpha.
@@ -25,6 +25,8 @@
 - As capturas de bioma/tileset usam `debug_disable = true` para não misturar clima com o atlas.
 
 ## Vídeos
+
+Regravados em D-385 com a névoa mais densa.
 
 - `docs/referencias/exploracao/weather_mist_cycle.mp4` — 12 s, 1280×720, 30 fps; ciclo completo com `debug_duration = 10 s` (2 s de fade-in + 6 s de espera + 2 s de fade-out).
 - `docs/referencias/exploracao/weather_mist_before_after.mp4` — 12 s, 1280×360, lado a lado sem clima × neblina.
