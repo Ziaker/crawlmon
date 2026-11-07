@@ -3,7 +3,7 @@
 - **Data:** 2026-11-06
 - **Área:** Exploração / visual / clima / VFX
 - **Origem:** O criador pediu ideias de eventos temporais depois de a névoa/ambiente por bioma entrar.
-- **Status:** **PROPOSTA**, não aprovada. Nada implementado.
+- **Status:** **escopo aprovado (D-381):** só visual, os três eventos, frequência rara e distorção temporal. A cadência exata de "raramente", a duração e o mapeamento por bioma ainda estão pendentes. Nada implementado.
 
 ## O que o criador disse (literal)
 
@@ -27,6 +27,7 @@ Um `WeatherController` na cena de exploração escolhe um clima por bioma/andar,
 - Sem colisão real de partícula com TileMap (2D não tem isso pronto); o respingo é dirigido pelas células de chão.
 - Biomas: 4th Station, murky forest, spacial cliffs, temporal spire. Nos gelos, **neve** em vez de chuva; no dark wasteland, **cinza**.
 - Performance: um sistema de gotas + um de respingos, com limite; sem nós por gota.
+- **Correção técnica (D-381):** o projeto é `gl_compatibility`; usar `CPUParticles2D` (ou shader), não `GPUParticles2D`, que o protocolo proíbe.
 
 ### 3. Neblina maior
 
@@ -59,5 +60,17 @@ Um `WeatherController` na cena de exploração escolhe um clima por bioma/andar,
 2. Quer os três (calor, chuva, neblina) ou começamos pela neblina?
 3. Frequência: um clima por andar, ou eventos aleatórios a cada 40–90 s?
 4. A distorção temporal em Temporal Tower/Spire entra ou fica fora?
+
+## Respostas do criador (2026-11-06)
+
+> 1 - so visual
+
+> 2 - sim
+
+> 3 - raramente
+
+> 4 - acho que sim
+
+Registradas em D-381. A cadência exata de "raramente" e a duração ainda não foram definidas.
 
 Nada foi implementado ou publicado.
