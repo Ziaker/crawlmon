@@ -2840,3 +2840,32 @@ As regras completas de cada item ficam no arquivo da decisão; esta lista é o �
 - **Conflitos históricos preservados**, sem resolução unilateral: plano legado pós-Windup versus D-226 (ocorrências reservadas na declaração); D-363 cita D-358 onde o contrato pertinente de eventos é D-362; divergência de LUK na Rodada 60 (GDD §12.13).
 - **Somente documentação:** quatro D novos, índice, consolidado e adendo GDD. Nenhum código, Resource, Move, VFX, teste, cena, HUD, IA ou asset modificado e nenhum teste Godot executado.
 
+---
+
+## 90. Rodada 91B — receitas visuais em andamento, referências espaciais, falhas de consumidores e migração de schemas
+
+> **2026-11-07.** O criador respondeu **“Tudo A continue”**, aprovando as quatro recomendações **1A, 2A, 3A e 4A** apresentadas na Rodada 91B, sem observações extras. Registros **D-961–D-964** conforme D-061. Esta é a série **B** da engine de Moves: não altera a **Rodada 91 de gameplay** (D-381–D-384), os registros anteriores até D-960 ou decisões de outras sessões. **Apenas documentação; implementação não autorizada.**
+
+### 90.1 Regras aprovadas
+
+| Documento | Escolha | Regra |
+|---|---|---|
+| [D-961](decisoes/D-961-r91b-q1-preservar-receita-visual-validada-execucao-em-andamento.md) | **1A** | **Execução em andamento conserva sua receita visual validada até encerrar**; nova versão validada vale somente para **novas execuções**; perda de recurso durante execução gera diagnóstico, **sem fallback inventado** |
+| [D-962](decisoes/D-962-r91b-q2-identidade-estavel-participantes-referencias-espaciais-eventos.md) | **2A** | **Eventos mantêm IDs estáveis dos participantes e referências espaciais do instante mecânico**; apresentação usa transformações reais disponíveis, respeitando regras de ausência/morte/movimento |
+| [D-963](decisoes/D-963-r91b-q3-falha-consumidor-visual-isolada-diagnostico-sem-rollback.md) | **3A** | **Falha de consumidor de VFX/rastreamento após evento mecânico válido deve ser isolada e diagnosticada**; não repetir, reverter ou alterar resolução mecânica, nem introduzir fallback visual silencioso |
+| [D-964](decisoes/D-964-r91b-q4-previa-diff-aprovacao-lote-migracao-schemas.md) | **4A** | **Prévia de migração com diferenças por Resource, aprovação explícita do lote, versões migradas separadas e revalidação dos pares**, preservando originais |
+
+### 90.2 Compatibilidades e exemplos não normativos
+
+- **D-961 e D-957/D-958/D-960:** configuração mecânica resolvida permanece fixa pela declaração, e **receita visual já associada à execução também não é substituída em pleno ataque**. Dados alterados só ficam disponíveis após validação para novas execuções. **Se um recurso indispensável realmente se perder durante execução, há diagnóstico, não promessa de apresentação perfeita**. D-376 preserva indisponibilidade de **Move já migrado** com visual obrigatório inválido para novas execuções.
+- **D-962 e D-235/D-362/D-348/D-959:** participantes referenciados por **IDs estáveis**, dados espaciais de referência do **instante mecânico**, transformações reais quando disponíveis; não inferir ponto fixo de personagem, time, câmera ou lado. **Exemplo:** projétil cujo alvo morre respeita as regras de não causar dano quando perde alvo válido, sem criar retarget por conta própria.
+- **D-963 e D-348/D-956/D-959:** falhas da apresentação ou observabilidade **não reexecutam golpes nem invalidam acerto já resolvido**; cada consumidor é independente, deve ser diagnosticado e não deve duplicar VFX/diagnóstico. Diferenciar falha de consumidor de uma **definição visual obrigatória inválida** coberta por D-350/D-376.
+- **D-964 e D-960/D-342/D-349/D-955:** migrar **schema de dados** requer **aprovar explicitamente o lote após prévia por Resource**, gerar cópias separadas e validar novamente os pares. Distinto de **migrar execução legada para a engine**, que continua incremental. **Exemplo hipotético:** lote com cinquenta Resources apresenta diferenças individualizadas; nenhuma conversão real é autorizada por esse exemplo.
+- Preservar D-351: testes automatizados e visuais devem demonstrar correspondência temporal e espacial em lados espelhados/anatomias diferentes; nenhuma aprovação de um contrato substitui a execução dos testes.
+
+### 90.3 Pendências e histórico preservado
+
+- **Não decididos:** mecanismos de retenção/cópia da receita visual em andamento; tratamento técnico de perda definitiva do recurso; esquema de referências espaciais; método de captura de transformações; diagnóstico/retomada de consumidor; formato da prévia/diff e da aprovação de lote; nomes de arquivos e estratégia de conversão concreta.
+- **Conflitos editoriais/técnicos não alterados:** D-363 cita D-358 como contrato de eventos (a referência pertinente é D-362); planejamento legado após Windup versus D-226 (reserva na declaração); divergência histórica de LUK da Rodada 60 (GDD §12.13).
+- **Somente documentos:** quatro decisões novas, índice, consolidado e GDD; **nenhum código, Move, Resource executável, VFX, IA, HUD, cena, asset ou teste modificado; nenhum teste Godot executado**.
+

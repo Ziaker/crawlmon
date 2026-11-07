@@ -1,7 +1,7 @@
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
-> **Revisão:** 1.75 — Rodada 90B: validação de Resources, configuração mecânica por execução, IDs de eventos e versões de esquemas (2026-11-06); histórico preservado.  
+> **Revisão:** 1.76 — Rodada 91B: receitas visuais em andamento, referências espaciais, isolamento de falhas e migração de schemas por lote (2026-11-07); histórico preservado.  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -1784,6 +1784,7 @@ C. Outro comportamento, descrito pelo criador.
 
 | 1.74 | 2026-11-06 | Rodada 91: Moves podem alterar/destruir cenário quando Move e arena declarem interação correspondente; habilidades são conservadas/substituídas conforme ficha da linha evolutiva, mantendo duas e uma selecionada; furtividade ambiental na exploração com coberturas antes do contato hostil; IA adaptativa apenas às ações observadas na batalha atual. D-381–D-384. | Rodada 91 registrada / Rodada 92 proposta |
 | 1.75 | 2026-11-06 | Rodada 90B: Resources mecânico/visual revalidados ao carregar e após mudar; configuração mecânica/variante congelada por execução na declaração, com estado dos combatentes dinâmico; IDs individuais determinísticos por evento e detecção de entregas repetidas; schemas explicitamente versionados e migração de dados controlada sem regravar originais. D-957–D-960. | Rodada 90B registrada / Rodada 91B proposta |
+| 1.76 | 2026-11-07 | Rodada 91B: preservar receita visual validada de execução em andamento; eventos com identidades estáveis e referências espaciais do instante mecânico; isolar falhas de consumidores VFX/diagnóstico sem alterar mecânica; prévia de migração de schema com diffs por Resource, aprovação explícita do lote, cópias separadas e revalidação. D-961–D-964. | Rodada 91B registrada / Rodada 92B proposta |
 
 > **Regra de preservação:** nas atualizações posteriores, não reescrever seções não relacionadas nem transformar hipóteses em decisões. Preservar este histórico, acrescentando entradas rastreáveis, e nunca afirmar que uma decisão foi implementada sem verificar o código e, quando cabível, executar testes.
 
@@ -2574,4 +2575,19 @@ A engine deverá **demonstrar por validação e testes reproduzíveis** que even
 **Relações e limitações:** preservar D-235, D-333–D-343, D-348–D-351, D-360–D-363, D-373–D-376 e D-953–D-956. Exemplo ilustrativo: Fire Bullet com arquivo visual editado demanda revalidação antes de disponibilizar a nova configuração; um Splitter Flames em execução mantém a variante com que foi declarado, mas condições e atributos dos participantes seguem os instantes mecânicos apropriados. Entrega repetida do **mesmo evento** não multiplica VFX, enquanto eventos **distintos** da mesma ocorrência continuam válidos. A migração controlada de **schemas** não é a migração da execução do Move. Não escolher ID, formato de versão, transporte ou mecanismo de cache sem nova aprovação.
 
 **Pendências:** destino visual de execuções já em andamento após recarregamento, algoritmo de detecção de mudanças, política de migração e critérios de testes. **Conflitos preservados:** D-226 versus plano do código após Windup, D-363 citando D-358 em lugar de D-362 e a divergência de LUK da Rodada 60 (§12.13). **Somente documentação: nenhum código, Resource, Move, IA, HUD, VFX, cena, teste ou asset modificado; nenhum teste Godot executado.**
+
+### 12.51 Rodada 91B — continuidade visual, espacialidade dos eventos e recuperação de falhas (revisão 1.76)
+
+> **2026-11-07.** O criador respondeu **“Tudo A continue”** às quatro questões da Rodada 91B, aprovando **1A–4A**. Registros **D-961–D-964**, consolidado **§90** em `docs/REGRAS_DO_JOGO.md`. Trata-se da **série B** dedicada à engine, independente da Rodada 91 de gameplay (D-381–D-384). Adendo histórico e documental; **D-001 continua determinando as fontes normativas de combate**.
+
+| Questão | Escolha | Contrato aprovado | Documento |
+|---|---|---|---|
+| R91B-Q1 | **1A** | **Receita visual validada de execução em andamento permanece até o encerramento**; novas versões só para novas execuções depois de validação; perda de recurso gera diagnóstico, sem fallback inventado | [D-961](decisoes/D-961-r91b-q1-preservar-receita-visual-validada-execucao-em-andamento.md) |
+| R91B-Q2 | **2A** | **Eventos mantêm IDs estáveis e referências espaciais do instante mecânico**; visual usa transformações reais disponíveis e respeita desaparecimento/morte dos participantes | [D-962](decisoes/D-962-r91b-q2-identidade-estavel-participantes-referencias-espaciais-eventos.md) |
+| R91B-Q3 | **3A** | **Isolar e diagnosticar falha do consumidor visual/rastreamento após evento mecânico válido**; não repetir, reverter ou alterar resolução nem inserir fallback silencioso | [D-963](decisoes/D-963-r91b-q3-falha-consumidor-visual-isolada-diagnostico-sem-rollback.md) |
+| R91B-Q4 | **4A** | **Prévia de migração de schema com diff por Resource e aprovação explícita do lote**; depois, gerar versões separadas preservando originais e revalidar os pares | [D-964](decisoes/D-964-r91b-q4-previa-diff-aprovacao-lote-migracao-schemas.md) |
+
+**Compatibilidade:** manter D-235/D-343/D-348–D-351/D-362/D-376/D-954–D-960. Execuções de Fire Bullet ou Splitter Flames em andamento (exemplos) não trocam automaticamente de receita visual por recarga; consumidores não alteram a autoridade mecânica. IDs e transformações vêm dos participantes reais, independentemente de personagem, espécie ou lado. A perda real de um Resource em execução não obriga um VFX impossível: exige diagnóstico sem fallback inventado. **Migração de schema** é distinta da migração de execução legada de Moves. Não escolher algoritmo, dados espaciais, defaults ou arquivos concretos sem nova aprovação.
+
+**Pendências:** política concreta de retenção de receita, referência espacial, falha de consumidor, estrutura de relatório de migração, testes automáticos/visuais e limiares. Permanecem preservadas divergências anteriores: D-226 versus planner pós-Windup, D-363 citando D-358 em vez de D-362, e LUK da Rodada 60 (GDD §12.13). **Somente documentação; nenhum código, Resource, Move, VFX, IA, HUD, cena, asset ou teste modificado; nenhum teste Godot executado.**
 
