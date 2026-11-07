@@ -11,6 +11,7 @@ const FogOfWarClass = preload("res://scripts/dungeon/fog_of_war.gd")
 const DialogueBoxClass = preload("res://scripts/ui/dialogue_box.gd")
 const NPCData = preload("res://scripts/dungeon/npc_data.gd")
 const BiomeSelectorScript = preload("res://scripts/dungeon/biome_selector.gd")
+const WeatherControllerClass = preload("res://scripts/dungeon/weather_controller.gd")
 
 const TILE := 48
 
@@ -91,6 +92,13 @@ func _ready() -> void:
 	fog = FogOfWarClass.new()
 	add_child(fog)
 	fog.setup(_map, player, GameState)
+
+	# Clima visual (D-381/D-382/D-383): camada 2D de ambiente, sem Motion
+	# Composer. Entra antes da vinheta para ficar abaixo dela e da UI.
+	var weather = WeatherControllerClass.new()
+	weather.name = "Weather"
+	add_child(weather)
+	weather.setup(GameState, fog)
 
 	# Vinheta suave de tela; fica abaixo do diálogo (layer 15) e dos menus (10).
 	var vignette := CanvasLayer.new()
@@ -214,15 +222,24 @@ func _spawn_items(spots: Array[Dictionary]) -> void:
 		pickup.position = pos
 		pickup.setup(item_id, player)
 		pickup.collected.connect(_on_item_collected)
+		pickup.blocked.connect(_on_item_blocked)
 		entities.add_child(pickup)
 
 
 ## Coleta automática (D-033): soma a Poção ao inventário e registra no GameState
-## para ela não reaparecer ao voltar de uma batalha.
+## para ela não reaparecer ao voltar de uma batalha. QoL: every pickup answers.
 func _on_item_collected(pickup) -> void:
 	if not GameState.add_item(DungeonPickupClass.ITEM_ID):
+		Menus.toast("Inventário cheio — libere um slot", Color("ff8a72"), 2.4)
 		return
 	GameState.dungeon_items_collected.append(pickup.id)
+	var item := Item.get_item(DungeonPickupClass.ITEM_ID)
+	var item_name := item.display_name if item != null else "Item"
+	Menus.toast("%s +1   ·   %d/%d" % [item_name, GameState.total_item_count(), GameState.max_inventory_capacity()], Color("d7fd6a"), 2.0)
+
+
+func _on_item_blocked(_pickup) -> void:
+	Menus.toast("Inventário cheio — libere um slot", Color("ff8a72"), 2.4)
 
 
 ## Cardinal pathfinding grid: walls and NPCs are solid, everything else is

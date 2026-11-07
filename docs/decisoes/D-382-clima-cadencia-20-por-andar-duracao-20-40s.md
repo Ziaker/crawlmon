@@ -3,7 +3,7 @@
 - **Data:** 2026-11-06
 - **Área:** Exploração / visual / clima
 - **Origem:** respostas do criador às pendências de D-381.
-- **Status:** números definidos; clima fora do Motion Composer (D-383); nada implementado.
+- **Status:** números definidos; clima fora do Motion Composer (D-383); neblina implementada (D-384); calor/chuva/neve/distorção pendentes.
 
 ## O que o criador escolheu (literal)
 

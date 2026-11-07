@@ -268,6 +268,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-381] Clima de exploração (só visual):** os eventos temporais não alteram movimento, combate, colisão, câmera, geração, raio de visão 7,5, LOS nem o explorado; entram neblina maior (véu mais denso, sem aumentar o raio), calor ondulado, chuva/neve com respingo e distorção temporal em Temporal/Spire; frequência **rara** (cadência exata pendente). Clima fora do Motion Composer (D-383); nada implementado.
 - **[D-382] Cadência do clima:** 20% de chance por andar (1 em 5), no máximo um evento por andar, 20–40 s com fade; o mapeamento de biomas de D-362 fica mantido; clima fora do Motion Composer (D-383); continua só visual.
 - **[D-383] Clima fora do Motion Composer:** névoa, calor, chuva/neve e distorção temporal são camadas 2D de ambiente e não usam o Composer nem o protocolo de 4 fases; D-308 fica restrito a VFX de Move/elemento em combate; o Composer não é gate para clima.
+- **[D-384] Neblina implementada:** camada 2D de tela cheia, rolagem de 20% por andar (1 em 5), 20–40 s, fade de 2 s; não altera raio/LOS/explorado/regras; calor/chuva/neve/distorção pendentes; captura antes/depois em `docs/referencias/exploracao/weather_mist_before_after.png`.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).

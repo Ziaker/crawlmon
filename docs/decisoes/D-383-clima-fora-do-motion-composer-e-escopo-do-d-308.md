@@ -3,7 +3,7 @@
 - **Data:** 2026-11-06
 - **Área:** Exploração / visual / clima / VFX / processo
 - **Origem:** resposta do criador ao conflito entre o clima 2D e o protocolo D-308.
-- **Status:** decidido; documentação atualizada; a implementação do clima começa pela neblina.
+- **Status:** decidido; documentação atualizada; neblina implementada (D-384).
 
 ## O que o criador disse (literal)
 
@@ -25,4 +25,4 @@
 
 ## Estado
 
-Documentação atualizada: D-308, `docs/vfx/PROTOCOLO_VFX_OBRIGATORIO.md`, `docs/vfx/MOTION_COMPOSER_V1.md`, D-362, D-381, D-382, `AGENTS.md`, índice e `docs/REGRAS_DO_JOGO.md`. Nenhum código de clima implementado ainda. Nada publicado.
+Documentação atualizada: D-308, `docs/vfx/PROTOCOLO_VFX_OBRIGATORIO.md`, `docs/vfx/MOTION_COMPOSER_V1.md`, D-362, D-381, D-382, `AGENTS.md`, índice e `docs/REGRAS_DO_JOGO.md`. Neblina implementada (D-384); calor/chuva/neve/distorção pendentes. Nada publicado.
