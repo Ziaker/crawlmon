@@ -21,10 +21,11 @@
 - Captura pela **rolagem real** (seed 2, andar 1): `scratch/weather_mist_roll.png`.
 - Antes/depois: `docs/referencias/exploracao/weather_mist_before_after.png` (mesmo seed/andar, sem clima × com neblina).
 - O shader compilou e desenhou no **GL Compatibility** durante a captura; não houve erro de shader.
+- A captura de rolagem real e a de "sem clima" foram feitas no **worktree principal** (seed 2, andar 1); a cena abriu e desenhou sem erro de shader.
 
 ## O que não foi verificado
 
-- **O jogo no worktree principal não rodou:** há erros de parse de outras sessões em `scripts/ui/battle_hud.gd` (`_slant`) e `scripts/combat/fx/heal_gain_mark.gd` (`_fit_to_camera`). A captura foi feita num **worktree descartável em HEAD**, com um patch de teste somente em `heal_gain_mark.gd`; os arquivos de batalha do worktree principal **não** foram tocados.
+- **O worktree continua misto:** a cena de exploração rodou no worktree principal e as capturas foram feitas nele, mas o worktree tem alterações não commitadas de outras sessões (combate/heal). Nada dessas sessões foi tocado.
 - Calor ondulado, chuva/neve, cinza e distorção temporal não implementados.
 - Performance não medida; é um `ColorRect` de tela cheia com uma amostragem de ruído.
 - Não há vídeo; as provas são capturas estáticas.
