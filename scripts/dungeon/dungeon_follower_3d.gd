@@ -16,6 +16,13 @@ var _current_anim := ""
 var _was_moving := false
 
 
+## D-389: the DQT GLBs are ignored by Git, so the normal game only spawns the
+## 3D follower when the asset exists on disk. A clone without it keeps the
+## two 2D allies and no fallback capsule.
+static func can_spawn(model_id: String = "dqt_orc") -> bool:
+	return ResourceLoader.exists("res://assets/modelos/%s/%s.glb" % [model_id, model_id])
+
+
 func _ready() -> void:
 	_build_viewport()
 	_sprite = Sprite2D.new()

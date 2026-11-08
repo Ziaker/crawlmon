@@ -273,7 +273,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-386] Chuva implementada:** gotas 2D em espaço de mundo e respingos nas células de chão perto do jogador; 20% por andar, 20–40 s, fade 2 s; só visual; CPUParticles2D (GL Compatibility); calor/neve/cinza/distorção ainda pendentes.
 - **[D-387] Calor ondulado implementado:** overlay 2D de tela cheia com senoides, RGB shift leve e tom âmbar, mais forte perto do chão; poeira de calor esparsa; 20% por andar, 20–40 s; só visual; fora do Motion Composer (D-383).
 - **[D-388] Seguidor na mesma velocidade:** `SPEED` do seguidor 200 → **180 px/s**, igual ao jogador; o spawn usa o gap de 32 px (D-361); rastro exato, espera e reposição de D-314 não mudam; o ganho de velocidade para alcançar o alvo deixa de existir.
-- **[D-389] DQT Orc 3D no overworld (lab):** o Orc é um terceiro seguidor visual, atrás do Pancham, com rastro/gap 32/velocidade 180; renderizado em SubViewport 3D ortográfico e exibido num Sprite2D; idle/walk do DQT; só no overworld, sem batalha/party/colisão; o jogo normal não muda; requer o GLB local.
+- **[D-389] DQT Orc 3D no overworld:** o Orc é um terceiro seguidor **visual** atrás do Pancham, com rastro/gap 32/velocidade 180; renderizado em SubViewport 3D ortográfico e exibido num Sprite2D; idle/walk do DQT; só no overworld, sem batalha/party/colisão e fora de `followers`; sem o GLB local ele não aparece.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).

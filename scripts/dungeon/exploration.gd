@@ -6,6 +6,7 @@ extends Node2D
 const DungeonNPCClass = preload("res://scripts/dungeon/npc.gd")
 const DungeonEnemyClass = preload("res://scripts/dungeon/enemy.gd")
 const DungeonFollowerClass = preload("res://scripts/dungeon/follower.gd")
+const DungeonFollower3DClass = preload("res://scripts/dungeon/dungeon_follower_3d.gd")
 const DungeonPickupClass = preload("res://scripts/dungeon/pickup.gd")
 const FogOfWarClass = preload("res://scripts/dungeon/fog_of_war.gd")
 const DialogueBoxClass = preload("res://scripts/ui/dialogue_box.gd")
@@ -82,6 +83,7 @@ func _ready() -> void:
 		player.set("species_id", GameState.party[0].species_id)
 	entities.add_child(player)
 	_spawn_followers()
+	_spawn_3d_follower()
 	
 	# Cria os NPCs com sprites aleatórios e ícones respectivos
 	_spawn_npcs(npc_spots)
@@ -189,6 +191,21 @@ func _spawn_followers() -> void:
 		follower.position = _follower_spawn(player.position)
 		entities.add_child(follower)
 		followers.append(follower)
+
+
+## D-389: DQT Orc 3D atrás do último aliado 2D (Pancham), só no overworld.
+## Entra em `entities` para o Y-sort, mas não em `followers`: é visual, não é
+## alvo de inimigo, não entra em batalha, party, colisão nem regra.
+func _spawn_3d_follower() -> void:
+	if not DungeonFollower3DClass.can_spawn("dqt_orc"):
+		return
+	var leader: Node2D = player
+	if not followers.is_empty():
+		leader = followers[-1]
+	var orc = DungeonFollower3DClass.new()
+	orc.setup("dqt_orc", leader)
+	orc.position = _follower_spawn(leader.position)
+	entities.add_child(orc)
 
 
 ## O gap da fila atrás do líder; se estiver bloqueado, tenta as outras direções.
