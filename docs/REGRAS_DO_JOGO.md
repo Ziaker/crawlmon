@@ -274,6 +274,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-387] Calor ondulado implementado:** overlay 2D de tela cheia com senoides, RGB shift leve e tom âmbar, mais forte perto do chão; poeira de calor esparsa; 20% por andar, 20–40 s; só visual; fora do Motion Composer (D-383).
 - **[D-388] Seguidor na mesma velocidade:** `SPEED` do seguidor 200 → **180 px/s**, igual ao jogador; o spawn usa o gap de 32 px (D-361); rastro exato, espera e reposição de D-314 não mudam; o ganho de velocidade para alcançar o alvo deixa de existir.
 - **[D-389] DQT Orc 3D no overworld:** o Orc é um terceiro seguidor **visual** atrás do Pancham, com rastro/gap 32/velocidade 180; renderizado em SubViewport 3D ortográfico e exibido num Sprite2D; idle/walk do DQT; só no overworld, sem batalha/party/colisão e fora de `followers`; sem o GLB local ele não aparece.
+- **[D-991] Modelos 3D dos Pokémon no overworld (lab):** laboratório separado troca os sprites de Abra e Pancham (e o Orc) pelos GLBs, normalizados em altura (Abra 25, Pancham 24, Orc 30 px de mundo) para igualar os sprites; render 3D→2D igual a D-389; três opções de shader (pixel, toon, pixel+toon) e uma referência sem shader; o jogo normal continua com sprites 2D e **sem** shader até o criador escolher.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).
