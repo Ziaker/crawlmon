@@ -1,0 +1,1042 @@
+[
+  {
+    "id": "vortex",
+    "lib": "LIB-VFX-01",
+    "name": "Vortex Mesh",
+    "candidates": [
+      {
+        "n": 1,
+        "title": "Doctor Strange — eldritch portal (sparks)",
+        "url": "https://www.framestore.com/work/doctor-strange",
+        "source": "doctorstrange",
+        "why": "Portal feito de faíscas longas e curvas, com centro de energia — a referência mais próxima de vórtice com leitura espacial.",
+        "note": ""
+      },
+      {
+        "n": 2,
+        "title": "America Chavez — star portal (crystal edges)",
+        "url": "https://britishcinematographer.co.uk/framestore-creates-mind-bending-vfx-for-doctor-strange-in-the-multiverse-of-madness",
+        "source": "chavez",
+        "why": "Borda que se fragmenta e se reconstrói, sugando detritos: ensina a tratar o aro do vórtice como peça viva.",
+        "note": ""
+      },
+      {
+        "n": 3,
+        "title": "CGHOW — stylized tornado (torus mesh + vortex force)",
+        "url": "https://dev.epicgames.com/community/learning/tutorials/XvOj9/unreal-engine-simple-stylized-tornado-vfx-in-ue5-niagara-torus-mesh-erode-dynamic-params",
+        "source": "tornado_cghow",
+        "why": "Vórtice baseado em malha de toro com erode e parâmetros por partícula; resolve volume sem sprite.",
+        "note": ""
+      },
+      {
+        "n": 4,
+        "title": "Gustavo Dresch Rosa — cone tornado study",
+        "url": "https://80.lv/articles/neat-stylized-tornado-vfx-set-up-in-unreal-engine-s-niagara",
+        "source": "tornado_gustavo",
+        "why": "Camadas de cone com shader de tornado e detritos orbitando; silhueta Ghibli.",
+        "note": ""
+      },
+      {
+        "n": 5,
+        "title": "Kfir Balouka — storm tornado (UE5 + Substance)",
+        "url": "https://80.lv/articles/take-a-look-at-these-stylized-tornado-vfx-created-with-ue5-s-niagara",
+        "source": "tornado_kfir",
+        "why": "Texturas autorais e erosão; mostra como o ruído dá breakup à parede do vórtice.",
+        "note": ""
+      }
+    ],
+    "selected": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "id": "funnel",
+    "lib": "LIB-VFX-02",
+    "name": "Tornado / Funnel",
+    "candidates": [
+      {
+        "n": 1,
+        "title": "CGHOW — simple stylized tornado",
+        "url": "https://dev.epicgames.com/community/learning/tutorials/XvOj9/unreal-engine-simple-stylized-tornado-vfx-in-ue5-niagara-torus-mesh-erode-dynamic-params",
+        "source": "tornado_cghow",
+        "why": "Malha de toro + vortex force + erode por partícula; o método mais replicável.",
+        "note": ""
+      },
+      {
+        "n": 2,
+        "title": "Gustavo Dresch Rosa — layered cone tornado",
+        "url": "https://80.lv/articles/neat-stylized-tornado-vfx-set-up-in-unreal-engine-s-niagara",
+        "source": "tornado_gustavo",
+        "why": "Camadas cônicas com shader e detritos; leitura de volume em rotação.",
+        "note": ""
+      },
+      {
+        "n": 3,
+        "title": "Kfir Balouka — stormy tornado",
+        "url": "https://80.lv/articles/take-a-look-at-these-stylized-tornado-vfx-created-with-ue5-s-niagara",
+        "source": "tornado_kfir",
+        "why": "Textura/erosão autoral, silhueta irregular e clima.",
+        "note": ""
+      },
+      {
+        "n": 4,
+        "title": "UE4 Niagara — stylized tornado preview",
+        "url": "https://www.youtube.com/watch?v=oa2TK0zP8lc",
+        "source": "tornado4",
+        "why": "Vídeo de estudo com foco em forma e movimento, não em realismo.",
+        "note": ""
+      },
+      {
+        "n": 5,
+        "title": "Brais — explosion smoke cloud meshes",
+        "url": "https://realtimevfx.com/t/brais-sketchbook/31406",
+        "source": "brais",
+        "why": "Nuvens em malha (não sprite) com depth fade: referência para a base de poeira do funil.",
+        "note": ""
+      }
+    ],
+    "selected": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "id": "ribbon",
+    "lib": "LIB-VFX-03",
+    "name": "Spiral Ribbon",
+    "candidates": [
+      {
+        "n": 1,
+        "title": "Mourad El Ghali — Fire Slash (Genshin-inspired)",
+        "url": "https://mouradzzz.artstation.com/projects/3EaexB",
+        "source": "fireslash",
+        "why": "Fita de fogo com fases charge/impact/slash e dissipação; boa referência de largura e ponta.",
+        "note": ""
+      },
+      {
+        "n": 2,
+        "title": "Lucie Travaux — Slash VFX (Unity Shader Graph)",
+        "url": "https://lixsh.artstation.com/projects/ea8PrX",
+        "source": "slashlix",
+        "why": "Fita/arco com textura alpha e leitura limpa em 3D.",
+        "note": ""
+      },
+      {
+        "n": 3,
+        "title": "Ali's Sketchbook — procedural slash shader (MIT)",
+        "url": "https://realtimevfx.com/t/alis-sketchbook/29539/6",
+        "source": "ali",
+        "why": "Shader que desenha triângulo, distorce com ruído e dissolve: base para fita 3D.",
+        "note": ""
+      },
+      {
+        "n": 4,
+        "title": "Stt Sketch #22 — mesh slash textures",
+        "url": "https://realtimevfx.com/t/stt-sketch-22/8586",
+        "source": "stt",
+        "why": "Duas camadas de textura (emissiva + trilha escura) em malha de slash.",
+        "note": ""
+      },
+      {
+        "n": 5,
+        "title": "Fab — Melee Weapon Aura & Trails",
+        "url": "https://www.fab.com/listings/bb36b822-001a-4927-a02b-79b17cf2b36b",
+        "source": "meleetrails",
+        "why": "Pacote com fitas de arma e aura; referência de continuidade e taper.",
+        "note": ""
+      }
+    ],
+    "selected": [
+      1,
+      3,
+      5
+    ]
+  },
+  {
+    "id": "helix",
+    "lib": "LIB-VFX-04",
+    "name": "Helix Cylinder",
+    "candidates": [
+      {
+        "n": 1,
+        "title": "Rayane Saada — anime fire beam",
+        "url": "https://80.lv/articles/using-unreal-engine-to-make-an-anime-inspired-stylized-fire-beam-vfx",
+        "source": "firebeam",
+        "why": "Feixe com buildup/impact/release, fresnel e textura panning distorcida.",
+        "note": ""
+      },
+      {
+        "n": 2,
+        "title": "Harry Alisavakis — Kamehameha-like laser",
+        "url": "https://80.lv/articles/crafting-a-kamehameha-like-vfx-001agt",
+        "source": "kamehameha",
+        "why": "Núcleo, esferas de carga e poeira circular; timing de feixe.",
+        "note": ""
+      },
+      {
+        "n": 3,
+        "title": "VFX Apprentice — Genshin VFX breakdown",
+        "url": "https://www.vfxapprentice.com/blog/genshin-impact-stylized-vfx-breakdown",
+        "source": "genshinbreak",
+        "why": "Malhas 3D assimétricas para slashes/feixes, impacto em 2 frames.",
+        "note": ""
+      },
+      {
+        "n": 4,
+        "title": "Vefects — Anime Stylized VFX (pack)",
+        "url": "https://www.fab.com/listings/d85dee78-9584-4b4b-a3b7-4b96de33c2b8",
+        "source": "animepack",
+        "why": "Slash/projéteis/explosões com estética anime; referência de reuso de material.",
+        "note": ""
+      },
+      {
+        "n": 5,
+        "title": "Nathan Lacsamana — HSR style study",
+        "url": "https://nathanlacsamana.com/hsr-vfx-style-study",
+        "source": "hsrstudy",
+        "why": "Impacto azul direcional com fragmentos e kaleidoscópio; referência de cor e breakup.",
+        "note": ""
+      }
+    ],
+    "selected": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "id": "dissolve",
+    "lib": "LIB-VFX-05",
+    "name": "Spiral Erosion",
+    "candidates": [
+      {
+        "n": 1,
+        "title": "Venom Slash — alpha mask + noise",
+        "url": "https://realtimevfx.com/t/venom-slash-breakdown-of-the-effect-included/18903",
+        "source": "venomslash",
+        "why": "Máscara anelar, ruído rolando e atlas de respingos: erosão aplicada a uma superfície real.",
+        "note": ""
+      },
+      {
+        "n": 2,
+        "title": "Ali's Sketchbook — procedural slash dissolve",
+        "url": "https://realtimevfx.com/t/alis-sketchbook/29539/6",
+        "source": "ali",
+        "why": "Dissolve com ruído e distorção, código MIT; referência de shader.",
+        "note": ""
+      },
+      {
+        "n": 3,
+        "title": "Brais — reusable procedural smoke material",
+        "url": "https://realtimevfx.com/t/brais-sketchbook/31406",
+        "source": "brais",
+        "why": "Material paramétrico com dissolve e gradient; como manter a superfície legível.",
+        "note": ""
+      },
+      {
+        "n": 4,
+        "title": "Kfir Balouka — tornado erosion material",
+        "url": "https://80.lv/articles/take-a-look-at-these-stylized-tornado-vfx-created-with-ue5-s-niagara",
+        "source": "tornado_kfir",
+        "why": "Erosão aplicada a um volume em movimento.",
+        "note": ""
+      },
+      {
+        "n": 5,
+        "title": "CGHOW — tornado erode material",
+        "url": "https://dev.epicgames.com/community/learning/tutorials/XvOj9/unreal-engine-simple-stylized-tornado-vfx-in-ue5-niagara-torus-mesh-erode-dynamic-params",
+        "source": "tornado_cghow",
+        "why": "Erode/tiling por partícula; breakup não uniforme.",
+        "note": ""
+      }
+    ],
+    "selected": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "id": "thrust",
+    "lib": "LIB-VFX-06",
+    "name": "Thrust Cone",
+    "candidates": [
+      {
+        "n": 1,
+        "title": "Guilty Gear combo breakdown (80.lv)",
+        "url": "https://80.lv/articles/animating-guilty-gear-inspired-fighting-game-combo-in-maya",
+        "source": "ggcombo",
+        "why": "Dash com linhas de velocidade, rim light e impact frames; ritmo de anime fighter.",
+        "note": ""
+      },
+      {
+        "n": 2,
+        "title": "GG Strive 2.0 — Johnny breakdown",
+        "url": "https://www.youtube.com/watch?v=wyJHtD5qo5Q",
+        "source": "ggjohnny",
+        "why": "Vídeo de referência de dash/close slash; timing real do jogo.",
+        "note": ""
+      },
+      {
+        "n": 3,
+        "title": "Stormhound — ZZZ attack VFX",
+        "url": "https://80.lv/articles/check-out-this-fancy-real-time-attack-vfx-for-zenless-zone-zero-animation",
+        "source": "zzz",
+        "why": "Ataque com faíscas e flares; referência de aceleração e cone.",
+        "note": ""
+      },
+      {
+        "n": 4,
+        "title": "Vefects — Anime Stylized VFX (dash)",
+        "url": "https://www.fab.com/listings/d85dee78-9584-4b4b-a3b7-4b96de33c2b8",
+        "source": "animepack",
+        "why": "Pack com dash e slash; referência de composição.",
+        "note": ""
+      },
+      {
+        "n": 5,
+        "title": "Lucie Travaux — Slash VFX",
+        "url": "https://lixsh.artstation.com/projects/ea8PrX",
+        "source": "slashlix",
+        "why": "Fita com direção clara; base para o cone de avanço.",
+        "note": ""
+      }
+    ],
+    "selected": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "id": "speedlines",
+    "lib": "LIB-VFX-07",
+    "name": "Speed Lines",
+    "candidates": [
+      {
+        "n": 1,
+        "title": "Guilty Gear combo breakdown",
+        "url": "https://80.lv/articles/animating-guilty-gear-inspired-fighting-game-combo-in-maya",
+        "source": "ggcombo",
+        "why": "Speed lines 2D sobre 3D, com rim light e hitstop.",
+        "note": ""
+      },
+      {
+        "n": 2,
+        "title": "GG Strive Johnny breakdown",
+        "url": "https://www.youtube.com/watch?v=wyJHtD5qo5Q",
+        "source": "ggjohnny",
+        "why": "Referência de dash e close slash no jogo real.",
+        "note": ""
+      },
+      {
+        "n": 3,
+        "title": "Genshin VFX breakdown",
+        "url": "https://www.vfxapprentice.com/blog/genshin-impact-stylized-vfx-breakdown",
+        "source": "genshinbreak",
+        "why": "Timing snappy e linhas de ação; contraste e restrição.",
+        "note": ""
+      },
+      {
+        "n": 4,
+        "title": "VFX Apprentice — 2D hit impact",
+        "url": "https://www.youtube.com/watch?v=Zzha-1ccQak",
+        "source": "vfxhit2d",
+        "why": "Linhas de impacto desenhadas quadro a quadro.",
+        "note": ""
+      },
+      {
+        "n": 5,
+        "title": "ZZZ attack VFX",
+        "url": "https://80.lv/articles/check-out-this-fancy-real-time-attack-vfx-for-zenless-zone-zero-animation",
+        "source": "zzz",
+        "why": "Flares e riscos de velocidade em ataque 3D.",
+        "note": ""
+      }
+    ],
+    "selected": [
+      1,
+      2,
+      4
+    ]
+  },
+  {
+    "id": "motiontrail",
+    "lib": "LIB-VFX-08",
+    "name": "Motion Trail",
+    "candidates": [
+      {
+        "n": 1,
+        "title": "Fab — Melee Weapon Aura & Trails",
+        "url": "https://www.fab.com/listings/bb36b822-001a-4927-a02b-79b17cf2b36b",
+        "source": "meleetrails",
+        "why": "Trilhas de arma com largura/taper e continuidade.",
+        "note": ""
+      },
+      {
+        "n": 2,
+        "title": "Lucie Travaux — Slash VFX",
+        "url": "https://lixsh.artstation.com/projects/ea8PrX",
+        "source": "slashlix",
+        "why": "Fita que preserva a curva do movimento.",
+        "note": ""
+      },
+      {
+        "n": 3,
+        "title": "Mourad — Fire Slash",
+        "url": "https://mouradzzz.artstation.com/projects/3EaexB",
+        "source": "fireslash",
+        "why": "Rastro de fogo com dissipação.",
+        "note": ""
+      },
+      {
+        "n": 4,
+        "title": "Stt Sketch #22",
+        "url": "https://realtimevfx.com/t/stt-sketch-22/8586",
+        "source": "stt",
+        "why": "Trilha escura secundária sob o slash emissivo.",
+        "note": ""
+      },
+      {
+        "n": 5,
+        "title": "Venom Slash",
+        "url": "https://realtimevfx.com/t/venom-slash-breakdown-of-the-effect-included/18903",
+        "source": "venomslash",
+        "why": "Máscara + ruído para a trilha não ficar rígida.",
+        "note": ""
+      }
+    ],
+    "selected": [
+      1,
+      2,
+      4
+    ]
+  },
+  {
+    "id": "aura",
+    "lib": "LIB-VFX-09",
+    "name": "Aura Burst",
+    "candidates": [
+      {
+        "n": 1,
+        "title": "Mourad — Outline Anime Aura (Genshin-inspired)",
+        "url": "https://mouradzzz.artstation.com/projects/AZ6XqW",
+        "source": "aura",
+        "why": "Aura com outline e gradiente, adaptável a qualquer modelo.",
+        "note": ""
+      },
+      {
+        "n": 2,
+        "title": "Super Saiyan Aura — After Effects tutorial",
+        "url": "https://www.youtube.com/watch?v=ESOShZCqVZY",
+        "source": "ssjaura",
+        "why": "Referência de silhueta de aura DBZ, com camadas e ruído.",
+        "note": ""
+      },
+      {
+        "n": 3,
+        "title": "Genshin VFX breakdown",
+        "url": "https://www.vfxapprentice.com/blog/genshin-impact-stylized-vfx-breakdown",
+        "source": "genshinbreak",
+        "why": "Buffs/auras com timing e cor.",
+        "note": ""
+      },
+      {
+        "n": 4,
+        "title": "Vefects — Anime Stylized VFX (buff)",
+        "url": "https://www.fab.com/listings/d85dee78-9584-4b4b-a3b7-4b96de33c2b8",
+        "source": "animepack",
+        "why": "Buff cast + loop; referência de loop e dissipação.",
+        "note": ""
+      },
+      {
+        "n": 5,
+        "title": "Brais — fake light / gradient material",
+        "url": "https://realtimevfx.com/t/brais-sketchbook/31406",
+        "source": "brais",
+        "why": "Como dar luz falsa e volume a uma superfície.",
+        "note": ""
+      }
+    ],
+    "selected": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "id": "dust",
+    "lib": "LIB-VFX-10",
+    "name": "Dust Trail",
+    "candidates": [
+      {
+        "n": 1,
+        "title": "Brais — smoke cloud meshes",
+        "url": "https://realtimevfx.com/t/brais-sketchbook/31406",
+        "source": "brais",
+        "why": "Nuvens de fumaça em malha com dissolve e depth fade.",
+        "note": ""
+      },
+      {
+        "n": 2,
+        "title": "Guilty Gear combo breakdown",
+        "url": "https://80.lv/articles/animating-guilty-gear-inspired-fighting-game-combo-in-maya",
+        "source": "ggcombo",
+        "why": "Poeira de dash e pouso no ritmo do jogo.",
+        "note": ""
+      },
+      {
+        "n": 3,
+        "title": "Noska Sketch #50",
+        "url": "https://realtimevfx.com/t/noska-sketch-50/19460",
+        "source": "noska",
+        "why": "Fumaça/explosão com camadas e antecipação.",
+        "note": ""
+      },
+      {
+        "n": 4,
+        "title": "1mafx — ground crack breakdown",
+        "url": "https://www.1mafx.com/blog/ground-crack-vfx-breakdown",
+        "source": "groundcrack",
+        "why": "Dust bursts em impactos de solo.",
+        "note": ""
+      },
+      {
+        "n": 5,
+        "title": "Venom Slash",
+        "url": "https://realtimevfx.com/t/venom-slash-breakdown-of-the-effect-included/18903",
+        "source": "venomslash",
+        "why": "Respingos com atlas e dissolve.",
+        "note": ""
+      }
+    ],
+    "selected": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "id": "scuff",
+    "lib": "LIB-VFX-11",
+    "name": "Brake Dust",
+    "candidates": [
+      {
+        "n": 1,
+        "title": "Guilty Gear combo breakdown",
+        "url": "https://80.lv/articles/animating-guilty-gear-inspired-fighting-game-combo-in-maya",
+        "source": "ggcombo",
+        "why": "Frenagem/slide com poeira direcional.",
+        "note": ""
+      },
+      {
+        "n": 2,
+        "title": "Stormhound — ZZZ attack",
+        "url": "https://80.lv/articles/check-out-this-fancy-real-time-attack-vfx-for-zenless-zone-zero-animation",
+        "source": "zzz",
+        "why": "Parada brusca com faíscas e poeira.",
+        "note": ""
+      },
+      {
+        "n": 3,
+        "title": "1mafx — ground crack",
+        "url": "https://www.1mafx.com/blog/ground-crack-vfx-breakdown",
+        "source": "groundcrack",
+        "why": "Poeira em leque no impacto de solo.",
+        "note": ""
+      },
+      {
+        "n": 4,
+        "title": "Brais — smoke",
+        "url": "https://realtimevfx.com/t/brais-sketchbook/31406",
+        "source": "brais",
+        "why": "Nuvem com expansão e dissipação.",
+        "note": ""
+      },
+      {
+        "n": 5,
+        "title": "GG Strive Johnny breakdown",
+        "url": "https://www.youtube.com/watch?v=wyJHtD5qo5Q",
+        "source": "ggjohnny",
+        "why": "Referência de dash/parada.",
+        "note": ""
+      }
+    ],
+    "selected": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "id": "scratch",
+    "lib": "LIB-VFX-12",
+    "name": "Ground Scratch",
+    "candidates": [
+      {
+        "n": 1,
+        "title": "Keiren Wall — ground slam decals",
+        "url": "https://keirenwall.com/home/Houdini-Decals",
+        "source": "keiren",
+        "why": "Rachadura com height/normal/roughness e parallax; profundidade real.",
+        "note": ""
+      },
+      {
+        "n": 2,
+        "title": "1mafx — ground crack",
+        "url": "https://www.1mafx.com/blog/ground-crack-vfx-breakdown",
+        "source": "groundcrack",
+        "why": "Fratura procedural + textura + VFX de poeira.",
+        "note": ""
+      },
+      {
+        "n": 3,
+        "title": "Pol Villà — cracking concrete",
+        "url": "https://80.lv/articles/creating-cracking-concrete-effect-using-houdini",
+        "source": "concrete",
+        "why": "Rachadura em concreto com atributos e shader.",
+        "note": ""
+      },
+      {
+        "n": 4,
+        "title": "RealTimeVFX — ground breaking",
+        "url": "https://realtimevfx.com/t/the-ground-breaking-effect/5832",
+        "source": "groundbreak",
+        "why": "Discussão de mesh/skeletal para o chão quebrar.",
+        "note": ""
+      },
+      {
+        "n": 5,
+        "title": "CGcircuit — Houdini RBD ground destruction",
+        "url": "https://www.cgcircuit.com/tutorial/houdini-rbd-ii---ground-destruction",
+        "source": "cgcircuit",
+        "why": "Rachaduras e importação para Unreal.",
+        "note": ""
+      }
+    ],
+    "selected": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "id": "shockwave",
+    "lib": "LIB-VFX-13",
+    "name": "Shockwave Ring",
+    "candidates": [
+      {
+        "n": 1,
+        "title": "Brais — shockwave disk + heat distortion",
+        "url": "https://realtimevfx.com/t/brais-sketchbook/31406",
+        "source": "brais",
+        "why": "Disco com UV radial e distorção de calor; referência de frente de onda.",
+        "note": ""
+      },
+      {
+        "n": 2,
+        "title": "Noska Sketch #50 — shockwave mesh",
+        "url": "https://realtimevfx.com/t/noska-sketch-50/19460",
+        "source": "noska",
+        "why": "Malha de shockwave com escala e cor; antecipação e impacto.",
+        "note": ""
+      },
+      {
+        "n": 3,
+        "title": "80.lv — stylized lightning",
+        "url": "https://realtimevfx.com/t/lightning-strike-stylized-what-do-you-guys-think-update/1972",
+        "source": "lightning",
+        "why": "Crítica de timing: atrasar a onda 0,1–0,15 s e encurtar o impacto.",
+        "note": ""
+      },
+      {
+        "n": 4,
+        "title": "CGHOW — radial to shockwave (Niagara)",
+        "url": "https://dev.epicgames.com/community/learning/tutorials/XvOj9/unreal-engine-simple-stylized-tornado-vfx-in-ue5-niagara-torus-mesh-erode-dynamic-params",
+        "source": "tornado_cghow",
+        "why": "Gradiente radial → onda sem textura; técnica limpa.",
+        "note": ""
+      },
+      {
+        "n": 5,
+        "title": "Rebelway — One-Punch Man impact",
+        "url": "https://rebelway.net/one-punch-man-houdini-tutorial",
+        "source": "onepunch",
+        "why": "Impacto de escala grande com onda e detritos.",
+        "note": ""
+      }
+    ],
+    "selected": [
+      1,
+      2,
+      5
+    ]
+  },
+  {
+    "id": "crown",
+    "lib": "LIB-VFX-14",
+    "name": "Impact Crown",
+    "candidates": [
+      {
+        "n": 1,
+        "title": "VFX Apprentice — Genshin impact frames",
+        "url": "https://www.vfxapprentice.com/blog/genshin-impact-stylized-vfx-breakdown",
+        "source": "genshinbreak",
+        "why": "Impacto em 2 frames, contraste alto e silhueta antes do detalhe.",
+        "note": ""
+      },
+      {
+        "n": 2,
+        "title": "3dxdev — Impact Frames (UE5)",
+        "url": "https://3dxdev.com/assets/impact-frames-anime-hit-effects-for-unreal-engine-5",
+        "source": "impactpack",
+        "why": "Pacote de frames de impacto: branco, silhueta e linhas.",
+        "note": ""
+      },
+      {
+        "n": 3,
+        "title": "80.lv — Guilty Gear combo",
+        "url": "https://80.lv/articles/animating-guilty-gear-inspired-fighting-game-combo-in-maya",
+        "source": "ggcombo",
+        "why": "Impact frames + hitstop + speed lines no ritmo de anime fighter.",
+        "note": ""
+      },
+      {
+        "n": 4,
+        "title": "Rebelway — One-Punch Man impact",
+        "url": "https://rebelway.net/one-punch-man-houdini-tutorial",
+        "source": "onepunch",
+        "why": "Impacto cinematográfico com poeira, detritos e onda.",
+        "note": ""
+      },
+      {
+        "n": 5,
+        "title": "RoClicks — hitstop/impact frames",
+        "url": "https://roclicks.gg/resources/animation/hit-feel",
+        "source": "roclicks",
+        "why": "Tempos de vida por elemento (flash 0,03–0,15 s; corpo 0,35–1,2 s).",
+        "note": ""
+      }
+    ],
+    "selected": [
+      1,
+      2,
+      4
+    ]
+  },
+  {
+    "id": "blastcone",
+    "lib": "LIB-VFX-15",
+    "name": "Blast Cone",
+    "candidates": [
+      {
+        "n": 1,
+        "title": "Rayane Saada — anime fire beam",
+        "url": "https://80.lv/articles/using-unreal-engine-to-make-an-anime-inspired-stylized-fire-beam-vfx",
+        "source": "firebeam",
+        "why": "Cone/feixe direcional com release instantâneo.",
+        "note": ""
+      },
+      {
+        "n": 2,
+        "title": "Rebelway — One-Punch Man impact",
+        "url": "https://rebelway.net/one-punch-man-houdini-tutorial",
+        "source": "onepunch",
+        "why": "Cone de pressão com poeira e detritos.",
+        "note": ""
+      },
+      {
+        "n": 3,
+        "title": "Brais — initial blast",
+        "url": "https://realtimevfx.com/t/brais-sketchbook/31406",
+        "source": "brais",
+        "why": "Duas esferas/malhas para o blast inicial, sem sprite.",
+        "note": ""
+      },
+      {
+        "n": 4,
+        "title": "Noska Sketch #50",
+        "url": "https://realtimevfx.com/t/noska-sketch-50/19460",
+        "source": "noska",
+        "why": "Explosão com malha e flipbook.",
+        "note": ""
+      },
+      {
+        "n": 5,
+        "title": "Pawel Margacz — cast/impact breakdown",
+        "url": "https://80.lv/articles/breakdown-creating-vfx-in-unreal-engine-4",
+        "source": "pawel",
+        "why": "Impacto com flash, círculo, faíscas e detritos.",
+        "note": ""
+      }
+    ],
+    "selected": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "id": "fracture",
+    "lib": "LIB-VFX-16",
+    "name": "Ground Fracture",
+    "candidates": [
+      {
+        "n": 1,
+        "title": "1mafx — ground crack (3 parts)",
+        "url": "https://www.1mafx.com/blog/ground-crack-vfx-breakdown",
+        "source": "groundcrack",
+        "why": "Houdini RBD + Substance + Niagara; pipeline completo.",
+        "note": ""
+      },
+      {
+        "n": 2,
+        "title": "Keiren Wall — ground slam decals",
+        "url": "https://keirenwall.com/home/Houdini-Decals",
+        "source": "keiren",
+        "why": "Fratura convertida em decal com parallax.",
+        "note": ""
+      },
+      {
+        "n": 3,
+        "title": "Pol Villà — cracking concrete",
+        "url": "https://80.lv/articles/creating-cracking-concrete-effect-using-houdini",
+        "source": "concrete",
+        "why": "Fratura com feedback loop e detalhe no shader.",
+        "note": ""
+      },
+      {
+        "n": 4,
+        "title": "SideFX — destruction techniques",
+        "url": "https://www.sidefx.com/learn/talks/destruction-vfx-techniques-with-houdini-and-unreal/",
+        "source": "sidefx",
+        "why": "Aulas de fratura Houdini → Unreal/Niagara.",
+        "note": ""
+      },
+      {
+        "n": 5,
+        "title": "CGcircuit — Houdini RBD II",
+        "url": "https://www.cgcircuit.com/tutorial/houdini-rbd-ii---ground-destruction",
+        "source": "cgcircuit",
+        "why": "Cracks e RBD para ground destruction.",
+        "note": ""
+      }
+    ],
+    "selected": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "id": "flipbook",
+    "lib": "LIB-VFX-17",
+    "name": "Anime Impact Flipbook",
+    "candidates": [
+      {
+        "n": 1,
+        "title": "VFX Apprentice — 2D hit impact (part 3)",
+        "url": "https://www.youtube.com/watch?v=Zzha-1ccQak",
+        "source": "vfxhit2d",
+        "why": "Construção quadro a quadro de um impacto 2D; dissolve e in-between.",
+        "note": ""
+      },
+      {
+        "n": 2,
+        "title": "3dxdev — Impact Frames UE5",
+        "url": "https://3dxdev.com/assets/impact-frames-anime-hit-effects-for-unreal-engine-5",
+        "source": "impactpack",
+        "why": "Frames brancos/negativos e como aplicar em Niagara.",
+        "note": ""
+      },
+      {
+        "n": 3,
+        "title": "RealTimeVFX — impact frames in UE5",
+        "url": "https://realtimevfx.com/t/impact-frames-in-ue5/24982",
+        "source": "impactue5",
+        "why": "Discussão de sprite vs post-process e LUT.",
+        "note": ""
+      },
+      {
+        "n": 4,
+        "title": "GG Strive effect reverse engineering",
+        "url": "https://realtimevfx.com/t/please-help-me-reverse-engineer-this-effect-from-guilty-gear-strive/30609",
+        "source": "ggreverse",
+        "why": "Hipótese de flipbook em malha 3D no jogo.",
+        "note": ""
+      },
+      {
+        "n": 5,
+        "title": "Genshin VFX breakdown",
+        "url": "https://www.vfxapprentice.com/blog/genshin-impact-stylized-vfx-breakdown",
+        "source": "genshinbreak",
+        "why": "Impacto em 2 frames e leitura de atlas.",
+        "note": ""
+      }
+    ],
+    "selected": [
+      1,
+      2,
+      4
+    ]
+  },
+  {
+    "id": "sparks",
+    "lib": "LIB-VFX-18",
+    "name": "Kinetic Sparks",
+    "candidates": [
+      {
+        "n": 1,
+        "title": "Venom Slash — splash atlas",
+        "url": "https://realtimevfx.com/t/venom-slash-breakdown-of-the-effect-included/18903",
+        "source": "venomslash",
+        "why": "Atlas de respingos com glow e dissolve; direção do corte.",
+        "note": ""
+      },
+      {
+        "n": 2,
+        "title": "Stylized Fireball — impact particles",
+        "url": "https://realtimevfx.com/t/stylized-fireball-projectile/31658",
+        "source": "fireball",
+        "why": "Faíscas/partículas com bandas de cor e line art.",
+        "note": ""
+      },
+      {
+        "n": 3,
+        "title": "Pawel Margacz — impact",
+        "url": "https://80.lv/articles/breakdown-creating-vfx-in-unreal-engine-4",
+        "source": "pawel",
+        "why": "Faíscas com várias configurações no mesmo impacto.",
+        "note": ""
+      },
+      {
+        "n": 4,
+        "title": "Guilty Gear combo",
+        "url": "https://80.lv/articles/animating-guilty-gear-inspired-fighting-game-combo-in-maya",
+        "source": "ggcombo",
+        "why": "Hit sparks com timing e hitstop.",
+        "note": ""
+      },
+      {
+        "n": 5,
+        "title": "1mafx — ground crack",
+        "url": "https://www.1mafx.com/blog/ground-crack-vfx-breakdown",
+        "source": "groundcrack",
+        "why": "Fragmentos e poeira no impacto de solo.",
+        "note": ""
+      }
+    ],
+    "selected": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "id": "debris",
+    "lib": "LIB-VFX-19",
+    "name": "Directional Debris",
+    "candidates": [
+      {
+        "n": 1,
+        "title": "Brais — debris ribbons + cloud meshes",
+        "url": "https://realtimevfx.com/t/brais-sketchbook/31406",
+        "source": "brais",
+        "why": "Detritos com ribbons e nuvens em malha; profundidade.",
+        "note": ""
+      },
+      {
+        "n": 2,
+        "title": "1mafx — ground crack debris",
+        "url": "https://www.1mafx.com/blog/ground-crack-vfx-breakdown",
+        "source": "groundcrack",
+        "why": "Pedras e poeira em camadas separadas.",
+        "note": ""
+      },
+      {
+        "n": 3,
+        "title": "SideFX — destruction techniques",
+        "url": "https://www.sidefx.com/learn/talks/destruction-vfx-techniques-with-houdini-and-unreal/",
+        "source": "sidefx",
+        "why": "Fratura + Niagara para detritos e poeira.",
+        "note": ""
+      },
+      {
+        "n": 4,
+        "title": "Noska Sketch #50",
+        "url": "https://realtimevfx.com/t/noska-sketch-50/19460",
+        "source": "noska",
+        "why": "Detritos e faíscas com escalas diferentes.",
+        "note": ""
+      },
+      {
+        "n": 5,
+        "title": "CGcircuit — ground destruction",
+        "url": "https://www.cgcircuit.com/tutorial/houdini-rbd-ii---ground-destruction",
+        "source": "cgcircuit",
+        "why": "RBD e cacos com peso.",
+        "note": ""
+      }
+    ],
+    "selected": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "id": "slash",
+    "lib": "LIB-VFX-20",
+    "name": "Slash Arc",
+    "candidates": [
+      {
+        "n": 1,
+        "title": "Mourad — Fire Slash",
+        "url": "https://mouradzzz.artstation.com/projects/3EaexB",
+        "source": "fireslash",
+        "why": "Corte de fogo com charge/impact/slash e dissipação.",
+        "note": ""
+      },
+      {
+        "n": 2,
+        "title": "Ali's Sketchbook — procedural slash (MIT)",
+        "url": "https://realtimevfx.com/t/alis-sketchbook/29539/6",
+        "source": "ali",
+        "why": "Shader de slash com triângulo distorcido, ruído e aberração cromática.",
+        "note": ""
+      },
+      {
+        "n": 3,
+        "title": "Venom Slash — ring mesh + noise",
+        "url": "https://realtimevfx.com/t/venom-slash-breakdown-of-the-effect-included/18903",
+        "source": "venomslash",
+        "why": "Malha anelar, alpha mask e duas texturas multiplicadas.",
+        "note": ""
+      },
+      {
+        "n": 4,
+        "title": "Stt Sketch #22",
+        "url": "https://realtimevfx.com/t/stt-sketch-22/8586",
+        "source": "stt",
+        "why": "Camadas de textura e mesh particles.",
+        "note": ""
+      },
+      {
+        "n": 5,
+        "title": "Lucie Travaux — Slash VFX",
+        "url": "https://lixsh.artstation.com/projects/ea8PrX",
+        "source": "slashlix",
+        "why": "Fita limpa com shader graph e alpha.",
+        "note": ""
+      }
+    ],
+    "selected": [
+      1,
+      2,
+      3
+    ]
+  }
+]

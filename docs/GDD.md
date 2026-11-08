@@ -2298,3 +2298,13 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 **Pendências abertas (não decididas):** valor oficial da redução (G7) e posição na cadeia de dano; se o Guard absorve ou concede ATB/Burst além do +1 ATB do Brick Break; interação do Guard com multi-hit, projéteis e ataques em área; tratamento de golpes com dano que não podem ser reduzidos; definição do Move **Protect** (custo, duração, o que bloqueia, se cobre o time); efeito e Move do **Mold Break**; quais outros Moves além do Brick Break terão a trait de quebrar o Guard; comportamento do Guard no mapa/exploração e em chefes; A divergência histórica de LUK da R60 (§12.13) **não foi tocada**.
 
 **Estado de implementação (verificado no repositório local em 2026-11-05):** lógica, teste `tests/battle/test_d272_guard.gd`, menu, hotkey, badge e efeito visual existem **no repositório local**; parte da integração mora em arquivos compartilhados com outras sessões e **ainda não foi commitada**, portanto o Guard **não roda no `HEAD`** até esse commit. **Nada foi enviado ao GitHub.** Testado: Guard no Pancham, no Gible e espelhado (Gible contra Abra e Pancham). **Não testado:** Guard por Espaço/bloco azul e por Shift em jogo real (apenas por leitura de código), inimigo distante com escudo/texto em escala por distância, alvos de tamanhos diferentes além dos três personagens, interação com todos os Moves do catálogo.
+
+## Variantes de Tackle com trait (D-998, 2026-11-08)
+
+- **Tackle** é o golpe corpo a corpo básico e genérico de todos os personagens.
+- Um personagem pode ter, no lugar do Tackle, uma **variante com outro nome**. O nome diferente sinaliza uma **trait**: uma regra própria daquele golpe.
+- A trait pertence ao move (seu `move_id`), não ao personagem: quem tiver a variante usa a mesma trait (D-235).
+
+| Variante | Quem tem hoje | Trait |
+|---|---|---|
+| Spear Thrust | Orc | Para a 7 unidades do alvo (as outras investidas param a 2,6) para acertar com a ponta da lança (D-996/D-997). |

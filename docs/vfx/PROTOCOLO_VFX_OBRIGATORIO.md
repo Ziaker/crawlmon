@@ -6,6 +6,8 @@
 
 Todo **VFX de Move/elemento em combate** é construído **sobre o Motion Composer**, usando **as duas skills** (`scenario-godot-vfx` e `scenario-godot-shaders`). Se o Motion Composer não consegue fazer o que o efeito precisa, **o Motion Composer é atualizado primeiro** (nova versão: V1.1, V1.2, ... sem limite), documentado e testado, e só depois o efeito é feito. É proibido contornar o Motion Composer com código de partículas, rastros ou trajetórias escrito à mão dentro da classe do Move. **Clima/exploração não é Move e fica fora deste protocolo (D-383).**
 
+**Biblioteca de projéteis (D-956/D-957, 2026-11-07):** para os projéteis da biblioteca vale a D-954, escolhida pelo criador ("D-954: principal à mão"). O efeito principal (feixe/cabeça, clarões, impacto) é feito **à mão**, com malhas, flipbooks e shaders. O Motion Composer cuida só do **secundário** (faíscas, brasas, poeira, rastros) e do timing. As fases são seis: Start → Wind-up → Release → Trajectory → Impact → Post-impact. O resto deste protocolo (skills, checklist, duas vistas, vídeo, um ajuste por vez) continua valendo.
+
 ## 1. Antes de escrever uma linha (em ordem, sem pular)
 
 1. **Citar as decisões aplicáveis** pelo ID (no mínimo: D-235, D-308, D-044, D-045, D-043, D-019, e as do Move/personagem em questão). Abrir `docs/decisoes/` de verdade.
