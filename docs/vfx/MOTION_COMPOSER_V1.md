@@ -1138,3 +1138,15 @@ Pedido do criador: aplicar no jogo a **opção 2 (Persona Kinetic Cross)** do pr
 **D-347 (2026-11-06):** o **número** passou a aparecer acima do `UnitCard`/`EnemyTag` (fora da ficha, perto do HP), com rotação de ±6° e deslocamento diagonal para cima na direção do lado (inimigo à direita, aliado à esquerda), em 1,4 s. As **cruzes continuam no personagem** como VFX 3D do M26. O odômetro de HP foi arquivado e o HP/barra são imediatos.
 
 **Verificado:** batalha real (`vfx_room`) nas duas vistas, 1280×720: o número com as cores exatas acima das fichas e as cruzes verdes no personagem, o lado direito do HUD fica limpo e tudo some ao fim. Vídeo: `test_captures/HealGain_option2_normal_espelhado.mp4` e teste do inimigo em `test_captures/HealGain_enemy_tag.mp4`. **Não verificado:** desempenho em hardware fraco, aprovação artística do criador.
+
+## V1.12 (D-1026, 2026-11-09): `floor_ring` e cores do anel
+
+O Armored Bulk precisa de um anel de choque **prateado e contínuo** no chão que **abre e some**. O `ring` já existente usa o shader `fire_ring` (tracejado laranja/vermelho) e, com `expand`, apaga ao contrário (visível só no fim); ele continua **intocado** para os presets que já o usam.
+
+| Mudança | Onde | Efeito |
+|---|---|---|
+| rep `floor_ring` | `motion_rep.gd` | anel no chão sob a origem; `k` de 0 a 1 abre o raio (de 12% a 100% de `size`) e **apaga** (fade = `k`); as cores e a espessura vêm de `look` |
+| `MotionPainter.ring(..., params)` | `motion_painter.gd` | parâmetro opcional de `look` (`orange`, `red`, `solid`, `dashes`, `thick`); vazio = visual antigo |
+| uniform `solid` | `shaders/fire_ring.gdshader` | 1 = linha contínua; 0 (padrão) = tracejado antigo |
+
+Uso: `MotionRep.make("floor_ring", {"size": 3.0, "strength": 1.1, "look": {"orange": prata, "red": aço, "solid": 1.0, "thick": 0.05}})`. Tudo em metros do mundo; o nó que desenha escala pelo corpo real (D-235). Preset: `MotionPresets.armored_bulk_effect` e `armor_break_effect`.

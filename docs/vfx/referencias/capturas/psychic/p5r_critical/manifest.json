@@ -1,0 +1,36 @@
+{
+  "tool": "reference_capture.py",
+  "date": "2026-11-09",
+  "source": "scratch/vfx_research/clips/p5r_critical.mp4",
+  "source_title": "p5r_critical.mp4",
+  "source_uploader": "",
+  "source_duration": 30.029,
+  "clip_start": 0.0,
+  "clip_end": 30.029,
+  "clip_preroll": 0.0,
+  "element": "Psychic",
+  "effect": "P5R Critical",
+  "resolution": {
+    "width": 640,
+    "height": 360
+  },
+  "max_height": 480,
+  "crop": "",
+  "phases": [
+    {
+      "phase": "IMPACT",
+      "time": 1.0,
+      "local_time": 1.0,
+      "frame": "docs\\vfx\\referencias\\capturas\\psychic\\p5r_critical\\frames\\00_impact_1.000.png",
+      "sha256": "2189a5fb3c72c9b3"
+    },
+    {
+      "phase": "HOLD",
+      "time": 1.5,
+      "local_time": 1.5,
+      "frame": "docs\\vfx\\referencias\\capturas\\psychic\\p5r_critical\\frames\\01_hold_1.500.png",
+      "sha256": "a471dc7ab79b6013"
+    }
+  ],
+  "contact_sheet": "docs\\vfx\\referencias\\capturas\\psychic\\p5r_critical\\contact_sheet.png"
+}

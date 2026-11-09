@@ -2307,4 +2307,5 @@ A Rodada 62 aprovou **1A, 2A, 3A, 4A e 5B**, sem observações adicionais. As de
 
 | Variante | Quem tem hoje | Trait |
 |---|---|---|
+| Boulder Smash | Cyclops | Poder 1,2 Físico; no contato, 20% + LUK de -1 DEF no alvo (visual do Rakunda); o contato espera a esmagada completa (D-1003, D-1005). |
 | Spear Thrust | Orc | Para a 7 unidades do alvo (as outras investidas param a 2,6) para acertar com a ponta da lança (D-996/D-997). |
