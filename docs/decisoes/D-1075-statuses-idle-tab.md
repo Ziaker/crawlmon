@@ -32,7 +32,7 @@
 - **Tab de novo:** mostra (`visible=4`).
 - **Tab para esconder e movimento:** `visible=0`; o movimento libera o modo manual.
 - **5 s parado depois do movimento:** `visible=4`, volta ao automático.
-- **Provas:** `docs/referencias/exploracao/3d/murky_forest_status_hidden.png` (escondido), `murky_forest_hud_sugimori.png` (visível após 5 s), recorte `murky_forest_hud_sugimori_cards.png`, vídeos `murky_forest_status_party.mp4/.gif` e `murky_forest_status_solo.mp4/.gif` (15 s) e a folha `murky_forest_status_contato.png`.
+- **Provas:** `docs/referencias/exploracao/3d/murky_forest_status_hidden.png` (escondido), `murky_forest_hud_sugimori.png` (visível após 5 s), recorte `murky_forest_hud_sugimori_cards.png`, vídeos `murky_forest_status_party.mp4/.gif` e `murky_forest_status_solo.mp4/.gif` (15 s) e a folha `murky_forest_status_contato.png`. As provas usam o visual anterior, pois a D-1076 foi revertida.
 - **Escopo:** só o `ExplorationBattleHud`; mini-mapa/alerta/prompt seguem sempre visíveis. A cena principal em headless está bloqueada pelos erros de VFX de outra sessão; o teste foi no isolado.
 
 ## O que não foi verificado

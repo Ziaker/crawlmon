@@ -4,7 +4,7 @@
 - **Área:** Exploração / HUD / cards do overworld (`ExplorationBattleHud`).
 - **Relacionadas:** D-1072 (casca dos cards), D-1063 (NPCs), D-1023/D-1022 (overworld 3D).
 - **Status:** **teste implementado e corrigido** com zoom no rosto (Abra 3, Pancham 2, Gible 2); Gible entrou como 4º card demo; batalha, status, menus, DQT e jogo 2D não mudam; commit local; **sem push**.
-- **Nota D-1075/D-1076 (2026-11-09):** os cards agora aparecem após 5 s parado ou Tab (D-1075); o toon do overworld foi restaurado via shader customizado no `gl_compatibility` (D-1076). O layout/arte dos cards não muda.
+- **Nota D-1075/D-1076 (2026-11-09):** os cards agora aparecem após 5 s parado ou Tab (D-1075); a tentativa de shader toon customizado (D-1076) foi **revertida** e o visual voltou ao estado anterior (`DIFFUSE_TOON` no `gl_compatibility`, que não aplica). O layout/arte dos cards não muda.
 
 ## O que o criador disse (literal)
 

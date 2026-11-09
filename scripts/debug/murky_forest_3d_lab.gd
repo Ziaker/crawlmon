@@ -10,7 +10,6 @@ extends "res://scripts/debug/third_person_3d_lab.gd"
 ## parede 4,2 m; copa 5,5 m. Não é a escala final do jogo.
 
 const FOREST_VIGNETTE := preload("res://shaders/vignette.gdshader")
-const TOON_SHADER := preload("res://shaders/toon_overworld.gdshader")
 const NPC_DATA := preload("res://scripts/dungeon/npc_data.gd")
 const FOREST_WALL_HEIGHT := 4.2
 const MINIMAP_SIZE := 256
@@ -357,14 +356,20 @@ func _fern_color() -> Color:
 
 # --- Forest meshes -----------------------------------------------------------
 
-func _toon_mat(color: Color, emission := Color(0, 0, 0, 1), emission_energy := 0.0) -> ShaderMaterial:
-	var mat := ShaderMaterial.new()
-	mat.shader = TOON_SHADER
-	mat.set_shader_parameter("albedo_color", color)
-	mat.set_shader_parameter("emission_color", emission)
-	mat.set_shader_parameter("emission_energy", emission_energy)
-	mat.set_shader_parameter("bands", 3.0)
-	mat.set_shader_parameter("rim_amount", 0.22)
+func _toon_mat(color: Color, emission := Color(0, 0, 0, 1), emission_energy := 0.0) -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = color
+	mat.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
+	mat.specular_mode = BaseMaterial3D.SPECULAR_TOON
+	mat.roughness = 0.92
+	mat.metallic = 0.0
+	mat.rim_enabled = true
+	mat.rim = 0.22
+	mat.rim_tint = 0.35
+	if emission_energy > 0.0:
+		mat.emission_enabled = true
+		mat.emission = emission
+		mat.emission_energy_multiplier = emission_energy
 	return mat
 
 
@@ -1173,7 +1178,13 @@ func _apply_toon(root: Node) -> void:
 			var over := mesh_instance.material_override as BaseMaterial3D
 			if over.shading_mode == BaseMaterial3D.SHADING_MODE_UNSHADED:
 				continue
-			mesh_instance.material_override = _toon_from_base(over)
+			var dup := over.duplicate(true) as BaseMaterial3D
+			dup.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
+			dup.specular_mode = BaseMaterial3D.SPECULAR_TOON
+			dup.rim_enabled = true
+			dup.rim = 0.22
+			dup.rim_tint = 0.35
+			mesh_instance.material_override = dup
 			continue
 		for i in mesh_instance.mesh.get_surface_count():
 			var mat := mesh_instance.get_active_material(i)
@@ -1182,21 +1193,13 @@ func _apply_toon(root: Node) -> void:
 			var base := mat as BaseMaterial3D
 			if base.shading_mode == BaseMaterial3D.SHADING_MODE_UNSHADED:
 				continue
-			mesh_instance.set_surface_override_material(i, _toon_from_base(base))
-
-
-func _toon_from_base(base: BaseMaterial3D) -> ShaderMaterial:
-	var mat := ShaderMaterial.new()
-	mat.shader = TOON_SHADER
-	mat.set_shader_parameter("albedo_color", base.albedo_color)
-	if base.albedo_texture != null:
-		mat.set_shader_parameter("albedo_texture", base.albedo_texture)
-		mat.set_shader_parameter("use_texture", true)
-	mat.set_shader_parameter("emission_color", base.emission)
-	mat.set_shader_parameter("emission_energy", base.emission_energy_multiplier)
-	mat.set_shader_parameter("bands", 3.0)
-	mat.set_shader_parameter("rim_amount", 0.22)
-	return mat
+			var dup := base.duplicate(true) as BaseMaterial3D
+			dup.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
+			dup.specular_mode = BaseMaterial3D.SPECULAR_TOON
+			dup.rim_enabled = true
+			dup.rim = 0.22
+			dup.rim_tint = 0.35
+			mesh_instance.set_surface_override_material(i, dup)
 
 
 func _set_actor_layers() -> void:

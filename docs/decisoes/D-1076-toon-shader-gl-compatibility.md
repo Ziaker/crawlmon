@@ -1,54 +1,39 @@
-# D-1076 — Restaurar o filtro toon do overworld no `gl_compatibility`
+# D-1076 — Tentativa de shader toon no `gl_compatibility` (revertida)
 
 - **Data:** 2026-11-09.
 - **Área:** Exploração / visual 3D / shaders.
-- **Relacionadas:** D-1028 (toon no overworld), D-1023 (lab), D-1063 (NPCs).
-- **Status:** **teste implementado e verificado** no lab isolado; renderer global mantido em `gl_compatibility`; batalha, 2D, status/menus não mudam; commit local; **sem push**.
+- **Relacionadas:** D-1028 (toon no overworld), D-1023 (lab), D-1063 (NPCs), D-1075 (status).
+- **Status:** **REVERTIDA em 2026-11-09**; o shader customizado foi removido e o lab voltou ao estado anterior (`DIFFUSE_TOON` nativo); renderer global mantido em `gl_compatibility`; batalha, 2D, status/menus e regras não mudam; **sem push**.
 
 ## O que o criador disse (literal)
 
 > inclusive cade o filtro toon que tinha:
 
+> está completamente quebrado, pq não volta a ser como tava antes, quando o toon não estava desligado?
+
 ## Diagnóstico
 
-O `project.godot` está em **`renderer/rendering_method="gl_compatibility"`**. Nesse renderer, `BaseMaterial3D.DIFFUSE_TOON`/`SPECULAR_TOON` (o filtro usado por D-1028) **não é aplicado**; por isso os modelos/cenário ficam com sombreamento liso. O código do lab continua chamando `_apply_toon`, mas o efeito nativo é ignorado.
+O `project.godot` está em **`renderer/rendering_method="gl_compatibility"`**. Nesse renderer, `BaseMaterial3D.DIFFUSE_TOON`/`SPECULAR_TOON` (o filtro usado por D-1028) **não é aplicado**; por isso os modelos/cenário ficam com sombreamento liso. O código do lab continua chamando `_apply_toon`, mas o efeito nativo é ignorado. O estado anterior que o criador tinha era esse visual liso — o filtro existia no código, mas não aparecia no Compatibility.
 
-## Decisão
+## Tentativa (histórico)
 
-1. **Manter o renderer global em `gl_compatibility`.**
-2. **Criar um shader toon espacial próprio** para o overworld, aplicado aos modelos e ao cenário da Murky Forest:
-   - bandas de luz (3 níveis), sem PBR;
-   - rim leve, como o toon antigo;
-   - preservar **albedo color/texture**, emissão e transparência dos materiais existentes;
-   - não aplicar em materiais `unshaded` (olhos/decais, partículas, mini-mapa).
-3. **Onde aplicar:** `_apply_toon` do `murky_forest_3d_lab.gd` e `_toon_mat` do cenário. O lab de pedra D-1023 e a batalha 3D não são tocados.
-4. **Sem contorno preto** por enquanto: D-1028 definiu toon + rim; contorno é uma decisão visual nova.
-5. **Escopo:** só o overworld 3D; batalha, 2D, UI e regras não mudam.
-6. **Se o shader não compilar/iluminar no Compatibility:** voltar e reportar antes de trocar o renderer global.
+Foi criado `shaders/toon_overworld.gdshader` (3 bandas + rim, texturas/emissão preservadas) e o `murky_forest_3d_lab.gd` passou a converter os materiais para `ShaderMaterial`. A tentativa deixou o visual **quebrado/neon** e perdeu a leitura anterior; o criador pediu para voltar ao estado anterior.
 
-## Ambiguidades
+## Reversão (2026-11-09)
 
-- **Número de bandas:** 3 (o antigo toon tinia 3 níveis); ajustável.
-- **Contorno:** não incluído; se o criador quiser, é uma decisão nova.
-- **Custo/performance:** o shader é simples, mas não foi medido em 60 fps/mobile.
-
-## Teste implementado (2026-11-09)
-
-- **Shader:** `shaders/toon_overworld.gdshader` (spatial, `specular_disabled`, 3 bandas de luz, rim, albedo color/texture, emission; luz dividida por PI para não estourar).
-- **Aplicação:** `murky_forest_3d_lab.gd` (`_toon_mat` e `_apply_toon`) converte os materiais `BaseMaterial3D` do cenário, player, aliados, inimigos e NPCs; materiais `unshaded` (olhos/decais, partículas, mini-mapa) continuam fora.
-- **Teste no `gl_compatibility`:** a captura isolada (`murky_forest_hud_sugimori.png` e `murky_forest_status_hidden.png`) mostra os modelos/cenário com bandas de toon; sem erro de shader.
-- **Texturas:** Abra, Pancham, Orc, Slime e NPCs mantêm as texturas; a iluminação é quantizada.
-- **Escopo:** o lab de pedra D-1023, a batalha 3D, o 2D e a UI não foram tocados.
-- **Cena principal:** o teste foi no projeto isolado (mesmo `gl_compatibility`); a cena principal em headless continua bloqueada pelos erros de VFX de outra sessão.
-- **Vídeo:** `docs/referencias/exploracao/3d/murky_forest_status_party.mp4/.gif` e `murky_forest_status_solo.mp4/.gif` mostram o toon calibrado junto com o comportamento D-1075; `murky_forest_status_contato.png` resume os quadros.
+1. **Shader removido:** `shaders/toon_overworld.gdshader` foi apagado.
+2. **Lab restaurado:** `murky_forest_3d_lab.gd` voltou ao estado de `7ab8aad9`, com `_toon_mat` e `_apply_toon` em `StandardMaterial3D`/`DIFFUSE_TOON`; nenhuma conversão para `ShaderMaterial`.
+3. **Visual anterior de volta:** como o renderer é `gl_compatibility`, o toon nativo continua não aparecendo — o resultado é o **liso anterior**, que era o estado aprovado antes da tentativa.
+4. **Renderer global não mudou.**
+5. **D-1075 continua:** os cards escondidos/5 s/Tab seguem implementados; as provas e vídeos foram regravados com o visual anterior.
+6. **Se o criador quiser toon visível de verdade:** é uma decisão nova — trocar o renderer para Forward+ ou tentar outro shader; nenhuma das duas foi aplicada.
 
 ## O que não foi verificado
 
-- Contorno preto: não incluído (D-1028 definiu toon + rim; contorno seria decisão nova).
-- Custo/performance em 60 fps, mobile/web e muitas luzes.
-- Se o shader cobre todos os casos de transparência/alpha (os materiais unshaded continuam separados).
-- A cena principal em headless/janela enquanto os VFX de outra sessão estiverem quebrados.
+- O toon nativo no `gl_compatibility` (ele não é aplicado; não há como “ligar” sem trocar renderer/sombreamento).
+- O shader customizado foi removido; performance/qualidade dele não são mais relevantes.
+- A cena principal em headless/janela continua bloqueada pelos erros de VFX de outra sessão; provas/vídeos são do lab isolado.
 
 ## Estado
 
-Teste implementado e verificado no lab isolado com `gl_compatibility`; toon de 3 bandas + rim restaurado no overworld, com luz calibrada e vídeos gravados, renderer global mantido. Provas registradas; commit local; **sem push**. Batalha/2D intactos.
+Tentativa revertida. O lab voltou ao visual anterior; a D-1075 (status) permanece. `murky_forest_hud_sugimori.png`, `murky_forest_status_hidden.png`, os vídeos party/solo e a folha de contato foram regravados com o visual anterior. Documentação registrada; commit local; **sem push**. Batalha/2D intactos.
