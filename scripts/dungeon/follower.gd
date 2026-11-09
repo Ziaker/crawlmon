@@ -13,6 +13,9 @@ const TRAIL_GAP := 32.0  ## 2/3 tile at 48 px (D-361; was 48).
 const TRAIL_MAX := 512
 const STUCK_WAIT := 1.0
 
+## D-1018: lab-only multiplier for the scale test. The normal game keeps 1.0.
+static var gap_scale := 1.0
+
 var species_id := ""
 var leader: Node2D
 
@@ -70,7 +73,7 @@ func _target_index() -> int:
 	var dist := 0.0
 	for i in range(_trail.size() - 1, 0, -1):
 		dist += _trail[i].distance_to(_trail[i - 1])
-		if dist >= TRAIL_GAP:
+		if dist >= TRAIL_GAP * gap_scale:
 			return i - 1
 	return 0
 

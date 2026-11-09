@@ -64,6 +64,8 @@ const STYLES := {
 ## D-991: world-pixel height that matches each overworld sprite (D-1016 keeps
 ## the same sizes; the dungeon-tile overhaul is a later decision).
 const PIXEL_HEIGHTS := {"abra": 25.0, "pancham": 24.0, "dqt_orc": 30.0}
+## D-1018: lab-only multiplier for the scale test. The normal game keeps 1.0.
+static var height_scale := 1.0
 
 static func has_model(model_id: String) -> bool:
 	return PIXEL_HEIGHTS.has(model_id) and ResourceLoader.exists(
@@ -71,7 +73,7 @@ static func has_model(model_id: String) -> bool:
 
 
 static func pixel_height_for(model_id: String) -> float:
-	return float(PIXEL_HEIGHTS.get(model_id, 32.0))
+	return float(PIXEL_HEIGHTS.get(model_id, 32.0)) * height_scale
 
 
 ## Set before the scene is instantiated; every view reads it on _ready.

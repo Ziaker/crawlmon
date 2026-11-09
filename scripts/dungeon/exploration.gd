@@ -234,7 +234,7 @@ func _attach_model_view(target: Node2D, model_id: String) -> void:
 
 ## O gap da fila atrás do líder; se estiver bloqueado, tenta as outras direções.
 func _follower_spawn(origin: Vector2) -> Vector2:
-	var gap := float(DungeonFollowerClass.TRAIL_GAP)
+	var gap := float(DungeonFollowerClass.TRAIL_GAP) * float(DungeonFollowerClass.gap_scale)
 	for offset in [Vector2(0, gap), Vector2(0, -gap), Vector2(-gap, 0), Vector2(gap, 0)]:
 		if not _is_wall_at(origin + offset):
 			return origin + offset
