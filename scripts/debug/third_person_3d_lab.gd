@@ -9,11 +9,13 @@ extends Node3D
 ## Esc sai. O mouse não é capturado.
 
 const DQT_PROFILES := preload("res://scripts/combat/dqt_model_profiles.gd")
+const VIGNETTE_SHADER := preload("res://shaders/vignette.gdshader")
 
 const WALL_HEIGHT := 4.6
 const SPEED := 3.2
 const TURN_SPEED := 1.4
-const FOLLOW_SPEED := 4.5
+const FOLLOW_SPEED := 3.8
+const CATCH_UP_SPEED := 5.2
 const CAM_DISTANCE := 3.4
 const CAM_HEIGHT := 0.85
 const CAM_FOV := 55.0
@@ -21,8 +23,10 @@ const PARTY_CAM_DISTANCE := 6.2
 const PARTY_CAM_HEIGHT := 1.5
 const PARTY_CAM_PITCH := 22.0
 const SOLO_CAM_PITCH := 8.0
+const NAV_Y := 0.05
 
 enum AllyState { IDLE, FOLLOW, CATCH_UP, AVOID, RECOVER }
+enum EnemyState { PATROL, CHASE, SEARCH, RETURN }
 
 ## Alturas provisórias do lab (metros). Não são regra de jogo.
 const HEIGHTS := {
@@ -47,22 +51,39 @@ var _cam_pitch := SOLO_CAM_PITCH
 var _last_look := -100.0
 var _time := 0.0
 var _cam_pivot := Vector3.ZERO
+var _cam_probe := SphereShape3D.new()
 var _camera: Camera3D
 var _torches: Array[OmniLight3D] = []
 var _torch_base: Array[float] = []
 var _enemy: Node3D
+var _enemy_body: CharacterBody3D
+var _enemy_agent: NavigationAgent3D
+var _enemy_ap: AnimationPlayer
+var _enemy_state := EnemyState.PATROL
+var _enemy_patrol_i := 0
+var _enemy_last_seen := Vector3.ZERO
+var _enemy_lost := 0.0
+var _enemy_dust: CPUParticles3D
+var _player_dust: CPUParticles3D
+var _nav_region: NavigationRegion3D
+var _door_prompt: Label
+var _door_used := false
+var _door_near := false
 
 
 func _ready() -> void:
 	_party_visible = start_party
 	_cam_pitch = PARTY_CAM_PITCH if _party_visible else SOLO_CAM_PITCH
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	_setup_interaction_action()
 	_build_environment()
+	_build_navigation()
 	_build_room()
 	_build_player()
 	_build_followers()
 	_build_enemy()
 	_build_exit()
+	_build_vignette()
 	_build_hud()
 
 
@@ -71,9 +92,6 @@ func _process(delta: float) -> void:
 	for i in _torches.size():
 		var base: float = _torch_base[i]
 		_torches[i].light_energy = base * (0.86 + 0.14 * sin(_time * 7.0 + float(i) * 1.7))
-	# O Slime é referência; depois que o jogador passa, ele sai da câmera.
-	if _enemy != null:
-		_enemy.visible = player.global_position.z > _enemy.global_position.z + 0.4
 
 
 func _physics_process(delta: float) -> void:
@@ -87,6 +105,8 @@ func _physics_process(delta: float) -> void:
 	player.velocity = dir * SPEED
 	player.move_and_slide()
 	player.rotation.y = player_yaw
+	if _player_dust != null:
+		_player_dust.emitting = dir.length_squared() > 0.01 and player.velocity.length() > 0.1
 
 	if Input.is_key_pressed(KEY_Q):
 		_cam_yaw += 1.6 * delta
@@ -100,6 +120,8 @@ func _physics_process(delta: float) -> void:
 
 	_update_camera(delta)
 	_update_followers(delta)
+	_update_enemy(delta)
+	_update_door_prompt()
 	_play_move(player_ap, dir.length_squared() > 0.01)
 
 
@@ -148,6 +170,37 @@ func _build_environment() -> void:
 	key.shadow_enabled = true
 	key.directional_shadow_max_distance = 40.0
 	add_child(key)
+
+
+# --- Navigation --------------------------------------------------------------
+
+## Malha de navegação em L feita à mão para o lab (duas salas retangulares com
+## arestas compartilhadas). Numa dungeon real, isto vira um bake.
+func _build_navigation() -> void:
+	var nav := NavigationMesh.new()
+	nav.cell_size = 0.25
+	nav.cell_height = 0.25
+	nav.agent_radius = 0.45
+	nav.agent_height = 2.1
+	nav.agent_max_climb = 0.3
+	nav.agent_max_slope = 45.0
+	nav.set_vertices(PackedVector3Array([
+		Vector3(-3.7, NAV_Y, 5.7),    # 0
+		Vector3(3.7, NAV_Y, 5.7),     # 1
+		Vector3(3.7, NAV_Y, -6.3),    # 2
+		Vector3(-3.7, NAV_Y, -6.3),   # 3
+		Vector3(17.7, NAV_Y, -6.3),   # 4
+		Vector3(17.7, NAV_Y, -13.7),  # 5
+		Vector3(3.7, NAV_Y, -13.7),   # 6
+		Vector3(-3.7, NAV_Y, -13.7),  # 7
+	]))
+	nav.add_polygon(PackedInt32Array([0, 1, 2, 3]))
+	nav.add_polygon(PackedInt32Array([3, 2, 6, 7]))
+	nav.add_polygon(PackedInt32Array([2, 4, 5, 6]))
+	_nav_region = NavigationRegion3D.new()
+	_nav_region.name = "Navigation"
+	_nav_region.navigation_mesh = nav
+	add_child(_nav_region)
 
 
 # --- Room --------------------------------------------------------------------
@@ -284,6 +337,38 @@ func _add_blob_shadow(parent: Node3D, width: float, depth: float) -> void:
 	parent.add_child(mi)
 
 
+func _add_footstep_dust(parent: Node3D) -> CPUParticles3D:
+	var quad := QuadMesh.new()
+	quad.size = Vector2(0.11, 0.11)
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.albedo_texture = _shadow_texture()
+	mat.albedo_color = Color(0.62, 0.52, 0.40, 0.42)
+	var dust := CPUParticles3D.new()
+	dust.name = "FootDust"
+	dust.position = Vector3(0.0, 0.08, 0.0)
+	dust.amount = 6
+	dust.lifetime = 0.45
+	dust.emitting = false
+	dust.local_coords = false
+	dust.mesh = quad
+	dust.material_override = mat
+	dust.direction = Vector3(0.0, 1.0, 0.0)
+	dust.spread = 35.0
+	dust.initial_velocity_min = 0.15
+	dust.initial_velocity_max = 0.5
+	dust.gravity = Vector3(0.0, -0.6, 0.0)
+	dust.scale_amount_min = 0.4
+	dust.scale_amount_max = 0.8
+	dust.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	dust.emission_sphere_radius = 0.12
+	parent.add_child(dust)
+	return dust
+
+
 # --- Player and models -------------------------------------------------------
 
 func _build_player() -> void:
@@ -317,21 +402,23 @@ func _build_player() -> void:
 	rim.light_energy = 0.5
 	rim.omni_range = 3.5
 	player.add_child(rim)
+	_player_dust = _add_footstep_dust(player)
 
 	_camera = Camera3D.new()
 	_camera.fov = CAM_FOV
 	_camera.near = 0.05
 	_camera.far = 100.0
 	_camera.current = true
+	_cam_probe.radius = 0.18
 	add_child(_camera)
 	_update_camera(0.0)
 
 
 func _build_followers() -> void:
-	# Formação em V à frente do jogador. No vídeo solo eles ficam escondidos;
 	# Triângulo com o jogador na ponta: aliados um pouco atrás e aos lados.
-	_add_follower("pancham", -1.4, 1.3, Vector3(-1.4, 0.0, 1.3))
-	_add_follower("dqt_orc", 2.9, 1.9, Vector3(2.9, 0.0, 1.9))
+	# No vídeo solo eles ficam escondidos; no grupo, andam com walk e sombra.
+	_add_follower("pancham", -0.9, 1.3, Vector3(-0.9, 0.0, 1.3))
+	_add_follower("dqt_orc", 1.7, 2.0, Vector3(1.7, 0.0, 2.0))
 
 
 func _add_follower(model_id: String, side: float, behind: float, start: Vector3) -> void:
@@ -352,15 +439,26 @@ func _add_follower(model_id: String, side: float, behind: float, start: Vector3)
 	shape.position.y = capsule.height * 0.5
 	body.add_child(shape)
 	add_child(body)
+	var agent := NavigationAgent3D.new()
+	agent.path_desired_distance = 0.4
+	agent.target_desired_distance = 0.35
+	agent.radius = capsule.radius
+	agent.height = capsule.height
+	agent.max_speed = CATCH_UP_SPEED
+	agent.avoidance_enabled = false
+	body.add_child(agent)
 	var model := _make_model(model_id, height)
 	body.add_child(model)
 	_add_blob_shadow(body, 0.7 if model_id == "pancham" else 1.3, 0.45 if model_id == "pancham" else 0.85)
+	var dust := _add_footstep_dust(body)
 	var ap := _anim_player(model)
 	_play(ap, "idle")
 	_followers.append({
 		"node": body,
 		"model": model,
 		"ap": ap,
+		"agent": agent,
+		"dust": dust,
 		"behind": behind,
 		"side": side,
 		"height": height,
@@ -496,25 +594,47 @@ func _play_idle(ap: AnimationPlayer) -> void:
 # --- Enemy and exit ----------------------------------------------------------
 
 func _build_enemy() -> void:
-	var enemy := Node3D.new()
-	enemy.name = "SlimeEnemy"
-	enemy.position = Vector3(-2.8, 0.0, -6.5)
-	enemy.rotation.y = 0.0
-	add_child(enemy)
-	_enemy = enemy
-	var model := _make_model("dqt_slime", float(HEIGHTS["dqt_slime"]))
-	enemy.add_child(model)
-	_add_blob_shadow(enemy, 1.2, 1.0)
-	var ap := _anim_player(model)
-	_play_idle(ap)
+	var body := CharacterBody3D.new()
+	body.name = "SlimeEnemy"
+	body.position = Vector3(12.0, 0.0, -10.0)
+	body.collision_layer = 8
+	body.collision_mask = 1
+	body.floor_snap_length = 0.3
+	body.motion_mode = CharacterBody3D.MOTION_MODE_GROUNDED
+	var height := float(HEIGHTS["dqt_slime"])
+	var shape := CollisionShape3D.new()
+	var capsule := CapsuleShape3D.new()
+	capsule.radius = 0.4
+	capsule.height = height
+	shape.shape = capsule
+	shape.position.y = height * 0.5
+	body.add_child(shape)
+	add_child(body)
+	_enemy_body = body
+	_enemy = body
+	var agent := NavigationAgent3D.new()
+	agent.path_desired_distance = 0.4
+	agent.target_desired_distance = 0.35
+	agent.radius = 0.4
+	agent.height = height
+	agent.max_speed = 2.4
+	agent.avoidance_enabled = false
+	body.add_child(agent)
+	_enemy_agent = agent
+	var model := _make_model("dqt_slime", height)
+	body.add_child(model)
+	_add_blob_shadow(body, 1.2, 1.0)
+	_enemy_dust = _add_footstep_dust(body)
+	_enemy_ap = _anim_player(model)
+	_play_idle(_enemy_ap)
 	var tag := Label3D.new()
 	tag.text = "SLIME"
 	tag.font_size = 42
 	tag.modulate = Color(0.85, 0.95, 1.0)
 	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	tag.position = Vector3(0, 2.2, 0)
-	tag.no_depth_test = true
-	enemy.add_child(tag)
+	tag.position = Vector3(0, 1.95, 0)
+	tag.no_depth_test = false
+	body.add_child(tag)
 
 
 func _build_exit() -> void:
@@ -545,9 +665,30 @@ func _update_camera(_delta: float) -> void:
 	var query := PhysicsRayQueryParameters3D.create(_cam_pivot, desired, 1)
 	query.collide_with_areas = false
 	query.collide_with_bodies = true
+	# Só o cenário deve puxar a câmera; atores (jogador, aliados e inimigo)
+	# nunca entram no raycast, senão a câmera cola no corpo.
+	var actors: Array[RID] = [player.get_rid()]
+	for f in _followers:
+		actors.append((f["node"] as CollisionObject3D).get_rid())
+	if _enemy_body != null:
+		actors.append(_enemy_body.get_rid())
+	query.exclude = actors
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	if not hit.is_empty():
-		desired = (hit["position"] as Vector3) + (hit["normal"] as Vector3) * 0.25
+		desired = (hit["position"] as Vector3) + (hit["normal"] as Vector3) * 0.4
+	# Se o ponto final ainda raspa a parede, recua em direção ao pivô até folgar.
+	var probe := PhysicsShapeQueryParameters3D.new()
+	probe.shape = _cam_probe
+	probe.collision_mask = 1
+	probe.collide_with_bodies = true
+	probe.collide_with_areas = false
+	probe.exclude = actors
+	var to_pivot := (_cam_pivot - desired).normalized()
+	for i in 6:
+		probe.transform = Transform3D(Basis(), desired)
+		if get_world_3d().direct_space_state.intersect_shape(probe, 1).is_empty():
+			break
+		desired += to_pivot * 0.15
 	_camera.global_position = desired
 	_camera.look_at(_cam_pivot + Vector3(0.0, 0.1, 0.0), Vector3.UP)
 
@@ -561,26 +702,45 @@ func _update_followers(delta: float) -> void:
 		var behind := float(f["behind"])
 		var side := float(f["side"])
 		var height := float(f["height"])
-		var target := player.global_position - forward * behind + right * side
+		var behind_point := player.global_position - forward * behind
+		var side_sign := signf(side)
+		var side_dir := right * side_sign
+		var side_abs := absf(side)
+		var side_from := behind_point + Vector3(0.0, 0.6, 0.0)
+		var side_query := PhysicsRayQueryParameters3D.create(side_from, side_from + side_dir * side_abs, 1)
+		var side_hit := get_world_3d().direct_space_state.intersect_ray(side_query)
+		if not side_hit.is_empty():
+			var side_dist := side_from.distance_to(side_hit["position"] as Vector3)
+			side_abs = maxf(0.0, side_dist - 0.7)
+		var target := behind_point + side_dir * side_abs
 		target.y = 0.0
 		target = _clamp_to_free(player.global_position, target)
 		var to := target - body.global_position
 		to.y = 0.0
 		var dist := to.length()
-		var desired := to.normalized() if dist > 0.05 else Vector3.ZERO
+		var agent: NavigationAgent3D = f["agent"]
+		agent.target_position = target
+		var desired := Vector3.ZERO
+		var next := agent.get_next_path_position()
+		if agent.is_navigation_finished():
+			desired = to.normalized() if dist > 0.2 else Vector3.ZERO
+		else:
+			var to_next := next - body.global_position
+			to_next.y = 0.0
+			desired = to_next.normalized() if to_next.length() > 0.05 else to.normalized()
 		var avoid := _wall_avoidance(body, desired, height)
 		var sep := _separation(f)
 		var state := AllyState.IDLE
 		var speed := 0.0
-		if dist > 2.4:
+		if dist > 1.6:
 			state = AllyState.CATCH_UP
-			speed = 4.6
+			speed = CATCH_UP_SPEED
 		elif player_moving or dist > 0.15:
 			state = AllyState.FOLLOW
-			speed = 3.4
+			speed = FOLLOW_SPEED
 		if avoid.length_squared() > 0.01:
 			state = AllyState.AVOID
-			speed *= 0.72
+			speed = maxf(speed * 0.8, 4.2)
 		var stuck := float(f["stuck"])
 		if body.get_slide_collision_count() > 0 and dist > 0.3:
 			stuck += delta
@@ -628,12 +788,18 @@ func _update_followers(delta: float) -> void:
 		_play_move(f["ap"], moving)
 		var ap: AnimationPlayer = f["ap"]
 		ap.speed_scale = clampf(hv.length() / 3.2, 0.75, 1.35) if moving else 1.0
+		var dust: CPUParticles3D = f["dust"]
+		dust.emitting = moving and _party_visible
 
 
 ## Se o alvo da formação cair atrás de uma parede, para no primeiro obstáculo.
 func _clamp_to_free(origin: Vector3, target: Vector3) -> Vector3:
 	var from := origin + Vector3(0.0, 0.6, 0.0)
 	var to := target + Vector3(0.0, 0.6, 0.0)
+	# Sonda um pouco além do alvo: se a parede está logo à frente, o alvo
+	# também precisa recuar para o corpo do aliado caber.
+	var dir := (to - from).normalized()
+	to += dir * 0.6
 	var query := PhysicsRayQueryParameters3D.create(from, to, 1)
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	if hit.is_empty():
@@ -643,7 +809,7 @@ func _clamp_to_free(origin: Vector3, target: Vector3) -> Vector3:
 	normal.y = 0.0
 	if normal.length_squared() < 0.001:
 		return target
-	return point + normal.normalized() * 0.35 - Vector3(0.0, 0.6, 0.0)
+	return point + normal.normalized() * 0.6 - Vector3(0.0, 0.6, 0.0)
 
 
 ## Três raios (frente, esquerda, direita) para desviar de paredes e pilares.
@@ -692,6 +858,139 @@ func _separation(f: Dictionary) -> Vector3:
 	return push
 
 
+## Inimigo simples de laboratório: patrulha, vê por raycast, persegue e volta.
+func _update_enemy(delta: float) -> void:
+	if _enemy_body == null:
+		return
+	var body := _enemy_body
+	var to_player := player.global_position - body.global_position
+	to_player.y = 0.0
+	var dist := to_player.length()
+	var can_see := dist < 7.0 and _enemy_has_los()
+	if can_see:
+		_enemy_state = EnemyState.CHASE
+		_enemy_last_seen = player.global_position
+		_enemy_lost = 0.0
+	else:
+		match _enemy_state:
+			EnemyState.CHASE:
+				_enemy_lost += delta
+				if _enemy_lost > 2.0:
+					_enemy_state = EnemyState.SEARCH
+					_enemy_lost = 0.0
+			EnemyState.SEARCH:
+				_enemy_lost += delta
+				if _enemy_lost > 2.0:
+					_enemy_state = EnemyState.RETURN
+			EnemyState.RETURN:
+				if body.global_position.distance_to(Vector3(12.0, 0.0, -10.0)) < 0.6:
+					_enemy_state = EnemyState.PATROL
+
+	var target := player.global_position
+	var speed := 2.4
+	match _enemy_state:
+		EnemyState.PATROL:
+			var points := [Vector3(10.0, 0.0, -10.0), Vector3(14.0, 0.0, -10.0)]
+			target = points[_enemy_patrol_i]
+			speed = 1.2
+			if body.global_position.distance_to(target) < 0.45:
+				_enemy_patrol_i = (_enemy_patrol_i + 1) % 2
+		EnemyState.SEARCH:
+			target = _enemy_last_seen
+			speed = 1.8
+			if body.global_position.distance_to(target) < 0.45:
+				_enemy_state = EnemyState.RETURN
+		EnemyState.RETURN:
+			target = Vector3(12.0, 0.0, -10.0)
+			speed = 2.0
+		EnemyState.CHASE:
+			target = player.global_position
+			speed = 2.4
+	target.y = 0.0
+
+	_enemy_agent.target_position = target
+	var desired := Vector3.ZERO
+	var next := _enemy_agent.get_next_path_position()
+	var direct := target - body.global_position
+	direct.y = 0.0
+	if _enemy_agent.is_navigation_finished():
+		desired = direct.normalized() if direct.length() > 0.2 else Vector3.ZERO
+	else:
+		var to_next := next - body.global_position
+		to_next.y = 0.0
+		desired = to_next.normalized() if to_next.length() > 0.05 else direct.normalized()
+	var avoid := _wall_avoidance(body, desired, 1.4)
+	var sep := _enemy_separation()
+	var steer := desired + avoid * 1.2 + sep
+	if steer.length_squared() > 0.001:
+		steer = steer.normalized()
+	var vel: Vector3 = body.velocity.lerp(steer * speed, clampf(delta * 7.0, 0.0, 1.0))
+	body.velocity = vel
+	body.move_and_slide()
+	var hv := Vector3(body.velocity.x, 0.0, body.velocity.z)
+	var moving := hv.length() > 0.1
+	if moving:
+		body.rotation.y = lerp_angle(
+			body.rotation.y, atan2(hv.x, hv.z), clampf(delta * 8.0, 0.0, 1.0))
+	_play_move(_enemy_ap, moving)
+	_enemy_ap.speed_scale = clampf(hv.length() / 1.6, 0.75, 1.35) if moving else 1.0
+	_enemy_dust.emitting = moving
+	# Não deixar o inimigo gigante entre a câmera e o jogador (lab).
+	var cam_delta := _camera.global_position - _enemy_body.global_position
+	cam_delta.y = 0.0
+	_enemy_body.visible = cam_delta.length() > 6.2
+
+
+func _enemy_has_los() -> bool:
+	var from := _enemy_body.global_position + Vector3(0.0, 0.9, 0.0)
+	var to := player.global_position + Vector3(0.0, 0.8, 0.0)
+	var query := PhysicsRayQueryParameters3D.create(from, to, 1)
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	return hit.is_empty()
+
+
+func _enemy_separation() -> Vector3:
+	var body := _enemy_body
+	var push := Vector3.ZERO
+	for f in _followers:
+		var d: Vector3 = body.global_position - (f["node"] as Node3D).global_position
+		d.y = 0.0
+		if d.length() < 1.0 and d.length_squared() > 0.0001:
+			push += d.normalized() * (1.0 - d.length())
+	var dp: Vector3 = body.global_position - player.global_position
+	dp.y = 0.0
+	if dp.length() < 1.0 and dp.length_squared() > 0.0001:
+		push += dp.normalized() * (1.0 - dp.length())
+	return push
+
+
+func _setup_interaction_action() -> void:
+	if InputMap.has_action("lab_interact"):
+		return
+	InputMap.add_action("lab_interact")
+	for key in [KEY_E, KEY_Z]:
+		var ev := InputEventKey.new()
+		ev.physical_keycode = key
+		InputMap.action_add_event("lab_interact", ev)
+
+
+func _build_vignette() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 5
+	var rect := ColorRect.new()
+	rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var mat := ShaderMaterial.new()
+	mat.shader = VIGNETTE_SHADER
+	mat.set_shader_parameter("tint", Color(0.03, 0.02, 0.015, 1.0))
+	mat.set_shader_parameter("strength", 0.30)
+	mat.set_shader_parameter("softness", 0.60)
+	mat.set_shader_parameter("dither_strength", 0.006)
+	rect.material = mat
+	layer.add_child(rect)
+	add_child(layer)
+
+
 # --- HUD ---------------------------------------------------------------------
 
 func _build_hud() -> void:
@@ -706,4 +1005,41 @@ func _build_hud() -> void:
 	label.add_theme_constant_override("shadow_offset_x", 2)
 	label.add_theme_constant_override("shadow_offset_y", 2)
 	layer.add_child(label)
+
+	_door_prompt = Label.new()
+	_door_prompt.text = ""
+	_door_prompt.position = Vector2(520, 660)
+	_door_prompt.add_theme_font_size_override("font_size", 22)
+	_door_prompt.add_theme_color_override("font_color", Color(1.0, 0.90, 0.60))
+	_door_prompt.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	_door_prompt.add_theme_constant_override("shadow_offset_x", 2)
+	_door_prompt.add_theme_constant_override("shadow_offset_y", 2)
+	_door_prompt.visible = false
+	layer.add_child(_door_prompt)
 	add_child(layer)
+
+
+func _update_door_prompt() -> void:
+	if _door_prompt == null or player == null:
+		return
+	var from := player.global_position + Vector3(0.0, 0.9, 0.0)
+	var forward := Vector3(sin(player_yaw), 0.0, cos(player_yaw))
+	var query := PhysicsRayQueryParameters3D.create(from, from + forward * 3.2, 1)
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	var near := false
+	if not hit.is_empty():
+		var point: Vector3 = hit["position"]
+		near = point.distance_to(Vector3(17.7, 0.9, -10.0)) < 1.5
+	_door_near = near
+	if _door_used:
+		_door_prompt.visible = near
+		_door_prompt.text = "SAÍDA" if near else ""
+		return
+	_door_prompt.visible = near
+	if near:
+		_door_prompt.text = "Z/E: SAÍDA"
+		if Input.is_action_pressed("lab_interact"):
+			_door_used = true
+			_door_prompt.text = "SAÍDA"
+	else:
+		_door_prompt.text = ""
