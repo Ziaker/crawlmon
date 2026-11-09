@@ -12,6 +12,7 @@ extends "res://scripts/debug/third_person_3d_lab.gd"
 const FOREST_VIGNETTE := preload("res://shaders/vignette.gdshader")
 const FOREST_WALL_HEIGHT := 4.2
 const MINIMAP_SIZE := 256
+const MINIMAP_DISPLAY_SIZE := 112
 const MINIMAP_WORLD_SIZE := 20.0
 
 var _rng := RandomNumberGenerator.new()
@@ -21,6 +22,7 @@ var _minimap_rect: TextureRect
 var _marker_root: Control
 var _marker_texture: ImageTexture
 var _minimap_markers: Array[Dictionary] = []
+var _hud_badges: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -32,10 +34,12 @@ func _ready() -> void:
 		# A camada 5 é só do mapa do mini-mapa; a câmera principal não a vê.
 		_camera.cull_mask = 0xFFFFFFFF & ~(1 << 4)
 	_build_minimap()
+	_build_hud_badges()
 
 
 func _process(delta: float) -> void:
 	super(delta)
+	_update_hud_badges()
 
 
 func _physics_process(delta: float) -> void:
@@ -602,60 +606,55 @@ func _build_minimap() -> void:
 	layer.layer = 15
 	var border := ColorRect.new()
 	border.color = Color(0.48, 0.40, 0.22, 0.95)
-	border.position = Vector2(1030, 12)
-	border.size = Vector2(240, 240)
+	border.position = Vector2(1150, 12)
+	border.size = Vector2(120, 120)
 	border.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(border)
 	var bg := ColorRect.new()
 	bg.color = Color(0.012, 0.008, 0.02, 1.0)
-	bg.position = Vector2(1034, 16)
-	bg.size = Vector2(232, 232)
+	bg.position = Vector2(1152, 14)
+	bg.size = Vector2(116, 116)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(bg)
 	_minimap_rect = TextureRect.new()
 	_minimap_rect.texture = _minimap_viewport.get_texture()
-	_minimap_rect.position = Vector2(1038, 20)
-	_minimap_rect.size = Vector2(224, 224)
+	_minimap_rect.position = Vector2(1154, 16)
 	_minimap_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_minimap_rect.stretch_mode = TextureRect.STRETCH_SCALE
+	_minimap_rect.size = Vector2(MINIMAP_SIZE, MINIMAP_SIZE)
+	_minimap_rect.scale = Vector2(
+		float(MINIMAP_DISPLAY_SIZE) / float(MINIMAP_SIZE),
+		float(MINIMAP_DISPLAY_SIZE) / float(MINIMAP_SIZE))
 	_minimap_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(_minimap_rect)
-	var title := Label.new()
-	title.text = "MAPA — MURKY FOREST"
-	title.position = Vector2(1038, 248)
-	title.add_theme_font_size_override("font_size", 14)
-	title.add_theme_color_override("font_color", Color(0.75, 1.0, 0.70))
-	title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
-	title.add_theme_constant_override("shadow_offset_x", 2)
-	title.add_theme_constant_override("shadow_offset_y", 2)
-	layer.add_child(title)
 	_marker_root = Control.new()
-	_marker_root.position = _minimap_rect.position
-	_marker_root.size = _minimap_rect.size
+	_marker_root.position = Vector2(1154, 16)
+	_marker_root.size = Vector2(MINIMAP_DISPLAY_SIZE, MINIMAP_DISPLAY_SIZE)
 	_marker_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(_marker_root)
 	add_child(layer)
 
-	_add_minimap_marker(player, Color(0.25, 1.0, 0.45, 1.0), 18.0, "player")
+	_add_minimap_marker(player, Color(0.25, 1.0, 0.45, 1.0), 9.0, "player")
 	for f in _followers:
-		_add_minimap_marker(f["node"], Color(0.25, 1.0, 0.45, 1.0), 12.0, "ally")
+		_add_minimap_marker(f["node"], Color(0.25, 1.0, 0.45, 1.0), 6.0, "ally")
 	if _enemy_body != null:
-		_add_minimap_marker(_enemy_body, Color(1.0, 0.22, 0.18, 1.0), 16.0, "enemy")
+		_add_minimap_marker(_enemy_body, Color(1.0, 0.22, 0.18, 1.0), 8.0, "enemy")
 	for node in get_tree().get_nodes_in_group("minimap_npc"):
 		if node is Node3D:
-			_add_minimap_marker(node, Color(1.0, 1.0, 1.0, 1.0), 16.0, "npc")
+			_add_minimap_marker(node, Color(1.0, 1.0, 1.0, 1.0), 8.0, "npc")
 
 
 func _add_minimap_marker(node: Node3D, color: Color, size: float, kind: String) -> void:
 	var marker := TextureRect.new()
 	marker.texture = _marker_texture
 	marker.modulate = color
-	marker.size = Vector2(size, size)
 	marker.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	marker.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	marker.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	marker.custom_minimum_size = Vector2(size, size)
 	marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_marker_root.add_child(marker)
+	marker.size = Vector2(size, size)
 	_minimap_markers.append({
 		"node": node,
 		"rect": marker,
@@ -664,12 +663,139 @@ func _add_minimap_marker(node: Node3D, color: Color, size: float, kind: String) 
 	})
 
 
+func _build_hud_badges() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 18
+	var vbox := VBoxContainer.new()
+	vbox.position = Vector2(14, 76)
+	vbox.size = Vector2(250, 240)
+	vbox.add_theme_constant_override("separation", 8)
+	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(vbox)
+	# HP demo: o lab não tem combate; a HUD final deve ler GameState.party.
+	var badges := [
+		["ABRA", 86, 100, false],
+		["PANCHAM", 100, 100, true],
+		["ORC", 46, 100, true],
+	]
+	for data in badges:
+		vbox.add_child(_make_hud_badge(str(data[0]), int(data[1]), int(data[2]), bool(data[3])))
+	add_child(layer)
+
+
+func _make_hud_badge(character_name: String, hp: int, max_hp: int, is_ally: bool) -> PanelContainer:
+	var ratio := float(hp) / float(max_hp)
+	var color := _hp_color(ratio)
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(230, 56)
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.035, 0.025, 0.02, 0.88)
+	style.border_color = Color(0.55, 0.45, 0.22, 0.9)
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left = 4
+	style.corner_radius_top_right = 4
+	style.corner_radius_bottom_left = 4
+	style.corner_radius_bottom_right = 4
+	style.content_margin_left = 8
+	style.content_margin_right = 8
+	style.content_margin_top = 5
+	style.content_margin_bottom = 5
+	panel.add_theme_stylebox_override("panel", style)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(row)
+	var accent := ColorRect.new()
+	accent.color = color
+	accent.custom_minimum_size = Vector2(4, 42)
+	accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(accent)
+
+	var info := VBoxContainer.new()
+	info.add_theme_constant_override("separation", 3)
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(info)
+	var name_label := Label.new()
+	name_label.text = character_name
+	name_label.add_theme_font_size_override("font_size", 15)
+	name_label.add_theme_color_override("font_color", Color(0.95, 0.86, 0.62))
+	name_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	name_label.add_theme_constant_override("shadow_offset_x", 1)
+	name_label.add_theme_constant_override("shadow_offset_y", 1)
+	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	info.add_child(name_label)
+
+	var hp_row := HBoxContainer.new()
+	hp_row.add_theme_constant_override("separation", 6)
+	hp_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hp_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	info.add_child(hp_row)
+	var bar := ProgressBar.new()
+	bar.min_value = 0.0
+	bar.max_value = float(max_hp)
+	bar.value = float(hp)
+	bar.show_percentage = false
+	bar.custom_minimum_size = Vector2(140, 10)
+	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var bar_bg := StyleBoxFlat.new()
+	bar_bg.bg_color = Color(0.07, 0.055, 0.045, 0.95)
+	bar_bg.corner_radius_top_left = 2
+	bar_bg.corner_radius_top_right = 2
+	bar_bg.corner_radius_bottom_left = 2
+	bar_bg.corner_radius_bottom_right = 2
+	var bar_fill := StyleBoxFlat.new()
+	bar_fill.bg_color = color
+	bar_fill.corner_radius_top_left = 2
+	bar_fill.corner_radius_top_right = 2
+	bar_fill.corner_radius_bottom_left = 2
+	bar_fill.corner_radius_bottom_right = 2
+	bar.add_theme_stylebox_override("background", bar_bg)
+	bar.add_theme_stylebox_override("fill", bar_fill)
+	hp_row.add_child(bar)
+	var hp_label := Label.new()
+	hp_label.text = "%d / %d" % [hp, max_hp]
+	hp_label.add_theme_font_size_override("font_size", 11)
+	hp_label.add_theme_color_override("font_color", Color(0.78, 0.75, 0.66))
+	hp_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hp_row.add_child(hp_label)
+
+	_hud_badges.append({
+		"panel": panel,
+		"bar": bar,
+		"hp_label": hp_label,
+		"ally": is_ally,
+	})
+	return panel
+
+
+func _hp_color(ratio: float) -> Color:
+	if ratio <= 0.25:
+		return Color(0.90, 0.25, 0.20)
+	if ratio <= 0.50:
+		return Color(0.95, 0.75, 0.20)
+	return Color(0.25, 0.90, 0.40)
+
+
+func _update_hud_badges() -> void:
+	for badge in _hud_badges:
+		if bool(badge["ally"]):
+			(badge["panel"] as Control).visible = _party_visible
+
+
 func _update_minimap() -> void:
 	if _minimap_camera == null or _minimap_rect == null or player == null:
 		return
 	_minimap_camera.global_position = player.global_position + Vector3(0.0, 30.0, 0.0)
 	var vp := Vector2(MINIMAP_SIZE, MINIMAP_SIZE)
-	var rect_size := _minimap_rect.size
+	var rect_size := _marker_root.size
 	for m in _minimap_markers:
 		var rect: TextureRect = m["rect"]
 		var node: Node3D = m["node"]
