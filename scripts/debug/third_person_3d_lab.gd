@@ -5,7 +5,8 @@ extends Node3D
 ## parado e uma porta de saída. O objetivo é testar câmera, escala, colisão e
 ## movimento — não é uma dungeon final e não toca no jogo normal.
 ##
-## Controles: WASD/setas andam e viram, mouse/Q/E olham, Esc solta o mouse.
+## Controles: WASD/setas andam e viram, Q/E ou botão direito do mouse olham,
+## Esc sai. O mouse não é capturado.
 
 const DQT_PROFILES := preload("res://scripts/combat/dqt_model_profiles.gd")
 
@@ -16,14 +17,15 @@ const FOLLOW_SPEED := 4.5
 const CAM_DISTANCE := 3.4
 const CAM_HEIGHT := 0.85
 const CAM_FOV := 55.0
-const PARTY_CAM_DISTANCE := 5.4
-const PARTY_CAM_HEIGHT := 1.0
-const PARTY_CAM_PITCH := 14.0
+const PARTY_CAM_DISTANCE := 6.2
+const PARTY_CAM_HEIGHT := 1.5
+const PARTY_CAM_PITCH := 22.0
+const SOLO_CAM_PITCH := 8.0
 
 ## Alturas provisórias do lab (metros). Não são regra de jogo.
 const HEIGHTS := {
 	"abra": 1.0,
-	"pancham": 1.1,
+	"pancham": 0.7,
 	"dqt_orc": 2.1,
 	"dqt_slime": 1.4,
 }
@@ -39,7 +41,7 @@ var player_yaw := PI  ## frente do modelo +Z; PI = olhando para -Z.
 var _followers: Array[Dictionary] = []
 var _party_visible := false
 var _cam_yaw := PI
-var _cam_pitch := 8.0
+var _cam_pitch := SOLO_CAM_PITCH
 var _last_look := -100.0
 var _time := 0.0
 var _cam_pivot := Vector3.ZERO
@@ -50,7 +52,8 @@ var _torch_base: Array[float] = []
 
 func _ready() -> void:
 	_party_visible = start_party
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	_cam_pitch = PARTY_CAM_PITCH if _party_visible else SOLO_CAM_PITCH
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_build_environment()
 	_build_room()
 	_build_player()
@@ -95,7 +98,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+	if event is InputEventMouseMotion and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
 		var motion := event as InputEventMouseMotion
 		_cam_yaw -= motion.relative.x * 0.0025
 		_cam_pitch = clampf(_cam_pitch - motion.relative.y * 0.0015, -8.0, 32.0)
@@ -103,11 +106,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventKey and event.pressed:
 		var key := (event as InputEventKey).keycode
 		if key == KEY_ESCAPE:
-			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 			get_tree().quit()
 		elif key == KEY_1:
 			_party_visible = not _party_visible
-			_cam_pitch = PARTY_CAM_PITCH if _party_visible else 14.0
+			_cam_pitch = PARTY_CAM_PITCH if _party_visible else SOLO_CAM_PITCH
 			for f in _followers:
 				(f["node"] as Node3D).visible = _party_visible
 
@@ -117,14 +119,14 @@ func _unhandled_input(event: InputEvent) -> void:
 func _build_environment() -> void:
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.015, 0.02, 0.035)
+	env.background_color = Color(0.02, 0.018, 0.015)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.38, 0.44, 0.56)
-	env.ambient_light_energy = 0.8
+	env.ambient_light_color = Color(0.55, 0.50, 0.44)
+	env.ambient_light_energy = 0.7
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.tonemap_exposure = 0.85
 	env.fog_enabled = true
-	env.fog_light_color = Color(0.05, 0.08, 0.12)
+	env.fog_light_color = Color(0.08, 0.07, 0.06)
 	env.fog_density = 0.008
 	env.glow_enabled = true
 	env.glow_intensity = 0.45
@@ -135,7 +137,7 @@ func _build_environment() -> void:
 
 	var key := DirectionalLight3D.new()
 	key.rotation_degrees = Vector3(-52.0, -28.0, 0.0)
-	key.light_color = Color(0.72, 0.80, 0.95)
+	key.light_color = Color(0.85, 0.80, 0.72)
 	key.light_energy = 0.55
 	key.shadow_enabled = true
 	key.directional_shadow_max_distance = 40.0
@@ -145,9 +147,9 @@ func _build_environment() -> void:
 # --- Room --------------------------------------------------------------------
 
 func _build_room() -> void:
-	var floor_mat := _stone_mat(Color(0.18, 0.22, 0.28), 0.92)
-	var wall_mat := _stone_mat(Color(0.22, 0.26, 0.32), 0.95)
-	var dark_mat := _stone_mat(Color(0.10, 0.13, 0.17), 0.98)
+	var floor_mat := _stone_mat(Color(0.24, 0.22, 0.20), 0.92)
+	var wall_mat := _stone_mat(Color(0.28, 0.26, 0.24), 0.95)
+	var dark_mat := _stone_mat(Color(0.12, 0.11, 0.10), 0.98)
 
 	# Piso em L: corredor norte-sul + corredor leste-oeste.
 	_box(Vector3(8.0, 0.4, 20.0), Vector3(0.0, -0.2, -4.0), floor_mat)
@@ -163,11 +165,6 @@ func _build_room() -> void:
 	_box(Vector3(22.5, WALL_HEIGHT, 0.5), Vector3(7.0, 2.3, -14.25), wall_mat)
 	_box(Vector3(14.5, WALL_HEIGHT, 0.5), Vector3(11.0, 2.3, -5.75), wall_mat)
 	_box(Vector3(0.5, WALL_HEIGHT, 8.0), Vector3(18.25, 2.3, -10.0), wall_mat)
-
-	# Rodapé luminoso para leitura do piso.
-	var trim := _emissive(Color(0.18, 0.65, 0.78), 0.9)
-	_box(Vector3(0.08, 0.03, 20.0), Vector3(-3.9, 0.02, -4.0), trim, false)
-	_box(Vector3(22.0, 0.03, 0.08), Vector3(7.0, 0.02, -13.9), trim, false)
 
 	# Pilares.
 	for p in [
@@ -187,8 +184,8 @@ func _build_room() -> void:
 
 	var center_light := OmniLight3D.new()
 	center_light.position = Vector3(8.0, 3.2, -10.0)
-	center_light.light_color = Color(0.38, 0.55, 0.80)
-	center_light.light_energy = 1.0
+	center_light.light_color = Color(1.0, 0.88, 0.72)
+	center_light.light_energy = 0.7
 	center_light.omni_range = 14.0
 	add_child(center_light)
 
@@ -247,6 +244,40 @@ func _emissive(color: Color, energy: float) -> StandardMaterial3D:
 	return mat
 
 
+func _shadow_texture() -> GradientTexture2D:
+	var grad := Gradient.new()
+	grad.set_color(0, Color(1, 1, 1, 1))
+	grad.set_color(1, Color(1, 1, 1, 0))
+	var tex := GradientTexture2D.new()
+	tex.gradient = grad
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.0, 1.0)
+	tex.width = 64
+	tex.height = 64
+	return tex
+
+
+## Sombra de contato (blob) no chão. Funciona no Compatibility e não depende
+## do shadow map direcional.
+func _add_blob_shadow(parent: Node3D, width: float, depth: float) -> void:
+	var quad := QuadMesh.new()
+	quad.size = Vector2(width, depth)
+	var mi := MeshInstance3D.new()
+	mi.mesh = quad
+	mi.rotation.x = -PI / 2.0
+	mi.position.y = 0.04
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.albedo_texture = _shadow_texture()
+	mat.albedo_color = Color(0.0, 0.0, 0.0, 0.45)
+	mi.material_override = mat
+	parent.add_child(mi)
+
+
 # --- Player and models -------------------------------------------------------
 
 func _build_player() -> void:
@@ -271,12 +302,13 @@ func _build_player() -> void:
 	player.add_child(player_model)
 	player_ap = _anim_player(player_model)
 	_play(player_ap, "idle")
+	_add_blob_shadow(player, 0.9, 0.6)
 
 	# Luz de recorte Presa ao jogador para ele não sumir no fundo escuro.
 	var rim := OmniLight3D.new()
 	rim.position = Vector3(0.0, 1.6, 1.1)
-	rim.light_color = Color(0.55, 0.75, 1.0)
-	rim.light_energy = 0.8
+	rim.light_color = Color(1.0, 0.82, 0.60)
+	rim.light_energy = 0.5
 	rim.omni_range = 3.5
 	player.add_child(rim)
 
@@ -291,12 +323,12 @@ func _build_player() -> void:
 
 func _build_followers() -> void:
 	# Formação em V à frente do jogador. No vídeo solo eles ficam escondidos;
-	# no vídeo de grupo, a câmera recua para os três aparecerem.
-	_add_follower("pancham", -1.1, 1.6, Vector3(-1.1, 0.0, -1.6))
-	_add_follower("dqt_orc", 1.3, 2.8, Vector3(1.3, 0.0, -2.8))
+	# Triângulo com o jogador na ponta: aliados um pouco atrás e aos lados.
+	_add_follower("pancham", -1.4, 1.3, Vector3(-1.4, 0.0, 1.3))
+	_add_follower("dqt_orc", 2.4, 1.9, Vector3(2.4, 0.0, 1.9))
 
 
-func _add_follower(model_id: String, side: float, ahead: float, start: Vector3) -> void:
+func _add_follower(model_id: String, side: float, behind: float, start: Vector3) -> void:
 	var node := Node3D.new()
 	node.name = "%sFollower" % model_id.capitalize()
 	node.position = start
@@ -304,15 +336,16 @@ func _add_follower(model_id: String, side: float, ahead: float, start: Vector3) 
 	add_child(node)
 	var model := _make_model(model_id, float(HEIGHTS[model_id]))
 	node.add_child(model)
+	_add_blob_shadow(node, 0.7 if model_id == "pancham" else 1.3, 0.45 if model_id == "pancham" else 0.85)
 	var ap := _anim_player(model)
 	_play(ap, "idle")
 	_followers.append({
 		"node": node,
 		"model": model,
 		"ap": ap,
-		"ahead": ahead,
+		"behind": behind,
 		"side": side,
-		"moving": false,
+		"last_pos": start,
 	})
 
 
@@ -448,6 +481,7 @@ func _build_enemy() -> void:
 	add_child(enemy)
 	var model := _make_model("dqt_slime", float(HEIGHTS["dqt_slime"]))
 	enemy.add_child(model)
+	_add_blob_shadow(enemy, 1.2, 1.0)
 	var ap := _anim_player(model)
 	_play_idle(ap)
 	var tag := Label3D.new()
@@ -461,7 +495,7 @@ func _build_enemy() -> void:
 
 
 func _build_exit() -> void:
-	var gate_mat := _emissive(Color(0.25, 0.85, 0.78), 1.4)
+	var gate_mat := _emissive(Color(1.0, 0.72, 0.28), 1.4)
 	_box(Vector3(0.3, 3.2, 0.3), Vector3(17.7, 1.6, -11.4), gate_mat, false)
 	_box(Vector3(0.3, 3.2, 0.3), Vector3(17.7, 1.6, -8.6), gate_mat, false)
 	_box(Vector3(0.3, 0.3, 3.2), Vector3(17.7, 3.2, -10.0), gate_mat, false)
@@ -469,7 +503,7 @@ func _build_exit() -> void:
 	var tag := Label3D.new()
 	tag.text = "SAÍDA"
 	tag.font_size = 46
-	tag.modulate = Color(0.55, 1.0, 0.9)
+	tag.modulate = Color(1.0, 0.88, 0.55)
 	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	tag.position = Vector3(17.5, 3.8, -10.0)
 	tag.no_depth_test = false
@@ -500,25 +534,24 @@ func _update_followers(delta: float) -> void:
 	var right := Vector3(-cos(player_yaw), 0.0, sin(player_yaw))
 	for f in _followers:
 		var node: Node3D = f["node"]
-		var ahead := float(f["ahead"])
+		var behind := float(f["behind"])
 		var side := float(f["side"])
-		var target := player.position + forward * ahead + right * side
+		var target := player.position - forward * behind + right * side
 		target.y = 0.0
 		var to := target - node.position
 		to.y = 0.0
 		var moving := to.length() > 0.08
-		f["moving"] = moving
 		if moving:
 			var step := to.normalized() * minf(FOLLOW_SPEED * delta, to.length())
 			node.position += step
 			node.rotation.y = atan2(step.x, step.z)
 		else:
 			node.position = target
-			var face := player.position - node.position
-			face.y = 0.0
-			if face.length_squared() > 0.001:
-				node.rotation.y = atan2(face.x, face.z)
-		_play_move(f["ap"], moving and _party_visible)
+			node.rotation.y = player_yaw
+		var last: Vector3 = f["last_pos"]
+		var walked := node.position.distance_to(last) > 0.001
+		f["last_pos"] = node.position
+		_play_move(f["ap"], walked and _party_visible)
 
 
 # --- HUD ---------------------------------------------------------------------
@@ -527,7 +560,7 @@ func _build_hud() -> void:
 	var layer := CanvasLayer.new()
 	layer.layer = 20
 	var label := Label.new()
-	label.text = "Lab 3D — terceira pessoa (SMT III)\nWASD/setas: andar e virar · mouse/Q/E: câmera · 1: aliados · Esc: sair"
+	label.text = "Lab 3D — terceira pessoa (SMT III)\nWASD/setas: andar e virar · Q/E ou botão direito: câmera · 1: aliados · Esc: sair"
 	label.position = Vector2(20, 16)
 	label.add_theme_font_size_override("font_size", 16)
 	label.add_theme_color_override("font_color", Color(1.0, 0.90, 0.60))
