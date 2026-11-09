@@ -313,6 +313,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-1076] Tentativa de toon no gl_compatibility (revertida):** o shader customizado foi removido e o lab voltou ao `DIFFUSE_TOON` anterior; como o renderer é `gl_compatibility`, o resultado é o visual liso que existia antes; renderer global mantido; batalha/2D intactos.
 - **[D-1082] Melhorias do lab da Murky Forest:** **teste implementado**: luzes de preenchimento/aproximação, vinhas/galhos/clumps médios ancorados e fade de folhagem entre câmera e jogador; auditoria de câmera/caminho passou; HUD/status, NPCs, batalha/2D intactos; provas e vídeos regravados.
 - **[D-1083] Iluminação do lab menos clara e contrastada:** **teste implementado**: exposição/ambiente/lua/preenchimentos/glow/fog reduzidos, sombra direcional 0,55 e ajuste de contraste 0,82/saturação 0,88; geometria/folhagem/oclusão D-1082 e HUD/status/NPCs/batalha/2D intactos; provas/vídeos regravados.
+- **[D-1084] Orc/DQT: idle com `idle_full` toca uma vez e segura:** **teste implementado**: o `idle` do Orc/Cyclops/Slime preserva `LOOP_NONE` e o lab não reinicia o clipe quando ele termina; auditoria parado→andando→parado com `idle_restarts=0`; batalha/2D/HUD/regras intactos.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).

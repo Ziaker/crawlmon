@@ -516,6 +516,10 @@ func _make_model(model_id: String, target_height: float) -> Node3D:
 		_strip_root_motion(ap)
 		for anim_name in ["idle", "walk", "run"]:
 			if ap.has_animation(anim_name):
+				# D-1084: idle_full (Orc/Cyclops/Slime) já vem LOOP_NONE do perfil;
+				# walk/run continuam em loop.
+				if anim_name == "idle" and not dqt.is_empty() and bool(dqt.get("idle_full", false)):
+					continue
 				ap.get_animation(anim_name).loop_mode = Animation.LOOP_LINEAR
 	if not dqt.is_empty():
 		DQT_PROFILES.start_idle_breath(root)
@@ -579,6 +583,14 @@ func _play(ap: AnimationPlayer, name: String) -> void:
 		return
 	if ap.current_animation == name:
 		return
+	# D-1084: idle_full (Orc/Cyclops/Slime) é LOOP_NONE; depois que termina,
+	# o current_animation fica vazio. Não reiniciar: segura o último quadro.
+	if name == "idle" and ap.get_animation("idle").loop_mode == Animation.LOOP_NONE:
+		if ap.current_animation == "" and bool(ap.get_meta("idle_held", false)):
+			return
+		ap.set_meta("idle_held", true)
+	else:
+		ap.set_meta("idle_held", false)
 	ap.play(name, 0.15)
 
 
