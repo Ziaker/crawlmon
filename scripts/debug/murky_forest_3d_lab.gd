@@ -43,6 +43,7 @@ const NPC_SLOTS: Array[Dictionary] = [
 ]
 
 var _rng := RandomNumberGenerator.new()
+var _foliage_fade: Array[Dictionary] = []
 var _minimap_viewport: SubViewport
 var _minimap_camera: Camera3D
 var _minimap_rect: TextureRect
@@ -79,6 +80,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	super(delta)
+	_update_foliage_fade(delta)
 	_update_hud_badges()
 
 
@@ -104,7 +106,7 @@ func _build_environment() -> void:
 	env.background_color = Color(0.018, 0.012, 0.030)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.38, 0.32, 0.50)
-	env.ambient_light_energy = 1.0
+	env.ambient_light_energy = 1.05
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.tonemap_exposure = 0.95
 	env.fog_enabled = true
@@ -121,7 +123,7 @@ func _build_environment() -> void:
 	var moon := DirectionalLight3D.new()
 	moon.rotation_degrees = Vector3(-58.0, -32.0, 0.0)
 	moon.light_color = Color(0.66, 0.86, 0.72)
-	moon.light_energy = 0.60
+	moon.light_energy = 0.72
 	moon.shadow_enabled = true
 	moon.directional_shadow_max_distance = 40.0
 	add_child(moon)
@@ -130,9 +132,21 @@ func _build_environment() -> void:
 	var fill := OmniLight3D.new()
 	fill.position = Vector3(8.0, 3.4, -10.0)
 	fill.light_color = Color(1.0, 0.58, 0.30)
-	fill.light_energy = 1.1
+	fill.light_energy = 1.2
 	fill.omni_range = 17.0
 	add_child(fill)
+
+	# D-1077: preenchimento frio no início e no corredor para tirar os vazios pretos.
+	for data in [
+		[Vector3(0.0, 3.0, -2.0), Color(0.55, 0.78, 0.75), 0.55, 9.0],
+		[Vector3(0.0, 2.8, -8.8), Color(0.62, 0.80, 0.92), 0.38, 7.0],
+	]:
+		var light := OmniLight3D.new()
+		light.position = data[0]
+		light.light_color = data[1]
+		light.light_energy = data[2]
+		light.omni_range = data[3]
+		add_child(light)
 
 
 # --- Forest room -------------------------------------------------------------
@@ -184,34 +198,34 @@ func _build_foliage() -> void:
 	# Parede oeste e leste da sala norte.
 	for z in range(-5, 7, 2):
 		for side in [-1, 1]:
-			var x: float = side * 3.85
+			var x: float = side * 3.98
 			for k in 2:
-				var pos := Vector3(x + side * 0.22,
+				var pos := Vector3(x + side * 0.14,
 					_rng.randf_range(0.8, 3.4) + k * 0.5,
 					z + _rng.randf_range(-0.45, 0.45))
-				_foliage(pos, _rng.randf_range(0.45, 0.85), _leaf_color(), 1 << 8)
+				_foliage(pos, _rng.randf_range(0.35, 0.65), _leaf_color(), 1 << 8)
 	# Parede norte da sala.
 	for x in range(-3, 4, 2):
 		_foliage(Vector3(x + _rng.randf_range(-0.3, 0.3),
-			_rng.randf_range(1.0, 3.3), 5.83), _rng.randf_range(0.55, 0.95), _leaf_color(), 1 << 8)
+			_rng.randf_range(1.0, 3.3), 5.92), _rng.randf_range(0.45, 0.75), _leaf_color(), 1 << 8)
 	# Paredes do corredor leste-oeste.
 	for x in range(4, 18, 2):
 		for z in [-5.95, -14.05]:
 			var sign_z := 1.0 if z > -6.5 else -1.0
 			_foliage(Vector3(x + _rng.randf_range(-0.4, 0.4),
-				_rng.randf_range(0.9, 3.5), z + sign_z * 0.18),
-				_rng.randf_range(0.5, 0.9), _leaf_color(), 1 << 8)
+				_rng.randf_range(0.9, 3.5), z + sign_z * 0.12),
+				_rng.randf_range(0.4, 0.7), _leaf_color(), 1 << 8)
 	# Topo das paredes: arbustos grandes.
 	for i in 34:
 		var on_north_room := i % 3 == 0
 		var pos: Vector3
 		if on_north_room:
 			var side := -1.0 if i % 2 == 0 else 1.0
-			pos = Vector3(side * 3.8, _rng.randf_range(3.9, 4.45), _rng.randf_range(-5.5, 5.5))
+			pos = Vector3(side * 4.0, _rng.randf_range(3.9, 4.45), _rng.randf_range(-5.5, 5.5))
 		else:
 			var z := -5.95 if i % 2 == 0 else -14.05
 			pos = Vector3(_rng.randf_range(4.0, 17.5), _rng.randf_range(3.9, 4.45), z)
-		_foliage(pos, _rng.randf_range(0.65, 1.15), _leaf_color(), 1 << 9)
+		_foliage(pos, _rng.randf_range(0.5, 0.9), _leaf_color(), 1 << 9)
 	# Folhas no chão (não bloqueiam o caminho).
 	for i in 120:
 		var x := _rng.randf_range(-3.6, 3.6)
@@ -249,7 +263,74 @@ func _build_foliage() -> void:
 		if _near_path(pos):
 			continue
 		_root(pos, _rng.randf_range(0.0, TAU), _rng.randf_range(0.8, 1.6))
+	_build_vertical_foliage()
 	_build_fireflies()
+
+
+## D-1077: vinhas, galhos e clumps médios ancorados nas paredes/árvores.
+func _build_vertical_foliage() -> void:
+	var vine_tops := [
+		Vector3(-3.95, 4.5, -4.0), Vector3(3.95, 4.5, 1.5),
+		Vector3(-3.95, 4.5, 3.0), Vector3(3.95, 4.5, -5.0),
+		Vector3(6.0, 4.5, -5.9), Vector3(10.0, 4.5, -5.9),
+		Vector3(14.0, 4.5, -5.9), Vector3(7.0, 4.5, -14.1),
+		Vector3(11.0, 4.5, -14.1), Vector3(15.0, 4.5, -14.1),
+	]
+	for i in vine_tops.size():
+		_vine(vine_tops[i], 1.6 + float(i % 3) * 0.35)
+	var branches := [
+		{"pos": Vector3(-3.0, 3.2, -2.0), "dir": Vector3(1.0, 0.0, 0.0), "len": 1.3},
+		{"pos": Vector3(3.0, 3.0, -7.0), "dir": Vector3(-1.0, 0.0, 0.0), "len": 1.2},
+		{"pos": Vector3(7.0, 3.1, -13.0), "dir": Vector3(0.0, 0.0, 1.0), "len": 1.4},
+		{"pos": Vector3(13.0, 3.0, -7.0), "dir": Vector3(0.0, 0.0, -1.0), "len": 1.3},
+	]
+	for b in branches:
+		_branch(b["pos"], b["dir"], float(b["len"]))
+	# Clumps médios nas paredes, menores, preenchendo a altura.
+	for i in 12:
+		var side := -1.0 if i % 2 == 0 else 1.0
+		var x := side * 3.98
+		var z := _rng.randf_range(-5.2, 5.0)
+		_foliage(Vector3(x, _rng.randf_range(2.5, 3.5), z),
+			_rng.randf_range(0.25, 0.42), _leaf_color(), 1 << 8)
+
+
+func _vine(top: Vector3, length: float) -> void:
+	var mi := MeshInstance3D.new()
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = 0.02
+	mesh.bottom_radius = 0.04
+	mesh.height = length
+	mesh.radial_segments = 5
+	mi.mesh = mesh
+	mi.position = top + Vector3(0.0, -length * 0.5, 0.0)
+	mi.material_override = _toon_mat(Color(0.10, 0.16, 0.10))
+	mi.layers = 1 << 8
+	add_child(mi)
+	for k in 3:
+		var off := Vector3(_rng.randf_range(-0.14, 0.14), 0.0, _rng.randf_range(-0.14, 0.14))
+		_foliage(top + off + Vector3(0.0, -length * (0.35 + 0.2 * float(k)), 0.0),
+			_rng.randf_range(0.18, 0.30), _leaf_color(), 1 << 8)
+
+
+func _branch(base: Vector3, dir: Vector3, length: float) -> void:
+	var d := dir.normalized()
+	var mi := MeshInstance3D.new()
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = 0.035
+	mesh.bottom_radius = 0.065
+	mesh.height = length
+	mesh.radial_segments = 5
+	mi.mesh = mesh
+	mi.position = base + d * (length * 0.5)
+	if absf(d.x) > 0.5:
+		mi.rotation.z = PI * 0.5 * signf(d.x)
+	else:
+		mi.rotation.x = -PI * 0.5 * signf(d.z)
+	mi.material_override = _toon_mat(Color(0.10, 0.07, 0.05))
+	mi.layers = 1 << 8
+	add_child(mi)
+	_foliage(base + d * length, _rng.randf_range(0.32, 0.48), _leaf_color(), 1 << 8)
 
 
 func _near_path(pos: Vector3) -> bool:
@@ -276,6 +357,14 @@ func _build_forest_lights() -> void:
 		add_child(light)
 		_torches.append(light)
 		_torch_base.append(0.55)
+
+	# D-1077: aproximação quente da saída, para o portal não nascer do nada.
+	var approach := OmniLight3D.new()
+	approach.position = Vector3(13.5, 2.2, -10.0)
+	approach.light_color = Color(1.0, 0.68, 0.38)
+	approach.light_energy = 0.5
+	approach.omni_range = 6.0
+	add_child(approach)
 
 
 func _build_fireflies() -> void:
@@ -387,9 +476,17 @@ func _foliage(pos: Vector3, radius: float, color: Color, layer: int) -> void:
 		_rng.randf_range(0.65, 0.95),
 		_rng.randf_range(0.9, 1.25))
 	mi.rotation.y = _rng.randf_range(0.0, TAU)
-	mi.material_override = _toon_mat(color)
+	var mat := _toon_mat(color)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_color.a = 1.0
+	mi.material_override = mat
 	mi.layers = layer
 	add_child(mi)
+	_foliage_fade.append({
+		"mesh": mi,
+		"mat": mat,
+		"radius": radius * maxf(maxf(mi.scale.x, mi.scale.y), mi.scale.z),
+	})
 	# Clumps menores por cima: quebra a leitura de "pedra" e vira folhagem.
 	for k in 2:
 		var clump := SphereMesh.new()
@@ -405,9 +502,44 @@ func _foliage(pos: Vector3, radius: float, color: Color, layer: int) -> void:
 			_rng.randf_range(-radius * 0.7, radius * 0.7))
 		leaf.rotation.y = _rng.randf_range(0.0, TAU)
 		leaf.scale = Vector3(1.0, 0.72, 1.0)
-		leaf.material_override = _toon_mat(color.lightened(0.16))
+		var leaf_mat := _toon_mat(color.lightened(0.16))
+		leaf_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		leaf_mat.albedo_color.a = 1.0
+		leaf.material_override = leaf_mat
 		leaf.layers = layer
 		add_child(leaf)
+		_foliage_fade.append({
+			"mesh": leaf,
+			"mat": leaf_mat,
+			"radius": clump.radius * 1.1,
+		})
+
+
+## D-1077: some suavemente com folhas que ficam entre a câmera e o jogador.
+func _update_foliage_fade(delta: float) -> void:
+	if _camera == null or player == null:
+		return
+	var cam := _camera.global_position
+	var target := player.global_position + Vector3(0.0, 1.0, 0.0)
+	var seg := target - cam
+	var seg_len2 := maxf(seg.length_squared(), 0.001)
+	for entry in _foliage_fade:
+		var mesh := entry["mesh"] as MeshInstance3D
+		if mesh == null or not is_instance_valid(mesh):
+			continue
+		var mat := entry["mat"] as StandardMaterial3D
+		if mat == null:
+			continue
+		var pos := mesh.global_position
+		var t := clampf((pos - cam).dot(seg) / seg_len2, 0.0, 1.0)
+		var closest := cam + seg * t
+		var occlude := t > 0.02 and t < 0.98 \
+			and pos.distance_to(cam) < 3.6 \
+			and pos.distance_to(closest) < float(entry["radius"]) + 0.35
+		var target_a := 0.22 if occlude else 1.0
+		var col := mat.albedo_color
+		col.a = lerpf(col.a, target_a, clampf(delta * 8.0, 0.0, 1.0))
+		mat.albedo_color = col
 
 
 func _leaf_patch(pos: Vector3, rot: float, color: Color) -> void:
