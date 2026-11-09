@@ -13,6 +13,8 @@
 
 > nao assim, eu nao pedi assim, e pra dar zoom perto da face deles QUE NEM VC FEZ COM OS DQT, corrija isso
 
+> perfeito, agora so falta corrigir os textos vazados e deixar o angulo deles coeso com cartao paralelogramatico
+
 Respostas às perguntas de esclarecimento:
 
 - **Onde trocar?** Só os cards do overworld; batalha, status e menus ficam como estão.
@@ -31,9 +33,10 @@ Respostas às perguntas de esclarecimento:
 4. **Card fixo:** **330×104**, sem aumentar. O herói continua 1,0× e os aliados 0,85×. O Gible entra como **4º card demo** em (14, 394), 0,85×, com HP 100/100 e MP 10/20 (demo).
 5. **Barras e textos maiores:** preencher o espaço útil do card:
    - nome em **20 px** (era 18);
-   - HP: barra **166×12** (era 120×7), texto **12 px** (era 10);
-   - MP: barra **166×10** (era 120×5), texto **11 px** (era 9);
-   - textos de HP/MP à direita das barras, alinhados verticalmente com elas.
+   - HP: barra **162×12** (era 120×7), texto **12 px** (era 10);
+   - MP: barra **162×10** (era 120×5), texto **11 px** (era 9);
+   - textos de HP/MP à direita das barras, alinhados verticalmente com elas;
+   - **textos com o mesmo shear do corpo**: nome, ícones de elemento, `ALLY | AI` e números de HP/MP são desenhados sob `_body_shear()` (8 px em 82 px, pivô em y=18). As barras continuam horizontais; os textos ganham margem segura para não vazar da borda inclinada.
 6. **Ícones de elemento ao lado do nome:** até **2** ícones de 18×18 imediatamente após o nome, na mesma linha. Fonte: `res://assets/ui/icons/elements/*.svg`, com o mesmo mapa do battle (`FÍSICO→neutral`, `FOGO→fire`, `ÁGUA/GELO→water_ice`, `RAIO→electric`, `PSÍQUICO→psychic`, `VENENO→nature`, `SOM→sound`, `TERRA→earth`, `VENTO→wind`, `LUZ→light`, `TREVAS→dark`, `MYSTIC→mystic`). Cores de contraste: escuras no card creme do herói, claras no card azul dos aliados.
 7. **Elementos dos cards atuais:** ABRA = Psíquico; PANCHAM = Físico + Trevas; ORC = Físico (DQT, retrato atual); GIBLE = Terra.
 8. **O que não muda:** mini-mapa/bolinhas flat, Slime 0,49 m, NPCs sólidos D-1063, alerta “!”, câmera, batalha 3D, jogo 2D e regras.
@@ -42,10 +45,11 @@ Respostas às perguntas de esclarecimento:
 
 - **Sugimori com zoom no rosto:** Abra (crop 300,120–620,480), Pancham (300,40–980,800) e Gible (30,100–520,660) carregam no projeto principal; o card usa a região UV escolhida no mesmo `_slant_texture(pr.grow(-2.0), 5.0, ...)` das artes DQT.
 - **Orc/DQT:** `personagens/portraits/orc.png` (256×256) continua inteiro; nenhuma arte DQT foi trocada.
-- **Cards:** 330×104, herói 1,0×, aliados 0,85×. Nome 20 px; HP 166×12 com texto 12; MP 166×10 com texto 11; barras e textos ocupando a largura útil. Agora são **4 cards no party**: Abra, Pancham, Orc e Gible (Gible demo 100/100 + 10/20).
+- **Cards:** 330×104, herói 1,0×, aliados 0,85×. Nome 20 px; HP 162×12 com texto 12; MP 162×10 com texto 11; barras e textos ocupando a largura útil. Agora são **4 cards no party**: Abra, Pancham, Orc e Gible (Gible demo 100/100 + 10/20).
+- **Ângulo dos textos:** nome, ícones de elemento, `ALLY | AI` e HP/MP são desenhados com o mesmo shear do corpo (`8/82`, pivô y=18); as barras ficam horizontais. A margem direita foi aumentada (barra 162, texto em x=+10) para nenhum texto cruzar a borda inclinada.
 - **Elementos:** Abra = Psíquico; Pancham = Físico + Trevas; Orc = Físico; Gible = Terra. Ícones 18×18 ao lado do nome, com o mesmo mapa do `BattleHud` (`FÍSICO→neutral`, `PSÍQUICO→psychic`, `TREVAS→dark`, `TERRA→earth`) e cores de contraste (escuras no creme, claras no azul).
-- **Prova:** captura isolada em `docs/referencias/exploracao/3d/murky_forest_hud_sugimori.png` e recorte dos quatro cards em `murky_forest_hud_sugimori_cards.png`; mostra Abra/Pancham/Gible com Sugimori em close, Orc com o retrato DQT, quatro cards no party, bolinhas flat e NPCs.
-- **Verificação:** `--check-only` do HUD e carregamento dos assets no projeto principal; a captura foi feita no projeto isolado porque a janela do projeto principal ainda esbarra nos erros de parse de VFX de outra sessão. A cena principal em headless continua rodando.
+- **Prova:** captura isolada em `docs/referencias/exploracao/3d/murky_forest_hud_sugimori.png` e recorte dos quatro cards em `murky_forest_hud_sugimori_cards.png`; mostra Abra/Pancham/Gible com Sugimori em close, Orc com o retrato DQT, quatro cards no party, bolinhas flat e NPCs; os textos estão dentro da borda inclinada e com o mesmo shear do card.
+- **Verificação:** `--check-only` do HUD e carregamento dos assets no projeto principal; a captura foi feita no projeto isolado porque a janela do projeto principal ainda esbarra nos erros de parse de VFX de outra sessão. A cena principal em headless também está bloqueada no momento por erros de `tidal_surge_vfx.gd` de outra sessão; o HUD isolado e a auditoria D-1063 rodam sem erro.
 
 ## Ambiguidades
 
@@ -58,13 +62,14 @@ Respostas às perguntas de esclarecimento:
 
 ## O que não foi verificado
 
-- **Janela do projeto principal:** a captura foi no isolado; o projeto principal carrega os assets, mas a janela ainda é bloqueada pelos erros de VFX de outra sessão.
+- **Janela do projeto principal:** a captura foi no isolado; o projeto principal carrega os assets, mas a janela e a cena headless ainda são bloqueadas pelos erros de VFX de outra sessão (`tidal_surge_vfx.gd`).
 - **Sugimori local:** a pasta `sugimori/` é ignorada pelo Git; se a arte faltar, o card cai no retrato antigo.
 - **Crop de rosto:** os retângulos são manuais; o Abra 3, Pancham 2 e Gible 2 foram escolhidos, mas não há detecção automática de rosto.
+- **Barras horizontais:** os textos recebem o shear do card, mas as barras de HP/MP continuam retas; se o criador quiser as barras inclinadas também, é uma decisão nova.
 - **Orc:** sem Sugimori; mantém o retrato DQT.
 - **Gible na party real:** o card é demo; não foi ligado a `GameState.party`.
 - **60 fps, mobile/web, outras resoluções** e batalha/status/menus (não tocados).
 
 ## Estado
 
-Teste implementado e corrigido no lab isolado; Abra/Pancham/Gible em close no rosto e Gible como 4º card demo; prova em `murky_forest_hud_sugimori*`. Documentação registrada; commit local; **sem push**. Nada de combate/2D/DQT muda.
+Teste implementado e corrigido no lab isolado; Abra/Pancham/Gible em close no rosto, textos com o shear do card e Gible como 4º card demo; prova em `murky_forest_hud_sugimori*`. Documentação registrada; commit local; **sem push**. Nada de combate/2D/DQT muda.

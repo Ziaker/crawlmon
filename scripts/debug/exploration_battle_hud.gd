@@ -235,6 +235,17 @@ class ExplorationCard extends Control:
 				_slant_texture(pr.grow(-2.0), 5.0, portrait, portrait_region)
 			else:
 				draw_texture_rect(portrait, Rect2(24, 32, 44, 44), false)
+		var bar_x := 84.0
+		var bar_w := 162.0
+		draw_rect(Rect2(bar_x, 55, bar_w, 12), track)
+		var hp_ratio := clampf(float(hp) / float(maxi(max_hp, 1)), 0.0, 1.0)
+		draw_rect(Rect2(bar_x, 55, bar_w * hp_ratio, 12), hp_col)
+		draw_rect(Rect2(bar_x, 74, bar_w, 10), track)
+		var mp_ratio := clampf(float(mp) / float(maxi(max_mp, 1)), 0.0, 1.0)
+		draw_rect(Rect2(bar_x, 74, bar_w * mp_ratio, 10), MP_BLUE)
+
+		# D-1074: o texto acompanha o mesmo ângulo do corpo (8 px em 82 px).
+		draw_set_transform_matrix(_body_shear())
 		var name_text := character_name.to_upper()
 		draw_string(font, Vector2(84, 45), name_text,
 			HORIZONTAL_ALIGNMENT_LEFT, 150, 20, fg)
@@ -250,18 +261,15 @@ class ExplorationCard extends Control:
 			icon_x += 20.0
 		if not hero:
 			_text_right(font, size.x - 14, 41, "ALLY | AI", 8, Color(fg, 0.6))
-		var bar_x := 84.0
-		var bar_w := 166.0
-		draw_rect(Rect2(bar_x, 55, bar_w, 12), track)
-		var hp_ratio := clampf(float(hp) / float(maxi(max_hp, 1)), 0.0, 1.0)
-		draw_rect(Rect2(bar_x, 55, bar_w * hp_ratio, 12), hp_col)
-		draw_string(font, Vector2(bar_x + bar_w + 7, 65), "HP %d/%d" % [hp, max_hp],
+		draw_string(font, Vector2(bar_x + bar_w + 10, 65), "HP %d/%d" % [hp, max_hp],
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 12, fg)
-		draw_rect(Rect2(bar_x, 74, bar_w, 10), track)
-		var mp_ratio := clampf(float(mp) / float(maxi(max_mp, 1)), 0.0, 1.0)
-		draw_rect(Rect2(bar_x, 74, bar_w * mp_ratio, 10), MP_BLUE)
-		draw_string(font, Vector2(bar_x + bar_w + 7, 84), "MP %d/%d" % [mp, max_mp],
+		draw_string(font, Vector2(bar_x + bar_w + 10, 84), "MP %d/%d" % [mp, max_mp],
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 11, fg)
+		draw_set_transform_matrix(Transform2D.IDENTITY)
+
+	func _body_shear() -> Transform2D:
+		var k := 8.0 / 82.0
+		return Transform2D(Vector2(1.0, 0.0), Vector2(-k, 1.0), Vector2(k * 18.0, 0.0))
 
 	func _text_right(f: Font, right_x: float, y: float, text: String, size_px: int, color: Color) -> void:
 		var w := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px).x
