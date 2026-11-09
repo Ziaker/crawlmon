@@ -42,10 +42,20 @@ Depois de ver o primeiro teste:
 - **Câmera do grupo:** subiu para 6,2 m/1,5 m/22° para o Orc caber inteiro; o Orc ainda é grande porque está atrás e perto da câmera, mas o jogador continua visível na ponta.
 - **Mouse:** sem captura; Q/E ou botão direito. **Janela:** gravações em segundo plano, sem foco.
 
+## Aliados: física e IA (lab)
+
+- Pancham e Orc agora são **CharacterBody3D** com cápsula própria (layer 4, máscara 1): colidem com paredes, pilares e batentes, e deslizam em vez de atravessar.
+- **Raycast de obstáculos:** três raios à frente/±32° a meia altura; a normal/tangente da parede entra na direção desejada. O alvo da formação é clampado por um raio jogador→alvo quando cai atrás de uma parede.
+- **Separação:** empurram-se para não empilhar entre si nem no jogador; não colidem fisicamente com o jogador para não travar a câmera.
+- **Máquina de estados:** `IDLE` (perto do alvo, jogador parado), `FOLLOW` (3,4 m/s), `CATCH_UP` (4,6 m/s quando o alvo está a mais de 2,4 m), `AVOID` (raycast ativo, velocidade reduzida) e `RECOVER` (alvo mais perto do jogador depois de 1,2 s bloqueado).
+- **Animação:** `walk` pelo deslocamento/velocidade real, com `speed_scale` acompanhando a velocidade; idle vira o corpo para o jogador.
+- O Slime de referência some depois que o jogador passa, para não ficar gigante entre a câmera e o grupo.
+- Isto é **lab**: para uma dungeon 3D real, o caminho de produção é `NavigationRegion3D` + `NavigationAgent3D` (navmesh), com estes raycasts como camada de segurança.
+
 ## Resultado e verificação
 
 - **Vídeo solo:** Abra caminha sozinho pelo corredor em L, passa pelo Slime, vira à direita e chega à porta; câmera atrás com colisão.
-- **Vídeo do grupo:** triângulo com o jogador na ponta; Pancham menor, Orc à direita; os dois caminham com `walk` e têm sombra. O Slime aparece ao fundo.
+- **Vídeo do grupo:** triângulo com o jogador na ponta; Pancham menor, Orc à direita; os dois caminham com `walk`, têm sombra e o Orc desvia/desliza no pilar e na curva sem atravessar a parede.
 - **Luz:** piso e paredes quentes, sem rodapés/azuis; a porta é dourada; o único azul é o Slime.
 - **Mouse/janela:** a lab não captura o mouse; a gravação off-screen gerou os 345 quadros sem erro.
 - **Worktree compartilhado:** a cena foi gravada num projeto isolado em `scratch/third_person_lab/` porque o projeto principal está temporariamente bloqueado por erros de parse de outra sessão (`TidalSurgeVfx`). O script da lab é autônomo (só `DqtModelProfiles` + GLBs) e é o mesmo que está em `scripts/debug/`.
@@ -55,7 +65,8 @@ Depois de ver o primeiro teste:
 
 - Distância/FOV/altura/inclinação finais da câmera; o Orc ainda ocupa muito espaço no grupo.
 - Colisão, escala e câmera em mapas 3D gerados de verdade.
-- Colisão dos seguidores com paredes/pilares (eles seguem a posição, sem navmesh).
+- Navegação em mapa 3D real com `NavigationRegion3D`/`NavigationAgent3D`; a lab usa raycast + `move_and_slide`.
+- A colisão entre aliados e o jogador é separação, não física (para não travar a câmera).
 - Regra final de sombra (o blob é do lab).
 - Transição para a batalha, encontros, névoa e performance.
 - Mobile/web.

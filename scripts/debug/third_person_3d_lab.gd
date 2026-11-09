@@ -22,6 +22,8 @@ const PARTY_CAM_HEIGHT := 1.5
 const PARTY_CAM_PITCH := 22.0
 const SOLO_CAM_PITCH := 8.0
 
+enum AllyState { IDLE, FOLLOW, CATCH_UP, AVOID, RECOVER }
+
 ## Alturas provisórias do lab (metros). Não são regra de jogo.
 const HEIGHTS := {
 	"abra": 1.0,
@@ -48,6 +50,7 @@ var _cam_pivot := Vector3.ZERO
 var _camera: Camera3D
 var _torches: Array[OmniLight3D] = []
 var _torch_base: Array[float] = []
+var _enemy: Node3D
 
 
 func _ready() -> void:
@@ -68,6 +71,9 @@ func _process(delta: float) -> void:
 	for i in _torches.size():
 		var base: float = _torch_base[i]
 		_torches[i].light_energy = base * (0.86 + 0.14 * sin(_time * 7.0 + float(i) * 1.7))
+	# O Slime é referência; depois que o jogador passa, ele sai da câmera.
+	if _enemy != null:
+		_enemy.visible = player.global_position.z > _enemy.global_position.z + 0.4
 
 
 func _physics_process(delta: float) -> void:
@@ -325,27 +331,43 @@ func _build_followers() -> void:
 	# Formação em V à frente do jogador. No vídeo solo eles ficam escondidos;
 	# Triângulo com o jogador na ponta: aliados um pouco atrás e aos lados.
 	_add_follower("pancham", -1.4, 1.3, Vector3(-1.4, 0.0, 1.3))
-	_add_follower("dqt_orc", 2.4, 1.9, Vector3(2.4, 0.0, 1.9))
+	_add_follower("dqt_orc", 2.9, 1.9, Vector3(2.9, 0.0, 1.9))
 
 
 func _add_follower(model_id: String, side: float, behind: float, start: Vector3) -> void:
-	var node := Node3D.new()
-	node.name = "%sFollower" % model_id.capitalize()
-	node.position = start
-	node.visible = _party_visible
-	add_child(node)
-	var model := _make_model(model_id, float(HEIGHTS[model_id]))
-	node.add_child(model)
-	_add_blob_shadow(node, 0.7 if model_id == "pancham" else 1.3, 0.45 if model_id == "pancham" else 0.85)
+	var body := CharacterBody3D.new()
+	body.name = "%sFollower" % model_id.capitalize()
+	body.position = start
+	body.visible = _party_visible
+	body.collision_layer = 4
+	body.collision_mask = 1
+	body.floor_snap_length = 0.3
+	body.motion_mode = CharacterBody3D.MOTION_MODE_GROUNDED
+	var height := float(HEIGHTS[model_id])
+	var shape := CollisionShape3D.new()
+	var capsule := CapsuleShape3D.new()
+	capsule.radius = clampf(height * 0.28, 0.2, 0.45)
+	capsule.height = maxf(height, capsule.radius * 2.0 + 0.05)
+	shape.shape = capsule
+	shape.position.y = capsule.height * 0.5
+	body.add_child(shape)
+	add_child(body)
+	var model := _make_model(model_id, height)
+	body.add_child(model)
+	_add_blob_shadow(body, 0.7 if model_id == "pancham" else 1.3, 0.45 if model_id == "pancham" else 0.85)
 	var ap := _anim_player(model)
 	_play(ap, "idle")
 	_followers.append({
-		"node": node,
+		"node": body,
 		"model": model,
 		"ap": ap,
 		"behind": behind,
 		"side": side,
+		"height": height,
+		"velocity": Vector3.ZERO,
 		"last_pos": start,
+		"stuck": 0.0,
+		"state": AllyState.IDLE,
 	})
 
 
@@ -479,6 +501,7 @@ func _build_enemy() -> void:
 	enemy.position = Vector3(-2.8, 0.0, -6.5)
 	enemy.rotation.y = 0.0
 	add_child(enemy)
+	_enemy = enemy
 	var model := _make_model("dqt_slime", float(HEIGHTS["dqt_slime"]))
 	enemy.add_child(model)
 	_add_blob_shadow(enemy, 1.2, 1.0)
@@ -532,26 +555,141 @@ func _update_camera(_delta: float) -> void:
 func _update_followers(delta: float) -> void:
 	var forward := Vector3(sin(player_yaw), 0.0, cos(player_yaw))
 	var right := Vector3(-cos(player_yaw), 0.0, sin(player_yaw))
+	var player_moving := player.velocity.length() > 0.15
 	for f in _followers:
-		var node: Node3D = f["node"]
+		var body: CharacterBody3D = f["node"]
 		var behind := float(f["behind"])
 		var side := float(f["side"])
-		var target := player.position - forward * behind + right * side
+		var height := float(f["height"])
+		var target := player.global_position - forward * behind + right * side
 		target.y = 0.0
-		var to := target - node.position
+		target = _clamp_to_free(player.global_position, target)
+		var to := target - body.global_position
 		to.y = 0.0
-		var moving := to.length() > 0.08
-		if moving:
-			var step := to.normalized() * minf(FOLLOW_SPEED * delta, to.length())
-			node.position += step
-			node.rotation.y = atan2(step.x, step.z)
+		var dist := to.length()
+		var desired := to.normalized() if dist > 0.05 else Vector3.ZERO
+		var avoid := _wall_avoidance(body, desired, height)
+		var sep := _separation(f)
+		var state := AllyState.IDLE
+		var speed := 0.0
+		if dist > 2.4:
+			state = AllyState.CATCH_UP
+			speed = 4.6
+		elif player_moving or dist > 0.15:
+			state = AllyState.FOLLOW
+			speed = 3.4
+		if avoid.length_squared() > 0.01:
+			state = AllyState.AVOID
+			speed *= 0.72
+		var stuck := float(f["stuck"])
+		if body.get_slide_collision_count() > 0 and dist > 0.3:
+			stuck += delta
 		else:
-			node.position = target
-			node.rotation.y = player_yaw
-		var last: Vector3 = f["last_pos"]
-		var walked := node.position.distance_to(last) > 0.001
-		f["last_pos"] = node.position
-		_play_move(f["ap"], walked and _party_visible)
+			stuck = maxf(0.0, stuck - delta * 2.0)
+		if stuck > 1.2:
+			state = AllyState.RECOVER
+			target = player.global_position - forward * (behind * 0.45) + right * (side * 0.25)
+			target.y = 0.0
+			to = target - body.global_position
+			to.y = 0.0
+			desired = to.normalized() if to.length() > 0.05 else Vector3.ZERO
+			speed = 2.4
+			if stuck > 2.6:
+				stuck = 0.0
+		f["stuck"] = stuck
+		f["state"] = state
+
+		var steer := desired + avoid * 1.35 + sep * 0.9
+		if steer.length_squared() > 0.001:
+			steer = steer.normalized()
+		else:
+			steer = Vector3.ZERO
+		var target_vel := steer * speed
+		var vel: Vector3 = f["velocity"]
+		vel = vel.lerp(target_vel, clampf(delta * 8.0, 0.0, 1.0))
+		if vel.length() < 0.02:
+			vel = Vector3.ZERO
+		f["velocity"] = vel
+		body.velocity = vel
+		body.move_and_slide()
+		f["velocity"] = body.velocity
+
+		var hv := Vector3(body.velocity.x, 0.0, body.velocity.z)
+		var moving := hv.length() > 0.12
+		if moving:
+			var yaw := atan2(hv.x, hv.z)
+			body.rotation.y = lerp_angle(body.rotation.y, yaw, clampf(delta * 10.0, 0.0, 1.0))
+		else:
+			var face := player.global_position - body.global_position
+			face.y = 0.0
+			if face.length_squared() > 0.001:
+				body.rotation.y = lerp_angle(
+					body.rotation.y, atan2(face.x, face.z), clampf(delta * 4.0, 0.0, 1.0))
+		_play_move(f["ap"], moving)
+		var ap: AnimationPlayer = f["ap"]
+		ap.speed_scale = clampf(hv.length() / 3.2, 0.75, 1.35) if moving else 1.0
+
+
+## Se o alvo da formação cair atrás de uma parede, para no primeiro obstáculo.
+func _clamp_to_free(origin: Vector3, target: Vector3) -> Vector3:
+	var from := origin + Vector3(0.0, 0.6, 0.0)
+	var to := target + Vector3(0.0, 0.6, 0.0)
+	var query := PhysicsRayQueryParameters3D.create(from, to, 1)
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return target
+	var point: Vector3 = hit["position"]
+	var normal: Vector3 = hit["normal"]
+	normal.y = 0.0
+	if normal.length_squared() < 0.001:
+		return target
+	return point + normal.normalized() * 0.35 - Vector3(0.0, 0.6, 0.0)
+
+
+## Três raios (frente, esquerda, direita) para desviar de paredes e pilares.
+func _wall_avoidance(body: CharacterBody3D, desired: Vector3, height: float) -> Vector3:
+	if desired.length_squared() < 0.001:
+		return Vector3.ZERO
+	var origin := body.global_position + Vector3(0.0, height * 0.55, 0.0)
+	var space := get_world_3d().direct_space_state
+	var avoid := Vector3.ZERO
+	for angle in [-32.0, 0.0, 32.0]:
+		var dir := desired.rotated(Vector3.UP, deg_to_rad(angle)).normalized()
+		var query := PhysicsRayQueryParameters3D.create(origin, origin + dir * 1.15, 1)
+		var hit := space.intersect_ray(query)
+		if hit.is_empty():
+			continue
+		var normal: Vector3 = hit["normal"]
+		normal.y = 0.0
+		if normal.length_squared() < 0.001:
+			continue
+		var tangent := Vector3.UP.cross(normal).normalized()
+		if tangent.dot(desired) < 0.0:
+			tangent = -tangent
+		var distance := origin.distance_to(hit["position"] as Vector3)
+		var weight := 1.0 - clampf(distance / 1.15, 0.0, 1.0)
+		avoid += tangent * weight
+		if absf(angle) < 1.0:
+			avoid += normal * weight * 0.7
+	return avoid.limit_length(1.0)
+
+
+## Evita empilhar nos outros aliados e no jogador.
+func _separation(f: Dictionary) -> Vector3:
+	var body: CharacterBody3D = f["node"]
+	var push := Vector3.ZERO
+	for other in _followers:
+		if other == f:
+			continue
+		var d: Vector3 = body.global_position - (other["node"] as Node3D).global_position
+		d.y = 0.0
+		if d.length() < 0.9 and d.length_squared() > 0.0001:
+			push += d.normalized() * (0.9 - d.length())
+	var dp: Vector3 = body.global_position - player.global_position
+	dp.y = 0.0
+	if dp.length() < 0.8 and dp.length_squared() > 0.0001:
+		push += dp.normalized() * (0.8 - dp.length())
+	return push
 
 
 # --- HUD ---------------------------------------------------------------------
