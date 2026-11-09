@@ -41,6 +41,8 @@
 
 ## Teste implementado (2026-11-09)
 
+> **Atualização D-1064:** os PNGs do ícone e os marcadores 20/14/16 foram removidos; o mini-mapa agora usa bolinhas 12/8/10/10 (azul/branco/vermelho). O HUD de HP/MP e o alerta continuam.
+
 - **Mini-mapa:** exibição **112×112** (metade), sem o título "MAPA"; o SubViewport interno continua 256×256 e o `TextureRect` é escalado em 0,4375. O quadro tem 120×120 e fica no canto superior direito. Marcadores em 20/14/16 px (jogador/aliados/inimigo), com o ícone exato e contorno escuro de 1 px.
 - **Ícone exato:** o marcador usa quatro PNGs derivados do anexo do criador, com contorno escuro de 1 px: `marker_player.png` (20), `marker_ally.png` (14), `marker_enemy.png` (16) e `marker_npc.png` (16), em `assets/exploration/`; o desenho procedural antigo fica só de fallback. O mesmo desenho é tingido de verde/vermelho pelo `modulate`.
 - **HUD:** três badges no extremo canto esquerdo, abaixo do texto de controles: **ABRA 86/100** (verde), **PANCHAM 100/100** (verde) e **ORC 46/100** (amarelo). Cada badge tem nome, barra de HP, número e uma barra de MP azul (demo: 14/20, 10/20, 8/20); painel escuro com borda dourada; a cor do HP acompanha o valor (verde >50%, amarelo 25–50%, vermelho ≤25%). No solo só o badge do Abra; no party os três.

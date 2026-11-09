@@ -10,31 +10,57 @@ extends "res://scripts/debug/third_person_3d_lab.gd"
 ## parede 4,2 m; copa 5,5 m. Não é a escala final do jogo.
 
 const FOREST_VIGNETTE := preload("res://shaders/vignette.gdshader")
-const MARKER_PATH := "res://assets/exploration/minimap_marker.png"
-const MARKER_PLAYER_PATH := "res://assets/exploration/marker_player.png"
-const MARKER_ALLY_PATH := "res://assets/exploration/marker_ally.png"
-const MARKER_ENEMY_PATH := "res://assets/exploration/marker_enemy.png"
-const MARKER_NPC_PATH := "res://assets/exploration/marker_npc.png"
+const NPC_DATA := preload("res://scripts/dungeon/npc_data.gd")
 const FOREST_WALL_HEIGHT := 4.2
 const MINIMAP_SIZE := 256
 const MINIMAP_DISPLAY_SIZE := 112
 const MINIMAP_WORLD_SIZE := 20.0
+const NPC_LOOK_RADIUS := 3.8
+const NPC_INTERACT_RADIUS := 2.4
+
+## Pool de 10 NPCs 3D (D-1063): 5 Pokémon Stage-1 + 5 monstros básicos do DQT.
+const NPC_POOL: Array[Dictionary] = [
+	{"id": "bulbasaur", "name": "BULBASAUR", "height": 0.78},
+	{"id": "charmander", "name": "CHARMANDER", "height": 0.85},
+	{"id": "squirtle", "name": "SQUIRTLE", "height": 0.80},
+	{"id": "pikachu", "name": "PIKACHU", "height": 0.72},
+	{"id": "eevee", "name": "EEVEE", "height": 0.70},
+	{"id": "dqt_dracky", "name": "DRACKY", "height": 0.95},
+	{"id": "dqt_healslime", "name": "HEAL SLIME", "height": 1.15},
+	{"id": "dqt_sabrecub", "name": "SABRECUB", "height": 0.85},
+	{"id": "dqt_platypunk", "name": "PLATYPUNK", "height": 0.95},
+	{"id": "dqt_fungi", "name": "FUNGHOUL", "height": 0.95},
+]
+
+## 3 posições laterais no corredor em L (não obstruem o caminho nem a patrulha).
+const NPC_SLOTS: Array[Dictionary] = [
+	{"pos": Vector3(-2.6, 0.0, -4.2), "yaw": PI * 0.35},
+	{"pos": Vector3(2.5, 0.0, -9.8), "yaw": -PI * 0.35},
+	{"pos": Vector3(8.2, 0.0, -7.2), "yaw": 0.0},
+]
 
 var _rng := RandomNumberGenerator.new()
 var _minimap_viewport: SubViewport
 var _minimap_camera: Camera3D
 var _minimap_rect: TextureRect
 var _marker_root: Control
-var _marker_texture: Texture2D
-var _marker_textures: Dictionary = {}
 var _minimap_markers: Array[Dictionary] = []
 var _hud_badges: Array[Dictionary] = []
 var _enemy_alert: PanelContainer
+var _npcs: Array[Dictionary] = []
+var _npc_offset := 0
+var _npc_talking := false
+var _npc_talk_target: Dictionary = {}
+var _npc_dialogue_panel: PanelContainer
+var _npc_dialogue_title: Label
+var _npc_dialogue_text: Label
+var _interact_prev := false
 
 
 func _ready() -> void:
 	super()
 	_rng.seed = 20261109
+	_build_npcs()
 	_apply_toon(self)
 	_set_actor_layers()
 	if _camera != null:
@@ -42,6 +68,7 @@ func _ready() -> void:
 		_camera.cull_mask = 0xFFFFFFFF & ~(1 << 4)
 	_build_minimap()
 	_build_hud_badges()
+	_build_npc_dialogue_ui()
 
 
 func _process(delta: float) -> void:
@@ -51,7 +78,16 @@ func _process(delta: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	super(delta)
+	_update_npcs(delta)
 	_update_minimap()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	super(event)
+	if event is InputEventKey and event.pressed and not event.echo:
+		var key := (event as InputEventKey).keycode
+		if key == KEY_2:
+			cycle_npcs((_npc_offset + 3) % NPC_POOL.size())
 
 
 # --- Environment -------------------------------------------------------------
@@ -516,7 +552,7 @@ func _build_hud() -> void:
 	var layer := CanvasLayer.new()
 	layer.layer = 20
 	var label := Label.new()
-	label.text = "Lab 3D — Murky Forest (SMT III + toon)\nWASD/setas: andar e virar · Q/E ou botão direito: câmera · 1: aliados · Esc: sair"
+	label.text = "Lab 3D — Murky Forest (SMT III + toon)\nWASD/setas: andar e virar · Q/E ou botão direito: câmera · 1: aliados · 2: trocar NPCs · Z/E: falar/saída · Esc: sair"
 	label.position = Vector2(20, 16)
 	label.add_theme_font_size_override("font_size", 16)
 	label.add_theme_color_override("font_color", Color(0.70, 0.95, 0.72))
@@ -536,6 +572,202 @@ func _build_hud() -> void:
 	_door_prompt.visible = false
 	layer.add_child(_door_prompt)
 	add_child(layer)
+
+
+# --- NPCs (D-1063) -----------------------------------------------------------
+
+func _build_npcs() -> void:
+	# Sorteia/exibe 3 NPCs no corredor (misturando Pokémon Stage-1 e DQT básicos).
+	var default_indices: Array[int] = [0, 5, 3] # Bulbasaur, Dracky, Pikachu no início; KEY_2 gira todos os 10.
+	for slot_i in NPC_SLOTS.size():
+		var pool_idx: int = default_indices[slot_i] if _npc_offset == 0 else ((_npc_offset + slot_i) % NPC_POOL.size())
+		_spawn_npc_at_slot(slot_i, pool_idx)
+
+
+func _spawn_npc_at_slot(slot_i: int, pool_idx: int) -> void:
+	var slot: Dictionary = NPC_SLOTS[slot_i]
+	var data: Dictionary = NPC_POOL[pool_idx]
+	var model_id := str(data["id"])
+	var npc_name := str(data["name"])
+	var height := float(data["height"])
+	var pos: Vector3 = slot["pos"]
+	var base_yaw := float(slot["yaw"])
+
+	var body := StaticBody3D.new()
+	body.name = "Npc_%s" % model_id
+	body.position = pos
+	body.rotation.y = base_yaw
+	# Camada 16: colide como ator se necessário, mas fica fora da máscara 1 da câmera (D-1023).
+	body.collision_layer = 16
+	body.collision_mask = 0
+	body.add_to_group("minimap_npc")
+
+	var shape := CollisionShape3D.new()
+	var capsule := CapsuleShape3D.new()
+	capsule.radius = clampf(height * 0.30, 0.22, 0.42)
+	capsule.height = maxf(height, capsule.radius * 2.0 + 0.05)
+	shape.shape = capsule
+	shape.position.y = capsule.height * 0.5
+	body.add_child(shape)
+	add_child(body)
+
+	var model := _make_model(model_id, height)
+	body.add_child(model)
+	_add_blob_shadow(body, clampf(height * 0.85, 0.65, 1.1), clampf(height * 0.65, 0.50, 0.90))
+	var ap := _anim_player(model)
+	_play_idle(ap)
+
+	var tag := Label3D.new()
+	tag.text = npc_name
+	tag.font_size = 38
+	tag.modulate = Color(1.0, 0.96, 0.82)
+	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	tag.position = Vector3(0.0, height + 0.42, 0.0)
+	tag.no_depth_test = false
+	tag.layers = 1 << 6
+	body.add_child(tag)
+
+	var dlg_idx := (pool_idx * 3 + slot_i) % NPC_DATA.DIALOGUES.size()
+	_npcs.append({
+		"node": body,
+		"model": model,
+		"ap": ap,
+		"id": model_id,
+		"name": npc_name,
+		"height": height,
+		"base_yaw": base_yaw,
+		"dialogue": NPC_DATA.DIALOGUES[dlg_idx],
+		"pool_idx": pool_idx,
+	})
+
+
+func cycle_npcs(new_offset: int) -> void:
+	_npc_offset = posmod(new_offset, NPC_POOL.size())
+	_npc_talking = false
+	if _npc_dialogue_panel != null:
+		_npc_dialogue_panel.visible = false
+	for npc in _npcs:
+		var node: Node3D = npc["node"]
+		if is_instance_valid(node):
+			node.queue_free()
+	_npcs.clear()
+	# Remove marcadores antigos de NPC no mini-mapa.
+	for i in range(_minimap_markers.size() - 1, -1, -1):
+		if _minimap_markers[i]["kind"] == "npc":
+			var rect: Control = _minimap_markers[i]["rect"]
+			if is_instance_valid(rect):
+				rect.queue_free()
+			_minimap_markers.remove_at(i)
+	for slot_i in NPC_SLOTS.size():
+		var pool_idx := (_npc_offset + slot_i) % NPC_POOL.size()
+		_spawn_npc_at_slot(slot_i, pool_idx)
+	for npc in _npcs:
+		var node: Node3D = npc["node"]
+		_apply_toon(node)
+		_set_layers(node, 1 << 6)
+		if _marker_root != null:
+			_add_minimap_marker(node, Color(1.0, 1.0, 1.0, 1.0), "npc")
+
+
+func _build_npc_dialogue_ui() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 22
+	_npc_dialogue_panel = PanelContainer.new()
+	_npc_dialogue_panel.position = Vector2(260, 540)
+	_npc_dialogue_panel.custom_minimum_size = Vector2(760, 108)
+	_npc_dialogue_panel.visible = false
+	_npc_dialogue_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.03, 0.02, 0.04, 0.92)
+	style.border_color = Color(0.65, 0.88, 0.68, 0.95)
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_left = 6
+	style.corner_radius_bottom_right = 6
+	style.content_margin_left = 16
+	style.content_margin_right = 16
+	style.content_margin_top = 10
+	style.content_margin_bottom = 10
+	_npc_dialogue_panel.add_theme_stylebox_override("panel", style)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_npc_dialogue_panel.add_child(vbox)
+
+	_npc_dialogue_title = Label.new()
+	_npc_dialogue_title.text = "NPC"
+	_npc_dialogue_title.add_theme_font_size_override("font_size", 17)
+	_npc_dialogue_title.add_theme_color_override("font_color", Color(0.75, 1.0, 0.72))
+	_npc_dialogue_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_child(_npc_dialogue_title)
+
+	_npc_dialogue_text = Label.new()
+	_npc_dialogue_text.text = ""
+	_npc_dialogue_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_npc_dialogue_text.custom_minimum_size = Vector2(720, 52)
+	_npc_dialogue_text.add_theme_font_size_override("font_size", 15)
+	_npc_dialogue_text.add_theme_color_override("font_color", Color(0.95, 0.94, 0.88))
+	_npc_dialogue_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_child(_npc_dialogue_text)
+
+	layer.add_child(_npc_dialogue_panel)
+	add_child(layer)
+
+
+func _update_npcs(delta: float) -> void:
+	if player == null:
+		return
+	var nearest_npc: Dictionary = {}
+	var nearest_dist := INF
+	for npc in _npcs:
+		var body: Node3D = npc["node"]
+		if not is_instance_valid(body):
+			continue
+		_play_idle(npc["ap"])
+		var to_player := player.global_position - body.global_position
+		to_player.y = 0.0
+		var dist := to_player.length()
+		if dist < NPC_LOOK_RADIUS and dist > 0.05:
+			var target_yaw := atan2(to_player.x, to_player.z)
+			body.rotation.y = lerp_angle(body.rotation.y, target_yaw, clampf(delta * 6.5, 0.0, 1.0))
+		else:
+			body.rotation.y = lerp_angle(body.rotation.y, float(npc["base_yaw"]), clampf(delta * 3.0, 0.0, 1.0))
+		if dist < NPC_INTERACT_RADIUS and dist < nearest_dist:
+			nearest_dist = dist
+			nearest_npc = npc
+
+	var interact_now := Input.is_action_pressed("lab_interact")
+	var interact_just := interact_now and not _interact_prev
+	_interact_prev = interact_now
+
+	if nearest_npc.is_empty():
+		if _npc_talking:
+			_npc_talking = false
+			if _npc_dialogue_panel != null:
+				_npc_dialogue_panel.visible = false
+		return
+
+	# Jogador perto de um NPC: mostra o prompt Z/E: FALAR (se não estiver na porta).
+	if not _door_near and _door_prompt != null:
+		_door_prompt.visible = true
+		_door_prompt.text = "Z/E: FECHAR" if _npc_talking else ("Z/E: FALAR (%s)" % str(nearest_npc["name"]))
+	if interact_just and not _door_near:
+		if _npc_talking and _npc_talk_target.get("node") == nearest_npc.get("node"):
+			_npc_talking = false
+			if _npc_dialogue_panel != null:
+				_npc_dialogue_panel.visible = false
+		else:
+			_npc_talking = true
+			_npc_talk_target = nearest_npc
+			if _npc_dialogue_panel != null:
+				_npc_dialogue_title.text = str(nearest_npc["name"])
+				_npc_dialogue_text.text = str(nearest_npc["dialogue"])
+				_npc_dialogue_panel.visible = true
 
 
 # --- Minimap -----------------------------------------------------------------
@@ -582,12 +814,7 @@ func _minimap_box(size: Vector3, pos: Vector3, color: Color) -> void:
 
 
 func _build_minimap() -> void:
-	# Ícones exatos enviados pelo criador, com contorno escuro de 1 px por tamanho.
-	_marker_texture = _load_marker_texture(MARKER_PATH)
-	_marker_textures["player"] = _load_marker_texture(MARKER_PLAYER_PATH)
-	_marker_textures["ally"] = _load_marker_texture(MARKER_ALLY_PATH)
-	_marker_textures["enemy"] = _load_marker_texture(MARKER_ENEMY_PATH)
-	_marker_textures["npc"] = _load_marker_texture(MARKER_NPC_PATH)
+	# Os marcadores são bolinhas de UI (sem textura): azul, branco e vermelho.
 	_minimap_viewport = SubViewport.new()
 	_minimap_viewport.size = Vector2i(MINIMAP_SIZE, MINIMAP_SIZE)
 	_minimap_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
@@ -646,9 +873,9 @@ func _build_minimap() -> void:
 	layer.add_child(_marker_root)
 	add_child(layer)
 
-	_add_minimap_marker(player, Color(0.25, 1.0, 0.45, 1.0), "player")
+	_add_minimap_marker(player, Color(0.25, 0.55, 1.0, 1.0), "player")
 	for f in _followers:
-		_add_minimap_marker(f["node"], Color(0.25, 1.0, 0.45, 1.0), "ally")
+		_add_minimap_marker(f["node"], Color(0.25, 0.55, 1.0, 1.0), "ally")
 	if _enemy_body != null:
 		_add_minimap_marker(_enemy_body, Color(1.0, 0.22, 0.18, 1.0), "enemy")
 	for node in get_tree().get_nodes_in_group("minimap_npc"):
@@ -656,40 +883,49 @@ func _build_minimap() -> void:
 			_add_minimap_marker(node, Color(1.0, 1.0, 1.0, 1.0), "npc")
 
 
-func _load_marker_texture(path: String) -> Texture2D:
-	if ResourceLoader.exists(path):
-		var tex := load(path) as Texture2D
-		if tex != null:
-			return tex
-	return _make_marker_texture()
-
-
 func _add_minimap_marker(node: Node3D, color: Color, kind: String) -> void:
-	var tex: Texture2D = _marker_textures.get(kind, _marker_texture)
-	var display_size := float(tex.get_size().x)
-	var marker := TextureRect.new()
-	marker.texture = tex
-	marker.modulate = color
-	marker.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	marker.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	marker.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	marker.custom_minimum_size = Vector2(display_size, display_size)
-	marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var dot_size := 10.0
 	match kind:
 		"player":
-			marker.z_index = 4
+			dot_size = 12.0
 		"ally":
-			marker.z_index = 3
+			dot_size = 8.0
 		"npc":
-			marker.z_index = 2
+			dot_size = 10.0
 		_:
-			marker.z_index = 1
-	_marker_root.add_child(marker)
-	marker.size = Vector2(display_size, display_size)
+			dot_size = 10.0
+	var dot := Panel.new()
+	dot.custom_minimum_size = Vector2(dot_size, dot_size)
+	dot.size = Vector2(dot_size, dot_size)
+	dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = color
+	style.border_color = Color(0.02, 0.01, 0.02, 0.90)
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	var radius := int(dot_size * 0.5)
+	style.corner_radius_top_left = radius
+	style.corner_radius_top_right = radius
+	style.corner_radius_bottom_left = radius
+	style.corner_radius_bottom_right = radius
+	dot.add_theme_stylebox_override("panel", style)
+	match kind:
+		"player":
+			dot.z_index = 4
+		"ally":
+			dot.z_index = 3
+		"npc":
+			dot.z_index = 2
+		_:
+			dot.z_index = 1
+	_marker_root.add_child(dot)
+	dot.size = Vector2(dot_size, dot_size)
 	_minimap_markers.append({
 		"node": node,
-		"rect": marker,
-		"size": display_size,
+		"rect": dot,
+		"size": dot_size,
 		"kind": kind,
 	})
 
@@ -900,7 +1136,7 @@ func _update_minimap() -> void:
 	var vp := Vector2(MINIMAP_SIZE, MINIMAP_SIZE)
 	var rect_size := _marker_root.size
 	for m in _minimap_markers:
-		var rect: TextureRect = m["rect"]
+		var rect: Control = m["rect"]
 		var node: Node3D = m["node"]
 		var show := is_instance_valid(node)
 		if show and m["kind"] == "ally" and not _party_visible:
@@ -914,35 +1150,6 @@ func _update_minimap() -> void:
 			else:
 				rect.position = pos - Vector2(m["size"], m["size"]) * 0.5
 		rect.visible = show
-
-
-func _make_marker_texture() -> ImageTexture:
-	var rows := [
-		"....#......#....",
-		"....#......#....",
-		"....##....##....",
-		"...##########...",
-		"..############..",
-		".##############.",
-		"##...######...##",
-		"##...######...##",
-		"....########....",
-		"...##########...",
-		"...##########...",
-		"..###..##..###..",
-		".###........###.",
-		"###..........###",
-		"###..........###",
-		"................",
-	]
-	var img := Image.create(16, 16, false, Image.FORMAT_RGBA8)
-	img.fill(Color(0, 0, 0, 0))
-	for y in rows.size():
-		var row: String = rows[y]
-		for x in mini(row.length(), 16):
-			if row[x] == "#":
-				img.set_pixel(x, y, Color.WHITE)
-	return ImageTexture.create_from_image(img)
 
 
 # --- Toon and render layers --------------------------------------------------
@@ -986,6 +1193,8 @@ func _set_actor_layers() -> void:
 		_set_layers(f["node"], 1 << 2)
 	if _enemy_body != null:
 		_set_layers(_enemy_body, 1 << 3)
+	for npc in _npcs:
+		_set_layers(npc["node"], 1 << 6)
 
 
 func _set_layers(root: Node, layer: int) -> void:

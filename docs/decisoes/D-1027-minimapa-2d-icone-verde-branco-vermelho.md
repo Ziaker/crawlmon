@@ -3,7 +3,7 @@
 - **Data:** 2026-11-09
 - **Área:** Exploração / UI / mini-mapa / direção visual
 - **Origem:** o criador definiu o papel do 2D depois da direção 3D (D-1022) e do lab em terceira pessoa (D-1023).
-- **Status:** fonte do mini-mapa definida (**render top-down do andar 3D**); aliados definidos (verde, menores); **teste implementado no lab da Murky Forest**; ícone exato integrado; NPC branco e detalhes de exibição ainda pendentes; nada publicado.
+- **Status:** fonte do mini-mapa definida (**render top-down do andar 3D**); aliados definidos (verde, menores); **teste implementado no lab da Murky Forest**; ícone removido por D-1064 (bolinhas azuis/brancas/vermelhas); NPC branco e detalhes de exibição ainda pendentes; nada publicado.
 
 ## O que o criador disse (literal)
 
@@ -49,6 +49,8 @@ O ícone citado é a imagem anexada nesta conversa: silhueta em pixel art branca
 - **Relação com D-1022:** a D-1022 mantém o jogo 2D como referência até a fatia 3D; esta decisão muda o papel do 2D no produto final, mas **não** apaga a build 2D de referência.
 
 ## Teste implementado (2026-11-09)
+
+> **Atualização D-1064:** o ícone e os PNGs de marcador foram removidos; o mini-mapa agora usa bolinhas azuis (jogador/aliados), brancas (NPCs) e vermelhas (inimigos). Os detalhes de ícone abaixo são históricos.
 
 - **Cena:** `scenes/debug/murky_forest_3d_lab.tscn` + `scripts/debug/murky_forest_3d_lab.gd`, derivada do lab de terceira pessoa (D-1023). O jogo normal 2D, a batalha e as regras não foram tocados.
 - **Mini-mapa:** `SubViewport` 256×256 com `Camera3D` ortográfica de 20 m, top-down fixo no norte, seguindo o jogador. O piso/paredes do andar 3D são duplicados na camada de render 5 com material chapado (chão roxo, paredes verde-escuras, saída verde); a câmera principal exclui a camada 5 e o mini-mapa só vê a camada 5. O resto do cenário, os atores e a copa ficam fora do mapa.
