@@ -17,7 +17,7 @@ NPCs (auditoria isolada, 3 por vez):
 - colisão: player_mask=17, npc_layer=16, test_move=true; câmera usa máscara 1 e ignora.
 - marcadores: player 1, ally 2, enemy 1, npc 3; brancos; dots_flat=true antes e depois do ciclo; bordas 0.
 - prompt: "Z/E: FALAR (PIKACHU)"; diálogo abre e fecha com Z/E.
-- HUD D-1072/D-1074: cards 4, visível 1 no solo e 4 no party (GIBLE demo adicionado pela D-1074); badges antigos escondidos; Slime 0,49 m.
+- HUD D-1072/D-1074/D-1075: cards 4, escondidos enquanto anda e visíveis após 5 s parado ou Tab; 1 no solo e 4 no party (GIBLE demo adicionado pela D-1074); badges antigos escondidos; Slime 0,49 m.
 
 Auditoria de caminho (solo/party):
 - wall_hits=0; cam_inside=0; cam_close_frames=0; cam_min=3.37/3.79 m.

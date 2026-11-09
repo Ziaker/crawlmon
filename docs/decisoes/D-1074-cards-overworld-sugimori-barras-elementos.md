@@ -4,6 +4,7 @@
 - **Área:** Exploração / HUD / cards do overworld (`ExplorationBattleHud`).
 - **Relacionadas:** D-1072 (casca dos cards), D-1063 (NPCs), D-1023/D-1022 (overworld 3D).
 - **Status:** **teste implementado e corrigido** com zoom no rosto (Abra 3, Pancham 2, Gible 2); Gible entrou como 4º card demo; batalha, status, menus, DQT e jogo 2D não mudam; commit local; **sem push**.
+- **Nota D-1075/D-1076 (2026-11-09):** os cards agora aparecem após 5 s parado ou Tab (D-1075); o toon do overworld foi restaurado via shader customizado no `gl_compatibility` (D-1076). O layout/arte dos cards não muda.
 
 ## O que o criador disse (literal)
 
@@ -49,7 +50,7 @@ Respostas às perguntas de esclarecimento:
 - **Cards:** 330×104, herói 1,0×, aliados 0,85×. Nome 20 px; HP 142×18 com texto 12; MP 142×14 com texto 11; valores alinhados à direita em x=310. Agora são **4 cards no party**: Abra, Pancham, Orc e Gible (Gible demo 100/100 + 10/20).
 - **Ângulo dos textos e blocos:** nome, ícones de elemento, `ALLY | AI` e HP/MP são desenhados com o mesmo shear do corpo (`8/82`, pivô y=18); os valores à direita formam uma borda inclinada paralela ao card. As barras de HP/MP são **paralelogramos** com o mesmo ângulo; nada cruza a borda (HP 100/100 fica com ~20 px de margem).
 - **Elementos:** Abra = Psíquico; Pancham = Físico + Trevas; Orc = Físico; Gible = Terra. Ícones 18×18 ao lado do nome, com o mesmo mapa do `BattleHud` (`FÍSICO→neutral`, `PSÍQUICO→psychic`, `TREVAS→dark`, `TERRA→earth`) e cores de contraste (escuras no creme, claras no azul).
-- **Prova:** captura isolada em `docs/referencias/exploracao/3d/murky_forest_hud_sugimori.png` e recorte dos quatro cards em `murky_forest_hud_sugimori_cards.png`; mostra Abra/Pancham/Gible com Sugimori em close, Orc com o retrato DQT, quatro cards no party, bolinhas flat e NPCs; os textos estão dentro da borda inclinada e com o mesmo shear do card.
+- **Prova:** captura isolada em `docs/referencias/exploracao/3d/murky_forest_hud_sugimori.png` e recorte dos quatro cards em `murky_forest_hud_sugimori_cards.png`; mostra Abra/Pancham/Gible com Sugimori em close, Orc com o retrato DQT, quatro cards no party (visíveis após 5 s parado ou Tab, D-1075), bolinhas flat e NPCs; os textos estão dentro da borda inclinada e com o mesmo shear do card.
 - **Verificação:** `--check-only` do HUD e carregamento dos assets no projeto principal; a captura foi feita no projeto isolado porque a janela do projeto principal ainda esbarra nos erros de parse de VFX de outra sessão. A cena principal em headless também está bloqueada no momento por erros de `tidal_surge_vfx.gd` de outra sessão; o HUD isolado e a auditoria D-1063 rodam sem erro.
 
 ## Ambiguidades

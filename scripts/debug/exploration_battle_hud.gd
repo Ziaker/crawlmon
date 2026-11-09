@@ -65,10 +65,19 @@ const ELEMENT_ALLY_COLORS := {
 
 static var _element_icon_cache: Dictionary = {}
 
+const IDLE_SHOW_TIME := 5.0
+
 var _lab: Node3D
 var _layer: CanvasLayer
 var _cards: Array[Dictionary] = []
 var _font: Font
+var _idle_time := 0.0
+var _last_player_pos := Vector3.ZERO
+var _has_last_player_pos := false
+var _status_visible := false
+var _tab_visible := false
+var _tab_hidden := false
+var _tab_prev := false
 
 
 func _ready() -> void:
@@ -84,16 +93,55 @@ func _ready() -> void:
 	_build_cards()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if _lab == null:
 		return
+	var player := _lab.get("player") as Node3D
+	var moving := false
+	if player != null:
+		var pos := player.global_position
+		if _has_last_player_pos:
+			moving = _last_player_pos.distance_to(pos) > 0.002
+		_last_player_pos = pos
+		_has_last_player_pos = true
+
+	# D-1075: Tab alterna na hora; 5 s sem deslocamento mostram sozinho.
+	var tab_now := Input.is_key_pressed(KEY_TAB)
+	if tab_now and not _tab_prev:
+		_toggle_status_from_tab()
+	_tab_prev = tab_now
+
+	if moving:
+		_idle_time = 0.0
+		if not _tab_visible:
+			_status_visible = false
+			_tab_hidden = false
+	else:
+		_idle_time += delta
+		if not _tab_visible and not _tab_hidden and _idle_time >= IDLE_SHOW_TIME:
+			_status_visible = true
+	if _tab_visible:
+		_status_visible = true
+
 	var party_visible := bool(_lab.get("_party_visible"))
 	for entry in _cards:
-		if bool(entry["ally"]):
-			(entry["control"] as Control).visible = party_visible
+		var card := entry["control"] as Control
+		card.visible = _status_visible and (not bool(entry["ally"]) or party_visible)
 	# D-1072/D-1063: o ciclo de NPCs cria marcadores novos depois do _ready;
 	# achatar de novo garante que a bolinha branca também fique sem contorno.
 	_flatten_dots()
+
+
+func _toggle_status_from_tab() -> void:
+	var show_now := not _status_visible
+	_tab_visible = show_now
+	if show_now:
+		_tab_hidden = false
+		_status_visible = true
+	else:
+		_tab_hidden = true
+		_idle_time = 0.0
+		_status_visible = false
 
 
 func _flatten_dots() -> void:
@@ -148,6 +196,7 @@ func _build_cards() -> void:
 		card.scale = Vector2.ONE * float(data["scale"])
 		card.size = CARD_SIZE
 		card.custom_minimum_size = CARD_SIZE
+		card.visible = false
 		_layer.add_child(card)
 		_cards.append({"control": card, "ally": not bool(data["hero"])})
 
