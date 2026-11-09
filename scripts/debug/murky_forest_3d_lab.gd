@@ -17,6 +17,9 @@ const MINIMAP_DISPLAY_SIZE := 112
 const MINIMAP_WORLD_SIZE := 20.0
 const NPC_LOOK_RADIUS := 3.8
 const NPC_INTERACT_RADIUS := 2.4
+const NPC_COLLISION_LAYER := 1 << 4  ## 16: o jogador colide; o raio da câmera (mask 1) ignora.
+
+## D-1063: o NPC é sólido para o jogador, mas não puxa a câmera (D-1023).
 
 ## Pool de 10 NPCs 3D (D-1063): 5 Pokémon Stage-1 + 5 monstros básicos do DQT.
 const NPC_POOL: Array[Dictionary] = [
@@ -59,6 +62,9 @@ var _interact_prev := false
 
 func _ready() -> void:
 	super()
+	# D-1063: os NPCs são sólidos para o jogador (layer 16), mas o raio da
+	# câmera usa a máscara 1 e continua ignorando os NPCs (D-1023).
+	player.collision_mask |= NPC_COLLISION_LAYER
 	_rng.seed = 20261109
 	_build_npcs()
 	_apply_toon(self)
@@ -247,6 +253,10 @@ func _build_foliage() -> void:
 
 
 func _near_path(pos: Vector3) -> bool:
+	for slot in NPC_SLOTS:
+		var spos: Vector3 = slot["pos"]
+		if Vector2(pos.x - spos.x, pos.z - spos.z).length() < 1.1:
+			return true
 	if pos.x > -1.7 and pos.x < 1.7 and pos.z > -6.2 and pos.z < 5.5:
 		return true
 	if pos.z > -11.3 and pos.z < -7.5 and pos.x > 3.7:
@@ -597,8 +607,9 @@ func _spawn_npc_at_slot(slot_i: int, pool_idx: int) -> void:
 	body.name = "Npc_%s" % model_id
 	body.position = pos
 	body.rotation.y = base_yaw
-	# Camada 16: colide como ator se necessário, mas fica fora da máscara 1 da câmera (D-1023).
-	body.collision_layer = 16
+	# Layer 16 (bit 4): sólida para o jogador (máscara 1|16); o raio da câmera
+	# usa a máscara 1 e ignora os NPCs (D-1023).
+	body.collision_layer = NPC_COLLISION_LAYER
 	body.collision_mask = 0
 	body.add_to_group("minimap_npc")
 
@@ -617,12 +628,16 @@ func _spawn_npc_at_slot(slot_i: int, pool_idx: int) -> void:
 	var ap := _anim_player(model)
 	_play_idle(ap)
 
+	var top_y := height
+	if model_id == "dqt_dracky":
+		top_y = height * 1.48
+
 	var tag := Label3D.new()
 	tag.text = npc_name
 	tag.font_size = 38
 	tag.modulate = Color(1.0, 0.96, 0.82)
 	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	tag.position = Vector3(0.0, height + 0.42, 0.0)
+	tag.position = Vector3(0.0, top_y + 0.38, 0.0)
 	tag.no_depth_test = false
 	tag.layers = 1 << 6
 	body.add_child(tag)

@@ -217,11 +217,98 @@ def simplify_materials():
         bsdf.inputs['Metallic'].default_value = 0.0
         nt.links.new(tex.outputs['Color'], bsdf.inputs['Base Color'])
         nt.links.new(bsdf.outputs['BSDF'], out.inputs['Surface'])
-        print(f"  [MAT] {mat.name}: Base Color <- {img.name} (alb={os.path.basename(alb.image.filepath)}, lym={lym and os.path.basename(lym.filepath)})")
+        print(f"  [MAT] {mat.name}: Base Color <- {img.name}")
 
+TARGETS += [
+    {
+        "id": "bulbasaur",
+        "folder": r"pm0001\pm0001_00_00",
+        "trmdl": "pm0001_00_00.trmdl",
+        "anims": {
+            "idle": "pm0001_00_00_00000_defaultwait01_loop.tranm",
+            "battle_idle": "pm0001_00_00_00001_battlewait01_loop.tranm",
+            "walk": "pm0001_00_00_00030_walk01_loop.tranm",
+            "run": "pm0001_00_00_00100_run01_loop.tranm",
+            "attack": "pm0001_00_00_00400_attack01.tranm",
+            "attack_special": "pm0001_00_00_00450_rangeattack01.tranm",
+            "charge": "pm0001_00_00_00490_charge01_loop.tranm",
+            "damage": "pm0001_00_00_00500_damage01.tranm",
+            "down": "pm0001_00_00_00520_down01_start.tranm",
+            "victory": "pm0001_00_00_00310_appeal01.tranm"
+        }
+    },
+    {
+        "id": "charmander",
+        "folder": r"pm0004\pm0004_00_00",
+        "trmdl": "pm0004_00_00.trmdl",
+        "anims": {
+            "idle": "pm0004_00_00_00000_defaultwait01_loop.tranm",
+            "battle_idle": "pm0004_00_00_00001_battlewait01_loop.tranm",
+            "walk": "pm0004_00_00_00030_walk01_loop.tranm",
+            "run": "pm0004_00_00_00100_run01_loop.tranm",
+            "attack": "pm0004_00_00_00400_attack01.tranm",
+            "attack_special": "pm0004_00_00_00450_rangeattack01.tranm",
+            "charge": "pm0004_00_00_00490_charge01_loop.tranm",
+            "damage": "pm0004_00_00_00500_damage01.tranm",
+            "down": "pm0004_00_00_00520_down01_start.tranm",
+            "victory": "pm0004_00_00_00310_appeal01.tranm"
+        }
+    },
+    {
+        "id": "squirtle",
+        "folder": r"pm0007\pm0007_00_00",
+        "trmdl": "pm0007_00_00.trmdl",
+        "anims": {
+            "idle": "pm0007_00_00_00000_defaultwait01_loop.tranm",
+            "battle_idle": "pm0007_00_00_00001_battlewait01_loop.tranm",
+            "walk": "pm0007_00_00_00030_walk01_loop.tranm",
+            "run": "pm0007_00_00_00100_run01_loop.tranm",
+            "attack": "pm0007_00_00_00400_attack01.tranm",
+            "attack_special": "pm0007_00_00_00450_rangeattack01.tranm",
+            "charge": "pm0007_00_00_00490_charge01_loop.tranm",
+            "damage": "pm0007_00_00_00500_damage01.tranm",
+            "down": "pm0007_00_00_00520_down01_start.tranm",
+            "victory": "pm0007_00_00_00310_appeal01.tranm"
+        }
+    },
+    {
+        "id": "pikachu",
+        "folder": r"pm0025\pm0025_00_00",
+        "trmdl": "pm0025_00_00.trmdl",
+        "anims": {
+            "idle": "pm0025_00_00_00000_defaultwait01_loop.tranm",
+            "battle_idle": "pm0025_00_00_00001_battlewait01_loop.tranm",
+            "walk": "pm0025_00_00_00030_walk01_loop.tranm",
+            "run": "pm0025_00_00_00100_run01_loop.tranm",
+            "attack": "pm0025_00_00_00400_attack01.tranm",
+            "attack_special": "pm0025_00_00_00450_rangeattack01.tranm",
+            "charge": "pm0025_00_00_00490_charge01_loop.tranm",
+            "damage": "pm0025_00_00_00500_damage01.tranm",
+            "down": "pm0025_00_00_00520_down01_start.tranm",
+            "victory": "pm0025_00_00_00310_appeal01.tranm"
+        }
+    },
+    {
+        "id": "eevee",
+        "folder": r"pm0133\pm0133_00_00",
+        "trmdl": "pm0133_00_00.trmdl",
+        "anims": {
+            "idle": "pm0133_00_00_00000_defaultwait01_loop.tranm",
+            "battle_idle": "pm0133_00_00_00001_battlewait01_loop.tranm",
+            "walk": "pm0133_00_00_00030_walk01_loop.tranm",
+            "run": "pm0133_00_00_00100_run01_loop.tranm",
+            "attack": "pm0133_00_00_00400_attack01.tranm",
+            "attack_special": "pm0133_00_00_00450_rangeattack01.tranm",
+            "charge": "pm0133_00_00_00490_charge01_loop.tranm",
+            "damage": "pm0133_00_00_00500_damage01.tranm",
+            "down": "pm0133_00_00_00520_down01_start.tranm",
+            "victory": "pm0133_00_00_00310_appeal01.tranm"
+        }
+    }
+]
 ONLY = os.environ.get('POKE_ONLY')
 for target in TARGETS:
-    if ONLY and target['id'] != ONLY:
+    if ONLY and target['id'] not in [x.strip() for x in ONLY.split(',')]:
         continue
     p_id = target["id"]
     CURRENT_ID = p_id
@@ -234,8 +321,12 @@ for target in TARGETS:
         bpy.data.objects.remove(obj, do_unlink=True)
     for act in list(bpy.data.actions):
         bpy.data.actions.remove(act)
+    for mat in list(bpy.data.materials):
+        bpy.data.materials.remove(mat, do_unlink=True)
+    for img in list(bpy.data.images):
+        bpy.data.images.remove(img, do_unlink=True)
     
-    model_dir = os.path.join(ZA_ROOT, target["folder"])
+    model_dir = os.path.join(ZA_ROOT if os.path.exists(ZA_ROOT) else r"E:\Arenamon\dumper test\LegendsZAPkmnModelDumpWithDLC", target["folder"])
     trmdl_path = os.path.join(model_dir, target["trmdl"])
     
     # 2. Import TRMDL

@@ -1,0 +1,37 @@
+Murky Forest 3D lab — NPCs D-1063 — auditoria
+Data: 2026-11-09
+Cena: scenes/debug/murky_forest_3d_lab.tscn (projeto isolado para os testes de NPC e cena principal para o check)
+Pool: 5 Pokémon Stage-1 + 5 DQT básicos
+
+Modelos:
+- 10 GLBs presentes em assets/modelos/<id>/<id>.glb.
+- DQT: SHA-256 idêntico às variantes de C:\games\tact\monstros\00\... nos 5.
+- DQT: validate_glb.py PROBLEMS 0 nos 5 (dracky, healslime, sabrecub, platypunk, fungi).
+- Pokémon: rigs com 112–142 joints, 4–6 imagens de textura e 9–10 animações com canais.
+- Bulbasaur, Charmander, Squirtle, Eevee: 10 clipes; Pikachu: 9 (sem battle_idle; source pm0025_00_00_00001_battlewait01_loop.tranm ausente; fallback idle).
+
+NPCs (auditoria isolada, 3 por vez):
+- inicial: BULBASAUR (-2.6, 0, -4.2), DRACKY (2.5, 0, -9.8), PIKACHU (8.2, 0, -7.2).
+- ciclo +3: PIKACHU, EEVEE, DRACKY.
+- idle em todos; 10/22/9 clipes; toon 100% na amostra; labels e sombras; visual layer 64.
+- colisão: player_mask=17, npc_layer=16, test_move=true; câmera usa máscara 1 e ignora.
+- marcadores: player 1, ally 2, enemy 1, npc 3; brancos; dots_flat=true antes e depois do ciclo; bordas 0.
+- prompt: "Z/E: FALAR (PIKACHU)"; diálogo abre e fecha com Z/E.
+- HUD D-1072: cards 3, visível 1 no solo e 3 no party; badges antigos escondidos; Slime 0,49 m.
+
+Auditoria de caminho (solo/party):
+- wall_hits=0; cam_inside=0; cam_close_frames=0; cam_min=3.37/3.79 m.
+- path_checked=162; path_short=0; path_min=2.
+- stack_pairs=0; stack_min=1.42 m.
+- door near=true visible=true used=true.
+- mini-mapa 112×112; escala 0,4375; sem texto; câmera principal exclui a camada 5; mini-mapa só vê a camada 5.
+
+Cena principal:
+- godot --headless --path . --fixed-fps 30 --quit-after 120 scenes/debug/murky_forest_3d_lab.tscn terminou sem erro após remover a linha truncada.
+
+Não verificado:
+- Pikachu battle_idle (fonte ausente; fallback idle).
+- Câmera/colisão caminhando contra cada NPC (test_move prova a colisão).
+- Suavidade do look-at quadro a quadro.
+- 60 fps, mobile/web, outras resoluções.
+- Batalha 3D/2D e o lab de pedra D-1023 (roda, mas ganhou 1 DqtEyes).

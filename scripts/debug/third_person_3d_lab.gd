@@ -506,11 +506,13 @@ func _make_model(model_id: String, target_height: float) -> Node3D:
 		box = _aabb_in_parent(glb)
 	glb.position.y -= box.position.y
 
+	const DQT_EYES := preload("res://scripts/combat/dqt_eyes.gd")
 	var ap := _find_anim_player(glb)
 	if ap != null:
 		if not dqt.is_empty():
 			DQT_PROFILES.apply_anim_aliases(ap, dqt)
 			DQT_PROFILES.setup_weapon_follow(glb, ap, dqt)
+			DQT_EYES.attach(root, glb, ap, str(dqt.get("clip_prefix", "")) + "04")
 		_strip_root_motion(ap)
 		for anim_name in ["idle", "walk", "run"]:
 			if ap.has_animation(anim_name):
@@ -529,7 +531,10 @@ func _aabb_in_parent(node: Node3D) -> AABB:
 	var first := true
 	for child in node.find_children("*", "MeshInstance3D", true, false):
 		var mi := child as MeshInstance3D
-		if mi.mesh == null:
+		if mi.mesh == null or not mi.visible:
+			continue
+		if mi.name.contains("_tuta_"):
+			mi.visible = false
 			continue
 		var xf := Transform3D.IDENTITY
 		var n: Node = mi

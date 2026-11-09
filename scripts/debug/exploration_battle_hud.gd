@@ -42,6 +42,9 @@ func _process(_delta: float) -> void:
 	for entry in _cards:
 		if bool(entry["ally"]):
 			(entry["control"] as Control).visible = party_visible
+	# D-1072/D-1063: o ciclo de NPCs cria marcadores novos depois do _ready;
+	# achatar de novo garante que a bolinha branca também fique sem contorno.
+	_flatten_dots()
 
 
 func _flatten_dots() -> void:

@@ -16,6 +16,41 @@ extends RefCounted
 const WeaponFollow := preload("res://scripts/combat/dqt_weapon_follow.gd")
 
 const PROFILES := {
+	"dqt_dracky": {
+		"native_height": 1.236,
+		"target_height": 1.1,
+		"clip_prefix": "cm_00_0003_",
+		"rotation_y": 180.0,
+		"idle_source": "00",
+	},
+	"dqt_healslime": {
+		"native_height": 1.234,
+		"target_height": 1.25,
+		"clip_prefix": "cm_00_0004_",
+		"rotation_y": 180.0,
+		"idle_source": "00",
+	},
+	"dqt_sabrecub": {
+		"native_height": 1.036,
+		"target_height": 1.0,
+		"clip_prefix": "cm_00_0002_",
+		"rotation_y": 180.0,
+		"idle_source": "00",
+	},
+	"dqt_platypunk": {
+		"native_height": 1.354,
+		"target_height": 1.15,
+		"clip_prefix": "cm_00_0001_",
+		"rotation_y": 180.0,
+		"idle_source": "00",
+	},
+	"dqt_fungi": {
+		"native_height": 1.315,
+		"target_height": 1.15,
+		"clip_prefix": "cm_00_0038_",
+		"rotation_y": 180.0,
+		"idle_source": "00",
+	},
 	"dqt_slime": {
 		"native_height": 0.83,
 		"target_height": 1.4,
