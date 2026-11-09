@@ -3,7 +3,8 @@
 - **Data:** 2026-11-08
 - **Área:** Exploração / overworld / visual 3D
 - **Origem:** o criador acha estranho o 3D ao lado do pixel art e pediu para trocar os sprites dos Pokémon jogados pelos modelos deles **só para testar**; depois, ver se um shader deixa menos estranho.
-- **Status:** lab implementado; o **jogo normal continua com os sprites 2D**; 3 opções de shader gravadas e apresentadas; **escolha pendente**; nada publicado.
+- **Status:** lab implementado; na época, o **jogo normal continuava com os sprites 2D**; 3 opções de shader gravadas e apresentadas; escolha feita na D-1016; nada publicado.
+- **Nota (D-1016):** o criador escolheu o estilo **pixel** e o jogo normal passou a usar os modelos 3D de Abra, Pancham e Orc. Esta decisão continua descrevendo o laboratório e as opções; no jogo normal, vale a D-1016.
 
 ## O que o criador disse (literal)
 
@@ -32,7 +33,7 @@ Respostas da rodada:
 5. **Contorno 3D removido:** o *inverted hull* de `VfxLib.outline_model` foi retirado do overworld porque desenhava um disco escuro sob os pés na vista de cima; os materiais são achatados (`SPECULAR_TOON`, `roughness` 0,9) em vez disso.
 6. **Gravação:** mesmo andar para os quatro estilos (`GameState.new_dungeon(20261108, false)`), encontros removidos para a batalha não matar o gravador, clima desligado no lab (o jogo normal mantém o clima de D-381/D-382).
 7. **Referências:** `docs/referencias/exploracao/modelos_3d/` com `modelos_3d_estilos_ingame` (4 estilos no mapa real, 2×2), `modelos_3d_estilos_compare` (sprite 2D + 4 estilos, ampliado 2×) em MP4, GIF e PNG.
-8. **O jogo normal não ganha shader nenhum** até o criador escolher uma opção.
+8. **O jogo normal não ganha shader nenhum** até o criador escolher uma opção. *(Superado pela D-1016: o estilo escolhido foi o pixel e o jogo normal passou a usá-lo.)*
 
 ## Verificação
 
@@ -44,7 +45,7 @@ Respostas da rodada:
 
 ## O que não foi verificado
 
-- **Escolha do shader:** pendente do criador.
+- **Escolha do shader:** resolvida na D-1016 (pixel).
 - **Tamanho:** os modelos 3D ainda leem um pouco maiores que o corpo visível dos sprites (o sprite 32×32 tem corpo de ~16–18 px); não foi pedido ajuste.
 - **Sombra do chão:** a elipse escura sob o jogador é o blob shadow existente (D-313), não o modelo 3D; ela continua aparecendo no lab e não foi alterada.
 - **Performance:** 3 SubViewports 3D ativos no lab (e 12 na cena de comparação); não medida.

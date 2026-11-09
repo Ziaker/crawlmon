@@ -7,6 +7,7 @@ const DungeonNPCClass = preload("res://scripts/dungeon/npc.gd")
 const DungeonEnemyClass = preload("res://scripts/dungeon/enemy.gd")
 const DungeonFollowerClass = preload("res://scripts/dungeon/follower.gd")
 const DungeonFollower3DClass = preload("res://scripts/dungeon/dungeon_follower_3d.gd")
+const Model3DViewClass = preload("res://scripts/dungeon/model_3d_view.gd")
 const DungeonPickupClass = preload("res://scripts/dungeon/pickup.gd")
 const FogOfWarClass = preload("res://scripts/dungeon/fog_of_war.gd")
 const DialogueBoxClass = preload("res://scripts/ui/dialogue_box.gd")
@@ -84,6 +85,9 @@ func _ready() -> void:
 	entities.add_child(player)
 	_spawn_followers()
 	_spawn_3d_follower()
+	# D-1016: Abra, Pancham e o Orc usam os GLBs com o estilo pixel; sem o
+	# asset local, cada um continua com o sprite 2D.
+	_attach_model_views()
 	
 	# Cria os NPCs com sprites aleatórios e ícones respectivos
 	_spawn_npcs(npc_spots)
@@ -206,6 +210,26 @@ func _spawn_3d_follower() -> void:
 	orc.setup("dqt_orc", leader)
 	orc.position = _follower_spawn(leader.position)
 	entities.add_child(orc)
+
+
+## D-1016: anexa a vista 3D ao jogador e aos aliados que têm GLB. O sprite 2D
+## do nó é escondido pela própria vista; sem o asset, nada muda.
+func _attach_model_views() -> void:
+	_attach_model_view(player, str(player.get("species_id")))
+	for follower in followers:
+		_attach_model_view(follower, str(follower.get("species_id")))
+	# A elipse escura já desenhada pelo MapVisuals some sob quem tem modelo;
+	# força o redraw.
+	$Visuals.queue_redraw()
+
+
+func _attach_model_view(target: Node2D, model_id: String) -> void:
+	if target == null or model_id == "" or not Model3DViewClass.has_model(model_id):
+		return
+	target.set_meta("model_3d", model_id)
+	var view = Model3DViewClass.new()
+	view.setup(model_id, Model3DViewClass.pixel_height_for(model_id))
+	target.add_child(view)
 
 
 ## O gap da fila atrás do líder; se estiver bloqueado, tenta as outras direções.

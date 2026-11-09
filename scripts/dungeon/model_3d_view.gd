@@ -1,6 +1,6 @@
 class_name DungeonModel3DView
 extends Node2D
-## D-991 (lab): shows a GLB in the 2D overworld.
+## D-991/D-1016: shows a GLB in the 2D overworld.
 ##
 ## The model is rendered in a transparent SubViewport with an orthographic 3/4
 ## camera and drawn by a Sprite2D, exactly like the DQT Orc of D-389. This node
@@ -61,8 +61,22 @@ const STYLES := {
 	},
 }
 
+## D-991: world-pixel height that matches each overworld sprite (D-1016 keeps
+## the same sizes; the dungeon-tile overhaul is a later decision).
+const PIXEL_HEIGHTS := {"abra": 25.0, "pancham": 24.0, "dqt_orc": 30.0}
+
+static func has_model(model_id: String) -> bool:
+	return PIXEL_HEIGHTS.has(model_id) and ResourceLoader.exists(
+		"res://assets/modelos/%s/%s.glb" % [model_id, model_id])
+
+
+static func pixel_height_for(model_id: String) -> float:
+	return float(PIXEL_HEIGHTS.get(model_id, 32.0))
+
+
 ## Set before the scene is instantiated; every view reads it on _ready.
-static var current_style := "none"
+## D-1016: the normal game uses the pixel style chosen by the creator.
+static var current_style := "pixel"
 
 var model_id := ""
 var pixel_height := 32.0
@@ -171,7 +185,16 @@ func _build() -> void:
 		model.rotation_degrees.x = 90.0
 	else:
 		model.rotation_degrees.y = float(dqt_profile.get("rotation_y", 0.0))
-	_model_rig.add_child(model)
+	# D-389: the DQT Orc idles with a subtle breathing tween. Keep it in the
+	# shared view instead of dropping the behaviour the Orc already had.
+	var model_parent: Node3D = _model_rig
+	if not _z_up:
+		var breath := Node3D.new()
+		breath.name = "DqtIdleBreath"
+		breath.set_meta("height", 1.0)
+		_model_rig.add_child(breath)
+		model_parent = breath
+	model_parent.add_child(model)
 
 	# Normalise to height 1 and put the feet on y=0. Measuring the mesh AABB
 	# avoids per-model height tables and keeps every model at the same scale.
@@ -192,6 +215,8 @@ func _build() -> void:
 		for anim_name in ["idle", "walk", "run"]:
 			if _ap.has_animation(anim_name):
 				_ap.get_animation(anim_name).loop_mode = Animation.LOOP_LINEAR
+	if not _z_up:
+		DqtModelProfiles.start_idle_breath(_model_rig)
 
 	var camera := Camera3D.new()
 	camera.name = "ModelCamera"

@@ -1,6 +1,7 @@
 extends Node
 ## D-991 lab: troca os sprites de Abra, Pancham e do Orc pelos modelos 3D.
-## O jogo normal continua com os sprites; esta cena é só para testar.
+## D-1016: o jogo normal agora também usa os modelos (estilo pixel); este lab
+## continua como histórico e permite ligar estilos por instância.
 ##
 ## Abra no jogador, Pancham no seguidor e o Orc atrás dele. O Orc usa a mesma
 ## lógica de rastro 2D de D-314/D-361/D-388, mas com o visual 3D; ele não entra
@@ -9,9 +10,7 @@ extends Node
 const EXPLORATION := preload("res://scenes/exploration.tscn")
 const FOLLOWER := preload("res://scripts/dungeon/follower.gd")
 const FOLLOWER_3D := preload("res://scripts/dungeon/dungeon_follower_3d.gd")
-const VIEW := preload("res://scripts/debug/dungeon_model_3d_view.gd")
-
-const PIXEL_HEIGHT := {"abra": 25.0, "pancham": 24.0, "dqt_orc": 30.0}
+const VIEW := preload("res://scripts/dungeon/model_3d_view.gd")
 
 var exploration: Node
 var orc: Node2D
@@ -27,6 +26,7 @@ func _ready() -> void:
 	exploration = EXPLORATION.instantiate()
 	add_child(exploration)
 
+	# Abra e Pancham já receberam a vista 3D em exploration.gd (D-1016).
 	var leader: Node2D = exploration.player
 	if not exploration.followers.is_empty():
 		leader = exploration.followers[-1]
@@ -34,18 +34,17 @@ func _ready() -> void:
 	orc.setup("dqt_orc", leader)
 	orc.position = exploration._follower_spawn(leader.position)
 	exploration.entities.add_child(orc)
-
-	_attach(exploration.player, "abra")
-	for follower in exploration.followers:
-		_attach(follower, str(follower.species_id))
 	_attach(orc, "dqt_orc")
 
 	_add_overlay()
 
 
 func _attach(target: Node2D, model_id: String) -> void:
+	if not VIEW.has_model(model_id):
+		return
+	target.set_meta("model_3d", model_id)
 	var view = VIEW.new()
-	view.setup(model_id, float(PIXEL_HEIGHT.get(model_id, 32.0)))
+	view.setup(model_id, VIEW.pixel_height_for(model_id))
 	target.add_child(view)
 	views.append(view)
 

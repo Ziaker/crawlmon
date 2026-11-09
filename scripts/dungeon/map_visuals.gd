@@ -577,7 +577,8 @@ func _hash(x: int, y: int) -> int:
 
 func _draw() -> void:
 	var player: Node2D = _parent.get("player")
-	if player != null:
+	# D-1016: the blob shadow is hidden under characters that use a 3D model.
+	if player != null and not player.has_meta("model_3d"):
 		_blob(player.position + Vector2(0, 14), 13.0, 5.0)
 	var npcs: Array = _parent.get("npcs") if _parent.get("npcs") != null else []
 	for npc in npcs:

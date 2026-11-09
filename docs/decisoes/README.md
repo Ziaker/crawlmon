@@ -390,3 +390,4 @@ Fontes: **Conversa** = o que o criador disse (frase literal entre aspas); **PROM
 - [D-999 — Avanço suave no golpe](D-999-avanco-suave-no-golpe.md) — o corpo avança aos poucos até o contato, sem o salto final (só visual).
 - [D-1000 — Arco próprio do Swing](D-1000-arco-proprio-do-swing.md) — se a mão quase não anda, o rastro é um arco das costas por cima da cabeça até o contato.
 - [D-1001 — Abra restaurado; arco diagonal](D-1001-abra-restaurado-e-arco-diagonal.md) — modo mão volta ao aprovado; arco próprio vira diagonal ao lado do corpo.
+- [D-1016 — Modelos 3D de Abra e Pancham no jogo normal, estilo pixel](D-1016-modelos-3d-pixel-no-jogo-normal.md) — Abra, Pancham e Orc passam a usar os GLBs com o shader pixel; 25/24/30 px mantidos e o overhaul dos tiles adiado; a elipse escura já desenhada some sob os 3D (a divergência D-313/D-324 continua nos demais); sem o GLB local o sprite 2D volta.
