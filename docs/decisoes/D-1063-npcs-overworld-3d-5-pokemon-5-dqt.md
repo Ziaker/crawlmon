@@ -56,10 +56,10 @@ Respostas do criador às 4 perguntas de esclarecimento:
 - **NPCs:** 3 por vez; `idle`; etiquetas; sombras; marcadores brancos; prompt `Z/E: FALAR` e diálogo funcionando; ciclo `+3` verificado.
 - **Colisão:** `player_mask=17`, `npc_layer=16`, `test_move=true`; a câmera usa máscara 1 e ignora os NPCs.
 - **Bolinhas:** `dots_flat=true` no início e depois do ciclo; bordas todas em 0.
-- **HUD D-1072:** cards 3 (1 visível no solo, 3 no party), badges antigos escondidos; Slime em 0,49 m.
+- **HUD D-1072/D-1074:** cards 4 (1 visível no solo, 4 no party; GIBLE demo adicionado pela D-1074), badges antigos escondidos; Slime em 0,49 m.
 - **Auditoria de caminho (solo/party):** `wall_hits=0`, `cam_inside=0`, `cam_close_frames=0`, `path_short=0`, `path_min=2`, `stack_pairs=0`, porta `near/visible/used`; HUD/alerta/toon intactos.
 - **Cena principal:** `godot --headless --path . --fixed-fps 30 --quit-after 120 scenes/debug/murky_forest_3d_lab.tscn` terminou sem erro após a correção.
-- **Provas:** `docs/referencias/exploracao/3d/murky_forest_npcs_10_models.png`, `murky_forest_npcs_corredor.png`, `murky_forest_npcs_dialogo.png` e `murky_forest_npcs_auditoria.txt`. As imagens de corredor/diálogo foram feitas antes do HUD D-1072 (mostram os badges antigos); a prova do HUD novo está em `murky_forest_hud.png` e nos vídeos D-1072.
+- **Provas:** `docs/referencias/exploracao/3d/murky_forest_npcs_10_models.png`, `murky_forest_npcs_corredor.png`, `murky_forest_npcs_dialogo.png` e `murky_forest_npcs_auditoria.txt`. As imagens de corredor/diálogo foram feitas antes do HUD D-1072 (mostram os badges antigos); a prova do HUD novo está em `murky_forest_hud.png`, `murky_forest_hud_sugimori.png` e nos vídeos D-1072.
 
 ## O que não foi verificado
 

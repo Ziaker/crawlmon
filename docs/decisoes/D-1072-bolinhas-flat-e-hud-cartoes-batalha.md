@@ -4,7 +4,7 @@
 - **Área:** Exploração / HUD / mini-mapa
 - **Origem:** depois de aprovar o Slime menor, o criador pediu para tirar o contorno das bolinhas e trocar o HUD de HP/MP pelo visual dos cartões de batalha.
 - **Status:** **teste implementado no lab da Murky Forest** via nó `ExplorationBattleHud`; o resto está aprovado; nada publicado.
-- **Nota D-1074 (2026-11-09):** os retratos dos Pokémon e as barras/textos dos cards do overworld foram trocados/ampliados; a casca 330×104, as bolinhas flat, o HUD aditivo e a omissão dos sistemas de combate continuam.
+- **Nota D-1074 (2026-11-09):** os retratos dos Pokémon e as barras/textos dos cards do overworld foram trocados/ampliados; o Gible entrou como 4º card demo; a casca 330×104, as bolinhas flat, o HUD aditivo e a omissão dos sistemas de combate continuam.
 
 ## O que o criador disse (literal)
 

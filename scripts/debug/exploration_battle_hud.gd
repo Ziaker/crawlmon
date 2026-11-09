@@ -18,7 +18,18 @@ const CARD_DATA := [
 	{"name": "ORC", "hp": 46, "max_hp": 100, "mp": 8, "max_mp": 20,
 		"hero": false, "portrait": "orc", "elements": [Element.Type.FISICO],
 		"pos": Vector2(14, 292), "scale": 0.85},
+	{"name": "GIBLE", "hp": 100, "max_hp": 100, "mp": 10, "max_mp": 20,
+		"hero": false, "portrait": "gible", "elements": [Element.Type.TERRA],
+		"pos": Vector2(14, 394), "scale": 0.85},
 ]
+
+## D-1074: close no rosto dentro da arte Sugimori (UV normalizado).
+## Abra = opção 3; Pancham = opção 2; Gible = opção 2; Orc usa o retrato inteiro.
+var FACE_REGIONS := {
+	"abra": Rect2(300.0 / 851.0, 120.0 / 851.0, 320.0 / 851.0, 360.0 / 851.0),
+	"pancham": Rect2(300.0 / 1261.0, 40.0 / 1261.0, 680.0 / 1261.0, 760.0 / 1261.0),
+	"gible": Rect2(30.0 / 762.0, 100.0 / 762.0, 490.0 / 762.0, 560.0 / 762.0),
+}
 
 ## D-1074: mesmo mapa de elementos do BattleHud (FISICO usa "neutral").
 const ELEMENT_ICON_KEYS := {
@@ -129,6 +140,7 @@ func _build_cards() -> void:
 		card.hero = bool(data["hero"])
 		card.font = _font
 		card.portrait = _load_portrait(str(data["portrait"]))
+		card.portrait_region = FACE_REGIONS.get(str(data["portrait"]), Rect2(0.0, 0.0, 1.0, 1.0))
 		var elements: Array = data.get("elements", [])
 		card.element_icons = _load_element_icons(elements)
 		card.element_colors = _element_colors(elements, card.hero)
@@ -199,6 +211,7 @@ class ExplorationCard extends Control:
 	var hero := true
 	var font: Font
 	var portrait: Texture2D
+	var portrait_region := Rect2(0.0, 0.0, 1.0, 1.0)
 	var element_icons: Array[Texture2D] = []
 	var element_colors: Array[Color] = []
 
@@ -219,7 +232,7 @@ class ExplorationCard extends Control:
 		_slant(pr, 6.0, PORTRAIT_HERO if hero else PORTRAIT_ALLY)
 		if portrait != null:
 			if portrait.get_width() > 64:
-				_slant_texture(pr.grow(-2.0), 5.0, portrait)
+				_slant_texture(pr.grow(-2.0), 5.0, portrait, portrait_region)
 			else:
 				draw_texture_rect(portrait, Rect2(24, 32, 44, 44), false)
 		var name_text := character_name.to_upper()
@@ -265,9 +278,9 @@ class ExplorationCard extends Control:
 	func _slant(r: Rect2, skew: float, color: Color) -> void:
 		draw_colored_polygon(_pts(r, skew), color)
 
-	func _slant_texture(r: Rect2, skew: float, tex: Texture2D) -> void:
+	func _slant_texture(r: Rect2, skew: float, tex: Texture2D, src: Rect2 = Rect2(0.0, 0.0, 1.0, 1.0)) -> void:
 		var pts := _pts(r, skew)
-		var tex_aspect := float(tex.get_width()) / float(tex.get_height())
+		var tex_aspect := (src.size.x * tex.get_width()) / (src.size.y * tex.get_height())
 		var box_aspect := r.size.x / r.size.y
 		var u_span := 1.0
 		var v_span := 1.0
@@ -278,5 +291,7 @@ class ExplorationCard extends Control:
 		var uvs := PackedVector2Array()
 		for p in pts:
 			var k := (p - r.position) / r.size
-			uvs.append(Vector2(0.5 + (k.x - 0.5) * u_span, 0.5 + (k.y - 0.5) * v_span))
+			uvs.append(Vector2(
+				src.position.x + src.size.x * (0.5 + (k.x - 0.5) * u_span),
+				src.position.y + src.size.y * (0.5 + (k.y - 0.5) * v_span)))
 		draw_polygon(pts, PackedColorArray([Color.WHITE, Color.WHITE, Color.WHITE, Color.WHITE]), uvs, tex)
