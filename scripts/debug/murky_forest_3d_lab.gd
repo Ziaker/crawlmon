@@ -11,6 +11,10 @@ extends "res://scripts/debug/third_person_3d_lab.gd"
 
 const FOREST_VIGNETTE := preload("res://shaders/vignette.gdshader")
 const MARKER_PATH := "res://assets/exploration/minimap_marker.png"
+const MARKER_PLAYER_PATH := "res://assets/exploration/marker_player.png"
+const MARKER_ALLY_PATH := "res://assets/exploration/marker_ally.png"
+const MARKER_ENEMY_PATH := "res://assets/exploration/marker_enemy.png"
+const MARKER_NPC_PATH := "res://assets/exploration/marker_npc.png"
 const FOREST_WALL_HEIGHT := 4.2
 const MINIMAP_SIZE := 256
 const MINIMAP_DISPLAY_SIZE := 112
@@ -22,6 +26,7 @@ var _minimap_camera: Camera3D
 var _minimap_rect: TextureRect
 var _marker_root: Control
 var _marker_texture: Texture2D
+var _marker_textures: Dictionary = {}
 var _minimap_markers: Array[Dictionary] = []
 var _hud_badges: Array[Dictionary] = []
 var _enemy_alert: PanelContainer
@@ -577,11 +582,12 @@ func _minimap_box(size: Vector3, pos: Vector3, color: Color) -> void:
 
 
 func _build_minimap() -> void:
-	# Ícone exato enviado pelo criador; o desenho procedural fica só de fallback.
-	if ResourceLoader.exists(MARKER_PATH):
-		_marker_texture = load(MARKER_PATH) as Texture2D
-	if _marker_texture == null:
-		_marker_texture = _make_marker_texture()
+	# Ícones exatos enviados pelo criador, com contorno escuro de 1 px por tamanho.
+	_marker_texture = _load_marker_texture(MARKER_PATH)
+	_marker_textures["player"] = _load_marker_texture(MARKER_PLAYER_PATH)
+	_marker_textures["ally"] = _load_marker_texture(MARKER_ALLY_PATH)
+	_marker_textures["enemy"] = _load_marker_texture(MARKER_ENEMY_PATH)
+	_marker_textures["npc"] = _load_marker_texture(MARKER_NPC_PATH)
 	_minimap_viewport = SubViewport.new()
 	_minimap_viewport.size = Vector2i(MINIMAP_SIZE, MINIMAP_SIZE)
 	_minimap_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
@@ -640,31 +646,50 @@ func _build_minimap() -> void:
 	layer.add_child(_marker_root)
 	add_child(layer)
 
-	_add_minimap_marker(player, Color(0.25, 1.0, 0.45, 1.0), 14.0, "player")
+	_add_minimap_marker(player, Color(0.25, 1.0, 0.45, 1.0), "player")
 	for f in _followers:
-		_add_minimap_marker(f["node"], Color(0.25, 1.0, 0.45, 1.0), 10.0, "ally")
+		_add_minimap_marker(f["node"], Color(0.25, 1.0, 0.45, 1.0), "ally")
 	if _enemy_body != null:
-		_add_minimap_marker(_enemy_body, Color(1.0, 0.22, 0.18, 1.0), 12.0, "enemy")
+		_add_minimap_marker(_enemy_body, Color(1.0, 0.22, 0.18, 1.0), "enemy")
 	for node in get_tree().get_nodes_in_group("minimap_npc"):
 		if node is Node3D:
-			_add_minimap_marker(node, Color(1.0, 1.0, 1.0, 1.0), 12.0, "npc")
+			_add_minimap_marker(node, Color(1.0, 1.0, 1.0, 1.0), "npc")
 
 
-func _add_minimap_marker(node: Node3D, color: Color, size: float, kind: String) -> void:
+func _load_marker_texture(path: String) -> Texture2D:
+	if ResourceLoader.exists(path):
+		var tex := load(path) as Texture2D
+		if tex != null:
+			return tex
+	return _make_marker_texture()
+
+
+func _add_minimap_marker(node: Node3D, color: Color, kind: String) -> void:
+	var tex: Texture2D = _marker_textures.get(kind, _marker_texture)
+	var display_size := float(tex.get_size().x)
 	var marker := TextureRect.new()
-	marker.texture = _marker_texture
+	marker.texture = tex
 	marker.modulate = color
 	marker.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	marker.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	marker.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	marker.custom_minimum_size = Vector2(size, size)
+	marker.custom_minimum_size = Vector2(display_size, display_size)
 	marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	match kind:
+		"player":
+			marker.z_index = 4
+		"ally":
+			marker.z_index = 3
+		"npc":
+			marker.z_index = 2
+		_:
+			marker.z_index = 1
 	_marker_root.add_child(marker)
-	marker.size = Vector2(size, size)
+	marker.size = Vector2(display_size, display_size)
 	_minimap_markers.append({
 		"node": node,
 		"rect": marker,
-		"size": size,
+		"size": display_size,
 		"kind": kind,
 	})
 

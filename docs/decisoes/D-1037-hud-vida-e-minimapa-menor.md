@@ -13,7 +13,7 @@
 
 ## Decisão
 
-1. **Mini-mapa pela metade:** o quadro/render do mini-mapa deve ter **50% do tamanho atual** (de 224×224 para 112×112 px de exibição; o SubViewport interno pode continuar 256×256). Os marcadores ficam em 14/10/12 px (jogador/aliados/inimigo), grandes o bastante para o ícone exato ser legível no mapa de 112 px.
+1. **Mini-mapa pela metade:** o quadro/render do mini-mapa deve ter **50% do tamanho atual** (de 224×224 para 112×112 px de exibição; o SubViewport interno pode continuar 256×256). Os marcadores ficam em 20/14/16 px (jogador/aliados/inimigo), grandes o bastante para o ícone exato ser legível no mapa de 112 px.
 2. **Sem texto do mini-mapa:** remover o rótulo "MAPA — MURKY FOREST" (e qualquer título do mini-mapa). O mini-mapa fica só com o quadro e os marcadores.
 3. **HUD de vida:** badges no **extremo canto esquerdo** mostrando a vida dos personagens, com nome, barra de HP e número `atual / máximo`.
 4. **Primeira versão no lab:** mostrar **Abra (jogador), Pancham e Orc** — os três personagens visíveis no lab. Pancham/Orc são aliados verdes menores no mini-mapa; na HUD, os três usam o mesmo estilo de badge, com HP **demo** (o lab não tem combate). No modo solo, só o badge do Abra aparece; no party, os três.
@@ -29,7 +29,7 @@
 - **Estilo:** retrato do personagem, ícone, inicial ou só nome; barra fina/grossa; cor por personagem ou verde para todos; posição vertical centralizada ou começando abaixo do texto de controles.
 - **Inimigos:** mostrar vida de inimigos também? O pedido fala em "personagens"; por ora, não.
 - **Mini-mapa:** manter no canto superior direito? O texto de controles no topo esquerdo continua; o mini-mapa menor não deve colidir com ele.
-- **Marcadores:** 14/10/12 px são o suficiente para ler o ícone exato? Ajustar depois do vídeo.
+- **Marcadores:** 20/14/16 px são o suficiente para ler o ícone exato? Ajustar depois do vídeo.
 
 ## Ideias de HUD (primeiro lote: MP e alerta de inimigo já implementados)
 
@@ -41,8 +41,8 @@
 
 ## Teste implementado (2026-11-09)
 
-- **Mini-mapa:** exibição **112×112** (metade), sem o título "MAPA"; o SubViewport interno continua 256×256 e o `TextureRect` é escalado em 0,4375. O quadro tem 120×120 e fica no canto superior direito. Marcadores em 14/10/12 px (jogador/aliados/inimigo).
-- **Ícone exato:** o marcador usa `assets/exploration/minimap_marker.png`, extraído do anexo do criador (silhueta branca com fundo transparente); o desenho procedural antigo fica só de fallback. O mesmo PNG é tingido de verde/vermelho pelo `modulate`.
+- **Mini-mapa:** exibição **112×112** (metade), sem o título "MAPA"; o SubViewport interno continua 256×256 e o `TextureRect` é escalado em 0,4375. O quadro tem 120×120 e fica no canto superior direito. Marcadores em 20/14/16 px (jogador/aliados/inimigo), com o ícone exato e contorno escuro de 1 px.
+- **Ícone exato:** o marcador usa quatro PNGs derivados do anexo do criador, com contorno escuro de 1 px: `marker_player.png` (20), `marker_ally.png` (14), `marker_enemy.png` (16) e `marker_npc.png` (16), em `assets/exploration/`; o desenho procedural antigo fica só de fallback. O mesmo desenho é tingido de verde/vermelho pelo `modulate`.
 - **HUD:** três badges no extremo canto esquerdo, abaixo do texto de controles: **ABRA 86/100** (verde), **PANCHAM 100/100** (verde) e **ORC 46/100** (amarelo). Cada badge tem nome, barra de HP, número e uma barra de MP azul (demo: 14/20, 10/20, 8/20); painel escuro com borda dourada; a cor do HP acompanha o valor (verde >50%, amarelo 25–50%, vermelho ≤25%). No solo só o badge do Abra; no party os três.
 - **HP/MP demo:** os valores são de teste visual; o lab não tem combate. A HUD final deve ler `GameState.party`/`Combatant`; o Orc é seguidor visual (D-389), então a lista final de badges ainda depende de decisão.
 - **Alerta de inimigo:** um "!" vermelho no topo central aparece quando o Slime entra em `CHASE` e some quando volta a patrulhar; a auditoria confirma `false` no quadro 100 e `true` nos quadros 220/280. É a ideia de "indicador de inimigo próximo/consciência" do primeiro lote.

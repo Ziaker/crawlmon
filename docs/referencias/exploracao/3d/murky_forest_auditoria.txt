@@ -10,8 +10,8 @@ Resultado solo:
 - stack_pairs=0; stack_min=1,42 m
 - door near=true visible=true used=true
 - enemy state=CHASE nos quadros 220 e 280
-- minimap markers=4; exibição 112×112; escala do render 0,4375; centro do jogador=(56,56); sem o texto "MAPA"; marcadores 14/10/12; câmera principal exclui a camada 5; mini-mapa só vê a camada 5
-- ícone exato: res://assets/exploration/minimap_marker.png (64×64, extraído do anexo do criador)
+- minimap markers=4; exibição 112×112; escala do render 0,4375; centro do jogador=(56,56); sem o texto "MAPA"; marcadores 20/14/16; câmera principal exclui a camada 5; mini-mapa só vê a camada 5
+- ícone exato por tipo: marker_player.png 20, marker_ally.png 14, marker_enemy.png 16, todos derivados do anexo do criador, com contorno escuro de 1 px
 - HUD badges=3; visíveis=1 (ABRA; aliados escondidos no solo); ABRA 86/100 + 14/20, PANCHAM 100/100 + 10/20, ORC 46/100 + 8/20 (demo)
 - alerta de inimigo: false no quadro 100; true nos quadros 220 e 280
 - toon player=true; toon env=true
@@ -23,7 +23,7 @@ Resultado party:
 - path_checked=162; path_short=0; path_min=2
 - stack_pairs=0; stack_min=1,42 m
 - door near=true visible=true used=true
-- minimap markers=4; exibição 112×112; escala 0,4375; centro=(56,56); sem texto; camadas 5 corretas; marcadores 14/10/12; ícone exato (64×64)
+- minimap markers=4; exibição 112×112; escala 0,4375; centro=(56,56); sem texto; camadas 5 corretas; marcadores 20/14/16; ícones exatos por tipo com contorno
 - HUD badges=3; visíveis=3 (ABRA 86/100 + 14/20, PANCHAM 100/100 + 10/20, ORC 46/100 + 8/20; HP/MP demo)
 - alerta de inimigo: false no 100; true nos 220/280
 - mini-mapa visível: 4 marcadores (jogador + 2 aliados verdes menores + inimigo vermelho)
