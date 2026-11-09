@@ -3,7 +3,7 @@
 - **Data:** 2026-11-09
 - **Área:** Exploração / UI / mini-mapa / direção visual
 - **Origem:** o criador definiu o papel do 2D depois da direção 3D (D-1022) e do lab em terceira pessoa (D-1023).
-- **Status:** fonte do mini-mapa definida (**render top-down do andar 3D**); aliados definidos (verde, menores); arquivo do ícone e detalhes de exibição ainda pendentes; **nada implementado**; nada publicado.
+- **Status:** fonte do mini-mapa definida (**render top-down do andar 3D**); aliados definidos (verde, menores); **teste implementado no lab da Murky Forest**; arquivo do ícone, NPC branco e detalhes de exibição ainda pendentes; nada publicado.
 
 ## O que o criador disse (literal)
 
@@ -49,6 +49,21 @@ O ícone citado é a imagem anexada nesta conversa: silhueta em pixel art branca
 - **Conteúdo do mini-mapa:** paredes, portas, escadas, itens, baús e pontos de interesse aparecem? Com que símbolos?
 - **Relação com D-1022:** a D-1022 mantém o jogo 2D como referência até a fatia 3D; esta decisão muda o papel do 2D no produto final, mas **não** apaga a build 2D de referência.
 
+## Teste implementado (2026-11-09)
+
+- **Cena:** `scenes/debug/murky_forest_3d_lab.tscn` + `scripts/debug/murky_forest_3d_lab.gd`, derivada do lab de terceira pessoa (D-1023). O jogo normal 2D, a batalha e as regras não foram tocados.
+- **Mini-mapa:** `SubViewport` 256×256 com `Camera3D` ortográfica de 20 m, top-down fixo no norte, seguindo o jogador. O piso/paredes do andar 3D são duplicados na camada de render 5 com material chapado (chão roxo, paredes verde-escuras, saída verde); a câmera principal exclui a camada 5 e o mini-mapa só vê a camada 5. O resto do cenário, os atores e a copa ficam fora do mapa.
+- **Marcadores:** o jogador usa o ícone verde (18 px); Pancham e Orc usam o **mesmo ícone verde, menores (12 px)**; o Slime usa vermelho (16 px); NPCs usam branco (16 px) via grupo `minimap_npc` — **não há NPC no lab atual**, então o branco ainda não aparece em vídeo.
+- **Ícone:** o desenho exato ainda não está no projeto. O teste usa um **marcador provisório** em pixel art (silhueta de criatura com antenas/patas), no mesmo esquema de cores; o PNG transparente do criador substitui esse marcador sem mudar o código.
+- **Auditoria:** marcadores = 4; centro do jogador = (128,128) no viewport 256; câmera do mini-mapa segue o jogador; câmera principal exclui a camada 5; mini-mapa só vê a camada 5; solo mostra 2 marcadores (jogador + inimigo) e party mostra 4 (jogador + 2 aliados + inimigo). Tudo passou.
+
+## O que não foi verificado no mini-mapa
+
+- O arquivo/desenho final do ícone (o provisório é uma aproximação).
+- Um NPC real com marcador branco.
+- Névoa de guerra, rotação com a câmera, andar inteiro vs. janela local, posição/tamanho finais do mini-mapa.
+- O mini-mapa em mapas 3D gerados de verdade (o lab usa o L fixo).
+
 ## Estado
 
-Nada implementado. Nenhum código, cena, shader ou asset novo. O mini-mapa, o bioma de teste e a escala estão definidos; o arquivo do ícone continua pendente (o primeiro teste usará um marcador provisório).
+Teste implementado no lab isolado; vídeos solo/grupo e stills em `docs/referencias/exploracao/3d/murky_forest_*`. O mini-mapa funciona com o marcador provisório; o ícone final, um NPC branco e os detalhes de exibição continuam pendentes. O jogo normal 2D não foi tocado; nada publicado.

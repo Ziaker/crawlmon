@@ -1,0 +1,27 @@
+Murky Forest 3D lab — auditoria (D-1027/D-1028)
+Data: 2026-11-09
+Cena: scenes/debug/murky_forest_3d_lab.tscn (teste no projeto isolado scratch/third_person_lab)
+Timeline: 11,0 s / 330 quadros a 30 fps; anda 1,0–3,8 s; vira 3,8–4,9 s; anda 4,9–9,7 s; interage 10,3–10,6 s.
+
+Resultado solo:
+- wall_hits=0 (nenhum aliado dentro de parede/pilar)
+- cam_inside=0; cam_close_frames=0; cam_min=3,37 m
+- path_checked=162; path_short=0; path_min=2
+- stack_pairs=0; stack_min=1,42 m
+- door near=true visible=true used=true
+- enemy state=CHASE nos quadros 220 e 280
+- minimap markers=4; centro do jogador=(128,128) em 256; câmera segue; câmera principal exclui a camada 5; mini-mapa só vê a camada 5
+- toon player=true; toon env=true
+- mini-mapa visível: 2 marcadores (jogador + inimigo; aliados escondidos no solo)
+
+Resultado party:
+- wall_hits=0
+- cam_inside=0; cam_close_frames=0; cam_min=3,79 m
+- path_checked=162; path_short=0; path_min=2
+- stack_pairs=0; stack_min=1,42 m
+- door near=true visible=true used=true
+- minimap markers=4; centro=(128,128); câmera segue; camadas 5 corretas
+- mini-mapa visível: 4 marcadores (jogador + 2 aliados verdes menores + inimigo vermelho)
+- toon player=true; toon env=true
+
+Não verificado: ícone final (marcador provisório), NPC branco real, névoa/rotação/tamanho do mini-mapa, performance em 60 fps, mobile/web, fidelidade fina às tiles do PMD, licença/publicação.
