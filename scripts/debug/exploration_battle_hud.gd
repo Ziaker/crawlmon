@@ -236,13 +236,15 @@ class ExplorationCard extends Control:
 			else:
 				draw_texture_rect(portrait, Rect2(24, 32, 44, 44), false)
 		var bar_x := 84.0
-		var bar_w := 162.0
-		draw_rect(Rect2(bar_x, 55, bar_w, 12), track)
+		var bar_w := 142.0
+		var hp_skew := 8.0 * 18.0 / 82.0
+		var mp_skew := 8.0 * 14.0 / 82.0
+		_slant(Rect2(bar_x, 52, bar_w, 18), hp_skew, track)
 		var hp_ratio := clampf(float(hp) / float(maxi(max_hp, 1)), 0.0, 1.0)
-		draw_rect(Rect2(bar_x, 55, bar_w * hp_ratio, 12), hp_col)
-		draw_rect(Rect2(bar_x, 74, bar_w, 10), track)
+		_slant(Rect2(bar_x, 52, bar_w * hp_ratio, 18), hp_skew, hp_col)
+		_slant(Rect2(bar_x, 73, bar_w, 14), mp_skew, track)
 		var mp_ratio := clampf(float(mp) / float(maxi(max_mp, 1)), 0.0, 1.0)
-		draw_rect(Rect2(bar_x, 74, bar_w * mp_ratio, 10), MP_BLUE)
+		_slant(Rect2(bar_x, 73, bar_w * mp_ratio, 14), mp_skew, MP_BLUE)
 
 		# D-1074: o texto acompanha o mesmo ângulo do corpo (8 px em 82 px).
 		draw_set_transform_matrix(_body_shear())
@@ -260,10 +262,16 @@ class ExplorationCard extends Control:
 			draw_texture_rect(tex, Rect2(icon_x, 27, 18, 18), false, col)
 			icon_x += 20.0
 		if not hero:
-			_text_right(font, size.x - 14, 41, "ALLY | AI", 8, Color(fg, 0.6))
-		draw_string(font, Vector2(bar_x + bar_w + 10, 65), "HP %d/%d" % [hp, max_hp],
+			_text_right(font, 310.0, 41, "ALLY | AI", 8, Color(fg, 0.6))
+		# D-1074: valores alinhados à direita numa linha inclinada; o shear
+		# transforma a borda direita do bloco numa paralela ao lado do card.
+		var hp_text := "HP %d/%d" % [hp, max_hp]
+		var hp_w := font.get_string_size(hp_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+		draw_string(font, Vector2(310.0 - hp_w, 65), hp_text,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 12, fg)
-		draw_string(font, Vector2(bar_x + bar_w + 10, 84), "MP %d/%d" % [mp, max_mp],
+		var mp_text := "MP %d/%d" % [mp, max_mp]
+		var mp_w := font.get_string_size(mp_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
+		draw_string(font, Vector2(310.0 - mp_w, 83), mp_text,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 11, fg)
 		draw_set_transform_matrix(Transform2D.IDENTITY)
 
