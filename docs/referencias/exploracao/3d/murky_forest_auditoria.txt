@@ -4,6 +4,7 @@ Cena: scenes/debug/murky_forest_3d_lab.tscn (teste no projeto isolado scratch/th
 Timeline: 11,0 s / 330 quadros a 30 fps; anda 1,0–3,8 s; vira 3,8–4,9 s; anda 4,9–9,7 s; interage 10,3–10,6 s.
 
 Resultado solo:
+- Slime: scale=0.35; capsule_h=0,49 m; agente/modelo/sombra/tag em 0,35× (D-1071)
 - wall_hits=0 (nenhum aliado dentro de parede/pilar)
 - cam_inside=0; cam_close_frames=0; cam_min=3,37 m
 - path_checked=162; path_short=0; path_min=2
@@ -18,6 +19,7 @@ Resultado solo:
 - mini-mapa visível: 2 marcadores (jogador + inimigo); NPC branco não instanciado
 
 Resultado party:
+- Slime: scale=0.35; capsule_h=0,49 m; agente/modelo/sombra/tag em 0,35× (D-1071)
 - wall_hits=0
 - cam_inside=0; cam_close_frames=0; cam_min=3,79 m
 - path_checked=162; path_short=0; path_min=2
@@ -30,4 +32,4 @@ Resultado party:
 - mini-mapa visível: 4 marcadores (jogador azul + 2 aliados azuis menores + inimigo vermelho); NPC branco não instanciado
 - toon player=true; toon env=true
 
-Não verificado: NPC branco real, tom/tamanho final das bolinhas, contorno, animação, fonte real do HP/MP (GameState.party/Combatant), lista final de personagens, estilo/retrato final dos badges, névoa/rotação do mini-mapa, performance em 60 fps, mobile/web, fidelidade fina às tiles do PMD, licença/publicação.
+Não verificado: interpretação de 0,35× menor (35% do tamanho vs 35% de redução), NPC branco real, tom/tamanho final das bolinhas, contorno, animação, fonte real do HP/MP (GameState.party/Combatant), lista final de personagens, estilo/retrato final dos badges, névoa/rotação do mini-mapa, performance em 60 fps, mobile/web, fidelidade fina às tiles do PMD, licença/publicação.

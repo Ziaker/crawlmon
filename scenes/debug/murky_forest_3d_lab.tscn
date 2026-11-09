@@ -1,6 +1,10 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/debug/murky_forest_3d_lab.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/debug/slime_overworld_scaler.gd" id="2"]
 
 [node name="MurkyForest3DLab" type="Node3D"]
 script = ExtResource("1")
+
+[node name="SlimeOverworldScaler" type="Node" parent="."]
+script = ExtResource("2")
