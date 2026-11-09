@@ -275,7 +275,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 
 ### 14.1 Mapa e movimento
 
-- **[D-278, D-313]** O overworld mantém a estrutura e a colisão originais e continua 2D; a paleta usa a arena 3D como referência. A D-313 relaja a restrição “somente paleta”: os tiles podem ser refeitos/melhorados para encaixar melhor entre si, e ficam autorizados poeira/partículas, tochas cintilando, NPC olhando para o jogador e sprites de Pokémon. Sombra sob as entidades **não** foi autorizada.
+- **[D-278, D-313]** O overworld mantém a estrutura e a colisão originais e continua 2D; a paleta usa a arena 3D como referência. A D-313 relaja a restrição “somente paleta”: os tiles podem ser refeitos/melhorados para encaixar melhor entre si, e ficam autorizados poeira/partículas, tochas cintilando, NPC olhando para o jogador e sprites de Pokémon. Sombra sob as entidades **não** foi autorizada. **Substituída no overworld pela D-1022 (direção 3D; escopo pendente).**
 - **[GDD R7-Q5, R8-Q3/Q4]** Mapas **gerados proceduralmente por exploração/andar**, com salas e corredores; **seed reutilizável** reproduz o mesmo layout (mesma seed + regras + versão do gerador); formas, posições e conexões algorítmicas.
 - **[GDD R9-Q2, R36-Q3]** Ao **revisitar um andar** na mesma exploração, o layout **não muda**; itens já coletados e eventos concluídos **mantêm o estado**; inimigos derrotados **continuam removidos** (R9-Q4). Sem respawn ao subir/descer escadas.
 - **[GDD R9-Q5, R23-Q1]** Movimento **contínuo e livre nas 4 direções cardeais**, sem diagonal direta.
@@ -295,6 +295,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-991] Modelos 3D dos Pokémon no overworld (lab):** laboratório separado troca os sprites de Abra e Pancham (e o Orc) pelos GLBs, normalizados em altura (Abra 25, Pancham 24, Orc 30 px de mundo) para igualar os sprites; render 3D→2D igual a D-389; três opções de shader (pixel, toon, pixel+toon) e uma referência sem shader; o jogo normal continua com sprites 2D e **sem** shader até o criador escolher.
 - **[D-1016] Abra, Pancham e Orc em 3D no jogo normal (estilo pixel):** os sprites dos três são substituídos pelos GLBs; shader pixel (64×64 nearest, 6 níveis, saturação 1,15, contraste 1,08, silhueta escura); tamanhos 25/24/30 px mantidos (overhaul dos tiles adiado); a elipse escura já desenhada some sob quem tem modelo (a divergência D-313/D-324 continua nos demais); sem o GLB local o sprite 2D volta; o Orc continua visual (D-389); batalha/party/colisão/IA e clima intactos.
 - **[D-1018] Lab de escala dos modelos 3D:** variantes A (1,0×), B (1,5×), C (2,0× gap 48), D (2,0× gap 48 zoom 2,8×) e C32 (2,0× gap 32) gravadas; o jogo normal continua 25/24/30, gap 32 e zoom 2,3× (D-1016/D-361/D-344); escolha pendente.
+- **[D-1022] Fim do overworld 2D:** o overworld deixa de ser 2D e passa a ser 3D; substitui D-275/D-278/D-313 no overworld; câmera, geração de mapa, assets, seguidores, névoa e encontros ainda não definidos; o jogo 2D atual continua como referência até a fatia 3D; nada implementado.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).
