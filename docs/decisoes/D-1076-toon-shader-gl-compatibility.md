@@ -34,12 +34,13 @@ O `project.godot` está em **`renderer/rendering_method="gl_compatibility"`**. N
 
 ## Teste implementado (2026-11-09)
 
-- **Shader:** `shaders/toon_overworld.gdshader` (spatial, `specular_disabled`, 3 bandas de luz, rim, albedo color/texture, emission).
+- **Shader:** `shaders/toon_overworld.gdshader` (spatial, `specular_disabled`, 3 bandas de luz, rim, albedo color/texture, emission; luz dividida por PI para não estourar).
 - **Aplicação:** `murky_forest_3d_lab.gd` (`_toon_mat` e `_apply_toon`) converte os materiais `BaseMaterial3D` do cenário, player, aliados, inimigos e NPCs; materiais `unshaded` (olhos/decais, partículas, mini-mapa) continuam fora.
 - **Teste no `gl_compatibility`:** a captura isolada (`murky_forest_hud_sugimori.png` e `murky_forest_status_hidden.png`) mostra os modelos/cenário com bandas de toon; sem erro de shader.
 - **Texturas:** Abra, Pancham, Orc, Slime e NPCs mantêm as texturas; a iluminação é quantizada.
 - **Escopo:** o lab de pedra D-1023, a batalha 3D, o 2D e a UI não foram tocados.
 - **Cena principal:** o teste foi no projeto isolado (mesmo `gl_compatibility`); a cena principal em headless continua bloqueada pelos erros de VFX de outra sessão.
+- **Vídeo:** `docs/referencias/exploracao/3d/murky_forest_status_party.mp4/.gif` e `murky_forest_status_solo.mp4/.gif` mostram o toon calibrado junto com o comportamento D-1075; `murky_forest_status_contato.png` resume os quadros.
 
 ## O que não foi verificado
 
@@ -50,4 +51,4 @@ O `project.godot` está em **`renderer/rendering_method="gl_compatibility"`**. N
 
 ## Estado
 
-Teste implementado e verificado no lab isolado com `gl_compatibility`; toon de 3 bandas + rim restaurado no overworld, renderer global mantido. Provas registradas; commit local; **sem push**. Batalha/2D intactos.
+Teste implementado e verificado no lab isolado com `gl_compatibility`; toon de 3 bandas + rim restaurado no overworld, com luz calibrada e vídeos gravados, renderer global mantido. Provas registradas; commit local; **sem push**. Batalha/2D intactos.

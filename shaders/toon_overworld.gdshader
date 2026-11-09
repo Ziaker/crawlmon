@@ -24,5 +24,5 @@ void fragment() {
 void light() {
 	float ndl = clamp(dot(NORMAL, LIGHT) * 0.5 + 0.5, 0.0, 1.0);
 	float q = min(floor(ndl * bands) / max(bands - 1.0, 1.0), 1.0);
-	DIFFUSE_LIGHT += q * ATTENUATION * LIGHT_COLOR;
+	DIFFUSE_LIGHT += q * ATTENUATION * LIGHT_COLOR / PI;
 }
