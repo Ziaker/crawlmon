@@ -4,6 +4,7 @@
 - **Área:** Exploração / lab 3D / level art.
 - **Relacionadas:** D-1028 (visual), D-1023 (câmera), D-1063 (NPCs), D-1043 (escala), D-1075 (status).
 - **Status:** **teste implementado e verificado** no lab isolado; HUD/status/cards, NPCs, batalha, 2D e regras não mudam; commit local; **sem push**.
+- **Nota D-1083 (2026-11-09):** a iluminação foi baixada e ficou menos contrastada/saturada; geometria, vinhas/galhos e fade de oclusão continuam iguais.
 
 ## O que o criador disse (literal)
 

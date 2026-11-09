@@ -106,15 +106,20 @@ func _build_environment() -> void:
 	env.background_color = Color(0.018, 0.012, 0.030)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.38, 0.32, 0.50)
-	env.ambient_light_energy = 1.05
+	env.ambient_light_energy = 0.95
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	env.tonemap_exposure = 0.95
+	env.tonemap_exposure = 0.88
 	env.fog_enabled = true
 	env.fog_light_color = Color(0.055, 0.035, 0.085)
-	env.fog_density = 0.018
+	env.fog_density = 0.022
 	env.glow_enabled = true
-	env.glow_intensity = 0.35
-	env.glow_bloom = 0.04
+	env.glow_intensity = 0.22
+	env.glow_bloom = 0.02
+	# D-1083: menos contraste/saturação no 3D, sem mexer no HUD.
+	env.adjustment_enabled = true
+	env.adjustment_brightness = 0.98
+	env.adjustment_contrast = 0.82
+	env.adjustment_saturation = 0.88
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
@@ -123,8 +128,9 @@ func _build_environment() -> void:
 	var moon := DirectionalLight3D.new()
 	moon.rotation_degrees = Vector3(-58.0, -32.0, 0.0)
 	moon.light_color = Color(0.66, 0.86, 0.72)
-	moon.light_energy = 0.72
+	moon.light_energy = 0.45
 	moon.shadow_enabled = true
+	moon.shadow_opacity = 0.55
 	moon.directional_shadow_max_distance = 40.0
 	add_child(moon)
 
@@ -132,14 +138,14 @@ func _build_environment() -> void:
 	var fill := OmniLight3D.new()
 	fill.position = Vector3(8.0, 3.4, -10.0)
 	fill.light_color = Color(1.0, 0.58, 0.30)
-	fill.light_energy = 1.2
+	fill.light_energy = 0.85
 	fill.omni_range = 17.0
 	add_child(fill)
 
-	# D-1077: preenchimento frio no início e no corredor para tirar os vazios pretos.
+	# D-1077/D-1083: preenchimento frio no início e no corredor, mais discreto.
 	for data in [
-		[Vector3(0.0, 3.0, -2.0), Color(0.55, 0.78, 0.75), 0.55, 9.0],
-		[Vector3(0.0, 2.8, -8.8), Color(0.62, 0.80, 0.92), 0.38, 7.0],
+		[Vector3(0.0, 3.0, -2.0), Color(0.55, 0.78, 0.75), 0.32, 9.0],
+		[Vector3(0.0, 2.8, -8.8), Color(0.62, 0.80, 0.92), 0.22, 7.0],
 	]:
 		var light := OmniLight3D.new()
 		light.position = data[0]
@@ -352,17 +358,17 @@ func _build_forest_lights() -> void:
 		var light := OmniLight3D.new()
 		light.position = p
 		light.light_color = Color(0.35, 0.95, 0.55)
-		light.light_energy = 0.55
+		light.light_energy = 0.40
 		light.omni_range = 4.5
 		add_child(light)
 		_torches.append(light)
-		_torch_base.append(0.55)
+		_torch_base.append(0.40)
 
-	# D-1077: aproximação quente da saída, para o portal não nascer do nada.
+	# D-1077/D-1083: aproximação quente da saída, mais discreta.
 	var approach := OmniLight3D.new()
 	approach.position = Vector3(13.5, 2.2, -10.0)
 	approach.light_color = Color(1.0, 0.68, 0.38)
-	approach.light_energy = 0.5
+	approach.light_energy = 0.30
 	approach.omni_range = 6.0
 	add_child(approach)
 
@@ -600,11 +606,11 @@ func _mushroom(pos: Vector3, cap_color: Color, glow: Color, light_on: bool) -> v
 		var light := OmniLight3D.new()
 		light.position = cap.position + Vector3(0.0, 0.25, 0.0)
 		light.light_color = glow
-		light.light_energy = 0.65
+		light.light_energy = 0.45
 		light.omni_range = 3.2
 		add_child(light)
 		_torches.append(light)
-		_torch_base.append(0.65)
+		_torch_base.append(0.45)
 
 
 func _fern(pos: Vector3, scale: float, color: Color) -> void:
@@ -652,7 +658,7 @@ func _build_exit() -> void:
 	var exit_light := OmniLight3D.new()
 	exit_light.position = Vector3(17.2, 1.8, -10.0)
 	exit_light.light_color = Color(0.35, 1.0, 0.55)
-	exit_light.light_energy = 0.65
+	exit_light.light_energy = 0.45
 	exit_light.omni_range = 4.5
 	add_child(exit_light)
 	# Trepadeiras Verdes no portal.
