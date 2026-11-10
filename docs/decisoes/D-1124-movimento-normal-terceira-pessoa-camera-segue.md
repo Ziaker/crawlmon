@@ -4,6 +4,7 @@
 - **Área:** Exploração 3D / lab Murky Forest / controle e câmera.
 - **Relacionadas:** D-1107 (WASD relativo à câmera), D-1123 (trava + auto-follow, **revertida**), D-1027 (câmera), D-1088 (diálogo), D-1100 (ataque).
 - **Status:** **implementado/provado**; commit local; **sem push**.
+- **Nota D-1126 (2026-11-10):** o criador reclamou que a câmera não virava; a D-1126 acrescentou um auto-follow **lento** (rate 0,45). A/D continua de lado e sem trava, mas agora descreve uma curva ampla.
 
 ## O que o criador disse (literal)
 

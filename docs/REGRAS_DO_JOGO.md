@@ -339,6 +339,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-1122] Paredes com 40% de opacidade:** **implementado/provado**: 40% textura + 60% cor antiga; prints/vídeo.
 - **[D-1123] Câmera segue o jogador, com direção travada:** **implementado/provado**: câmera segue o yaw durante o movimento (rate 3,0), WASD travado, 1,2 s de graça manual; vídeo.
 - **[D-1124] Movimento normal de terceira pessoa: A/D de lado, câmera acompanha a posição:** **implementado/provado**: remove trava/auto-follow; A/D anda reto; câmera segue a posição; vídeo.
+- **[D-1126] Câmera volta a virar, bem devagar, sem trava:** **implementado/provado**: auto-follow lento (rate 0,45, deadzone 0,12), A/D faz curva ampla; vídeo.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).
@@ -1500,3 +1501,7 @@ Para o HTML dos oito Moves, o criador confirmou a entrega com Quarks.js como exc
 ## Decisão D-1124 — Movimento normal de terceira pessoa: A/D de lado, câmera acompanha a posição (2026-11-10)
 
 - **D-1124 (lab/controle):** o WASD volta a ser relativo à câmera **sem trava**; **A/D andam de lado**, o personagem vira para a direção do movimento e a câmera acompanha a **posição** (pivô), mas **não gira o yaw sozinha**. Q/E e botão direito orbitam. A D-1123 (direção travada + auto-follow de yaw) fica revertida: o teste mostrou que o auto-follow de yaw fazia o personagem girar em círculo. Detalhes em `docs/decisoes/D-1124-movimento-normal-terceira-pessoa-camera-segue.md`.
+
+## Decisão D-1126 — Câmera volta a virar, bem devagar, sem trava (2026-11-10)
+
+- **D-1126 (lab/câmera):** a câmera volta a seguir o yaw durante o movimento, mas **bem devagar**: `CAM_FOLLOW_RATE = 0.45`, zona morta de **0,12 rad** e **1,2 s** de graça após o olhar manual. O WASD continua relativo à câmera **sem trava**; A/D anda de lado e descreve uma **curva ampla**, não um giro de 450°. A D-1123 (trava + auto-follow rápido) continua revertida. Detalhes em `docs/decisoes/D-1126-camera-volta-a-virar-bem-devagar.md`.
