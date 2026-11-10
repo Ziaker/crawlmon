@@ -329,6 +329,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-1097] Flat Card escolhido e mais torto:** **implementado/provado**: A é o padrão; paralelogramo 90 px (~22,6°) + rotação -3,5°; A 30% maior (3,97×1,12 m; nome 120); B/C 3,06 m referência; validado nos 10 NPCs, aliados/inimigo, espelho e perto/longe; ícone 2D de 0,13 m (3D na D-1098).
 - **[D-1098] Ícones de estado 3D, maiores:** **implementado/provado**: 5 ícones extrudados (frente + lateral), 1,00 m (escala 0,55+dist/16), yaw -28°, lateral no tom do tint; placa A intacta; provas.
 - **[D-1099] Ícones de estado sem contorno preto:** **implementado/provado**: os 5 ícones de estado perdem o contorno preto, que vira a cor do ícone (base branca, tint do estado); alpha, tamanho, relevo 3D, lateral, yaw e escala intactos; medalhão (D-1095) e placa A (D-1097) intactos; provas.
+- **[D-1105] Cards 40% e ícones acima do nome:** **implementado/provado**: Flat Card A base 40% (1,588×0,448 m) e fator de distância que encolhe (metade na tela a 9 m); ícones no tamanho atual sempre acima do card — o inimigo saiu de baixo da placa; vídeo/provas.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).

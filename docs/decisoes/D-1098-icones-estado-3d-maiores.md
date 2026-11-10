@@ -55,6 +55,10 @@
 - Todos os estados em todos os ângulos/distâncias e no inimigo em jogo; a prova cobre os 5 estados e o `?` no NPC, com a escala a 4 m. A aceitação cobre NPC/inimigo na câmera alta, perto/médio/longe/espelho; **câmera baixa, o inimigo em patrulha real e as 10 alturas de NPC com o ícone 3D** ficam fora.
 - Mobile/60 fps/resoluções e a cena principal completa (VFX de outra sessão).
 
+## D-1105 (posterior)
+
+O ícone de estado passa a ficar **acima do topo atual do card** em todas as distâncias (gap de 0,08 m); as alturas fixas NPC `+1,75 m` e inimigo `1,05 m` são históricas. O inimigo agora tem o ícone **acima da placa**; o `✳` de fúria não encosta mais no Slime.
+
 ## Estado
 
 Implementado e provado. Aprovado pelo criador ("perfeito", 2026-11-10). Commit local; **sem push**.

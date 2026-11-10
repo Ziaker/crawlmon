@@ -19,11 +19,11 @@ extends Node3D
 
 const PLATE_W := 768.0
 const PLATE_H := 216.0
-## D-1097: o Flat Card escolhido é 30% maior que a versão anterior.
-## A = 768 × 0,0051714 = 3,97 m; B/C continuam 768 × 0,003978 = 3,06 m.
+## D-1097/D-1105: o Flat Card A tem base de 40% do tamanho antigo.
+## A = 768 × 0,00206856 = 1,588 m; B/C continuam 768 × 0,003978 = 3,06 m.
 const PIXEL_SIZE := 0.003978
 const STYLE_PIXEL_SIZE := {
-	"unit_card": 0.0051714,
+	"unit_card": 0.00206856,
 	"move_strip": 0.003978,
 	"expedition": 0.003978,
 }
@@ -212,6 +212,18 @@ func set_style(id: String) -> void:
 
 func set_distance_scale(value: float) -> void:
 	scale = Vector3.ONE * value
+
+
+## D-1105: topo atual do card no espaço do pai (corpo), já com a escala de
+## distância, a escala do intro e o bob. O ícone de estado fica acima disto.
+func card_top_local() -> float:
+	var half := PLATE_H * _pixel_size * 0.5
+	var visual_scale := 1.0
+	var visual_y := 0.0
+	if _visual != null:
+		visual_scale = _visual.scale.y
+		visual_y = _visual.position.y
+	return position.y + (half * visual_scale + visual_y) * scale.y
 
 
 func play_intro() -> void:

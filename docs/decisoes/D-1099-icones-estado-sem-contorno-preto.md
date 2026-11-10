@@ -52,6 +52,10 @@ Na pergunta de esclarecimento, escolheu:
 - Todos os estados em todas as distâncias e no inimigo em jogo. A aceitação cobre a câmera alta, perto/médio/longe/espelho; **câmera baixa, o inimigo em patrulha real e as 10 alturas de NPC** ficam fora.
 - Mobile/60 fps/resoluções e a cena principal completa (VFX de outra sessão).
 
+## D-1105 (posterior)
+
+O card mudou de base e de escala por distância, e o ícone passou a ficar acima dele. A arte sem contorno desta decisão permanece.
+
 ## Estado
 
 Implementado, provado e aprovado. Commit local; **sem push**.

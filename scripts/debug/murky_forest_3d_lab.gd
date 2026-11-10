@@ -122,8 +122,8 @@ func _process(delta: float) -> void:
 	super(delta)
 	_update_enemy_marker()
 	_update_marker_rings(delta)
-	_update_state_icons(delta)
 	_update_name_labels()
+	_update_state_icons(delta)
 	_update_talking_labels()
 	_update_foliage_fade(delta)
 	_update_hud_badges()
@@ -863,7 +863,7 @@ func _add_world_markers() -> void:
 				break
 		var enemy_tag := _spawn_nameplate(_enemy_body, enemy_name, "ENEMY", 2.2)
 		_name_labels.append({"node": enemy_tag, "owner": _enemy_body})
-
+		_enemy_icon_entry["plate"] = enemy_tag
 
 func _decorate_npc(npc: Dictionary) -> void:
 	if npc.has("icon_entry"):
@@ -876,8 +876,10 @@ func _decorate_npc(npc: Dictionary) -> void:
 	if str(npc["id"]) == "dqt_dracky":
 		top_y = height * 1.48
 	_add_ground_ring(body, clampf(height * 0.75, 0.45, 0.85), Color(1.0, 1.0, 1.0, 0.68), "npc")
-	# D-1098: desceu 0,10 m a pedido do criador; vão de ~0,04 m na escala-base.
+	# D-1105: a posição final é dinâmica (acima da placa); este é só o inicial.
 	npc["icon_entry"] = _add_state_icon(body, Vector3(0.0, top_y + 1.75, 0.0))
+	if npc.has("tag") and is_instance_valid(npc["tag"]):
+		npc["icon_entry"]["plate"] = npc["tag"]
 	var talking := Label3D.new()
 	talking.text = "..."
 	talking.font_size = 48
@@ -893,10 +895,10 @@ func _decorate_npc(npc: Dictionary) -> void:
 	talking.visible = false
 	body.add_child(talking)
 	npc["talking_label"] = talking
+	npc["icon_entry"]["talk"] = talking
 	if npc.has("tag") and is_instance_valid(npc["tag"]):
 		_name_labels.append({"node": npc["tag"], "owner": body})
 	_update_npc_icon(npc)
-
 
 func _add_ground_ring(parent: Node3D, radius: float, color: Color, kind: String = "") -> void:
 	var plane := PlaneMesh.new()
@@ -923,7 +925,7 @@ func _add_ground_ring(parent: Node3D, radius: float, color: Color, kind: String 
 
 
 func _add_state_icon(parent: Node3D, pos: Vector3) -> Dictionary:
-	# D-1098: ícone 3D extrudado, 0,85 m, frente texturizada + lateral escura.
+	# D-1098/D-1105: ícone 3D extrudado, 1,00 m; a posição final é acima da placa.
 	var icon = STATE_ICON.new()
 	icon.name = "StateIcon"
 	icon.setup(ICON_QUESTION, Color.WHITE)
@@ -939,7 +941,6 @@ func _add_state_icon(parent: Node3D, pos: Vector3) -> Dictionary:
 	}
 	_state_icons.append(entry)
 	return entry
-
 
 func _add_ally_name(f: Dictionary) -> void:
 	var body: Node3D = f["node"]
@@ -1020,15 +1021,29 @@ func _update_state_icons(delta: float) -> void:
 			continue
 		var pop := maxf(0.0, float(entry["pop"]) - delta * 4.0)
 		entry["pop"] = pop
-		icon.position.y = float(entry["base_y"]) \
-			+ sin(_time * 2.4 + float(entry["phase"])) * 0.045 + pop * 0.15
 		var dist := 9.0
 		if _camera != null:
 			dist = _camera.global_position.distance_to(icon.global_position)
 		# D-1098: ícones 3D ficam maiores também a média distância.
 		var s := (1.0 + pop * 0.35) * clampf(0.55 + dist / 16.0, 0.55, 1.15)
 		icon.scale = Vector3(s, s, s)
-
+		var base := float(entry["base_y"])
+		# D-1105: o ícone fica sempre acima do card atual; se o NPC fala,
+		# fica acima do "..." também para não cobri-lo.
+		var plate := entry.get("plate") as Node3D
+		if plate != null and is_instance_valid(plate) and plate.has_method("card_top_local"):
+			var top := float(plate.card_top_local())
+			var min_bottom := top + 0.08
+			var talk := entry.get("talk") as Node3D
+			if talk != null and is_instance_valid(talk) and talk.visible:
+				min_bottom = maxf(min_bottom, talk.position.y + 0.14)
+			var mesh: Mesh = icon._front.mesh
+			if mesh != null:
+				var aabb := mesh.get_aabb()
+				base = min_bottom - aabb.position.y * s
+				entry["base_y"] = base
+		icon.position.y = base \
+			+ sin(_time * 2.4 + float(entry["phase"])) * 0.045 + pop * 0.15
 
 func _update_name_labels() -> void:
 	if _camera == null:
@@ -1041,12 +1056,13 @@ func _update_name_labels() -> void:
 			_name_labels.remove_at(i)
 			continue
 		var dist := _camera.global_position.distance_to(tag.global_position)
-		var s := clampf(dist / 8.0, 0.28, 1.1)
+		# D-1105: o card encolhe com a distância; a 9 m a tela fica na
+		# metade do tamanho de 4 m. A base de 40% está no estilo do card.
+		var s := clampf(0.5 + (dist - 4.0) * 0.0125, 0.4, 0.7)
 		if tag.has_method("set_distance_scale"):
 			tag.set_distance_scale(s)
 		else:
 			tag.scale = Vector3(s, s, s)
-
 
 func _spawn_nameplate(parent: Node3D, text: String, role: String, y: float) -> Node3D:
 	var plate = NAMEPLATE.new()

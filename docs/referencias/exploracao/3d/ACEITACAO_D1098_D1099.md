@@ -57,6 +57,10 @@
 - As 10 alturas de NPC com o ícone 3D (a D-1097 validou as placas; o nó do ícone é o mesmo).
 - O jogo 3D principal (a cena principal ainda é 2D) e mobile/60 fps/resoluções.
 
+## D-1105 (posterior)
+
+O card ficou com 40% da base e o ícone do inimigo subiu para **cima da placa**; a ressalva do `✳` encostando no Slime deixa de valer. As medidas e alturas desta aceitação são históricas.
+
 ## Estado
 
 Aceitação registrada; vídeo gravado. Commit local; **sem push**.

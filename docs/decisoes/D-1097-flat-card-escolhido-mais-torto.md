@@ -57,6 +57,10 @@
 - Se o ângulo de -3,5° e o tamanho de 3,97 m são exatamente o que o criador queria; são ajustes visuais fáceis (aumentar/diminuir).
 - Todos os ângulos possíveis de câmera, mobile/60 fps e a cena principal completa (VFX de outra sessão).
 
+## D-1105 (posterior)
+
+A base do Flat Card A foi reduzida para **40%** (1,588 × 0,448 m) e o fator de distância passou a **diminuir** o tamanho na tela com a distância. As medidas de 3,97 × 1,12 m desta decisão são históricas.
+
 ## Estado
 
 Implementado e provado. Commit local; **sem push**.
