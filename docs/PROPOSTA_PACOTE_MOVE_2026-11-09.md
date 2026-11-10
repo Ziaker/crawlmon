@@ -121,8 +121,8 @@ static func move_vfx_for(move_id: StringName) -> MoveVfx:
 - Aprovação visual do ícone do Media antes de criar os ícones dos outros 37 Moves.
 
 ### Fase 4 — Piloto de `vfx.gd` (D-308) — **roteamento iniciado com Tackle**
-- `content/moves/tackle/vfx.gd` (`MoveVfx`) delega o impacto ao `FxImpacts._tackle_impact` atual; `move.tres` aponta `vfx_script` e `MoveVfxRegistry.impact()` tenta o script antes do caminho por família.
-- **Nenhum look mudou:** os mesmos nós (`TackleShockCone`, `TackleSlashArcA/B`, flipbooks, fumaça) são criados pela mesma função. `test_tackle_vfx`, `test_all_moves_vfx`, `test_move_vfx_routing`, `test_vfx_room` e a suíte 16/16 passaram.
+- `content/moves/tackle/vfx.gd` (`MoveVfx`) agora **é dono da composição** do impacto; `FxImpacts._tackle_impact` virou uma ponte de compatibilidade que chama o pacote. `move.tres` aponta `vfx_script` e `MoveVfxRegistry.impact()` tenta o script antes do caminho por família.
+- **Nenhum look mudou:** o corpo movido é idêntico ao original (47 linhas, só a assinatura do hook mudou) e cria os mesmos nós (`TackleShockCone`, `TackleSlashArcA/B`, flipbooks, fumaça), na mesma ordem. `test_tackle_vfx`, `test_all_moves_vfx`, `test_move_vfx_routing`, `test_vfx_room` e a suíte 16/16 passaram.
 - O `vfx.gd` ainda cobre só o impacto; `windup`/`travel`/`release`/`strike`/`return` continuam no caminho central até a próxima fase visual.
 - A mudança visual do Tackle (se houver) e o vídeo normal/espelhado D-308 continuam pendentes de aprovação.
 - Verificação obrigatória:
