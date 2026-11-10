@@ -18,7 +18,7 @@
 3. **NPC falando:** o ícone de estado acima da cabeça (❔/💬) é substituído por **reticências animadas** (`.` → `..` → `...`) enquanto a conversa está aberta; ao fechar, volta ao ícone normal (💬, pois já conversou).
 4. **Ícone de fúria:** o antigo 💢 vira um **estouro/explosão** (estrela irregular), tingido de vermelho/laranja; é o ícone de `CHASE`. Se o criador preferir espada depois, é uma troca isolada.
 5. **Tamanho:** todos os ícones de estado acima da cabeça ficam **25% maiores** (`pixel_size` de 0,0035 → 0,004375). O escalonamento por distância continua para não cobrir a tela.
-6. **Retratos:** Pokémon usam a arte Sugimori local; NPCs DQT sem retrato usam a inicial do nome no medalhão (fallback), em vez de repetir o Bulbasaur.
+6. **Retratos:** Pokémon usam o **ícone estabelecido** (face crop; D-1093), não a arte inteira; NPCs DQT sem retrato usam a inicial do nome no medalhão (fallback), em vez de repetir o Bulbasaur.
 7. **Não muda:** batalha, 2D, HUD/status, cards, regras e a câmera (D-1088) / reações de aliados (D-1089) seguem pendentes.
 
 ## Ambiguidades
@@ -34,7 +34,7 @@
 - **Reticências:** o `Label3D` acima do NPC cicla `.` → `..` → `...` a 3 estados/s; o ícone de estado fica oculto enquanto fala.
 - **Estouro:** `state_anger.png` virou uma explosão/estrela irregular; no `CHASE` a auditoria viu `state=1`, `icon=anger`. O burst também aparece na prova.
 - **Tamanho:** `pixel_size` de `0,0035` → `0,004375` (+25%) para todos os ícones de estado.
-- **Retratos:** Pokémon usam Sugimori; DQT sem retrato usa a inicial no medalhão (fallback), não o Bulbasaur.
+- **Retratos:** Pokémon usam o ícone estabelecido (face crop; D-1093), não a arte inteira; DQT sem retrato usa a inicial no medalhão (fallback). O Bulbasaur está em B provisório.
 - **`[Z] CLOSE`:** movido para a esquerda do selo “M”, para não ficar atrás dele.
 - **Provas:** `docs/referencias/exploracao/3d/murky_forest_paper_dialogue.png`, `murky_forest_panchan_reaction.png`, `murky_forest_orc_reaction.png`, `murky_forest_chase_burst.png` e `overworld_icons_states.png`; vídeo C regravado (`dialogue_hud_c_paper.mp4/.gif`) e folha de contato atualizada.
 

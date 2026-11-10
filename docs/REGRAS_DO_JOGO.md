@@ -322,6 +322,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-1090] HUD C, estouro e reticências:** **teste implementado**: HUD Paper/RPG no diálogo real, prompt oculto, `[Z] NEXT/CLOSE`, reticências animadas, ícone de fúria em estouro e ícones +25%; batalha/2D/regras intactos.
 - **[D-1091] Cores dos anéis no chão:** **teste implementado**: NPC branco; inimigo amarelo no alerta `!`, vermelho perseguindo e azul fugindo/querendo conversar; patrulha âmbar; aliado azul.
 - **[D-1092] Faixas laterais de aliados + câmera 3/4:** **teste implementado**: PANCHAM/ORC entram da esquerda em faixas Paper, o card BULBASAUR continua, uma por `[Z]`, ambas ficam; status cards ocultos; câmera 3/4 esquerda 50°/3,9 m/FOV 45; provas.
+- **[D-1093] Retratos/ícones usam o ícone estabelecido; 3 zooms do Bulbasaur:** **regra registrada/implementada**: Pancham/Bulbasaur usam face crop, Orc usa o retrato próprio; Bulbasaur em B provisório, aguardando A/B/C; PNGs das 3 opções.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).

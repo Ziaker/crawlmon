@@ -31,6 +31,7 @@
 - **Fechar:** `hud=false`, `prompt=true`, `action=TALK`, `banner0=false`, `banner1=false`, `icon=talked`.
 - **Câmera:** prova visual em `murky_forest_paper_dialogue.png` (estágio 0) e nas duas faixas; o jogador e o NPC aparecem acima do card, vistos de três-quartos pela esquerda.
 - **Provas:** `murky_forest_paper_dialogue.png`, `murky_forest_panchan_reaction.png` e `murky_forest_orc_reaction.png`.
+- **Nota D-1093:** os retratos do card/faixas usam o ícone estabelecido (face crop/portrait), não a arte inteira; o Bulbasaur está em B provisório até a escolha A/B/C.
 
 ## O que não foi verificado
 

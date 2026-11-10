@@ -67,6 +67,14 @@ var _dialogue_reactions: Array[Dictionary] = []
 var _enemy_marker_root: Node3D
 var _enemy_icon_entry: Dictionary = {}
 var _enemy_ring_entry: Dictionary = {}
+## D-1093: retratos usam o ícone estabelecido (face crop/portrait), não a arte
+## inteira. O Bulbasaur está na opção B provisória; A/B/C aguardam escolha.
+var PORTRAIT_FACE_REGIONS := {
+	"abra": Rect2(300.0 / 851.0, 120.0 / 851.0, 320.0 / 851.0, 360.0 / 851.0),
+	"pancham": Rect2(300.0 / 1261.0, 40.0 / 1261.0, 680.0 / 1261.0, 760.0 / 1261.0),
+	"gible": Rect2(30.0 / 762.0, 100.0 / 762.0, 490.0 / 762.0, 560.0 / 762.0),
+	"bulbasaur": Rect2(0.00, 0.04, 0.78, 0.78),
+}
 var _minimap_viewport: SubViewport
 var _minimap_camera: Camera3D
 var _minimap_rect: TextureRect
@@ -1148,7 +1156,20 @@ func _portrait_for_speaker(speaker: String) -> Texture2D:
 	var key := speaker.to_lower()
 	var sugimori := "res://sugimori/por_nome/%s.png" % key
 	if ResourceLoader.exists(sugimori):
-		return load(sugimori) as Texture2D
+		var tex := load(sugimori) as Texture2D
+		if tex == null:
+			return null
+		if PORTRAIT_FACE_REGIONS.has(key):
+			var r: Rect2 = PORTRAIT_FACE_REGIONS[key]
+			var atlas := AtlasTexture.new()
+			atlas.atlas = tex
+			atlas.region = Rect2(
+				r.position.x * tex.get_width(),
+				r.position.y * tex.get_height(),
+				r.size.x * tex.get_width(),
+				r.size.y * tex.get_height())
+			return atlas
+		return tex
 	var portrait := "res://personagens/portraits/%s.png" % key
 	if ResourceLoader.exists(portrait):
 		return load(portrait) as Texture2D
