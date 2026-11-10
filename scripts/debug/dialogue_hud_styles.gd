@@ -5,7 +5,7 @@ extends Control
 
 enum Style { SMT, COMIC, PAPER }
 
-const PORTRAIT_PATH := "res://sugimori/por_nome/BULBASAUR.png"
+const PORTRAIT_PATH := "res://sugimori/por_nome/bulbasaur.png"
 const SMT_SHADER := preload("res://shaders/dialogue_smt_panel.gdshader")
 const HALFTONE_SHADER := preload("res://shaders/dialogue_halftone.gdshader")
 const PAPER_SHADER := preload("res://shaders/dialogue_paper.gdshader")
@@ -24,6 +24,7 @@ var _halftone: ColorRect
 var _seal: Control
 var _portrait: TextureRect
 var _portrait_back: Control
+var _portrait_fallback: Label
 var _font_body: Font
 var _font_name: Font
 var _font_ui: Font
@@ -55,6 +56,7 @@ func setup(style_id: int) -> void:
 	_seal = null
 	_portrait = null
 	_portrait_back = null
+	_portrait_fallback = null
 	match style:
 		Style.SMT:
 			_build_smt()
@@ -62,11 +64,13 @@ func setup(style_id: int) -> void:
 			_build_comic()
 		Style.PAPER:
 			_build_paper()
+	visible = false
 
 
-func open(speaker: String, text: String) -> void:
+func open(speaker: String, text: String, next_text: String = "NEXT") -> void:
 	_speaker = speaker
 	_text = text
+	visible = true
 	if _name_label != null:
 		_name_label.text = speaker
 	if _body != null:
@@ -78,6 +82,7 @@ func open(speaker: String, text: String) -> void:
 	_typing = false
 	_opened = true
 	if _next != null:
+		_next.text = "[Z] " + next_text
 		_next.visible = false
 		_next.modulate.a = 0.0
 	match style:
@@ -88,6 +93,23 @@ func open(speaker: String, text: String) -> void:
 		Style.PAPER:
 			_animate_paper()
 	queue_redraw()
+
+
+func close() -> void:
+	_opened = false
+	_typing = false
+	if _next != null:
+		_next.visible = false
+	visible = false
+
+
+func set_portrait(texture: Texture2D) -> void:
+	if _portrait != null:
+		_portrait.texture = texture
+	if _portrait_fallback != null:
+		_portrait_fallback.visible = texture == null
+		if texture == null:
+			_portrait_fallback.text = _speaker.substr(0, 1) if not _speaker.is_empty() else "?"
 
 
 func _process(delta: float) -> void:
@@ -390,11 +412,17 @@ func _build_paper() -> void:
 		Color(0.85, 0.68, 0.30), Color(0.16, 0.25, 0.16), 2, 71))
 	_panel.add_child(_portrait_back)
 	_portrait_back.add_child(_portrait_rect(Vector2(8.0, 8.0), Vector2(126.0, 126.0), true))
+	_portrait_fallback = _label("B", Vector2(8.0, 8.0), Vector2(126.0, 126.0),
+		_font_name, 54, Color(0.16, 0.25, 0.16))
+	_portrait_fallback.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_portrait_fallback.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_portrait_fallback.visible = false
+	_portrait_back.add_child(_portrait_fallback)
 
 	_body = _label(_text, Vector2(190.0, 34.0), Vector2(700.0, 150.0), _font_body, 21,
 		Color(0.18, 0.12, 0.08))
 	_panel.add_child(_body)
-	_add_next(Vector2(760.0, 170.0), Vector2(150.0, 26.0), _font_ui,
+	_add_next(Vector2(600.0, 176.0), Vector2(150.0, 26.0), _font_ui,
 		Color(0.14, 0.23, 0.15))
 
 	_seal = Panel.new()

@@ -3,7 +3,7 @@
 - **Data:** 2026-11-09.
 - **Área:** Exploração / UI / diálogo / design.
 - **Relacionadas:** D-1063 (NPCs/diálogo), D-1075 (prompt/diálogo), D-1085 (prompt).
-- **Status:** **protótipos e vídeos prontos; aguardando a escolha do criador**; painel atual não substituído; nada publicado.
+- **Status:** **C escolhido pelo criador e integrado ao diálogo real (D-1090)**; A e B ficam como referência no lab de protótipos; nada publicado.
 
 ## O que o criador disse (literal)
 
@@ -43,7 +43,7 @@
   - `docs/referencias/exploracao/3d/dialogue_hud_c_paper.mp4` / `.gif`
 - **Folha de contato:** `docs/referencias/exploracao/3d/dialogue_hud_aberturas_contato.png` (0,0 s / 0,5 s / 1,5 s / 6,0 s).
 - **Lab:** `scenes/debug/dialogue_style_lab.tscn` + `scripts/debug/dialogue_style_lab.gd` + `scripts/debug/dialogue_hud_styles.gd`; não integrado ao diálogo real.
-- **Escolha pendente:** A, B ou C; também é possível combinar o estilo de um com a abertura de outro, porque o lab é modular.
+- **Escolha do criador:** **C — Paper/RPG**, integrado em D-1090. A e B continuam no lab como referência; a combinação de estilo/abertura continua possível.
 
 ## O que não foi verificado
 

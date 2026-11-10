@@ -37,7 +37,8 @@
 - **NPC:** Bulbasaur com `has_quest=true` mostra ❔ amarelo; outros NPCs mostram ❔ branco; após conversar, 💬. O estado `talked` é por sessão.
 - **Inimigo:** 💢 em `CHASE`, 💦 em `FLEE`, ❗ por 0,6 s ao perceber, ❓ em `SEARCH`; sem ícone em `PATROL`/`RETURN`.
 - **Medroso:** Slime com `threat_level=0`; ao chegar a 9 m (3 tiles de 3 m) ele entra em `FLEE` e foge devagar. A auditoria viu `state=4 (FLEE)`, `threat=0`, `alert=0,57` com ícone `alert` e, 45 quadros depois, `alert=0` com ícone `sweat`. `rings=6`, `icons=4`.
-- **Provas:** `murky_forest_prompt_z_talk.png`, `murky_forest_indicators_medroso.png` e `overworld_icons_states.png`.
+- **Provas:** `murky_forest_prompt_z_talk.png`, `murky_forest_indicators_medroso.png`, `murky_forest_chase_burst.png` e `overworld_icons_states.png`.
+- **Nota D-1090:** o antigo ícone de fúria virou um **estouro**; todos os ícones ficaram 25% maiores (`pixel_size 0,004375`); enquanto o NPC fala, o ícone de estado é substituído por reticências animadas.
 
 ## O que não foi verificado
 
