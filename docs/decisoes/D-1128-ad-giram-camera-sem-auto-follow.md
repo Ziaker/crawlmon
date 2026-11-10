@@ -4,6 +4,7 @@
 - **Área:** Exploração 3D / lab Murky Forest / câmera e controle.
 - **Relacionadas:** D-1126 (auto-follow lento, **substituída**), D-1124, D-1107, D-1027.
 - **Status:** **implementado/provado**; commit local; **sem push**.
+- **Nota D-1130 (2026-11-10):** a D-1128 usava `ui_left/ui_right` para a câmera; como essas ações incluem A/D **e** as setas, as setas também giravam. A D-1130 separou: A/D só câmera, setas só movimento.
 
 ## O que o criador disse (literal)
 

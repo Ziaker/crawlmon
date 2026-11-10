@@ -341,6 +341,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-1124] Movimento normal de terceira pessoa: A/D de lado, câmera acompanha a posição:** **implementado/provado**: remove trava/auto-follow; A/D anda reto; câmera segue a posição; vídeo.
 - **[D-1126] Câmera volta a virar, bem devagar, sem trava:** **implementado/provado**: auto-follow lento (rate 0,45, deadzone 0,12), A/D faz curva ampla; vídeo.
 - **[D-1128] A/D giram a câmera; W/S andam; sem giro automático:** **implementado/provado**: A/D a 3,0 rad/s, W/S andam, auto-follow removido; HUD e vídeo.
+- **[D-1130] A/D só giram a câmera; as setas movem o boneco:** **implementado/provado**: A/D câmera, setas/W/S movimento, sem auto-follow; HUD e vídeo.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).
@@ -1510,3 +1511,7 @@ Para o HTML dos oito Moves, o criador confirmou a entrega com Quarks.js como exc
 ## Decisão D-1128 — A/D giram a câmera; W/S andam; sem giro automático (2026-11-10)
 
 - **D-1128 (lab/controle):** **A/D** giram a câmera a **3,0 rad/s** (A esquerda, D direita); **W/S** andam para frente/trás na direção da câmera e o personagem vira para o movimento. O **auto-follow foi removido**: nenhum giro automático controla ou disputa com A/D. Q/E e botão direito continuam como atalhos de câmera. O HUD passa a mostrar `W/S: andar · A/D ou botão direito: câmera`. Detalhes em `docs/decisoes/D-1128-ad-giram-camera-sem-auto-follow.md`.
+
+## Decisão D-1130 — A/D só giram a câmera; as setas movem o boneco (2026-11-10)
+
+- **D-1130 (lab/controle):** **A/D** giram a câmera (3,0 rad/s) e **não movem** o personagem; **setas** ←/→/↑/↓ movem o boneco relativo à câmera e **W/S** continuam como atalhos de andar. O auto-follow não existe. O HUD passa a mostrar `Setas/W/S: andar · A/D ou botão direito: câmera`. A D-1128 usava `ui_left/ui_right` para a câmera, mas essas ações incluem A/D e setas; a D-1130 separa as teclas. Detalhes em `docs/decisoes/D-1130-ad-camera-setas-movem.md`.

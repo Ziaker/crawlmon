@@ -127,16 +127,27 @@ func _physics_process(delta: float) -> void:
 		if _player_dust != null:
 			_player_dust.emitting = false
 	else:
-		# D-1128: A/D giram a câmera; W/S andam para frente/trás.
-		var turn := Input.get_axis("ui_right", "ui_left")
+		# D-1130: A/D só giram a câmera; setas e W/S movem o boneco.
+		var turn := 0.0
+		if Input.is_key_pressed(KEY_A):
+			turn += 1.0
+		if Input.is_key_pressed(KEY_D):
+			turn -= 1.0
 		if turn != 0.0:
 			_cam_yaw += turn * CAM_TURN_SPEED * delta
 			_last_look = _time
-		var move := -Input.get_axis("ui_up", "ui_down")
-		if move != 0.0:
-			# D-1107: W/S relativo à câmera; o personagem vira para a direção.
+		var move := Vector2(
+			(1.0 if Input.is_key_pressed(KEY_RIGHT) else 0.0) - (1.0 if Input.is_key_pressed(KEY_LEFT) else 0.0),
+			(1.0 if Input.is_key_pressed(KEY_UP) else 0.0) - (1.0 if Input.is_key_pressed(KEY_DOWN) else 0.0))
+		if Input.is_key_pressed(KEY_W):
+			move.y += 1.0
+		if Input.is_key_pressed(KEY_S):
+			move.y -= 1.0
+		if move.length_squared() > 0.001:
+			# D-1107: movimento relativo à câmera; o personagem vira para a direção.
 			var cam_forward := Vector3(sin(_cam_yaw), 0.0, cos(_cam_yaw))
-			dir = cam_forward * move
+			var cam_right := Vector3(-cos(_cam_yaw), 0.0, sin(_cam_yaw))
+			dir = (cam_forward * move.y + cam_right * move.x).normalized()
 			var target_yaw := atan2(dir.x, dir.z)
 			player_yaw = lerp_angle(player_yaw, target_yaw, clampf(delta * TURN_RATE, 0.0, 1.0))
 		player.velocity = dir * SPEED
