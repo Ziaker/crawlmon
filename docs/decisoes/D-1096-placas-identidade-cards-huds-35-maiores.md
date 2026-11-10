@@ -3,7 +3,7 @@
 - **Data:** 2026-11-10.
 - **Área:** Exploração / overworld 3D / UI dos nomes.
 - **Relacionadas:** D-1094 (3 estilos anteriores), D-1072 (UnitCard de exploração), D-1074 (cards com retrato/barras), D-1087/D-1090 (HUD Paper), D-417/D-434 (Move Strips, Impact, paralelogramos), D-235 (nada depende de personagem/time/lado).
-- **Status:** **A (Flat Card) escolhida, com a inclinação da D-1097**; B/C ficam como referência; batalha, 2D, HUD/status, cards, regras, falas e câmera não mudam; commit local; **sem push**.
+- **Status:** **A (Flat Card) escolhida, mais torta e 30% maior na D-1097**; B/C ficam em 3,06 m como referência; batalha, 2D, HUD/status, cards, regras, falas e câmera não mudam; commit local; **sem push**.
 
 ## O que o criador disse (literal)
 
@@ -25,7 +25,7 @@ O criador pediu **3 novas** placas na linguagem dos cards/HUDs. A **Paper & Pin 
 
 - **Bloco paralelogramo flat**, cor creme `#eae9d9`, **só o nome** em Impact/Arial Black escuro `#111b29`.
 - **Sem** barras de HP/MP, sem badge de papel, sem losango de elemento, sem ícones, sem borda e **sem o papel NPC/ALLY/ENEMY**.
-- **D-1097:** escolhida; o paralelogramo ficou mais torto (90 px ≈ 22,6°) e o card recebeu uma rotação de -3,5°.
+- **D-1097:** escolhida; o paralelogramo ficou mais torto (90 px ≈ 22,6°), o card recebeu uma rotação de -3,5° e ficou **30% maior** que esta versão (3,97×1,12 m), com o nome em 120 px. B/C continuam em 3,06×0,86 m.
 - Base: o card creme do herói (UnitCard) e os cards flat de elemento do HUD, reduzidos ao essencial.
 - Entrada de carta sendo distribuída: escala 0,6 → 1,06 → 1.
 
@@ -48,7 +48,7 @@ O criador pediu **3 novas** placas na linguagem dos cards/HUDs. A **Paper & Pin 
 
 1. **Uma placa por ator:** NPC, aliado e inimigo usam o mesmo componente; o estilo e o papel (`NPC`/`ALLY`/`ENEMY`) mudam, nunca o personagem, o time ou o lado (D-235). O **Flat Card (A)** não mostra papel; B/C mostram.
 2. **A placa sempre olha para a câmera** e mantém a escala por distância (`clampf(dist / 8.0, 0.28, 1.1)`).
-3. **Tamanho:** textura 768×216 e `pixel_size` 0,003978 → **3,06×0,86 m**. É **30% maior** que a versão anterior (2,35×0,66 m) e ~**75% maior** que a D-1094 (1,74×0,49 m).
+3. **Tamanho:** textura 768×216; B/C com `pixel_size` 0,003978 → **3,06×0,86 m**; A (D-1097) com 0,0051714 → **3,97×1,12 m** e nome 120. Em relação à D-1094 (1,74×0,49 m), B/C são ~75% maiores e o A é ~128% maior.
 4. **Texto dinâmico:** nome e papel são `Label3D`; no B/C os rótulos fixos (`HP`, `MP`, `UNIT`, `ACTION`, `ATB`, `EXPEDITION`) ficam na textura. No A só existe o nome.
 5. **Sem dados falsos:** as barras de HP/MP e os pips de ATB do B/C são decorativos; não mostram números nem alteram o combate. O A não tem barras.
 6. **Alturas:** NPC/aliado com a placa em `altura + 0,58 m`; ícone de estado e reticências em `altura + 1,30 m`; inimigo em `1,72 m` (a placa maior não encosta no ícone).

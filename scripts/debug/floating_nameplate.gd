@@ -19,8 +19,14 @@ extends Node3D
 
 const PLATE_W := 768.0
 const PLATE_H := 216.0
-## 35% maior que a D-1094 (512×144 a 0,0034 = 1,74 m); aqui 2,35 m.
+## D-1097: o Flat Card escolhido é 30% maior que a versão anterior.
+## A = 768 × 0,0051714 = 3,97 m; B/C continuam 768 × 0,003978 = 3,06 m.
 const PIXEL_SIZE := 0.003978
+const STYLE_PIXEL_SIZE := {
+	"unit_card": 0.0051714,
+	"move_strip": 0.003978,
+	"expedition": 0.003978,
+}
 const PLATE_PATHS := {
 	"unit_card": "res://assets/ui/nameplates/nameplate_unit_card.png",
 	"move_strip": "res://assets/ui/nameplates/nameplate_move_strip.png",
@@ -39,6 +45,7 @@ var _display_font: SystemFont
 var _body_font: SystemFont
 var _serif_font: SystemFont
 var _texture_cache: Dictionary = {}
+var _pixel_size := PIXEL_SIZE
 var _name_home := Vector3.ZERO
 var _time := 0.0
 var _phase := 0.0
@@ -123,6 +130,10 @@ func _build() -> void:
 func _apply_style() -> void:
 	if _plate == null:
 		return
+	_pixel_size = float(STYLE_PIXEL_SIZE.get(style_id, PIXEL_SIZE))
+	_plate.pixel_size = _pixel_size
+	_name_label.pixel_size = _pixel_size
+	_role_label.pixel_size = _pixel_size
 	_plate.texture = _texture_for(style_id)
 	_name_label.text = display_name
 	_role_label.text = role_text
@@ -160,7 +171,7 @@ func _apply_style() -> void:
 		_:
 			# A — bloco paralelogramo flat, só o nome; nenhum detalhe.
 			_name_label.font = _display_font
-			_name_label.font_size = 100
+			_name_label.font_size = 120
 			_name_label.modulate = Color(0.067, 0.106, 0.161)
 			_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			_name_home = _plate_pos(384.0, 108.0)
@@ -180,8 +191,8 @@ func _apply_style() -> void:
 
 func _plate_pos(px: float, py: float) -> Vector3:
 	return Vector3(
-		(px - PLATE_W * 0.5) * PIXEL_SIZE,
-		(PLATE_H * 0.5 - py) * PIXEL_SIZE,
+		(px - PLATE_W * 0.5) * _pixel_size,
+		(PLATE_H * 0.5 - py) * _pixel_size,
 		0.02)
 
 
