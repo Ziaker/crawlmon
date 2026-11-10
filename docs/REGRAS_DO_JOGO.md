@@ -327,7 +327,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-1095] Ícone do Bulbasaur, aro interno, fundo marrom escuro e nome centralizado:** **implementado/provado**: Bulbasaur com o recorte fechado, aro dourado interno de volta, fundo do ícone em marrom escuro (#5C3C1E) e nome centralizado; batalha/2D/HUD/regras intactos; provas antes/depois.
 - **[D-1096] Placas de nome na linguagem dos cards/HUDs, flat e 30% maiores:** **A escolhida (D-1097)**: Flat Card (só nome), Move Strip e Expedition Tag; +30% sobre a versão anterior (~75% sobre a D-1094), F6 alterna, barras/pips decorativos no B/C, D-235; provas/vídeo.
 - **[D-1097] Flat Card escolhido e mais torto:** **implementado/provado**: A é o padrão; paralelogramo 90 px (~22,6°) + rotação -3,5°; A 30% maior (3,97×1,12 m; nome 120); B/C 3,06 m referência; validado nos 10 NPCs, aliados/inimigo, espelho e perto/longe; ícone 2D de 0,13 m (3D na D-1098).
-- **[D-1098] Ícones de estado 3D, maiores:** **implementado/provado**: 5 ícones extrudados (frente + lateral), 1,00 m, yaw -28°, lateral no tom do tint; placa A intacta; provas.
+- **[D-1098] Ícones de estado 3D, maiores:** **implementado/provado**: 5 ícones extrudados (frente + lateral), 1,00 m (escala 0,55+dist/16), yaw -28°, lateral no tom do tint; placa A intacta; provas.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).

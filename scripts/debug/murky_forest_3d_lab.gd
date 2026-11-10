@@ -1024,7 +1024,8 @@ func _update_state_icons(delta: float) -> void:
 		var dist := 9.0
 		if _camera != null:
 			dist = _camera.global_position.distance_to(icon.global_position)
-		var s := (1.0 + pop * 0.35) * clampf(dist / 8.0, 0.18, 1.1)
+		# D-1098: ícones 3D ficam maiores também a média distância.
+		var s := (1.0 + pop * 0.35) * clampf(0.55 + dist / 16.0, 0.55, 1.15)
 		icon.scale = Vector3(s, s, s)
 
 
