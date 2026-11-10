@@ -277,9 +277,8 @@ func _retire_scene(old: Node3D) -> void:
 	if old_battle != null:
 		for sig in ["attack_telegraphed", "attack_resolved", "attack_phase", "hit_resolved", "attack_cancelled", "battle_ended"]:
 			for conn in old_battle.get_signal_connection_list(sig):
-				var cb: Callable = conn["callable"]
-				if cb.get_object() == self:  # só os ouvintes desta sala; não mexe no que é da cena antiga
-					old_battle.disconnect(sig, cb)
+				# A cena antiga está sendo aposentada: nenhum ouvinte dela pode escrever no log novo.
+				old_battle.disconnect(sig, conn["callable"])
 	# A party persiste entre as recargas: solta os sinais dela que a cena antiga ouvia, para não chamarem uma cena morta.
 	for c in _units:
 		for sig in c.get_signal_list():

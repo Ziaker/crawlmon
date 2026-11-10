@@ -70,6 +70,14 @@ func _measure(move_name: String, skill: Skill, attacker: String, target: String)
 	for pc in root.get_node("/root/GameState").party:  # a party persiste entre as recargas da sala: volta a vida cheia
 		pc.set_hp_instant(pc.max_hp)
 	await room._load_battle(false)
+	# A party canônica atual é Abra + Pancham; Gible não está nela. O teste de D-235 precisa
+	# dos três atacantes, então usa o spawn de debug (dois Gible inimigos) e recalcula a lista.
+	if _unit("Gible") < 0:
+		room._add_test_enemies()
+		room._units.clear()
+		room._units.append_array(room._battle.party)
+		room._units.append_array(room._battle.enemies)
+		room._fill_units()
 	room._speed.value = 1.5
 	var ai := _unit(attacker)
 	var ti := _unit(target)
@@ -88,7 +96,7 @@ func _measure(move_name: String, skill: Skill, attacker: String, target: String)
 	room._target.select(ti)
 	room._force.select(1)  # acerto garantido
 	room._channel.button_pressed = false
-	room._fire()
+	await room._fire()
 	var guard := 0
 	while guard < 1800 and not _log_has("IMPACTO"):
 		await process_frame
