@@ -1,4 +1,4 @@
-# D-1096 — Placas de nome na linguagem dos cards/HUDs do jogo, 35% maiores
+# D-1096 — Placas de nome na linguagem dos cards/HUDs, flat e 30% maiores
 
 - **Data:** 2026-11-10.
 - **Área:** Exploração / overworld 3D / UI dos nomes.
@@ -13,18 +13,19 @@
 
 > 3 novas na linguagem do jogo, inclusive deixe estes cartões 35% maiores
 
+> o card é mt pequeno, a opção A usa coisas que não devia, é só pra ser um bloco paralelograma flat com o Nome do personagem não ter todos estes detalhes desnecessários, além dos cards ainda estarem pequenos, aumente seu tamanho em 30%
+
 ## Leitura da escolha
 
-O criador pediu **3 novas** placas — a Paper & Pin (A) fica como referência do que ele gostou, mas não entra no trio final. As novas placas usam a linguagem real dos cards/HUDs do jogo, não estilos genéricos. As placas ficaram **35% maiores** que as da D-1094: textura 768×216 e `pixel_size` 0,00306 → ~2,35×0,66 m (antes 512×144 e 1,74×0,49 m).
+O criador pediu **3 novas** placas na linguagem dos cards/HUDs. A **Paper & Pin (A)** fica como referência do que ele gostou, mas não entra no trio final. Na revisão, ele definiu que a **opção A** deve ser **só um bloco paralelogramo flat com o nome** — sem barras, badges, ícones, losangos ou papel — e que **todas as placas** devem ficar **30% maiores** que a versão anterior (que já era 35% maior que a D-1094).
 
 ## As 3 opções
 
-### A — Unit Card
+### A — Flat Card
 
-- Base: o **UnitCard** dos cards de batalha/exploração (D-1072/D-1074).
-- Card escuro `#17283b` com borda creme `#eae9d9`, corte no canto superior direito, faixa creme à esquerda e badge de papel no topo direito.
-- Nome em Impact/Arial Black (a fonte de título do HUD), creme; barras **HP** (`#e96159`) e **MP** (`#38bdf8`) em paralelogramo na base, com trilhos escuros e rótulos pequenos.
-- Losango dourado de elemento no canto; as barras são decorativas (não inventam HP/MP de NPC).
+- **Bloco paralelogramo flat**, cor creme `#eae9d9`, **só o nome** em Impact/Arial Black escuro `#111b29`.
+- **Sem** barras de HP/MP, sem badge de papel, sem losango de elemento, sem ícones, sem borda e **sem o papel NPC/ALLY/ENEMY**.
+- Base: o card creme do herói (UnitCard) e os cards flat de elemento do HUD, reduzidos ao essencial.
 - Entrada de carta sendo distribuída: escala 0,6 → 1,06 → 1.
 
 ### B — Move Strip
@@ -32,6 +33,7 @@ O criador pediu **3 novas** placas — a Paper & Pin (A) fica como referência d
 - Base: as **Move Strips** da hotbar de batalha/status (D-417/D-434).
 - Faixa flat com bloco de elemento à esquerda (losango neutro), nome em Impact, “ACTION” pequeno, **5 pips de ATB** em paralelogramo (como os 5 blocos do ATB do jogo) e chip **MP** azul; corte diagonal na direita.
 - Cores do HUD: azul-escuro `#0f1b2a`, ardósia `#334155`, ciano `#38bdf8`, azul `#2563eb`, creme `#eae9d9`, dourado `#dfc980`.
+- O papel `NPC/ALLY/ENEMY` aparece no topo esquerdo, abaixo de `ACTION`.
 - Entrada em wipe horizontal (escala X 0,02 → 1,05 → 1).
 
 ### C — Expedition Tag
@@ -43,19 +45,19 @@ O criador pediu **3 novas** placas — a Paper & Pin (A) fica como referência d
 
 ## Regras de implementação
 
-1. **Uma placa por ator:** NPC, aliado e inimigo usam o mesmo componente; o estilo e o papel (`NPC`/`ALLY`/`ENEMY`) mudam, nunca o personagem, o time ou o lado (D-235).
+1. **Uma placa por ator:** NPC, aliado e inimigo usam o mesmo componente; o estilo e o papel (`NPC`/`ALLY`/`ENEMY`) mudam, nunca o personagem, o time ou o lado (D-235). O **Flat Card (A)** não mostra papel; B/C mostram.
 2. **A placa sempre olha para a câmera** e mantém a escala por distância (`clampf(dist / 8.0, 0.28, 1.1)`).
-3. **35% maiores:** textura 768×216 e `pixel_size` 0,00306, resultando em ~2,35×0,66 m.
-4. **Texto dinâmico:** nome e papel são `Label3D`; os rótulos fixos (`HP`, `MP`, `UNIT`, `ACTION`, `ATB`, `EXPEDITION`) ficam na textura.
-5. **Sem dados falsos:** as barras de HP/MP e os pips de ATB são decorativos; não mostram números nem alteram o combate.
-6. **Alturas:** NPC/aliado com a placa em `altura + 0,58 m`; ícone de estado e reticências em `altura + 1,15 m`; inimigo em `1,58 m` (subiu para a placa maior não encostar no ícone de estado).
+3. **Tamanho:** textura 768×216 e `pixel_size` 0,003978 → **3,06×0,86 m**. É **30% maior** que a versão anterior (2,35×0,66 m) e ~**75% maior** que a D-1094 (1,74×0,49 m).
+4. **Texto dinâmico:** nome e papel são `Label3D`; no B/C os rótulos fixos (`HP`, `MP`, `UNIT`, `ACTION`, `ATB`, `EXPEDITION`) ficam na textura. No A só existe o nome.
+5. **Sem dados falsos:** as barras de HP/MP e os pips de ATB do B/C são decorativos; não mostram números nem alteram o combate. O A não tem barras.
+6. **Alturas:** NPC/aliado com a placa em `altura + 0,58 m`; ícone de estado e reticências em `altura + 1,30 m`; inimigo em `1,72 m` (a placa maior não encosta no ícone).
 7. **O que não muda:** batalha, 2D, HUD/status, cards, regras, falas, câmera, faixas, anéis e a D-1094 (fica como histórico).
 
 ## Arquivos
 
-- `assets/ui/nameplates/nameplate_unit_card.png`
-- `assets/ui/nameplates/nameplate_move_strip.png`
-- `assets/ui/nameplates/nameplate_expedition.png`
+- `assets/ui/nameplates/nameplate_unit_card.png` — bloco flat creme (A).
+- `assets/ui/nameplates/nameplate_move_strip.png` — Move Strip (B).
+- `assets/ui/nameplates/nameplate_expedition.png` — Expedition Tag (C).
 - `scripts/debug/floating_nameplate.gd`
 - `scripts/debug/murky_forest_3d_lab.gd` (estilo padrão, F6 e alturas)
 
@@ -66,13 +68,14 @@ O criador pediu **3 novas** placas — a Paper & Pin (A) fica como referência d
 - `docs/referencias/exploracao/3d/name_styles_d1096_expedition.png`
 - `docs/referencias/exploracao/3d/name_styles_d1096_comparison.png`
 - `docs/referencias/exploracao/3d/name_styles_d1096_lineup.png`
-- `docs/referencias/exploracao/3d/name_styles_d1096_roles.png`
+- `docs/referencias/exploracao/3d/name_styles_d1096_roles.png` — papéis NPC/ALLY/ENEMY no **Move Strip** (o Flat Card é só nome).
 - `docs/referencias/exploracao/3d/name_styles_d1096_cycle.mp4` / `.gif`
 
 ## O que foi verificado
 
-- As 3 placas no mesmo Bulbasaur, mesma câmera e mesma pose, 35% maiores que a D-1094.
-- A mesma placa em NPC, aliado e inimigo (`name_styles_d1096_roles.png`): BULBASAUR/NPC, PANCHAM/ALLY, SLIME/ENEMY, todos com o Unit Card.
+- As 3 placas no mesmo Bulbasaur, mesma câmera e mesma pose, **30% maiores** que a versão anterior.
+- O **Flat Card** com apenas o nome, sem barras/badges/ícones/papel.
+- A mesma placa em NPC, aliado e inimigo no **Move Strip** (`name_styles_d1096_roles.png`): BULBASAUR/NPC, PANCHAM/ALLY, SLIME/ENEMY.
 - Troca de estilo em tempo real pelo `F6`: as 6 placas trocam para `move_strip`, `expedition` e voltam para `unit_card` (`all=true`).
 - Cena `scenes/debug/murky_forest_3d_lab.tscn` headless: `exit=0`, sem erro de parse/case (só vazamentos de saída do headless).
 
@@ -85,7 +88,7 @@ O criador pediu **3 novas** placas — a Paper & Pin (A) fica como referência d
 
 ## Relação com a D-1094
 
-A D-1094 tinha **Paper & Pin / SMT Holo / Comic Impact**. O criador gostou da Paper & Pin, mas nesta rodada pediu **3 novas** na linguagem dos cards/HUDs e 35% maiores. Os três estilos da D-1094 continuam no histórico/referência; o trio ativo agora é Unit Card / Move Strip / Expedition Tag.
+A D-1094 tinha **Paper & Pin / SMT Holo / Comic Impact**. O criador gostou da Paper & Pin, mas nesta rodada pediu **3 novas** na linguagem dos cards/HUDs, depois simplificou o A para um bloco flat com só o nome e pediu **+30%** de tamanho. Os três estilos da D-1094 continuam no histórico/referência; o trio ativo agora é Flat Card / Move Strip / Expedition Tag.
 
 ## Estado
 

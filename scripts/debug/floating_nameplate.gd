@@ -20,7 +20,7 @@ extends Node3D
 const PLATE_W := 768.0
 const PLATE_H := 216.0
 ## 35% maior que a D-1094 (512×144 a 0,0034 = 1,74 m); aqui 2,35 m.
-const PIXEL_SIZE := 0.00306
+const PIXEL_SIZE := 0.003978
 const PLATE_PATHS := {
 	"unit_card": "res://assets/ui/nameplates/nameplate_unit_card.png",
 	"move_strip": "res://assets/ui/nameplates/nameplate_move_strip.png",
@@ -158,19 +158,21 @@ func _apply_style() -> void:
 			_sway_amp = 0.008
 			_bob_amp = 0.014
 		_:
+			# A — bloco paralelogramo flat, só o nome; nenhum detalhe.
 			_name_label.font = _display_font
-			_name_label.font_size = 78
-			_name_label.modulate = Color(0.925, 0.918, 0.855)
-			_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-			_name_home = _plate_pos(64.0, 106.0)
+			_name_label.font_size = 100
+			_name_label.modulate = Color(0.067, 0.106, 0.161)
+			_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			_name_home = _plate_pos(384.0, 108.0)
 			_role_label.font = _body_font
-			_role_label.font_size = 26
+			_role_label.font_size = 24
 			_role_label.modulate = Color(0.874, 0.788, 0.502)
 			_role_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			_role_label.position = _plate_pos(650.0, 41.0)
 			_base_tilt = 0.0
 			_sway_amp = 0.0
 			_bob_amp = 0.012
+	_role_label.visible = style_id != "unit_card"
 	_name_label.position = _name_home
 	_visual.rotation.z = _base_tilt
 

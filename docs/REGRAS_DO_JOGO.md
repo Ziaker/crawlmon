@@ -325,7 +325,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-1093] Retratos/ícones usam o ícone estabelecido; 3 zooms do Bulbasaur:** **regra registrada/implementada**: Pancham/Bulbasaur usam face crop, Orc usa o retrato próprio; Bulbasaur B escolhido (0,78 + 0,03 para a esquerda); PNGs A/B/C mantidos.
 - **[D-1094] Overhaul dos nomes flutuantes — 3 estilos:** **substituída pela D-1096**: Paper & Pin, SMT Holo e Comic Impact ficam históricos; a Paper foi a referência que o criador gostou; provas e vídeo.
 - **[D-1095] Ícone do Bulbasaur, aro interno, fundo marrom escuro e nome centralizado:** **implementado/provado**: Bulbasaur com o recorte fechado, aro dourado interno de volta, fundo do ícone em marrom escuro (#5C3C1E) e nome centralizado; batalha/2D/HUD/regras intactos; provas antes/depois.
-- **[D-1096] Placas de nome na linguagem dos cards/HUDs, 35% maiores:** **3 protótipos implementados/provados**: Unit Card, Move Strip e Expedition Tag; 35% maiores, F6 alterna, barras/pips decorativos, D-235; provas/vídeo.
+- **[D-1096] Placas de nome na linguagem dos cards/HUDs, flat e 30% maiores:** **3 protótipos implementados/provados**: Flat Card (só nome), Move Strip e Expedition Tag; +30% sobre a versão anterior (~75% sobre a D-1094), F6 alterna, barras/pips decorativos no B/C, D-235; provas/vídeo.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).
