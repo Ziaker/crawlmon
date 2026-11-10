@@ -32,6 +32,10 @@ func _skill(c: Combatant, skill_name: String) -> Skill:
 	for s in c.skills:
 		if s.display_name == skill_name:
 			return s
+	# D-1079: the move catalog is the single source; tests must use the new layer.
+	for s in Skill.all_catalog_skills():
+		if s.display_name == skill_name:
+			return s
 	return Skill.basic()
 
 
@@ -46,6 +50,15 @@ func _ko_goes_back(attacker_i: int, move: String) -> void:
 	var e: Combatant = b.enemies[0]
 	var a: Combatant = b.party[attacker_i]
 	var m: Node3D = bs.models[e]
+	Engine.time_scale = 1.0
+	# A IA em HOLD ainda bebe poção quando está ferida; sem inventário o alvo de 1 HP não se cura
+	# no meio do wind-up (era a causa de hp 1 -> 31 e do K.O. que nunca acontecia). Só os inimigos:
+	# a party é persistente entre cenas e não deve perder inventário por causa deste teste.
+	for c in b.party + b.enemies:
+		c.queued_skill = null
+		c.queued_target = null
+	for c in b.enemies:
+		c.inventory.clear()
 	var center := Vector3.ZERO
 	for p in b.party:
 		center += p.home
@@ -53,23 +66,70 @@ func _ko_goes_back(attacker_i: int, move: String) -> void:
 	var away := e.home - center
 	away.y = 0.0
 	away = away.normalized()
-	e.hp = 1
 	var before := m.position
+	var dead := false
+	var used_any := false
 	for tries in 8:
-		if not e.is_alive():
-			break
-		a.atb = 5.0
-		if not b.is_winding_up(a):
-			b.use_skill(a, _skill(a, move), e)
-		for i in 240:
+		# Wait for the attacker and the status engine; a shot sent during a return would be refused.
+		var idle_deadline := Time.get_ticks_msec() + 3000
+		while Time.get_ticks_msec() < idle_deadline and (b.is_attacking(a) or b.is_winding_up(a) or b.is_attacking(e) or b.is_winding_up(e) or b._status_pause != null):
 			await process_frame
-			if not e.is_alive():
-				break
-			before = m.position
-	await create_timer(0.7, true, false, true).timeout
+		if b.is_attacking(a) or b.is_winding_up(a) or b.is_attacking(e) or b.is_winding_up(e) or b._status_pause != null:
+			print("    [KO] %s: atacante/alvo não ficou ocioso (attacking=%s/%s winding=%s/%s pause=%s)" % [move, b.is_attacking(a), b.is_attacking(e), b.is_winding_up(a), b.is_winding_up(e), b._status_pause != null])
+			break
+		if not b.running or not e.is_alive():
+			break
+		# Reassert the target state before every attempt: no Guard, ARMOR, shield, blind, stun or invulnerability.
+		e.hp = 1
+		e.guard_timer = 0.0
+		e.armor_timer = 0.0
+		e.shield_timer = 0.0
+		e.shield_hp = 0
+		e.is_invulnerable = false
+		e.blind_timer = 0.0
+		e.stun_timer = 0.0
+		e.clear_burn()  # D-238: Burn kills without K.O. launch; the target must die from the hit.
+		e.taunted_by = null
+		e.taunt_atk_bonus = false
+		e.queued_skill = null
+		e.queued_target = null
+		a.atb = 5.0
+		a.mp = a.max_mp  # D-413: retries must not run out of MP
+		a.queued_skill = null
+		a.queued_target = null
+		b.debug_roll = 1  # force the hit; this test is about the KO launch, not dodge RNG
+		before = m.position
+		var used := b.use_skill(a, _skill(a, move), e)
+		used_any = used_any or used
+		if not used:
+			print("    [KO] %s: use_skill=false (attacking=%s winding=%s pause=%s atb=%.1f mp=%d)" % [move, b.is_attacking(a), b.is_winding_up(a), b._status_pause != null, a.blocks(), a.mp])
+			await process_frame
+			continue
+		# Wait for the hit/death in real time; the frame count is not a clock without --fixed-fps.
+		var hit_deadline := Time.get_ticks_msec() + 5000
+		while e.is_alive() and Time.get_ticks_msec() < hit_deadline:
+			await process_frame
+			if e.is_alive():
+				before = m.position
+		if not e.is_alive():
+			dead = true
+			break
+	# The K.O. starts the victory slow-motion (D-400), so the 1.05 s launch takes longer in real
+	# time. Wait for the body to travel, with a bounded deadline, instead of a fixed wall-clock wait.
+	var flight_deadline := Time.get_ticks_msec() + 6000
+	while Time.get_ticks_msec() < flight_deadline:
+		await process_frame
+		var flown := m.position - before
+		flown.y = 0.0
+		if flown.length() > 9.0:
+			break
 	var d := m.position - before
 	d.y = 0.0
-	_expect(not e.is_alive() and d.length() > 8.0 and d.normalized().dot(away) > 0.5, "KO com %s voa para longe dos jogadores (dot %.2f)" % [move, d.normalized().dot(away)])
+	if not dead and e.is_alive():
+		print("    [KO] %s: o alvo não morreu após 8 tentativas (hp=%d, use_skill=%s)" % [move, e.hp, used_any])
+	if dead and d.length() <= 8.0:
+		print("    [KO] %s: o alvo morreu mas o lançamento não afastou (final=%s, before=%s)" % [move, m.position, before])
+	_expect(not e.is_alive() and d.length() > 8.0 and d.normalized().dot(away) > 0.5, "KO com %s voa para longe dos jogadores (dot %.2f, dist %.2f)" % [move, d.normalized().dot(away), d.length()])
 	_end(bs)
 
 
@@ -112,7 +172,7 @@ func _still_evade(left: float) -> Array:
 	var inc: Incoming = b.incoming.back()
 	while not inc.impacted:
 		await process_frame
-		if inc.can_evade_now() and inc.travel_left() <= left:
+		if inc.can_evade_now():  # D-988: the window ends 0.25 s before the contact, not at travel_left 0.2
 			b.try_evade(l, inc)
 			break
 	return [bs, b, e, l, inc]
@@ -241,7 +301,7 @@ func _test_tarukaja_keeps_size() -> void:
 
 func _run() -> void:
 	await _test_tarukaja_keeps_size()
-	await _ko_goes_back(0, "Teleport")
+	await _ko_goes_back(0, "Tackle")
 	await _ko_goes_back(0, "Confusion")
 	await _ko_goes_back(1, "Karate Chop")
 	await _test_windup_loop()
