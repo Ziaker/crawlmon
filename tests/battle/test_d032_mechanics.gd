@@ -61,6 +61,9 @@ func _arena() -> Dictionary:
 	e2.place(Vector3(3, 0, -10), 0.0)
 	for c in [p1, p2, e1, e2]:
 		c.act_policy = Combatant.Act.HOLD
+		c.max_mp = 99  # D-413: the mechanics tests use real Skills with MP costs
+		c.mp = 99
+	Engine.time_scale = 1.0
 	b.start([p1, p2], [e1, e2])
 	return {"b": b, "p1": p1, "p2": p2, "e1": e1, "e2": e2}
 
@@ -147,6 +150,7 @@ func _test_taunt() -> void:
 	var p1: Combatant = ctx["p1"]
 	var p2: Combatant = ctx["p2"]
 	var e1: Combatant = ctx["e1"]
+	b.debug_roll = 1  # the foe attack must hit/execute, not be lost to the 10% auto-dodge
 	p1.add_atb(3.0)
 	p2.add_atb(3.0)
 	e1.add_atb(3.0)
@@ -255,13 +259,21 @@ func _test_dragon_rage_aoe_splash() -> void:
 	e1.add_atb(3.0)
 
 	var rage := Skill.new("Dragon Rage", 1.6, 3, Element.Type.FISICO, Skill.Kind.PROJECTILE, false, false, false, 2.0, true)
-	b.use_skill(e1, rage, p1)
-	var inc: Incoming = b.incoming[0]
+	b.debug_roll = 1  # force the main hit; 10% auto-dodge made the splash flaky
+	var before_rage := b.incoming.size()
+	var used_rage := b.use_skill(e1, rage, p1)
+	var inc: Incoming = b.incoming.back() if b.incoming.size() > before_rage else null
+	_expect(used_rage and inc != null, "Dragon Rage foi aceito")
+	if inc == null:
+		b.free()
+		return
+	_expect(inc.target == p1, "Dragon Rage mirou no alvo principal")
 	_expect(inc.total_windup == 2.0, "Dragon Rage tem 2.0s de windup")
 
 	# Executa e acerta p1 -> p2 (aliado) também deve sofrer dano total
 	inc.time_left = 0.0
 	_run_until_done(b, inc)
+	_expect(inc.impacted, "Dragon Rage chegou ao impacto")
 	_expect(p1.hp < 100, "Alvo principal de Dragon Rage sofreu dano")
 	_expect(p2.hp < 100, "Aliado sofreu o dano splash em área no contato de Dragon Rage")
 	b.free()
@@ -286,13 +298,27 @@ func _test_dig_invulnerability() -> void:
 	dig_inc.time_left = 0.0
 	b._process(DT)
 	_expect(e1.is_invulnerable, "Dig fica INVULNERÁVEL sob o chão durante o trajeto (TRAVEL)")
+	# Keep Dig underground for the whole foe attack: the normal TRAVEL could end before a 1.5 s
+	# wind-up foe attack lands, and then the hit would be legitimate (test timing, not game rule).
+	if dig_inc.phase == Incoming.Phase.TRAVEL and dig_inc.plan_i < dig_inc.plan.size():
+		dig_inc.plan[dig_inc.plan_i][1] = 999.0
 
 	# Se atacado durante a fase subterrânea, ataque sofre MISS!
-	b.use_skill(p1, Skill.basic(), e1)
-	var foe_atk: Incoming = b.incoming[0]
+	b.debug_roll = 1  # force the attack to hit; the invulnerability must make it miss, not RNG
+	var before_foe := b.incoming.size()
+	var foe_used := b.use_skill(p1, Skill.basic(), e1)
+	var foe_atk: Incoming = b.incoming.back() if b.incoming.size() > before_foe else null
+	_expect(foe_used and foe_atk != null, "O ataque em Dig foi aceito")
+	if foe_atk == null:
+		b.free()
+		return
+	_expect(foe_atk.target == e1, "O ataque em Dig mirou no usuário sob o chão")
 	foe_atk.time_left = 0.0
 	b._process(DT)
-	while not foe_atk.impacted:
+	var guard := 0
+	while not foe_atk.impacted and guard < 600:
 		b._process(DT)
+		guard += 1
+	_expect(foe_atk.impacted, "O ataque em Dig foi resolvido")
 	_expect(e1.hp == 100, "Ataques inimigos erram completamente o usuário de Dig sob o chão (MISS!)")
 	b.free()
