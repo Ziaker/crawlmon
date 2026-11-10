@@ -26,7 +26,14 @@ const SOLO_CAM_PITCH := 8.0
 const NAV_Y := 0.05
 
 enum AllyState { IDLE, FOLLOW, CATCH_UP, AVOID, RECOVER }
-enum EnemyState { PATROL, CHASE, SEARCH, RETURN }
+enum EnemyState { PATROL, CHASE, SEARCH, RETURN, FLEE }
+
+## D-1086: protótipo do Medroso (D-310/D-315) no lab da Murky Forest.
+## A fórmula final e as velocidades em px/s continuam pendentes; aqui o
+## Slime foge devagar quando o grupo chega a 3 tiles (9 m, 1 tile = 3 m).
+const MEDROSO_FLEE_RADIUS := 9.0
+const MEDROSO_EXIT_RADIUS := 10.5
+const MEDROSO_SPEED := 1.0
 
 ## Alturas provisórias do lab (metros). Não são regra de jogo.
 const HEIGHTS := {
@@ -38,6 +45,8 @@ const HEIGHTS := {
 
 ## O recorder liga isso antes de add_child para o vídeo com os três.
 @export var start_party := false
+## D-1086: só o lab da Murky Forest liga o protótipo do Medroso.
+@export var enable_threat_demo := false
 
 var player: CharacterBody3D
 var player_model: Node3D
@@ -62,6 +71,8 @@ var _enemy_ap: AnimationPlayer
 var _enemy_state := EnemyState.PATROL
 var _enemy_patrol_i := 0
 var _enemy_last_seen := Vector3.ZERO
+var _enemy_threat_level := 2
+var _enemy_alert_timer := 0.0
 var _enemy_lost := 0.0
 var _enemy_dust: CPUParticles3D
 var _player_dust: CPUParticles3D
@@ -462,6 +473,7 @@ func _add_follower(model_id: String, side: float, behind: float, start: Vector3)
 		"behind": behind,
 		"side": side,
 		"height": height,
+		"model_id": model_id,
 		"velocity": Vector3.ZERO,
 		"last_pos": start,
 		"stuck": 0.0,
@@ -644,6 +656,8 @@ func _build_enemy() -> void:
 	_enemy_dust = _add_footstep_dust(body)
 	_enemy_ap = _anim_player(model)
 	_play_idle(_enemy_ap)
+	if enable_threat_demo:
+		_enemy_threat_level = 0  # Medroso (D-1086)
 	var tag := Label3D.new()
 	tag.text = "SLIME"
 	tag.font_size = 42
@@ -876,53 +890,89 @@ func _separation(f: Dictionary) -> Vector3:
 
 
 ## Inimigo simples de laboratório: patrulha, vê por raycast, persegue e volta.
+## D-1086: com enable_threat_demo, o Slime vira Medroso (D-310/D-315) e foge.
 func _update_enemy(delta: float) -> void:
 	if _enemy_body == null:
 		return
+	_enemy_alert_timer = maxf(0.0, _enemy_alert_timer - delta)
 	var body := _enemy_body
 	var to_player := player.global_position - body.global_position
 	to_player.y = 0.0
 	var dist := to_player.length()
-	var can_see := dist < 7.0 and _enemy_has_los()
-	if can_see:
-		_enemy_state = EnemyState.CHASE
-		_enemy_last_seen = player.global_position
-		_enemy_lost = 0.0
-	else:
-		match _enemy_state:
-			EnemyState.CHASE:
-				_enemy_lost += delta
-				if _enemy_lost > 2.0:
-					_enemy_state = EnemyState.SEARCH
-					_enemy_lost = 0.0
-			EnemyState.SEARCH:
-				_enemy_lost += delta
-				if _enemy_lost > 2.0:
-					_enemy_state = EnemyState.RETURN
-			EnemyState.RETURN:
-				if body.global_position.distance_to(Vector3(12.0, 0.0, -10.0)) < 0.6:
-					_enemy_state = EnemyState.PATROL
-
 	var target := player.global_position
 	var speed := 2.4
-	match _enemy_state:
-		EnemyState.PATROL:
-			var points := [Vector3(10.0, 0.0, -10.0), Vector3(14.0, 0.0, -10.0)]
-			target = points[_enemy_patrol_i]
-			speed = 1.2
-			if body.global_position.distance_to(target) < 0.45:
-				_enemy_patrol_i = (_enemy_patrol_i + 1) % 2
-		EnemyState.SEARCH:
-			target = _enemy_last_seen
-			speed = 1.8
-			if body.global_position.distance_to(target) < 0.45:
-				_enemy_state = EnemyState.RETURN
-		EnemyState.RETURN:
-			target = Vector3(12.0, 0.0, -10.0)
-			speed = 2.0
-		EnemyState.CHASE:
-			target = player.global_position
-			speed = 2.4
+	var patrol_points := [Vector3(10.0, 0.0, -10.0), Vector3(14.0, 0.0, -10.0)]
+
+	if enable_threat_demo and _enemy_threat_level == 0:
+		var was_flee := _enemy_state == EnemyState.FLEE
+		if dist < MEDROSO_FLEE_RADIUS:
+			if not was_flee:
+				_enemy_alert_timer = 0.6
+			_enemy_state = EnemyState.FLEE
+		elif was_flee and dist > MEDROSO_EXIT_RADIUS:
+			_enemy_state = EnemyState.RETURN
+		elif _enemy_state != EnemyState.RETURN:
+			_enemy_state = EnemyState.PATROL
+		if _enemy_state == EnemyState.RETURN \
+				and body.global_position.distance_to(Vector3(12.0, 0.0, -10.0)) < 0.6:
+			_enemy_state = EnemyState.PATROL
+		match _enemy_state:
+			EnemyState.FLEE:
+				var away := body.global_position - player.global_position
+				away.y = 0.0
+				if away.length_squared() < 0.001:
+					away = Vector3(1.0, 0.0, 0.0)
+				target = body.global_position + away.normalized() * 3.0
+				target = _clamp_to_free(body.global_position, target)
+				speed = MEDROSO_SPEED
+			EnemyState.RETURN:
+				target = Vector3(12.0, 0.0, -10.0)
+				speed = 1.2
+			_:
+				target = patrol_points[_enemy_patrol_i]
+				speed = 1.2
+				if body.global_position.distance_to(target) < 0.45:
+					_enemy_patrol_i = (_enemy_patrol_i + 1) % 2
+	else:
+		var was_chase := _enemy_state == EnemyState.CHASE
+		var can_see := dist < 7.0 and _enemy_has_los()
+		if can_see:
+			if not was_chase:
+				_enemy_alert_timer = 0.6
+			_enemy_state = EnemyState.CHASE
+			_enemy_last_seen = player.global_position
+			_enemy_lost = 0.0
+		else:
+			match _enemy_state:
+				EnemyState.CHASE:
+					_enemy_lost += delta
+					if _enemy_lost > 2.0:
+						_enemy_state = EnemyState.SEARCH
+						_enemy_lost = 0.0
+				EnemyState.SEARCH:
+					_enemy_lost += delta
+					if _enemy_lost > 2.0:
+						_enemy_state = EnemyState.RETURN
+				EnemyState.RETURN:
+					if body.global_position.distance_to(Vector3(12.0, 0.0, -10.0)) < 0.6:
+						_enemy_state = EnemyState.PATROL
+		match _enemy_state:
+			EnemyState.PATROL:
+				target = patrol_points[_enemy_patrol_i]
+				speed = 1.2
+				if body.global_position.distance_to(target) < 0.45:
+					_enemy_patrol_i = (_enemy_patrol_i + 1) % 2
+			EnemyState.SEARCH:
+				target = _enemy_last_seen
+				speed = 1.8
+				if body.global_position.distance_to(target) < 0.45:
+					_enemy_state = EnemyState.RETURN
+			EnemyState.RETURN:
+				target = Vector3(12.0, 0.0, -10.0)
+				speed = 2.0
+			EnemyState.CHASE:
+				target = player.global_position
+				speed = 2.4
 	target.y = 0.0
 
 	_enemy_agent.target_position = target

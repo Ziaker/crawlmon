@@ -1,0 +1,8 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/debug/dialogue_style_lab.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/debug/murky_forest_3d_lab.tscn" id="2"]
+
+[node name="DialogueStyleLab" type="Node"]
+script = ExtResource("1")
+lab_scene = ExtResource("2")

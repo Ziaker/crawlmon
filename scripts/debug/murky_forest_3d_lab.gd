@@ -11,6 +11,14 @@ extends "res://scripts/debug/third_person_3d_lab.gd"
 
 const FOREST_VIGNETTE := preload("res://shaders/vignette.gdshader")
 const NPC_DATA := preload("res://scripts/dungeon/npc_data.gd")
+const NPC_PROMPT := preload("res://scripts/debug/overworld_prompt.gd")
+const MARKER_RING_SHADER := preload("res://shaders/overworld_marker_ring.gdshader")
+const ICON_ANGER := preload("res://assets/ui/overworld_icons/state_anger.png")
+const ICON_SWEAT := preload("res://assets/ui/overworld_icons/state_sweat.png")
+const ICON_ALERT := preload("res://assets/ui/overworld_icons/state_alert.png")
+const ICON_QUESTION := preload("res://assets/ui/overworld_icons/state_question.png")
+const ICON_TALKED := preload("res://assets/ui/overworld_icons/state_talked.png")
+const FOLLOWER_NAMES := {"pancham": "PANCHAM", "dqt_orc": "ORC"}
 const FOREST_WALL_HEIGHT := 4.2
 const MINIMAP_SIZE := 256
 const MINIMAP_DISPLAY_SIZE := 112
@@ -23,7 +31,7 @@ const NPC_COLLISION_LAYER := 1 << 4  ## 16: o jogador colide; o raio da câmera 
 
 ## Pool de 10 NPCs 3D (D-1063): 5 Pokémon Stage-1 + 5 monstros básicos do DQT.
 const NPC_POOL: Array[Dictionary] = [
-	{"id": "bulbasaur", "name": "BULBASAUR", "height": 0.78},
+	{"id": "bulbasaur", "name": "BULBASAUR", "height": 0.78, "has_quest": true},
 	{"id": "charmander", "name": "CHARMANDER", "height": 0.85},
 	{"id": "squirtle", "name": "SQUIRTLE", "height": 0.80},
 	{"id": "pikachu", "name": "PIKACHU", "height": 0.72},
@@ -44,6 +52,12 @@ const NPC_SLOTS: Array[Dictionary] = [
 
 var _rng := RandomNumberGenerator.new()
 var _foliage_fade: Array[Dictionary] = []
+var _marker_rings: Array[Dictionary] = []
+var _state_icons: Array[Dictionary] = []
+var _name_labels: Array[Dictionary] = []
+var _npc_prompt: Control
+var _enemy_marker_root: Node3D
+var _enemy_icon_entry: Dictionary = {}
 var _minimap_viewport: SubViewport
 var _minimap_camera: Camera3D
 var _minimap_rect: TextureRect
@@ -62,6 +76,8 @@ var _interact_prev := false
 
 
 func _ready() -> void:
+	# D-1086: o Slime deste lab é o protótipo Medroso (D-310/D-315).
+	enable_threat_demo = true
 	super()
 	# D-1063: os NPCs são sólidos para o jogador (layer 16), mas o raio da
 	# câmera usa a máscara 1 e continua ignorando os NPCs (D-1023).
@@ -70,6 +86,7 @@ func _ready() -> void:
 	_build_npcs()
 	_apply_toon(self)
 	_set_actor_layers()
+	_add_world_markers()
 	if _camera != null:
 		# A camada 5 é só do mapa do mini-mapa; a câmera principal não a vê.
 		_camera.cull_mask = 0xFFFFFFFF & ~(1 << 4)
@@ -80,6 +97,10 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	super(delta)
+	_update_enemy_marker()
+	_update_marker_rings(delta)
+	_update_state_icons(delta)
+	_update_name_labels()
 	_update_foliage_fade(delta)
 	_update_hud_badges()
 
@@ -791,7 +812,243 @@ func _spawn_npc_at_slot(slot_i: int, pool_idx: int) -> void:
 		"base_yaw": base_yaw,
 		"dialogue": NPC_DATA.DIALOGUES[dlg_idx],
 		"pool_idx": pool_idx,
+		"has_quest": bool(data.get("has_quest", false)),
+		"talked": false,
+		"tag": tag,
 	})
+
+
+# --- D-1086: círculos no chão, ícones de estado e nomes dos aliados --------
+
+func _add_world_markers() -> void:
+	for npc in _npcs:
+		_decorate_npc(npc)
+	for f in _followers:
+		var body: Node3D = f["node"]
+		var height := float(f["height"])
+		_add_ground_ring(body, clampf(height * 0.55, 0.42, 0.95), Color(0.22, 0.48, 1.0, 0.65), "ally")
+		_add_ally_name(f)
+	if _enemy_body != null:
+		_enemy_marker_root = Node3D.new()
+		_enemy_marker_root.name = "EnemyMarkers"
+		add_child(_enemy_marker_root)
+		_add_ground_ring(_enemy_marker_root, 0.45, Color(0.95, 0.15, 0.15, 0.70), "enemy")
+		_enemy_icon_entry = _add_state_icon(_enemy_marker_root, Vector3(0.0, 1.05, 0.0))
+		for child in _enemy_body.get_children():
+			if child is Label3D:
+				_name_labels.append({"tag": child, "owner": _enemy_body})
+				break
+
+
+func _decorate_npc(npc: Dictionary) -> void:
+	if npc.has("icon_entry"):
+		var old_sprite = npc["icon_entry"].get("sprite")
+		if is_instance_valid(old_sprite):
+			return
+	var body: Node3D = npc["node"]
+	var height := float(npc["height"])
+	var top_y := height
+	if str(npc["id"]) == "dqt_dracky":
+		top_y = height * 1.48
+	_add_ground_ring(body, clampf(height * 0.75, 0.45, 0.85), Color(0.40, 0.95, 0.60, 0.65), "npc")
+	npc["icon_entry"] = _add_state_icon(body, Vector3(0.0, top_y + 0.78, 0.0))
+	if npc.has("tag") and is_instance_valid(npc["tag"]):
+		_name_labels.append({"tag": npc["tag"], "owner": body})
+	_update_npc_icon(npc)
+
+
+func _add_ground_ring(parent: Node3D, radius: float, color: Color, kind: String = "") -> void:
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(radius * 2.6, radius * 2.6)
+	var mi := MeshInstance3D.new()
+	mi.mesh = plane
+	mi.position = Vector3(0.0, 0.025, 0.0)
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var mat := ShaderMaterial.new()
+	mat.shader = MARKER_RING_SHADER
+	mat.set_shader_parameter("ring_color", color)
+	mat.set_shader_parameter("inner_radius", 0.80)
+	mat.set_shader_parameter("outer_radius", 0.95)
+	mat.set_shader_parameter("softness", 0.04)
+	mi.material_override = mat
+	parent.add_child(mi)
+	_marker_rings.append({
+		"mesh": mi,
+		"mat": mat,
+		"owner": parent,
+		"kind": kind,
+		"phase": _rng.randf_range(0.0, TAU),
+	})
+
+
+func _add_state_icon(parent: Node3D, pos: Vector3) -> Dictionary:
+	var sprite := Sprite3D.new()
+	sprite.texture = ICON_QUESTION
+	sprite.pixel_size = 0.0035
+	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	sprite.shaded = false
+	sprite.double_sided = true
+	sprite.no_depth_test = false
+	sprite.position = pos
+	sprite.modulate = Color.WHITE
+	parent.add_child(sprite)
+	var entry := {
+		"sprite": sprite,
+		"base_y": pos.y,
+		"phase": _rng.randf_range(0.0, TAU),
+		"state": "",
+		"pop": 0.0,
+		"owner": parent,
+	}
+	_state_icons.append(entry)
+	return entry
+
+
+func _add_ally_name(f: Dictionary) -> void:
+	var body: Node3D = f["node"]
+	var height := float(f["height"])
+	var model_id := str(f.get("model_id", ""))
+	var display := str(FOLLOWER_NAMES.get(model_id, model_id.to_upper()))
+	var tag := Label3D.new()
+	tag.text = display
+	tag.font_size = 34
+	tag.modulate = Color(0.86, 0.92, 1.0)
+	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	tag.position = Vector3(0.0, height + 0.38, 0.0)
+	tag.no_depth_test = false
+	tag.layers = 1 << 6
+	body.add_child(tag)
+	_name_labels.append({"tag": tag, "owner": body})
+
+
+func _update_enemy_marker() -> void:
+	if _enemy_marker_root == null or _enemy_body == null:
+		return
+	if not is_instance_valid(_enemy_body):
+		return
+	_enemy_marker_root.global_position = _enemy_body.global_position
+	_enemy_marker_root.visible = _enemy_body.visible
+	_update_enemy_icon()
+
+
+func _update_marker_rings(_delta: float) -> void:
+	if _camera == null:
+		return
+	for i in range(_marker_rings.size() - 1, -1, -1):
+		var entry := _marker_rings[i]
+		var owner := entry["owner"] as Node3D
+		var mesh := entry["mesh"] as MeshInstance3D
+		if owner == null or not is_instance_valid(owner) or mesh == null or not is_instance_valid(mesh):
+			_marker_rings.remove_at(i)
+			continue
+		var dist := _camera.global_position.distance_to(owner.global_position)
+		mesh.visible = dist > 1.4
+		if not mesh.visible:
+			continue
+		if str(entry.get("kind", "")) == "ally" and player != null:
+			var to_owner := owner.global_position - player.global_position
+			var to_cam := _camera.global_position - player.global_position
+			if to_owner.length_squared() > 0.001 and to_cam.length_squared() > 0.001:
+				var ang := rad_to_deg(acos(clampf(
+					to_owner.normalized().dot(to_cam.normalized()), -1.0, 1.0)))
+				if ang < 50.0:
+					mesh.visible = false
+					continue
+		var fade := clampf(1.0 - (dist - 7.0) / 11.0, 0.22, 1.0)
+		var pulse := 0.88 + 0.12 * sin(_time * 2.1 + float(entry["phase"]))
+		var mat := entry["mat"] as ShaderMaterial
+		if mat != null:
+			mat.set_shader_parameter("alpha", fade * pulse)
+
+
+func _update_state_icons(delta: float) -> void:
+	for i in range(_state_icons.size() - 1, -1, -1):
+		var entry := _state_icons[i]
+		var sprite := entry["sprite"] as Sprite3D
+		if sprite == null or not is_instance_valid(sprite):
+			_state_icons.remove_at(i)
+			continue
+		var pop := maxf(0.0, float(entry["pop"]) - delta * 4.0)
+		entry["pop"] = pop
+		sprite.position.y = float(entry["base_y"]) \
+			+ sin(_time * 2.4 + float(entry["phase"])) * 0.045 + pop * 0.15
+		var dist := 9.0
+		if _camera != null:
+			dist = _camera.global_position.distance_to(sprite.global_position)
+		var s := (1.0 + pop * 0.35) * clampf(dist / 8.0, 0.18, 1.1)
+		sprite.scale = Vector3(s, s, s)
+
+
+func _update_name_labels() -> void:
+	if _camera == null:
+		return
+	for i in range(_name_labels.size() - 1, -1, -1):
+		var entry := _name_labels[i]
+		var tag := entry["tag"] as Label3D
+		var owner := entry["owner"] as Node3D
+		if tag == null or not is_instance_valid(tag) or owner == null or not is_instance_valid(owner):
+			_name_labels.remove_at(i)
+			continue
+		var dist := _camera.global_position.distance_to(tag.global_position)
+		var s := clampf(dist / 8.0, 0.28, 1.1)
+		tag.scale = Vector3(s, s, s)
+
+
+func _set_icon(entry: Dictionary, state: String, texture: Texture2D, tint: Color) -> void:
+	if str(entry.get("state", "")) == state:
+		return
+	entry["state"] = state
+	var sprite := entry["sprite"] as Sprite3D
+	if sprite == null:
+		return
+	sprite.texture = texture
+	sprite.modulate = tint
+	entry["pop"] = 0.28
+
+
+func _update_npc_icon(npc: Dictionary) -> void:
+	var entry: Dictionary = npc.get("icon_entry", {})
+	if entry.is_empty():
+		return
+	if bool(npc.get("talked", false)):
+		_set_icon(entry, "talked", ICON_TALKED, Color(0.75, 1.0, 0.78))
+	elif bool(npc.get("has_quest", false)):
+		_set_icon(entry, "quest", ICON_QUESTION, Color(1.0, 0.82, 0.22))
+	else:
+		_set_icon(entry, "question", ICON_QUESTION, Color.WHITE)
+
+
+func _update_enemy_icon() -> void:
+	if _enemy_icon_entry.is_empty():
+		return
+	var sprite := _enemy_icon_entry["sprite"] as Sprite3D
+	if sprite == null:
+		return
+	var state := "none"
+	var tex: Texture2D = null
+	var tint := Color.WHITE
+	if _enemy_alert_timer > 0.0:
+		state = "alert"
+		tex = ICON_ALERT
+		tint = Color(1.0, 0.85, 0.25)
+	elif _enemy_state == EnemyState.CHASE:
+		state = "anger"
+		tex = ICON_ANGER
+		tint = Color(1.0, 0.45, 0.35)
+	elif _enemy_state == EnemyState.FLEE:
+		state = "sweat"
+		tex = ICON_SWEAT
+		tint = Color(0.55, 0.85, 1.0)
+	elif _enemy_state == EnemyState.SEARCH:
+		state = "search"
+		tex = ICON_QUESTION
+		tint = Color(1.0, 0.45, 0.45)
+	if tex == null:
+		sprite.visible = false
+		_enemy_icon_entry["state"] = "none"
+		return
+	sprite.visible = true
+	_set_icon(_enemy_icon_entry, state, tex, tint)
 
 
 func cycle_npcs(new_offset: int) -> void:
@@ -799,6 +1056,8 @@ func cycle_npcs(new_offset: int) -> void:
 	_npc_talking = false
 	if _npc_dialogue_panel != null:
 		_npc_dialogue_panel.visible = false
+	if _npc_prompt != null:
+		_npc_prompt.hide_prompt()
 	for npc in _npcs:
 		var node: Node3D = npc["node"]
 		if is_instance_valid(node):
@@ -818,6 +1077,7 @@ func cycle_npcs(new_offset: int) -> void:
 		var node: Node3D = npc["node"]
 		_apply_toon(node)
 		_set_layers(node, 1 << 6)
+		_decorate_npc(npc)
 		if _marker_root != null:
 			_add_minimap_marker(node, Color(1.0, 1.0, 1.0, 1.0), "npc")
 
@@ -869,6 +1129,16 @@ func _build_npc_dialogue_ui() -> void:
 	vbox.add_child(_npc_dialogue_text)
 
 	layer.add_child(_npc_dialogue_panel)
+
+	# D-1085: prompt torto [Z] TALK, separado do prompt da porta.
+	_npc_prompt = NPC_PROMPT.new()
+	layer.add_child(_npc_prompt)
+	_npc_prompt.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_npc_prompt.offset_left = -190.0
+	_npc_prompt.offset_top = -68.0
+	_npc_prompt.offset_right = 190.0
+	_npc_prompt.offset_bottom = -10.0
+	_npc_prompt.visible = false
 	add_child(layer)
 
 
@@ -881,6 +1151,7 @@ func _update_npcs(delta: float) -> void:
 		var body: Node3D = npc["node"]
 		if not is_instance_valid(body):
 			continue
+		_update_npc_icon(npc)
 		_play_idle(npc["ap"])
 		var to_player := player.global_position - body.global_position
 		to_player.y = 0.0
@@ -899,16 +1170,20 @@ func _update_npcs(delta: float) -> void:
 	_interact_prev = interact_now
 
 	if nearest_npc.is_empty():
+		if _npc_prompt != null:
+			_npc_prompt.hide_prompt()
 		if _npc_talking:
 			_npc_talking = false
 			if _npc_dialogue_panel != null:
 				_npc_dialogue_panel.visible = false
 		return
 
-	# Jogador perto de um NPC: mostra o prompt Z/E: FALAR (se não estiver na porta).
-	if not _door_near and _door_prompt != null:
-		_door_prompt.visible = true
-		_door_prompt.text = "Z/E: FECHAR" if _npc_talking else ("Z/E: FALAR (%s)" % str(nearest_npc["name"]))
+	# Jogador perto de um NPC: prompt [Z] TALK; a porta tem o prompt dela.
+	if _door_near:
+		if _npc_prompt != null:
+			_npc_prompt.hide_prompt()
+	elif _npc_prompt != null:
+		_npc_prompt.show_prompt(str(nearest_npc["name"]), "CLOSE" if _npc_talking else "TALK")
 	if interact_just and not _door_near:
 		if _npc_talking and _npc_talk_target.get("node") == nearest_npc.get("node"):
 			_npc_talking = false
@@ -917,6 +1192,8 @@ func _update_npcs(delta: float) -> void:
 		else:
 			_npc_talking = true
 			_npc_talk_target = nearest_npc
+			nearest_npc["talked"] = true
+			_update_npc_icon(nearest_npc)
 			if _npc_dialogue_panel != null:
 				_npc_dialogue_title.text = str(nearest_npc["name"])
 				_npc_dialogue_text.text = str(nearest_npc["dialogue"])
