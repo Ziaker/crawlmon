@@ -13,6 +13,7 @@ const FOREST_VIGNETTE := preload("res://shaders/vignette.gdshader")
 const NPC_DATA := preload("res://scripts/dungeon/npc_data.gd")
 const NPC_PROMPT := preload("res://scripts/debug/overworld_prompt.gd")
 const NPC_HUD := preload("res://scripts/debug/dialogue_hud_styles.gd")
+const ALLY_DIALOGUE := preload("res://scripts/dungeon/ally_dialogue.gd")
 const MARKER_RING_SHADER := preload("res://shaders/overworld_marker_ring.gdshader")
 const ICON_ANGER := preload("res://assets/ui/overworld_icons/state_anger.png")
 const ICON_SWEAT := preload("res://assets/ui/overworld_icons/state_sweat.png")
@@ -58,8 +59,11 @@ var _state_icons: Array[Dictionary] = []
 var _name_labels: Array[Dictionary] = []
 var _npc_prompt: Control
 var _npc_hud: Control
+var _dialogue_stage := 0
+var _dialogue_reactions: Array[Dictionary] = []
 var _enemy_marker_root: Node3D
 var _enemy_icon_entry: Dictionary = {}
+var _enemy_ring_entry: Dictionary = {}
 var _minimap_viewport: SubViewport
 var _minimap_camera: Camera3D
 var _minimap_rect: TextureRect
@@ -103,7 +107,7 @@ func _process(delta: float) -> void:
 	_update_marker_rings(delta)
 	_update_state_icons(delta)
 	_update_name_labels()
-	_update_npc_talking()
+	_update_talking_labels()
 	_update_foliage_fade(delta)
 	_update_hud_badges()
 
@@ -831,11 +835,13 @@ func _add_world_markers() -> void:
 		var height := float(f["height"])
 		_add_ground_ring(body, clampf(height * 0.55, 0.42, 0.95), Color(0.22, 0.48, 1.0, 0.65), "ally")
 		_add_ally_name(f)
+		_add_ally_talking(f)
 	if _enemy_body != null:
 		_enemy_marker_root = Node3D.new()
 		_enemy_marker_root.name = "EnemyMarkers"
 		add_child(_enemy_marker_root)
-		_add_ground_ring(_enemy_marker_root, 0.45, Color(0.95, 0.15, 0.15, 0.70), "enemy")
+		_add_ground_ring(_enemy_marker_root, 0.45, Color(1.0, 0.72, 0.15, 0.70), "enemy")
+		_enemy_ring_entry = _marker_rings.back()
 		_enemy_icon_entry = _add_state_icon(_enemy_marker_root, Vector3(0.0, 1.05, 0.0))
 		for child in _enemy_body.get_children():
 			if child is Label3D:
@@ -853,7 +859,7 @@ func _decorate_npc(npc: Dictionary) -> void:
 	var top_y := height
 	if str(npc["id"]) == "dqt_dracky":
 		top_y = height * 1.48
-	_add_ground_ring(body, clampf(height * 0.75, 0.45, 0.85), Color(0.40, 0.95, 0.60, 0.65), "npc")
+	_add_ground_ring(body, clampf(height * 0.75, 0.45, 0.85), Color(1.0, 1.0, 1.0, 0.68), "npc")
 	npc["icon_entry"] = _add_state_icon(body, Vector3(0.0, top_y + 0.78, 0.0))
 	var talking := Label3D.new()
 	talking.text = "..."
@@ -940,6 +946,26 @@ func _add_ally_name(f: Dictionary) -> void:
 	_name_labels.append({"tag": tag, "owner": body})
 
 
+func _add_ally_talking(f: Dictionary) -> void:
+	var body: Node3D = f["node"]
+	var height := float(f["height"])
+	var talk := Label3D.new()
+	talk.text = "..."
+	talk.font_size = 48
+	talk.modulate = Color(1.0, 0.86, 0.45)
+	talk.outline_size = 6
+	talk.outline_modulate = Color(0.0, 0.0, 0.0, 0.9)
+	talk.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	talk.no_depth_test = false
+	talk.position = Vector3(0.0, height + 0.75, 0.0)
+	talk.layers = 1 << 6
+	talk.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	talk.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	talk.visible = false
+	body.add_child(talk)
+	f["talking_label"] = talk
+
+
 func _update_enemy_marker() -> void:
 	if _enemy_marker_root == null or _enemy_body == null:
 		return
@@ -948,6 +974,7 @@ func _update_enemy_marker() -> void:
 	_enemy_marker_root.global_position = _enemy_body.global_position
 	_enemy_marker_root.visible = _enemy_body.visible
 	_update_enemy_icon()
+	_update_enemy_ring_color()
 
 
 func _update_marker_rings(_delta: float) -> void:
@@ -1037,21 +1064,110 @@ func _update_npc_icon(npc: Dictionary) -> void:
 		_set_icon(entry, "question", ICON_QUESTION, Color.WHITE)
 
 
-func _update_npc_talking() -> void:
-	if not _npc_talking or _npc_talk_target.is_empty():
+func _update_talking_labels() -> void:
+	var active_label: Label3D = null
+	if _npc_talking and not _npc_talk_target.is_empty():
+		if _dialogue_stage == 0:
+			var label = _npc_talk_target.get("talking_label")
+			if label is Label3D:
+				active_label = label
+		elif _dialogue_stage > 0 and _dialogue_stage <= _dialogue_reactions.size():
+			var reaction: Dictionary = _dialogue_reactions[_dialogue_stage - 1]
+			var label = reaction.get("talking_label")
+			if label is Label3D:
+				active_label = label
+	for npc in _npcs:
+		if npc.has("talking_label") and is_instance_valid(npc["talking_label"]):
+			npc["talking_label"].visible = false
+	for f in _followers:
+		if f.has("talking_label") and is_instance_valid(f["talking_label"]):
+			f["talking_label"].visible = false
+	if active_label != null and is_instance_valid(active_label):
+		active_label.visible = true
+		var phase := int(_time * 3.0) % 3
+		active_label.text = ".".repeat(phase + 1)
+
+
+func _build_ally_reactions() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if _npc_talk_target.is_empty():
+		return out
+	var line_idx := int(_npc_talk_target.get("pool_idx", 0))
+	for f in _followers:
+		var model_id := str(f.get("model_id", ""))
+		var nature := "hardy"
+		if model_id == "pancham":
+			nature = "brave"
+		elif model_id == "dqt_orc":
+			nature = "orc"
+		var display := str(FOLLOWER_NAMES.get(model_id, model_id.to_upper()))
+		out.append({
+			"name": display,
+			"text": ALLY_DIALOGUE.get_line(nature, line_idx),
+			"portrait": _portrait_for_speaker(display),
+			"talking_label": f.get("talking_label"),
+		})
+	return out
+
+
+func _show_dialogue_stage() -> void:
+	if _npc_hud == null or _npc_talk_target.is_empty():
 		return
-	var label = _npc_talk_target.get("talking_label")
-	if label == null or not is_instance_valid(label):
-		return
-	var phase := int(_time * 3.0) % 3
-	label.text = ".".repeat(phase + 1)
+	if _dialogue_stage == 0:
+		var has_more := not _dialogue_reactions.is_empty()
+		_npc_hud.open(str(_npc_talk_target["name"]), str(_npc_talk_target["dialogue"]),
+			"NEXT" if has_more else "CLOSE")
+		_npc_hud.set_portrait(_portrait_for_speaker(str(_npc_talk_target["name"])))
+	else:
+		if _dialogue_stage > _dialogue_reactions.size():
+			return
+		var reaction: Dictionary = _dialogue_reactions[_dialogue_stage - 1]
+		var has_more := _dialogue_stage < _dialogue_reactions.size()
+		_npc_hud.set_line(str(reaction["name"]), str(reaction["text"]),
+			"NEXT" if has_more else "CLOSE")
+		_npc_hud.set_portrait(reaction.get("portrait") as Texture2D)
+	_update_talking_labels()
 
 
 func _npc_portrait(npc_name: String) -> Texture2D:
-	var path := "res://sugimori/por_nome/%s.png" % npc_name.to_lower()
-	if ResourceLoader.exists(path):
-		return load(path) as Texture2D
+	return _portrait_for_speaker(npc_name)
+
+
+func _portrait_for_speaker(speaker: String) -> Texture2D:
+	var key := speaker.to_lower()
+	var sugimori := "res://sugimori/por_nome/%s.png" % key
+	if ResourceLoader.exists(sugimori):
+		return load(sugimori) as Texture2D
+	var portrait := "res://personagens/portraits/%s.png" % key
+	if ResourceLoader.exists(portrait):
+		return load(portrait) as Texture2D
 	return null
+
+
+func _update_enemy_ring_color() -> void:
+	if _enemy_ring_entry.is_empty():
+		return
+	var mesh := _enemy_ring_entry.get("mesh") as MeshInstance3D
+	if mesh == null or not is_instance_valid(mesh):
+		return
+	var mat := _enemy_ring_entry.get("mat") as ShaderMaterial
+	if mat == null:
+		return
+	var wants_talk := false
+	if _enemy_body != null and is_instance_valid(_enemy_body):
+		wants_talk = bool(_enemy_body.get_meta("wants_to_talk", false))
+	var color: Color
+	if _enemy_alert_timer > 0.0:
+		color = Color(1.0, 0.82, 0.15, 0.85)  # alerta (!)
+	elif wants_talk or _enemy_state == EnemyState.FLEE:
+		color = Color(0.22, 0.48, 1.0, 0.78)  # fugindo ou quer conversar
+	elif _enemy_state == EnemyState.CHASE:
+		color = Color(0.95, 0.15, 0.15, 0.80)  # indo atrás de você
+	elif _enemy_state == EnemyState.SEARCH:
+		color = Color(1.0, 0.82, 0.15, 0.85)  # procurando
+	else:
+		color = Color(1.0, 0.62, 0.15, 0.45)  # patrulha/return: âmbar
+	mat.set_shader_parameter("ring_color", color)
 
 
 func _update_enemy_icon() -> void:
@@ -1090,12 +1206,16 @@ func _update_enemy_icon() -> void:
 func cycle_npcs(new_offset: int) -> void:
 	_npc_offset = posmod(new_offset, NPC_POOL.size())
 	_npc_talking = false
+	_dialogue_stage = 0
+	_dialogue_reactions.clear()
 	if _npc_dialogue_panel != null:
 		_npc_dialogue_panel.visible = false
 	if _npc_prompt != null:
 		_npc_prompt.hide_prompt()
 	if _npc_hud != null:
 		_npc_hud.close()
+	clear_dialogue_focus()
+	_update_talking_labels()
 	for npc in _npcs:
 		var node: Node3D = npc["node"]
 		if is_instance_valid(node):
@@ -1196,7 +1316,7 @@ func _update_npcs(delta: float) -> void:
 		if not is_instance_valid(body):
 			continue
 		_update_npc_icon(npc)
-		var talking_now: bool = _npc_talking and _npc_talk_target.get("node") == body
+		var talking_now: bool = _npc_talking and _dialogue_stage == 0 and _npc_talk_target.get("node") == body
 		if npc.has("talking_label") and is_instance_valid(npc["talking_label"]):
 			npc["talking_label"].visible = talking_now
 		var icon_sprite = npc.get("icon_entry", {}).get("sprite")
@@ -1224,10 +1344,14 @@ func _update_npcs(delta: float) -> void:
 			_npc_prompt.hide_prompt()
 		if _npc_hud != null:
 			_npc_hud.close()
+		clear_dialogue_focus()
 		if _npc_talking:
 			_npc_talking = false
+			_dialogue_stage = 0
+			_dialogue_reactions.clear()
 			if _npc_dialogue_panel != null:
 				_npc_dialogue_panel.visible = false
+			_update_talking_labels()
 		return
 
 	# Jogador perto de um NPC: prompt [Z] TALK; a porta tem o prompt dela.
@@ -1238,19 +1362,30 @@ func _update_npcs(delta: float) -> void:
 		_npc_prompt.show_prompt(str(nearest_npc["name"]), "TALK")
 	if interact_just and not _door_near:
 		if _npc_talking and _npc_talk_target.get("node") == nearest_npc.get("node"):
-			_npc_talking = false
-			if _npc_dialogue_panel != null:
-				_npc_dialogue_panel.visible = false
-			if _npc_hud != null:
-				_npc_hud.close()
+			if _npc_hud != null and _npc_hud.is_typing():
+				_npc_hud.finish_typing()
+			elif _dialogue_stage < _dialogue_reactions.size():
+				_dialogue_stage += 1
+				_show_dialogue_stage()
+			else:
+				_npc_talking = false
+				_dialogue_stage = 0
+				_dialogue_reactions.clear()
+				if _npc_dialogue_panel != null:
+					_npc_dialogue_panel.visible = false
+				if _npc_hud != null:
+					_npc_hud.close()
+				clear_dialogue_focus()
+				_update_talking_labels()
 		else:
 			_npc_talking = true
 			_npc_talk_target = nearest_npc
 			nearest_npc["talked"] = true
 			_update_npc_icon(nearest_npc)
-			if _npc_hud != null:
-				_npc_hud.open(str(nearest_npc["name"]), str(nearest_npc["dialogue"]), "CLOSE")
-				_npc_hud.set_portrait(_npc_portrait(str(nearest_npc["name"])))
+			_dialogue_stage = 0
+			_dialogue_reactions = _build_ally_reactions()
+			_show_dialogue_stage()
+			set_dialogue_focus(nearest_npc["node"] as Node3D)
 
 
 # --- Minimap -----------------------------------------------------------------

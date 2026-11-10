@@ -3,7 +3,7 @@
 - **Data:** 2026-11-09.
 - **Área:** Exploração / diálogo / aliados / Natures.
 - **Relacionadas:** D-393 (8 Natures), D-271 (Natures adiadas), D-1063 (NPCs), D-1087 (HUD de diálogo).
-- **Status:** **direção aprovada; implementação depois da escolha do HUD**; batalha, 2D, regras e atributos não mudam; nada publicado.
+- **Status:** **teste implementado e verificado** no lab isolado (HUD C); falas são uma primeira versão, ajustáveis; batalha, 2D, regras e atributos não mudam; commit local; **sem push**.
 
 ## O que o criador disse (literal)
 
@@ -27,11 +27,23 @@
 - Reações de Gible exigiriam modelo/seguidor e ficam para depois.
 - Não há sistema de missão/afinidade; as falas não alteram nada.
 
+## Teste implementado (2026-11-09)
+
+- **Catálogo:** `scripts/dungeon/ally_dialogue.gd` com 2 falas por Nature (Hardy, Docile, Brave, Timid, Modest, Calm, Jolly, Adamant) + 2 do tom `orc`.
+- **Escolha:** Pancham usa `brave`; Orc usa `orc`; a fala é escolhida pelo `pool_idx` do NPC. Gible não está no mundo e não reage.
+- **Sequência:** estágio 0 = NPC (`[Z] NEXT`); estágio 1 = Pancham (Brave, `[Z] NEXT`); estágio 2 = Orc (`[Z] CLOSE`). Se o jogador aperta Z enquanto o typewriter roda, a fala completa primeiro; o próximo Z avança.
+- **Card:** o nome/retrato trocam para PANCHAM/ORC; o NPC volta ao ícone 💬 e o ellipsis vai para o aliado que está falando. O primeiro e o último aliado usam a arte Sugimori e o retrato do Orc, respectivamente.
+- **Auditoria:** estágio 0 `hud=true prompt=false next=[Z] NEXT typing=true npc_ellipsis=true`; skip `typing=false`; Pancham `name=PANCHAM next=[Z] NEXT npc_ellipsis=false pancham_ellipsis=true`; Orc `name=ORC next=[Z] CLOSE orc_ellipsis=true`; fechar `hud=false prompt=TALK`.
+- **Provas:** `murky_forest_paper_dialogue.png`, `murky_forest_panchan_reaction.png` e `murky_forest_orc_reaction.png`.
+- **Falas (primeira versão):** Brave — “Então que venham. Se atacarem, devolvemos em dobro!” / “Tesouro raro? Eu abro caminho.”; Orc — “Eu esmago qualquer coisa que aparecer na frente.” / “Se querem lutar, eu dou a eles o que pediram.” As demais Natures estão no catálogo.
+
 ## O que não foi verificado
 
-- Nenhuma linha foi escrita/aprovada ainda; a integração depende do HUD escolhido.
+- Aprovação final das falas; são uma primeira versão.
+- Um aliado de cada uma das outras 7 Natures (o catálogo está pronto, mas só Pancham/Orc existem no mundo).
+- 60 fps/mobile e outras resoluções.
 - A cena principal em headless continua bloqueada pelos erros de VFX de outra sessão; teste no lab isolado.
 
 ## Estado
 
-Direção aprovada; escrever as falas e implementar depois da escolha do HUD. Nada publicado.
+Teste implementado e verificado no lab isolado. Reações de Pancham (Brave) e Orc (tom bravo) em sequência, só sabor. Commit local; **sem push**.

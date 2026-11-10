@@ -30,19 +30,19 @@
 ## Teste implementado (2026-11-09)
 
 - **HUD C no diálogo real:** o `murky_forest_3d_lab` usa o card Paper/RPG; o painel antigo fica oculto.
-- **Auditoria:** perto do Bulbasaur, prompt `TALK`; ao interagir, `hud=true`, `prompt=false`, `next=[Z] CLOSE`, `ellipsis=true`, `dots=.` (animando), `icon=talked`, `talked=true`; ao fechar, `hud=false`, `prompt=true`, `action=TALK`, `ellipsis=false`, `icon=talked`.
+- **Auditoria:** perto do Bulbasaur, prompt `TALK`; ao interagir, `hud=true`, `prompt=false`, `next=[Z] NEXT` (há reações de aliados), `ellipsis=true`, `dots=.` (animando), `icon=talked`, `talked=true`; ao completar/avançar, Pancham `[Z] NEXT` e Orc `[Z] CLOSE`; ao fechar, `hud=false`, `prompt=true`, `action=TALK`, `ellipsis=false`, `icon=talked`.
 - **Reticências:** o `Label3D` acima do NPC cicla `.` → `..` → `...` a 3 estados/s; o ícone de estado fica oculto enquanto fala.
 - **Estouro:** `state_anger.png` virou uma explosão/estrela irregular; no `CHASE` a auditoria viu `state=1`, `icon=anger`. O burst também aparece na prova.
 - **Tamanho:** `pixel_size` de `0,0035` → `0,004375` (+25%) para todos os ícones de estado.
 - **Retratos:** Pokémon usam Sugimori; DQT sem retrato usa a inicial no medalhão (fallback), não o Bulbasaur.
 - **`[Z] CLOSE`:** movido para a esquerda do selo “M”, para não ficar atrás dele.
-- **Provas:** `docs/referencias/exploracao/3d/murky_forest_paper_dialogue.png`, `murky_forest_chase_burst.png` e `overworld_icons_states.png`; vídeo C regravado (`dialogue_hud_c_paper.mp4/.gif`) e folha de contato atualizada.
+- **Provas:** `docs/referencias/exploracao/3d/murky_forest_paper_dialogue.png`, `murky_forest_panchan_reaction.png`, `murky_forest_orc_reaction.png`, `murky_forest_chase_burst.png` e `overworld_icons_states.png`; vídeo C regravado (`dialogue_hud_c_paper.mp4/.gif`) e folha de contato atualizada.
 
 ## O que não foi verificado
 
 - 60 fps/mobile, outras resoluções e falas muito longas.
 - O HUD C em todos os 10 NPCs (o retrato DQT cai no fallback).
-- A câmera D-1088 e as reações D-1089 ainda não foram implementadas.
+- A câmera D-1088 e as reações D-1089 foram implementadas nesta rodada; a aprovação visual/final delas é separada.
 - A cena principal em headless continua com os erros de VFX de outra sessão; teste no lab isolado.
 
 ## Estado

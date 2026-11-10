@@ -317,9 +317,10 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-1085] Prompt `[Z] TALK` e idioma das falas de NPC:** **teste implementado**: prompt torto `[Z] TALK` com nome, fluxo TALK/CLOSE e ícone 💬; falas de NPC em português (exceção a D-413) e UI em inglês; batalha/2D/regras intactos.
 - **[D-1086] Indicadores do overworld (círculos, ícones e Medroso):** **protótipo implementado**: círculos no chão (NPC/aliado/inimigo), ícones ❔/💬/💢/💦/❗/❓, nomes nos aliados e Medroso fugindo (D-310/D-315 pendentes); provas e auditoria; batalha/2D/regras intactos.
 - **[D-1087] Três HUDs de diálogo e três aberturas:** **C escolhido e integrado**: o HUD Paper/RPG virou o diálogo real (D-1090); A/B ficam como referência; vídeos e folha de contato mantidos.
-- **[D-1088] Câmera de diálogo dois-shot:** **direção aprovada**: câmera dois-shot, trava movimento/rotação, zoom moderado e volta suave; implementar após o HUD.
-- **[D-1089] Reações de aliados por Nature:** **direção aprovada**: Pancham (Brave) e Orc (tom bravo) reagem com falas curtas, só sabor; Gible não reage; implementar após o HUD.
-- **[D-1090] HUD C, estouro e reticências:** **teste implementado**: HUD Paper/RPG no diálogo real, `[Z] CLOSE`, reticências animadas acima do NPC, ícone de fúria em estouro e ícones +25%; batalha/2D/regras intactos.
+- **[D-1088] Câmera de diálogo dois-shot:** **teste implementado**: câmera over-the-shoulder, trava movimento/rotação, zoom 3,6 m/FOV 45 e volta em 0,4 s; jogador+NPC em quadro; aliados podem ficar fora do dois-shot.
+- **[D-1089] Reações de aliados por Nature:** **teste implementado**: Pancham (Brave) e Orc (tom bravo) reagem em sequência, com retrato/nome e `[Z]`; 2 falas por Nature no catálogo; Gible não reage; só sabor.
+- **[D-1090] HUD C, estouro e reticências:** **teste implementado**: HUD Paper/RPG no diálogo real, prompt oculto, `[Z] NEXT/CLOSE`, reticências animadas, ícone de fúria em estouro e ícones +25%; batalha/2D/regras intactos.
+- **[D-1091] Cores dos anéis no chão:** **teste implementado**: NPC branco; inimigo amarelo no alerta `!`, vermelho perseguindo e azul fugindo/querendo conversar; patrulha âmbar; aliado azul.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).

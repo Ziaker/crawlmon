@@ -68,23 +68,8 @@ func setup(style_id: int) -> void:
 
 
 func open(speaker: String, text: String, next_text: String = "NEXT") -> void:
-	_speaker = speaker
-	_text = text
+	_set_content(speaker, text, next_text, 0.35)
 	visible = true
-	if _name_label != null:
-		_name_label.text = speaker
-	if _body != null:
-		_body.text = text
-		_body.visible_characters = 0
-	_visible_chars = 0
-	_type_accum = 0.0
-	_type_delay = 0.35
-	_typing = false
-	_opened = true
-	if _next != null:
-		_next.text = "[Z] " + next_text
-		_next.visible = false
-		_next.modulate.a = 0.0
 	match style:
 		Style.SMT:
 			_animate_smt()
@@ -93,6 +78,45 @@ func open(speaker: String, text: String, next_text: String = "NEXT") -> void:
 		Style.PAPER:
 			_animate_paper()
 	queue_redraw()
+
+
+func set_line(speaker: String, text: String, next_text: String = "NEXT") -> void:
+	_set_content(speaker, text, next_text, 0.1)
+	visible = true
+
+
+func _set_content(speaker: String, text: String, next_text: String, delay: float) -> void:
+	_speaker = speaker
+	_text = text
+	if _name_label != null:
+		_name_label.text = speaker
+	if _body != null:
+		_body.text = text
+		_body.visible_characters = 0
+	_visible_chars = 0
+	_type_accum = 0.0
+	_type_delay = delay
+	_typing = false
+	_opened = true
+	if _next != null:
+		_next.text = "[Z] " + next_text
+		_next.visible = false
+		_next.modulate.a = 0.0
+
+
+func is_typing() -> bool:
+	return _typing or _type_delay > 0.0
+
+
+func finish_typing() -> void:
+	_type_delay = 0.0
+	_typing = false
+	_visible_chars = _text.length()
+	if _body != null:
+		_body.visible_characters = _visible_chars
+	if _next != null:
+		_next.visible = true
+		_next.modulate.a = 1.0
 
 
 func close() -> void:

@@ -39,6 +39,7 @@
 - **Medroso:** Slime com `threat_level=0`; ao chegar a 9 m (3 tiles de 3 m) ele entra em `FLEE` e foge devagar. A auditoria viu `state=4 (FLEE)`, `threat=0`, `alert=0,57` com ícone `alert` e, 45 quadros depois, `alert=0` com ícone `sweat`. `rings=6`, `icons=4`.
 - **Provas:** `murky_forest_prompt_z_talk.png`, `murky_forest_indicators_medroso.png`, `murky_forest_chase_burst.png` e `overworld_icons_states.png`.
 - **Nota D-1090:** o antigo ícone de fúria virou um **estouro**; todos os ícones ficaram 25% maiores (`pixel_size 0,004375`); enquanto o NPC fala, o ícone de estado é substituído por reticências animadas.
+- **Nota D-1091:** NPC branco; inimigo **amarelo** no alerta `!` (e procurando), **vermelho** perseguindo e **azul** fugindo ou querendo conversar; patrulha/retorno âmbar; aliado azul.
 
 ## O que não foi verificado
 

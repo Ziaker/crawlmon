@@ -37,7 +37,7 @@ Respostas desta rodada:
 
 - **Prompt:** `[Z] TALK` com keycap à esquerda, `E` pequeno, `TALK` e o nome do NPC; mesmo *shear* e tipografia pesada dos cards D-1074; embaixo no centro.
 - **Fluxo (D-1085):** perto do Bulbasaur, prompt visível com `action=TALK` e ícone `quest`; ao interagir, o painel abre, `talked=true` e o ícone vira `talked`; ao fechar, o prompt volta a `TALK` e o ícone continua `talked`.
-- **Nota D-1090:** com o HUD C integrado, o prompt de NPC fica **oculto** durante a conversa e o card mostra `[Z] CLOSE`; a auditoria D-1090 confirma `hud=true`, `prompt=false`.
+- **Nota D-1090:** com o HUD C integrado, o prompt de NPC fica **oculto** durante a conversa e o card mostra `[Z] NEXT/CLOSE` (NEXT quando há reações de aliados; CLOSE no fim); a auditoria D-1090 confirma `hud=true`, `prompt=false`.
 - **Prova:** `docs/referencias/exploracao/3d/murky_forest_prompt_z_talk.png`.
 - **Idioma:** a fala do NPC continua em português; o prompt/UI está em inglês (exceção expressa a D-413).
 - **Porta:** o prompt da porta continua o label antigo, separado do prompt de NPC.

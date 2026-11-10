@@ -62,6 +62,9 @@ var _time := 0.0
 var _cam_pivot := Vector3.ZERO
 var _cam_probe := SphereShape3D.new()
 var _camera: Camera3D
+var _dialogue_focus: Node3D
+var _dialogue_active := false
+var _dialogue_blend := 0.0
 var _torches: Array[OmniLight3D] = []
 var _torch_base: Array[float] = []
 var _enemy: Node3D
@@ -106,28 +109,41 @@ func _process(delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	var turn := Input.get_axis("ui_left", "ui_right")
-	if absf(turn) > 0.01:
-		player_yaw -= turn * TURN_SPEED * delta
-	var move := -Input.get_axis("ui_up", "ui_down")
 	var dir := Vector3.ZERO
-	if absf(move) > 0.01:
-		dir = Vector3(sin(player_yaw), 0.0, cos(player_yaw)) * move
-	player.velocity = dir * SPEED
-	player.move_and_slide()
-	player.rotation.y = player_yaw
-	if _player_dust != null:
-		_player_dust.emitting = dir.length_squared() > 0.01 and player.velocity.length() > 0.1
+	var dialogue_locked := _dialogue_focus != null and is_instance_valid(_dialogue_focus)
+	if dialogue_locked:
+		# D-1088: durante a conversa o jogador fica parado, virado para o NPC.
+		var face := _dialogue_focus.global_position - player.global_position
+		face.y = 0.0
+		if face.length_squared() > 0.001:
+			player_yaw = lerp_angle(player_yaw, atan2(face.x, face.z), clampf(delta * 4.0, 0.0, 1.0))
+		player.velocity = Vector3.ZERO
+		player.move_and_slide()
+		player.rotation.y = player_yaw
+		if _player_dust != null:
+			_player_dust.emitting = false
+	else:
+		var turn := Input.get_axis("ui_left", "ui_right")
+		if absf(turn) > 0.01:
+			player_yaw -= turn * TURN_SPEED * delta
+		var move := -Input.get_axis("ui_up", "ui_down")
+		if absf(move) > 0.01:
+			dir = Vector3(sin(player_yaw), 0.0, cos(player_yaw)) * move
+		player.velocity = dir * SPEED
+		player.move_and_slide()
+		player.rotation.y = player_yaw
+		if _player_dust != null:
+			_player_dust.emitting = dir.length_squared() > 0.01 and player.velocity.length() > 0.1
 
-	if Input.is_key_pressed(KEY_Q):
-		_cam_yaw += 1.6 * delta
-		_last_look = _time
-	if Input.is_key_pressed(KEY_E):
-		_cam_yaw -= 1.6 * delta
-		_last_look = _time
+		if Input.is_key_pressed(KEY_Q):
+			_cam_yaw += 1.6 * delta
+			_last_look = _time
+		if Input.is_key_pressed(KEY_E):
+			_cam_yaw -= 1.6 * delta
+			_last_look = _time
 
-	if _time - _last_look > 1.2:
-		_cam_yaw = lerp_angle(_cam_yaw, player_yaw, clampf(delta * 5.0, 0.0, 1.0))
+		if _time - _last_look > 1.2:
+			_cam_yaw = lerp_angle(_cam_yaw, player_yaw, clampf(delta * 5.0, 0.0, 1.0))
 
 	_update_camera(delta)
 	_update_followers(delta)
@@ -137,11 +153,14 @@ func _physics_process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseMotion and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
-		var motion := event as InputEventMouseMotion
-		_cam_yaw -= motion.relative.x * 0.0025
-		_cam_pitch = clampf(_cam_pitch - motion.relative.y * 0.0015, -8.0, 32.0)
-		_last_look = _time
+	if event is InputEventMouseMotion:
+		if _dialogue_focus != null:
+			return
+		if Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
+			var motion := event as InputEventMouseMotion
+			_cam_yaw -= motion.relative.x * 0.0025
+			_cam_pitch = clampf(_cam_pitch - motion.relative.y * 0.0015, -8.0, 32.0)
+			_last_look = _time
 	elif event is InputEventKey and event.pressed:
 		var key := (event as InputEventKey).keycode
 		if key == KEY_ESCAPE:
@@ -686,7 +705,7 @@ func _build_exit() -> void:
 
 # --- Camera and followers ----------------------------------------------------
 
-func _update_camera(_delta: float) -> void:
+func _update_camera(delta: float) -> void:
 	var distance := PARTY_CAM_DISTANCE if _party_visible else CAM_DISTANCE
 	var height := PARTY_CAM_HEIGHT if _party_visible else CAM_HEIGHT
 	_cam_pivot = player.global_position + Vector3(0.0, height, 0.0)
@@ -720,8 +739,73 @@ func _update_camera(_delta: float) -> void:
 		if get_world_3d().direct_space_state.intersect_shape(probe, 1).is_empty():
 			break
 		desired += to_pivot * 0.15
-	_camera.global_position = desired
-	_camera.look_at(_cam_pivot + Vector3(0.0, 0.1, 0.0), Vector3.UP)
+
+	# D-1088: mistura a câmera normal com o dois-shot do diálogo.
+	var target_blend := 1.0 if _dialogue_active and _dialogue_focus != null and is_instance_valid(_dialogue_focus) else 0.0
+	_dialogue_blend = move_toward(_dialogue_blend, target_blend, delta / 0.4)
+	var final_pos := desired
+	var look_target := _cam_pivot + Vector3(0.0, 0.1, 0.0)
+	if _dialogue_focus != null and is_instance_valid(_dialogue_focus) and _dialogue_blend > 0.001:
+		var pose := _dialogue_camera_pose(actors)
+		final_pos = desired.lerp(pose["pos"], _dialogue_blend)
+		look_target = look_target.lerp(pose["look"], _dialogue_blend)
+	if _dialogue_blend <= 0.001 and not _dialogue_active:
+		_dialogue_focus = null
+
+	var to_look := (look_target - final_pos).normalized()
+	for i in 6:
+		probe.transform = Transform3D(Basis(), final_pos)
+		if get_world_3d().direct_space_state.intersect_shape(probe, 1).is_empty():
+			break
+		final_pos += to_look * 0.15
+	_camera.global_position = final_pos
+	_camera.look_at(look_target, Vector3.UP)
+	_camera.fov = lerpf(CAM_FOV, 45.0, _dialogue_blend)
+
+
+func set_dialogue_focus(target: Node3D) -> void:
+	_dialogue_focus = target
+	_dialogue_active = true
+
+
+func clear_dialogue_focus() -> void:
+	_dialogue_active = false
+
+
+func _dialogue_camera_pose(actors: Array[RID]) -> Dictionary:
+	# D-1088: over-the-shoulder. A câmera fica atrás do jogador, deslocada
+	# para o lado, olhando entre o jogador e o NPC; os dois ficam em quadro.
+	var focus := _dialogue_focus
+	var to_focus := focus.global_position - player.global_position
+	to_focus.y = 0.0
+	var dir := to_focus.normalized()
+	if dir.length_squared() < 0.001:
+		dir = Vector3(0.0, 0.0, -1.0)
+	var side := Vector3(-dir.z, 0.0, dir.x)
+	var pivot := player.global_position + Vector3(0.0, 1.0, 0.0)
+	var dist := 3.6
+	var a := player.global_position - dir * dist + side * 0.85 + Vector3(0.0, 1.55, 0.0)
+	var b := player.global_position - dir * dist - side * 0.85 + Vector3(0.0, 1.55, 0.0)
+	var da := _camera_free_distance(pivot, a, actors)
+	var db := _camera_free_distance(pivot, b, actors)
+	var chosen := a if da >= db else b
+	var free := maxf(da, db)
+	var full := maxf(pivot.distance_to(chosen), 0.001)
+	var t := clampf((free - 0.25) / full, 0.35, 1.0)
+	var pos := pivot.lerp(chosen, t)
+	var look := player.global_position.lerp(focus.global_position, 0.62) + Vector3(0.0, 0.35, 0.0)
+	return {"pos": pos, "look": look}
+
+
+func _camera_free_distance(from: Vector3, to: Vector3, actors: Array[RID]) -> float:
+	var query := PhysicsRayQueryParameters3D.create(from, to, 1)
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+	query.exclude = actors
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return from.distance_to(to)
+	return from.distance_to(hit["position"] as Vector3)
 
 
 func _update_followers(delta: float) -> void:

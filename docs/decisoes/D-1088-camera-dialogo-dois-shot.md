@@ -3,7 +3,7 @@
 - **Data:** 2026-11-09.
 - **Área:** Exploração / câmera / diálogo.
 - **Relacionadas:** D-1023 (câmera/colisão), D-1063 (NPCs), D-1085 (prompt).
-- **Status:** **direção aprovada; implementação depois da escolha do HUD**; batalha, 2D e regras não mudam; nada publicado.
+- **Status:** **teste implementado e verificado** no lab isolado (HUD C integrado); batalha, 2D e regras não mudam; commit local; **sem push**.
 
 ## O que o criador disse (literal)
 
@@ -26,11 +26,22 @@
 - Zoom/enquadramento exatos serão ajustados com captura; a referência é “sem tirar os personagens de vista”.
 - O jogador pode girar a câmera? Não, fica travada durante a conversa.
 
+## Teste implementado (2026-11-09)
+
+- **Composição:** over-the-shoulder. A câmera fica atrás do jogador, deslocada 0,85 m para o lado, a 3,6 m, altura 1,55 m, olhando 62% do caminho em direção ao NPC e 0,35 m acima do chão.
+- **FOV:** 55° normal → 45° no diálogo; transição de 0,4 s com o mesmo blend da posição/alvo.
+- **Trava:** movimento do jogador, rotação Q/E e mouse ficam bloqueados enquanto `_dialogue_focus` existe; o controle só volta depois que o blend retorna a zero (0,4 s).
+- **Colisão:** a câmera testa os dois lados e escolhe o com mais espaço; raycast + sphere probe contra o cenário, ignorando jogador/aliados/inimigo.
+- **Personagens em quadro:** o jogador e o NPC aparecem acima do card Paper, com o NPC à frente; a tentativa de dois-shot lateral foi descartada porque escondia os dois atrás de folhagem/parede.
+- **Aliados:** podem ficar fora do dois-shot; quando falam, o card mostra nome/retrato e o ellipsis fica no mundo, acima deles.
+- **Provas:** `murky_forest_paper_dialogue.png`, `murky_forest_panchan_reaction.png` e `murky_forest_orc_reaction.png`.
+
 ## O que não foi verificado
 
 - NPCs encostados em parede, câmera muito perto, 60 fps/mobile e outras resoluções.
+- A câmera em todos os 10 NPCs e em corredores estreitos.
 - A cena principal em headless continua bloqueada pelos erros de VFX de outra sessão; teste no lab isolado.
 
 ## Estado
 
-Direção aprovada; implementar depois que o HUD de diálogo for escolhido. Nada publicado.
+Teste implementado e verificado no lab isolado. Câmera de diálogo over-the-shoulder com trava e volta suave. Commit local; **sem push**.
