@@ -36,6 +36,7 @@ Na pergunta de esclarecimento, escolheu:
 - `docs/referencias/exploracao/3d/state_icon_3d_back.png` — fundo.
 - `docs/referencias/exploracao/3d/state_icon_3d_inworld.png` — no cenário, acima do Flat Card A.
 - `docs/referencias/exploracao/3d/ACEITACAO_D1098_D1099.md` — aceitação no lab (5 estados no NPC/inimigo, perto/longe/espelho); folhas `acceptance_d1098_*.png`.
+- `docs/referencias/exploracao/3d/murky_forest_lab_state_icons.mp4` — vídeo de 35,8 s; GIF dos 5 estados do inimigo: `murky_forest_lab_enemy_states_preview.gif`.
 
 ## O que foi verificado
 
@@ -43,6 +44,7 @@ Na pergunta de esclarecimento, escolheu:
 - Os 5 estados (`question`, `alert`, `anger`, `sweat`, `talked`) renderizam em 3D sem contorno, com o tint de cada estado.
 - O `?` no cenário, sem contorno, na mesma altura `+1,75 m` e acima do Flat Card A.
 - Aceitação: 5 estados no NPC e no inimigo, perto/médio/longe/espelho; o ícone do inimigo aparece acima do Slime na câmera alta; vão do NPC **0,58/0,45/0,025 m** a 3,0/4,4/9,0 m.
+- Vídeo de 35,8 s (walkthrough real + inspeção); o `✳` de fúria do inimigo encosta no topo do Slime; o `?` e o `!` ficam acima.
 - `scenes/debug/murky_forest_3d_lab.tscn` headless: `exit=0`; check do script OK.
 
 ## O que não foi verificado

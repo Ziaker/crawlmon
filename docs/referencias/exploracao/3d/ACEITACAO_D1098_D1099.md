@@ -24,7 +24,7 @@
 | NPC médio, 4,4 m | **OK** | 0,45 m |
 | NPC longe, 9,0 m | **OK, no limite** | **0,025 m** |
 | Inimigo, 5 estados, 4,3 m | **OK** — arte/tint (corpo oculto só para ler o ícone) | 0,53–0,63 m |
-| Inimigo in-game, corpo visível | **OK** — o ícone aparece **acima** do Slime na câmera alta; o corpo não o cobre | 0,58 m |
+| Inimigo in-game, corpo visível | **OK com ressalva** — o `?` e o `!` aparecem acima; o `✳` de fúria encosta no topo do Slime | 0,58 m |
 | Inimigo perto, 2,6 m | **OK** | 0,74 m |
 | Inimigo longe, 6,1 m | **OK** | 0,42 m |
 | Inimigo espelho, 4,0 m | **OK** — ícone e placa de frente para a câmera oposta | 0,61 m |
@@ -32,11 +32,17 @@
 
 - **Limite conhecido:** a 9,0 m o vão do NPC cai para **0,025 m** (2,5 cm); com o balanço de ±0,045 m, o ícone pode **encostar** na placa. Isso já estava previsto na D-1098 e não é uma regressão da arte sem contorno.
 - **Oclusão de cenário:** na prova do NPC a 9 m, um tronco cobre parte do card; o vão do ícone continua visível. Não é falha do marcador.
-- **Inimigo:** o diagnóstico com o corpo oculto foi só para ler os 5 estados; a prova in-game com o corpo visível mostra o `!` inteiro acima do Slime.
+- **Inimigo:** o diagnóstico com o corpo oculto foi só para ler os 5 estados; a prova in-game com o corpo visível mostra o `!` inteiro acima do Slime. No vídeo, o `✳` de fúria (mais largo) encosta no topo do Slime; o `?` e o `!` ficam acima.
 
 ## Conclusão
 
-**Aceitação passa** para os casos testados. Nenhuma regra, código ou asset foi alterado nesta rodada. O único limite é o vão de 2,5 cm a 9 m no NPC, que o balanço pode reduzir a zero/encostar.
+**Aceitação passa com uma ressalva** para os casos testados. Nenhuma regra, código ou asset foi alterado nesta rodada. O limite do NPC é o vão de 2,5 cm a 9 m, que o balanço pode reduzir a zero/encostar. No inimigo, o ícone fica na altura da cabeça: o `?` e o `!` aparecem acima, mas o `✳` largo encosta no topo do Slime.
+
+## Vídeo
+
+- `docs/referencias/exploracao/3d/murky_forest_lab_state_icons.mp4` — **35,8 s**, 1280×720, 30 fps: walkthrough com a câmera real do jogo + inspeção dos 5 estados, 9 m, inimigo e espelho.
+- `docs/referencias/exploracao/3d/murky_forest_lab_enemy_states_preview.gif` — recorte dos 5 estados do inimigo.
+- **Ressalva do vídeo:** o ícone do inimigo em `1,05 m` fica na altura da cabeça do Slime; o `?` e o `!` aparecem acima, mas o `✳` de fúria encosta no topo do Slime. Na câmera baixa pode ficar atrás. Se incomodar, o próximo ajuste é **subir o ícone do inimigo** (nova decisão).
 
 ## Provas
 
@@ -53,4 +59,4 @@
 
 ## Estado
 
-Aceitação registrada. Commit local; **sem push**.
+Aceitação registrada; vídeo gravado. Commit local; **sem push**.
