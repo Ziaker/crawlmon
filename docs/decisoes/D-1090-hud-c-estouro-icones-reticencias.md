@@ -47,7 +47,7 @@
 
 ## Nota D-1095 (2026-11-10)
 
-O **name tab Paper** agora centraliza o nome verticalmente e o **retrato ocupa o medalhão até a borda preta**, sem o aro dourado interno; a borda preta e o fundo marrom/dourado continuam.
+O **name tab Paper** agora centraliza o nome verticalmente. O retrato mantém a **borda preta** e o **aro dourado interno**; o fundo atrás do rosto passou a ser o **marrom escuro `#5C3C1E`**.
 
 ## Estado
 

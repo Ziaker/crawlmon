@@ -1197,9 +1197,9 @@ func _circular_portrait(tex: Texture2D, region: Rect2) -> Texture2D:
 	# D-1095: o fundo do medalhão é cozido em dourado e o RGB de fora do
 	# círculo também fica dourado. Antes o transparente era preto e a borda
 	# da máscara puxava a "borda interna marrom" entre o fundo e o retrato.
-	var gold := Color(0.85, 0.68, 0.30, 1.0)
+	var brown := Color(92.0 / 255.0, 60.0 / 255.0, 30.0 / 255.0, 1.0)
 	var canvas := Image.create_empty(256, 256, false, Image.FORMAT_RGBA8)
-	canvas.fill(gold)
+	canvas.fill(brown)
 	canvas.blend_rect(face, Rect2i(0, 0, 256, 256), Vector2i.ZERO)
 	var center := Vector2(127.5, 127.5)
 	var radius := 124.0

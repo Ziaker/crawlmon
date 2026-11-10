@@ -126,9 +126,9 @@ func _build() -> void:
 	_panel.add_child(portrait_back)
 
 	_portrait = TextureRect.new()
-	# D-1095: ocupa a faixa até a borda preta; sem aro dourado interno.
-	_portrait.position = Vector2(2.0, 2.0)
-	_portrait.size = Vector2(52.0, 52.0)
+	# D-1095: aro dourado interno de volta; fundo do ícone marrom escuro.
+	_portrait.position = Vector2(4.0, 4.0)
+	_portrait.size = Vector2(48.0, 48.0)
 	_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -138,8 +138,8 @@ func _build() -> void:
 	portrait_back.add_child(_portrait)
 
 	_portrait_fallback = Label.new()
-	_portrait_fallback.position = Vector2(2.0, 2.0)
-	_portrait_fallback.size = Vector2(52.0, 52.0)
+	_portrait_fallback.position = Vector2(4.0, 4.0)
+	_portrait_fallback.size = Vector2(48.0, 48.0)
 	_portrait_fallback.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_portrait_fallback.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_portrait_fallback.add_theme_font_override("font", _font_name)
