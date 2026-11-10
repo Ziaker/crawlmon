@@ -228,7 +228,7 @@ func _wall_texture_mat(path: String) -> StandardMaterial3D:
 	mat.specular_mode = BaseMaterial3D.SPECULAR_TOON
 	mat.uv1_triplanar = true
 	mat.uv1_world_triplanar = true
-	mat.uv1_scale = Vector3(0.25, 0.25, 0.25)
+	mat.uv1_scale = Vector3(0.20, 0.20, 0.20)
 	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	return mat
 

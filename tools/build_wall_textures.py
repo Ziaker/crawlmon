@@ -345,6 +345,9 @@ def root_palisade(name, seed, planks, width_lo, width_hi, rope_ys, moss_amt,
         wrap_ellipse(c, x, y, r, max(2, r // 2), (0.285, 0.145, 0.345))
         wrap_ellipse(c, x, y - max(1, r // 3), r, max(2, r // 3), (0.47, 0.31, 0.52), False, 2)
 
+    # D-1117: 20% mais escura e 25% da cor antiga da parede (75% de textura).
+    c = c * 0.80
+    c = c * 0.75 + color((0.075, 0.145, 0.135)) * 0.25
     save(name, c)
 
 

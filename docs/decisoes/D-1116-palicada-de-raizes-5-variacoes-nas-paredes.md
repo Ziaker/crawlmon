@@ -4,6 +4,7 @@
 - **Área:** Exploração 3D / lab Murky Forest / paredes.
 - **Relacionadas:** D-1022 (direção 3D), D-1028 (visual toon), D-1082/D-1083 (luz do lab).
 - **Status:** **implementado/provado**; commit local; **sem push**.
+- **Nota D-1117 (2026-11-10):** o visual foi ajustado depois: textura **20% mais escura**, **75% de intensidade** sobre a cor antiga e tile de **5 m**. Esta decisão registra a distribuição original; os valores visuais atuais são os da D-1117.
 
 ## O que o criador disse (literal)
 
