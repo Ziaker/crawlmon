@@ -169,7 +169,8 @@ func _apply_style() -> void:
 			_role_label.modulate = Color(0.874, 0.788, 0.502)
 			_role_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			_role_label.position = _plate_pos(650.0, 41.0)
-			_base_tilt = 0.0
+			# D-1097: o Flat Card escolhido fica mais torto na tela.
+			_base_tilt = deg_to_rad(-3.5)
 			_sway_amp = 0.0
 			_bob_amp = 0.012
 	_role_label.visible = style_id != "unit_card"

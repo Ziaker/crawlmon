@@ -3,7 +3,7 @@
 - **Data:** 2026-11-10.
 - **Área:** Exploração / overworld 3D / UI dos nomes.
 - **Relacionadas:** D-1094 (3 estilos anteriores), D-1072 (UnitCard de exploração), D-1074 (cards com retrato/barras), D-1087/D-1090 (HUD Paper), D-417/D-434 (Move Strips, Impact, paralelogramos), D-235 (nada depende de personagem/time/lado).
-- **Status:** **3 protótipos implementados e provados; aguardando a escolha do criador**; batalha, 2D, HUD/status, cards, regras, falas e câmera não mudam; commit local; **sem push**.
+- **Status:** **A (Flat Card) escolhida, com a inclinação da D-1097**; B/C ficam como referência; batalha, 2D, HUD/status, cards, regras, falas e câmera não mudam; commit local; **sem push**.
 
 ## O que o criador disse (literal)
 
@@ -25,6 +25,7 @@ O criador pediu **3 novas** placas na linguagem dos cards/HUDs. A **Paper & Pin 
 
 - **Bloco paralelogramo flat**, cor creme `#eae9d9`, **só o nome** em Impact/Arial Black escuro `#111b29`.
 - **Sem** barras de HP/MP, sem badge de papel, sem losango de elemento, sem ícones, sem borda e **sem o papel NPC/ALLY/ENEMY**.
+- **D-1097:** escolhida; o paralelogramo ficou mais torto (90 px ≈ 22,6°) e o card recebeu uma rotação de -3,5°.
 - Base: o card creme do herói (UnitCard) e os cards flat de elemento do HUD, reduzidos ao essencial.
 - Entrada de carta sendo distribuída: escala 0,6 → 1,06 → 1.
 
@@ -81,7 +82,6 @@ O criador pediu **3 novas** placas na linguagem dos cards/HUDs. A **Paper & Pin 
 
 ## O que não foi verificado
 
-- A escolha final A/B/C.
 - Todos os 10 NPCs, aliados, inimigo e lados em todas as distâncias/ângulos.
 - 60 fps/mobile/outras resoluções e a cena principal completa (VFX de outra sessão).
 - Os textos fixos das texturas em outras resoluções; a placa é 3D e escala, mas os detalhes finos podem ficar pequenos no mobile.
