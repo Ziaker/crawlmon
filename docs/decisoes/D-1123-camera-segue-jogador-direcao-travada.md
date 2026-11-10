@@ -3,7 +3,8 @@
 - **Data:** 2026-11-10.
 - **Área:** Exploração 3D / lab Murky Forest / câmera e controle.
 - **Relacionadas:** D-1107 (WASD relativo à câmera; auto-alinhamento removido), D-1027 (câmera), D-1088 (diálogo), D-1100 (ataque).
-- **Status:** **implementado/provado**; commit local; **sem push**.
+- **Status:** **revertida pela D-1124**; commit local; **sem push**.
+- **Nota D-1124 (2026-11-10):** a trava e o auto-follow de yaw foram removidos; o lab voltou ao WASD relativo à câmera com A/D andando de lado e a câmera seguindo só a posição (D-1107). O teste mostrou que o auto-follow de yaw fazia o personagem girar em círculo.
 
 ## O que o criador disse (literal)
 

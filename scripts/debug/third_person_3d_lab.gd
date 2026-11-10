@@ -16,9 +16,6 @@ const SPEED := 3.2
 const TURN_SPEED := 1.4
 ## D-1107: velocidade do giro do personagem para a direção do movimento.
 const TURN_RATE := 10.0
-## D-1123: a câmera segue o yaw do jogador durante o movimento, com direção travada.
-const CAM_FOLLOW_RATE := 3.0
-const CAM_FOLLOW_GRACE := 1.2
 const FOLLOW_SPEED := 3.8
 const CATCH_UP_SPEED := 5.2
 const CAM_DISTANCE := 3.4
@@ -62,9 +59,6 @@ var _followers: Array[Dictionary] = []
 var _party_visible := false
 var _cam_yaw := PI
 var _cam_pitch := SOLO_CAM_PITCH
-## D-1123: direção do WASD travada enquanto a mesma combinação é mantida.
-var _move_input := Vector2.ZERO
-var _move_dir := Vector3.ZERO
 var _last_look := -100.0
 var _time := 0.0
 var _cam_pivot := Vector3.ZERO
@@ -120,8 +114,6 @@ func _physics_process(delta: float) -> void:
 	var dir := Vector3.ZERO
 	var dialogue_locked := _dialogue_focus != null and is_instance_valid(_dialogue_focus)
 	if dialogue_locked:
-		_move_input = Vector2.ZERO
-		_move_dir = Vector3.ZERO
 		# D-1088: durante a conversa o jogador fica parado, virado para o NPC.
 		var face := _dialogue_focus.global_position - player.global_position
 		face.y = 0.0
@@ -136,21 +128,13 @@ func _physics_process(delta: float) -> void:
 		var input := Vector2(
 			Input.get_axis("ui_left", "ui_right"),
 			-Input.get_axis("ui_up", "ui_down"))
-		var moving := input.length_squared() > 0.001
-		if moving:
-			# D-1123: WASD relativo à câmera no instante em que o input muda;
-			# a direção fica travada para a câmera não fazer o corpo circular.
-			if input != _move_input:
-				var cam_forward := Vector3(sin(_cam_yaw), 0.0, cos(_cam_yaw))
-				var cam_right := Vector3(-cos(_cam_yaw), 0.0, sin(_cam_yaw))
-				_move_dir = (cam_forward * input.y + cam_right * input.x).normalized()
-				_move_input = input
-			dir = _move_dir
+		if input.length_squared() > 0.001:
+			# D-1107: WASD relativo à câmera; o personagem vira para a direção.
+			var cam_forward := Vector3(sin(_cam_yaw), 0.0, cos(_cam_yaw))
+			var cam_right := Vector3(-cos(_cam_yaw), 0.0, sin(_cam_yaw))
+			dir = (cam_forward * input.y + cam_right * input.x).normalized()
 			var target_yaw := atan2(dir.x, dir.z)
 			player_yaw = lerp_angle(player_yaw, target_yaw, clampf(delta * TURN_RATE, 0.0, 1.0))
-		else:
-			_move_input = Vector2.ZERO
-			_move_dir = Vector3.ZERO
 		player.velocity = dir * SPEED
 		player.move_and_slide()
 		player.rotation.y = player_yaw
@@ -159,13 +143,8 @@ func _physics_process(delta: float) -> void:
 
 		if Input.is_key_pressed(KEY_Q):
 			_cam_yaw += 1.6 * delta
-			_last_look = _time
 		if Input.is_key_pressed(KEY_E):
 			_cam_yaw -= 1.6 * delta
-			_last_look = _time
-		# D-1123: depois da janela do olhar manual, a câmera vem atrás do yaw.
-		if moving and _time - _last_look > CAM_FOLLOW_GRACE:
-			_cam_yaw = lerp_angle(_cam_yaw, player_yaw, clampf(delta * CAM_FOLLOW_RATE, 0.0, 1.0))
 
 	_update_camera(delta)
 	_update_followers(delta)

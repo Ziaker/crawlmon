@@ -338,6 +338,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-1118] Texturas mais mescladas entre si, canto suave e 60% de opacidade:** **implementado/provado**: 20% média + contraste 1,25/ganho 1,35, 60% textura + 40% cor, crossfade 2 m; print, contato e vídeo/GIF.
 - **[D-1122] Paredes com 40% de opacidade:** **implementado/provado**: 40% textura + 60% cor antiga; prints/vídeo.
 - **[D-1123] Câmera segue o jogador, com direção travada:** **implementado/provado**: câmera segue o yaw durante o movimento (rate 3,0), WASD travado, 1,2 s de graça manual; vídeo.
+- **[D-1124] Movimento normal de terceira pessoa: A/D de lado, câmera acompanha a posição:** **implementado/provado**: remove trava/auto-follow; A/D anda reto; câmera segue a posição; vídeo.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).
@@ -1495,3 +1496,7 @@ Para o HTML dos oito Moves, o criador confirmou a entrega com Quarks.js como exc
 ## Decisão D-1123 — Câmera segue o jogador, com direção travada (2026-11-10)
 
 - **D-1123 (lab/câmera):** a câmera volta a seguir o **yaw** do jogador **durante o movimento**, com `CAM_FOLLOW_RATE = 3.0`. O WASD continua relativo à câmera no instante em que o input muda, mas a **direção fica travada** enquanto a mesma combinação é mantida, para a câmera não fazer o corpo girar em círculo. Q/E e o botão direito continuam orbitando e têm **1,2 s** de graça antes do auto-follow. Parado, a câmera não gira sozinha; diálogo e ataque ficam fora. Isto substitui a parte da D-1107 que dizia "a câmera segue a posição, não o yaw" e "o auto-alinhamento sai". Detalhes em `docs/decisoes/D-1123-camera-segue-jogador-direcao-travada.md`.
+
+## Decisão D-1124 — Movimento normal de terceira pessoa: A/D de lado, câmera acompanha a posição (2026-11-10)
+
+- **D-1124 (lab/controle):** o WASD volta a ser relativo à câmera **sem trava**; **A/D andam de lado**, o personagem vira para a direção do movimento e a câmera acompanha a **posição** (pivô), mas **não gira o yaw sozinha**. Q/E e botão direito orbitam. A D-1123 (direção travada + auto-follow de yaw) fica revertida: o teste mostrou que o auto-follow de yaw fazia o personagem girar em círculo. Detalhes em `docs/decisoes/D-1124-movimento-normal-terceira-pessoa-camera-segue.md`.
