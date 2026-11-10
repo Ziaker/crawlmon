@@ -15,6 +15,7 @@ const NPC_PROMPT := preload("res://scripts/debug/overworld_prompt.gd")
 const NPC_HUD := preload("res://scripts/debug/dialogue_hud_styles.gd")
 const ALLY_DIALOGUE := preload("res://scripts/dungeon/ally_dialogue.gd")
 const ALLY_BANNER := preload("res://scripts/debug/ally_banner.gd")
+const NAMEPLATE := preload("res://scripts/debug/floating_nameplate.gd")
 const MARKER_RING_SHADER := preload("res://shaders/overworld_marker_ring.gdshader")
 const ICON_ANGER := preload("res://assets/ui/overworld_icons/state_anger.png")
 const ICON_SWEAT := preload("res://assets/ui/overworld_icons/state_sweat.png")
@@ -53,6 +54,9 @@ const NPC_SLOTS: Array[Dictionary] = [
 	{"pos": Vector3(8.2, 0.0, -7.2), "yaw": 0.0},
 ]
 
+## D-1094: estilo das placas de nome. F6 alterna no lab para comparação.
+@export_enum("paper", "terminal", "comic") var name_style := "paper"
+
 var _rng := RandomNumberGenerator.new()
 var _foliage_fade: Array[Dictionary] = []
 var _marker_rings: Array[Dictionary] = []
@@ -68,7 +72,7 @@ var _enemy_marker_root: Node3D
 var _enemy_icon_entry: Dictionary = {}
 var _enemy_ring_entry: Dictionary = {}
 ## D-1093: retratos usam o ícone estabelecido (face crop/portrait), não a arte
-## inteira. O Bulbasaur está na opção B provisória; A/B/C aguardam escolha.
+## inteira. O Bulbasaur usa a opção B final, com 0,03 para a esquerda.
 var PORTRAIT_FACE_REGIONS := {
 	"abra": Rect2(300.0 / 851.0, 120.0 / 851.0, 320.0 / 851.0, 360.0 / 851.0),
 	"pancham": Rect2(300.0 / 1261.0, 40.0 / 1261.0, 680.0 / 1261.0, 760.0 / 1261.0),
@@ -135,6 +139,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		var key := (event as InputEventKey).keycode
 		if key == KEY_2:
 			cycle_npcs((_npc_offset + 3) % NPC_POOL.size())
+		elif key == KEY_F6:
+			_cycle_name_style()
 
 
 # --- Environment -------------------------------------------------------------
@@ -739,7 +745,7 @@ func _build_hud() -> void:
 	var layer := CanvasLayer.new()
 	layer.layer = 20
 	var label := Label.new()
-	label.text = "Lab 3D — Murky Forest (SMT III + toon)\nWASD/setas: andar e virar · Q/E ou botão direito: câmera · 1: aliados · 2: trocar NPCs · Z/E: falar/saída · Esc: sair"
+	label.text = "Lab 3D — Murky Forest (SMT III + toon)\nWASD/setas: andar e virar · Q/E ou botão direito: câmera · 1: aliados · 2: trocar NPCs · F6: estilo do nome · Z/E: falar/saída · Esc: sair"
 	label.position = Vector2(20, 16)
 	label.add_theme_font_size_override("font_size", 16)
 	label.add_theme_color_override("font_color", Color(0.70, 0.95, 0.72))
@@ -809,15 +815,8 @@ func _spawn_npc_at_slot(slot_i: int, pool_idx: int) -> void:
 	if model_id == "dqt_dracky":
 		top_y = height * 1.48
 
-	var tag := Label3D.new()
-	tag.text = npc_name
-	tag.font_size = 38
-	tag.modulate = Color(1.0, 0.96, 0.82)
-	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	tag.position = Vector3(0.0, top_y + 0.38, 0.0)
-	tag.no_depth_test = false
-	tag.layers = 1 << 6
-	body.add_child(tag)
+	# D-1094: placa de nome (Paper/terminal/comic) em vez do Label3D solto.
+	var tag := _spawn_nameplate(body, npc_name, "NPC", top_y + 0.50)
 
 	var dlg_idx := (pool_idx * 3 + slot_i) % NPC_DATA.DIALOGUES.size()
 	_npcs.append({
@@ -854,10 +853,14 @@ func _add_world_markers() -> void:
 		_add_ground_ring(_enemy_marker_root, 0.45, Color(1.0, 0.72, 0.15, 0.70), "enemy")
 		_enemy_ring_entry = _marker_rings.back()
 		_enemy_icon_entry = _add_state_icon(_enemy_marker_root, Vector3(0.0, 1.05, 0.0))
+		var enemy_name := "SLIME"
 		for child in _enemy_body.get_children():
 			if child is Label3D:
-				_name_labels.append({"tag": child, "owner": _enemy_body})
+				enemy_name = (child as Label3D).text
+				(child as Label3D).visible = false
 				break
+		var enemy_tag := _spawn_nameplate(_enemy_body, enemy_name, "ENEMY", 1.45)
+		_name_labels.append({"node": enemy_tag, "owner": _enemy_body})
 
 
 func _decorate_npc(npc: Dictionary) -> void:
@@ -871,7 +874,7 @@ func _decorate_npc(npc: Dictionary) -> void:
 	if str(npc["id"]) == "dqt_dracky":
 		top_y = height * 1.48
 	_add_ground_ring(body, clampf(height * 0.75, 0.45, 0.85), Color(1.0, 1.0, 1.0, 0.68), "npc")
-	npc["icon_entry"] = _add_state_icon(body, Vector3(0.0, top_y + 0.78, 0.0))
+	npc["icon_entry"] = _add_state_icon(body, Vector3(0.0, top_y + 0.92, 0.0))
 	var talking := Label3D.new()
 	talking.text = "..."
 	talking.font_size = 48
@@ -880,7 +883,7 @@ func _decorate_npc(npc: Dictionary) -> void:
 	talking.outline_modulate = Color(0.0, 0.0, 0.0, 0.9)
 	talking.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	talking.no_depth_test = false
-	talking.position = Vector3(0.0, top_y + 0.78, 0.0)
+	talking.position = Vector3(0.0, top_y + 0.92, 0.0)
 	talking.layers = 1 << 6
 	talking.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	talking.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -888,7 +891,7 @@ func _decorate_npc(npc: Dictionary) -> void:
 	body.add_child(talking)
 	npc["talking_label"] = talking
 	if npc.has("tag") and is_instance_valid(npc["tag"]):
-		_name_labels.append({"tag": npc["tag"], "owner": body})
+		_name_labels.append({"node": npc["tag"], "owner": body})
 	_update_npc_icon(npc)
 
 
@@ -945,16 +948,8 @@ func _add_ally_name(f: Dictionary) -> void:
 	var height := float(f["height"])
 	var model_id := str(f.get("model_id", ""))
 	var display := str(FOLLOWER_NAMES.get(model_id, model_id.to_upper()))
-	var tag := Label3D.new()
-	tag.text = display
-	tag.font_size = 34
-	tag.modulate = Color(0.86, 0.92, 1.0)
-	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	tag.position = Vector3(0.0, height + 0.38, 0.0)
-	tag.no_depth_test = false
-	tag.layers = 1 << 6
-	body.add_child(tag)
-	_name_labels.append({"tag": tag, "owner": body})
+	var tag := _spawn_nameplate(body, display, "ALLY", height + 0.50)
+	_name_labels.append({"node": tag, "owner": body})
 
 
 func _add_ally_talking(f: Dictionary) -> void:
@@ -968,7 +963,7 @@ func _add_ally_talking(f: Dictionary) -> void:
 	talk.outline_modulate = Color(0.0, 0.0, 0.0, 0.9)
 	talk.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	talk.no_depth_test = false
-	talk.position = Vector3(0.0, height + 0.75, 0.0)
+	talk.position = Vector3(0.0, height + 0.92, 0.0)
 	talk.layers = 1 << 6
 	talk.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	talk.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -1041,14 +1036,44 @@ func _update_name_labels() -> void:
 		return
 	for i in range(_name_labels.size() - 1, -1, -1):
 		var entry := _name_labels[i]
-		var tag := entry["tag"] as Label3D
+		var tag := entry.get("node") as Node3D
 		var owner := entry["owner"] as Node3D
 		if tag == null or not is_instance_valid(tag) or owner == null or not is_instance_valid(owner):
 			_name_labels.remove_at(i)
 			continue
 		var dist := _camera.global_position.distance_to(tag.global_position)
 		var s := clampf(dist / 8.0, 0.28, 1.1)
-		tag.scale = Vector3(s, s, s)
+		if tag.has_method("set_distance_scale"):
+			tag.set_distance_scale(s)
+		else:
+			tag.scale = Vector3(s, s, s)
+
+
+func _spawn_nameplate(parent: Node3D, text: String, role: String, y: float) -> Node3D:
+	var plate = NAMEPLATE.new()
+	plate.display_name = text
+	plate.role_text = role
+	plate.style_id = name_style
+	plate.position = Vector3(0.0, y, 0.0)
+	parent.add_child(plate)
+	return plate as Node3D
+
+
+## D-1094: troca o estilo das placas em tempo real (F6 no lab e captura A/B/C).
+func set_name_style(style: String) -> void:
+	if not ["paper", "terminal", "comic"].has(style):
+		return
+	name_style = style
+	for entry in _name_labels:
+		var node = entry.get("node")
+		if node != null and is_instance_valid(node) and node.has_method("set_style"):
+			node.set_style(style)
+
+
+func _cycle_name_style() -> void:
+	var order := ["paper", "terminal", "comic"]
+	var idx := order.find(name_style)
+	set_name_style(order[(idx + 1) % order.size()])
 
 
 func _set_icon(entry: Dictionary, state: String, texture: Texture2D, tint: Color) -> void:
