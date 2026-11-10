@@ -34,6 +34,7 @@ Respostas de esclarecimento:
 
 - `docs/referencias/exploracao/3d/murky_forest_lab_cards_40.mp4` — vídeo de 35,8 s: walkthrough real + 5 estados, 9 m, inimigo e espelho.
 - `docs/referencias/exploracao/3d/murky_forest_lab_cards_40_preview.gif` — recorte dos 5 estados do inimigo.
+- `docs/referencias/exploracao/3d/murky_forest_lab_cards_40_result.gif` — 15 s de resultado: NPC e inimigo em movimento.
 - `docs/referencias/exploracao/3d/d1105_npc_icon_above.png` — NPC com o card menor e o ícone acima.
 - `docs/referencias/exploracao/3d/d1105_enemy_icon_above.png` — inimigo com o ícone acima da placa.
 
