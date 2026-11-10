@@ -204,21 +204,50 @@ func _build_environment() -> void:
 
 # --- Forest room -------------------------------------------------------------
 
+## D-1116: paliçada base + 5 variações, uma por parede, em ordem sorteada.
+func _wall_materials() -> Array[StandardMaterial3D]:
+	var paths := [
+		"res://assets/textures/walls/murky_wall_root_palisade.png",
+		"res://assets/textures/walls/murky_wall_root_palisade_v1.png",
+		"res://assets/textures/walls/murky_wall_root_palisade_v2.png",
+		"res://assets/textures/walls/murky_wall_root_palisade_v3.png",
+		"res://assets/textures/walls/murky_wall_root_palisade_v4.png",
+		"res://assets/textures/walls/murky_wall_root_palisade_v5.png",
+	]
+	var mats: Array[StandardMaterial3D] = []
+	for path in paths:
+		mats.append(_wall_texture_mat(path))
+	mats.shuffle()
+	return mats
+
+
+func _wall_texture_mat(path: String) -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_texture = load(path) as Texture2D
+	mat.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
+	mat.specular_mode = BaseMaterial3D.SPECULAR_TOON
+	mat.uv1_triplanar = true
+	mat.uv1_world_triplanar = true
+	mat.uv1_scale = Vector3(0.25, 0.25, 0.25)
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	return mat
+
+
 func _build_room() -> void:
 	var floor_mat := _toon_mat(Color(0.19, 0.11, 0.22))
-	var wall_mat := _toon_mat(Color(0.075, 0.145, 0.135))
+	var wall_mats := _wall_materials()
 	var trunk_mat := _toon_mat(Color(0.10, 0.065, 0.055))
 
 	# Piso em L (mesma colisão do lab: a navmesh e a IA continuam valendo).
 	_box(Vector3(8.0, 0.4, 20.0), Vector3(0.0, -0.2, -4.0), floor_mat)
 	_box(Vector3(22.0, 0.4, 8.0), Vector3(7.0, -0.2, -10.0), floor_mat)
 	# Paredes externas do L, agora com 4,2 m.
-	_box(Vector3(8.5, FOREST_WALL_HEIGHT, 0.5), Vector3(0.0, FOREST_WALL_HEIGHT * 0.5, 6.25), wall_mat)
-	_box(Vector3(0.5, FOREST_WALL_HEIGHT, 20.0), Vector3(-4.25, FOREST_WALL_HEIGHT * 0.5, -4.0), wall_mat)
-	_box(Vector3(0.5, FOREST_WALL_HEIGHT, 12.0), Vector3(4.25, FOREST_WALL_HEIGHT * 0.5, 0.0), wall_mat)
-	_box(Vector3(22.5, FOREST_WALL_HEIGHT, 0.5), Vector3(7.0, FOREST_WALL_HEIGHT * 0.5, -14.25), wall_mat)
-	_box(Vector3(14.5, FOREST_WALL_HEIGHT, 0.5), Vector3(11.0, FOREST_WALL_HEIGHT * 0.5, -5.75), wall_mat)
-	_box(Vector3(0.5, FOREST_WALL_HEIGHT, 8.0), Vector3(18.25, FOREST_WALL_HEIGHT * 0.5, -10.0), wall_mat)
+	_box(Vector3(8.5, FOREST_WALL_HEIGHT, 0.5), Vector3(0.0, FOREST_WALL_HEIGHT * 0.5, 6.25), wall_mats[0])
+	_box(Vector3(0.5, FOREST_WALL_HEIGHT, 20.0), Vector3(-4.25, FOREST_WALL_HEIGHT * 0.5, -4.0), wall_mats[1])
+	_box(Vector3(0.5, FOREST_WALL_HEIGHT, 12.0), Vector3(4.25, FOREST_WALL_HEIGHT * 0.5, 0.0), wall_mats[2])
+	_box(Vector3(22.5, FOREST_WALL_HEIGHT, 0.5), Vector3(7.0, FOREST_WALL_HEIGHT * 0.5, -14.25), wall_mats[3])
+	_box(Vector3(14.5, FOREST_WALL_HEIGHT, 0.5), Vector3(11.0, FOREST_WALL_HEIGHT * 0.5, -5.75), wall_mats[4])
+	_box(Vector3(0.5, FOREST_WALL_HEIGHT, 8.0), Vector3(18.25, FOREST_WALL_HEIGHT * 0.5, -10.0), wall_mats[5])
 	# Pilares: colisão igual, visual de tronco.
 	for p in [
 		Vector2(-3.0, -2.0), Vector2(3.0, -7.0),

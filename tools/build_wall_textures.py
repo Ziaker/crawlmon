@@ -262,21 +262,24 @@ def slate_cracks():
     save("murky_wall_slate_cracks.png", c)
 
 
-# 5) Paliçada de raízes e tábuas.
-def root_palisade():
-    dark = color((0.075, 0.062, 0.045))
-    mid = color((0.205, 0.160, 0.100))
-    light = color((0.335, 0.270, 0.175))
-    moss = color((0.150, 0.265, 0.110))
-    green = color((0.075, 0.160, 0.065))
-    rope = color((0.105, 0.115, 0.055))
-    rope_l = color((0.245, 0.250, 0.120))
+# 5) Paliçada de raízes e tábuas (base + variações).
+def root_palisade(name, seed, planks, width_lo, width_hi, rope_ys, moss_amt,
+                  tint=(1.0, 1.0, 1.0), knots=20, rope_w=16, leaves=10,
+                  gap_frac=0.060, cross=False, fungi=0):
+    tint = np.array(tint, np.float32)
+    dark = color((0.075, 0.062, 0.045)) * tint
+    mid = color((0.205, 0.160, 0.100)) * tint
+    light = color((0.335, 0.270, 0.175)) * tint
+    moss = color((0.150, 0.265, 0.110)) * tint
+    green = color((0.075, 0.160, 0.065)) * tint
+    rope = color((0.125, 0.135, 0.065)) * tint
+    rope_l = color((0.300, 0.310, 0.150)) * tint
 
-    warp = (fbm(501, [(0.008, 0.7), (0.025, 0.3)]) - 0.5) * 70.0
+    warp = (fbm(seed + 1, [(0.008, 0.7), (0.025, 0.3)]) - 0.5) * 70.0
     b = ((xx + warp) % S) / S
 
-    rng = np.random.default_rng(500)
-    widths = rng.uniform(0.10, 0.165, 8)
+    rng = np.random.default_rng(seed)
+    widths = rng.uniform(width_lo, width_hi, planks)
     widths /= widths.sum()
     bounds = np.concatenate([[0.0], np.cumsum(widths)])
     pid = np.clip(np.searchsorted(bounds, b, side="right") - 1, 0, len(widths) - 1)
@@ -284,20 +287,22 @@ def root_palisade():
     frac = np.clip((b - start) / widths[pid], 0.0, 1.0)
 
     phase = rng.uniform(0.0, TAU, len(widths))[pid]
-    grain = 0.5 + 0.5 * np.sin(TAU * (yy / S * 4.0 + noise(502, 0.03) * 1.6) + phase)
-    grain2 = noise(503, 0.14)
+    grain = 0.5 + 0.5 * np.sin(TAU * (yy / S * 4.0 + noise(seed + 2, 0.03) * 1.6) + phase)
+    grain2 = noise(seed + 3, 0.14)
     c = mix(dark, mid, (0.28 + 0.58 * grain)[:, :, None])
-    c = mix(c, light, np.clip(grain * 0.28 + grain2 * 0.11, 0.0, 1.0)[:, :, None])
+    c = mix(c, light, np.clip(grain * 0.28 + grain2 * 0.08, 0.0, 1.0)[:, :, None])
+    tone = rng.uniform(0.82, 1.16, len(widths))[pid]
+    c *= tone[:, :, None]
 
     edge = np.minimum(frac, 1.0 - frac)
     bevel = smooth(edge / 0.10)
     left_edge = smooth((0.075 - frac) / 0.075)
     right_shadow = smooth((frac - 0.90) / 0.10)
-    c *= (0.80 + 0.32 * bevel - 0.20 * right_shadow + 0.12 * left_edge)[:, :, None]
-    gap = (frac < 0.030) | (frac > 0.970)
-    c[gap] = dark * 0.50
+    c *= (0.80 + 0.32 * bevel - 0.24 * right_shadow + 0.16 * left_edge)[:, :, None]
+    gap = (frac < gap_frac) | (frac > 1.0 - gap_frac)
+    c[gap] = dark * 0.35
 
-    for _ in range(20):
+    for _ in range(knots):
         x, y = rng.uniform(0, S), rng.uniform(0, S)
         wrap_ellipse(c, x, y, rng.integers(4, 10), rng.integers(7, 16), (0.09, 0.07, 0.045))
         wrap_ellipse(c, x, y, rng.integers(3, 7), rng.integers(5, 12), (0.31, 0.25, 0.16), False)
@@ -305,33 +310,65 @@ def root_palisade():
     # Amarrações horizontais de cipó, para ler como paliçada construída.
     ropes = np.zeros((S, S), np.uint8)
     ropes_l = np.zeros((S, S), np.uint8)
-    for k, y0 in enumerate((0.24, 0.56, 0.86)):
+    for y0 in rope_ys:
         ph = rng.uniform(0.0, TAU)
         pts = []
         for x in range(-64, S + 65, 32):
             y = y0 * S + 13.0 * np.sin(TAU * x / S * 2.0 + ph) + 5.0 * np.sin(TAU * x / S * 5.0 + ph * 2.0)
             pts.append((x, y))
         for i in range(len(pts) - 1):
-            wrap_line(ropes, pts[i], pts[i + 1], 8)
+            wrap_line(ropes, pts[i], pts[i + 1], rope_w)
             wrap_line(ropes_l, (pts[i][0], pts[i][1] - 2), (pts[i + 1][0], pts[i + 1][1] - 2), 2)
-        for _ in range(10):
+        for _ in range(leaves):
             lx = rng.uniform(0, S)
             ly = y0 * S + 13.0 * np.sin(TAU * lx / S * 2.0 + ph) + 5.0 * np.sin(TAU * lx / S * 5.0 + ph * 2.0)
             wrap_ellipse(c, lx, ly + rng.uniform(-8, 8), rng.integers(4, 8), rng.integers(2, 4),
                          (0.12, 0.22, 0.08))
+
+    if cross:
+        wrap_line(ropes, (-32, -32), (S + 32, S + 32), rope_w)
+        wrap_line(ropes, (-32, S + 32), (S + 32, -32), rope_w)
+        wrap_line(ropes_l, (-30, -34), (S + 34, S + 30), 2)
+        wrap_line(ropes_l, (-30, S + 34), (S + 34, -30), 2)
+
     c = mix(c, rope, (ropes.astype(np.float32) / 255.0) * 0.80)
     c = mix(c, rope_l, (ropes_l.astype(np.float32) / 255.0) * 0.45)
 
-    m = smooth((fbm(505, [(0.02, 0.7), (0.07, 0.3)]) - 0.52) / 0.18)
-    c = mix(c, moss, m * 0.55)
+    m = smooth((fbm(seed + 5, [(0.02, 0.7), (0.07, 0.3)]) - 0.52) / 0.18)
+    c = mix(c, moss, m * moss_amt)
     moss_gap = np.clip(cv2.GaussianBlur(gap.astype(np.float32), (0, 0), 5.0) * 2.2, 0.0, 1.0)
-    c = mix(c, moss, moss_gap * 0.45)
-    save("murky_wall_root_palisade.png", c)
+    c = mix(c, moss, moss_gap * moss_amt * 0.8)
+
+    for _ in range(fungi):
+        x, y = rng.uniform(0, S), rng.uniform(0, S)
+        r = int(rng.integers(5, 11))
+        wrap_ellipse(c, x, y, r, max(2, r // 2), (0.285, 0.145, 0.345))
+        wrap_ellipse(c, x, y - max(1, r // 3), r, max(2, r // 3), (0.47, 0.31, 0.52), False, 2)
+
+    save(name, c)
 
 
 mossy_stone()
 bark_roots()
 mycelium()
 slate_cracks()
-root_palisade()
-print("OK: 5 wall textures in", OUT)
+root_palisade("murky_wall_root_palisade.png", 500, 8, 0.10, 0.165,
+              (0.24, 0.56, 0.86), 0.55)
+
+# D-1116: cinco variações da paliçada, todas emendáveis.
+root_palisade("murky_wall_root_palisade_v1.png", 601, 10, 0.08, 0.13,
+              (0.16, 0.40, 0.64, 0.88), 0.55, tint=(0.96, 1.00, 0.92),
+              knots=16, rope_w=14, leaves=12, gap_frac=0.055)
+root_palisade("murky_wall_root_palisade_v2.png", 602, 6, 0.14, 0.22,
+              (0.32, 0.74), 0.30, tint=(1.12, 1.03, 0.88),
+              knots=30, rope_w=20, leaves=8, gap_frac=0.070)
+root_palisade("murky_wall_root_palisade_v3.png", 603, 9, 0.09, 0.15,
+              (0.22, 0.50, 0.78), 0.45, tint=(0.90, 0.96, 1.00),
+              knots=14, rope_w=16, leaves=8, cross=True)
+root_palisade("murky_wall_root_palisade_v4.png", 604, 7, 0.12, 0.19,
+              (0.12, 0.30, 0.50, 0.70, 0.90), 0.60, tint=(0.96, 1.00, 0.90),
+              knots=18, rope_w=12, leaves=14, gap_frac=0.050)
+root_palisade("murky_wall_root_palisade_v5.png", 605, 11, 0.07, 0.12,
+              (0.20, 0.55, 0.82), 0.65, tint=(1.10, 0.94, 0.84),
+              knots=30, rope_w=14, leaves=10, gap_frac=0.065, fungi=6)
+print("OK: wall textures in", OUT)

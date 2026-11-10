@@ -333,6 +333,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-1107] Controle 3D relativo à câmera:** **implementado/provado**: WASD relativo à câmera; personagem vira para o movimento; Q/E e botão direito orbitam; auto-alinhamento removido; lab e vídeo.
 - **[D-1110] Cards dos aliados 10% menores e mais altos:** **implementado/provado**: banners em 90% (342×74), base y 200 e espaçamento 83; ~20 px do painel do NPC; vídeo/print.
 - **[D-1111] Aliados sem placa branca:** **implementado/provado**: remove a placa branca dos aliados; NPC/inimigo e cards de diálogo ficam; print/vídeo.
+- **[D-1116] Paliçada de raízes + 5 variações nas paredes:** **implementado/provado**: 6 texturas (base + V1..V5) sorteadas entre as 6 paredes, uma por parede; 4 m/tile; print, contato e vídeo/GIF.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).
@@ -1470,3 +1471,7 @@ Para o HTML dos oito Moves, o criador confirmou a entrega com Quarks.js como exc
 ## Decisão D-441 — Drain Spear no jogo (2026-11-08)
 
 - **D-441 (só visual, nenhuma regra de combate muda):** o leque do impacto do Badge Steal continua e aponta do contato para o atacante; 8 luzes azuis saem do ponto de contato em arcos diferentes, voam até o jogador e formam o anel onde ficava a coroa, sem coroa/órbita, e somem por opacidade; o cabo da lança fica 20% mais fino, sem mudar a lâmina nem a ponta. O Move fica no Orc do DQT, no combate real; o laboratório é só depuração.
+
+## Decisão D-1116 — Paliçada de raízes + 5 variações nas paredes (2026-11-10)
+
+- **D-1116 (lab/paredes):** a paliçada de raízes atual ganha **5 variações** (V1..V5), todas da mesma família e emendáveis; as **6** texturas (base + V1..V5) são distribuídas entre as **6 paredes** do lab, **uma por parede, sem repetição**, em ordem **sorteada a cada carregamento**. Aplicação toon com triplanar e **4 m por tile**; piso, pilares, NPCs, HUD, câmera, combate e 2D não mudam. Detalhes em `docs/decisoes/D-1116-palicada-de-raizes-5-variacoes-nas-paredes.md`.
