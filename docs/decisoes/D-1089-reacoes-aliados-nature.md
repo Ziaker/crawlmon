@@ -15,8 +15,8 @@
 
 1. **Quem reage:** Pancham (Nature **Brave**) e Orc com tom **agressivo/bravo** do perfil, **sem criar uma Nature canônica para o Orc**.
 2. **Gible** continua só card demo do HUD; não reage e não vira seguidor nesta rodada.
-3. **Formato:** uma fala curta por aliado, no painel de diálogo, com o nome de quem fala; um aliado por vez.
-4. **Quando:** depois da fala do NPC, com `[Z]` para avançar; não interrompe o NPC.
+3. **Formato (atualizado por D-1092):** cada reação vira uma **faixa lateral** de papel, entrando pela esquerda, com retrato/nome do aliado; o **card do NPC permanece** com a fala do NPC. Um aliado por vez.
+4. **Quando:** depois da fala do NPC, com `[Z]` para avançar; a faixa não interrompe nem substitui o NPC. As duas faixas ficam visíveis até fechar.
 5. **Efeito:** só sabor, sem afinidade, missão, atributo ou consequência de gameplay.
 6. **Falas:** 2–3 linhas por Nature (16–24 no total), escritas por mim e mostradas para aprovação antes de integrar; o tom segue D-393 (Brave agressivo, Timid cauteloso, Calm ponderado etc.).
 7. **Não muda:** batalha, 2D, HUD/status, cards, regras e atributos.
@@ -31,10 +31,10 @@
 
 - **Catálogo:** `scripts/dungeon/ally_dialogue.gd` com 2 falas por Nature (Hardy, Docile, Brave, Timid, Modest, Calm, Jolly, Adamant) + 2 do tom `orc`.
 - **Escolha:** Pancham usa `brave`; Orc usa `orc`; a fala é escolhida pelo `pool_idx` do NPC. Gible não está no mundo e não reage.
-- **Sequência:** estágio 0 = NPC (`[Z] NEXT`); estágio 1 = Pancham (Brave, `[Z] NEXT`); estágio 2 = Orc (`[Z] CLOSE`). Se o jogador aperta Z enquanto o typewriter roda, a fala completa primeiro; o próximo Z avança.
-- **Card:** o nome/retrato trocam para PANCHAM/ORC; o NPC volta ao ícone 💬 e o ellipsis vai para o aliado que está falando. O primeiro e o último aliado usam a arte Sugimori e o retrato do Orc, respectivamente.
-- **Auditoria:** estágio 0 `hud=true prompt=false next=[Z] NEXT typing=true npc_ellipsis=true`; skip `typing=false`; Pancham `name=PANCHAM next=[Z] NEXT npc_ellipsis=false pancham_ellipsis=true`; Orc `name=ORC next=[Z] CLOSE orc_ellipsis=true`; fechar `hud=false prompt=TALK`.
-- **Provas:** `murky_forest_paper_dialogue.png`, `murky_forest_panchan_reaction.png` e `murky_forest_orc_reaction.png`.
+- **Sequência:** estágio 0 = NPC (`[Z] NEXT`); estágio 1 = faixa do Pancham (Brave, `[Z] NEXT`); estágio 2 = faixa do Orc (`[Z] CLOSE`). Se o jogador aperta Z enquanto o typewriter roda, a fala do NPC completa primeiro; o próximo Z avança. As duas faixas ficam visíveis.
+- **Card:** o card permanece **BULBASAUR** com a fala do NPC; as faixas mostram PANCHAM/ORC com retrato/nome. O NPC volta ao ícone 💬 e o ellipsis vai para o aliado que está falando. Pancham usa a arte Sugimori; Orc usa o retrato do Orc.
+- **Auditoria:** estágio 0 `card=BULBASAUR next=[Z] NEXT banner0=false banner1=false npc_ellipsis=true`; skip `typing=false`; Pancham `card=BULBASAUR banner0=true name0=PANCHAM next=[Z] NEXT pancham_ellipsis=true`; Orc `card=BULBASAUR banner0=true banner1=true name1=ORC next=[Z] CLOSE orc_ellipsis=true`; fechar `hud=false prompt=TALK banner0=false banner1=false`.
+- **Provas:** `murky_forest_paper_dialogue.png`, `murky_forest_panchan_reaction.png` e `murky_forest_orc_reaction.png` (as faixas aparecem ao lado do card do NPC).
 - **Falas (primeira versão):** Brave — “Então que venham. Se atacarem, devolvemos em dobro!” / “Tesouro raro? Eu abro caminho.”; Orc — “Eu esmago qualquer coisa que aparecer na frente.” / “Se querem lutar, eu dou a eles o que pediram.” As demais Natures estão no catálogo.
 
 ## O que não foi verificado

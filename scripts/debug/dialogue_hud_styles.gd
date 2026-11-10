@@ -85,6 +85,11 @@ func set_line(speaker: String, text: String, next_text: String = "NEXT") -> void
 	visible = true
 
 
+func set_next_text(next_text: String) -> void:
+	if _next != null:
+		_next.text = "[Z] " + next_text
+
+
 func _set_content(speaker: String, text: String, next_text: String, delay: float) -> void:
 	_speaker = speaker
 	_text = text

@@ -773,27 +773,38 @@ func clear_dialogue_focus() -> void:
 
 
 func _dialogue_camera_pose(actors: Array[RID]) -> Dictionary:
-	# D-1088: over-the-shoulder. A câmera fica atrás do jogador, deslocada
-	# para o lado, olhando entre o jogador e o NPC; os dois ficam em quadro.
+	# D-1088/D-1092: três-quartos pela esquerda. A câmera orbita o ponto
+	# médio jogador↔NPC a 50° para a esquerda, em vez de ficar atrás do
+	# jogador; o jogador e o NPC ficam em quadro, acima do card.
 	var focus := _dialogue_focus
-	var to_focus := focus.global_position - player.global_position
-	to_focus.y = 0.0
-	var dir := to_focus.normalized()
-	if dir.length_squared() < 0.001:
-		dir = Vector3(0.0, 0.0, -1.0)
-	var side := Vector3(-dir.z, 0.0, dir.x)
-	var pivot := player.global_position + Vector3(0.0, 1.0, 0.0)
-	var dist := 3.6
-	var a := player.global_position - dir * dist + side * 0.85 + Vector3(0.0, 1.55, 0.0)
-	var b := player.global_position - dir * dist - side * 0.85 + Vector3(0.0, 1.55, 0.0)
-	var da := _camera_free_distance(pivot, a, actors)
-	var db := _camera_free_distance(pivot, b, actors)
-	var chosen := a if da >= db else b
-	var free := maxf(da, db)
-	var full := maxf(pivot.distance_to(chosen), 0.001)
+	var axis := focus.global_position - player.global_position
+	axis.y = 0.0
+	if axis.length_squared() < 0.001:
+		axis = Vector3(0.0, 0.0, -1.0)
+	axis = axis.normalized()
+	var mid := (player.global_position + focus.global_position) * 0.5 + Vector3(0.0, 1.0, 0.0)
+	var left := -axis.cross(Vector3.UP)
+	if left.length_squared() < 0.001:
+		left = Vector3(-1.0, 0.0, 0.0)
+	left = left.normalized()
+	var angle := deg_to_rad(50.0)
+	var back_left := (-axis * cos(angle) + left * sin(angle)).normalized()
+	var back_right := (-axis * cos(angle) - left * sin(angle)).normalized()
+	var dist := 3.9
+	var left_pose := mid + back_left * dist + Vector3(0.0, 0.55, 0.0)
+	var left_free := _camera_free_distance(mid, left_pose, actors)
+	var chosen := left_pose
+	var free := left_free
+	if left_free < 2.2:
+		var right_pose := mid + back_right * dist + Vector3(0.0, 0.55, 0.0)
+		var right_free := _camera_free_distance(mid, right_pose, actors)
+		if right_free > left_free:
+			chosen = right_pose
+			free = right_free
+	var full := maxf(mid.distance_to(chosen), 0.001)
 	var t := clampf((free - 0.25) / full, 0.35, 1.0)
-	var pos := pivot.lerp(chosen, t)
-	var look := player.global_position.lerp(focus.global_position, 0.62) + Vector3(0.0, 0.35, 0.0)
+	var pos := mid.lerp(chosen, t)
+	var look := mid + Vector3(0.0, -0.35, 0.0)
 	return {"pos": pos, "look": look}
 
 

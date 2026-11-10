@@ -28,12 +28,12 @@
 
 ## Teste implementado (2026-11-09)
 
-- **Composição:** over-the-shoulder. A câmera fica atrás do jogador, deslocada 0,85 m para o lado, a 3,6 m, altura 1,55 m, olhando 62% do caminho em direção ao NPC e 0,35 m acima do chão.
+- **Composição:** **três-quartos pela esquerda (D-1092)**. Orbita o ponto médio jogador↔NPC a 50° para a esquerda, a 3,9 m, altura 1,55 m; o alvo fica 0,35 m abaixo do meio, para os dois aparecerem acima do card. Se a esquerda estiver bloqueada, usa a direita como fallback.
 - **FOV:** 55° normal → 45° no diálogo; transição de 0,4 s com o mesmo blend da posição/alvo.
 - **Trava:** movimento do jogador, rotação Q/E e mouse ficam bloqueados enquanto `_dialogue_focus` existe; o controle só volta depois que o blend retorna a zero (0,4 s).
 - **Colisão:** a câmera testa os dois lados e escolhe o com mais espaço; raycast + sphere probe contra o cenário, ignorando jogador/aliados/inimigo.
-- **Personagens em quadro:** o jogador e o NPC aparecem acima do card Paper, com o NPC à frente; a tentativa de dois-shot lateral foi descartada porque escondia os dois atrás de folhagem/parede.
-- **Aliados:** podem ficar fora do dois-shot; quando falam, o card mostra nome/retrato e o ellipsis fica no mundo, acima deles.
+- **Personagens em quadro:** o jogador e o NPC aparecem acima do card Paper, vistos de três-quartos pela esquerda; a tentativa lateral de 90° foi descartada porque escondia os dois atrás de folhagem/parede.
+- **Aliados:** podem ficar fora do dois-shot; quando falam, entram as **faixas laterais** da D-1092, com nome/retrato, e o ellipsis fica no mundo, acima deles.
 - **Provas:** `murky_forest_paper_dialogue.png`, `murky_forest_panchan_reaction.png` e `murky_forest_orc_reaction.png`.
 
 ## O que não foi verificado

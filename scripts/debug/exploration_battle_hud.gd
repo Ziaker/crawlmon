@@ -78,6 +78,7 @@ var _status_visible := false
 var _tab_visible := false
 var _tab_hidden := false
 var _tab_prev := false
+var _dialogue_open := false
 
 
 func _ready() -> void:
@@ -122,6 +123,9 @@ func _process(delta: float) -> void:
 			_status_visible = true
 	if _tab_visible:
 		_status_visible = true
+	if _dialogue_open:
+		# D-1092: as faixas dos aliados ocupam a esquerda; esconde os cards.
+		_status_visible = false
 
 	var party_visible := bool(_lab.get("_party_visible"))
 	for entry in _cards:
@@ -130,6 +134,14 @@ func _process(delta: float) -> void:
 	# D-1072/D-1063: o ciclo de NPCs cria marcadores novos depois do _ready;
 	# achatar de novo garante que a bolinha branca também fique sem contorno.
 	_flatten_dots()
+
+
+func set_dialogue_open(open: bool) -> void:
+	_dialogue_open = open
+	if open:
+		_tab_visible = false
+		_tab_hidden = false
+		_status_visible = false
 
 
 func _toggle_status_from_tab() -> void:

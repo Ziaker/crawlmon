@@ -14,6 +14,7 @@ const NPC_DATA := preload("res://scripts/dungeon/npc_data.gd")
 const NPC_PROMPT := preload("res://scripts/debug/overworld_prompt.gd")
 const NPC_HUD := preload("res://scripts/debug/dialogue_hud_styles.gd")
 const ALLY_DIALOGUE := preload("res://scripts/dungeon/ally_dialogue.gd")
+const ALLY_BANNER := preload("res://scripts/debug/ally_banner.gd")
 const MARKER_RING_SHADER := preload("res://shaders/overworld_marker_ring.gdshader")
 const ICON_ANGER := preload("res://assets/ui/overworld_icons/state_anger.png")
 const ICON_SWEAT := preload("res://assets/ui/overworld_icons/state_sweat.png")
@@ -59,6 +60,8 @@ var _state_icons: Array[Dictionary] = []
 var _name_labels: Array[Dictionary] = []
 var _npc_prompt: Control
 var _npc_hud: Control
+var _dialogue_banners: Array[Control] = []
+var _battle_hud: Node
 var _dialogue_stage := 0
 var _dialogue_reactions: Array[Dictionary] = []
 var _enemy_marker_root: Node3D
@@ -1101,10 +1104,14 @@ func _build_ally_reactions() -> Array[Dictionary]:
 		elif model_id == "dqt_orc":
 			nature = "orc"
 		var display := str(FOLLOWER_NAMES.get(model_id, model_id.to_upper()))
+		var tint := Color(0.08, 0.08, 0.10)
+		if model_id == "dqt_orc":
+			tint = Color(0.18, 0.30, 0.16)
 		out.append({
 			"name": display,
 			"text": ALLY_DIALOGUE.get_line(nature, line_idx),
 			"portrait": _portrait_for_speaker(display),
+			"tint": tint,
 			"talking_label": f.get("talking_label"),
 		})
 	return out
@@ -1123,9 +1130,13 @@ func _show_dialogue_stage() -> void:
 			return
 		var reaction: Dictionary = _dialogue_reactions[_dialogue_stage - 1]
 		var has_more := _dialogue_stage < _dialogue_reactions.size()
-		_npc_hud.set_line(str(reaction["name"]), str(reaction["text"]),
-			"NEXT" if has_more else "CLOSE")
-		_npc_hud.set_portrait(reaction.get("portrait") as Texture2D)
+		if _dialogue_stage - 1 < _dialogue_banners.size():
+			var banner: Control = _dialogue_banners[_dialogue_stage - 1]
+			if banner != null:
+				banner.open(str(reaction["name"]), str(reaction["text"]),
+					reaction.get("portrait") as Texture2D,
+					reaction.get("tint", Color(0.14, 0.23, 0.15)))
+		_npc_hud.set_next_text("NEXT" if has_more else "CLOSE")
 	_update_talking_labels()
 
 
@@ -1205,17 +1216,9 @@ func _update_enemy_icon() -> void:
 
 func cycle_npcs(new_offset: int) -> void:
 	_npc_offset = posmod(new_offset, NPC_POOL.size())
-	_npc_talking = false
-	_dialogue_stage = 0
-	_dialogue_reactions.clear()
-	if _npc_dialogue_panel != null:
-		_npc_dialogue_panel.visible = false
 	if _npc_prompt != null:
 		_npc_prompt.hide_prompt()
-	if _npc_hud != null:
-		_npc_hud.close()
-	clear_dialogue_focus()
-	_update_talking_labels()
+	_close_npc_dialogue()
 	for npc in _npcs:
 		var node: Node3D = npc["node"]
 		if is_instance_valid(node):
@@ -1303,7 +1306,34 @@ func _build_npc_dialogue_ui() -> void:
 	layer.add_child(_npc_hud)
 	_npc_hud.setup(2)
 	_npc_hud.close()
+
+	# D-1092: uma faixa lateral por aliado, acima do card do NPC.
+	_battle_hud = get_node_or_null("ExplorationBattleHud")
+	for i in _followers.size():
+		var banner = ALLY_BANNER.new()
+		banner.name = "AllyBanner%d" % i
+		layer.add_child(banner)
+		banner.setup(i)
+		banner.close()
+		_dialogue_banners.append(banner)
 	add_child(layer)
+
+
+func _close_npc_dialogue() -> void:
+	_npc_talking = false
+	_dialogue_stage = 0
+	_dialogue_reactions.clear()
+	if _npc_dialogue_panel != null:
+		_npc_dialogue_panel.visible = false
+	if _npc_hud != null:
+		_npc_hud.close()
+	for banner in _dialogue_banners:
+		if banner != null:
+			banner.close()
+	clear_dialogue_focus()
+	if _battle_hud != null:
+		_battle_hud.set_dialogue_open(false)
+	_update_talking_labels()
 
 
 func _update_npcs(delta: float) -> void:
@@ -1342,16 +1372,7 @@ func _update_npcs(delta: float) -> void:
 	if nearest_npc.is_empty():
 		if _npc_prompt != null:
 			_npc_prompt.hide_prompt()
-		if _npc_hud != null:
-			_npc_hud.close()
-		clear_dialogue_focus()
-		if _npc_talking:
-			_npc_talking = false
-			_dialogue_stage = 0
-			_dialogue_reactions.clear()
-			if _npc_dialogue_panel != null:
-				_npc_dialogue_panel.visible = false
-			_update_talking_labels()
+		_close_npc_dialogue()
 		return
 
 	# Jogador perto de um NPC: prompt [Z] TALK; a porta tem o prompt dela.
@@ -1368,15 +1389,7 @@ func _update_npcs(delta: float) -> void:
 				_dialogue_stage += 1
 				_show_dialogue_stage()
 			else:
-				_npc_talking = false
-				_dialogue_stage = 0
-				_dialogue_reactions.clear()
-				if _npc_dialogue_panel != null:
-					_npc_dialogue_panel.visible = false
-				if _npc_hud != null:
-					_npc_hud.close()
-				clear_dialogue_focus()
-				_update_talking_labels()
+				_close_npc_dialogue()
 		else:
 			_npc_talking = true
 			_npc_talk_target = nearest_npc
@@ -1386,6 +1399,8 @@ func _update_npcs(delta: float) -> void:
 			_dialogue_reactions = _build_ally_reactions()
 			_show_dialogue_stage()
 			set_dialogue_focus(nearest_npc["node"] as Node3D)
+			if _battle_hud != null:
+				_battle_hud.set_dialogue_open(true)
 
 
 # --- Minimap -----------------------------------------------------------------

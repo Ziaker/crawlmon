@@ -30,7 +30,7 @@
 ## Teste implementado (2026-11-09)
 
 - **HUD C no diálogo real:** o `murky_forest_3d_lab` usa o card Paper/RPG; o painel antigo fica oculto.
-- **Auditoria:** perto do Bulbasaur, prompt `TALK`; ao interagir, `hud=true`, `prompt=false`, `next=[Z] NEXT` (há reações de aliados), `ellipsis=true`, `dots=.` (animando), `icon=talked`, `talked=true`; ao completar/avançar, Pancham `[Z] NEXT` e Orc `[Z] CLOSE`; ao fechar, `hud=false`, `prompt=true`, `action=TALK`, `ellipsis=false`, `icon=talked`.
+- **Auditoria:** perto do Bulbasaur, prompt `TALK`; ao interagir, `hud=true`, `prompt=false`, `card=BULBASAUR`, `next=[Z] NEXT` (há reações de aliados), `ellipsis=true`, `dots=.` (animando), `icon=talked`, `talked=true`. Ao avançar, as faixas PANCHAM/ORC entram à esquerda (D-1092) e o card continua BULBASAUR; o último passo mostra `[Z] CLOSE`. Ao fechar, `hud=false`, `prompt=true`, `action=TALK`, `ellipsis=false`, `icon=talked`.
 - **Reticências:** o `Label3D` acima do NPC cicla `.` → `..` → `...` a 3 estados/s; o ícone de estado fica oculto enquanto fala.
 - **Estouro:** `state_anger.png` virou uma explosão/estrela irregular; no `CHASE` a auditoria viu `state=1`, `icon=anger`. O burst também aparece na prova.
 - **Tamanho:** `pixel_size` de `0,0035` → `0,004375` (+25%) para todos os ícones de estado.
