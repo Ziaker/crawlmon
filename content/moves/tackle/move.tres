@@ -1,9 +1,11 @@
 [gd_resource type="Resource" script_class="MoveData" format=3]
 
 [ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_dktdb"]
+[ext_resource type="Script" path="res://content/moves/tackle/vfx.gd" id="2_tackle_vfx"]
 
 [resource]
 script = ExtResource("1_dktdb")
+vfx_script = ExtResource("2_tackle_vfx")
 id = &"tackle"
 display_name = "Tackle"
 windup = 1.5

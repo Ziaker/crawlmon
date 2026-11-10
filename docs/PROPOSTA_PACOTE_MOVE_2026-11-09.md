@@ -2,7 +2,7 @@
 
 - **Data:** 2026-11-09
 - **Decisões aplicáveis:** D-1079 (pacote de Move), D-308 (VFX de Move/elemento), D-1030 (Motion Composer auxiliar/opcional), D-235 (independente de personagem/time/lado), D-019/D-1040 (relógio único), D-1042/D-1044 (sala e análise VFX), D-022 (sem push).
-- **Estado:** **Fases 1, 2 e 3 implementadas**: contrato `MoveVfx` + resolução de `vfx_script`, piloto `behavior.gd` do **Media** e piloto de ícone por Move com fallback (Media). Nenhum VFX ou regra mudou; a aprovação visual do ícone e as Fases 4–5 aguardam o criador.
+- **Estado:** **Fases 1–3 implementadas e Fase 4 iniciada**: contrato `MoveVfx` + resolução de `vfx_script`, piloto `behavior.gd` do **Media**, piloto de ícone por Move (Media) e piloto de `vfx.gd` do **Tackle** (impacto delegando ao módulo atual, sem mudança visual). Nenhum VFX ou regra mudou; a aprovação visual do ícone e a evolução visual da Fase 4 aguardam o criador.
 
 ## 1. O que já existe
 
@@ -120,9 +120,11 @@ static func move_vfx_for(move_id: StringName) -> MoveVfx:
 - `tests/ui/test_move_icons.gd` cobre Media com ícone, Tackle sem ícone e cache.
 - Aprovação visual do ícone do Media antes de criar os ícones dos outros 37 Moves.
 
-### Fase 4 — Piloto de `vfx.gd` (D-308)
-- Escolher **um** Move piloto (recomendação: `tackle`, por ser simples e já ter testes; alternativa: `fire_bullet`).
-- O `vfx.gd` deve reproduzir **o mesmo look atual** primeiro (migração sem mudança visual) ou implementar a mudança pedida, nunca as duas coisas juntas.
+### Fase 4 — Piloto de `vfx.gd` (D-308) — **roteamento iniciado com Tackle**
+- `content/moves/tackle/vfx.gd` (`MoveVfx`) delega o impacto ao `FxImpacts._tackle_impact` atual; `move.tres` aponta `vfx_script` e `MoveVfxRegistry.impact()` tenta o script antes do caminho por família.
+- **Nenhum look mudou:** os mesmos nós (`TackleShockCone`, `TackleSlashArcA/B`, flipbooks, fumaça) são criados pela mesma função. `test_tackle_vfx`, `test_all_moves_vfx`, `test_move_vfx_routing`, `test_vfx_room` e a suíte 16/16 passaram.
+- O `vfx.gd` ainda cobre só o impacto; `windup`/`travel`/`release`/`strike`/`return` continuam no caminho central até a próxima fase visual.
+- A mudança visual do Tackle (se houver) e o vídeo normal/espelhado D-308 continuam pendentes de aprovação.
 - Verificação obrigatória:
   - `vfx_room.tscn`, vista normal e espelhada, câmera do jogo;
   - quatro fases com transição contínua;

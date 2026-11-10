@@ -128,6 +128,14 @@ static func windup(fx: BattleFx, inc: Incoming, move_id: String, from: Vector3, 
 ## Authored impact routing (Etapa 3). The impact nodes themselves stay in
 ## FxImpacts/AbraMoveVfx/ElementMoveVfx/FireMoveVfx; only the dispatch is here.
 static func impact(fx: BattleFx, move_id: String, pos: Vector3, big: bool, dir: Vector3) -> Dictionary:
+	# D-1079: an authored vfx.gd gets the first chance. An empty result falls
+	# back to the existing family/match path, so moves without a script are
+	# unchanged.
+	var authored := move_vfx_for(fx, StringName(move_id))
+	if authored != null:
+		var authored_nodes: Array[Node3D] = authored.impact(null, pos, big, dir)
+		if not authored_nodes.is_empty():
+			return {"handled": true, "nodes": authored_nodes}
 	var family := impact_family(StringName(move_id))
 	var impacts := fx.fx_impacts
 	if family == &"abra":

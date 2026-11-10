@@ -1,5 +1,7 @@
 extends SceneTree
 
+const TackleVfxScript = preload("res://content/moves/tackle/vfx.gd")
+
 var failures := 0
 
 
@@ -22,6 +24,7 @@ func _run() -> void:
 	_test_tackle_strike_timing(battle_fx.fx_motion)
 	_test_tackle_strike(battle_fx.fx_motion)
 	_test_tackle_impact(battle_fx.fx_impacts)
+	_test_tackle_registry_impact(battle_fx)
 	await process_frame
 	battle_fx.queue_free()
 	if failures == 0:
@@ -62,6 +65,28 @@ func _test_tackle_impact(impacts: FxImpacts) -> void:
 	_expect("TackleFlipbookMain" in names, "D-041 must include main impact flipbook")
 	_expect("TackleFlipbookCore" in names, "D-041 must include core impact flipbook")
 	_expect("TackleGroundSmoke" in names, "D-041 must include ground radial smoke")
+
+
+func _test_tackle_registry_impact(battle_fx: BattleFx) -> void:
+	var authored := MoveVfxRegistry.move_vfx_for(battle_fx, &"tackle")
+	_expect(authored != null, "Tackle vfx_script is resolved from move.tres")
+	_expect(authored != null and authored.get_script() == TackleVfxScript, "Tackle uses the package vfx.gd")
+	var result := MoveVfxRegistry.impact(battle_fx, "tackle", Vector3(1, 1, 2), false, Vector3.FORWARD)
+	_expect(bool(result.get("handled", false)), "Tackle impact is handled by the package")
+	var names: Array[String] = []
+	for node in result.get("nodes", []):
+		names.append(node.name)
+	# The direct impact test already spawned a set, so Godot may suffix the
+	# duplicate names with a number; the composition is the same.
+	_expect(_has_prefix(names, "TackleShockCone"), "package impact keeps the current shock cone")
+	_expect(_has_prefix(names, "TackleSlashArcA") and _has_prefix(names, "TackleSlashArcB"), "package impact keeps both slash arcs")
+
+
+func _has_prefix(names: Array[String], prefix: String) -> bool:
+	for n in names:
+		if n.begins_with(prefix):
+			return true
+	return false
 
 
 func _shader_color(node: MeshInstance3D) -> Color:
