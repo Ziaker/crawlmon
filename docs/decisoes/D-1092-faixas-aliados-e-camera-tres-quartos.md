@@ -40,6 +40,10 @@
 - 60 fps/mobile/outras resoluções; Tab durante o diálogo (os cards ficam ocultos).
 - A cena principal completa continua com os erros de VFX de outra sessão.
 
+## Nota D-1095 (2026-11-10)
+
+O **medalhão da faixa do aliado** perdeu a borda interna escura, mantendo o fundo marrom/dourado; o resto da faixa continua igual.
+
 ## Estado
 
 Teste implementado e verificado no lab isolado. Faixas laterais, card do NPC preservado e câmera três-quartos pela esquerda. Commit local; **sem push**.

@@ -430,6 +430,8 @@ func _build_paper() -> void:
 	_name_label = _label(_speaker, Vector2.ZERO, Vector2(340.0, 32.0), _font_name, 20,
 		Color(0.95, 0.86, 0.62))
 	_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	# D-1095: o nome estava alto na fita; centraliza no eixo vertical.
+	_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_name_tab.add_child(_name_label)
 	_panel.add_child(_name_tab)
 
@@ -437,8 +439,9 @@ func _build_paper() -> void:
 	_portrait_back.position = Vector2(28.0, 36.0)
 	_portrait_back.size = Vector2(142.0, 142.0)
 	_portrait_back.pivot_offset = Vector2(71.0, 71.0)
+	# D-1095: sem borda interna; o fundo marrom/dourado do medalhão continua.
 	_portrait_back.add_theme_stylebox_override("panel", _flat(
-		Color(0.85, 0.68, 0.30), Color(0.16, 0.25, 0.16), 2, 71))
+		Color(0.85, 0.68, 0.30), Color(0.85, 0.68, 0.30), 0, 71))
 	_panel.add_child(_portrait_back)
 	_portrait_back.add_child(_portrait_rect(Vector2(8.0, 8.0), Vector2(126.0, 126.0), true))
 	_portrait_fallback = _label("B", Vector2(8.0, 8.0), Vector2(126.0, 126.0),

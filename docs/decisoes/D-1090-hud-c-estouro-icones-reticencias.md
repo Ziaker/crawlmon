@@ -45,6 +45,10 @@
 - A câmera D-1088 e as reações D-1089 foram implementadas nesta rodada; a aprovação visual/final delas é separada.
 - A cena principal em headless continua com os erros de VFX de outra sessão; teste no lab isolado.
 
+## Nota D-1095 (2026-11-10)
+
+O **name tab Paper** agora centraliza o nome verticalmente e o **medalhão do retrato** perdeu a borda interna escura, mantendo o fundo marrom/dourado.
+
 ## Estado
 
 Teste implementado e verificado no lab isolado: HUD C no diálogo real, estouro, ícones +25% e reticências animadas. Commit local; **sem push**.

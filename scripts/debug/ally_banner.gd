@@ -119,8 +119,9 @@ func _build() -> void:
 	var portrait_back := Panel.new()
 	portrait_back.position = Vector2(14.0, 13.0)
 	portrait_back.size = Vector2(56.0, 56.0)
+	# D-1095: sem borda interna; o fundo marrom/dourado do medalhão continua.
 	portrait_back.add_theme_stylebox_override("panel", _flat(
-		Color(0.85, 0.68, 0.30), Color(0.16, 0.25, 0.16), 2, 28))
+		Color(0.85, 0.68, 0.30), Color(0.85, 0.68, 0.30), 0, 28))
 	_panel.add_child(portrait_back)
 
 	_portrait = TextureRect.new()

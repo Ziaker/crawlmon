@@ -1210,6 +1210,10 @@ func _circular_portrait(tex: Texture2D, region: Rect2) -> Texture2D:
 
 func _portrait_for_speaker(speaker: String) -> Texture2D:
 	var key := speaker.to_lower()
+	# D-1095: ícone fechado do Bulbasaur, já mascarado e com o fundo do medalhão.
+	var baked := "res://assets/ui/portraits/%s.png" % key
+	if ResourceLoader.exists(baked):
+		return load(baked) as Texture2D
 	var sugimori := "res://sugimori/por_nome/%s.png" % key
 	if ResourceLoader.exists(sugimori):
 		var tex := load(sugimori) as Texture2D

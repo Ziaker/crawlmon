@@ -53,6 +53,10 @@ Os PNGs mostram o recorte dentro do medalhão dourado com aro verde, como o retr
 - Os demais NPCs Pokémon (Charmander, Squirtle, Pikachu, Eevee) sem face crop estabelecido; continuam com a arte inteira por enquanto.
 - 60 fps/mobile, outras resoluções e a cena principal completa (VFX de outra sessão).
 
+## Nota D-1095 (2026-11-10)
+
+O criador pediu um ícone fechado do Bulbasaur, com a face centralizada e a bochecha direita cortada, e o Bulbasaur passou a usar esse novo recorte (D-1095). O **B (0,78 + 0,03 para a esquerda)** e os PNGs A/B/C continuam como histórico/referência; a regra dos ícones estabelecidos para os demais personagens não muda.
+
 ## Estado
 
-Regra registrada e ícones estabelecidos implementados; Bulbasaur em B escolhido, com 0,03 para a esquerda. Commit local; **sem push**.
+Regra registrada e ícones estabelecidos implementados; Bulbasaur em B escolhido, com 0,03 para a esquerda; o recorte fechado da D-1095 é o ícone atual. Commit local; **sem push**.
