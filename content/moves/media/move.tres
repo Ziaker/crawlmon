@@ -20,6 +20,7 @@ hold = 0.2
 plan_profile = &"cast"
 tags = Array[StringName]([&"stage_vfx"])
 vfx_key = &"media"
+icon_color = Color(0.247059, 0.74902, 0.435294, 1)
 effect_line_text = "Heals all living allies for 10 + MAG | 2 ATB"
 short_effect_text = "heal 10+MAG | team"
 description_text = "A healing ritual for the whole team. Higher MAG heals more."

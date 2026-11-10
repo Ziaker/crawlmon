@@ -14,6 +14,7 @@ const DARK_BG := Color(0.04, 0.07, 0.11, 0.75)
 const BORDER_COLOR := Color(0.20, 0.30, 0.42, 0.9)
 const CYAN := Color("38bdf8")
 const AMBER := Color("f59e0b")
+const MoveIcons = preload("res://scripts/ui/move_icons.gd")
 
 var hud: Control
 var skill: Skill
@@ -233,9 +234,16 @@ func _draw() -> void:
 		type_col = Color("fcb900")
 		type_fg = Color("080e18")
 
+	var badge_col := type_col
+	if skill.data != null and skill.data.icon_color.a > 0.0:
+		badge_col = skill.data.icon_color
 	var type_ic := _get_type_icon(type_name)
+	if skill.data != null:
+		var move_ic: Texture2D = MoveIcons.for_move(skill.data.id)
+		if move_ic != null:
+			type_ic = move_ic
 	if type_ic != null:
-		_draw_para_flat(Rect2(Vector2(bx, badge_y), Vector2(badge_sz, badge_sz)), 2.0, type_col)
+		_draw_para_flat(Rect2(Vector2(bx, badge_y), Vector2(badge_sz, badge_sz)), 2.0, badge_col)
 		draw_texture_rect(type_ic, Rect2(Vector2(bx + 2.0, badge_y + 2.0), Vector2(13.0, 13.0)), false, type_fg)
 		bx += badge_sz + 4.0
 

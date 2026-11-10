@@ -50,6 +50,9 @@ extends Resource
 @export var behavior_script: Script = null
 @export var vfx_key: StringName = &""
 @export var vfx_script: Script = null
+## Optional badge/background color for the Move icon. Alpha 0 = use the
+## type/range fallback color (Phase 3, D-1079).
+@export var icon_color: Color = Color(0, 0, 0, 0)
 @export var ai_profile: Dictionary = {}
 
 # --- Textos da ficha (D-420) ------------------------------------------------

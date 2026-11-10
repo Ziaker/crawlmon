@@ -19,6 +19,7 @@ const INK := Color("080e18")
 const CREAM := Color("f0eedf")
 const NAVY := Color("0a1929")
 const GUARD_BLUE := Color("1f6fd6")  ## D-272: the Guard block (flat blue instead of the green highlight).
+const MoveIcons = preload("res://scripts/ui/move_icons.gd")
 
 const FAN_W := 232.0
 const FAN_H := 38.0
@@ -29,6 +30,7 @@ const MAX_ROWS := 5
 
 var style := Style.FAN
 var header := ""  ## Chapter label (FAN) or panel title (DRAWER).
+var note := ""  ## Extra line at the bottom of the drawer (pages, hints).
 var index := 0
 
 var _texts: Array[String] = []
@@ -39,6 +41,19 @@ var _hilite: Array[Color] = []  ## Highlight color of the row (alpha 0 = the def
 var _shield: Array[bool] = []  ## The row draws a shield icon instead of the diamond (D-272).
 static var _title_font: Font
 static var _body_font: Font
+var _skills: Array = []
+static var _icon_cache: Dictionary = {}
+
+
+static func _get_icon(path: String) -> Texture2D:
+	if _icon_cache.has(path):
+		return _icon_cache[path]
+	if ResourceLoader.exists(path):
+		var tex: Texture2D = load(path)
+		_icon_cache[path] = tex
+		return tex
+	return null
+
 
 
 static func title_font() -> Font:
@@ -70,6 +85,7 @@ func set_entries(entries: Array, keep_index := false) -> void:
 	_accents.clear()
 	_hilite.clear()
 	_shield.clear()
+	_skills.clear()
 	for e in entries:
 		if e is Dictionary:
 			_texts.append(e["text"])
@@ -78,6 +94,7 @@ func set_entries(entries: Array, keep_index := false) -> void:
 			_accents.append(e.get("accent", Color(0, 0, 0, 0)))
 			_hilite.append(e.get("hilite", Color(0, 0, 0, 0)))
 			_shield.append(e.get("shield", false))
+			_skills.append(e.get("skill", null))
 		else:
 			_texts.append(str(e))
 			_details.append("")
@@ -85,6 +102,7 @@ func set_entries(entries: Array, keep_index := false) -> void:
 			_accents.append(Color(0, 0, 0, 0))
 			_hilite.append(Color(0, 0, 0, 0))
 			_shield.append(false)
+			_skills.append(null)
 	index = clampi(index if keep_index else 0, 0, maxi(_texts.size() - 1, 0))
 	queue_redraw()
 	moved.emit(index)
@@ -197,15 +215,92 @@ func _draw_drawer() -> void:
 		var i := first + n
 		var y := 48.0 + n * ROW_H
 		var active := i == index
-		var alpha := 1.0 if _enabled[i] else 0.45
+		var enabled := _enabled[i]
+		var alpha := 1.0 if enabled else 0.32
+		var sk: Skill = _skills[i] if i < _skills.size() else null
+
+		# Element color stripe (D-438: neutral/physical uses Color("cbd5e1"))
+		var elem_col := Color("cbd5e1")
+		if sk != null:
+			elem_col = StatusScreen.ELEMENT_COLORS.get(sk.element, BattleFx.COLORS.get(sk.element, Color("cbd5e1")))
+
 		if active:
-			draw_rect(Rect2(8, y, DRAWER_W - 16, ROW_H - 3), LIME)
+			draw_rect(Rect2(8, y, DRAWER_W - 16, ROW_H - 3), LIME if enabled else Color(0.2, 0.25, 0.3, 0.8))
+			draw_rect(Rect2(8, y, 4, ROW_H - 3), elem_col)
 		else:
+			if sk != null:
+				draw_rect(Rect2(8, y, DRAWER_W - 16, ROW_H - 3), Color(0.04, 0.08, 0.12, 0.6 if enabled else 0.3))
+			draw_rect(Rect2(8, y, 4, ROW_H - 3), Color(elem_col, alpha))
 			draw_line(Vector2(10, y + ROW_H - 2), Vector2(DRAWER_W - 10, y + ROW_H - 2), Color("354758"), 1.0)
-		var fg := INK if active else (CREAM if _accents[i].a == 0.0 else _accents[i])
-		var detail_w := small.get_string_size(_details[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x
-		draw_string(small, Vector2(16, y + 23), _texts[i], HORIZONTAL_ALIGNMENT_LEFT, DRAWER_W - 40.0 - detail_w, 15, Color(fg, alpha))
+
+		var fg := (INK if enabled else Color("64748b")) if active else (CREAM if _accents[i].a == 0.0 else _accents[i])
+
+		# 3 Icons on the right side of the row: Element, Type, Range (D-438)
+		var icons_w := 0.0
+		if sk != null:
+			var ic_y := y + 3.0
+			var ic_sz := 13.0
+			var ic_gap := 3.0
+			var rx := DRAWER_W - 16.0 - (3.0 * ic_sz + 2.0 * ic_gap)
+			icons_w = 3.0 * ic_sz + 2.0 * ic_gap + 4.0
+
+			# Icon 1: Element SVG (D-438, D-440)
+			var elem_ic := BattleHud.element_icon(sk.element)
+			if elem_ic != null:
+				draw_rect(Rect2(rx, ic_y, ic_sz, ic_sz), Color(0, 0, 0, 0.5 * alpha))
+				draw_texture_rect(elem_ic, Rect2(rx + 1, ic_y + 1, ic_sz - 2, ic_sz - 2), false, Color(elem_col if not active else INK, alpha))
+			rx += ic_sz + ic_gap
+
+			# Icon 2: Type SVG (physical, magical, guard, dodge)
+			var type_name := "magical"
+			var type_col := Color("0ea5e9")
+			if sk.kind == Skill.Kind.MELEE or (sk.element == Element.Type.FISICO and sk.kind != Skill.Kind.STATUS):
+				type_name = "physical"
+				type_col = Color("ef4444")
+			elif sk.display_name.to_lower() == "guard":
+				type_name = "guard"
+				type_col = Color("cbd5e1")
+			elif sk.display_name.to_lower() == "teleport":
+				type_name = "dodge"
+				type_col = Color("fcb900")
+			var badge_col := type_col
+			if sk.data != null and sk.data.icon_color.a > 0.0:
+				badge_col = sk.data.icon_color
+			var type_ic := _get_icon("res://assets/ui/icons/move_types/%s.svg" % type_name)
+			if sk.data != null:
+				var move_ic: Texture2D = MoveIcons.for_move(sk.data.id)
+				if move_ic != null:
+					type_ic = move_ic
+			if type_ic != null:
+				draw_rect(Rect2(rx, ic_y, ic_sz, ic_sz), Color(badge_col, 0.7 * alpha))
+				draw_texture_rect(type_ic, Rect2(rx + 1, ic_y + 1, ic_sz - 2, ic_sz - 2), false, Color(Color.WHITE if not active else INK, alpha))
+			rx += ic_sz + ic_gap
+
+			# Icon 3: Range SVG (melee, mid, long, area)
+			var range_name := "mid"
+			if sk.is_aoe:
+				range_name = "area"
+			elif sk.kind == Skill.Kind.MELEE:
+				range_name = "melee"
+			elif sk.kind == Skill.Kind.PROJECTILE:
+				range_name = "long"
+			var range_ic := _get_icon("res://assets/ui/icons/range/%s.svg" % range_name)
+			if range_ic != null:
+				draw_rect(Rect2(rx, ic_y, ic_sz, ic_sz), Color(0.9, 0.95, 1.0, 0.8 * alpha))
+				draw_texture_rect(range_ic, Rect2(rx + 1, ic_y + 1, ic_sz - 2, ic_sz - 2), false, Color(Color("080e18"), alpha))
+
+		# Move Name
+		var name_size := 14
+		var max_w := DRAWER_W - 20.0 - icons_w
+		while name_size > 10 and small.get_string_size(_texts[i], HORIZONTAL_ALIGNMENT_LEFT, -1, name_size).x > max_w:
+			name_size -= 1
+		draw_string(small, Vector2(16, y + 17), _texts[i], HORIZONTAL_ALIGNMENT_LEFT, max_w, name_size, Color(fg, alpha))
+
+		# Detail line (ATB · MP | target forecast)
 		if _details[i] != "":
-			BattleHud.text_right(self, small, DRAWER_W - 14, y + 22, _details[i], 10, Color(INK if active else GOLD, alpha))
+			var det_col := (INK if enabled else Color("475569")) if active else (GOLD if enabled else Color("64748b"))
+			draw_string(small, Vector2(16, y + 30), _details[i], HORIZONTAL_ALIGNMENT_LEFT, DRAWER_W - 26.0, 9, Color(det_col, alpha * 0.95))
+	if note != "":
+		draw_string(small, Vector2(14, h - 3), note, HORIZONTAL_ALIGNMENT_LEFT, DRAWER_W - 70, 9, LIME)
 	if _texts.size() > rows:
 		BattleHud.text_right(self, small, DRAWER_W - 14, h - 3, "%d/%d" % [index + 1, _texts.size()], 9, Color(1, 1, 1, 0.5))

@@ -94,7 +94,8 @@ Nenhuma para a Etapa 1. As decisões de detalhe das Etapas 2–6 (nomes finais d
 - `MoveCatalog.all_moves()`, `CharacterCatalog.all_characters()`, `CharacterData.skill_ids()`, `inventory()` e `model_profile_dict()` devolvem cópias, para não mutar definições compartilhadas.
 - **Fase 1 do pacote de Move:** `MoveVfx` (base de hooks, sem relógio próprio) e `MoveVfxRegistry.move_vfx_for()`/`clear_move_vfx_cache()`; `vfx_script` agora resolve e é coberto pelo contrato. Nenhum `.tres` usa ainda e nenhum VFX existente mudou.
 - **Fase 2 do pacote de Move (Media):** a classe `Media` saiu de `move_behaviors.gd` para `content/moves/media/behavior.gd`; `move.tres` aponta `behavior_script`, a entrada fixa saiu do `MoveBehaviorRegistry` e o builder preserva `behavior.gd`/`vfx.gd` opcionais. Comportamento, tempos e visual idênticos; contrato e suíte 16/16 verdes.
-- Proposta completa em [`docs/PROPOSTA_PACOTE_MOVE_2026-11-09.md`](../PROPOSTA_PACOTE_MOVE_2026-11-09.md); Fases 3–5 (icon/VFX e expansão) aguardam escolha do criador.
+- **Fase 3 do pacote de Move (ícone):** `content/moves/media/icon.svg` é o piloto; `scripts/ui/move_icons.gd` resolve o ícone por caminho fixo e `FanMenu`/`SkillInfoPanel` usam o ícone do Move quando existe, com fallback para o ícone de tipo/alcance. Contrato `tests/ui/test_move_icons.gd` verde; aprovação visual antes de expandir.
+- Proposta completa em [`docs/PROPOSTA_PACOTE_MOVE_2026-11-09.md`](../PROPOSTA_PACOTE_MOVE_2026-11-09.md); Fases 4–5 (VFX e expansão) aguardam escolha do criador.
 - Pendências registradas em [`docs/AUDITORIA_ARQUITETURA_2026-11-09.md`](../AUDITORIA_ARQUITETURA_2026-11-09.md): pacote de Move parcial (`behavior.gd`/`vfx.gd`/`icon.svg` ausentes por Move), matches de coreografia por `move_id` em VFX e testes antigos/flaky.
 
 Nenhum push.

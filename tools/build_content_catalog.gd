@@ -85,6 +85,12 @@ func _build_moves() -> int:
 		# D-1079: optional per-Move scripts live beside move.tres and survive a
 		# catalog rebuild. This is an edit-time check, not a runtime folder scan.
 		var move_dir := "%s/%s" % [MOVE_ROOT, move_id]
+		# Preserve optional visual metadata already authored beside move.tres.
+		var existing_path := "%s/move.tres" % move_dir
+		if ResourceLoader.exists(existing_path):
+			var existing := load(existing_path) as MoveData
+			if existing != null:
+				data.icon_color = existing.icon_color
 		var behavior_path := "%s/behavior.gd" % move_dir
 		if ResourceLoader.exists(behavior_path):
 			data.behavior_script = load(behavior_path) as Script
