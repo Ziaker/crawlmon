@@ -34,7 +34,7 @@
 - **Reticências:** o `Label3D` acima do NPC cicla `.` → `..` → `...` a 3 estados/s; o ícone de estado fica oculto enquanto fala.
 - **Estouro:** `state_anger.png` virou uma explosão/estrela irregular; no `CHASE` a auditoria viu `state=1`, `icon=anger`. O burst também aparece na prova.
 - **Tamanho:** `pixel_size` de `0,0035` → `0,004375` (+25%) para todos os ícones de estado.
-- **Retratos:** Pokémon usam o ícone estabelecido (face crop; D-1093), não a arte inteira; DQT sem retrato usa a inicial no medalhão (fallback). O Bulbasaur está em B provisório.
+- **Retratos:** Pokémon usam o ícone estabelecido (face crop; D-1093), não a arte inteira; DQT sem retrato usa a inicial no medalhão (fallback). O Bulbasaur usa B com 0,03 para a esquerda.
 - **`[Z] CLOSE`:** movido para a esquerda do selo “M”, para não ficar atrás dele.
 - **Provas:** `docs/referencias/exploracao/3d/murky_forest_paper_dialogue.png`, `murky_forest_panchan_reaction.png`, `murky_forest_orc_reaction.png`, `murky_forest_chase_burst.png` e `overworld_icons_states.png`; vídeo C regravado (`dialogue_hud_c_paper.mp4/.gif`) e folha de contato atualizada.
 
