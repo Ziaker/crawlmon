@@ -345,10 +345,28 @@ def root_palisade(name, seed, planks, width_lo, width_hi, rope_ys, moss_amt,
         wrap_ellipse(c, x, y, r, max(2, r // 2), (0.285, 0.145, 0.345))
         wrap_ellipse(c, x, y - max(1, r // 3), r, max(2, r // 3), (0.47, 0.31, 0.52), False, 2)
 
-    # D-1117: 20% mais escura e 25% da cor antiga da parede (75% de textura).
+    # D-1117/D-1118: 20% mais escura; a opacidade e a cor da parede ficam no shader.
     c = c * 0.80
-    c = c * 0.75 + color((0.075, 0.145, 0.135)) * 0.25
     save(name, c)
+
+
+def blend_palisades(amount=0.30):
+    names = [
+        "murky_wall_root_palisade.png",
+        "murky_wall_root_palisade_v1.png",
+        "murky_wall_root_palisade_v2.png",
+        "murky_wall_root_palisade_v3.png",
+        "murky_wall_root_palisade_v4.png",
+        "murky_wall_root_palisade_v5.png",
+    ]
+    imgs = [cv2.imread(os.path.join(OUT, n), cv2.IMREAD_COLOR).astype(np.float32) for n in names]
+    avg = np.mean(imgs, axis=0)
+    for name, img in zip(names, imgs):
+        out = img * (1.0 - amount) + avg * amount
+        mean = out.mean()
+        out = ((out - mean) * 1.25 + mean) * 1.35
+        cv2.imwrite(os.path.join(OUT, name), np.clip(out, 0.0, 255.0).astype(np.uint8))
+    print("palisades blended toward average:", amount, "contrast 1.25, gain 1.35")
 
 
 mossy_stone()
@@ -374,4 +392,5 @@ root_palisade("murky_wall_root_palisade_v4.png", 604, 7, 0.12, 0.19,
 root_palisade("murky_wall_root_palisade_v5.png", 605, 11, 0.07, 0.12,
               (0.20, 0.55, 0.82), 0.65, tint=(1.10, 0.94, 0.84),
               knots=30, rope_w=14, leaves=10, gap_frac=0.065, fungi=6)
+blend_palisades(0.20)
 print("OK: wall textures in", OUT)

@@ -18,6 +18,7 @@ const ALLY_BANNER := preload("res://scripts/debug/ally_banner.gd")
 const NAMEPLATE := preload("res://scripts/debug/floating_nameplate.gd")
 const STATE_ICON := preload("res://scripts/debug/overworld_state_icon.gd")
 const MARKER_RING_SHADER := preload("res://shaders/overworld_marker_ring.gdshader")
+const WALL_SHADER := preload("res://shaders/wall_palisade_blend.gdshader")
 const ICON_ANGER := preload("res://assets/ui/overworld_icons/state_anger.png")
 const ICON_SWEAT := preload("res://assets/ui/overworld_icons/state_sweat.png")
 const ICON_ALERT := preload("res://assets/ui/overworld_icons/state_alert.png")
@@ -204,32 +205,56 @@ func _build_environment() -> void:
 
 # --- Forest room -------------------------------------------------------------
 
-## D-1116: paliçada base + 5 variações, uma por parede, em ordem sorteada.
-func _wall_materials() -> Array[StandardMaterial3D]:
-	var paths := [
-		"res://assets/textures/walls/murky_wall_root_palisade.png",
-		"res://assets/textures/walls/murky_wall_root_palisade_v1.png",
-		"res://assets/textures/walls/murky_wall_root_palisade_v2.png",
-		"res://assets/textures/walls/murky_wall_root_palisade_v3.png",
-		"res://assets/textures/walls/murky_wall_root_palisade_v4.png",
-		"res://assets/textures/walls/murky_wall_root_palisade_v5.png",
-	]
-	var mats: Array[StandardMaterial3D] = []
-	for path in paths:
-		mats.append(_wall_texture_mat(path))
-	mats.shuffle()
+## D-1116/D-1118: paliçada base + 5 variações, uma por parede, em ordem
+## sorteada, com crossfade nos cantos e 60% de textura sobre a cor antiga.
+const WALL_TEXTURE_PATHS := [
+	"res://assets/textures/walls/murky_wall_root_palisade.png",
+	"res://assets/textures/walls/murky_wall_root_palisade_v1.png",
+	"res://assets/textures/walls/murky_wall_root_palisade_v2.png",
+	"res://assets/textures/walls/murky_wall_root_palisade_v3.png",
+	"res://assets/textures/walls/murky_wall_root_palisade_v4.png",
+	"res://assets/textures/walls/murky_wall_root_palisade_v5.png",
+]
+## Vizinhas de cada parede nos dois cantos internos.
+const WALL_NEIGHBORS := [
+	[1, 2], [0, 3], [0, 4], [1, 5], [2, 5], [3, 4],
+]
+## Canto interno (x, z) de cada ponta de cada parede.
+const WALL_CORNERS := [
+	[Vector2(-4.0, 6.0), Vector2(4.0, 6.0)],
+	[Vector2(-4.0, 6.0), Vector2(-4.0, -14.0)],
+	[Vector2(4.0, 6.0), Vector2(4.0, -6.0)],
+	[Vector2(-4.0, -14.0), Vector2(18.0, -14.0)],
+	[Vector2(4.0, -6.0), Vector2(18.0, -6.0)],
+	[Vector2(18.0, -14.0), Vector2(18.0, -6.0)],
+]
+
+
+func _wall_materials() -> Array[ShaderMaterial]:
+	var texs: Array[Texture2D] = []
+	for path in WALL_TEXTURE_PATHS:
+		texs.append(load(path) as Texture2D)
+	texs.shuffle()
+	var mats: Array[ShaderMaterial] = []
+	for i in texs.size():
+		mats.append(_wall_material(i, texs))
 	return mats
 
 
-func _wall_texture_mat(path: String) -> StandardMaterial3D:
-	var mat := StandardMaterial3D.new()
-	mat.albedo_texture = load(path) as Texture2D
-	mat.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
-	mat.specular_mode = BaseMaterial3D.SPECULAR_TOON
-	mat.uv1_triplanar = true
-	mat.uv1_world_triplanar = true
-	mat.uv1_scale = Vector3(0.20, 0.20, 0.20)
-	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+func _wall_material(index: int, texs: Array[Texture2D]) -> ShaderMaterial:
+	var mat := ShaderMaterial.new()
+	mat.shader = WALL_SHADER
+	mat.set_shader_parameter("tex_own", texs[index])
+	mat.set_shader_parameter("tex_a", texs[int(WALL_NEIGHBORS[index][0])])
+	mat.set_shader_parameter("tex_b", texs[int(WALL_NEIGHBORS[index][1])])
+	var ca: Vector2 = WALL_CORNERS[index][0]
+	var cb: Vector2 = WALL_CORNERS[index][1]
+	mat.set_shader_parameter("corner_a", Vector4(ca.x, ca.y, 0.0, 1.0))
+	mat.set_shader_parameter("corner_b", Vector4(cb.x, cb.y, 0.0, 1.0))
+	mat.set_shader_parameter("corner_width", 2.0)
+	mat.set_shader_parameter("tile", 0.20)
+	mat.set_shader_parameter("strength", 0.60)
+	mat.set_shader_parameter("base_color", Color(0.075, 0.145, 0.135, 1.0))
 	return mat
 
 

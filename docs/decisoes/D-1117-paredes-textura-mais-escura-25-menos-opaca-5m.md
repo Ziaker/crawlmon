@@ -4,6 +4,7 @@
 - **Área:** Exploração 3D / lab Murky Forest / paredes.
 - **Relacionadas:** D-1116 (paliçada + 5 variações), D-1028 (toon), D-1083 (luz baixa).
 - **Status:** **implementado/provado**; commit local; **sem push**.
+- **Nota D-1118 (2026-11-10):** o visual foi ajustado de novo: texturas **20% misturadas com a média**, **60% de textura + 40% cor antiga**, crossfade de **2 m** nos cantos e ganho 1,35. Os valores atuais são os da D-1118.
 
 ## O que o criador disse (literal)
 

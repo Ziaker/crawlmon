@@ -335,6 +335,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-1111] Aliados sem placa branca:** **implementado/provado**: remove a placa branca dos aliados; NPC/inimigo e cards de diálogo ficam; print/vídeo.
 - **[D-1116] Paliçada de raízes + 5 variações nas paredes:** **implementado/provado**: 6 texturas (base + V1..V5) sorteadas entre as 6 paredes, uma por parede; 4 m/tile; print, contato e vídeo/GIF.
 - **[D-1117] Paredes com textura mais escura, 25% menos opaca e 5 m por tile:** **implementado/provado**: textura ×0,80, 75% textura + 25% cor antiga, tile 5 m; print, contato e vídeo/GIF.
+- **[D-1118] Texturas mais mescladas entre si, canto suave e 60% de opacidade:** **implementado/provado**: 20% média + contraste 1,25/ganho 1,35, 60% textura + 40% cor, crossfade 2 m; print, contato e vídeo/GIF.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).
@@ -1480,3 +1481,7 @@ Para o HTML dos oito Moves, o criador confirmou a entrega com Quarks.js como exc
 ## Decisão D-1117 — Paredes com textura mais escura, 25% menos opaca e 5 m por tile (2026-11-10)
 
 - **D-1117 (lab/paredes):** a paliçada usada nas 6 paredes é multiplicada por **0,80** e entra a **75%** sobre a cor antiga da parede (`0.075, 0.145, 0.135`, 25%); a parede continua opaca. O tile passa de **4 m** para **5 m**. A distribuição sorteada da D-1116 não muda. Detalhes em `docs/decisoes/D-1117-paredes-textura-mais-escura-25-menos-opaca-5m.md`.
+
+## Decisão D-1118 — Texturas mais mescladas entre si, canto suave e 60% de opacidade (2026-11-10)
+
+- **D-1118 (lab/paredes):** as 6 paliçadas são misturadas **20%** com a média (contraste 1,25 e ganho 1,35); o shader entrega **60% de textura + 40% da cor antiga** (parede opaca) e faz **crossfade de 2 m** entre as texturas vizinhas nos cantos, chegando a 50/50 no canto exato. O sorteio de uma textura por parede (D-1116) e o tile de 5 m (D-1117) continuam. Detalhes em `docs/decisoes/D-1118-texturas-mescladas-canto-suave-60-opacidade.md`.
