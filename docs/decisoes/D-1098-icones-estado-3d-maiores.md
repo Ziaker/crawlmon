@@ -3,7 +3,7 @@
 - **Data:** 2026-11-10.
 - **Área:** Exploração / overworld 3D / ícones de estado (`?`, `!`, fúria, suor, conversado).
 - **Relacionadas:** D-1086 (ícones de estado), D-1090 (ícones +25%), D-1097 (placa A e alturas), D-235 (nada depende de personagem/time/lado), D-1093 (arte estabelecida).
-- **Status:** **implementado/provado**; batalha, 2D, HUD/status, cards, regras, falas, câmera, retratos e a placa A não mudam; commit local; **sem push**.
+- **Status:** **implementado/provado e aprovado** pelo criador ("perfeito", 2026-11-10); batalha, 2D, HUD/status, cards, regras, falas, câmera, retratos e a placa A não mudam; commit local; **sem push**.
 
 ## O que o criador disse (literal)
 
@@ -54,4 +54,4 @@
 
 ## Estado
 
-Implementado e provado. Commit local; **sem push**.
+Implementado e provado. Aprovado pelo criador ("perfeito", 2026-11-10). Commit local; **sem push**.
