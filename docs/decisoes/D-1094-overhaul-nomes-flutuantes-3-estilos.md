@@ -3,7 +3,7 @@
 - **Data:** 2026-11-10.
 - **Área:** Exploração / overworld 3D / UI dos nomes.
 - **Relacionadas:** D-1086 (nomes/ícones/círculos), D-1090 (ícones/estouro), D-1091 (anéis), D-1092 (faixas/câmera), D-1093 (ícones estabelecidos), D-235 (nada depende de personagem/time/lado).
-- **Status:** **3 protótipos implementados e capturados; aguardando a escolha do criador**; o lab usa **Paper** como provisório e `F6` alterna; batalha, 2D, HUD/status, cards, regras e falas não mudam; commit local; **sem push**.
+- **Status:** **3 protótipos implementados e capturados; substituídos pela D-1096** (3 novas na linguagem dos cards/HUDs, 35% maiores); o lab usava **Paper** como provisório e `F6` alternava; batalha, 2D, HUD/status, cards, regras e falas não mudam; commit local; **sem push**.
 
 ## O que o criador disse (literal)
 
@@ -79,6 +79,10 @@ Trocar o nome flutuante simples (um `Label3D` solto acima da cabeça) por uma **
 - 60 fps/mobile, outras resoluções e a cena principal completa (VFX de outra sessão).
 - O texto do papel/terminal/comic em todos os idiomas/tamanhos de tela.
 
+## Nota D-1096 (2026-11-10)
+
+O criador gostou da **Paper & Pin (A)**, mas pediu **3 novas** placas na linguagem dos cards/HUDs do jogo e **35% maiores**. O trio ativo passou a ser **Unit Card / Move Strip / Expedition Tag** (D-1096). Paper & Pin, SMT Holo e Comic Impact continuam no histórico/referência.
+
 ## Estado
 
-Protótipos A/B/C implementados, integrados e capturados. O estilo **Paper** está provisório no lab; nenhum estilo foi oficializado. Commit local; **sem push**.
+Protótipos A/B/C implementados, integrados e capturados; substituídos pela D-1096. Nenhum estilo desta rodada foi oficializado. Commit local; **sem push**.

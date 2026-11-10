@@ -54,8 +54,9 @@ const NPC_SLOTS: Array[Dictionary] = [
 	{"pos": Vector3(8.2, 0.0, -7.2), "yaw": 0.0},
 ]
 
-## D-1094: estilo das placas de nome. F6 alterna no lab para comparação.
-@export_enum("paper", "terminal", "comic") var name_style := "paper"
+## D-1096: estilo das placas de nome na linguagem dos cards/HUDs.
+## F6 alterna no lab para comparação.
+@export_enum("unit_card", "move_strip", "expedition") var name_style := "unit_card"
 
 var _rng := RandomNumberGenerator.new()
 var _foliage_fade: Array[Dictionary] = []
@@ -816,7 +817,7 @@ func _spawn_npc_at_slot(slot_i: int, pool_idx: int) -> void:
 		top_y = height * 1.48
 
 	# D-1094: placa de nome (Paper/terminal/comic) em vez do Label3D solto.
-	var tag := _spawn_nameplate(body, npc_name, "NPC", top_y + 0.50)
+	var tag := _spawn_nameplate(body, npc_name, "NPC", top_y + 0.58)
 
 	var dlg_idx := (pool_idx * 3 + slot_i) % NPC_DATA.DIALOGUES.size()
 	_npcs.append({
@@ -859,7 +860,7 @@ func _add_world_markers() -> void:
 				enemy_name = (child as Label3D).text
 				(child as Label3D).visible = false
 				break
-		var enemy_tag := _spawn_nameplate(_enemy_body, enemy_name, "ENEMY", 1.45)
+		var enemy_tag := _spawn_nameplate(_enemy_body, enemy_name, "ENEMY", 1.58)
 		_name_labels.append({"node": enemy_tag, "owner": _enemy_body})
 
 
@@ -874,7 +875,7 @@ func _decorate_npc(npc: Dictionary) -> void:
 	if str(npc["id"]) == "dqt_dracky":
 		top_y = height * 1.48
 	_add_ground_ring(body, clampf(height * 0.75, 0.45, 0.85), Color(1.0, 1.0, 1.0, 0.68), "npc")
-	npc["icon_entry"] = _add_state_icon(body, Vector3(0.0, top_y + 0.92, 0.0))
+	npc["icon_entry"] = _add_state_icon(body, Vector3(0.0, top_y + 1.15, 0.0))
 	var talking := Label3D.new()
 	talking.text = "..."
 	talking.font_size = 48
@@ -883,7 +884,7 @@ func _decorate_npc(npc: Dictionary) -> void:
 	talking.outline_modulate = Color(0.0, 0.0, 0.0, 0.9)
 	talking.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	talking.no_depth_test = false
-	talking.position = Vector3(0.0, top_y + 0.92, 0.0)
+	talking.position = Vector3(0.0, top_y + 1.15, 0.0)
 	talking.layers = 1 << 6
 	talking.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	talking.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -948,7 +949,7 @@ func _add_ally_name(f: Dictionary) -> void:
 	var height := float(f["height"])
 	var model_id := str(f.get("model_id", ""))
 	var display := str(FOLLOWER_NAMES.get(model_id, model_id.to_upper()))
-	var tag := _spawn_nameplate(body, display, "ALLY", height + 0.50)
+	var tag := _spawn_nameplate(body, display, "ALLY", height + 0.58)
 	_name_labels.append({"node": tag, "owner": body})
 
 
@@ -963,7 +964,7 @@ func _add_ally_talking(f: Dictionary) -> void:
 	talk.outline_modulate = Color(0.0, 0.0, 0.0, 0.9)
 	talk.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	talk.no_depth_test = false
-	talk.position = Vector3(0.0, height + 0.92, 0.0)
+	talk.position = Vector3(0.0, height + 1.15, 0.0)
 	talk.layers = 1 << 6
 	talk.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	talk.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -1061,7 +1062,7 @@ func _spawn_nameplate(parent: Node3D, text: String, role: String, y: float) -> N
 
 ## D-1094: troca o estilo das placas em tempo real (F6 no lab e captura A/B/C).
 func set_name_style(style: String) -> void:
-	if not ["paper", "terminal", "comic"].has(style):
+	if not ["unit_card", "move_strip", "expedition"].has(style):
 		return
 	name_style = style
 	for entry in _name_labels:
@@ -1071,7 +1072,7 @@ func set_name_style(style: String) -> void:
 
 
 func _cycle_name_style() -> void:
-	var order := ["paper", "terminal", "comic"]
+	var order := ["unit_card", "move_strip", "expedition"]
 	var idx := order.find(name_style)
 	set_name_style(order[(idx + 1) % order.size()])
 
