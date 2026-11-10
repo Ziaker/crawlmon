@@ -1,0 +1,58 @@
+D-1097 — VALIDAÇÃO DO FLAT CARD (A)
+Data: 2026-11-10
+Lab: scenes/debug/murky_forest_3d_lab.tscn (isolado)
+
+ESTADO PADRÃO
+- name_style = unit_card
+- 6 placas: 3 NPCs + 2 aliados + 1 inimigo
+
+FLAT CARD
+- pixel_size = 0,0051714
+- nome = 120 px; papel oculto (A é só nome)
+- placa = 3,97 × 1,12 m (768 × 216 px)
+- paralelogramo 90 px + rotação -3,5°
+
+ÂNCORAS
+- NPC: placa em altura + 0,65 m
+- aliado: placa em altura + 0,65 m
+- inimigo: placa em 2,00 m
+- ícone/reticências do NPC/aliado: altura + 1,65 m
+
+VÃO PLACA × ÍCONE
+- ícone de estado: 0,56 m de altura
+- NPC: topo da placa 1,989 m; base do ícone 2,118 m → vão 0,13 m (sem sobreposição)
+- inimigo: base da placa 1,442 m; topo do ícone 1,328 m → vão 0,11 m (sem sobreposição)
+
+NOMES (fonte 120, largura útil 3,51 m)
+- BULBASAUR 2,89 m — cabe
+- CHARMANDER 3,37 m — cabe
+- SQUIRTLE 2,29 m — cabe
+- PIKACHU 2,18 m — cabe
+- EEVEE 1,35 m — cabe
+- DRACKY 1,97 m — cabe
+- HEAL SLIME 2,70 m — cabe
+- SABRECUB 2,60 m — cabe
+- PLATYPUNK 2,76 m — cabe
+- FUNGHOUL 2,52 m — cabe
+- PANCHAM 2,39 m — cabe
+- ORC 1,02 m — cabe
+- SLIME 1,44 m — cabe
+Maior nome: CHARMANDER 3,37 m (margem de 0,14 m para a borda útil).
+
+F6
+- move_strip: todas as 6 placas = true; papel visível
+- expedition: todas as 6 placas = true; papel visível
+- unit_card: todas as 6 placas = true; papel oculto
+
+VISTAS
+- Frente: nome correto
+- Lado espelhado: nome correto (não espelha)
+- Perto (3 m): escala 0,375; nome legível
+- Longe (9 m): escala 1,10; nome legível
+
+RESULTADO: PASSA
+- 10 NPCs, aliados e inimigo aceitam o Flat Card (D-235)
+- Nenhum nome estoura a placa
+- Nenhuma sobreposição com o ícone de estado
+- F6 alterna A/B/C sem quebrar o papel
+- Texto correto nas duas vistas
