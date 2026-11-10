@@ -1152,6 +1152,37 @@ func _npc_portrait(npc_name: String) -> Texture2D:
 	return _portrait_for_speaker(npc_name)
 
 
+func _circular_portrait(tex: Texture2D, region: Rect2) -> Texture2D:
+	# D-1093: o recorte já sai circular; o AtlasTexture + shader de máscara
+	# desalinhava e deixava o quadrado vazar do medalhão.
+	var img := tex.get_image()
+	if img == null:
+		return tex
+	var full := Rect2i(Vector2i.ZERO, img.get_size())
+	var px := Rect2i(
+		int(region.position.x * img.get_width()),
+		int(region.position.y * img.get_height()),
+		int(region.size.x * img.get_width()),
+		int(region.size.y * img.get_height()))
+	px = px.intersection(full)
+	if px.size.x < 2 or px.size.y < 2:
+		return tex
+	var face := img.get_region(px)
+	face.resize(256, 256, Image.INTERPOLATE_LANCZOS)
+	var center := Vector2(127.5, 127.5)
+	var radius := 124.0
+	for y in 256:
+		for x in 256:
+			var d := Vector2(float(x), float(y)).distance_to(center)
+			var a := clampf((radius - d) / 1.5, 0.0, 1.0)
+			if a >= 0.999:
+				continue
+			var c := face.get_pixel(x, y)
+			c.a *= a
+			face.set_pixel(x, y, c)
+	return ImageTexture.create_from_image(face)
+
+
 func _portrait_for_speaker(speaker: String) -> Texture2D:
 	var key := speaker.to_lower()
 	var sugimori := "res://sugimori/por_nome/%s.png" % key
@@ -1160,15 +1191,7 @@ func _portrait_for_speaker(speaker: String) -> Texture2D:
 		if tex == null:
 			return null
 		if PORTRAIT_FACE_REGIONS.has(key):
-			var r: Rect2 = PORTRAIT_FACE_REGIONS[key]
-			var atlas := AtlasTexture.new()
-			atlas.atlas = tex
-			atlas.region = Rect2(
-				r.position.x * tex.get_width(),
-				r.position.y * tex.get_height(),
-				r.size.x * tex.get_width(),
-				r.size.y * tex.get_height())
-			return atlas
+			return _circular_portrait(tex, PORTRAIT_FACE_REGIONS[key])
 		return tex
 	var portrait := "res://personagens/portraits/%s.png" % key
 	if ResourceLoader.exists(portrait):

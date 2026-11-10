@@ -36,7 +36,8 @@ Os PNGs mostram o recorte dentro do medalhão dourado com aro verde, como o retr
 
 ## Teste implementado (2026-11-09)
 
-- **Estabelecidos:** `_portrait_for_speaker()` agora aplica `AtlasTexture` para Abra/Pancham/Gible/Bulbasaur; Orc continua no retrato próprio.
+- **Estabelecidos:** `_portrait_for_speaker()` agora recorta o rosto de Abra/Pancham/Gible/Bulbasaur; Orc continua no retrato próprio.
+- **Correção do círculo:** o recorte é **pré-mascarado em círculo** (`ImageTexture` 256²) antes de entrar no `TextureRect`. Antes, o `AtlasTexture` + shader de máscara desalinhava e o quadrado do recorte vazava do medalhão; agora o rosto fica dentro do aro dourado.
 - **Bulbasaur:** recorte **B com 0,03 para a esquerda** no card Paper e nos retratos de NPC; o card mostra o rosto, não o corpo inteiro.
 - **Pancham:** faixa com o face crop estabelecido, não a arte inteira.
 - **Orc:** retrato estabelecido, como antes.
