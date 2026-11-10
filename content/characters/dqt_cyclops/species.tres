@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="Resource" path="res://content/characters/dqt_cyclops/loadout.tres" id="1_ka3d6"]
+[ext_resource type="Resource" path="res://content/characters/dqt_cyclops/model_profile.tres" id="2_txqg3"]
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="3_rhd20"]
+
+[resource]
+script = ExtResource("3_rhd20")
+id = &"dqt_cyclops"
+display_name = "Cyclops"
+species_id = "dqt_cyclops"
+raw_stats = {
+"AGI": 40,
+"LUK": 54,
+"MAG": 20,
+"STR": 110,
+"VIT": 75,
+"WIS": 25
+}
+weaknesses = Array[int]([4])
+loadout = ExtResource("1_ka3d6")
+travel_extra = 0.8
+model_profile = ExtResource("2_txqg3")

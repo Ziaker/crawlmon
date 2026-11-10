@@ -2,20 +2,21 @@ class_name Element
 extends RefCounted
 ## Elements used by skills and weaknesses.
 
-enum Type { FISICO, FOGO, AGUA_GELO, RAIO, PSIQUICO, VENENO, SOM, TERRA, VENTO, LUZ, TREVAS }
+enum Type { FISICO, FOGO, AGUA_GELO, RAIO, PSIQUICO, VENENO, SOM, TERRA, VENTO, LUZ, TREVAS, MYSTIC }
 
 const NAMES := {
-	Type.FISICO: "Físico",
-	Type.FOGO: "Fogo",
-	Type.AGUA_GELO: "Água/Gelo",
-	Type.RAIO: "Raio",
-	Type.PSIQUICO: "Psíquico",
-	Type.VENENO: "Veneno",
-	Type.SOM: "Som",
-	Type.TERRA: "Terra",
-	Type.VENTO: "Vento",
-	Type.LUZ: "Luz",
-	Type.TREVAS: "Trevas",
+	Type.FISICO: "Physical",
+	Type.FOGO: "Fire",
+	Type.AGUA_GELO: "Water/Ice",
+	Type.RAIO: "Electric",
+	Type.PSIQUICO: "Psychic",
+	Type.VENENO: "Poison",
+	Type.SOM: "Sound",
+	Type.TERRA: "Earth",
+	Type.VENTO: "Wind",
+	Type.LUZ: "Light",
+	Type.TREVAS: "Dark",
+	Type.MYSTIC: "Mystic",
 }
 
 

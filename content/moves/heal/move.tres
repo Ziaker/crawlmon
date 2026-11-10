@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_1cued"]
+
+[resource]
+script = ExtResource("1_1cued")
+id = &"heal"
+display_name = "Heal"
+kind = 3
+element = 9
+power = 0.0
+mp_cost = 3
+windup = 0.5
+is_aoe = true
+is_friendly = true
+stand_gap = 2.6
+hold = 0.2
+plan_profile = &"cast"
+vfx_key = &"generic"
+effect_line_text = "Crossover heal | Combat effect not implemented | 2 ATB"
+short_effect_text = "crossover heal"
+description_text = "Crossover test heal. Its combat effect is not implemented yet."
+mechanics_text = "Restorative spell that restores missing HP to a selected friendly target."
+visual_text = "Soft emerald-green light pillar wrapping the target with glowing restorative leaves and water drops."
+motion_text = "Stationary targeted cast."
+windup_text = "1.10s wind-up. Gentle restorative channel."
+tactical_text = "Restores missing HP to a selected friendly target. Single Target."
+visual_motion_text = "Stationary targeted cast enveloping ally in emerald restorative light."
+phase_visuals = {
+"impact": "Aplicação do efeito visual e badge de status: Soft emerald-green light pillar wrapping the target with glowing restorative leaves and water drops.",
+"release": "Liberação da invocação no próprio lançador/alvo: Stationary targeted cast.",
+"return": "Dissolução suave da cerimônia sem sobras e retomada do relógio do combate.",
+"strike": "Ativação do selo/aura de status sobre os alvos.",
+"travel": "Manifestação direta no campo (sem deslocamento de corpo): Stationary targeted cast.",
+"windup": "Canalização de status com motor pausado (D-031): 1.10s wind-up. Gentle restorative channel."
+}

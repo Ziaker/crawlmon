@@ -1,4 +1,6 @@
 extends Node
+
+const DrainSpearMove = preload("res://scripts/data/drain_spear_move.gd")
 ## Sala de VFX: abre a batalha real sem IA e sem menu, e um painel na tela dispara qualquer move
 ## em qualquer alvo, com loop, pausa, quadro a quadro, câmera lenta, câmera de órbita, distância
 ## entre os times, times espelhados (Gible aliado; Abra e Pancham inimigos), resultado forçado
@@ -15,102 +17,26 @@ extends Node
 ##   Godot --path . res://scenes/debug/vfx_room.tscn --fixed-fps 60 -- --move=Confusion --force=hit \
 ##     --cam=1 --speed=0.5 --record=3 --step=0.05 --quit
 ##   --scenario=choque|choque_atraso|cruzamento|persegue|morre_windup|morre_corrida|evade_perfeito|guard|interrompe --windup=
-##   --move= --attacker= --target= --mirror --cam=0..3 --speed= --distance= --force=random|hit|dodge|crit|weak
+##   --move= --attacker=player|enemy|NOME --target=opponent|NOME --mirror --cam=0..3 --speed= --distance= --force=random|hit|dodge|crit|weak
+##   --preflight=SEGUNDOS (checagem rápida: dispara, imprime [vfx_room] preflight result=... e sai)
+##   --real-mp (não completa MP: expõe recusa real; o padrão da sala continua completando)
+##   (--dqt/--dqt-mirror não são lidos aqui: o BattleScene os lê de OS.get_cmdline_user_args())
 ##   --pause-at=release|travel|strike|impact --pause-delay= --shot=arquivo.png
 ##   --hide=linhas,particulas,shaders,sprites,malhas --record=SEGUNDOS --step=SEGUNDOS --out=pasta
 ##   --log=arquivo.txt --quit
 
 const PANEL_W := 560.0  ## largura do painel, em pixels
-## Cenários prontos. Papéis, nunca nomes (D-235): A1/A2 = aliados, E1/E2/E3 = inimigos, "#n" = unidade n da lista.
-## "atk": [atacante, Move, alvo, segundos até disparar]; os dois primeiros aparecem nos campos da aba Cenário.
-## "acts": [segundos, ação, quem, ...]: evade, evade_once, guard, step(±1), buff(stat, ±n), status(burn|stun|blind), kill, attack(Move, alvo).
-## "enemies": 3 = acrescenta os 2 inimigos extras. "hp": % da vida de todos. "pos": {papel: ["between", a, b, fração]}.
-const SCENARIOS := [
-	# --- Choque (D-279) ---
-	{"id": "choque", "g": "Choque", "label": "Frente a frente (Tackle × Tackle)", "atk": [["A1", "Tackle", "E1", 0.0], ["E1", "Tackle", "A1", 0.0]]},
-	{"id": "choque_atraso", "g": "Choque", "label": "Defasado em 0,5 s", "atk": [["A1", "Tackle", "E1", 0.0], ["E1", "Tackle", "A1", 0.5]]},
-	{"id": "choque_mach", "g": "Choque", "label": "Mach Punch (rápido) × Tackle (lento)", "atk": [["E1", "Tackle", "A1", 0.0], ["A1", "Mach Punch", "E1", 1.5]]},
-	{"id": "choque_brick", "g": "Choque", "label": "Brick Break × Tackle", "atk": [["A1", "Brick Break", "E1", 0.0], ["E1", "Tackle", "A1", 0.0]]},
-	{"id": "cruzamento", "g": "Choque", "label": "Cruzamento (alvos distintos): cancelam", "atk": [["A1", "Tackle", "E1", 0.0], ["E1", "Tackle", "A2", 0.0]]},
-	{"id": "choque_2x2", "g": "Choque", "label": "Dois contra dois (4 corredores)", "enemies": 3, "atk": [["A1", "Tackle", "E1", 0.0], ["A2", "Tackle", "E2", 0.0], ["E1", "Tackle", "A1", 0.0], ["E2", "Tackle", "A2", 0.0]]},
-	{"id": "choque_3", "g": "Choque", "label": "Três corredores no mesmo ponto", "enemies": 3, "atk": [["A1", "Tackle", "E1", 0.0], ["E1", "Tackle", "A1", 0.0], ["E2", "Tackle", "A1", 0.3]]},
-	{"id": "aliados_mesmo_alvo", "g": "Choque", "label": "Aliados no mesmo alvo (não se chocam)", "atk": [["A1", "Tackle", "E1", 0.0], ["A2", "Tackle", "E1", 0.0]]},
-	{"id": "choque_letal", "g": "Choque", "label": "Choque com vida 1% (quem morre?)", "hp": 1, "atk": [["A1", "Tackle", "E1", 0.0], ["E1", "Tackle", "A1", 0.0]]},
-	# --- Perseguição e prisão (D-044, D-054, D-282) ---
-	{"id": "persegue", "g": "Perseguição e prisão", "label": "Alvo correndo em outro", "atk": [["E1", "Tackle", "A2", 0.0], ["A1", "Tackle", "E1", 0.7]]},
-	{"id": "preso_evade", "g": "Perseguição e prisão", "label": "Preso desvia (Evade)", "atk": [["E1", "Tackle", "A2", 0.0], ["A1", "Tackle", "E1", 0.7]], "acts": [[0.0, "evade", "E1"]]},
-	{"id": "preso_guard", "g": "Perseguição e prisão", "label": "Preso abre Guard", "atk": [["E1", "Tackle", "A2", 0.0], ["A1", "Tackle", "E1", 0.7]], "acts": [[3.4, "guard", "E1"]]},
-	{"id": "alvo_ja_voltou", "g": "Perseguição e prisão", "label": "Alvo já voltou para casa (corrida longa)", "atk": [["E1", "Tackle", "A2", 0.0], ["A1", "Tackle", "E1", 2.4]]},
-	# --- Interrupção ---
-	{"id": "mach_interrompe_windup", "g": "Interrupção", "label": "Mach Punch interrompe o wind-up", "atk": [["E1", "Tackle", "A1", 0.0], ["A1", "Mach Punch", "E1", 0.3]]},
-	{"id": "tiro_interrompe_corrida", "g": "Interrupção", "label": "Tiro interrompe a corrida", "atk": [["E1", "Tackle", "A1", 0.0], ["A2", "Fire Bullet", "E1", 1.0]]},
-	{"id": "tiro_interrompe_golpe", "g": "Interrupção", "label": "Tiro interrompe o golpe", "atk": [["E1", "Tackle", "A1", 0.0], ["A2", "Fire Bullet", "E1", 2.0]]},
-	{"id": "alvo_empurrado", "g": "Perseguição e prisão", "label": "Alvo empurrado por um tiro durante o golpe (D-286)", "atk": [["A1", "Tackle", "E1", 0.0], ["A2", "Fire Bullet", "E1", 1.9]]},
-	{"id": "alvo_empurrado_tarde", "g": "Perseguição e prisão", "label": "Alvo empurrado logo antes do impacto", "atk": [["A1", "Tackle", "E1", 0.0], ["A2", "Fire Bullet", "E1", 2.4]]},
-	# --- Evade e contra-ataque (D-283, D-284) ---
-	{"id": "evade_janela", "g": "Evade", "label": "Evade na janela final (0,25 s)", "atk": [["A1", "Tackle", "E1", 0.0]], "acts": [[0.0, "evade", "E1"]]},
-	{"id": "evade_cedo", "g": "Evade", "label": "Evade cedo demais: sem efeito", "atk": [["A1", "Tackle", "E1", 0.0]], "acts": [[2.7, "evade_once", "E1"]]},
-	{"id": "evade_contra", "g": "Evade", "label": "Evade + contra-ataque (wind-up 0,3 s)", "atk": [["A1", "Tackle", "E1", 0.0]], "acts": [[0.0, "evade", "E1"], [3.55, "attack", "E1", "Tackle", "A1"]]},
-	{"id": "evade_projetil", "g": "Evade", "label": "Evade de projétil", "atk": [["A1", "Fire Bullet", "E1", 0.0]], "acts": [[0.0, "evade", "E1"]]},
-	{"id": "evade_na_corrida", "g": "Evade", "label": "Evade durante a própria corrida", "atk": [["E1", "Tackle", "A2", 0.0], ["A1", "Fire Bullet", "E1", 1.1]], "acts": [[0.0, "evade", "E1"]]},
-	# --- Guard (D-272) ---
-	{"id": "guard_alvo", "g": "Guard", "label": "Alvo em Guard contra Tackle", "atk": [["A1", "Tackle", "E1", 0.0]], "acts": [[1.6, "guard", "E1"]]},
-	{"id": "brick_quebra_guard", "g": "Guard", "label": "Brick Break quebra o Guard", "atk": [["A1", "Brick Break", "E1", 0.0]], "acts": [[1.7, "guard", "E1"]]},
-	{"id": "guard_projetil", "g": "Guard", "label": "Alvo em Guard contra projétil", "atk": [["A1", "Fire Bullet", "E1", 0.0]], "acts": [[0.5, "guard", "E1"]]},
-	# --- Projéteis ---
-	{"id": "fire_bullet", "g": "Projéteis", "label": "Fire Bullet simples", "atk": [["A1", "Fire Bullet", "E1", 0.0]]},
-	{"id": "projeteis_cruzam", "g": "Projéteis", "label": "Dois projéteis se cruzam", "atk": [["A1", "Fire Bullet", "E1", 0.0], ["E1", "Fire Bullet", "A1", 0.0]]},
-	{"id": "projetil_alvo_morre", "g": "Projéteis", "label": "Alvo morre com o projétil no ar", "enemies": 3, "atk": [["A1", "Fire Bullet", "E1", 0.0]], "acts": [[0.9, "kill", "E1"]]},
-	{"id": "lancador_morre", "g": "Projéteis", "label": "Lançador morre com o projétil no ar", "enemies": 3, "atk": [["E1", "Fire Bullet", "A1", 0.0]], "acts": [[0.8, "kill", "E1"]]},
-	{"id": "intercepta", "g": "Projéteis", "label": "Outro inimigo intercepta o projétil", "enemies": 3, "atk": [["A1", "Fire Bullet", "E1", 0.0]], "pos": {"E2": ["between", "A1", "E1", 0.5]}},
-	{"id": "dragon_rage", "g": "Projéteis", "label": "Dragon Rage", "atk": [["A1", "Dragon Rage", "E1", 0.0]]},
-	{"id": "sand_attack", "g": "Projéteis", "label": "Sand Attack (cegueira)", "atk": [["A1", "Sand Attack", "E1", 0.0]]},
-	# --- Área ---
-	{"id": "megido", "g": "Área", "label": "Megido (onda nos 3 inimigos)", "enemies": 3, "atk": [["A1", "Megido", "E1", 0.0]]},
-	{"id": "mabufula", "g": "Área", "label": "Mabufula (onda)", "enemies": 3, "atk": [["A1", "Mabufula", "E1", 0.0]]},
-	{"id": "hassou_tobi", "g": "Área", "label": "Hassou Tobi (corpo a corpo em área)", "enemies": 3, "atk": [["A1", "Hassou Tobi", "E1", 0.0]]},
-	{"id": "titanomachia", "g": "Área", "label": "Titanomachia (corpo a corpo em área)", "enemies": 3, "atk": [["A1", "Titanomachia", "E1", 0.0]]},
-	{"id": "aoe_evade", "g": "Área", "label": "Megido com um alvo desviando", "enemies": 3, "atk": [["A1", "Megido", "E1", 0.0]], "acts": [[0.0, "evade", "E2"]]},
-	# --- Status e buffs ---
-	{"id": "tarukaja", "g": "Status e buffs", "label": "Tarukaja (buff de ataque em si)", "atk": [["A1", "Tarukaja", "A1", 0.0]]},
-	{"id": "rakunda", "g": "Status e buffs", "label": "Rakunda no inimigo", "atk": [["A1", "Rakunda", "E1", 0.0]]},
-	{"id": "sukunda", "g": "Status e buffs", "label": "Sukunda no inimigo", "atk": [["A1", "Sukunda", "E1", 0.0]]},
-	{"id": "media", "g": "Status e buffs", "label": "Media (grupo)", "hp": 55, "atk": [["A1", "Media", "A1", 0.0]]},
-	{"id": "taunt", "g": "Status e buffs", "label": "Taunt redireciona o ataque", "enemies": 3, "atk": [["A1", "Taunt", "E1", 0.0], ["E1", "Tackle", "A2", 3.2]]},
-	{"id": "status_pausa", "g": "Status e buffs", "label": "Status pausa um ataque em curso", "atk": [["E1", "Tackle", "A1", 0.0], ["A1", "Tarukaja", "A1", 0.5]]},
-	{"id": "buff_atk", "g": "Status e buffs", "label": "ATK +3 e depois Tackle", "atk": [["A1", "Tackle", "E1", 1.0]], "acts": [[0.0, "buff", "A1", "atk", 3]]},
-	{"id": "debuff_def", "g": "Status e buffs", "label": "DEF −3 no alvo e depois Tackle", "atk": [["A1", "Tackle", "E1", 1.0]], "acts": [[0.0, "buff", "E1", "def", -3]]},
-	# --- Morte e fim de combate ---
-	{"id": "vitoria", "g": "Morte e fim", "label": "Último inimigo morre: vitória", "hp": 1, "atk": [["A1", "Tackle", "E1", 0.0]]},
-	{"id": "ko_lancamento", "g": "Morte e fim", "label": "KO com inimigos restantes (lançamento)", "hp": 1, "enemies": 3, "atk": [["A1", "Tackle", "E1", 0.0]]},
-	{"id": "derrota", "g": "Morte e fim", "label": "Aliados morrem: derrota", "hp": 1, "enemies": 3, "atk": [["E1", "Tackle", "A1", 0.0], ["E2", "Tackle", "A2", 0.0]]},
-	{"id": "morre_windup", "g": "Morte e fim", "label": "Alvo morre no wind-up (D-108)", "enemies": 3, "atk": [["A1", "Tackle", "E1", 0.0]], "acts": [[0.5, "kill", "E1"]]},
-	{"id": "morre_corrida", "g": "Morte e fim", "label": "Alvo morre na corrida (D-113)", "enemies": 3, "atk": [["A1", "Tackle", "E1", 0.0]], "acts": [[1.9, "kill", "E1"]]},
-	{"id": "morre_strike", "g": "Morte e fim", "label": "Alvo morre no golpe", "enemies": 3, "atk": [["A1", "Tackle", "E1", 0.0]], "acts": [[2.8, "kill", "E1"]]},
-	{"id": "atacante_morre", "g": "Morte e fim", "label": "Atacante morre na corrida", "enemies": 3, "atk": [["A1", "Tackle", "E1", 0.0]], "acts": [[1.9, "kill", "A1"]]},
-	{"id": "burn_mata", "g": "Morte e fim", "label": "Burn mata o alvo", "hp": 4, "enemies": 3, "atk": [["A1", "Fire Bullet", "E1", 0.0]]},
-	# --- Posição e distância ---
-	{"id": "passo_frente", "g": "Posição", "label": "Dois passos à frente e depois Tackle", "atk": [["A1", "Tackle", "E1", 1.6]], "acts": [[0.0, "step", "A1", 1], [0.6, "step", "A1", 1]]},
-	{"id": "passo_atras_alvo", "g": "Posição", "label": "Alvo dá um passo atrás", "atk": [["A1", "Tackle", "E1", 1.2]], "acts": [[0.0, "step", "E1", -1]]},
-	{"id": "distancia_curta", "g": "Posição", "label": "Distância curta (14)", "dist": 14.0, "atk": [["A1", "Tackle", "E1", 0.0]]},
-	{"id": "distancia_longa", "g": "Posição", "label": "Distância longa (40)", "dist": 40.0, "atk": [["A1", "Tackle", "E1", 0.0]]},
-	# --- Especiais ---
-	{"id": "teleport", "g": "Especiais", "label": "Teleport", "atk": [["A1", "Teleport", "E1", 0.0]]},
-	{"id": "dig", "g": "Especiais", "label": "Dig (invulnerável sob o chão)", "atk": [["A1", "Dig", "E1", 0.0], ["E1", "Fire Bullet", "A1", 0.3]]},
-	{"id": "mach_punch", "g": "Especiais", "label": "Mach Punch (0,20 s)", "atk": [["A1", "Mach Punch", "E1", 0.0]]},
-	{"id": "karate_chop", "g": "Especiais", "label": "Karate Chop", "atk": [["A1", "Karate Chop", "E1", 0.0]]},
-	{"id": "bite", "g": "Especiais", "label": "Bite", "atk": [["A1", "Bite", "E1", 0.0]]},
-]
+## Cenários prontos em scripts/debug/vfx_room_scenarios.gd (VfxRoomScenarios.SCENARIOS).
 const LOOP_GAP := 0.8  ## segundos depois do golpe terminar antes de repetir
 const TEAM_DISTANCE := 30.0
 const FORCE_LABELS := ["Sorteio normal", "Acerto (sem crítico)", "Esquiva", "Crítico", "Fraqueza (acerto)"]
 const FORCE_KEYS := ["random", "hit", "dodge", "crit", "weak"]
 const FORCE_ROLL := [0, 1, 2, 3, 1]
-const PAUSE_LABELS := ["Não pausar", "Fim da carga (release)", "Disparo (voo)", "Golpe", "Impacto"]
-const PAUSE_KEYS := ["", "release", "travel", "strike", "impact"]
+const PAUSE_LABELS := ["Não pausar", "Início do preparo (wind-up)", "Fim da carga (release)", "Disparo (voo)", "Golpe", "Impacto", "Retorno"]
+const PAUSE_KEYS := ["", "windup", "release", "travel", "strike", "impact", "return"]
 const LAYER_KEYS := ["linhas", "particulas", "shaders", "sprites", "malhas"]
 const LAYER_LABELS := ["Linhas neon e sólidos", "Partículas", "Flipbooks e shaders", "Sprites e brilhos", "Malhas simples"]
-const RELOAD_DIRS := ["res://scripts/combat/fx/", "res://scripts/vfx/smt/"]
+const RELOAD_DIRS := ["res://scripts/vfx/combat/", "res://scripts/vfx/smt/"]
 const RELOAD_FILES := ["res://scripts/combat/vfx_lib.gd", "res://scripts/combat/battle_fx.gd"]
 
 var _args := {}
@@ -122,6 +48,8 @@ var _tabs: TabContainer
 var _svc: SubViewportContainer  ## a cena do combate; ocupa a tela menos o painel (o painel nunca cobre a cena)
 var _sv: SubViewport
 var _attacker: OptionButton
+var _multi_box: GridContainer  ## D-980
+var _multi_checks: Array = []  ## D-980: one CheckBox per unit
 var _move: OptionButton
 var _target: OptionButton
 var _move_grid: GridContainer
@@ -225,13 +153,48 @@ var _scn_pos: Dictionary = {}
 var _need_enemies := 1  ## 3 = os 2 inimigos extras entram junto
 var _catalog: Dictionary = {}  ## todo Move conhecido por nome: qualquer unidade pode usar qualquer Move (D-235)
 var _killed := false  ## alguém morreu de propósito: o próximo disparo recarrega a batalha
+# --- Telemetria de Combate e 10 Ferramentas de Análise de VFX (D-1042 / D-1044) ---
+var _tick_from_fire := 0
+var _step_ticks_limit := -1
+var _baseline_fx_ids: Dictionary = {}
+var _audit_done := false
+var _last_leaks: Array[String] = []
+var _telemetry: Dictionary = {}
+var _ficha_label: Label
+var _analysis_overlay: Control
+var _scale_overlay_on := false
+var _bone_probe_on := false
+var _overdraw_on := false
+var _envelope_graph_on := false
+var _audit_leaks_on := false
+var _bg_mode := "arena"
+var _bg_canvas_rect: ColorRect
+var _solo_node_pattern := ""
+var _mute_node_pattern := ""
+var _bone_prev_pos := Vector3.ZERO
+var _bone_has_prev := false
+var _bone_cur_speed := 0.0
+var _bone_peak_speed := 0.0
+var _bone_name_tracked := ""
+var _bone_trail: Array[Vector3] = []
+var _envelope_samples: Array[Dictionary] = []
+var _prev_node_alphas: Dictionary = {}
+var _envelope_pops: Array[String] = []
+var _overdraw_mat: StandardMaterial3D
+var _orig_materials: Dictionary = {}
+var _macro_slow_until := -1.0
+var _analysis: VfxRoomAnalysis
 
 
 func _ready() -> void:
 	_parse_args()
+	_analysis = VfxRoomAnalysis.new(self)
+	add_child(_analysis)
+	_seed_full_catalog()
 	RenderingServer.set_default_clear_color(Color(0.03, 0.06, 0.1))  # o fundo atrás do painel
 	_build_view()
 	_build_panel()
+	_build_analysis_overlay()
 	await _load_battle(_args.has("mirror"))
 	if _args.has("mirror"):
 		_mirror_btn.set_pressed_no_signal(true)
@@ -308,6 +271,15 @@ func _load_battle(mirror: bool) -> void:
 
 ## A batalha antiga sai de cena sem ser apagada na hora: timers e efeitos dela ainda disparam e não podem achar nós já liberados.
 func _retire_scene(old: Node3D) -> void:
+	# D-1042/D-1044: a batalha antiga pode emitir FASE TRAVEL/IMPACTO depois do reload. Sem soltar os
+	# ouvintes da sala nela, essas linhas entram no log da medição nova (test_melee_timers).
+	var old_battle := old.get_node_or_null("Battle") as Battle
+	if old_battle != null:
+		for sig in ["attack_telegraphed", "attack_resolved", "attack_phase", "hit_resolved", "attack_cancelled", "battle_ended"]:
+			for conn in old_battle.get_signal_connection_list(sig):
+				var cb: Callable = conn["callable"]
+				if cb.get_object() == self:  # só os ouvintes desta sala; não mexe no que é da cena antiga
+					old_battle.disconnect(sig, cb)
 	# A party persiste entre as recargas: solta os sinais dela que a cena antiga ouvia, para não chamarem uma cena morta.
 	for c in _units:
 		for sig in c.get_signal_list():
@@ -344,6 +316,13 @@ func _prepare_unit(c: Combatant) -> void:
 				listed = true  # a party persists between reloads: do not stack the same Move again
 		if not listed:
 			c.skills.append(fire_skill)
+	for lib_skill in Skill.library_skills():  # D-956/D-957: the projectile library Moves, listed only here
+		var lib_listed := false
+		for skl in c.skills:
+			if skl.display_name == lib_skill.display_name:
+				lib_listed = true
+		if not lib_listed:
+			c.skills.append(lib_skill)
 	for el_skill in Skill.element_skills():  # D-308: the element reference Moves, listed only here
 		var el_listed := false
 		for sk3 in c.skills:
@@ -351,6 +330,13 @@ func _prepare_unit(c: Combatant) -> void:
 				el_listed = true
 		if not el_listed:
 			c.skills.append(el_skill)
+	# move_drain_spear: listed here for every unit (D-235), like the reference Moves above.
+	var drain_listed := false
+	for sk4 in c.skills:
+		if BattleSpace.move_id(sk4.display_name) == "drain_spear":
+			drain_listed = true
+	if not drain_listed:
+		c.skills.append(DrainSpearMove.make())
 	for sk3 in c.skills:
 		if not _catalog.has(sk3.display_name):
 			_catalog[sk3.display_name] = sk3
@@ -404,11 +390,55 @@ func _exit_tree() -> void:
 func _run_cli() -> void:
 	if _args.is_empty():
 		return
-	_select_by_name(_attacker, _args.get("attacker", ""))
+	var attacker_ok := _select_attacker_arg()
 	_fill_moves()
-	_select_by_name(_target, _args.get("target", ""))
+	print("[vfx_room] cli units: ", _units.map(func(u: Combatant) -> String: return u.name), " attacker=", _attacker.selected)
+	if not attacker_ok:
+		_preflight_fail("Atacante não encontrado: %s" % String(_args.get("attacker", "")))
+		return
+	if String(_args.get("target", "")) == "opponent":
+		# The first unit on the other side of the attacker (D-235: never a fixed index, which may be an ally).
+		var atk_side: bool = (_units[_attacker.selected] as Combatant).is_player
+		var target_ok := false
+		for i in _units.size():
+			if (_units[i] as Combatant).is_player != atk_side and (_units[i] as Combatant).is_alive():
+				_target.select(i)
+				target_ok = true
+				break
+		if not target_ok:
+			_preflight_fail("Alvo oponente não encontrado para %s" % (_units[_attacker.selected] as Combatant).name)
+			return
+	else:
+		if not _select_by_name(_target, String(_args.get("target", ""))):
+			_preflight_fail("Alvo não encontrado: %s" % String(_args.get("target", "")))
+			return
 	if _args.has("cam"):
-		_cam_mode.select(clampi(int(_args["cam"]), 0, 3))
+		var cam_arg := String(_args["cam"]).to_lower()
+		if cam_arg == "macro":
+			_cam_mode.select(5)
+		else:
+			_cam_mode.select(clampi(int(cam_arg), 0, 5))
+		_apply_camera()
+	if _args.has("fov-test"):
+		_apply_fov_test(float(_args["fov-test"]))
+	if _args.has("scale-overlay"):
+		_scale_overlay_on = true
+	if _args.has("bone-probe"):
+		_bone_probe_on = true
+	if _args.has("overdraw"):
+		_overdraw_on = true
+	if _args.has("envelope-graph"):
+		_envelope_graph_on = true
+	if _args.has("audit-leaks"):
+		_audit_leaks_on = true
+	if _args.has("bg"):
+		_apply_bg_mode(String(_args["bg"]).to_lower())
+	if _args.has("solo-node"):
+		_solo_node_pattern = String(_args["solo-node"]).to_lower()
+	if _args.has("mute-node"):
+		_mute_node_pattern = String(_args["mute-node"]).to_lower()
+	if _args.has("step-ticks"):
+		_step_ticks_limit = int(_args["step-ticks"])
 	if _args.has("speed"):
 		_speed.value = float(_args["speed"])
 	if _args.has("distance"):
@@ -421,6 +451,17 @@ func _run_cli() -> void:
 		var pi := PAUSE_KEYS.find(String(_args["pause-at"]))
 		if pi >= 0:
 			_pause_event.select(pi)
+	elif _args.has("phase"):
+		var pi := PAUSE_KEYS.find(String(_args["phase"]).to_lower())
+		if pi >= 0:
+			_pause_event.select(pi)
+	elif _args.has("isolate-phase"):
+		var iso := String(_args["isolate-phase"]).to_lower()
+		var pi2 := PAUSE_KEYS.find(iso)
+		if pi2 >= 0:
+			_pause_event.select(pi2)
+			if iso == "windup" and not _args.has("windup"):
+				_windup_ovr.value = 2.0
 	if _args.has("pause-delay"):
 		_pause_delay.value = float(_args["pause-delay"])
 	for name in String(_args.get("hide", "")).split(",", false):
@@ -432,6 +473,13 @@ func _run_cli() -> void:
 		_rec_request = float(_args["record"])
 		_rec_step = float(_args.get("step", 0.05))
 	_quit_flag = _args.has("quit")
+	if _args.has("scale-test"):
+		_apply_scale_test(float(_args["scale-test"]))
+	if _args.has("record-idle"):
+		# Test-only: record the loaded battle without firing a Move.
+		_fired = true
+		_start_record(float(_args["record-idle"]), float(_args.get("step", "0.0333333")))
+		return
 	if _args.has("tab"):
 		for ti in _tabs.get_tab_count():
 			if _tabs.get_tab_title(ti) == String(_args["tab"]):
@@ -441,26 +489,100 @@ func _run_cli() -> void:
 		_windup_ovr.value = float(_args["windup"])
 	if _args.has("hp"):
 		_hp_slider.value = clampf(float(_args["hp"]), 1.0, 100.0)  # life of every unit when the shot fires (VFX demos)
+	if _args.has("test-d235"):
+		await _run_test_d235()
+		return
+	if _args.has("test-all-moves-matrix"):
+		await _run_test_all_moves_matrix()
+		return
+	if _args.has("proof-sheet"):
+		await _run_proof_sheet(String(_args["proof-sheet"]))
+		return
 	if _args.has("scenario"):
+		var scn_id := String(_args["scenario"])
+		if _scenario_by_id(scn_id).is_empty():
+			# D-1035: fail fast instead of leaving --record waiting for a timeout.
+			_preflight_fail("Cenário não encontrado: %s" % scn_id)
+			_quit_flag = true
+			get_tree().quit()
+			return
 		await get_tree().process_frame
-		await _run_scenario(String(_args["scenario"]))
+		await _run_scenario(scn_id)
 		return
 	if _args.has("move"):
 		var want := String(_args["move"]).to_lower().replace(" ", "")
+		var found := false
 		for i in _move.item_count:
 			if _move.get_item_text(i).to_lower().replace(" ", "") == want:
 				_move.select(i)
+				found = true
+				break
 		await get_tree().process_frame
+		if not found:
+			_preflight_fail("Move não encontrado: %s" % String(_args["move"]))
+			return
+		if _args.has("preflight"):
+			# Fail-fast: the recorder needs to know within seconds whether the combat accepted the shot.
+			# This only observes the real `_fire`; it does not change any rule or timing.
+			await _fire()
+			var wait := maxf(0.1, float(_args.get("preflight", "1.0")))
+			await get_tree().create_timer(wait).timeout
+			var atk := _units[_attacker.selected] if _attacker.selected >= 0 and _attacker.selected < _units.size() else null
+			var tgt := _units[_target.selected] if _target.selected >= 0 and _target.selected < _units.size() else null
+			var reason := _status.text.replace("\n", " | ")
+			print("[vfx_room] preflight result=%s attacker=%s attacker_side=%s target=%s target_side=%s move=%s reason=%s" % [
+				"ok" if _fired else "fail",
+				atk.name if atk != null else "?",
+				("player" if atk.is_player else "enemy") if atk != null else "?",
+				tgt.name if tgt != null else "?",
+				("player" if tgt.is_player else "enemy") if tgt != null else "?",
+				_move.get_item_text(_move.selected) if _move.item_count > 0 else "?",
+				reason,
+			])
+			_quit_flag = true
+			get_tree().quit()
+			return
 		_fire()
 
 
-func _select_by_name(opt: OptionButton, name: String) -> void:
+## Attacker by role/side (D-235), never by a fixed index: player/ally = first alive ally;
+## enemy = first alive enemy; any other value keeps the old name-prefix selection.
+func _select_attacker_arg() -> bool:
+	var arg := String(_args.get("attacker", ""))
+	if arg == "":
+		return true
+	if arg == "player" or arg == "ally" or arg == "enemy":
+		var want_player := arg != "enemy"
+		for i in _units.size():
+			var u := _units[i] as Combatant
+			if u.is_player == want_player and u.is_alive():
+				_attacker.select(i)
+				return true
+		return false
+	return _select_by_name(_attacker, arg)
+
+
+func _select_by_name(opt: OptionButton, name: String) -> bool:
 	if name == "":
-		return
+		return true
 	for i in opt.item_count:
 		if opt.get_item_text(i).to_lower().begins_with(name.to_lower()):
 			opt.select(i)
-			return
+			return true
+	return false
+
+
+## Prints the same fail-fast line used by the recorder and quits only in preflight mode.
+## Outside preflight it leaves the room open for the operator to fix the fields.
+func _preflight_fail(reason: String) -> void:
+	_status.text = reason
+	print("[vfx_room] ", reason)
+	if _quit_flag and not _args.has("preflight"):
+		get_tree().quit(1)
+	if _args.has("preflight"):
+		print("[vfx_room] preflight result=fail attacker=? attacker_side=? target=? target_side=? move=%s reason=%s" % [
+			String(_args.get("move", "")), reason])
+		get_tree().quit()
 
 
 # --- Entrada -------------------------------------------------------------------------
@@ -518,8 +640,25 @@ func _unhandled_input(event: InputEvent) -> void:
 		_orbit_pitch = clampf(_orbit_pitch + rel.y * 0.006, -0.2, 1.4)
 
 
+## --clean (D-965): proof frames without the battle HUD and the arena props (pillars, walls, debris, dust); the
+## floor, lights and units stay. Only this debug room; the game is untouched.
+func _apply_clean() -> void:
+	if not _args.has("clean") or _bs == null:
+		return
+	if _bs.hud != null:
+		_bs.hud.visible = false
+	for n in _bs.get_children():
+		if n.get_script() == preload("res://scripts/combat/battle_arena.gd"):
+			for v in n.find_children("*", "GeometryInstance3D", true, false):
+				var gi := v as GeometryInstance3D
+				if gi is MeshInstance3D and (gi as MeshInstance3D).get_aabb().size.y < 0.6:
+					continue  # floor tiles and slabs stay
+				gi.visible = false
+
+
 func _process(delta: float) -> void:
 	_clock += delta
+	_apply_clean()
 	_enforce_time()
 	if _immortal != null and _immortal.button_pressed and _hp_slider.value >= 100.0:
 		for u in _units:
@@ -529,23 +668,51 @@ func _process(delta: float) -> void:
 		_update_orbit()
 	elif _cam_mode != null and _cam_mode.selected == 4 and not _units.is_empty():
 		_update_frame_cam(false)
+	if _cam_mode != null and _cam_mode.selected == 5 and not _units.is_empty():
+		_update_macro_cam()
 	_auto_hide_panel()
 	_layout_view()
 	_sweep_layers()
+	_tick_vfx_analysis(delta)
+	if _fired and not _paused:
+		_tick_from_fire += 1
+		if _step_ticks_limit > 0 and _tick_from_fire >= _step_ticks_limit:
+			_step_ticks_limit = -1
+			_toggle_pause()
+			print("[vfx_room] Pausado em step-ticks=%d (t=%.3f)" % [_tick_from_fire, _clock - _fire_clock])
+			_emit_summary_json()
+			if _quit_flag:
+				get_tree().quit()
+			return
 	if _pause_due >= 0.0 and _clock >= _pause_due and not _paused:
 		_pause_due = -1.0
 		_toggle_pause()
+		var pk := String(PAUSE_KEYS[_pause_event.selected])
+		var cur_sk := _current_skill()
+		var f_txt := cur_sk.visual_phase_text(pk) if cur_sk != null else ""
 		_status.text = "Pausado: %s (t=%.3f)." % [PAUSE_LABELS[_pause_event.selected], _clock - _fire_clock]
-		_take_shot()
+		if f_txt != "":
+			print("[vfx_room] FICHA_FASE [%s] (%s): %s" % [pk, cur_sk.display_name, f_txt])
+			if _ficha_label != null:
+				_ficha_label.text = "FICHA VISUAL [%s]: %s" % [pk.to_upper(), f_txt]
+		print("[vfx_room] ", _status.text)
+		await _take_shot()
+		_emit_summary_json()
+		if _quit_flag and (_shot_path == "" or _shot_taken):
+			get_tree().quit()
 	_tick_record()
 	_run_schedule()
 	if _battle == null or not _battle.running or not _fired:
 		return
 	if _busy() == false:  # (wind-up também conta como ação em curso)
 		_idle_for += delta / maxf(Engine.time_scale, 0.01)
+		if not _audit_done and _idle_for >= 0.35:
+			_audit_done = true
+			_audit_vfx_leaks()
 		if _loop.button_pressed and _idle_for >= LOOP_GAP and _rec.is_empty():
 			_fire()
 		elif _quit_flag and _idle_for >= LOOP_GAP and _rec.is_empty() and _rec_request <= 0.0 and (_shot_path == "" or _shot_taken):
+			_emit_summary_json()
 			get_tree().quit()
 	else:
 		_idle_for = 0.0
@@ -561,6 +728,12 @@ func _enforce_time() -> void:
 			Engine.time_scale = 1.0  # deixa passar exatamente este quadro
 		else:
 			Engine.time_scale = 0.0
+		return
+	if _macro_slow_until > 0.0 and _clock >= _macro_slow_until:
+		_macro_slow_until = -1.0
+		Engine.time_scale = _speed.value
+	if _macro_slow_until > 0.0 and _clock < _macro_slow_until:
+		Engine.time_scale = 0.05
 		return
 	if Engine.time_scale >= _speed.value * 0.5:
 		Engine.time_scale = _speed.value
@@ -585,24 +758,44 @@ func _step_one() -> void:
 
 func _connect_events() -> void:
 	_battle.attack_telegraphed.connect(func(inc) -> void:
-		_note("CARGA começa: %s %s -> %s  (wind-up %.2fs)" % [inc.attacker.name, inc.label, inc.target.name, inc.total_windup]))
+		_note("CARGA começa: %s %s -> %s  (wind-up %.2fs)" % [inc.attacker.name, inc.label, inc.target.name, inc.total_windup])
+		_record_phase("windup")
+		_event("windup"))
 	_battle.attack_resolved.connect(func(inc) -> void:
 		_note("CARGA termina (release): %s" % inc.label)
+		_record_phase("release")
 		_event("release"))
 	_battle.attack_phase.connect(func(inc, phase: int) -> void:
 		var pname: String = Battle.Phase.keys()[phase]
 		_note("FASE %s: %s" % [pname, inc.label])
+		_record_phase(pname.to_lower())
 		if phase == Battle.Phase.TRAVEL:
 			_event("travel")
 		elif phase == Battle.Phase.STRIKE:
-			_event("strike"))
+			if _cam_mode != null and _cam_mode.selected == 5:
+				_macro_slow_until = _clock + 0.025
+			_event("strike")
+		elif phase == Battle.Phase.RETURN:
+			_event("return"))
 	_battle.hit_resolved.connect(func(att: Combatant, tgt: Combatant, _el: int, info: Dictionary) -> void:
 		_note("IMPACTO: %s -> %s  dano=%s esquiva=%s crítico=%s fraqueza=%s" % [att.name, tgt.name, str(info.get("dmg", 0)), str(info.get("evaded", false)), str(info.get("crit", false)), str(info.get("weak", false))])
+		_record_phase("impact")
+		_record_hit_telemetry(att, tgt, info)
+		if _cam_mode != null and _cam_mode.selected == 5:
+			_macro_slow_until = _clock + 0.025
 		_event("impact"))
 	_battle.attack_cancelled.connect(func(inc) -> void: _note("CANCELADO: %s" % inc.label))
+	_battle.battle_ended.connect(func(won: bool) -> void:
+		_note("BATALHA TERMINOU: %s" % ("vitória" if won else "derrota"))
+		if _quit_flag:
+			await get_tree().create_timer(1.2).timeout
+			_emit_summary_json()
+			get_tree().quit())
 	_bs.fx.child_entered_tree.connect(func(n: Node) -> void:
 		if not String(n.name).begins_with("@"):
-			_note("VFX nasce: %s" % n.name))
+			_note("VFX nasce: %s" % n.name)
+		if _telemetry.has("vfx_spawns"):
+			(_telemetry["vfx_spawns"] as Array).append(String(n.name)))
 
 
 func _event(kind: String) -> void:
@@ -629,6 +822,40 @@ func _save_log() -> void:
 
 
 # --- Gravação de quadros ----------------------------------------------------------------
+
+
+## Test-only scale probe: shrink/grow every model so its visible body mesh reads target_h.
+## Does not change the game scene; used to compare "before" and "after" in the VFX room.
+func _apply_scale_test(target_h: float) -> void:
+	if target_h <= 0.05:
+		return
+	for c in _units:
+		var model: Node3D = _bs.models.get(c)
+		if model == null or not is_instance_valid(model):
+			continue
+		var h := _visible_body_height(model)
+		if h > 0.05:
+			model.scale = model.scale * (target_h / h)
+			if _bs.fx != null and _bs.fx._base_scale.has(c):
+				_bs.fx._base_scale[c] = model.scale
+
+
+func _visible_body_height(model: Node3D) -> float:
+	var lo := INF
+	var hi := -INF
+	for n in model.find_children("*", "MeshInstance3D", true, false):
+		var mi := n as MeshInstance3D
+		if mi.mesh == null:
+			continue
+		var low := String(mi.name).to_lower()
+		if low in ["burstring", "readyring"] or low.begins_with("guard") or low.begins_with("shield") or low.begins_with("wmodel"):
+			continue
+		var b: AABB = mi.global_transform * mi.get_aabb()
+		lo = minf(lo, b.position.y)
+		hi = maxf(hi, b.position.y + b.size.y)
+	if hi <= lo:
+		return 0.0
+	return hi - lo
 
 
 func _start_record(seconds: float, step: float) -> void:
@@ -703,7 +930,10 @@ func _take_shot() -> void:
 	DirAccess.make_dir_recursive_absolute(path.get_base_dir())
 	img.save_png(path)
 	_note("FOTO: %s" % path)
+	if _args.has("diff-with"):
+		_compare_images(path, String(_args["diff-with"]))
 	if _quit_flag:
+		_emit_summary_json()
 		get_tree().quit()
 
 
@@ -728,6 +958,16 @@ func _layer_of(n: Node) -> String:
 func _sweep_layers() -> void:
 	if _bs == null or _layer_checks.is_empty():
 		return
+	if _solo_node_pattern != "" or _mute_node_pattern != "":
+		for ch in _bs.fx.get_children():
+			var cname := String(ch.name).to_lower()
+			if cname in ["debugfreecam3d", "debuggizmos3d"] or cname.begins_with("fxlane"):
+				continue
+			if ch is Node3D:
+				if _solo_node_pattern != "":
+					(ch as Node3D).visible = _solo_node_pattern in cname
+				elif _mute_node_pattern != "" and _mute_node_pattern in cname:
+					(ch as Node3D).visible = false
 	var off: Array[String] = []
 	for k in LAYER_KEYS:
 		if not (_layer_checks[k] as CheckButton).button_pressed:
@@ -881,7 +1121,7 @@ func _build_panel() -> void:
 	_scn_group_opt = OptionButton.new()
 	_scn_group_opt.add_item("Todos os grupos")
 	var seen_groups: Array[String] = []
-	for sc0 in SCENARIOS:
+	for sc0 in VfxRoomScenarios.SCENARIOS:
 		if not (String(sc0["g"]) in seen_groups):
 			seen_groups.append(String(sc0["g"]))
 			_scn_group_opt.add_item(String(sc0["g"]))
@@ -1079,12 +1319,27 @@ func _build_panel() -> void:
 	var srow := GridContainer.new()
 	srow.columns = 3
 	box.add_child(srow)
-	for sd in [["Queimar", "burn"], ["Atordoar 2s", "stun"], ["Cegar 3s", "blind"], ["Guard", "guard"], ["Limpar", "clear"]]:
+	for sd in [["Queimar", "burn"], ["Atordoar 2s", "stun"], ["Cegar 3s", "blind"], ["Guard", "guard"], ["Escudo 18", "shield"], ["Imun. Mágica 10s", "magic_immune"], ["ATB +1", "atb_add"], ["ATB -1", "atb_sub"], ["ATB cheio", "atb_full"], ["ATB zerado", "atb_zero"], ["Limpar", "clear"]]:
 		var sbt := Button.new()
 		sbt.text = sd[0]
 		sbt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		sbt.pressed.connect(_status_effect.bind(sd[1]))
 		srow.add_child(sbt)
+
+	# D-980: apply a status to one or more characters at once.
+	_section(box, "STATUS EM VÁRIOS (marque e aplique agora)")
+	_multi_box = GridContainer.new()
+	_multi_box.columns = 2
+	box.add_child(_multi_box)
+	var mrow := GridContainer.new()
+	mrow.columns = 3
+	box.add_child(mrow)
+	for md in [["STUN 4s", "stun4"], ["Burn", "burn"], ["Blind 3s", "blind"], ["ATK +1", "b:atk:1"], ["ATK −1", "b:atk:-1"], ["DEF +1", "b:def:1"], ["DEF −1", "b:def:-1"], ["SPD +1", "b:speed:1"], ["SPD −1", "b:speed:-1"], ["Limpar", "clear"]]:
+		var mb := Button.new()
+		mb.text = md[0]
+		mb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		mb.pressed.connect(_status_many.bind(md[1]))
+		mrow.add_child(mb)
 
 	_section(box, "AGENDAR UMA AÇÃO (vale em todo disparo até limpar)")
 	_act_unit = _unit_option(box, "Quem")
@@ -1178,7 +1433,7 @@ func _build_panel() -> void:
 	# --- Aba Câmera: modo, foco e camadas ---
 	box = _page(tabs, "Câmera")
 	_cam_mode = OptionButton.new()
-	for label in ["Do jogo (automática)", "Zoom no alvo", "Visão do atirador", "Órbita (mouse)", "Lateral (enquadra todos)"]:
+	for label in ["Do jogo (automática)", "Zoom no alvo", "Visão do atirador", "Órbita (mouse)", "Lateral (enquadra todos)", "Macro Impacto (FOV 15°, 0.05x)"]:
 		_cam_mode.add_item(label)
 	_cam_mode.item_selected.connect(func(_i: int) -> void: _apply_camera())
 	box.add_child(_cam_mode)
@@ -1250,6 +1505,13 @@ func _build_panel() -> void:
 	reload.text = "Recarregar VFX e repetir  (R)"
 	reload.pressed.connect(_reload_vfx)
 	box.add_child(reload)
+	_build_vfx_analysis_tab(tabs)
+	_ficha_label = Label.new()
+	_ficha_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_ficha_label.custom_minimum_size = Vector2(PANEL_W - 20.0, 36)
+	_ficha_label.add_theme_font_size_override("font_size", 11)
+	_ficha_label.add_theme_color_override("font_color", Color("62d8e7"))
+	root.add_child(_ficha_label)
 	_rebuild_scn_list()
 
 
@@ -1316,6 +1578,7 @@ func _fill_units() -> void:
 		_attacker2.select(_target.selected)
 		_target2.select(_attacker.selected)
 	_fill_moves()
+	_fill_multi()  # D-980
 	_sync_pos_sliders()
 
 
@@ -1396,6 +1659,9 @@ func _reset() -> void:
 	for u in _units:
 		u.set_hp_instant(u.max_hp)
 		u.atb = _atb_slider.value
+		if not _args.has("real-mp") and u.mp < 20:
+			u.max_mp = maxi(u.max_mp, 20)  # debug room only: a unit built without attributes (DQT test party) has 0 MP
+			u.mp = u.max_mp
 		u.stun_timer = 0.0
 		u.clear_burn()  # D-238
 		u.blind_timer = 0.0
@@ -1428,10 +1694,13 @@ func _fire() -> void:
 		await _reload_keep_selection()  # alguém morreu, o combate acabou ou ainda há golpe em curso: recomeça limpo
 	if _scn_on:
 		_prepare_world()  # a recarga tira os inimigos extras: o cenário os recoloca
+		_apply_scenario_selections()
 	var a := _units[_attacker.selected]
 	var t := _units[_target.selected]
 	var skill := _shaped(_find_skill(a, _move.get_item_text(_move.selected)))
 	if skill == null:
+		_status.text = "%s não tem o Move escolhido." % a.name
+		print("[vfx_room] ", _status.text)
 		return
 	if a == t and not skill.is_friendly:  # (Moves amigáveis podem ter o próprio atacante como alvo)
 		_status.text = "Atacante e alvo precisam ser diferentes."
@@ -1450,13 +1719,23 @@ func _fire() -> void:
 	_sched.clear()
 	_polls.clear()
 	for u in _units:
-		u.set_hp_instant(maxi(1, roundi(u.max_hp * _hp_slider.value / 100.0)))
+		u.set_hp_instant(1 if _hp_slider.value <= 1.0 else maxi(1, roundi(u.max_hp * _hp_slider.value / 100.0)))
 		u.atb = _atb_slider.value
+		if not _args.has("real-mp") and u.mp < 20:
+			u.max_mp = maxi(u.max_mp, 20)  # debug room only: a unit built without attributes (DQT test party) has 0 MP
+			u.mp = u.max_mp
 		u.stun_timer = 0.0
 		u.blind_timer = 0.0
 		u.clear_burn()  # D-238
 		u.engaged_with = null
 	_restore_weakness()
+	# Debug room only (D-978 review): --stun=always|never forces a chance-based status through the LUK difference.
+	if String(_args.get("stun", "")) == "always":
+		a.luk = 1000
+		t.luk = 0
+	elif String(_args.get("stun", "")) == "never":
+		a.luk = 0
+		t.luk = 1000
 	_battle.debug_roll = int(FORCE_ROLL[_force.selected])
 	if _force.selected == 4 and not (skill.element in t.weaknesses):
 		t.weaknesses.append(skill.element)
@@ -1495,14 +1774,23 @@ func _fire() -> void:
 		_queue_act([_evade_at.value, "evade", "#%d" % _evade_unit.selected])
 	elif _evade_mode.selected == 2:
 		_queue_act([_evade_at.value, "evade_once", "#%d" % _evade_unit.selected])
+	if _args.has("acts-ticks"):
+		_parse_acts_ticks(String(_args["acts-ticks"]))
 	_fired = ok or ok2
 	_idle_for = 0.0
+	_tick_from_fire = 0
+	_audit_done = false
+	_init_fire_telemetry(a, t, skill)
+	if _ficha_label != null and skill != null:
+		var pk := String(PAUSE_KEYS[_pause_event.selected]) if _pause_event.selected > 0 else "impact"
+		_ficha_label.text = "FICHA [%s — %s]: %s" % [skill.display_name, pk.to_upper(), skill.visual_phase_text(pk)]
 	if _fired and _rec_request > 0.0:
 		_start_record(_rec_request, _rec_step)
 	var line := ("[%s] " % _scn_name if _scn_name != "" else "") + "%s: %s -> %s %s  [%s]" % [a.name, skill.display_name, t.name, ("" if ok else "(recusado pelo combate)") + ("  | alvo canalizando " + channeling if channeling != "" else ""), FORCE_LABELS[_force.selected]]
 	if a2 != null:
 		line += "\n+ %s: %s -> %s  (%+.2fs)%s" % [a2.name, skill2.display_name, t2.name, d, "" if ok2 else " (recusado)"]
 	_status.text = line
+	print("[vfx_room] ", line)
 
 
 ## Ainda há wind-up, golpe ou retorno em andamento (um disparo novo começaria sujo).
@@ -1513,9 +1801,17 @@ func _busy() -> bool:
 func _find_skill(c: Combatant, skill_name: String) -> Skill:
 	if c == null:
 		return null
+	if skill_name == "Tackle":
+		return Skill.basic()
 	for s in c.skills:
 		if s.display_name == skill_name:
 			return s
+	if _catalog.has(skill_name):
+		return _catalog[skill_name]
+	var want := skill_name.to_lower().replace(" ", "").replace("_", "")
+	for k in _catalog:
+		if String(k).to_lower().replace(" ", "").replace("_", "") == want:
+			return _catalog[k]
 	return _catalog.get(skill_name)  # qualquer unidade pode usar qualquer Move (D-235)
 
 
@@ -1551,7 +1847,10 @@ func _run_schedule() -> void:
 		return
 	var t := _clock - _fire_clock
 	for s in _sched.duplicate():
-		if t < float(s["at"]):
+		if s.has("tick"):
+			if _tick_from_fire < int(s["tick"]):
+				continue
+		elif t < float(s["at"]):
 			continue
 		_sched.erase(s)
 		match String(s["kind"]):
@@ -1568,7 +1867,7 @@ func _run_schedule() -> void:
 			_polls.erase(poll)
 			continue
 		var inc := _battle.find_evadable(u)
-		if inc != null and _battle.try_evade(u, inc):  # só vale nos últimos 0,25 s (D-283); antes disso não tem efeito
+		if inc != null and inc.can_evade_now() and _battle.try_evade(u, inc):  # D-1014: o laboratório espera a janela válida
 			_polls.erase(poll)
 			_note("EVADE perfeito: %s (%s)" % [u.name, inc.label])
 
@@ -1577,6 +1876,15 @@ func _do_act(what: String, u: Combatant, args: Array, t: float) -> void:
 	if u == null:
 		return
 	match what:
+		"damage":
+			var amt := int(args[0]) if args.size() > 0 else 10
+			var att_u := _units[_attacker.selected] if not _units.is_empty() else u
+			u.take_damage(amt)
+			_battle.hit_resolved.emit(att_u, u, Element.Type.FISICO, {
+				"evaded": false, "dmg": amt, "weak": false, "crit": false,
+				"gain": 0, "whiffed": false, "power": 1.0, "skill_name": "Tackle",
+			})
+			_note("DANO: %s levou %d de dano (HP %d/%d)" % [u.name, amt, u.hp, u.max_hp])
 		"kill":
 			u.set_meta("room_no_heal", true)
 			u.take_damage(u.hp, true)
@@ -1604,11 +1912,12 @@ func _do_act(what: String, u: Combatant, args: Array, t: float) -> void:
 			if ok3:
 				_fired = true
 		"evade":
-			_polls.append({"u": u, "until": t + 1.8})
+			_polls.append({"u": u, "until": t + 4.5})  # D-1014: a janela válida chega depois do wind-up
 		"evade_once":
 			var inc := _battle.find_evadable(u)
+			var inside := inc != null and inc.can_evade_now()
 			var done := inc != null and _battle.try_evade(u, inc)
-			_note("EVADE %s: %s" % ["perfeito" if done else "SEM EFEITO (fora da janela de 0,25 s ou sem ataque)", u.name])
+			_note("EVADE %s: %s" % ["perfeito" if done and inside else ("FORA DE HORA (gastou e errou, D-1014)" if done else "SEM EFEITO (sem ataque a desviar)"), u.name])
 
 
 ## "A1", "A2", "E1".."E3" (papéis) ou "#n" (unidade n da lista).
@@ -1659,6 +1968,9 @@ func _pick(opt: OptionButton, name: String) -> void:
 		if opt.get_item_text(i) == name:
 			opt.select(i)
 			return
+	if name != "":
+		opt.add_item(name)
+		opt.select(opt.item_count - 1)
 
 
 func _set_attack1(att: int, move_name: String, tgt: int) -> void:
@@ -1707,7 +2019,7 @@ func _rebuild_scn_list() -> void:
 	var q := _scn_search.text.strip_edges().to_lower()
 	var last_group := ""
 	var n := 0
-	for sc in SCENARIOS:
+	for sc in VfxRoomScenarios.SCENARIOS:
 		var g := String(sc["g"])
 		if _scn_group != "Todos" and g != _scn_group:
 			continue
@@ -1772,7 +2084,7 @@ func _scenario_summary(sc: Dictionary) -> String:
 
 
 func _scenario_by_id(id: String) -> Dictionary:
-	for s in SCENARIOS:
+	for s in VfxRoomScenarios.SCENARIOS:
 		if String(s["id"]) == id:
 			return s
 	return {}
@@ -1796,7 +2108,24 @@ func _run_scenario(id: String) -> void:
 	_hp_slider.value = float(spec.get("hp", 100))
 	_windup_ovr.value = float(spec.get("windup", 0.0))
 	_channel.button_pressed = bool(spec.get("channel", false))
+	if spec.has("pause"):
+		var pi := PAUSE_KEYS.find(String(spec["pause"]))
+		if pi >= 0:
+			_pause_event.select(pi)
+	if spec.has("force"):
+		_force.select(int(spec["force"]))
+	if _args.has("move") and id.begins_with("fase_"):
+		var custom_atk: Array = _scn_atk.duplicate(true)
+		custom_atk[0][1] = String(_args["move"])
+		_scn_atk = custom_atk
 	_prepare_world()
+	_apply_scenario_selections()
+	_fire()
+
+
+func _apply_scenario_selections() -> void:
+	if _scn_atk.is_empty():
+		return
 	var atk: Array = _scn_atk
 	var first: Array = atk[0]
 	var d0 := float(first[3])
@@ -1809,7 +2138,6 @@ func _run_scenario(id: String) -> void:
 	else:
 		_delay1.value = d0
 		_set_attack1(_units.find(_role(String(first[0]))), String(first[1]), _units.find(_role(String(first[2]))))
-	_fire()
 
 
 func _buff(delta: int) -> void:
@@ -1817,6 +2145,40 @@ func _buff(delta: int) -> void:
 	var stat: String = ["atk", "def", "spd"][_buff_stat.selected]
 	var v := u.buff_stat(stat, delta)
 	_status.text = "%s: %s agora em %+d" % [u.name, stat.to_upper(), v]
+
+
+## D-980: the status buttons of "STATUS EM VÁRIOS" apply to every checked character.
+func _status_many(kind: String) -> void:
+	var names: Array[String] = []
+	for i in _multi_checks.size():
+		if not (_multi_checks[i] as CheckBox).button_pressed or i >= _units.size():
+			continue
+		var u: Combatant = _units[i]
+		if kind.begins_with("b:"):
+			var parts := kind.split(":")
+			u.buff_stat(parts[1], int(parts[2]))
+		else:
+			_apply_status(u, kind)
+		names.append(u.name)
+	_status.text = ("%s: %s" % [kind, ", ".join(names)]) if not names.is_empty() else "Marque pelo menos um personagem."
+
+
+func _fill_multi() -> void:
+	if _multi_box == null:
+		return
+	var keep: Array = []
+	for cb in _multi_checks:
+		keep.append((cb as CheckBox).button_pressed)
+	for ch in _multi_box.get_children():
+		ch.queue_free()
+	_multi_checks.clear()
+	for i in _units.size():
+		var c: Combatant = _units[i]
+		var cb := CheckBox.new()
+		cb.text = "%s (%s)" % [c.name, "aliado" if c.is_player else "inimigo"]
+		cb.button_pressed = bool(keep[i]) if i < keep.size() else false
+		_multi_box.add_child(cb)
+		_multi_checks.append(cb)
 
 
 func _status_effect(kind: String) -> void:
@@ -1836,11 +2198,27 @@ func _apply_status(u: Combatant, kind: String) -> void:
 			u.apply_burn()
 		"stun":
 			u.stun_timer = 2.0
+		"stun4":
+			u.stun_timer = maxf(u.stun_timer, 4.0)  # D-980: the length of the Electric Beam STUN (D-977)
 		"blind":
 			u.blind_timer = 3.0
+		"shield":
+			u.apply_shield(18, 8.0)
+		"magic_immune":
+			u.apply_magic_immunity(10.0)
+		"atb_add":
+			u.atb = minf(u.atb + 1.0, Combatant.BLOCKS)  # D-1070
+		"atb_sub":
+			u.atb = maxf(u.atb - 1.0, 0.0)
+		"atb_full":
+			u.atb = Combatant.BLOCKS
+		"atb_zero":
+			u.atb = 0.0
 		"clear":
 			u.clear_buffs()
 			u.clear_burn()
+			u.end_shield("clear")
+			u.clear_magic_immunity()
 
 
 ## Agenda uma ação para t segundos depois do próximo disparo (aba Ações).
@@ -1928,6 +2306,19 @@ func _start_channel(c: Combatant, foe: Combatant) -> String:
 	return ""
 
 
+## Test-only FOV override: freeze the battle director and set the camera FOV.
+func _apply_fov_test(fov_value: float) -> void:
+	if _bs == null:
+		return
+	var director: BattleCamera = _bs.director
+	if director != null:
+		director.set_process(false)
+	var cam := _bs.get_node_or_null("Camera3D") as Camera3D
+	if cam != null:
+		cam.current = true
+		cam.fov = clampf(fov_value, 20.0, 110.0)
+
+
 func _apply_camera() -> void:
 	var director: BattleCamera = _bs.director
 	var cam: Camera3D = _bs.get_node("Camera3D")
@@ -1965,6 +2356,8 @@ func _apply_camera() -> void:
 			_orbit_dist = clampf(a.global_position.distance_to(t.global_position) * 0.8, 10.0, 60.0)
 			cam.fov = 50.0
 			_update_orbit()
+		5:
+			_update_macro_cam()
 
 
 ## Câmera lateral que enquadra todos os envolvidos (atacantes e alvos dos dois ataques e de tudo em curso).
@@ -2030,3 +2423,174 @@ func _update_orbit() -> void:
 	var off := Vector3(sin(_orbit_yaw) * cos(_orbit_pitch), sin(_orbit_pitch), cos(_orbit_yaw) * cos(_orbit_pitch)) * _orbit_dist
 	cam.global_position = focus + off
 	cam.look_at(focus)
+
+
+
+# --- Catálogo Universal D-235, Telemetria JSON e 10 Ferramentas de Análise de VFX (D-1042 / D-1044) ---
+
+
+func _seed_full_catalog() -> void:
+	for sk in Skill.all_catalog_skills():
+		if not _catalog.has(sk.display_name):
+			_catalog[sk.display_name] = sk
+
+
+func _current_skill() -> Skill:
+	if _units.is_empty() or _attacker == null or _move == null or _move.selected < 0 or _move.item_count == 0:
+		return null
+	var a := _units[clampi(_attacker.selected, 0, _units.size() - 1)]
+	return _find_skill(a, _move.get_item_text(_move.selected))
+
+
+func _parse_acts_ticks(spec: String) -> void:
+	for item in spec.split(",", false):
+		var parts := item.split(":", false)
+		if parts.size() >= 3:
+			var tk := int(parts[0])
+			var what := String(parts[1])
+			if what == "attack":
+				what = "attackr"
+			var role := String(parts[2])
+			var rest: Array = []
+			for i in range(3, parts.size()):
+				rest.append(parts[i])
+			_sched.append({"tick": tk, "at": 0.0, "kind": "act", "what": what, "role": role, "args": rest})
+
+
+func _init_fire_telemetry(a: Combatant, t: Combatant, skill: Skill) -> void:
+	_baseline_fx_ids.clear()
+	if _bs != null and _bs.fx != null:
+		for ch in _bs.fx.get_children():
+			_baseline_fx_ids[ch.get_instance_id()] = true
+	_last_leaks.clear()
+	_envelope_samples.clear()
+	_prev_node_alphas.clear()
+	_envelope_pops.clear()
+	_bone_has_prev = false
+	_bone_cur_speed = 0.0
+	_bone_peak_speed = 0.0
+	_bone_trail.clear()
+	_telemetry = {
+		"scenario": _scn_cur if _scn_on else "",
+		"attacker": a.name if a != null else "",
+		"attacker_side": ("player" if a.is_player else "enemy") if a != null else "",
+		"target": t.name if t != null else "",
+		"target_side": ("player" if t.is_player else "enemy") if t != null else "",
+		"move": skill.display_name if skill != null else "",
+		"hp_before": t.hp if t != null else 0,
+		"hp_after": t.hp if t != null else 0,
+		"damage_dealt": 0,
+		"hits_count": 0,
+		"crit_count": 0,
+		"weak_count": 0,
+		"evaded_count": 0,
+		"guard_result": "",
+		"armor_result": "",
+		"stun_timer_after": 0.0,
+		"ko_triggered": false,
+		"phases_reached": [],
+		"ficha_fases": skill.visual_phases() if skill != null else {},
+		"vfx_spawns": [],
+		"vfx_leaks": [],
+		"envelope_pops": [],
+		"bone_peak_speed": 0.0,
+	}
+
+
+func _record_phase(phase_name: String) -> void:
+	if not _telemetry.has("phases_reached"):
+		return
+	var arr: Array = _telemetry["phases_reached"]
+	if not arr.has(phase_name):
+		arr.append(phase_name)
+
+
+func _record_hit_telemetry(_att: Combatant, tgt: Combatant, info: Dictionary) -> void:
+	if _telemetry.is_empty():
+		return
+	_telemetry["hits_count"] = int(_telemetry.get("hits_count", 0)) + 1
+	_telemetry["damage_dealt"] = int(_telemetry.get("damage_dealt", 0)) + int(info.get("dmg", 0))
+	if tgt != null:
+		_telemetry["hp_after"] = tgt.hp
+		_telemetry["stun_timer_after"] = snappedf(tgt.stun_timer, 0.01)
+		if not tgt.is_alive():
+			_telemetry["ko_triggered"] = true
+	if bool(info.get("crit", false)):
+		_telemetry["crit_count"] = int(_telemetry.get("crit_count", 0)) + 1
+	if bool(info.get("weak", false)):
+		_telemetry["weak_count"] = int(_telemetry.get("weak_count", 0)) + 1
+	if bool(info.get("evaded", false)):
+		_telemetry["evaded_count"] = int(_telemetry.get("evaded_count", 0)) + 1
+	if String(info.get("guard", "")) != "":
+		_telemetry["guard_result"] = String(info["guard"])
+	if String(info.get("armor", "")) != "":
+		_telemetry["armor_result"] = String(info["armor"])
+	if _scale_overlay_on:
+		_log_scale_metrics()
+
+
+func _emit_summary_json() -> void:
+	if not _args.has("summary-json"):
+		return
+	if _audit_leaks_on and not _audit_done:
+		_audit_done = true
+		_audit_vfx_leaks()
+	if not _units.is_empty() and _target.selected >= 0 and _target.selected < _units.size():
+		var tgt := _units[_target.selected]
+		_telemetry["hp_after"] = tgt.hp
+		_telemetry["stun_timer_after"] = snappedf(tgt.stun_timer, 0.01)
+		if not tgt.is_alive():
+			_telemetry["ko_triggered"] = true
+	_telemetry["vfx_leaks"] = _last_leaks
+	_telemetry["leaks_detected"] = _last_leaks.size()
+	_telemetry["envelope_pops"] = _envelope_pops
+	_telemetry["bone_peak_speed"] = snappedf(_bone_peak_speed, 0.01)
+	print("[vfx_room] SUMMARY_JSON: ", JSON.stringify(_telemetry))
+
+
+
+
+# --- Análise VFX: wrappers para o módulo VfxRoomAnalysis (Etapa 4) -------------
+
+func _audit_vfx_leaks() -> void:
+	_analysis._audit_vfx_leaks()
+
+
+func _build_analysis_overlay() -> void:
+	_analysis._build_analysis_overlay()
+
+
+func _tick_vfx_analysis(delta: float) -> void:
+	_analysis._tick_vfx_analysis(delta)
+
+
+func _log_scale_metrics() -> void:
+	_analysis._log_scale_metrics()
+
+
+func _update_macro_cam() -> void:
+	_analysis._update_macro_cam()
+
+
+func _apply_bg_mode(mode: String) -> void:
+	_analysis._apply_bg_mode(mode)
+
+
+func _compare_images(shot_file: String, ref_arg: String) -> void:
+	_analysis._compare_images(shot_file, ref_arg)
+
+
+func _run_proof_sheet(out_arg: String) -> void:
+	await _analysis._run_proof_sheet(out_arg)
+
+
+func _run_test_d235() -> void:
+	await _analysis._run_test_d235()
+
+
+func _run_test_all_moves_matrix() -> void:
+	await _analysis._run_test_all_moves_matrix()
+
+
+func _build_vfx_analysis_tab(tabs: TabContainer) -> void:
+	_analysis._build_vfx_analysis_tab(tabs)

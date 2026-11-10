@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_f8npd"]
+
+[resource]
+script = ExtResource("1_f8npd")
+id = &"hassou_tobi"
+display_name = "Hassou Tobi"
+power = 1.4
+atb_cost = 3
+mp_cost = 6
+windup = 1.5
+is_aoe = true
+stand_gap = 2.6
+run_base = 0.18
+hold = 0.7
+plan_profile = &"melee"
+bw_pulse = true
+vfx_key = &"generic"
+effect_line_text = "140% ATK physical damage | Hits ALL enemies | 3 ATB"
+short_effect_text = "140% | AoE"
+description_text = "A physical flurry that sweeps every enemy."
+mechanics_text = "Legendary physical flurry that strikes all enemies in rapid succession with leaping slashes."
+visual_text = "Blurring afterimages of white blade slashes and cherry blossom petal trails crisscrossing the field."
+motion_text = "Rapid multidirectional leap. Attacker jumps from target to target in a rapid zig-zag before returning."
+windup_text = "1.75s wind-up. Focused blade drawing posture."
+tactical_text = "Flurry of rapid leaping slashes striking all enemies. Full AoE."
+visual_motion_text = "Rapid multidirectional leap with blurring white blade afterimages."
+phase_visuals = {
+"impact": "Contato direto no ponto zero do alvo com hit-stop, flash e reação: Blurring afterimages of white blade slashes and cherry blossom petal trails crisscrossing the field.",
+"release": "Partida física contínua a partir da carga rumo ao alvo: Rapid multidirectional leap. Attacker jumps from target to target in a rapid zig-zag before returning.",
+"return": "Salto/corrida de recuo de volta à posição de origem e retomada de idle.",
+"strike": "Prelúdio de golpe e arco de swing/arma com aviso Dread na janela de Evade (D-986/D-992).",
+"travel": "Corrida pelo eixo atacante->alvo com trilha no chão (D-1013): Rapid multidirectional leap. Attacker jumps from target to target in a rapid zig-zag before returning.",
+"windup": "Preparo em posição base com loop contínuo de carga (D-163): 1.75s wind-up. Focused blade drawing posture."
+}

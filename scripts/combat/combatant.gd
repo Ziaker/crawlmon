@@ -7,6 +7,11 @@ signal damaged(combatant: Combatant, amount: int)
 signal died(combatant: Combatant)
 signal buff_changed(combatant: Combatant, stat: String, new_val: int)  ## Visual and physical buff updates (D-158)
 signal guard_ended(combatant: Combatant, reason: String)  ## D-272: "expired", "hit" or "broken".
+signal armor_changed(combatant: Combatant, state: String)  ## D-1026: "started", "extended", "hit", "expired" or "battle_end".
+signal experience_gained(amount: int, current_xp: int, xp_required: int)
+signal level_up_occurred(new_level: int, points_gained: int)
+
+const CrawlmonAttributeMath = preload("res://scripts/combat/crawlmon_attribute_math.gd")
 
 enum Act { ATTACK, SKILL, HOLD }  ## Tactics: what an AI ally does with its blocks.
 enum React { NONE, EVADE }  ## Tactics: how an AI ally reacts to incoming attacks.
@@ -22,20 +27,58 @@ var hp: int
 var base_attack: int
 var mag: int  ## Magic (MAG, D-122/D-131). PROVISIONAL: mirrors base_attack until the real attribute data exists.
 var base_speed: float  ## Blocks per second.
-## Six permanent attributes (D-130/D-131). Not wired to combat yet (D-001); keep 0
-## until the creator approves the conversion/base values (D-269/D-270).
+## Atributos permanentes canonicos (D-120, D-130, D-131, D-391).
 var str: int = 0
 var vit: int = 0
-var spi: int = 0
+var wis: int = 0
+## Alias de compatibilidade para referencias legadas a SPI (D-391).
+var spi: int:
+	get:
+		return wis
+	set(value):
+		wis = value
 var agi: int = 0
 var luk: int = 0
-## Progression fields (R13-Q4/R14-Q4/R26-Q3). XP/level-up rules are not active yet.
+
+## Recursos de combate e ficha (D-391, D-392).
+var max_mp: int = 0
+var mp: int = 0
+
+## Individualidade, Natures e Progressao (D-393, D-394).
+var nature_id: String = "hardy"
+var individual_offsets: Dictionary = {}
+var innate_stats: Dictionary = {"STR": 1, "MAG": 1, "VIT": 1, "WIS": 1, "AGI": 1, "LUK": 1}
+var progression_points: Dictionary = {"STR": 0, "MAG": 0, "VIT": 0, "WIS": 0, "AGI": 0, "LUK": 0}
+var action_counts: Dictionary = {"PHYSICAL": 0, "MAGIC": 0, "GUARD": 0, "EVADE": 0}
+
+## Progression fields (R13-Q4/R14-Q4/R26-Q3). XP/level-up rules (D-394, D-399, D-401, D-402).
 var level: int = 1
 var xp: int = 0
 var distributable_points: int = 0
+var base_experience: int = 30
 var is_player: bool
 var in_battle := false
 var skills: Array[Skill] = []
+var elements: Array[Element.Type] = []  ## Species innate element(s) (D-413).
+
+
+func get_elements() -> Array[Element.Type]:
+	if not elements.is_empty():
+		return elements
+	var sp := species_id.to_lower()
+	if sp == "abra" or name.to_lower() == "abra":
+		return [Element.Type.PSIQUICO]
+	elif sp == "pancham" or name.to_lower() == "pancham":
+		return [Element.Type.FISICO, Element.Type.TREVAS]
+	elif sp == "dqt_slime" or sp == "slime":
+		return [Element.Type.AGUA_GELO]
+	elif sp == "gible":
+		return [Element.Type.TERRA]
+	elif sp == "cyclops":
+		return [Element.Type.FISICO, Element.Type.TERRA]
+	elif sp == "orc":
+		return [Element.Type.FISICO]
+	return [Element.Type.FISICO]
 var weaknesses: Array[Element.Type] = []
 var held_item_id := ""
 var inventory: Dictionary = {}  ## item id -> count (the leader shares GameState.inventory).
@@ -73,6 +116,13 @@ var clips: Dictionary = {}  ## Animation name -> seconds; registered by whoever 
 var atk_buff := 0   ## -5 .. +5 (Tarukaja / Tarunda, D-159)
 var def_buff := 0   ## -5 .. +5 (Rakukaja / Rakunda, D-159)
 var speed_buff := 0 ## -5 .. +5 (Sukukaja / Sukunda, D-159)
+## Badge Steal (Drain Spear): a positive shield badge and a magic-immunity badge.
+var shield_hp := 0
+var shield_max := 0
+var shield_timer := 0.0
+var shield_seconds := 0.0
+var magic_immune_timer := 0.0
+var magic_immune_seconds := 0.0
 
 # Novos estados de combate (D-032)
 var is_invulnerable := false  ## Sumido em Teleport/Dig: imune a ataques direcionados.
@@ -81,6 +131,7 @@ var blind_timer := 0.0        ## Cegueira em segundos: 35% de chance de errar a�
 var taunted_by: Combatant = null  ## Alvo único forçado pelo Taunt.
 var taunt_atk_bonus := false  ## Bônus de +1 estágio de ATK exclusivo para a ação provocada.
 var guard_timer := 0.0        ## D-272: segundos restantes de Guard. Enquanto > 0: sem outras ações e ATB pausado.
+var armor_timer := 0.0        ## D-1026: segundos restantes da badge ARMOR (absorve o primeiro contato de Move sem interrupção).
 var burn_ticks_left := 0      ## D-238: ticks de Burn que faltam (4 ao aplicar; 2 HP fixos cada).
 var burn_clock := 0.0         ## D-238: segundos até o próximo tick (o primeiro vem 1 s depois da aplicação).
 
@@ -102,7 +153,10 @@ var speed: float:
 			mult = 1.0 + float(speed_buff) * 0.25
 		else:
 			mult = 1.0 / (1.0 + float(abs(speed_buff)) * 0.25)
-		return maxf(0.1, base_speed * mult)
+		var rate := base_speed
+		if agi > 0:
+			rate = CrawlmonAttributeMath.natural_atb_increment(1.0, float(agi))
+		return maxf(0.1, rate * mult)
 
 
 func is_stunned() -> bool:
@@ -111,6 +165,69 @@ func is_stunned() -> bool:
 
 func is_blind() -> bool:
 	return blind_timer > 0.0
+
+
+## Drain Spear / Badge Steal: the shield and magic-immunity badges.
+func is_shielded() -> bool:
+	return shield_timer > 0.0 and shield_hp > 0
+
+
+func apply_shield(amount: int, seconds: float) -> void:
+	shield_hp = maxi(amount, 1)
+	shield_max = shield_hp
+	shield_seconds = maxf(seconds, 0.01)
+	shield_timer = shield_seconds
+
+
+func absorb_shield(amount: int) -> int:
+	if not is_shielded() or amount <= 0:
+		return 0
+	var absorbed := mini(amount, shield_hp)
+	shield_hp -= absorbed
+	return absorbed
+
+
+func end_shield(_reason := "") -> void:
+	shield_hp = 0
+	shield_timer = 0.0
+
+
+func tick_shield(delta: float) -> void:
+	if shield_timer <= 0.0:
+		return
+	shield_timer = maxf(shield_timer - delta, 0.0)
+	if shield_timer <= 0.0:
+		shield_hp = 0
+
+
+## Receives a shield taken by Badge Steal: current reserve preserved, duration reset.
+func adopt_shield(p_hp: int, p_max: int, p_seconds: float) -> void:
+	shield_hp = maxi(p_hp, 1)
+	shield_max = maxi(p_max, shield_hp)
+	shield_seconds = maxf(p_seconds, 0.01)
+	shield_timer = shield_seconds
+
+
+func is_magic_immune() -> bool:
+	return magic_immune_timer > 0.0
+
+
+func apply_magic_immunity(seconds: float) -> void:
+	magic_immune_seconds = maxf(seconds, 0.01)
+	magic_immune_timer = magic_immune_seconds
+
+
+func clear_magic_immunity() -> void:
+	magic_immune_timer = 0.0
+	magic_immune_seconds = 0.0
+
+
+func tick_magic_immunity(delta: float) -> void:
+	if magic_immune_timer <= 0.0:
+		return
+	magic_immune_timer = maxf(magic_immune_timer - delta, 0.0)
+	if magic_immune_timer <= 0.0:
+		magic_immune_seconds = 0.0
 
 
 ## D-238: queimando. Dura 4 s (4 ticks de 2 HP, o primeiro 1 s depois). Aplicar de novo renova os 4 ticks e mantém a cadência.
@@ -127,6 +244,34 @@ func apply_burn(ticks := 4) -> void:
 func clear_burn() -> void:
 	burn_ticks_left = 0
 	burn_clock = 0.0
+
+
+## D-1026: ARMOR badge. Reapplying only adds seconds to what is left (the badge never stacks).
+func is_armored() -> bool:
+	return armor_timer > 0.0
+
+
+func apply_armor(seconds: float) -> void:
+	var extended := armor_timer > 0.0
+	armor_timer += maxf(seconds, 0.0)
+	armor_changed.emit(self, "extended" if extended else "started")
+
+
+## reason: "hit" (first contact of a Move), "expired" or "battle_end".
+func end_armor(reason: String) -> void:
+	if armor_timer <= 0.0:
+		return
+	armor_timer = 0.0
+	armor_changed.emit(self, reason)
+
+
+## It keeps counting down during a Guard (D-1026). Called from the battle clock, which does not run while a status pause holds the engine.
+func tick_armor(delta: float) -> void:
+	if armor_timer <= 0.0:
+		return
+	armor_timer = maxf(armor_timer - delta, 0.0)
+	if armor_timer <= 0.0:
+		armor_changed.emit(self, "expired")
 
 
 func is_guarding() -> bool:
@@ -153,6 +298,172 @@ func _init(p_name: String, p_hp: int, p_attack: int, p_speed: float, p_is_player
 	mag = p_mag if p_mag > 0 else p_attack  # PROVISIONAL until the D-120/D-131 attribute table is wired in.
 	base_speed = p_speed
 	is_player = p_is_player
+
+
+## Retorna o valor efetivo de um atributo (inato consolidado + pontos de progressao) (D-390, D-394).
+func get_effective_stat(stat: String) -> int:
+	var s := stat.to_upper()
+	if s == "SPI":
+		s = "WIS"
+	return int(innate_stats.get(s, 1)) + int(progression_points.get(s, 0))
+
+
+## Sincroniza as variaveis diretas com os status efetivos e atualiza a velocidade base de ATB.
+func sync_effective_stats() -> void:
+	str = get_effective_stat("STR")
+	mag = get_effective_stat("MAG")
+	vit = get_effective_stat("VIT")
+	wis = get_effective_stat("WIS")
+	agi = get_effective_stat("AGI")
+	luk = get_effective_stat("LUK")
+	base_speed = CrawlmonAttributeMath.natural_atb_increment(1.0, float(agi))
+
+
+## Identifica se este combatente e o lider ativo da equipe com guarda estrita contra party vazia.
+func is_party_leader() -> bool:
+	if not is_player:
+		return false
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree and tree.root and tree.root.has_node("GameState"):
+		var gs: Node = tree.root.get_node("GameState")
+		var p: Variant = gs.get("party")
+		if p is Array and not (p as Array).is_empty():
+			return (p as Array)[0] == self
+		return false
+	# Em testes unitarios isolados sem a cena GameState ativa, considera lider por padrao se is_player for true.
+	return true
+
+
+## Concede experiencia, processa transicoes de nivel e recalcula atributos maximos (D-394, D-399, D-400, D-402).
+func add_experience(amount: int) -> Dictionary:
+	var old_level: int = level
+	var old_xp: int = xp
+	var current_req: int = CrawlmonAttributeMath.get_xp_for_level_transition(level)
+
+	if amount <= 0:
+		return {
+			"old_level": old_level,
+			"new_level": level,
+			"levels_gained": 0,
+			"points_gained": 0,
+			"old_xp": old_xp,
+			"current_xp": xp,
+			"xp_required": current_req,
+			"transitions": []
+		}
+
+	xp += amount
+	var levels_gained: int = 0
+	var total_points: int = 0
+	var transitions: Array[Dictionary] = []
+
+	while true:
+		var req: int = CrawlmonAttributeMath.get_xp_for_level_transition(level)
+		if xp >= req:
+			xp -= req
+			level += 1
+			levels_gained += 1
+			var pts: int = CrawlmonAttributeMath.get_stat_points_for_level(level)
+			total_points += pts
+			if is_party_leader():
+				distributable_points += pts
+			update_resource_maximums()
+			transitions.append({"level": level, "points": pts, "xp_required": req})
+			level_up_occurred.emit(level, pts)
+		else:
+			break
+
+	experience_gained.emit(amount, xp, CrawlmonAttributeMath.get_xp_for_level_transition(level))
+	return {
+		"old_level": old_level,
+		"new_level": level,
+		"levels_gained": levels_gained,
+		"points_gained": total_points,
+		"old_xp": old_xp,
+		"current_xp": xp,
+		"xp_required": CrawlmonAttributeMath.get_xp_for_level_transition(level),
+		"transitions": transitions
+	}
+
+
+## Recalcula o HP e MP maximos com base em VIT/WIS e nivel (D-391, D-392),
+## preservando deltas no valor atual e mantendo o estado de K.O. intacto (hp == 0 continua 0).
+func update_resource_maximums() -> void:
+	var old_max_hp := max_hp
+	var old_max_mp := max_mp
+	max_hp = CrawlmonAttributeMath.calculate_max_hp(level, vit)
+	max_mp = CrawlmonAttributeMath.calculate_max_mp(level, wis)
+	if species_id.to_lower() == "abra" or name.to_lower() == "abra":
+		max_mp = maxi(max_mp, 20)  # D-413: Abra minimum MP floor of 20
+	if hp > 0:
+		hp = clampi(hp + (max_hp - old_max_hp), 1, max_hp)
+	if mp > 0:
+		mp = clampi(mp + (max_mp - old_max_mp), 0, max_mp)
+	elif mp == 0 and old_max_mp == 0:
+		mp = max_mp
+
+## MP Regeneration: 4 points every 8 seconds, individual timer, resets on MP skills (D-413).
+var mp_regen_timer: float = 0.0
+const MP_REGEN_INTERVAL := 8.0
+const MP_REGEN_FULL_ATB_MULT := 1.75  ## D-1070: with the ATB full, the MP pulse timer runs this much faster
+const MP_REGEN_AMOUNT := 10  ## D-1062: the base of one pulse; the real value also scales with MAG (mp_regen_amount())
+
+signal mp_regenerated(combatant: Combatant, amount: int)
+
+
+## D-1062: MP gained per pulse: 10 + MAG / 5 up to MAG 25 (at most +5), then +1 per 10 MAG above 25. Same for every combatant.
+func mp_regen_amount() -> int:
+	var m := maxi(mag, 0)
+	var bonus := m / 5 if m <= 25 else 5 + (m - 25) / 10
+	return MP_REGEN_AMOUNT + bonus
+
+
+## D-1070: all five ATB blocks are full.
+func atb_full() -> bool:
+	return atb >= BLOCKS - 0.001
+
+
+## D-1070: how fast the MP pulse timer runs now (1.75x with the ATB full).
+func mp_regen_rate() -> float:
+	return MP_REGEN_FULL_ATB_MULT if atb_full() else 1.0
+
+
+## D-1070: real seconds until the next MP pulse, counting the rate.
+func mp_regen_left() -> float:
+	return maxf(MP_REGEN_INTERVAL - mp_regen_timer, 0.0) / mp_regen_rate()
+
+
+func tick_mp_regen(delta: float) -> bool:
+	if not is_alive():
+		return false
+	if mp >= max_mp:
+		mp_regen_timer = 0.0
+		return false
+	mp_regen_timer += delta
+	if mp_regen_timer >= MP_REGEN_INTERVAL:
+		mp_regen_timer = 0.0
+		var gained := mini(mp_regen_amount(), max_mp - mp)
+		mp += gained
+		mp_regenerated.emit(self, gained)
+		return true
+	return false
+
+
+func can_pay_skill(sk: Skill) -> bool:
+	if not can_pay(sk.cost):
+		return false
+	if mp < sk.mp_cost:
+		return false
+	return true
+
+
+func pay_skill(sk: Skill) -> void:
+	pay(sk.cost)
+	if sk.mp_cost > 0:
+		mp = maxi(0, mp - sk.mp_cost)
+		mp_regen_timer = 0.0  # timer resets whenever using an MP-consuming move (D-413)
+
+
 
 
 ## The (fractional) step the body is drawn at while it moves between two positions.
@@ -206,6 +517,8 @@ func tick(delta: float) -> void:
 		stun_timer = maxf(stun_timer - delta, 0.0)
 	if blind_timer > 0.0:
 		blind_timer = maxf(blind_timer - delta, 0.0)
+	if is_alive() and in_battle:
+		tick_mp_regen(delta * mp_regen_rate())  # D-1070
 	if guard_timer > 0.0:
 		# D-272: the ATB is paused while guarding.
 		guard_timer = maxf(guard_timer - delta, 0.0)
@@ -352,6 +665,12 @@ func clear_pending() -> void:
 	pending_burst = 0
 	extra = 0.0
 	guard_timer = 0.0
+	armor_timer = 0.0
+	shield_hp = 0
+	shield_max = 0
+	shield_timer = 0.0
+	shield_seconds = 0.0
+	clear_magic_immunity()
 	is_invulnerable = false
 	stun_timer = 0.0
 	blind_timer = 0.0
@@ -368,3 +687,61 @@ func weakness_text() -> String:
 	for w in weaknesses:
 		names.append(Element.name_of(w))
 	return ", ".join(names)
+
+
+## Snapshot e Rollback em memória para testes de ramificação por agentes de IA (D-1042 / D-1044).
+func save_state() -> Dictionary:
+	return {
+		"hp": hp, "max_hp": max_hp, "mp": mp, "max_mp": max_mp, "mp_regen_timer": mp_regen_timer,
+		"atb": atb, "extra": extra, "burst": burst,
+		"pending_atb": pending_atb, "pending_extra": pending_extra, "pending_burst": pending_burst,
+		"counter_ready": counter_ready, "pos_step": pos_step, "step_from": step_from, "step_t": step_t,
+		"home": home, "yaw": yaw, "pos": pos, "rest": rest, "has_rest": has_rest,
+		"atk_buff": atk_buff, "def_buff": def_buff, "speed_buff": speed_buff,
+		"shield_hp": shield_hp, "shield_max": shield_max, "shield_timer": shield_timer, "shield_seconds": shield_seconds,
+		"magic_immune_timer": magic_immune_timer, "magic_immune_seconds": magic_immune_seconds,
+		"is_invulnerable": is_invulnerable, "stun_timer": stun_timer, "blind_timer": blind_timer,
+		"guard_timer": guard_timer, "armor_timer": armor_timer,
+		"burn_ticks_left": burn_ticks_left, "burn_clock": burn_clock,
+		"taunt_atk_bonus": taunt_atk_bonus,
+	}
+
+
+func restore_state(s: Dictionary) -> void:
+	max_hp = int(s.get("max_hp", max_hp))
+	hp = int(s.get("hp", hp))
+	max_mp = int(s.get("max_mp", max_mp))
+	mp = int(s.get("mp", mp))
+	mp_regen_timer = float(s.get("mp_regen_timer", mp_regen_timer))
+	atb = float(s.get("atb", atb))
+	extra = float(s.get("extra", extra))
+	burst = int(s.get("burst", burst))
+	pending_atb = int(s.get("pending_atb", pending_atb))
+	pending_extra = int(s.get("pending_extra", pending_extra))
+	pending_burst = int(s.get("pending_burst", pending_burst))
+	counter_ready = bool(s.get("counter_ready", counter_ready))
+	pos_step = int(s.get("pos_step", pos_step))
+	step_from = float(s.get("step_from", step_from))
+	step_t = float(s.get("step_t", step_t))
+	home = s.get("home", home)
+	yaw = float(s.get("yaw", yaw))
+	pos = s.get("pos", pos)
+	rest = s.get("rest", rest)
+	has_rest = bool(s.get("has_rest", has_rest))
+	atk_buff = int(s.get("atk_buff", atk_buff))
+	def_buff = int(s.get("def_buff", def_buff))
+	speed_buff = int(s.get("speed_buff", speed_buff))
+	shield_hp = int(s.get("shield_hp", shield_hp))
+	shield_max = int(s.get("shield_max", shield_max))
+	shield_timer = float(s.get("shield_timer", shield_timer))
+	shield_seconds = float(s.get("shield_seconds", shield_seconds))
+	magic_immune_timer = float(s.get("magic_immune_timer", magic_immune_timer))
+	magic_immune_seconds = float(s.get("magic_immune_seconds", magic_immune_seconds))
+	is_invulnerable = bool(s.get("is_invulnerable", is_invulnerable))
+	stun_timer = float(s.get("stun_timer", stun_timer))
+	blind_timer = float(s.get("blind_timer", blind_timer))
+	guard_timer = float(s.get("guard_timer", guard_timer))
+	armor_timer = float(s.get("armor_timer", armor_timer))
+	burn_ticks_left = int(s.get("burn_ticks_left", burn_ticks_left))
+	burn_clock = float(s.get("burn_clock", burn_clock))
+	taunt_atk_bonus = bool(s.get("taunt_atk_bonus", taunt_atk_bonus))

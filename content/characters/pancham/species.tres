@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="Resource" path="res://content/characters/pancham/loadout.tres" id="1_0q61y"]
+[ext_resource type="Resource" path="res://content/characters/pancham/model_profile.tres" id="2_kdkkw"]
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="3_2nl1f"]
+
+[resource]
+script = ExtResource("3_2nl1f")
+id = &"pancham"
+display_name = "Pancham"
+species_id = "pancham"
+raw_stats = {
+"AGI": 43,
+"LUK": 56,
+"MAG": 46,
+"STR": 82,
+"VIT": 62,
+"WIS": 48
+}
+weaknesses = Array[int]([4, 8])
+loadout = ExtResource("1_0q61y")
+model_profile = ExtResource("2_kdkkw")

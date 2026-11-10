@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_2dsdk"]
+
+[resource]
+script = ExtResource("1_2dsdk")
+id = &"teleporte_rapido"
+display_name = "Teleport"
+element = 4
+power = 0.7
+atb_cost = 1
+mp_cost = 3
+windup = 0.5
+stand_gap = 2.6
+hold = 0.2
+teleport = true
+untargetable = true
+redirectable = false
+plan_profile = &"teleport"
+hit_stop_duration = 0.065
+tags = Array[StringName]([&"untargetable"])
+vfx_key = &"abra"
+effect_line_text = "70% ATK psychic damage | User is untargetable during the strike | 1 ATB"
+short_effect_text = "70% | untargetable"
+description_text = "Spatial displacement strike; user is untargetable during execution, striking safely."
+mechanics_text = "Spatial displacement strike. The user becomes completely untargetable during execution, striking before returning to safety."
+visual_text = "Violet dimensional distortion ripple where the user vanishes into particles and re-materializes at the destination."
+motion_text = "Zero ground travel. Instantaneous blink directly adjacent to the opponent followed by an evasive back-hop."
+windup_text = "0.90s wind-up. Spatial distortion charges before user phases out."
+tactical_text = "User becomes untargetable during execution, striking safely. Single Target."
+visual_motion_text = "Spatial blink adjacent to target followed by an evasive back-hop."
+phase_visuals = {
+"impact": "Contato direto no ponto zero do alvo com hit-stop, flash e reação: Violet dimensional distortion ripple where the user vanishes into particles and re-materializes at the destination.",
+"release": "Partida física contínua a partir da carga rumo ao alvo: Zero ground travel. Instantaneous blink directly adjacent to the opponent followed by an evasive back-hop.",
+"return": "Salto/corrida de recuo de volta à posição de origem e retomada de idle.",
+"strike": "Prelúdio de golpe e arco de swing/arma com aviso Dread na janela de Evade (D-986/D-992).",
+"travel": "Corrida pelo eixo atacante->alvo com trilha no chão (D-1013): Zero ground travel. Instantaneous blink directly adjacent to the opponent followed by an evasive back-hop.",
+"windup": "Preparo em posição base com loop contínuo de carga (D-163): 0.90s wind-up. Spatial distortion charges before user phases out."
+}

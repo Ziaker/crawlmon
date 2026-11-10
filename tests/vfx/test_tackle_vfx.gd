@@ -46,16 +46,9 @@ func _test_tackle_strike_timing(motion: FxMotion) -> void:
 
 func _test_tackle_strike(motion: FxMotion) -> void:
 	var nodes: Array[Node3D] = motion._tackle_strike_vfx(Vector3.ZERO, Vector3.FORWARD)
-	_expect(nodes.size() == 2, "A2 must create exactly two smear blades")
-	if nodes.size() != 2:
-		return
-	var outer := nodes[0] as MeshInstance3D
-	var inner := nodes[1] as MeshInstance3D
-	_expect(outer.name == "TackleSmearOuter", "outer blade must be identifiable")
-	_expect(inner.name == "TackleSmearCore", "inner blade must be identifiable")
-	_expect(outer.position.is_equal_approx(Vector3(0, 0.95, -1.15)), "A2 must orbit at the approved shoulder offset")
-	_expect(_shader_color(outer).is_equal_approx(Color("fb5607")), "outer blade must be fire orange")
-	_expect(_shader_color(inner).is_equal_approx(Color("ffbe0b").lightened(0.35)), "inner blade must be white-gold")
+	# D-990: the two fixed smear blades were removed; the 3D SwingTrail follows
+	# the real limb. This hook only spawns the spark burst, so it returns no nodes.
+	_expect(nodes.is_empty(), "A2 must not recreate the removed fixed smear blades (D-990)")
 
 
 func _test_tackle_impact(impacts: FxImpacts) -> void:

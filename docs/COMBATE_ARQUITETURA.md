@@ -38,3 +38,19 @@ godot --headless --path . --script res://tests/battle/test_attack_motion.gd   # 
 cada dano, `sync`: distância entre as posições **das regras**, desvio da animação em
 relação ao contato. Anomalias duras: `MELEE_HIT_FAR`, `PROJ_HIT_FAR`, `ANIM_DRIFT`,
 `TELEPORT`, `TOO_FAST`, `DEAD_ATTACKING`.
+
+## Conteúdo: Move e Personagem como pacotes (D-1079)
+
+- **Move:** `content/moves/<id>/move.tres` (`MoveData`) + `behavior.gd` opcional + `vfx.gd` opcional + ícone/textos. O `id` é a identidade estável; `display_name` é só texto.
+- **Personagem:** `content/characters/<id>/species.tres` (`CharacterData`) + `loadout.tres` + `model_profile.tres`.
+- **Catálogos explícitos:** `content/catalogs/move_catalog.tres` e `content/catalogs/character_catalog.tres`; sem varredura de pasta em runtime.
+- **Runtime:** `Skill` é um wrapper fino de `MoveData`; `CharacterFactory` constrói o `Combatant` a partir de `CharacterData`. `EnemyFactory`, `GameState._build_party` e `DqtTestParty` delegam a ele.
+- **Regra preservada:** a lógica continua dona do relógio (D-019/D-1040); o VFX só desenha. O comportamento é por `move_id` (D-235).
+- **Etapa 1:** dados e catálogos implementados sem mudar regra/tempo/visual.
+- **Etapa 2 concluída:** `Incoming.move_data` + `MoveBehavior`/`MoveBehaviorRegistry`/`MoveBehaviors`. `AttackPlanner` lê `MoveData` (stand gap, run, hit, hold, plano) e `BattleAI` lê os hooks de status; `Battle` usa os hooks de hit/status. A cadeia do Tidal Surge, as constantes de Boulder/Electric/Armor e a tag `guard_break` também saíram do núcleo do `Battle`.
+- **Etapa 3 (roteamento de VFX) concluída:** `MoveData.vfx_key` + `MoveVfxRegistry`; `fx_telegraph` (wind-up), `fx_projectiles` (família do projétil) e `fx_impacts` (todos os impactos autorais, incluindo Electric/Tidal) leem o registro. `BattleFx` usa tags do `MoveData` para Drain, guard break, Burn/Fire Bullet, status com VFX de palco, Shock Wave no miss e Quick Punch no pulso BW; hit-stop e BW pulse saíram das tabelas para o `MoveData`.
+- **Etapa 4 concluída nos blocos seguros:** `skill.gd` (887 → 327 linhas) com textos/custos legados em `SkillLegacyData` (561 linhas); `battle_hud.gd` (1557 → 1241) com os helpers de desenho em `BattleHudDraw` (322); `battle.gd` (1153 → 1053) com `BattleRewards` (58) e `BattleBadges` (78); `vfx_room.gd` (2736 → 2328) com `VfxRoomScenarios` (112) e `VfxRoomAnalysis` (442). Restam os núcleos coesos de timeline/hit e o painel/gravação da sala, cuja divisão exige decisão.
+- **Etapa 6 concluída:** `tests/combat/test_content_contract.gd` valida um Move e um Personagem novos em memória (catálogo, `Skill`, dispatcher, VFX registry e `CharacterFactory`), sem alterar os `.tres`.
+- **Etapa 5 concluída:** `scripts/vfx/` é a raiz única de VFX; `scripts/combat/fx/*` virou `scripts/vfx/combat/*` (com `projectile_lib/` e `.uid` preservados). Preloads, `RELOAD_DIRS` e o cache de classes foram atualizados; a suíte completa de combate/VFX passou 16/16. Não há `export_presets.cfg` para ajustar. Docs históricos podem citar o caminho antigo.
+- **Auditoria de arquitetura (2026-11-09):** `behavior_script` passou a ser lido pelo registry; impacto/trajeto de um Move novo respeitam `vfx_key`; catálogos/fichas devolvem cópias das definições.
+- **Pacote de Move, Fase 1+2:** `MoveVfx` + `MoveVfxRegistry.move_vfx_for()` (contrato de `vfx_script`) e piloto `Media` em `content/moves/media/behavior.gd`, com `move.tres` apontando `behavior_script` e o builder preservando scripts opcionais. Nenhum VFX mudou. Pendências e evidências em [`AUDITORIA_ARQUITETURA_2026-11-09.md`](AUDITORIA_ARQUITETURA_2026-11-09.md) e [`PROPOSTA_PACOTE_MOVE_2026-11-09.md`](PROPOSTA_PACOTE_MOVE_2026-11-09.md).

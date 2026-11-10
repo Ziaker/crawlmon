@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_tinya"]
+
+[resource]
+script = ExtResource("1_tinya")
+id = &"megido"
+display_name = "Megido"
+kind = 1
+element = 9
+power = 1.6
+atb_cost = 3
+mp_cost = 6
+windup = 1.5
+is_aoe = true
+stand_gap = 2.6
+hold = 0.2
+plan_profile = &"projectile"
+bw_pulse = true
+vfx_key = &"generic"
+effect_line_text = "160% ATK light damage | Hits ALL enemies | 3 ATB"
+short_effect_text = "160% light | AoE"
+description_text = "A light explosion that hits the entire enemy team."
+mechanics_text = "Almighty/Mystic transcendent explosion that strikes all enemies simultaneously, bypassing elemental resistances."
+visual_text = "Pillar of blinding sacred white-cyan light descending from above, collapsing into a field-wide planar shockwave."
+motion_text = "Stationary invocation. Caster raises hands; strikes every enemy position simultaneously with zero projectile travel."
+windup_text = "2.20s wind-up. Protracted celestial chant; vulnerable to team-wide disruption."
+tactical_text = "Transcendent explosion hitting all enemies, bypassing resistances. Full AoE."
+visual_motion_text = "Stationary invocation summoning a pillar of blinding celestial light."
+phase_visuals = {
+"impact": "Explosão/impacto no ponto de contato a 1,2 m de altura (D-1013 / D-308 Fase 4): Pillar of blinding sacred white-cyan light descending from above, collapsing into a field-wide planar shockwave.",
+"release": "Transição contínua da carga para o disparo sem sumiço brusco (D-308 Fase 2): Stationary invocation. Caster raises hands; strikes every enemy position simultaneously with zero projectile travel.",
+"return": "Dissipação completa de partículas/malhas (zero restos) e retorno do lançador ao idle.",
+"strike": "Janela final de aproximação (últimos 0,25 s) antes do contato.",
+"travel": "Voo do projétil/feixe ao longo do eixo atacante->alvo mantendo leitura de tela (D-308 Fase 3): Stationary invocation. Caster raises hands; strikes every enemy position simultaneously with zero projectile travel.",
+"windup": "Carga elemental contínua à frente do lançador (D-308 Fase 1): 2.20s wind-up. Protracted celestial chant; vulnerable to team-wide disruption."
+}

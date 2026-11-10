@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_j3dfr"]
+
+[resource]
+script = ExtResource("1_j3dfr")
+id = &"confusao"
+display_name = "Confusion"
+kind = 1
+element = 4
+power = 1.4
+mp_cost = 3
+windup = 1.5
+stand_gap = 2.6
+hold = 0.2
+plan_profile = &"projectile"
+hit_stop_duration = 0.085
+vfx_key = &"abra"
+effect_line_text = "140% ATK psychic damage | Projectile | 2 ATB"
+short_effect_text = "140% psychic"
+description_text = "Unstable psychic projectile that bursts around the target, disrupting mental focus."
+mechanics_text = "Unstable telekinetic blast that assaults the target's mind. Has high damage variance and disrupts focus."
+visual_text = "Swirling violet distortions and concentric telekinetic ripples warp the surrounding air before condensing into an erratic glowing orb that implodes on impact."
+motion_text = "Stationary cast. Attacker channels spatial energy in place and launches an erratic curved homing bolt."
+windup_text = "1.50s wind-up. Caster remains locked in casting stance; taking heavy hits during charge risks interruption."
+tactical_text = "Disrupts mental focus with erratic psychic pressure. Single Target burst."
+visual_motion_text = "Stationary launch of swirling violet distortion orbs that detonate upon impact."
+phase_visuals = {
+"impact": "Explosão/impacto no ponto de contato a 1,2 m de altura (D-1013 / D-308 Fase 4): Swirling violet distortions and concentric telekinetic ripples warp the surrounding air before condensing into an erratic glowing orb that implodes on impact.",
+"release": "Transição contínua da carga para o disparo sem sumiço brusco (D-308 Fase 2): Stationary cast. Attacker channels spatial energy in place and launches an erratic curved homing bolt.",
+"return": "Dissipação completa de partículas/malhas (zero restos) e retorno do lançador ao idle.",
+"strike": "Janela final de aproximação (últimos 0,25 s) antes do contato.",
+"travel": "Voo do projétil/feixe ao longo do eixo atacante->alvo mantendo leitura de tela (D-308 Fase 3): Stationary cast. Attacker channels spatial energy in place and launches an erratic curved homing bolt.",
+"windup": "Carga elemental contínua à frente do lançador (D-308 Fase 1): 1.50s wind-up. Caster remains locked in casting stance; taking heavy hits during charge risks interruption."
+}

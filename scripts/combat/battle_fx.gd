@@ -5,7 +5,7 @@ extends Node3D
 ## choreography (zero camera shake).
 
 const COLORS := {
-	Element.Type.FISICO: Color(0.95, 0.95, 0.95),
+	Element.Type.FISICO: Color("cbd5e1"),
 	Element.Type.FOGO: Color(1.0, 0.45, 0.1),
 	Element.Type.AGUA_GELO: Color(0.4, 0.8, 1.0),
 	Element.Type.RAIO: Color(1.0, 0.95, 0.2),
@@ -17,6 +17,8 @@ const COLORS := {
 	Element.Type.LUZ: Color(1.0, 1.0, 0.7),
 	Element.Type.TREVAS: Color(0.4, 0.15, 0.55),
 }
+const FxLaneScript = preload("res://scripts/vfx/combat/fx_lane.gd")
+const FxDrainSpearScript = preload("res://scripts/vfx/combat/fx_drain_spear.gd")
 const STEP_DIST := BattleSpace.STEP_DIST
 const FLY_TIME := BattleSpace.FLY_TIME
 const TELEGRAPH_COLOR := Color(1.0, 0.22, 0.18)
@@ -55,25 +57,36 @@ var _stepping: Dictionary = {}  ## Combatant -> bool: walking a step
 var _base_scale: Dictionary = {}  ## Combatant -> Vector3 (as registered; enemies are scaled up)
 var _displaced: Dictionary = {}  ## Combatant -> bool (standing off its home after a dodge)
 var _vanish_until: Dictionary = {}  ## Combatant -> clock safety deadline to restore m.visible = true
+var _knock_home: Dictionary = {}  ## D-1045: Combatant -> Vector3 drawn spot at the first hit of a recoil chain
 
-## Modules (one file per responsibility, see scripts/combat/fx/):
+## Modules (one file per responsibility, see scripts/vfx/combat/):
+var fx_lane  ## FxLane (preloaded: the class cache may not know it yet)
 var fx_telegraph: FxTelegraph
 var fx_motion: FxMotion
 var fx_attack_plan: FxAttackPlan
 var fx_dodge: FxDodge
+var fx_stun: FxStun  ## D-979
+var fx_evade_flash: FxEvadeFlash  ## D-986
 var fx_impacts: FxImpacts
 var fx_guard: FxGuard
+var fx_armor: FxArmor  ## D-1026
+var fx_drain_spear: RefCounted
 var fx_projectiles: FxProjectiles
 var fx_text: FxText
 
 
 func _init() -> void:
+	fx_lane = FxLaneScript.new(self)
 	fx_telegraph = FxTelegraph.new(self)
 	fx_motion = FxMotion.new(self)
 	fx_attack_plan = FxAttackPlan.new(self)
 	fx_dodge = FxDodge.new(self)
+	fx_stun = FxStun.new(self)
+	fx_evade_flash = FxEvadeFlash.new(self)
 	fx_impacts = FxImpacts.new(self)
 	fx_guard = FxGuard.new(self)
+	fx_armor = FxArmor.new(self)
+	fx_drain_spear = FxDrainSpearScript.new(self)
 	fx_projectiles = FxProjectiles.new(self)
 	fx_text = FxText.new(self)
 
@@ -84,27 +97,16 @@ static func normalize_move_id(skill_name: String) -> String:
 
 
 static func move_hit_stop_duration(move_id: String) -> float:
-	match normalize_move_id(move_id):
-		"tackle", "investida", "soco_rapido": return 0.075
-		"golpe_carate": return 0.095
-		"quebra_telha": return 0.110
-		"confusao": return 0.085
-		"raio_psiquico": return 0.095
-		"onda_choque": return 0.100
-		"teleporte_rapido": return 0.065
-		"mordida": return 0.095
-		"tiro_areia": return 0.085
-		"garra_dragao": return 0.105
-		"furia_dragao": return 0.115
-		"investida_escavadora", "investida_subterranea": return 0.120
-		_: return -1.0
+	var id := normalize_move_id(move_id)
+	var data := MoveCatalog.get_move(StringName(id))
+	if data != null:
+		return data.hit_stop_duration
+	return 0.075 if id == "investida" else -1.0  # legacy alias without a catalog entry
 
 
 static func move_uses_bw_pulse(move_id: String) -> bool:
-	return normalize_move_id(move_id) in [
-		"golpe_carate", "quebra_telha", "onda_choque", "garra_dragao", "furia_dragao",
-		"investida_subterranea", "investida_escavadora", "megido", "titanomachia", "hassou_tobi"
-	]
+	var data := MoveCatalog.get_move(StringName(normalize_move_id(move_id)))
+	return data.bw_pulse if data != null else false
 
 
 func register(c: Combatant, model: Node3D) -> void:
@@ -141,7 +143,7 @@ func unregister(c: Combatant) -> void:
 		(_buff_tweens[c] as Tween).kill()
 	for d in [_models, _home, _home_yaw, _tweens, _hit_at, _slot, _busy_until, _ready_off,
 			_base_speed, _phase, _stepping, _base_scale, _displaced, _vanish_until,
-			_orig_scale, _orig_speed, _buff_tweens]:
+			_orig_scale, _orig_speed, _buff_tweens, _knock_home]:
 		(d as Dictionary).erase(c)
 
 
@@ -287,17 +289,31 @@ func debug_move_home(c: Combatant, new_home: Vector3) -> void:
 
 
 ## info keys: evaded, dmg, weak, crit, gain, whiffed, power, skill_name.
+func _move_data_for(move_id: String) -> MoveData:
+	return MoveCatalog.get_move(StringName(normalize_move_id(move_id)))
+
+
+## Tag first (D-1079); the legacy ids keep old Skills without MoveData working.
+func _move_has_tag_or(move_id: String, tag: StringName, legacy_ids: Array) -> bool:
+	var data := _move_data_for(move_id)
+	if data != null:
+		return data.has_tag(tag)
+	return normalize_move_id(move_id) in legacy_ids
+
+
 func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, info: Dictionary) -> void:
 	var color: Color = COLORS[element]
+	var move_id := normalize_move_id(String(info.get("skill_name", "")))
+	if _move_has_tag_or(move_id, &"badge_steal", ["drain_spear"]):
+		color = Color("62d8e7")  # the Move's cyan magical energy, not the white physical tint
 	var a_pos: Vector3 = (_models[attacker] as Node3D).position if _models.has(attacker) else rest_pos(attacker)
 	a_pos.y = 0.0
 	var t_pos: Vector3 = (_models[target] as Node3D).position if _models.has(target) else rest_pos(target)
 	t_pos.y = 0.0
 	var to := t_pos + Vector3(0, 1, 0)
 	var evaded: bool = info["evaded"]
-	var move_id := normalize_move_id(String(info.get("skill_name", "")))
 	if info.get("status", false):
-		if move_id in ["tarukaja", "rakunda", "sukunda", "media"]:
+		if _move_has_tag_or(move_id, &"stage_vfx", ["tarukaja", "rakunda", "sukunda", "media", "armored_bulk"]):  # D-1026
 			# D-038 / D-337: buffs, debuffs and Media are carried entirely by their own stage VFX, with no white flash.
 			return
 		var before_status := get_child_count()
@@ -324,7 +340,7 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 		return
 	# Called at the moment the strike lands (Battle waits for the animation).
 	if evaded:
-		if move_id == "onda_choque":
+		if _move_has_tag_or(move_id, &"impact_on_miss", ["onda_choque"]):
 			# D-170: Shock Wave keeps its impact even when it misses (visual only).
 			_impact(element, to, color, false, _flat_dir(a_pos, t_pos), move_id)
 		_dodge_later(target, "ESQUIVOU! +1 ATB", 0.0, 0.11)
@@ -332,8 +348,9 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 	var weak: bool = info["weak"]
 	var crit: bool = info["crit"]
 	var power: float = info.get("power", 1.0)
-	var fire_stop: bool = move_id == "fire_bullet" and bool(info.get("interrupted", false))  # D-236
-	var heavy := weak or crit or power >= 1.4 or fire_stop
+	var fire_stop: bool = _move_has_tag_or(move_id, &"burn", ["fire_bullet"]) and bool(info.get("interrupted", false))  # D-236
+	var drain_spear := _move_has_tag_or(move_id, &"badge_steal", ["drain_spear"])
+	var heavy := weak or crit or power >= 1.4 or fire_stop or drain_spear
 	var strike_dir := _flat_dir(a_pos, t_pos)
 	var is_ko := not target.is_player and not target.is_alive()
 
@@ -348,8 +365,11 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 			cam.speed_lines()
 
 	last_hit_info = info  # D-236: a move-authored impact may read whether the hit interrupted an action
-	var impact_fx: Array[Node3D] = _impact(element, to, color, heavy or is_ko, strike_dir, move_id)
-	if move_id == "quebra_telha":
+	# move_drain_spear: its Motion effect already draws the cyan spray/reverse steal at this contact.
+	var impact_fx: Array[Node3D] = []
+	if not drain_spear:
+		impact_fx = _impact(element, to, color, heavy or is_ko, strike_dir, move_id)
+	if _move_has_tag_or(move_id, &"guard_break", ["quebra_telha"]):
 		impact_fx.append(fx_impacts.shatter_brick_barrier(target, to, strike_dir))
 
 	if is_ko:
@@ -366,22 +386,27 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 	flash(target)
 	# Screen-space post-processing (chromatic aberration, radial blur, elemental tint)
 	if cam != null and not is_ko:
-		var bw_pulse := move_uses_bw_pulse(move_id) or (heavy and move_id != "soco_rapido")
+		var bw_pulse := (move_uses_bw_pulse(move_id) or (heavy and not _move_has_tag_or(move_id, &"no_bw_pulse", ["soco_rapido"]))) and not drain_spear
 		cam.impact_post(to, color, heavy, bw_pulse)
 
 	# Micro-freeze (Hit Stop): 0.18s dramatic hold on K.O. (D-049)
-	var hit_stop_dur: float = 0.18 if is_ko else move_hit_stop_duration(move_id)
-	await _hit_stop(attacker, target, heavy or is_ko, strike_dir, impact_fx, hit_stop_dur)
+	# D-1012: hit-stop by the weight of the blow (light 0.06 / normal 0.09 / heavy or crit 0.14 / K.O. 0.20).
+	var hit_stop_dur: float = 0.2 if is_ko else (0.14 if heavy else (0.06 if move_hit_stop_duration(move_id) < 0.07 else 0.09))
+	if drain_spear and not is_ko:
+		hit_stop_dur = 0.1  # D-1014
+		flash(target)  # D-1014: a short white flash on the contact
+	# D-1045: the hit reaction and the push start on the impact itself, not after the hit-stop.
+	var reacts := not is_ko and String(info.get("guard", "")) == "" and String(info.get("armor", "")) == ""
+	if reacts:
+		var knock_mult := (1.55 if (weak or crit) else 1.0) * clampf(power, 0.85, 1.6)
+		if bool(info.get("visual_push", true)):  # D-1073: projectile contacts do not shove; melee/CAST keep it.
+			knock(target, a_pos, knock_mult, 5.4 if fire_stop else -1.0)  # D-236/D-1051: the interrupting Fire Bullet shoves the enemy farther back (visual only)
+		_hit_react(target, hit_stop_dur)
+	await _hit_stop(attacker, target, heavy or is_ko, strike_dir, impact_fx, hit_stop_dur, reacts)
 
 	if is_ko:
 		# D-049: Ballistic anime launch with parabolic trajectory, smoke trail and ground impact
 		fx_motion.launch_ko(target)
-	else:
-		# D-272: a character in Guard takes no recoil/stagger from the contact that ends its Guard.
-		if String(info.get("guard", "")) == "":
-			var knock_mult := (1.55 if (weak or crit) else 1.0) * clampf(power, 0.85, 1.6)
-			knock(target, a_pos, knock_mult, 2.7 if fire_stop else -1.0)  # D-236: the interrupting Fire Bullet shoves the enemy far back (visual only)
-			_hit_react(target)
 	if crit:
 		float_text(to + Vector3(0, 2.4, 0), "CRÍTICO!", Color(1.0, 0.9, 0.2), 48)
 	if weak:
@@ -394,6 +419,15 @@ func rest_pos(c: Combatant) -> Vector3:
 	return c.rest_pos()
 
 
+## The body centre as DRAWN right now: the model is what travels during the return run,
+## while `Combatant.pos` only changes when the logic lands. Read-only.
+func drawn_body_center(c: Combatant) -> Vector3:
+	var base := c.pos
+	if _models.has(c) and is_instance_valid(_models[c]):
+		base = (_models[c] as Node3D).position
+	return base + Vector3.UP * (1.1 * maxf(c.body_scale, 0.5))
+
+
 func _busy_for(c: Combatant, seconds: float) -> void:
 	_busy_until[c] = maxf(_busy_until.get(c, 0.0), clock + seconds)
 
@@ -402,6 +436,8 @@ func _busy_for(c: Combatant, seconds: float) -> void:
 ## ring while they can act. Movement therefore always means something.
 func _process(delta: float) -> void:
 	clock += delta
+	fx_lane.process(delta)  # D-1019: the live path on the floor
+	fx_drain_spear.process(delta)  # move_drain_spear: formation, thrust, steal and dissolve
 	fx_motion.drive()
 	# Position steps: the home spot is the step-0 spot moved along the facing axis by
 	# the logic's own (animated) step value; the run clip plays while it walks.
@@ -453,6 +489,8 @@ func _process(delta: float) -> void:
 		var ring: Node3D = m.get_node_or_null("ReadyRing")
 		if ring != null:
 			ring.visible = true  # D-240: the shadow is always under the character (it used to be a ring shown only while it could act)
+	fx_evade_flash.update(delta)  # D-986: Dread-like tell in the Evade window
+	fx_stun.update(delta)  # D-979: dizzy body + spinning stars while stunned (after the idle pose is set)
 
 
 func _is_idle(c: Combatant) -> bool:
@@ -592,6 +630,7 @@ func _line(a: Vector3, b: Vector3, color: Color, thick: float) -> MeshInstance3D
 
 func telegraph(inc) -> void:
 	fx_telegraph.telegraph(inc)
+	fx_drain_spear.start(inc)
 
 
 func clear_telegraph(inc) -> void:
@@ -600,6 +639,7 @@ func clear_telegraph(inc) -> void:
 
 func on_attack_cancelled(inc) -> void:
 	fx_telegraph.on_attack_cancelled(inc)
+	fx_drain_spear.cancel(inc)
 
 
 func resolve_attack(inc) -> void:
@@ -608,6 +648,10 @@ func resolve_attack(inc) -> void:
 
 func manual_evade(actor: Combatant, inc) -> void:
 	fx_dodge.manual_evade(actor, inc)
+
+
+func evade_mistimed(actor: Combatant, inc) -> void:
+	fx_dodge.mistimed(actor, inc)
 
 
 func evade_whiff(actor: Combatant, _inc) -> void:
@@ -664,18 +708,20 @@ func intro() -> void:
 
 func finish(player_won: bool) -> void:
 	fx_motion.finish(player_won)
+	if fx_drain_spear != null:
+		fx_drain_spear.clear_all()
 
 
-func _hit_stop(attacker: Combatant, target: Combatant, heavy: bool, strike_dir := Vector3.FORWARD, impact_fx: Array[Node3D] = [], duration_override := -1.0) -> void:
-	await fx_motion._hit_stop(attacker, target, heavy, strike_dir, impact_fx, duration_override)
+func _hit_stop(attacker: Combatant, target: Combatant, heavy: bool, strike_dir := Vector3.FORWARD, impact_fx: Array[Node3D] = [], duration_override := -1.0, slow_target := false) -> void:
+	await fx_motion._hit_stop(attacker, target, heavy, strike_dir, impact_fx, duration_override, slow_target)
 
 
 func dodge(target: Combatant, _text: String, hold := false) -> void:
 	fx_dodge.dodge(target, _text, hold)
 
 
-func _hit_react(c: Combatant) -> void:
-	await fx_motion._hit_react(c)
+func _hit_react(c: Combatant, slow_time := 0.0) -> void:
+	await fx_motion._hit_react(c, slow_time)
 
 
 func _play(c: Combatant, anim: String) -> void:
@@ -773,7 +819,7 @@ func miss_text(pos: Vector3) -> void:
 
 ## The modules point back at this node; cut the cycle so everything can be freed.
 func _exit_tree() -> void:
-	for mod in [fx_telegraph, fx_motion, fx_attack_plan, fx_dodge, fx_impacts, fx_projectiles, fx_text]:
+	for mod in [fx_telegraph, fx_motion, fx_attack_plan, fx_dodge, fx_impacts, fx_armor, fx_drain_spear, fx_projectiles, fx_text]:
 		mod.fx = null
 
 
@@ -798,8 +844,10 @@ func on_status_pause_started(inc) -> void:
 	var m: Node3D = _models.get(caster)
 	if m == null:
 		return
-	if BattleFx.normalize_move_id(inc.label) == "media":
+	if MoveVfxRegistry.family_for_inc(inc) == &"media":
 		return  # D-337: Media's own ritual replaces the legacy status burst (no white ring, star or aura)
+	if MoveVfxRegistry.family_for_inc(inc) == &"armored_bulk":
+		return  # D-1026: Armored Bulk has its own start/release (chrome wave, shock ring, sparks), not the generic burst
 	var col: Color = COLORS.get(inc.element, Color.WHITE)
 	var at := Vector3(m.position.x, 0.0, m.position.z)
 	VfxLib.flash_star(self, at + Vector3(0, 1.2, 0), col.lightened(0.4), 4.2, 0.3)
@@ -808,7 +856,17 @@ func on_status_pause_started(inc) -> void:
 	_glow(at + Vector3(0, 0.3, 0), col, 46, Vector2(0.35, 0.8), 0.9, Vector2(2.0, 6.0), Vector3(0, 6, 0), 0.3, 0.9)
 
 
+## D-1062: the eco textual "+N MP" above the unit that recovered MP.
+func on_mp_regenerated(c: Combatant, amount: int) -> void:
+	var m: Node3D = _models.get(c)
+	if m == null or not is_instance_valid(m) or not m.visible or not c.is_alive():
+		return
+	var box := fx_armor.body_box_of(m)
+	MpEcho.spawn(self, m, box.end.y if box.size.y > 0.1 else 1.6, box.size.y if box.size.y > 0.1 else 1.6, amount)
+
+
 func on_status_pause_ended(_inc) -> void:
+	fx_armor.on_status_pause_ended(_inc)  # D-1026
 	for ap in _status_frozen:
 		if is_instance_valid(ap):
 			fx_motion._unfreeze(ap)

@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="CharacterLoadout" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/character_loadout.gd" id="1_18uqu"]
+
+[resource]
+script = ExtResource("1_18uqu")
+skills = Array[StringName]([&"boulder_smash", &"rock_throw", &"glare", &"armored_bulk"])

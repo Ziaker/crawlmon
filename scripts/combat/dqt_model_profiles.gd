@@ -1,4 +1,4 @@
-﻿class_name DqtModelProfiles
+class_name DqtModelProfiles
 extends RefCounted
 ## Crossover pilot: Dragon Quest Tact models.
 ##
@@ -73,6 +73,8 @@ const PROFILES := {
 		# D-341: the creator wants the Orc's run at its normal 1x speed (no stride matching).
 		"ally_scale": 1.2,  # D-342: 1.2x bigger on the player's side only
 		# qa_export flags the spear detached on Die/Joy/SkillB; keep it in the hand.
+		"charge_clip": "32",  # D-1004: wind-up plays the whole clip 32
+		"guard_clip": "12",  # D-1004
 		"weapon_follow": {
 			"hand": "j_te_r",
 			"bone": "n_buki_r_n_hara",
@@ -95,6 +97,8 @@ const PROFILES := {
 		"match_run_stride": true,
 		"ally_scale": 1.2,  # D-342: 1.2x bigger on the player's side only
 		# Run reuses walk (01); re-attach the club to the hand during it.
+		"charge_clip": "32",  # D-1004
+		"guard_clip": "32",  # D-1004
 		"weapon_follow": {
 			"hand": "j_te_l",
 			"bone": "n_buki_l_n_hara",
@@ -117,6 +121,7 @@ const ANIM_SUFFIXES := {
 	"damage": "10",
 	"down": "30",
 	"victory": "02",
+	"guard": "00",  ## D-1004: replaced per profile by "guard_clip"
 }
 
 
@@ -139,6 +144,12 @@ static func apply_anim_aliases(ap: AnimationPlayer, profile: Dictionary) -> void
 		var suffix := str(ANIM_SUFFIXES[alias])
 		if alias in ["idle", "battle_idle", "charge"]:
 			suffix = str(profile.get("idle_source", suffix))
+		if alias == "charge" and profile.has("charge_clip"):
+			suffix = str(profile["charge_clip"])  # D-1004
+		if alias == "guard":
+			if not profile.has("guard_clip"):
+				continue
+			suffix = str(profile["guard_clip"])
 		var source := prefix + suffix
 		if not ap.has_animation(source):
 			continue
@@ -149,6 +160,9 @@ static func apply_anim_aliases(ap: AnimationPlayer, profile: Dictionary) -> void
 		if profile.get("idle_full", false) and alias in ["idle", "battle_idle"]:
 			anim = base.duplicate(true) as Animation
 			anim.loop_mode = Animation.LOOP_NONE
+		elif alias in ["charge", "guard"] and profile.has(alias + "_clip"):
+			anim = base.duplicate(true) as Animation  # D-1004: the whole clip, looped
+			anim.loop_mode = Animation.LOOP_LINEAR
 		elif profile.has("idle_pose_time") and alias in ["idle", "battle_idle", "charge"]:
 			anim = _hold_pose(base, float(profile["idle_pose_time"]))
 		else:

@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_243wo"]
+
+[resource]
+script = ExtResource("1_243wo")
+id = &"mordida"
+display_name = "Bite"
+element = 10
+power = 1.3
+mp_cost = 3
+windup = 1.2
+stand_gap = 2.6
+hold = 0.2
+plan_profile = &"melee"
+hit_stop_duration = 0.095
+tags = Array[StringName]([&"armor_worthy"])
+vfx_key = &"generic"
+ai_profile = {
+"armor_worthy": true,
+"contact_bonus": 8.0
+}
+effect_line_text = "130% ATK dark damage | Bite | 2 ATB"
+short_effect_text = "130% dark"
+description_text = "A direct dark-type bite."
+mechanics_text = "Vicious dark-element clamp that bites into the target at point-blank range, destabilizing morale."
+visual_text = "Jagged purple shadow fangs materialize and snap shut around the opponent with dark mist dissipation."
+motion_text = "Attacker dashes forward into point-blank range, clamps down, and leaps back into formation."
+windup_text = "1.00s wind-up. Aggressive crouching recoil before leap."
+tactical_text = "Vicious dark clamp destabilizing enemy morale. Single Target."
+visual_motion_text = "Point-blank sprint clamping jagged purple shadow fangs."
+phase_visuals = {
+"impact": "Contato direto no ponto zero do alvo com hit-stop, flash e reação: Jagged purple shadow fangs materialize and snap shut around the opponent with dark mist dissipation.",
+"release": "Partida física contínua a partir da carga rumo ao alvo: Attacker dashes forward into point-blank range, clamps down, and leaps back into formation.",
+"return": "Salto/corrida de recuo de volta à posição de origem e retomada de idle.",
+"strike": "Prelúdio de golpe e arco de swing/arma com aviso Dread na janela de Evade (D-986/D-992).",
+"travel": "Corrida pelo eixo atacante->alvo com trilha no chão (D-1013): Attacker dashes forward into point-blank range, clamps down, and leaps back into formation.",
+"windup": "Preparo em posição base com loop contínuo de carga (D-163): 1.00s wind-up. Aggressive crouching recoil before leap."
+}

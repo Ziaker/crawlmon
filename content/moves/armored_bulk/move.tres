@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_sptko"]
+
+[resource]
+script = ExtResource("1_sptko")
+id = &"armored_bulk"
+display_name = "Armored Bulk"
+kind = 3
+element = 7
+power = 0.0
+atb_cost = 1
+mp_cost = 10
+windup = 0.0
+is_friendly = true
+stand_gap = 2.6
+hold = 0.2
+status_pause = 1.5
+plan_profile = &"cast"
+tags = Array[StringName]([&"self_status", &"armor", &"stage_vfx"])
+vfx_key = &"armored_bulk"
+effect_line_text = "ARMOR for 8 s: the first Move that hits is taken without interruption, contact effects or knockback (not K.O.); the badge breaks | Poison and Burn do not break it | 1 ATB | 10 MP"
+short_effect_text = "ARMOR 8 s | self"
+description_text = "The user flexes until the muscles turn to metal and gains ARMOR."
+mechanics_text = "Self status move: the user's body hardens into metal and gains the ARMOR badge for 8 seconds."
+visual_text = "A wave of chrome climbs the body from the feet to the head, then a low shock ring and short metal sparks; the chrome settles into a faint film."
+motion_text = "Stationary. The caster plays its victory animation in place."
+windup_text = "Instant wind-up. The engine is paused for 1.5 s."
+tactical_text = "Gains ARMOR (8 s): the first Move contact causes no interruption, contact effect or knockback (except K.O.). Self."
+visual_motion_text = "Stationary victory pose while chrome climbs the body."
+phase_visuals = {
+"impact": "O cromo assenta numa película metálica com brilhos esporádicos no ombro e meio do corpo e badge ARMOR ativa por 8s (D-1026/D-1028).",
+"release": "Onda de cromo metálico começa a subir dos pés à cabeça do usuário.",
+"return": "Pausa de status termina em 1,5s mantendo a película metálica enquanto durar a ARMOR.",
+"strike": "Faíscas metálicas curtas estalam ao redor do tronco e ombros.",
+"travel": "Cromo envolve o corpo inteiro enquanto um anel de choque baixo se abre no chão.",
+"windup": "Wind-up instantâneo com motor pausado por 1,5s e pose de vitória no lugar (D-1026)."
+}

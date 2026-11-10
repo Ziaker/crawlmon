@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_8np2t"]
+
+[resource]
+script = ExtResource("1_8np2t")
+id = &"spear_thrust"
+display_name = "Spear Thrust"
+power = 1.3
+mp_cost = 3
+windup = 1.2
+stand_gap = 7.0
+hold = 0.2
+plan_profile = &"melee"
+tags = Array[StringName]([&"basic_variant"])
+vfx_key = &"generic"
+effect_line_text = "130% ATK physical damage | Thrust | 2 ATB"
+short_effect_text = "130% physical"
+description_text = "A direct, penetrating spear thrust."
+mechanics_text = "Direct linear thrust with extended melee reach, delivering solid single-target piercing damage."
+visual_text = "Piercing white thrust line with directional speed streaks and metallic tip glint."
+motion_text = "Attacker lunges forward half-distance, extending the spear to full reach, then steps back."
+windup_text = "1.00s wind-up. Linear weapon alignment."
+tactical_text = "Direct linear thrust with extended melee reach. Single Target."
+visual_motion_text = "Forward half-lunge thrust with metallic glint."
+phase_visuals = {
+"impact": "Contato direto no ponto zero do alvo com hit-stop, flash e reação: Piercing white thrust line with directional speed streaks and metallic tip glint.",
+"release": "Partida física contínua a partir da carga rumo ao alvo: Attacker lunges forward half-distance, extending the spear to full reach, then steps back.",
+"return": "Salto/corrida de recuo de volta à posição de origem e retomada de idle.",
+"strike": "Prelúdio de golpe e arco de swing/arma com aviso Dread na janela de Evade (D-986/D-992).",
+"travel": "Corrida pelo eixo atacante->alvo com trilha no chão (D-1013): Attacker lunges forward half-distance, extending the spear to full reach, then steps back.",
+"windup": "Preparo em posição base com loop contínuo de carga (D-163): 1.00s wind-up. Linear weapon alignment."
+}

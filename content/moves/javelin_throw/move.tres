@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_63fnu"]
+
+[resource]
+script = ExtResource("1_63fnu")
+id = &"javelin_throw"
+display_name = "Javelin Throw"
+kind = 1
+power = 1.2
+mp_cost = 3
+windup = 1.0
+stand_gap = 2.6
+hold = 0.2
+plan_profile = &"projectile"
+vfx_key = &"generic"
+effect_line_text = "120% ATK physical damage | Projectile | 2 ATB"
+short_effect_text = "120% physical"
+description_text = "A heavy thrown javelin that impales the target at range."
+mechanics_text = "Long-range ballistic spear throw that impales the target with heavy armor-piercing kinetic force."
+visual_text = "Spinning javelin with trailing wind spirals and heavy earth impact dust upon landing."
+motion_text = "Stationary throw. Attacker leans back and hurls the javelin in a direct ballistic trajectory."
+windup_text = "1.30s wind-up. Throwing arm draws back into full tension."
+tactical_text = "Long-range ballistic spear throw dealing kinetic damage. Single Target."
+visual_motion_text = "Stationary ballistic hurl with trailing wind spirals."
+phase_visuals = {
+"impact": "Explosão/impacto no ponto de contato a 1,2 m de altura (D-1013 / D-308 Fase 4): Spinning javelin with trailing wind spirals and heavy earth impact dust upon landing.",
+"release": "Transição contínua da carga para o disparo sem sumiço brusco (D-308 Fase 2): Stationary throw. Attacker leans back and hurls the javelin in a direct ballistic trajectory.",
+"return": "Dissipação completa de partículas/malhas (zero restos) e retorno do lançador ao idle.",
+"strike": "Janela final de aproximação (últimos 0,25 s) antes do contato.",
+"travel": "Voo do projétil/feixe ao longo do eixo atacante->alvo mantendo leitura de tela (D-308 Fase 3): Stationary throw. Attacker leans back and hurls the javelin in a direct ballistic trajectory.",
+"windup": "Carga elemental contínua à frente do lançador (D-308 Fase 1): 1.30s wind-up. Throwing arm draws back into full tension."
+}

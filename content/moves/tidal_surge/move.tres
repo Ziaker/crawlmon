@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_hp4np"]
+
+[resource]
+script = ExtResource("1_hp4np")
+id = &"tidal_surge"
+display_name = "Tidal Surge"
+kind = 1
+element = 2
+mp_cost = 5
+windup = 0.8
+stand_gap = 2.6
+hold = 0.2
+plan_profile = &"projectile"
+tags = Array[StringName]([&"bounce"])
+vfx_key = &"tidal"
+effect_line_text = "Water/Ice damage x1.0 ATK | projectile | 2 ATB"
+short_effect_text = "x1.0 Water/Ice"
+description_text = "A water/ice projectile move. Deals x1.0 ATK damage."
+mechanics_text = "Fires a continuous water jet at one enemy for 100% Water magical damage. On a successful hit, the jet bounces to the nearest living enemy measured from the last target for 75% damage after 0.3s, then to the next nearest for 50% after 0.6s. Each bounce is a normal hit with weakness, critical and evasion (manual and automatic); if a bounce is evaded, the chain stops. A target that dies before the jet reaches it stops the chain; a target that dies from this move's hit still lets it continue. Each enemy is hit once, with at most two bounces; with only one enemy alive there is no bounce. The bounces grant no extra ATB or Burst: the whole chain is one 2 ATB + 5 MP move."
+visual_text = "A blue water ogive with a pale cyan core charges in front of the caster, spinning and compressing while the strike is held; on release it stretches into a continuous, slightly curved jet with a white-cyan core, a blue sheath, a helical water ribbon and a trail of droplets, which crosses the field to the target; on contact the jet erupts into a radial water explosion with a foam flash, a sphere of water sheets and droplets and a thin ground ring; the jet then leaps from the last target to the next enemy with the same water body, up to two bounces, and each impact folds back into falling droplets and mist that fade completely."
+motion_text = "Stationary. The caster stays in place; the jet leaves from the charge in front of the body, crosses to the target and, on a hit, bounces from the last target to the next enemy."
+windup_text = "0.80s wind-up: a spinning blue water ogive forms in front of the caster, compresses and sharpens before the jet."
+tactical_text = "Single-target Water magical projectile. On a hit, bounces up to two more living enemies (75%/50%) from the last target; each bounce is evadable and the chain stops on a miss. 2 ATB + 5 MP."
+visual_motion_text = "Stationary launch; a continuous curved water jet that bounces between enemies."
+phase_visuals = {
+"impact": "Explosão radial de água com clarão de espuma, esfera de lâminas d'água, gotículas e anel fino no chão.",
+"release": "A ogiva estica-se num jato contínuo levemente curvo com núcleo branco-ciano, bainha azul e fita helicoidal.",
+"return": "Gotas e névoa caem e desaparecem por completo sem deixar nós órfãos.",
+"strike": "Ponta do jato d'água na janela final de 0,25s antes do impacto.",
+"travel": "Jato contínuo de água com trilha de gotículas cruza o campo até o alvo (e salta até 2 vezes entre inimigos vivos).",
+"windup": "Vórtice de água no chão com folhas de onda (Start) seguido de ogiva azul com núcleo ciano girando e comprimindo (0,80s, D-1021/D-1025)."
+}

@@ -18,6 +18,7 @@ signal attack_cancelled(inc)
 ## GOLPE (STRIKE) -> RETORNO (RETURN). BattleFx only draws the progress it reads here.
 signal attack_phase(inc, phase: int)  ## `inc` entered `phase` (Battle.Phase).
 signal manual_evaded(actor: Combatant, inc)
+signal evade_mistimed(actor: Combatant, inc)  ## D-1015: a dodge pressed outside the valid window (it did not dodge)
 ## A status move paused the engine (D-031) / the engine runs again.
 signal status_pause_started(inc)
 signal status_pause_ended(inc)
@@ -42,10 +43,13 @@ signal burn_ticked(target: Combatant, damage: int)  ## D-238: for the future HUD
 signal burn_ended(target: Combatant)  ## D-238: the Burn ran out (not when the target died)
 signal guard_started(actor: Combatant)  ## D-272
 signal guard_ended(actor: Combatant, reason: String)  ## D-272: "expired", "hit", "broken" or "battle_end".
+signal mp_regenerated(actor: Combatant, amount: int)  ## D-1062: a unit recovered MP (the amount really gained)
+signal armor_changed(actor: Combatant, state: String)  ## D-1026: "started", "extended", "hit", "expired" or "battle_end".
 signal reward_spawned(reward)
 signal reward_landed(reward)
 
 const Phase = Incoming.Phase
+
 
 const REWARD_FLOAT := 0.6  ## Seconds a reward token floats over where it was earned.
 const REWARD_FLY := 0.25  ## Seconds it flies to the HUD.
@@ -55,8 +59,12 @@ const ITEM_BLOCKS := 1.0
 const GUARD_BLOCKS := 1.0  ## D-272: Guard costs 1 ATB; Burst does not pay it.
 const GUARD_SECONDS := 2.0  ## D-272: no cancelling; ends by time, contact or Brick Break.
 const GUARD_REDUCTION := 0.5  ## PROVISIONAL (D-272): until VIT/SPI exist. Damage taken = ceil(damage x (1 - this)).
-const GUARD_BREAKERS := ["quebra_telha"]  ## D-272: moves with the guard-break trait (Brick Break).
 const AI_GUARD_CHANCE := 0.25  ## D-272/D-116: chance an AI target guards when an attack is declared on it.
+
+
+func _init() -> void:
+	_reward_queue = BattleRewards.new(self)
+	_badges = BattleBadges.new(self)
 
 ## Minimum ATB cost among the combatant's usable skills (or 0 if Burst is active) — D-040.
 static func min_skill_cost(c: Combatant) -> float:
@@ -71,12 +79,15 @@ static func min_skill_cost(c: Combatant) -> float:
 	return float(min_cost)
 const EVADE_STILL := 3.0  ## Evade while standing still (not running in its own attack) — D-006.
 const EVADE_ON_RUN := 2.0  ## Evade during the run of its own melee attack — D-006.
+const PRELUDE_GAP := 0.25  ## D-988: the Evade window closes this long before the contact (the attacker's rise)
 const PERFECT_WINDOW := 0.25  ## D-283: the Evade only works in the last seconds before the hit, inside the strike, and is always perfect (D-027, D-030).
 const COUNTER_WINDUP := 0.3  ## D-284: wind-up of the counter-attack after a perfect Evade, whatever the move (a status move stays instant).
 const AUTO_DODGE_CHANCE := 0.10  ## Automatic evade chance per hit, for every target.
 var debug_roll := 0  ## Sala de VFX (debug): 0 = sorteio normal, 1 = acerto sem crítico, 2 = esquiva, 3 = acerto crítico.
 const STATUS_WINDUP := 0.5  ## Status moves prepare faster, with the engine paused (D-031).
 const STATUS_VFX_TAIL := 1.0  ## Seconds the engine stays paused after the status effect is applied.
+const ARMORED_BULK := "armored_bulk"  ## D-1026: SELF status move, instant wind-up.
+const ARMORED_BULK_PAUSE := 1.5  ## D-1026: kept for FX timing; the rule reads MoveData.status_pause.
 const BURN_DMG := 2  ## D-238 (D-236 sheet): fixed damage of each Burn tick
 const BURN_INTERVAL := 1.0  ## seconds between ticks; the first comes one interval after the hit
 const WINDUP := 1.5  ## Every attack takes this long to land; the attacker's ATB is locked meanwhile.
@@ -97,17 +108,23 @@ var party: Array[Combatant] = []
 var enemies: Array[Combatant] = []
 var incoming: Array[Incoming] = []
 var running := false
-var rewards: Array[BattleReward] = []
-var _reward_id := 0
+var _reward_queue: BattleRewards
+var rewards: Array[BattleReward]:
+	get:
+		return _reward_queue.items
+var _badges: BattleBadges
 var _landing: Array[Incoming] = []  ## Resolved attacks whose strike has not landed yet.
 var _returning: Array[Incoming] = []  ## Struck already: only the return is left to play.
 var _status_pause: Incoming = null  ## A status move is being performed: only it runs (D-031).
 var _status_tail := -1.0
+var _status_total := 0.0  ## D-1026: when > 0 the move fixes the TOTAL length of the pause (no default tail).
+var _status_elapsed := 0.0
 var _freeze_left := 0.0  ## Hit-stop: the whole battle clock holds still for this many seconds.
 var _evade := BattleEvade.new(self)
 var _ai := BattleAI.new(self)
 var _planner := AttackPlanner.new(self)
 var _hop_back := 0.3  ## Placeholder; BattleFx decides how long a return takes.
+
 
 
 func start(p_party: Array[Combatant], p_enemies: Array[Combatant]) -> void:
@@ -121,11 +138,16 @@ func start(p_party: Array[Combatant], p_enemies: Array[Combatant]) -> void:
 		c.pos_step = 0
 		c.step_from = 0.0
 		c.step_t = 1.0
+		if not c.armor_changed.is_connected(_on_armor_changed):
+			c.armor_changed.connect(_on_armor_changed)  # D-1026
+		if not c.mp_regenerated.is_connected(_on_mp_regenerated):
+			c.mp_regenerated.connect(_on_mp_regenerated)  # D-1062
 	_landing.clear()
 	_ai.reset()
 	_status_pause = null
 	_returning.clear()
 	rewards.clear()
+	_badges.clear()
 	running = true
 	log_message.emit("Batalha iniciada!")
 
@@ -160,6 +182,7 @@ func _process(delta: float) -> void:
 	if _freeze_left > 0.0:
 		_freeze_left -= delta
 		return
+	_badges.step(delta)
 	if not running:
 		if not _returning.is_empty():
 			_step_attacks(delta)  # The winners' leaps back still play out after the last hit.
@@ -169,6 +192,9 @@ func _process(delta: float) -> void:
 		state_changed.emit()
 		return
 	for c in party + enemies:
+		c.tick_shield(delta)  # Drain Spear / Badge Steal: the shield badge has its own clock.
+		c.tick_magic_immunity(delta)
+		c.tick_armor(delta)  # D-1026: counts down also during a Guard; frozen by a status pause like every duration
 		if not is_winding_up(c):  # ATB stays locked until the action finishes.
 			c.tick(delta)
 		_tick_burn(c, delta)  # D-238: burns on, also while it winds up
@@ -180,7 +206,7 @@ func _process(delta: float) -> void:
 	_resolve_incoming(delta)
 	_step_attacks(delta)
 	_run_queued()
-	_step_rewards(delta)
+	_reward_queue.step(delta)
 	_evade.step_engage(delta)
 	state_changed.emit()
 
@@ -188,11 +214,13 @@ func _process(delta: float) -> void:
 # --- Actions (same for the player, allies and enemies) -----------------------
 
 func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
-	if not actor.is_alive() or actor.is_stunned() or actor.is_guarding() or is_winding_up(actor) or not actor.can_pay(skill.cost):
+	if not actor.is_alive() or actor.is_stunned() or actor.is_guarding() or is_winding_up(actor) or not actor.can_pay_skill(skill):
 		return false
 	if _status_pause != null:
 		return false  # The engine is paused by a status move (D-031).
-	if skill.is_friendly:
+	if (skill.data != null and skill.data.has_tag(&"self_status")) or BattleSpace.move_id(skill.display_name) == ARMORED_BULK:
+		target = actor  # D-1026: SELF
+	elif skill.is_friendly:
 		if target == null or not target.is_alive() or target.is_player != actor.is_player:
 			target = actor
 	else:
@@ -200,7 +228,7 @@ func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
 			return false
 		if actor.engaged_with != null and target != actor.engaged_with:
 			return false  # Engaged: it only acts on the opponent it is standing next to.
-	actor.pay(skill.cost)
+	actor.pay_skill(skill)
 	var inc := Incoming.new()
 	inc.attacker = actor
 	inc.target = target
@@ -212,6 +240,9 @@ func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
 	inc.is_aoe = skill.is_aoe
 	inc.is_friendly = skill.is_friendly
 	inc.skill = skill
+	# D-1079: one stable move id + canonical sheet for the planner, rules and AI.
+	inc.move_id = BattleSpace.move_id(skill.display_name)
+	inc.move_data = MoveCatalog.get_move(StringName(inc.move_id))
 	# After a perfect Evade during its own run, the next attack is immediate (D-027).
 	inc.instant = (actor.engaged_with != null or actor.counter_ready) and not skill.is_friendly
 	if not skill.is_friendly:
@@ -226,7 +257,6 @@ func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
 		actor.taunt_atk_bonus = true
 
 	# Individual windup overrides (D-032 / D-034)
-	var mid := BattleSpace.move_id(skill.display_name)
 	var w_override := skill.windup if skill.windup >= 0.0 else (STATUS_WINDUP if inc.kind == Skill.Kind.STATUS else WINDUP)
 	inc.total_windup = ((0.0 if inc.kind == Skill.Kind.STATUS else COUNTER_WINDUP) if inc.instant else w_override)  # D-284
 	inc.time_left = inc.total_windup
@@ -235,6 +265,11 @@ func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
 	if inc.kind == Skill.Kind.STATUS:
 		_status_pause = inc  # From the wind-up until its effect has played (D-031).
 		_status_tail = -1.0
+		var status_pause := inc.move_data.status_pause if inc.move_data != null and inc.move_data.status_pause >= 0.0 else 0.0
+		if status_pause <= 0.0 and BattleSpace.move_id(inc.label) == ARMORED_BULK:
+			status_pause = ARMORED_BULK_PAUSE  # compatibility for Skills without MoveData
+		_status_total = status_pause  # D-1026
+		_status_elapsed = 0.0
 		status_pause_started.emit(inc)
 	log_message.emit("%s prepara %s em %s..." % [actor.name, skill.display_name, target.name])
 	_planner.redirect_if_blocked(inc)
@@ -246,7 +281,7 @@ func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
 ## A player's move: it starts now if it can; otherwise it waits in the one slot, replacing
 ## whatever was there. Nothing is paid until it starts (D-161).
 func request_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
-	if not running or not actor.is_alive() or actor.is_stunned() or actor.is_guarding():
+	if not running or not actor.is_alive() or actor.is_stunned() or actor.is_guarding() or actor.mp < skill.mp_cost:
 		return false
 	if can_start_now(actor):
 		return _start_move(actor, skill, target)
@@ -264,7 +299,7 @@ func can_start_now(actor: Combatant) -> bool:
 
 
 func _start_move(actor: Combatant, skill: Skill, target: Combatant) -> bool:
-	if actor.is_stunned() or actor.is_guarding() or not actor.can_pay(skill.cost):
+	if actor.is_stunned() or actor.is_guarding() or not actor.can_pay_skill(skill):
 		return false
 	if not skill.is_friendly and (target == null or not target.is_alive()):
 		return false
@@ -349,6 +384,14 @@ func _on_guard_ended(actor: Combatant, reason: String) -> void:
 	guard_ended.emit(actor, reason)
 
 
+func _on_mp_regenerated(actor: Combatant, amount: int) -> void:
+	mp_regenerated.emit(actor, amount)
+
+
+func _on_armor_changed(actor: Combatant, state: String) -> void:
+	armor_changed.emit(actor, state)
+
+
 ## An AI-controlled target may raise a Guard when an attack is declared on it (D-272, D-116).
 func _roll_ai_guard(inc: Incoming) -> void:
 	var t := inc.target
@@ -423,6 +466,13 @@ func step(c: Combatant, dir: int) -> bool:
 static func estimate_damage(attacker: Combatant, target: Combatant, skill: Skill) -> int:
 	if skill.kind == Skill.Kind.STATUS:
 		return 0
+	var move_data: MoveData = skill.data
+	if move_data == null:
+		move_data = MoveCatalog.get_move(StringName(BattleSpace.move_id(skill.display_name)))
+	var flat := move_data.magic_flat if move_data != null else -1
+	if flat >= 0:
+		# Drain Spear: magic damage 5 + MAG, mitigated by SPI (never by DEF/crit/weakness).
+		return maxi(1, flat + attacker.mag - target.spi)
 	var weak := skill.element in target.weaknesses
 	var step_mult := (1.0 + DMG_PER_STEP * maxi(attacker.pos_step, 0)) * (1.0 - DMG_PER_STEP * maxi(-target.pos_step, 0))
 	return maxi(1, roundi(attacker.attack * skill.power * (WEAKNESS_MULT if weak else 1.0) * step_mult))
@@ -487,12 +537,13 @@ func _resolve_incoming(delta: float, only: Incoming = null) -> void:
 			attack_cancelled.emit(inc)
 			incoming.erase(inc)
 			continue
+		_roll_ai_dodge(inc)  # D-1007
+		_tick_ai_dodge(inc, delta)
 		inc.time_left -= delta
 		if inc.time_left > 0.0:
 			continue
 		incoming.erase(inc)
-		var mid := BattleSpace.move_id(inc.label)
-		if mid in ["investida_subterranea", "investida_escavadora", "teleporte_rapido"]:
+		if move_is_untargetable(inc):
 			inc.attacker.is_invulnerable = true
 		inc.auto_dodged = inc.kind != Skill.Kind.STATUS and not inc.dodged and not inc.whiffed and (debug_roll == 2 or (debug_roll == 0 and randf() < AUTO_DODGE_CHANCE))
 		inc.resolved = true
@@ -534,12 +585,11 @@ func _step_attacks(delta: float, only: Incoming = null) -> void:
 			inc.plan_i += 1
 			if inc.plan_i < inc.plan.size():
 				inc.phase = inc.plan[inc.plan_i][0]
-				var mid_flight := BattleSpace.move_id(inc.label)
 				if inc.phase == Phase.STRIKE:
-					if mid_flight in ["investida_subterranea", "investida_escavadora", "teleporte_rapido"]:
+					if move_is_untargetable(inc):
 						inc.attacker.is_invulnerable = false
 				elif inc.phase == Phase.RETURN:
-					if mid_flight == "teleporte_rapido":
+					if move_teleports(inc):
 						inc.attacker.is_invulnerable = true
 				AttackMotion.on_phase(inc)
 				attack_phase.emit(inc, inc.phase)
@@ -550,13 +600,12 @@ func _step_attacks(delta: float, only: Incoming = null) -> void:
 			if inc.target.is_alive() and can_guard(inc.target):
 				use_guard(inc.target)
 		AttackMotion.update_projectile(inc)
-		if inc.can_evade_now() and inc.ai_evade_at >= 0.0 and inc.phase_time >= inc.ai_evade_at:
-			_ai.try_evade(inc)
+		_tick_ai_dodge(inc, delta)  # D-1007: the AI dodges at its random moment (wind-up to contact)
 		if inc.plan_i >= inc.plan.size():
 			if not inc.impacted:
 				_strike(inc)
 			inc.phase = Phase.DONE
-			if BattleSpace.move_id(inc.label) in ["investida_subterranea", "investida_escavadora", "teleporte_rapido"]:
+			if move_is_untargetable(inc):
 				inc.attacker.is_invulnerable = false
 			_returning.erase(inc)
 			if inc.motion != "engaged" and inc.attacker.is_alive():
@@ -642,12 +691,14 @@ func _clash(ia: Incoming, ib: Incoming) -> void:
 ## waits STATUS_VFX_TAIL more seconds for its visual effect before everything resumes.
 func _step_status_pause(delta: float) -> void:
 	var inc := _status_pause
+	_status_elapsed += delta
 	if incoming.has(inc):
 		_resolve_incoming(delta, inc)
 	elif _landing.has(inc) or _returning.has(inc):
 		_step_attacks(delta, inc)
 	elif _status_tail < 0.0:
-		_status_tail = STATUS_VFX_TAIL  # Done (or cancelled): let its effect finish.
+		# Done (or cancelled): let its effect finish. A move with a fixed total pause keeps the engine paused up to that total.
+		_status_tail = maxf(_status_total - _status_elapsed, 0.01) if _status_total > 0.0 else STATUS_VFX_TAIL
 	else:
 		_status_tail -= delta
 		if _status_tail <= 0.0:
@@ -656,17 +707,69 @@ func _step_status_pause(delta: float) -> void:
 
 
 ## A computer-controlled target reacts on the way in with a chance equal to its speed.
+## D-1007/D-1014: an AI target decides here (chance = SPD) whether it will Evade; the moment is a random one INSIDE the valid window.
+func _roll_ai_dodge(inc: Incoming) -> void:
+	if inc.ai_dodge_rolled:
+		return
+	inc.ai_dodge_rolled = true
+	var t := inc.target
+	if inc.ghost or inc.is_friendly or inc.kind == Skill.Kind.STATUS or t == party[0] or t.react_policy != Combatant.React.EVADE:
+		return
+	if randf() < t.speed:
+		inc.ai_dodge_in = 0.0  # D-1014: it will try; the moment is picked once the valid window opens
+
+
+func _tick_ai_dodge(inc: Incoming, delta: float) -> void:
+	if inc.ai_dodge_in < 0.0:
+		return  # It will not dodge.
+	# D-1014: the AI only dodges inside the valid window (physical: the prelude; projectile/area: the last 0.25 s).
+	if not inc.can_evade_now():
+		return
+	if not inc.ai_dodge_armed:
+		inc.ai_dodge_armed = true
+		inc.ai_dodge_in = randf_range(0.0, maxf(inc.window_left() - 0.04, 0.0))
+		return
+	inc.ai_dodge_in -= delta
+	if inc.ai_dodge_in <= 0.0:
+		inc.ai_dodge_in = -1.0
+		_ai.try_evade(inc)
+
+
 func _roll_ai_evade(inc: Incoming) -> void:
+	return  # D-1007: replaced by _roll_ai_dodge (random moment from the wind-up to the contact)
 	if inc.phase != inc.impact_phase or inc.ghost or inc.is_friendly:
 		return  # (a buff or a heal is not something to dodge)
 	var t := inc.target
 	if t == party[0] or t.react_policy != Combatant.React.EVADE:
 		return
 	if randf() < t.speed:
-		inc.ai_evade_at = maxf(inc.phase_len() - randf_range(0.03, PERFECT_WINDOW - 0.03), 0.0)  # D-283: inside the final window
+		var end_at := minf(PRELUDE_GAP, maxf(inc.phase_len() - PERFECT_WINDOW, 0.0))
+		inc.ai_evade_at = maxf(inc.phase_len() - end_at - randf_range(0.03, PERFECT_WINDOW - 0.03), 0.0)  # D-988: inside the rise window
+
+
+
+
+func _ensure_move_data(inc: Incoming) -> void:
+	if inc.move_id.is_empty():
+		inc.move_id = BattleSpace.move_id(inc.label)
+	if inc.move_data == null:
+		inc.move_data = MoveCatalog.get_move(StringName(inc.move_id))
+
+
+func move_is_untargetable(inc: Incoming) -> bool:
+	if inc.move_data != null and inc.move_data.untargetable:
+		return true
+	return BattleSpace.move_id(inc.label) in ["investida_subterranea", "investida_escavadora", "teleporte_rapido"]
+
+
+func move_teleports(inc: Incoming) -> bool:
+	if inc.move_data != null and inc.move_data.teleport:
+		return true
+	return BattleSpace.move_id(inc.label) == "teleporte_rapido"
 
 
 func _strike(inc: Incoming) -> void:
+	_ensure_move_data(inc)
 	AttackMotion.arrive(inc)
 	inc.impacted = true
 	_landing.erase(inc)
@@ -684,52 +787,38 @@ func _strike(inc: Incoming) -> void:
 	elif inc.attacker.is_alive() and inc.kind == Skill.Kind.STATUS:
 		_execute_status_move(inc)
 	elif inc.target.is_alive() and (inc.attacker.is_alive() or inc.kind == Skill.Kind.PROJECTILE):
-		var mid := BattleSpace.move_id(inc.label)
-		if mid in ["tiro_areia", "sand_attack"]:
-			if inc.attacker.taunt_atk_bonus:
-				inc.attacker.taunt_atk_bonus = false
-				inc.attacker.taunted_by = null
-			if inc.attacker.is_blind() and randf() < 0.35:
-				log_message.emit("%s erra o Sand Attack devido à cegueira! (MISS!)" % inc.attacker.name)
-				hit_resolved.emit(inc.attacker, inc.target, inc.element, {
-					"status": true, "evaded": true, "dmg": 0, "weak": false,
-					"crit": false, "gain": 0, "whiffed": inc.whiffed, "power": 0.0,
-					"skill_name": inc.label
-				})
-			elif inc.auto_dodged or inc.dodged or inc.target.is_invulnerable_target():
-				if inc.auto_dodged:
-					grant_atb(inc.target, 1, inc.target)
-					log_message.emit("%s esquiva do Sand Attack automaticamente! +1 bloco (MISS!)" % inc.target.name)
-				elif inc.target.is_invulnerable_target():
-					log_message.emit("%s não está lá e o Sand Attack erra completamente! (MISS!)" % inc.target.name)
-				else:
-					log_message.emit("%s esquivou do Sand Attack! (MISS!)" % inc.target.name)
-				hit_resolved.emit(inc.attacker, inc.target, inc.element, {
-					"status": true, "evaded": true, "dmg": 0, "weak": false,
-					"crit": false, "gain": 0, "whiffed": inc.whiffed, "power": 0.0,
-					"skill_name": inc.label
-				})
-			else:
-				inc.target.blind_timer = 4.0
-				log_message.emit("%s foi atingido pela areia e fica cego por 4 segundos!" % inc.target.name)
-				hit_resolved.emit(inc.attacker, inc.target, inc.element, {
-					"status": true, "evaded": false, "dmg": 0, "weak": false,
-					"crit": false, "gain": 0, "whiffed": inc.whiffed, "power": 0.0,
-					"skill_name": inc.label, "blind": true
-				})
+		var behavior := MoveBehaviorRegistry.get_behavior(inc.move_id)
+		if behavior.on_strike(inc, self):
+			return
+		var vpush := true
+		if inc.skill != null:
+			vpush = inc.skill.pushes_visually()  # D-1073: projectile does not shove; melee/CAST does.
+		elif inc.kind == Skill.Kind.MELEE or inc.kind == Skill.Kind.CAST:
+			vpush = true
 		else:
-			var hit_info := _hit(inc.attacker, inc.target, inc.power, inc.element, inc.label, inc.whiffed, inc.auto_dodged)
-			var foes: Array[Combatant] = enemies if inc.attacker.is_player else party  # The attacker's opponents.
-			if inc.is_aoe:
+			vpush = false
+		var hit_info: Dictionary
+		if behavior.has_before_hit():
+			hit_info = behavior.before_hit(inc, self)
+		else:
+			var hit_opts := {"visual_push": vpush, "move_data": inc.move_data}
+			if inc.bounce_no_reward:
+				# D-1025: a bounce is a normal hit but never grants extra ATB/Burst, and the FX must not treat
+				# it as the main beam's impact.
+				hit_opts = {"no_gain": true, "bounce": true, "bounce_index": inc.bounce_index, "visual_push": vpush, "move_data": inc.move_data}
+			hit_info = apply_hit(inc.attacker, inc.target, inc.power, inc.element, inc.label, inc.whiffed, inc.auto_dodged, hit_opts)
+		var foes: Array[Combatant] = enemies if inc.attacker.is_player else party  # The attacker's opponents.
+		if inc.is_aoe:
+			for foe in foes:
+				if foe.is_alive() and foe != inc.target:
+					apply_hit(inc.attacker, foe, inc.power * 0.85, inc.element, inc.label, inc.whiffed, false, {"visual_push": vpush, "move_data": inc.move_data})
+		elif (inc.move_data != null and inc.move_data.aoe_on_contact) or (inc.skill != null and inc.skill.aoe_on_contact):
+			# D-032: Se o alvo principal foi atingido (não esquivou / não invulnerável), aliados sofrem dano total (1.6x)
+			if not hit_info.get("evaded", false):
 				for foe in foes:
 					if foe.is_alive() and foe != inc.target:
-						_hit(inc.attacker, foe, inc.power * 0.85, inc.element, inc.label, inc.whiffed, false)
-			elif (inc.skill != null and inc.skill.aoe_on_contact) or mid in ["furia_dragao", "dragon_rage"]:
-				# D-032: Se o alvo principal foi atingido (não esquivou / não invulnerável), aliados sofrem dano total (1.6x)
-				if not hit_info.get("evaded", false):
-					for foe in foes:
-						if foe.is_alive() and foe != inc.target:
-							_hit(inc.attacker, foe, inc.power, inc.element, inc.label, inc.whiffed, false)
+						apply_hit(inc.attacker, foe, inc.power, inc.element, inc.label, inc.whiffed, false, {"visual_push": vpush, "move_data": inc.move_data})
+		behavior.on_hit(inc, self, hit_info)
 
 
 ## An area attack whose aimed target is gone aims at the next opponent still standing, so the
@@ -744,88 +833,18 @@ func _retarget_aoe(inc: Incoming) -> void:
 
 
 func _execute_status_move(inc: Incoming) -> void:
-	var mid := BattleSpace.move_id(inc.label)
-	match mid:
-		"media":
-			var team: Array[Combatant] = party if inc.attacker.is_player else enemies
-			var heal_amount := 10 + inc.attacker.mag  # creator (2026-11-05): Media heals 10 + MAG
-			log_message.emit("%s usa Media! A equipe recupera HP!" % inc.attacker.name)
-			for ally in team:
-				if ally.is_alive():
-					var before_hp := ally.hp
-					ally.heal(heal_amount)
-					healed.emit(inc.attacker, ally, ally.hp - before_hp)
-					hit_resolved.emit(inc.attacker, ally, inc.element, {
-						"status": true, "evaded": false, "dmg": 0, "weak": false,
-						"crit": false, "gain": 0, "whiffed": false, "power": 0.0,
-						"skill_name": inc.label, "heal": true
-					})
-		"tarukaja":
-			var team: Array[Combatant] = party if inc.attacker.is_player else enemies
-			var any_increased := false
-			for ally in team:
-				if ally.is_alive():
-					var capped := not ally.can_buff("atk", 1)
-					if not capped:
-						ally.buff_stat("atk", 1)
-						any_increased = true
-					hit_resolved.emit(inc.attacker, ally, inc.element, {
-						"status": true, "evaded": false, "dmg": 0, "weak": false,
-						"crit": false, "gain": 0, "whiffed": false, "power": 0.0,
-						"skill_name": inc.label, "buff": "atk", "capped": capped
-					})
-			if any_increased:
-				log_message.emit("%s usa Tarukaja! O ataque da equipe aumentou!" % inc.attacker.name)
-			else:
-				log_message.emit("%s usa Tarukaja! O ataque da equipe já está no patamar máximo (+5)!" % inc.attacker.name)
-		"rakunda":
-			if inc.target.is_alive():
-				var capped := not inc.target.can_buff("def", -1)
-				if not capped:
-					inc.target.buff_stat("def", -1)
-					log_message.emit("%s usa Rakunda! A defesa de %s foi reduzida!" % [inc.attacker.name, inc.target.name])
-				else:
-					log_message.emit("%s usa Rakunda! A defesa de %s já está no patamar mínimo (-5)!" % [inc.attacker.name, inc.target.name])
-				hit_resolved.emit(inc.attacker, inc.target, inc.element, {
-					"status": true, "evaded": false, "dmg": 0, "weak": false,
-					"crit": false, "gain": 0, "whiffed": false, "power": 0.0,
-					"skill_name": inc.label, "debuff": "def", "capped": capped
-				})
-		"sukunda":
-			if inc.target.is_alive():
-				var capped := not inc.target.can_buff("speed", -1)
-				if not capped:
-					inc.target.buff_stat("speed", -1)
-					log_message.emit("%s usa Sukunda! A agilidade de %s foi reduzida!" % [inc.attacker.name, inc.target.name])
-				else:
-					log_message.emit("%s usa Sukunda! A agilidade de %s já está no patamar mínimo (-5)!" % [inc.attacker.name, inc.target.name])
-				hit_resolved.emit(inc.attacker, inc.target, inc.element, {
-					"status": true, "evaded": false, "dmg": 0, "weak": false,
-					"crit": false, "gain": 0, "whiffed": false, "power": 0.0,
-					"skill_name": inc.label, "debuff": "spd", "capped": capped
-				})
-		"provocacao", "taunt":
-			if inc.target.is_alive():
-				inc.target.taunted_by = inc.attacker
-				inc.target.taunt_atk_bonus = true
-				log_message.emit("%s usa Taunt em %s! %s é provocado a atacar %s!" % [inc.attacker.name, inc.target.name, inc.target.name, inc.attacker.name])
-				for other in incoming:
-					if other.attacker == inc.target and not other.is_friendly and not other.is_aoe and other.kind != Skill.Kind.STATUS:
-						other.target = inc.attacker
-						log_message.emit("O ataque de %s foi redirecionado para %s pelo Taunt!" % [inc.target.name, inc.attacker.name])
-				hit_resolved.emit(inc.attacker, inc.target, inc.element, {
-					"status": true, "evaded": false, "dmg": 0, "weak": false,
-					"crit": false, "gain": 0, "whiffed": false, "power": 0.0,
-					"skill_name": inc.label, "taunt": true
-				})
-		_:
-			if inc.target.is_alive():
-				log_message.emit("%s usa %s em %s" % [inc.attacker.name, inc.label, inc.target.name])
-				hit_resolved.emit(inc.attacker, inc.target, inc.element, {
-					"status": true, "evaded": false, "dmg": 0, "weak": false,
-					"crit": false, "gain": 0, "whiffed": false, "power": 0.0,
-					"skill_name": inc.label
-				})
+	_ensure_move_data(inc)
+	var behavior := MoveBehaviorRegistry.get_behavior(inc.move_id)
+	if behavior.on_status(inc, self):
+		return
+	# Fallback for status Moves that do not declare a behavior yet.
+	if inc.target.is_alive():
+		log_message.emit("%s usa %s em %s" % [inc.attacker.name, inc.label, inc.target.name])
+		hit_resolved.emit(inc.attacker, inc.target, inc.element, {
+			"status": true, "evaded": false, "dmg": 0, "weak": false,
+			"crit": false, "gain": 0, "whiffed": false, "power": 0.0,
+			"skill_name": inc.label
+		})
 
 
 ## Resolved attacks that FX still has to draw (landing or returning).
@@ -839,65 +858,32 @@ func attacks_in_flight() -> Array[Incoming]:
 # --- Rewards ------------------------------------------------------------------
 
 ## Credits `amount` ATB blocks to `owner` right now and queues one token per block.
+## The token flight lives in BattleRewards (Etapa 4); Battle keeps this API.
 func grant_atb(owner: Combatant, amount: int, source: Combatant) -> void:
-	var before := owner.atb
-	var extra_in_grant := 0
-	for k in amount:
-		var r := BattleReward.new()
-		_reward_id += 1
-		r.id = _reward_id
-		r.owner = owner
-		r.source = source
-		r.delay = k * 0.09
-		if before + float(k) >= Combatant.BLOCKS - 0.001:  # No room in the bar: an extra block.
-			r.extra = true
-			r.slot = int(owner.extra) + extra_in_grant
-			extra_in_grant += 1
-			owner.pending_extra += 1
-		else:
-			r.slot = clampi(int(floor(before + float(k))), 0, int(Combatant.BLOCKS) - 1)
-			owner.pending_atb += 1
-		rewards.append(r)
-		reward_spawned.emit(r)
-	owner.add_atb(float(amount))
+	_reward_queue.grant_atb(owner, amount, source)
 
 
 func grant_burst(owner: Combatant, source: Combatant) -> void:
-	var r := BattleReward.new()
-	_reward_id += 1
-	r.id = _reward_id
-	r.kind = "burst"
-	r.owner = owner
-	r.source = source
-	owner.pending_burst += 1
-	rewards.append(r)
-	reward_spawned.emit(r)
-
-
-func _step_rewards(delta: float) -> void:
-	for r in rewards.duplicate():
-		r.t += delta
-		if not r.landed and r.age() >= REWARD_FLOAT + REWARD_FLY:
-			r.landed = true
-			_release_pending(r)
-			reward_landed.emit(r)
-		if r.age() >= REWARD_FLOAT + REWARD_FLY + REWARD_IMPACT:
-			rewards.erase(r)
-
-
-func _release_pending(r: BattleReward) -> void:
-	if r.kind == "burst":
-		r.owner.pending_burst = maxi(r.owner.pending_burst - 1, 0)
-	elif r.extra:
-		r.owner.pending_extra = maxi(r.owner.pending_extra - 1, 0)
-	else:
-		r.owner.pending_atb = maxi(r.owner.pending_atb - 1, 0)
+	_reward_queue.grant_burst(owner, source)
 
 
 # --- Helpers ---------------------------------------------------------------
 
-func _hit(attacker: Combatant, target: Combatant, power: float, element: Element.Type, label: String, whiffed := false, auto_dodged := false) -> Dictionary:
+## Removes every positive badge from `target` and queues it for `attacker` after the 0.30 s
+## transfer. Debuffs are never stolen. Returns one entry per badge (also used by the VFX).
+## The transfer flight lives in BattleBadges (Etapa 4); Battle keeps this API.
+func steal_badges(attacker: Combatant, target: Combatant) -> Array:
+	return _badges.steal(attacker, target)
+
+
+func _hit(attacker: Combatant, target: Combatant, power: float, element: Element.Type, label: String, whiffed := false, auto_dodged := false, opts := {}) -> Dictionary:
 	var info := {"evaded": false, "dmg": 0, "weak": false, "crit": false, "gain": 0, "whiffed": whiffed, "power": power, "skill_name": label}
+	info["visual_push"] = bool(opts.get("visual_push", true))  # D-1073: the contact FX may skip the shove.
+	if bool(opts.get("bounce", false)):
+		# D-1025: a bounce hit is a normal hit for weakness/crit/evade, but the FX and the reward rules can tell it
+		# apart from the main beam.
+		info["bounce"] = true
+		info["bounce_index"] = int(opts.get("bounce_index", 0))
 
 	# Consumo do bônus de ATK do Taunt (D-032: consumido na primeira ação ofensiva, mesmo se errar/desviar/alvo invulnerável)
 	if attacker.taunt_atk_bonus:
@@ -925,17 +911,41 @@ func _hit(attacker: Combatant, target: Combatant, power: float, element: Element
 		log_message.emit("%s esquiva de %s automaticamente! +1 bloco" % [target.name, label])
 		hit_resolved.emit(attacker, target, element, info)
 		return info
-	var weak := element in target.weaknesses
-	var crit := whiffed or debug_roll == 3 or (debug_roll == 0 and randf() < CRIT_CHANCE)
-	# Position: +10% per step in front for the attacker, -10% per step behind for the target.
-	var step_mult := (1.0 + DMG_PER_STEP * maxi(attacker.pos_step, 0)) * (1.0 - DMG_PER_STEP * maxi(-target.pos_step, 0))
-	var dmg := maxi(1, roundi(attacker.attack * power * (WEAKNESS_MULT if weak else 1.0) * (CRIT_MULT if crit else 1.0) * step_mult))
-	var mid := BattleSpace.move_id(label)
+	# Move-authored step between a confirmed contact and the damage (Drain Spear's Badge Steal).
+	if opts.has("before_damage"):
+		var before: Callable = opts["before_damage"]
+		if before.is_valid():
+			before.call()
+	var magic_flat := int(opts.get("magic_flat", -1))
+	if magic_flat >= 0 and target.is_magic_immune():
+		info["immune"] = true
+		log_message.emit("%s é imune ao dano mágico!" % target.name)
+		hit_resolved.emit(attacker, target, element, info)
+		return info
+	var weak := false
+	var crit := false
+	var dmg := 0
+	if magic_flat >= 0:
+		# Drain Spear: 5 + MAG - SPI, minimum 1. No weakness, crit or position multiplier.
+		dmg = maxi(1, magic_flat + attacker.mag - target.spi)
+		info["magic"] = true
+	else:
+		weak = element in target.weaknesses
+		crit = whiffed or debug_roll == 3 or (debug_roll == 0 and randf() < CRIT_CHANCE)
+		# Position: +10% per step in front for the attacker, -10% per step behind for the target.
+		var step_mult := (1.0 + DMG_PER_STEP * maxi(attacker.pos_step, 0)) * (1.0 - DMG_PER_STEP * maxi(-target.pos_step, 0))
+		dmg = maxi(1, roundi(attacker.attack * power * (WEAKNESS_MULT if weak else 1.0) * (CRIT_MULT if crit else 1.0) * step_mult))
+	var hit_move_data: MoveData = opts.get("move_data", null)
+	var guard_break := false
+	if hit_move_data != null:
+		guard_break = hit_move_data.has_tag(&"guard_break")
+	else:
+		guard_break = BattleSpace.move_id(label) == "quebra_telha"  # compatibility for Skills without MoveData
 	# D-272: contact destroys the Guard. It cuts the damage (rounded up), except Brick Break, which
 	# breaks it, deals the full damage and gives the attacker 1 ATB.
 	var guard_result := ""
 	if target.is_guarding():
-		if mid in GUARD_BREAKERS:
+		if guard_break:
 			guard_result = "broken"
 			grant_atb(attacker, 1, target)
 			target.end_guard("broken")
@@ -944,52 +954,76 @@ func _hit(attacker: Combatant, target: Combatant, power: float, element: Element
 			dmg = maxi(1, ceili(float(dmg) * (1.0 - GUARD_REDUCTION)))
 			target.end_guard("hit")
 	info["guard"] = guard_result
-	target.take_damage(dmg)
+	# D-1026: ARMOR. The Guard has priority and keeps the badge. Otherwise the first contact of a Move destroys it: the
+	# damage is normal, but there is no interruption, no contact effect and no knockback (the K.O. launch stays).
+	var armor_result := ""
+	if target.is_armored() and guard_result == "":
+		armor_result = "hit"
+		target.end_armor("hit")
+	info["armor"] = armor_result
+	# Badge Steal shield: a reserve absorbs before HP. The Drain Spear already removed the
+	# target's shield before this point, so the stolen shield never absorbs its own hit.
+	var shield_absorbed := 0
+	if target.is_shielded():
+		shield_absorbed = target.absorb_shield(dmg)
+		dmg -= shield_absorbed
+		info["shield_absorbed"] = shield_absorbed
+		if target.shield_hp <= 0:
+			target.end_shield("broken")
+	if shield_absorbed > 0:
+		info["shield_hit"] = true
+	if dmg > 0:
+		target.take_damage(dmg, bool(opts.get("bypass_def", false)))
 	if not target.is_alive():
 		_drop_returns_of(target)
-	var gain := (2 if weak else 0) + (1 if crit else 0)
+	var gain := 0 if bool(opts.get("no_gain", false)) else (2 if weak else 0) + (1 if crit else 0)
 	if gain > 0:
 		grant_atb(attacker, gain, target)
 	info["dmg"] = dmg
 	info["weak"] = weak
+	if weak and not target.is_player:  # D-981: a weakness hit reveals the species' elements
+		var gst: Node = (Engine.get_main_loop() as SceneTree).root.get_node_or_null("GameState") if Engine.get_main_loop() is SceneTree else null
+		if gst != null:
+			gst.discovered_species[gst.species_key(target)] = true
 	info["crit"] = crit
 	info["gain"] = gain
-	log_message.emit("%s usa %s (%s) em %s (%d dano)%s" % [
-		attacker.name, label, Element.name_of(element), target.name, dmg,
+	var element_name := "mágico" if magic_flat >= 0 else Element.name_of(element)
+	log_message.emit("%s usa %s (%s) em %s (%d dano)%s%s" % [
+		attacker.name, label, element_name, target.name, dmg,
+		(" [escudo -%d]" % shield_absorbed if shield_absorbed > 0 else ""),
 		(" FRAQUEZA! +2 bloco(s)" if weak else "") + (" CRÍTICO! +1 bloco" if crit else "")])
 
-	# Efeitos de contato adicionais (D-032)
-	if mid == "golpe_carate" and randf() < 0.30:
-		if target.can_buff("speed", -1):
-			target.buff_stat("speed", -1)
-			log_message.emit("Karate Chop atinge um ponto vital! A velocidade de %s foi reduzida (-1 VEL)!" % target.name)
-		else:
-			log_message.emit("Karate Chop atinge um ponto vital, mas a velocidade de %s já está no patamar mínimo (-5)!" % target.name)
-	elif mid == "mordida" and randf() < 0.30:
-		target.stun_timer = 2.0
-		log_message.emit("%s foi atordoado pela Mordida por 2 segundos!" % target.name)
-		var had_interrupted := false
-		for inc_check in incoming.duplicate():
-			if inc_check.attacker == target:
-				had_interrupted = true
-				break
-		if had_interrupted:
-			grant_atb(attacker, 1, target)
-			log_message.emit("%s interrompeu a ação de %s com o atordoamento! (+1 ATB)" % [attacker.name, target.name])
-		info["interrupted"] = _interrupt_attacks_of(target, attacker, 1.8)
+	# Efeitos de contato adicionais (D-032/D-1005/D-977/D-238), por Move (D-1079).
+	if armor_result != "":
+		info["interrupted"] = false  # D-1026: ARMOR absorbs the interruption and every contact effect
+		log_message.emit("A ARMOR de %s absorve o impacto (sem interrupção nem efeitos de contato)!" % target.name)
 	else:
-		info["interrupted"] = _interrupt_attacks_of(target, attacker, (1.55 if (weak or crit) else 1.0) * clampf(power, 0.85, 1.6))
-
-	# D-238: the Fire Bullet sets the target on fire when its hit interrupts an action of the target.
-	if mid == "fire_bullet" and bool(info.get("interrupted", false)) and target.is_alive():
-		var was_burning := target.is_burning()
-		target.apply_burn()
-		info["burn"] = true
-		log_message.emit("%s %s!" % [target.name, "continua queimando (Burn renovado)" if was_burning else "está queimando"])
-		burn_applied.emit(target)
+		var behavior_id := hit_move_data.id if hit_move_data != null else StringName(BattleSpace.move_id(label))
+		MoveBehaviorRegistry.get_behavior(behavior_id).on_contact(attacker, target, info, self)
 
 	hit_resolved.emit(attacker, target, element, info)
 	return info
+
+
+## Public wrappers used by MoveBehavior (D-1079, Etapa 2). They keep the same
+## code paths the old inline move-specific branches used.
+func apply_hit(attacker: Combatant, target: Combatant, power: float, element: Element.Type, label: String, whiffed := false, auto_dodged := false, opts := {}) -> Dictionary:
+	return _hit(attacker, target, power, element, label, whiffed, auto_dodged, opts)
+
+
+func interrupt_attacks_of(c: Combatant, hitter: Combatant, force: float) -> bool:
+	return _interrupt_attacks_of(c, hitter, force)
+
+
+## Used by Tidal Surge's behavior to register a bounce without owning the
+## Battle's landing list (D-1079).
+func add_landing(inc: Incoming) -> void:
+	_landing.append(inc)
+
+
+func roll_ai_for(inc: Incoming) -> void:
+	_roll_ai_evade(inc)
+	_roll_ai_dodge(inc)
 
 
 ## D-238: one Burn clock step. Each tick takes BURN_DMG fixed HP; it may kill (the death animation plays, no K.O. launch).
@@ -1125,14 +1159,48 @@ func _check_end() -> void:
 	_landing.clear()
 	_update_positions()
 	for r in rewards:
-		_release_pending(r)
+		_reward_queue.release_pending(r)
 	rewards.clear()
 	for c in party + enemies:
 		c.engaged_with = null
 		c.in_battle = false
 		c.end_guard("battle_end")
+		c.end_armor("battle_end")
 		_clear_queued(c)
 		if c.is_alive():
 			c.clear_buffs()  # The drawing goes back to normal too (D-158); a launched body keeps its own (D-166).
 	log_message.emit("Vitória!" if enemies_dead else "Derrota...")
 	battle_ended.emit(enemies_dead)
+
+
+## Snapshot e Rollback em memória e avanço determinístico por ticks para agentes de IA (D-1042 / D-1044).
+func save_state() -> Dictionary:
+	var units_state := {}
+	for c in party + enemies:
+		units_state[c] = c.save_state()
+	return {
+		"running": running,
+		"debug_roll": debug_roll,
+		"freeze_left": _freeze_left,
+		"units": units_state,
+	}
+
+
+func restore_state(state: Dictionary) -> void:
+	running = bool(state.get("running", running))
+	debug_roll = int(state.get("debug_roll", debug_roll))
+	_freeze_left = float(state.get("freeze_left", 0.0))
+	incoming.clear()
+	_landing.clear()
+	_returning.clear()
+	_status_pause = null
+	var units_state: Dictionary = state.get("units", {})
+	for c in party + enemies:
+		if units_state.has(c):
+			c.restore_state(units_state[c])
+	state_changed.emit()
+
+
+func step_ticks(ticks: int, fixed_dt := 1.0 / 60.0) -> void:
+	for _i in maxi(0, ticks):
+		_process(fixed_dt)

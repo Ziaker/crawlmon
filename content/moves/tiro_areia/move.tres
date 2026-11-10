@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_f4epb"]
+
+[resource]
+script = ExtResource("1_f4epb")
+id = &"tiro_areia"
+display_name = "Sand Attack"
+kind = 1
+element = 7
+power = 0.0
+atb_cost = 1
+mp_cost = 2
+windup = 0.75
+ground = true
+stand_gap = 2.6
+hold = 0.2
+plan_profile = &"projectile"
+hit_stop_duration = 0.085
+vfx_key = &"sand_attack"
+effect_line_text = "Blinds the target for 4 s (35% miss) | Ground projectile | 1 ATB"
+short_effect_text = "blinds 4 s"
+description_text = "Throws sand in the target's eyes. Blinds for 4 s with a 35% miss chance."
+mechanics_text = "Coarse sand cloud that blinds the target for 4 seconds, imposing a 35% miss chance on their offensive actions."
+visual_text = "Gust of gritty beige dust and sand motes kicked forward, obscuring the opponent's vision."
+motion_text = "Stationary sweep. Caster kicks or sweeps sand from the ground directly toward the opponent's eyes."
+windup_text = "0.80s wind-up. Fast ground sweeping gesture."
+tactical_text = "Blinds target for 4s, imposing a 35% miss chance. Single Target."
+visual_motion_text = "Stationary sweep kicking a gust of gritty beige dust into target's eyes."
+phase_visuals = {
+"impact": "Explosão/impacto no ponto de contato a 1,2 m de altura (D-1013 / D-308 Fase 4): Gust of gritty beige dust and sand motes kicked forward, obscuring the opponent's vision.",
+"release": "Transição contínua da carga para o disparo sem sumiço brusco (D-308 Fase 2): Stationary sweep. Caster kicks or sweeps sand from the ground directly toward the opponent's eyes.",
+"return": "Dissipação completa de partículas/malhas (zero restos) e retorno do lançador ao idle.",
+"strike": "Janela final de aproximação (últimos 0,25 s) antes do contato.",
+"travel": "Voo do projétil/feixe ao longo do eixo atacante->alvo mantendo leitura de tela (D-308 Fase 3): Stationary sweep. Caster kicks or sweeps sand from the ground directly toward the opponent's eyes.",
+"windup": "Carga elemental contínua à frente do lançador (D-308 Fase 1): 0.80s wind-up. Fast ground sweeping gesture."
+}

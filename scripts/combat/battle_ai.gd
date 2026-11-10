@@ -4,6 +4,8 @@ extends RefCounted
 ## D-114, D-115, D-168). A helper of Battle: it reads Battle's state and acts through the same
 ## actions the player uses. The weights below are a first calibration (D-116).
 
+const NatureData = preload("res://scripts/data/nature_data.gd")
+
 const THINK_EVERY := 0.25  ## Seconds between decisions of one combatant.
 const IDLE_RESERVE := 1.0  ## Blocks an evader keeps after acting when nothing threatens it.
 const CLOSE_TO_BEST := 0.7  ## Moves scoring at least this share of the best one may be picked.
@@ -12,7 +14,7 @@ const COST_WEIGHT := 0.35  ## Each block a move costs divides its value by this 
 const KO_BONUS := 40.0
 const WEAK_BONUS := 15.0  ## A weakness also pays the attacker ATB.
 const INTERRUPT_BONUS := 18.0
-const CONTACT_BONUS := {"mordida": 8.0, "golpe_carate": 6.0}
+const CONTACT_BONUS := {"mordida": 8.0, "golpe_carate": 6.0}  ## fallback for Skills without MoveData
 const STRIKE_TIME := 0.7  ## About how long a melee strike takes after the run.
 const UNRESOLVED_ETA := 0.7  ## About how long an attack takes to land once its wind-up ends.
 const MIN_MISSING_TO_HEAL := 0.2  ## Below this share of missing HP, healing is not worth a turn.
@@ -106,7 +108,7 @@ func _still_worth_it(c: Combatant, plan: Dictionary) -> bool:
 
 func _affordable_knock_out(c: Combatant, target: Combatant) -> Skill:
 	for skill in _moves_of(c):
-		if skill.kind != Skill.Kind.STATUS and not skill.is_friendly and c.can_pay(skill.cost) \
+		if skill.kind != Skill.Kind.STATUS and not skill.is_friendly and c.can_pay_skill(skill) \
 				and score_move(c, skill, target) > 0.0 and _damage_to(c, skill, target) >= target.hp:
 			return skill
 	return null
@@ -153,10 +155,15 @@ func _weighted_pick(options: Array[Dictionary]) -> Dictionary:
 # --- Saving ATB for an Evade ----------------------------------------------------
 
 ## A knock-out and a free (Burst) action never wait; anything else leaves the reserve intact.
+## Subordinado as politicas de Tactics, com modulacao da Nature (D-001, D-393).
 func _may_spend(c: Combatant, skill: Skill, target: Combatant) -> bool:
-	if not c.can_pay(skill.cost):
+	if not c.can_pay_skill(skill):
 		return false
-	if c.burst > 0 or c.blocks() >= Combatant.BLOCKS or c.blocks() - skill.cost >= _reserve(c):
+	var eff_reserve := _reserve(c)
+	if c.act_policy == Combatant.Act.SKILL and c.nature_id != "":
+		var agg_mult: float = float(NatureData.get_nature(c.nature_id).get("aggression_mult", 1.0))
+		eff_reserve /= maxf(agg_mult, 0.1)
+	if c.burst > 0 or c.blocks() >= Combatant.BLOCKS or c.blocks() - skill.cost >= eff_reserve:
 		return true
 	return not skill.is_friendly and skill.kind != Skill.Kind.STATUS and _damage_to(c, skill, target) >= target.hp
 
@@ -164,13 +171,16 @@ func _may_spend(c: Combatant, skill: Skill, target: Combatant) -> bool:
 func _reserve(c: Combatant) -> float:
 	if c.react_policy != Combatant.React.EVADE:
 		return 0.0
+	var nature_bias := 0.0
+	if c.nature_id != "":
+		nature_bias = float(NatureData.get_nature(c.nature_id).get("atb_reserve_bias", 0.0))
 	for inc in b.active_attacks():
 		if inc.target != c or inc.dodged or inc.is_friendly or inc.kind == Skill.Kind.STATUS:
 			continue
 		var eta: float = inc.eta() if inc.resolved else inc.time_left + UNRESOLVED_ETA
 		if c.blocks() + c.speed * eta >= Battle.EVADE_STILL:
-			return Battle.EVADE_STILL
-	return IDLE_RESERVE
+			return clampf(Battle.EVADE_STILL + nature_bias, 0.0, Combatant.BLOCKS)
+	return clampf(IDLE_RESERVE + nature_bias, 0.0, Combatant.BLOCKS)
 
 
 ## On its own run a non-perfect Evade would throw that attack away (D-029): it waits for the
@@ -180,25 +190,26 @@ func try_evade(inc: Incoming) -> void:
 	inc.ai_evade_at = -1.0
 	if not t.is_alive() or inc.evade_tried or t.blocks() < b.evade_cost(t):
 		return
-	if b._evade.own_run(t) != null and inc.travel_left() > Battle.PERFECT_WINDOW:
-		inc.ai_evade_at = inc.phase_len() - Battle.PERFECT_WINDOW * 0.6
-		return
 	b.try_evade(t, inc)
 
 
 # --- What a move is worth right now -----------------------------------------------
 
 func score_move(c: Combatant, skill: Skill, target: Combatant) -> float:
-	var move_id := BattleSpace.move_id(skill.display_name)
+	var move_id := String(skill.data.id) if skill.data != null else BattleSpace.move_id(skill.display_name)
+	var behavior := MoveBehaviorRegistry.get_behavior(StringName(move_id))
 	var value := 0.0
 	if skill.kind == Skill.Kind.STATUS:
-		value = _status_value(c, move_id, target)
-	elif move_id in ["tiro_areia", "sand_attack"]:
-		value = 0.0 if target.is_blind() or target.is_invulnerable_target() else 22.0
+		var status_score := behavior.ai_status_value(c, target, b)
+		value = status_score if status_score >= 0.0 else 8.0
 	else:
-		value = _damage_value(c, skill, move_id, target)
-		if value > 0.0 and _would_interrupt(c, skill, target):
-			value += INTERRUPT_BONUS
+		var attack_score := behavior.ai_attack_value(c, target, b)
+		if attack_score >= 0.0:
+			value = attack_score
+		else:
+			value = _damage_value(c, skill, move_id, target)
+			if value > 0.0 and _would_interrupt(c, skill, target):
+				value += INTERRUPT_BONUS
 	return value if c.burst > 0 else value / (1.0 + COST_WEIGHT * float(skill.cost))
 
 
@@ -214,12 +225,20 @@ func _damage_value(c: Combatant, skill: Skill, move_id: String, target: Combatan
 			value += KO_BONUS
 		if skill.element in foe.weaknesses:
 			value += WEAK_BONUS
-	return value + float(CONTACT_BONUS.get(move_id, 0.0)) if value > 0.0 else 0.0
+	var contact_bonus: float = float(CONTACT_BONUS.get(move_id, 0.0))
+	if skill.data != null:
+		contact_bonus = float(skill.data.ai_profile.get("contact_bonus", contact_bonus))
+	return value + float(contact_bonus) if value > 0.0 else 0.0
 
 
 ## The hit's damage, including the target's defense stage (same numbers as take_damage).
 func _damage_to(c: Combatant, skill: Skill, foe: Combatant) -> int:
 	var damage := float(Battle.estimate_damage(c, foe, skill))
+	var bypass_def := skill.data != null and skill.data.bypass_def
+	if not bypass_def:
+		bypass_def = BattleSpace.move_id(skill.display_name) == "drain_spear"  # fallback for Skills without MoveData
+	if bypass_def:
+		return roundi(damage)  # magical damage uses SPI, not the DEF stage
 	var stage := float(abs(foe.def_buff)) * 0.25
 	return roundi(damage / (1.0 + stage) if foe.def_buff >= 0 else damage * (1.0 + stage))
 
@@ -236,46 +255,6 @@ func _would_interrupt(c: Combatant, skill: Skill, target: Combatant) -> bool:
 		if inc.attacker == target and inc.kind != Skill.Kind.STATUS and inc.time_left > arrival:
 			return true
 	return false
-
-
-func _status_value(c: Combatant, move_id: String, target: Combatant) -> float:
-	var team: Array[Combatant] = b.party if c.is_player else b.enemies
-	match move_id:
-		"media":
-			var total := 0.0
-			var worst := 0.0
-			for ally in team:
-				if ally.is_alive():
-					var missing := 1.0 - float(ally.hp) / float(ally.max_hp)
-					total += missing
-					worst = maxf(worst, missing)
-			return total * 110.0 if worst >= MIN_MISSING_TO_HEAL else 0.0
-		"tarukaja":
-			var total := 0.0
-			for ally in team:
-				if ally.is_alive() and ally.can_buff("atk", 1):
-					total += 22.0 * (1.0 - float(maxi(ally.atk_buff, 0)) / 5.0)
-			return total
-		"rakunda":
-			return _debuff_value(target, "def", target.def_buff, 34.0)
-		"sukunda":
-			return _debuff_value(target, "speed", target.speed_buff, 24.0)
-		"provocacao", "taunt":
-			if target.taunted_by != null:
-				return 0.0
-			var own_share := float(c.hp) / float(c.max_hp)
-			for ally in team:
-				if ally != c and ally.is_alive() and float(ally.hp) / float(ally.max_hp) < minf(own_share, 0.5):
-					return 40.0  # Draws the attack away from a hurt ally.
-			return 4.0
-	return 8.0
-
-
-## Worth less the more that stat is already down, and nothing on a nearly dead target.
-func _debuff_value(target: Combatant, stat: String, stage: int, base: float) -> float:
-	if not target.can_buff(stat, -1) or float(target.hp) / float(target.max_hp) < MIN_TARGET_HP_TO_DEBUFF:
-		return 0.0
-	return base * (1.0 - float(maxi(-stage, 0)) / 5.0)
 
 
 ## Weighed against the moves, with no fixed HP line: it is worth what it would really heal,

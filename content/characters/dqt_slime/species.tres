@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="Resource" path="res://content/characters/dqt_slime/loadout.tres" id="1_10cw0"]
+[ext_resource type="Resource" path="res://content/characters/dqt_slime/model_profile.tres" id="2_15kal"]
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="3_w8t2e"]
+
+[resource]
+script = ExtResource("3_w8t2e")
+id = &"dqt_slime"
+display_name = "Slime"
+species_id = "dqt_slime"
+raw_stats = {
+"AGI": 35,
+"LUK": 26,
+"MAG": 25,
+"STR": 25,
+"VIT": 25,
+"WIS": 20
+}
+weaknesses = Array[int]([1])
+loadout = ExtResource("1_10cw0")
+model_profile = ExtResource("2_15kal")

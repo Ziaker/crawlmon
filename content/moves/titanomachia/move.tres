@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_4gox8"]
+
+[resource]
+script = ExtResource("1_4gox8")
+id = &"titanomachia"
+display_name = "Titanomachia"
+element = 7
+power = 1.5
+atb_cost = 3
+mp_cost = 6
+windup = 1.5
+is_aoe = true
+stand_gap = 2.6
+run_base = 0.24
+hold = 0.7
+plan_profile = &"melee"
+bw_pulse = true
+vfx_key = &"generic"
+effect_line_text = "150% ATK earth damage | Hits ALL enemies | 3 ATB"
+short_effect_text = "150% earth | AoE"
+description_text = "A slow, devastating earth impact in an area."
+mechanics_text = "Cataclysmic earth eruption that shatters the ground beneath the entire enemy team with seismic shockwaves."
+visual_text = "Giant stone monoliths and seismic cracks ripping across the ground with erupting volcanic boulders."
+motion_text = "Stationary seismic strike. Caster stomps the arena floor, sending shockwaves across all target positions."
+windup_text = "2.10s wind-up. Seismic ground pounding buildup."
+tactical_text = "Cataclysmic ground eruption shattering floor under all enemies. Full AoE."
+visual_motion_text = "Stationary seismic stomp tearing ground with volcanic monoliths."
+phase_visuals = {
+"impact": "Contato direto no ponto zero do alvo com hit-stop, flash e reação: Giant stone monoliths and seismic cracks ripping across the ground with erupting volcanic boulders.",
+"release": "Partida física contínua a partir da carga rumo ao alvo: Stationary seismic strike. Caster stomps the arena floor, sending shockwaves across all target positions.",
+"return": "Salto/corrida de recuo de volta à posição de origem e retomada de idle.",
+"strike": "Prelúdio de golpe e arco de swing/arma com aviso Dread na janela de Evade (D-986/D-992).",
+"travel": "Corrida pelo eixo atacante->alvo com trilha no chão (D-1013): Stationary seismic strike. Caster stomps the arena floor, sending shockwaves across all target positions.",
+"windup": "Preparo em posição base com loop contínuo de carga (D-163): 2.10s wind-up. Seismic ground pounding buildup."
+}

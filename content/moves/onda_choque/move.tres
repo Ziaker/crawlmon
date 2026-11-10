@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_w83sv"]
+
+[resource]
+script = ExtResource("1_w83sv")
+id = &"onda_choque"
+display_name = "Shock Wave"
+kind = 2
+element = 3
+power = 1.3
+mp_cost = 3
+windup = 1.5
+stand_gap = 2.6
+hold = 0.2
+redirectable = false
+plan_profile = &"cast_travel_strike"
+plan_fly = 0.24
+plan_return = 0.2
+hit_stop_duration = 0.1
+bw_pulse = true
+tags = Array[StringName]([&"impact_on_miss"])
+vfx_key = &"abra"
+effect_line_text = "130% ATK electric damage | Ranged | 2 ATB"
+short_effect_text = "130% electric"
+description_text = "Undodgeable electrical discharge arcing directly into the opponent across the floor."
+mechanics_text = "Undodgeable electrical discharge that arcs directly into the opponent, bypassing standard manual and passive evasion."
+visual_text = "Golden electrical arcs branching across the field with crackling corona discharges wrapping the opponent's silhouette."
+motion_text = "Stationary release. Electrical arcs branch instantly through the air directly to the target."
+windup_text = "1.20s wind-up. Electrical aura charges around the body before discharge."
+tactical_text = "Undodgeable electrical discharge bypassing standard evasion. Single Target."
+visual_motion_text = "Stationary discharge of golden electrical arcs wrapping the opponent."
+phase_visuals = {
+"impact": "Explosão/impacto no ponto de contato a 1,2 m de altura (D-1013 / D-308 Fase 4): Golden electrical arcs branching across the field with crackling corona discharges wrapping the opponent's silhouette.",
+"release": "Transição contínua da carga para o disparo sem sumiço brusco (D-308 Fase 2): Stationary release. Electrical arcs branch instantly through the air directly to the target.",
+"return": "Dissipação completa de partículas/malhas (zero restos) e retorno do lançador ao idle.",
+"strike": "Janela final de aproximação (últimos 0,25 s) antes do contato.",
+"travel": "Voo do projétil/feixe ao longo do eixo atacante->alvo mantendo leitura de tela (D-308 Fase 3): Stationary release. Electrical arcs branch instantly through the air directly to the target.",
+"windup": "Carga elemental contínua à frente do lançador (D-308 Fase 1): 1.20s wind-up. Electrical aura charges around the body before discharge."
+}

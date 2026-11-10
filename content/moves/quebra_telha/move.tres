@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_b13lg"]
+
+[resource]
+script = ExtResource("1_b13lg")
+id = &"quebra_telha"
+display_name = "Brick Break"
+power = 1.8
+atb_cost = 3
+mp_cost = 4
+windup = 1.5
+stand_gap = 2.6
+run_base = 0.24
+strike_time = 0.45
+hold = 0.7
+plan_profile = &"melee"
+hit_stop_duration = 0.11
+bw_pulse = true
+vfx_key = &"brick_break"
+effect_line_text = "180% ATK physical damage | BREAKS Guard | 3 ATB"
+short_effect_text = "180% | breaks Guard"
+description_text = "Breaks the target's Guard and refunds 1 ATB to the attacker."
+mechanics_text = "Crushing downward hammer strike that instantly shatters enemy Guard stances and refunds 1 ATB block upon guard break."
+visual_text = "Golden-yellow energy aura around the striking limb, shattering into barrier-cracking crystalline fracture particles upon impact."
+motion_text = "Attacker leaps forward with downward hammer fist directly over the enemy's defensive posture."
+windup_text = "1.40s wind-up. Heavy overhead wind-up that telegraphs crushing momentum."
+tactical_text = "Shatters Guard stances and refunds 1 ATB upon success. Single Target."
+visual_motion_text = "Leaping hammer fist with golden aura and crystalline fracture VFX."
+phase_visuals = {
+"impact": "Contato direto no ponto zero do alvo com hit-stop, flash e reação: Golden-yellow energy aura around the striking limb, shattering into barrier-cracking crystalline fracture particles upon impact.",
+"release": "Partida física contínua a partir da carga rumo ao alvo: Attacker leaps forward with downward hammer fist directly over the enemy's defensive posture.",
+"return": "Salto/corrida de recuo de volta à posição de origem e retomada de idle.",
+"strike": "Prelúdio de golpe e arco de swing/arma com aviso Dread na janela de Evade (D-986/D-992).",
+"travel": "Corrida pelo eixo atacante->alvo com trilha no chão (D-1013): Attacker leaps forward with downward hammer fist directly over the enemy's defensive posture.",
+"windup": "Preparo em posição base com loop contínuo de carga (D-163): 1.40s wind-up. Heavy overhead wind-up that telegraphs crushing momentum."
+}

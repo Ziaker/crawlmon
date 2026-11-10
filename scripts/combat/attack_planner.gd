@@ -17,31 +17,37 @@ func _init(p_battle: Battle) -> void:
 func plan(inc: Incoming) -> float:
 	var a := inc.attacker
 	var t := inc.target
-	inc.move_id = BattleSpace.move_id(inc.label)
+	if inc.move_id.is_empty():
+		inc.move_id = BattleSpace.move_id(inc.label)
+	if inc.move_data == null:
+		inc.move_data = MoveCatalog.get_move(StringName(inc.move_id))
+	var move := inc.move_data
 	var a_home := a.rest_pos()  # Engaged characters stand away from their step spot.
 	var t_home := t.rest_pos()
 	inc.dir = BattleSpace.flat_dir(a_home, t_home)
+	# The contact distance comes from the Move's sheet (D-1079), not from its name.
+	inc.stand_gap = move.stand_gap if move != null and move.stand_gap > 0.0 else BattleSpace.STAND_GAP
 	# Travel times start from the step-0 geometry and then lose 0.10 s per step.
 	var a0 := a.home
 	var t0 := t.home
-	if inc.move_id == "furia_dragao":
-		var rage_hit := 0.15 if inc.instant else clip_hit(a, "attack_special", BattleSpace.CAST_AT)
+	if move != null and move.plan_profile == &"cast_strike_travel":
+		var cast_hit := 0.15 if inc.instant else clip_hit(a, "attack_special", BattleSpace.CAST_AT)
 		inc.motion = "cast"
-		inc.fly = Battle.travel_seconds(0.30, a, t)
-		inc.plan = [[Phase.STRIKE, rage_hit], [Phase.TRAVEL, inc.fly], [Phase.RETURN, 0.16]]
+		inc.fly = Battle.travel_seconds(move.plan_fly, a, t)
+		inc.plan = [[Phase.STRIKE, cast_hit], [Phase.TRAVEL, inc.fly], [Phase.RETURN, move.plan_return]]
 		inc.impact_phase = Phase.TRAVEL
-	elif inc.move_id == "teleporte_rapido":
+	elif move != null and move.plan_profile == &"teleport":
 		var attack_dir := BattleSpace.flat_dir(a_home, t_home)
 		inc.motion = "cast"
 		inc.blink = true
 		inc.from = a_home
 		inc.aim = t_home
-		inc.dest = t_home + attack_dir * 1.35
-		var hit := 0.22 if inc.instant else clip_hit(a, "attack", 0.22)
+		inc.dest = t_home + attack_dir * move.blink_distance
+		var blink_hit := 0.22 if inc.instant else clip_hit(a, "attack", 0.22)
 		inc.fly = 0.05
-		inc.plan = [[Phase.TRAVEL, 0.05], [Phase.STRIKE, hit], [Phase.RETURN, 0.35]]
+		inc.plan = [[Phase.TRAVEL, 0.05], [Phase.STRIKE, blink_hit], [Phase.RETURN, 0.35]]
 		inc.impact_phase = Phase.STRIKE
-	elif inc.kind == Skill.Kind.MELEE and a.engaged_with == t:
+	elif inc.kind == Skill.Kind.MELEE and a.engaged_with == t and inc.stand_gap <= BattleSpace.STAND_GAP + 0.01:
 		# Already standing next to it: no travel, no return.
 		var hit0 := clip_hit(a, "attack", BattleSpace.HIT_AT)
 		hit0 = _strike_override(inc, hit0)  # D-241
@@ -65,16 +71,12 @@ func plan(inc: Incoming) -> float:
 		inc.plan = [[Phase.STRIKE, hit0]]
 		inc.impact_phase = Phase.STRIKE
 	elif inc.kind == Skill.Kind.MELEE:
-		var stand := t_home - inc.dir * BattleSpace.STAND_GAP
-		var run_t := Battle.travel_seconds(base_run(a0, t0), a, t)
-		match inc.move_id:
-			"soco_rapido": run_t = Battle.travel_seconds(0.18, a, t)
-			"golpe_carate": run_t = Battle.travel_seconds(0.45, a, t)  # D-169
-			"quebra_telha": run_t = Battle.travel_seconds(0.24, a, t)
-			"garra_dragao": run_t = Battle.travel_seconds(0.45, a, t)  # D-169
-			"investida_escavadora": run_t = Battle.travel_seconds(0.26, a, t)
-			"hassou_tobi": run_t = Battle.travel_seconds(0.18, a, t)
-			"titanomachia": run_t = Battle.travel_seconds(0.24, a, t)
+		var stand := t_home - inc.dir * inc.stand_gap
+		var run_t := Battle.travel_seconds(base_run_for(a0, t0, inc.stand_gap), a, t)
+		if move != null and move.run_fixed >= 0.0:
+			run_t = move.run_fixed  # D-1014: a fixed short step, whatever the speed
+		elif move != null and move.run_base >= 0.0:
+			run_t = Battle.travel_seconds(move.run_base, a, t)
 		run_t += a.travel_extra  # D-341: slow character, only the run to the target
 		var hop_dist := stand.distance_to(a_home)
 		inc.motion = "melee"
@@ -82,10 +84,12 @@ func plan(inc: Incoming) -> float:
 		inc.run_t = run_t
 		inc.antic = 0.0 if inc.instant else BattleSpace.ANTICIP_T
 		inc.hit = clip_hit(a, "attack", BattleSpace.HIT_AT)
-		inc.hit = _strike_override(inc, inc.hit)  # D-241: Mach Punch 0.20 s, Karate Chop and Brick Break 0.45 s (clip sped up to match)
-		if inc.move_id == "soco_rapido":
+		if move != null:
+			inc.hit += move.hit_offset
+		inc.hit = _strike_override(inc, inc.hit)  # D-241
+		if move != null and move.strike_time > 0.0 and move.strike_time <= 0.20:
 			inc.antic = 0.0  # the jab lands straight on arrival
-		inc.hold = float(BattleSpace.RETURN_HOLD.get(inc.move_id, BattleSpace.RETURN_HOLD_DEFAULT))  # D-281
+		inc.hold = move.hold if move != null and move.hold >= 0.0 else BattleSpace.RETURN_HOLD_DEFAULT  # D-281
 		inc.hop_t = clampf(hop_dist / 70.0, 0.22, 0.4)
 		inc.hop_h = clampf(hop_dist * 0.12, 1.2, 3.0)
 		inc.from = a.pos
@@ -95,13 +99,13 @@ func plan(inc: Incoming) -> float:
 		var hit := 0.15 if inc.instant else clip_hit(a, "attack_special", BattleSpace.CAST_AT)
 		var total := BattleSpace.CAST_AT + 0.42
 		inc.motion = "cast"
-		if inc.move_id == "provocacao":
-			inc.fly = 0.28
-			inc.plan = [[Phase.STRIKE, hit], [Phase.TRAVEL, 0.28], [Phase.RETURN, 0.17]]
+		if move != null and move.plan_profile == &"cast_strike_travel":
+			inc.fly = move.plan_fly
+			inc.plan = [[Phase.STRIKE, hit], [Phase.TRAVEL, inc.fly], [Phase.RETURN, move.plan_return]]
 			inc.impact_phase = Phase.TRAVEL
-		elif inc.move_id == "onda_choque":
-			inc.fly = 0.24
-			inc.plan = [[Phase.TRAVEL, 0.24], [Phase.STRIKE, hit], [Phase.RETURN, 0.20]]
+		elif move != null and move.plan_profile == &"cast_travel_strike":
+			inc.fly = move.plan_fly
+			inc.plan = [[Phase.TRAVEL, inc.fly], [Phase.STRIKE, hit], [Phase.RETURN, move.plan_return]]
 			inc.impact_phase = Phase.STRIKE
 		elif inc.kind == Skill.Kind.PROJECTILE:
 			inc.fly = Battle.travel_seconds(base_fly(a0, t0), a, t)
@@ -125,7 +129,10 @@ func plan(inc: Incoming) -> float:
 func redirect_if_blocked(inc: Incoming) -> void:
 	if inc.kind != Skill.Kind.PROJECTILE or inc.is_aoe or inc.is_friendly:
 		return
-	if BattleSpace.move_id(inc.label) in ["furia_dragao", "provocacao", "onda_choque", "teleporte_rapido"]:
+	if inc.move_data != null:
+		if not inc.move_data.redirectable:
+			return
+	elif BattleSpace.move_id(inc.label) in ["furia_dragao", "provocacao", "onda_choque", "teleporte_rapido"]:
 		return
 	var block := interceptor(inc, inc.attacker.rest_pos(), inc.target.rest_pos())
 	if block != null:
@@ -166,10 +173,10 @@ func arrive_next_to(actor: Combatant, opponent: Combatant) -> void:
 	actor.set_rest(opp_pos + away * BattleSpace.STAND_GAP)
 
 
-## D-241: a move listed in BattleSpace.STRIKE_HIT lands at that time; the attack clip then runs `hit / new` times
-## faster so its contact frame falls on it. Moves not in the table keep the clip's own contact time.
+## D-241: a Move with `strike_time` in its MoveData lands at that time; the attack clip then runs `hit / new`
+## times faster so its contact frame falls on it. Moves without it keep the clip's own contact time.
 func _strike_override(inc: Incoming, hit: float) -> float:
-	var t: float = float(BattleSpace.STRIKE_HIT.get(inc.move_id, -1.0))
+	var t: float = inc.move_data.strike_time if inc.move_data != null else -1.0
 	if t <= 0.0:
 		return hit
 	inc.strike_speed = hit / t
@@ -183,7 +190,12 @@ static func clip_hit(c: Combatant, anim: String, fallback: float) -> float:
 
 
 static func base_run(a0: Vector3, t0: Vector3) -> float:
-	var stand0 := t0 - BattleSpace.flat_dir(a0, t0) * BattleSpace.STAND_GAP
+	return base_run_for(a0, t0, BattleSpace.STAND_GAP)
+
+
+## Same run-time estimate, but for a Move that stops at `gap` from the target (Drain Spear).
+static func base_run_for(a0: Vector3, t0: Vector3, gap: float) -> float:
+	var stand0 := t0 - BattleSpace.flat_dir(a0, t0) * gap
 	return clampf(a0.distance_to(stand0) / BattleSpace.RUN_SPEED, 0.6, 1.1)
 
 

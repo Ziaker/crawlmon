@@ -12,14 +12,22 @@ const TEAM_DISTANCE := 30.0  ## Units between the two lines.
 const PARTY_SLOTS := [Vector3(0.6, 0, 1.5), Vector3(7.5, 0, -3.0), Vector3(-5.0, 0, -2.0)]
 const SLOWMO_SCALE := 0.3  ## Game speed after a perfect Evade.
 const SLOWMO_SECONDS := 2.0  ## Real seconds, or until the player's counter-action.
+const TARGET_HEIGHT := 1.2  ## D-1013 (creator: "1,2"): every battle model reads at this height (m)
+const CYCLOPS_HEIGHT := 4.0  ## D-1054: exact Cyclops height requested by the creator
 const ENEMY_SCALE := 2.16  ## Extra scale on enemy models so they read at 30 units (D-339: 1.8 +20%).
-const ACT_NAMES := ["Atacar", "Habilidades", "Segurar"]
-const REACT_NAMES := ["Nada", "Esquivar"]
+const ACT_NAMES := ["Attack", "Skills", "Hold"]
+const REACT_NAMES := ["None", "Evade"]
+const FIGHT_SLOTS := 9  ## Number keys 1-9 per page; Q/E turn the page.
 const BattleArena = preload("res://scripts/combat/battle_arena.gd")
 const BattleFx = preload("res://scripts/combat/battle_fx.gd")
 const BattleCamera = preload("res://scripts/combat/battle_camera.gd")
 const BattleHud = preload("res://scripts/ui/battle_hud.gd")
 const SmtBuffController = preload("res://scripts/vfx/smt/smt_buff_controller.gd")
+const NatureData = preload("res://scripts/data/nature_data.gd")
+const CrawlmonAttributeMath = preload("res://scripts/combat/crawlmon_attribute_math.gd")
+const VictoryPanelScript = preload("res://scripts/ui/victory_panel.gd")
+const LevelUpModalScript = preload("res://scripts/ui/level_up_modal.gd")
+const EnemyFactory = preload("res://scripts/combat/enemy_factory.gd")
 
 @onready var battle: Battle = $Battle
 @onready var ui: CanvasLayer = $UI
@@ -54,6 +62,7 @@ var _last_skill := ""  ## Last Fight skill and target, by name.
 var _last_target := ""
 var _tactic_rows: Array = []  ## {unit, kind: act | react | pos} per Tactics row
 var _fight_skills: Array[Skill] = []
+var _fight_page := 0  ## 9 slots per page (Q/E); 1-9 uses the current page.
 var _item_list: Array[Item] = []
 var _targets: Array[Combatant] = []
 var _on_target: Callable
@@ -73,18 +82,21 @@ func _ready() -> void:
 	smt_vfx.name = "SmtBuffController"
 	add_child(smt_vfx)
 	var party := GameState.party
-	var enemies: Array[Combatant] = [_new_gible()]
+	var enemies: Array[Combatant] = []
 	if has_meta("vfx_room_mirror"):  # Sala de VFX: times espelhados (Gible aliado; Abra e Pancham inimigos).
 		party = _debug_mirror_party()
 		enemies = _debug_mirror_enemies()
 	# Crossover pilot: --dqt puts the DQT trio on the player's side; --dqt-mirror
 	# puts them on the enemy side so their fronts face the camera.
-	if "--dqt-mirror" in OS.get_cmdline_user_args():
+	elif "--dqt-mirror" in OS.get_cmdline_user_args():
 		var solo: Array[Combatant] = [GameState.party[0]]
 		party = solo
 		enemies = DqtTestParty.build(false)
 	elif DqtTestParty.enabled or "--dqt" in OS.get_cmdline_user_args():
 		party = DqtTestParty.build(true, GameState.inventory)
+		enemies = EnemyFactory.roll_encounter()
+	else:
+		enemies = EnemyFactory.roll_encounter()
 	for e in enemies:  # Same Tactics the allies have: cast skills and evade when able.
 		e.act_policy = Combatant.Act.SKILL
 		e.react_policy = Combatant.React.EVADE
@@ -141,9 +153,12 @@ func _ready() -> void:
 	battle.attack_cancelled.connect(fx.on_attack_cancelled)
 	battle.manual_evaded.connect(fx.manual_evade)
 	battle.evade_whiffed.connect(fx.evade_whiff)
+	battle.evade_mistimed.connect(fx.evade_mistimed)  # D-1015
 	battle.hit_resolved.connect(fx.play_hit)
 	battle.guard_started.connect(fx.fx_guard.start)  # D-272
 	battle.guard_ended.connect(fx.fx_guard.stop)
+	battle.armor_changed.connect(fx.fx_armor.on_armor_changed)  # D-1026
+	battle.mp_regenerated.connect(fx.on_mp_regenerated)  # D-1062
 	battle.hit_resolved.connect(smt_vfx.on_hit_resolved)
 	battle.healed.connect(fx.heal_fx)
 	battle.manual_evaded.connect(_on_manual_evaded)
@@ -164,6 +179,7 @@ func _ready() -> void:
 		await tr.revealed  # The run-in plays while the panels open.
 	await fx.intro()
 	battle.start(party, enemies)
+	director.watch_safe_area(_safe_area_units, hud.free_rect)  # D-1010
 	director.watch_enemies(_enemy_frame_points)  # D-015 test: the living enemies the framing must keep in view.
 	_show_main()
 
@@ -176,19 +192,30 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		get_tree().reload_current_scene()
 		return
+	# Q/E turn the Fight page (QoL 5): slots 1-9 stay reachable past the ninth move.
+	if event is InputEventKey and event.pressed and not event.echo and state == S.FIGHT \
+			and (event.keycode == KEY_Q or event.keycode == KEY_E):
+		_change_fight_page(-1 if event.keycode == KEY_Q else 1)
+		get_viewport().set_input_as_handled()
+		return
 	# 1-9 use that move of the list on the current target; R repeats the last move.
 	if event is InputEventKey and event.pressed and not event.echo and battle.running and leader.is_alive() \
 			and (state == S.MAIN or state == S.FIGHT):
 		var slot: int = event.keycode - KEY_1
+		var offset := _fight_page * FIGHT_SLOTS if state == S.FIGHT else 0
 		var skill: Skill = null
 		_build_fight_skills()
-		if slot >= 0 and slot < 9 and slot < _fight_skills.size():
-			skill = _fight_skills[slot]
+		if slot >= 0 and slot < FIGHT_SLOTS and offset + slot < _fight_skills.size():
+			skill = _fight_skills[offset + slot]
 		elif event.keycode == KEY_R:
 			skill = _move_by_name(_last_skill)
 		if skill != null:
+			if leader.mp < skill.mp_cost:
+				get_viewport().set_input_as_handled()
+				return
 			var target := _fight_target if state == S.FIGHT and _fight_target != null and _fight_target.is_alive() else _default_target()
 			if _use_move(skill, target):
+				_leave_fight_camera()
 				_show_main()
 			get_viewport().set_input_as_handled()
 			return
@@ -231,20 +258,7 @@ func _debug_mirror_enemies() -> Array[Combatant]:
 
 
 func _new_gible() -> Combatant:
-	var e := Combatant.new("Gible", 38, 9, 0.42, false)
-	e.weaknesses.assign([Element.Type.AGUA_GELO])
-	e.skills.assign([
-		Skill.new("Bite", 1.3, 2, Element.Type.TREVAS, Skill.Kind.MELEE, false, false, false, 1.2),
-		Skill.new("Sand Attack", 0.0, 1, Element.Type.TERRA, Skill.Kind.PROJECTILE, true, false, false, 0.75),
-		Skill.new("Dragon Rage", 1.6, 3, Element.Type.FISICO, Skill.Kind.PROJECTILE, false, false, false, 2.0, true),
-		Skill.new("Dig", 1.5, 2, Element.Type.TERRA, Skill.Kind.MELEE, true, false, false, 1.0),
-		Skill.new("Dragon Claw", 1.6, 3, Element.Type.FISICO, Skill.Kind.MELEE, false, false, false, 1.5),
-		Skill.new("Rakunda", 0.0, 1, Element.Type.TREVAS, Skill.Kind.STATUS, false, false, false, 0.5),
-		Skill.new("Mabufula", 1.35, 2, Element.Type.AGUA_GELO, Skill.Kind.PROJECTILE, false, true, false, 1.5),
-		Skill.new("Titanomachia", 1.5, 3, Element.Type.TERRA, Skill.Kind.MELEE, false, true, false, 1.5),
-	])
-	e.inventory = {"potion": 1}
-	return e
+	return EnemyFactory.create_enemy("gible", null, "adamant")
 
 
 ## Debug panel (H adds two standing enemies, Shift+H removes them). Returns the note
@@ -317,12 +331,9 @@ func _spawn(list: Array[Combatant], slots: Array[Vector3], yaw: float, color: Co
 	for i in list.size():
 		var c := list[i]
 		var model := _make_model(c, color)
-		if not c.is_player:
-			model.scale = Vector3.ONE * ENEMY_SCALE
-		else:  # D-342: some DQT models read too small on the player's side
-			var dqt_prof := DqtModelProfiles.get_profile(c.species_id.to_lower())
-			if dqt_prof.has("ally_scale"):
-				model.scale = Vector3.ONE * float(dqt_prof["ally_scale"])
+		# D-1013: every character is scaled to one target height, the same as ally or enemy (D-339 ENEMY_SCALE and
+		# D-342 ally_scale removed). Measured from the model's real meshes, never per species.
+		_fit_height.call_deferred(c, model)  # D-1013: measured once the idle pose is applied (bind pose can be folded)
 		model.position = slots[i]
 		model.rotation.y = yaw
 		add_child(model)
@@ -347,93 +358,111 @@ func _enemy_frame_points() -> Array[Vector3]:
 	return points
 
 
+## D-1010: every living unit as world points (feet, head) plus the screen padding of its
+## enemy tag, so the camera keeps bodies and tags inside the HUD's free rectangle.
+func _safe_area_units() -> Array:
+	var out: Array = []
+	for list in [battle.party, battle.enemies]:
+		for c in list:
+			var m: Node3D = models.get(c)
+			if m == null or not c.is_alive():
+				continue
+			var head_y: float = m.get_meta("head_y") if m.has_meta("head_y") else 1.8
+			var enemy: bool = list == battle.enemies
+			# Body box: feet, head and the sides (half width ~ 0.45 x height, measured from the model height).
+			var r := maxf(0.45 * head_y, 0.5)
+			var top := m.global_position + Vector3(0, head_y + (0.4 if enemy else 0.0), 0)
+			var pts: Array[Vector3] = [m.global_position, top,
+					m.global_position + Vector3(-r, 0, 0), m.global_position + Vector3(r, 0, 0),
+					m.global_position + Vector3(-r, head_y * 0.6, 0), m.global_position + Vector3(r, head_y * 0.6, 0)]
+			out.append({"pts": pts, "pad": BattleHud.tag_pad() if enemy else Vector4(0, 0, 0, 0),
+					"leader": c == battle.party[0], "c": c})
+	return out
+
+
 func _make_model(c: Combatant, color: Color) -> Node3D:
-	var root := Node3D.new()
-	var model_id := c.name.to_lower()
-	if c.species_id != "":
-		model_id = c.species_id.to_lower()
-	var glb_path := "res://assets/modelos/%s/%s.glb" % [model_id, model_id]
-	var dqt_profile := DqtModelProfiles.get_profile(model_id)
+	return CharacterModelLoader.create_character_model(c, color, true)
 
-	var is_3d_pokemon := false
-	if ResourceLoader.exists(glb_path):
-		var glb_scene: PackedScene = load(glb_path)
-		if glb_scene:
-			var pokemon_instance := glb_scene.instantiate()
-			# Pokemon GLBs come out of Blender Z-up: tip them upright and scale up.
-			# DQT GLBs are already Y-up, so they only get the height fit.
-			if dqt_profile.is_empty():
-				pokemon_instance.rotation_degrees.x = 90.0
-				pokemon_instance.scale = Vector3.ONE * MODEL_SCALE
-			else:
-				pokemon_instance.rotation_degrees = Vector3(
-					0.0, float(dqt_profile.get("rotation_y", 0.0)), 0.0)
-				var native_height := float(dqt_profile.get("native_height", 0.0))
-				var target_height := float(dqt_profile.get("target_height", 0.0))
-				if native_height > 0.001 and target_height > 0.001:
-					pokemon_instance.scale = Vector3.ONE * (target_height / native_height)
-				# The tactlib 2.x GLBs already carry glTF-correct UVs: no runtime V flip.
-			if dqt_profile.is_empty():
-				root.add_child(pokemon_instance)
-			else:
-				var breath := Node3D.new()
-				breath.name = "DqtIdleBreath"
-				breath.set_meta("height", float(dqt_profile.get("target_height", 2.0)))
-				root.add_child(breath)
-				breath.add_child(pokemon_instance)
-			VfxLib.outline_model(pokemon_instance, 0.0035)
-			is_3d_pokemon = true
 
-			var anim_player: AnimationPlayer = _find_anim_player(pokemon_instance)
-			if anim_player:
-				if not dqt_profile.is_empty():
-					DqtModelProfiles.apply_anim_aliases(anim_player, dqt_profile)
-					DqtModelProfiles.setup_weapon_follow(pokemon_instance, anim_player, dqt_profile)
-					# D-340: game eye rule (<X>_scale) + own blink.
-					DqtEyes.attach(root, pokemon_instance, anim_player,
-						str(dqt_profile.get("clip_prefix", "")) + "04")
-					DqtModelProfiles.setup_run_stride(root, pokemon_instance, anim_player, dqt_profile)  # D-341
-				root.set_meta("anim_player", anim_player)
-				_strip_root_motion(anim_player)
-				# Configure linear loops for resting animations
-				for anim_name in ["idle", "battle_idle", "walk", "run", "charge"]:
-					if anim_player.has_animation(anim_name):
-						anim_player.get_animation(anim_name).loop_mode = Animation.LOOP_LINEAR
-				if not dqt_profile.is_empty() and dqt_profile.get("idle_full", false):
-					if anim_player.has_animation("battle_idle"):
-						anim_player.get_animation("battle_idle").loop_mode = Animation.LOOP_NONE
-				if anim_player.has_animation("battle_idle"):
-					anim_player.play("battle_idle")
-				elif anim_player.has_animation("idle"):
-					anim_player.play("idle")
+## D-1047: back to the previous fit for everyone, except Cyclops and Slime.
+## Those two keep the target_height already defined in their DQT profiles
+## (Cyclops 3.22 m, Slime 1.40 m), which gives exactly the two requested fixes.
+func _fit_height(c: Combatant, model: Node3D) -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if not is_instance_valid(model):
+		return
+	var sid := String(c.species_id).to_lower()
+	if sid == "dqt_cyclops":
+		var h_cyclops := _visible_body_height(model)
+		if h_cyclops > 0.05:
+			# 0.99: the idle pose settles slightly taller after the fit.
+			model.scale = model.scale * ((CYCLOPS_HEIGHT * 0.99) / h_cyclops)
+			if fx != null and fx._base_scale.has(c):
+				fx._base_scale[c] = model.scale
+				fx._orig_scale[c] = model.scale
+			c.body_scale = model.scale.x
+		model.set_meta("head_y", _measure_head(model))
+		return
+	if sid == "dqt_slime":
+		model.set_meta("head_y", _measure_head(model))
+		return
+	var h_now := _posed_height(model)
+	if h_now > 0.05:
+		model.scale = model.scale * (TARGET_HEIGHT / h_now)
+		if fx != null and fx._base_scale.has(c):
+			fx._base_scale[c] = model.scale
+			fx._orig_scale[c] = model.scale
+		c.body_scale = model.scale.x
+		model.set_meta("head_y", _measure_head(model))
 
-	if not is_3d_pokemon:
-		var mesh := MeshInstance3D.new()
-		mesh.mesh = CapsuleMesh.new()
-		mesh.position.y = 1.0
-		var mat := StandardMaterial3D.new()
-		mat.albedo_color = color
-		mesh.material_override = mat
-		root.add_child(mesh)
-		root.set_meta("mesh", mesh)
 
-	root.set_meta("color", color)
+## D-1053: visible body height, excluding weapon/helper meshes.
+func _visible_body_height(model: Node3D) -> float:
+	var lo := INF
+	var hi := -INF
+	for n in model.find_children("*", "MeshInstance3D", true, false):
+		var mi := n as MeshInstance3D
+		if mi.mesh == null:
+			continue
+		var low := String(mi.name).to_lower()
+		if low in ["burstring", "readyring"] or low.begins_with("guard") or low.begins_with("shield") or low.begins_with("wmodel"):
+			continue
+		var b: AABB = mi.global_transform * mi.get_aabb()
+		lo = minf(lo, b.position.y)
+		hi = maxf(hi, b.position.y + b.size.y)
+	if hi <= lo:
+		return _posed_height(model)
+	return hi - lo
 
-	var ring := MeshInstance3D.new()
-	ring.name = "BurstRing"
-	var torus := TorusMesh.new()
-	torus.inner_radius = 0.9
-	torus.outer_radius = 1.1
-	ring.mesh = torus
-	var ring_mat := StandardMaterial3D.new()
-	ring_mat.albedo_color = Color(1.0, 0.8, 0.1)
-	ring_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	ring.material_override = ring_mat
-	ring.position.y = 0.05
-	ring.visible = false
-	root.add_child(ring)
-	root.set_meta("burst_ring", ring)
-	return root
+
+## D-1013 fallback: height from the skeleton's bones in their current pose.
+func _posed_height(model: Node3D) -> float:
+	var lo := INF
+	var hi := -INF
+	for sk in model.find_children("*", "Skeleton3D", true, false):
+		var s3 := sk as Skeleton3D
+		for i in s3.get_bone_count():
+			var p := s3.global_transform * s3.get_bone_global_pose(i).origin
+			lo = minf(lo, p.y)
+			hi = maxf(hi, p.y)
+	if hi > lo:
+		return (hi - model.global_position.y) * 0.56  # D-1013: bone span reads ~1.8x the visible height (calibrated on Abra: mesh 1.12, bones 2.01)
+	return _model_height(model)
+
+
+## D-1013: height of the visible meshes, in world units, at the model's current scale.
+func _model_height(model: Node3D) -> float:
+	var lo := INF
+	var hi := -INF
+	for node in model.find_children("*", "MeshInstance3D", true, false):
+		var mi := node as MeshInstance3D
+		if mi.mesh == null or mi.name == "BurstRing" or mi.name == "ReadyRing":
+			continue
+		var box: AABB = (model.global_transform.affine_inverse() * mi.global_transform) * mi.get_aabb()
+		lo = minf(lo, box.position.y)
+		hi = maxf(hi, box.end.y)
+	return (hi - lo) * model.scale.y if hi > lo else 0.0
 
 
 ## Top of the visible meshes in the model's own space (for floating tags).
@@ -575,8 +604,70 @@ func _on_battle_ended(player_won: bool) -> void:
 	fx.finish(player_won)
 	_menu.hide()
 	hud.set_target(null)
-	await get_tree().create_timer(3.0, true, false, true).timeout
-	GameState.end_battle(player_won)
+
+	if player_won:
+		_trigger_victory_flow()
+	else:
+		await get_tree().create_timer(3.0, true, false, true).timeout
+		GameState.end_battle(false)
+
+
+func _trigger_victory_flow() -> void:
+	# 1. Desacelera suavemente o combate antes de abrir o painel (D-400)
+	var tween := create_tween()
+	tween.tween_property(Engine, "time_scale", 0.2, 0.6)
+	await tween.finished
+
+	# 2. Computa soma de XP dos inimigos abatidos (D-399)
+	var total_xp: int = 0
+	for enemy in battle.enemies:
+		if enemy != null:
+			total_xp += CrawlmonAttributeMath.get_enemy_xp_drop(enemy.base_experience, enemy.level)
+
+	# 3. Concede XP apenas para membros sobreviventes (D-402)
+	var party_summaries: Array[Dictionary] = []
+	for member in battle.party:
+		if member == null:
+			continue
+		if member.is_alive():
+			var res: Dictionary = member.add_experience(total_xp)
+			res["combatant"] = member
+			res["is_alive"] = true
+			party_summaries.append(res)
+		else:
+			party_summaries.append({
+				"combatant": member,
+				"is_alive": false,
+				"old_level": member.level,
+				"new_level": member.level,
+				"levels_gained": 0,
+				"points_gained": 0,
+				"old_xp": member.xp,
+				"current_xp": member.xp,
+				"xp_required": CrawlmonAttributeMath.get_xp_for_level_transition(member.level),
+				"transitions": []
+			})
+
+	# 4. Verifica se algum membro da equipe subiu de nivel (D-433)
+	var any_leveled_up := false
+	for s in party_summaries:
+		if s.get("levels_gained", 0) > 0:
+			any_leveled_up = true
+			break
+
+	if any_leveled_up:
+		# Exibe o LevelUpHUD unificado (D-401, D-418, D-420, D-433)
+		get_tree().paused = true
+		var level_up_scene: PackedScene = load("res://scenes/ui/level_up_hud.tscn")
+		var hud = level_up_scene.instantiate() as LevelUpHUD
+		ui.add_child(hud)
+		hud.open(party_summaries, total_xp)
+		await hud.completed
+		get_tree().paused = false
+
+	# 5. Restaura escala de tempo e finaliza combate (se ninguem subiu de nivel, retorna direto para masmorra por D-433)
+	Engine.time_scale = 1.0
+	GameState.end_battle(true)
 
 
 # --- Command flow ----------------------------------------------------------
@@ -595,6 +686,7 @@ func _refresh() -> void:
 		if sig != _fight_sig:
 			_fight_sig = sig
 			_fill_fight(true)
+			_update_fight_header(_menu.index)
 
 
 func _set_state(s: S) -> void:
@@ -604,6 +696,9 @@ func _set_state(s: S) -> void:
 	get_tree().paused = s == S.TACTICS or s == S.STATUS
 	if s != S.TARGET and s != S.FIGHT:
 		hud.set_target(null)  # The target tag stays lit while the move list is open.
+	if s != S.FIGHT:
+		hud.hide_skill_info()  # The move sheet belongs to the Fight list only.
+		_menu.note = ""
 	if was_target and s != S.TARGET:
 		director.cinema()
 
@@ -614,8 +709,8 @@ func _consumables() -> Array[Item]:
 
 ## The move waiting in the slot, if any, is shown over the menu (D-161).
 func _main_title() -> String:
-	var title := "01 / ESCOLHA SUA AÇÃO"
-	return title if leader.queued_skill == null else "%s · FILA: %s" % [title, leader.queued_skill.display_name]
+	# D-982: the "01 / CHOOSE YOUR ACTION" title was removed; only the queued move is shown, when there is one.
+	return "" if leader.queued_skill == null else "QUEUE: %s" % leader.queued_skill.display_name
 
 
 ## What the open move list depends on: it is redrawn when any of this changes.
@@ -638,10 +733,10 @@ func _main_entries() -> Array:
 		third = {"text": "Guard", "detail": "%d ATB" % int(Battle.GUARD_BLOCKS), "hilite": FanMenu.GUARD_BLUE, "shield": true}
 	return [
 		{"text": "Fight", "detail": "%d ATB" % int(Battle.min_skill_cost(leader))},
-		{"text": "Itens", "detail": "%d ATB" % int(Battle.ITEM_BLOCKS)},
+		{"text": "Items", "detail": "%d ATB" % int(Battle.ITEM_BLOCKS)},
 		third,
-		{"text": "Tactics", "detail": "PAUSA"},
-		{"text": "Status", "detail": "PAUSA"},
+		{"text": "Tactics", "detail": "PAUSE"},
+		{"text": "Status", "detail": "PAUSE"},
 	]
 
 
@@ -650,11 +745,11 @@ func _update_main_enabled() -> void:
 	var waits := not battle.can_start_now(leader)  # Busy or paused: the choice goes to the slot (D-161).
 	var can_fight := not leader.is_stunned() and (waits or leader.can_pay(min_cost))
 	_menu.set_enabled(0, can_fight)
-	var fight_detail := "fila" if can_fight and waits else (("GRÁTIS" if leader.burst > 0 else "%d ATB" % int(min_cost)) if can_fight else ("atordoado" if leader.is_stunned() else "falta ATB"))
+	var fight_detail := "queue" if can_fight and waits else (("FREE" if leader.burst > 0 else "%d ATB" % int(min_cost)) if can_fight else ("stunned" if leader.is_stunned() else "need ATB"))
 	_menu.set_detail(0, fight_detail)
 	var can_item := leader.can_pay(Battle.ITEM_BLOCKS) and not _consumables().is_empty()
 	_menu.set_enabled(1, can_item)
-	_menu.set_detail(1, "%d ATB" % int(Battle.ITEM_BLOCKS) if can_item else ("sem itens" if _consumables().is_empty() else "falta ATB"))
+	_menu.set_detail(1, "%d ATB" % int(Battle.ITEM_BLOCKS) if can_item else ("no items" if _consumables().is_empty() else "need ATB"))
 	if _guard_mode:
 		var why_not := battle.guard_block_reason(leader)
 		_menu.set_enabled(2, why_not == "")
@@ -664,7 +759,7 @@ func _update_main_enabled() -> void:
 	_menu.set_enabled(2, can_evade)
 	var why := "%d ATB" % int(battle.evade_cost(leader))
 	if not can_evade:
-		why = "engajado" if leader.engaged_with != null else ("em ação" if battle.is_attacking(leader) else ("falta ATB" if leader.blocks() < battle.evade_cost(leader) else "nada a desviar"))
+		why = "engaged" if leader.engaged_with != null else ("acting" if battle.is_attacking(leader) else ("need ATB" if leader.blocks() < battle.evade_cost(leader) else "nothing to dodge"))
 	_menu.set_detail(2, why)
 
 
@@ -674,13 +769,34 @@ func _show_fight() -> void:
 	_fight_sig = _fight_signature()
 	_fight_target = _default_target()
 	hud.set_target(_fight_target)
+	_focus_fight_target()
+	_fight_page = 0
+	for n in _fight_skills.size():
+		if _fight_skills[n].display_name == _last_skill:
+			_fight_page = floori(float(n) / float(FIGHT_SLOTS))
 	_fill_fight(false)
 	for n in _fight_skills.size():
 		if _fight_skills[n].display_name == _last_skill:
-			_menu.select(n)
+			_menu.select(n - _fight_page * FIGHT_SLOTS)
 	if _decision_slowmo_available:
 		_start_decision_slowmo(FIGHT_SLOWMO_SECONDS)
 	_update_fight_header(_menu.index)
+
+
+## The Fight menu uses the same high, wide TATICA framing as item target picking.
+## The glide ignores the decision slow-motion so the camera does not crawl.
+func _focus_fight_target() -> void:
+	if _fight_target == null or not models.has(_fight_target):
+		return
+	var model: Node3D = models[_fight_target]
+	if model != null and is_instance_valid(model):
+		director.tactical(model.global_position, BattleCamera.GLIDE, true)
+
+
+## Back to the base framing when the move list closes without a starting action.
+func _leave_fight_camera() -> void:
+	if not battle.is_attacking(leader):
+		director.cinema()
 
 
 func _build_fight_skills() -> void:
@@ -718,56 +834,85 @@ func _fill_fight(keep_index: bool) -> void:
 			if dmg > best_dmg:
 				best_dmg = dmg
 				best = n
+	var pages := maxi(1, ceili(float(_fight_skills.size()) / float(FIGHT_SLOTS)))
+	_fight_page = clampi(_fight_page, 0, pages - 1)
+	var offset := _fight_page * FIGHT_SLOTS
 	var entries: Array = []
 	var is_stunned := leader.is_stunned()
-	for n in _fight_skills.size():
+	for n in range(offset, mini(offset + FIGHT_SLOTS, _fight_skills.size())):
 		var sk := _fight_skills[n]
 		var waits := not battle.can_start_now(leader)  # Goes to the slot; paid when it starts (D-161).
-		var affordable := not is_stunned and (waits or leader.can_pay(sk.cost))
-		var price := "GRÁTIS" if leader.burst > 0 else "%d ATB" % sk.cost
+		var has_mp := leader.mp >= sk.mp_cost
+		var affordable := not is_stunned and has_mp and (waits or leader.can_pay(sk.cost))
+		var price := "FREE" if leader.burst > 0 else "%d ATB" % sk.cost
 		if is_stunned:
-			price = "ATORDOADO (%.1fs)" % leader.stun_timer
+			price = "STUNNED (%.1fs)" % leader.stun_timer
+		elif not has_mp:
+			price = "NEED %d MP" % (sk.mp_cost - leader.mp)
 		elif waits:
-			price = "fila · " + price
+			price = "queue | " + price
 		elif not leader.can_pay(sk.cost):
-			price = "falta %d ATB" % int(ceilf(sk.cost - leader.blocks()))
+			price = "need %d ATB" % int(ceilf(sk.cost - leader.blocks()))
+		var mp_str := "%d MP" % sk.mp_cost
+		var cost_str := "%s · %s" % [price, mp_str]
 		var tail := ""
 		var accent := Color(0, 0, 0, 0)
 		if sk.is_aoe:
-			tail += " · [ÁREA]"
+			tail += " | [AoE]"
 		elif sk.is_friendly:
-			tail += " · [GRUPO]"
+			tail += " | [TEAM]"
 		if target != null:
 			if sk.kind == Skill.Kind.STATUS:
-				tail += " · sem dano"
+				tail += " | status"
 			else:
 				var weak := sk.element in target.weaknesses
-				tail += " · ≈%d%s" % [Battle.estimate_damage(leader, target, sk), " FRAQ." if weak else ""]
+				tail += " | ~%d%s" % [Battle.estimate_damage(leader, target, sk), " WEAK" if weak else ""]
 				if weak:
 					accent = Color("ffd45a")
 		entries.append({
-			"text": ("★ " if n == best else "") + sk.display_name,
-			"detail": "%s · %s%s" % [price, Element.name_of(sk.element), tail],
+			"text": "%d %s%s" % [n - offset + 1, "★ " if n == best else "", sk.display_name],
+			"detail": "%s%s" % [cost_str, tail],
 			"enabled": affordable,
-			"accent": accent})
+			"accent": accent,
+			"skill": sk,
+		})
 	_menu.set_entries(entries, keep_index)
 
 
 ## Header strip: the highlighted move's category and travel time to the current target.
 func _update_fight_header(i: int) -> void:
-	if i < 0 or i >= _fight_skills.size():
+	var offset := _fight_page * FIGHT_SLOTS
+	var idx := offset + i
+	if i < 0 or idx < 0 or idx >= _fight_skills.size():
 		return
-	var sk := _fight_skills[i]
+	var sk := _fight_skills[idx]
 	var text := Skill.kind_name(sk.kind).to_upper()
 	if sk.is_aoe:
-		text += " (ÁREA)"
+		text += " (AoE)"
 	elif sk.is_friendly:
-		text += " (SUPORTE)"
+		text += " (SUPPORT)"
 	if _fight_target != null and (sk.kind == Skill.Kind.MELEE or sk.kind == Skill.Kind.PROJECTILE):
 		text += " %.2fs" % AttackPlanner.preview_travel(leader, _fight_target, sk.kind)
+	var pages := maxi(1, ceili(float(_fight_skills.size()) / float(FIGHT_SLOTS)))
+	var notes: Array[String] = []
+	if pages > 1:
+		notes.append("PAGE %d/%d | Q/E SWITCH" % [_fight_page + 1, pages])
 	if _decision_slowmo_active:
-		text += " · ⏳ %.1fs" % maxf(_decision_slowmo_time_left, 0.0)
+		notes.append("⏳ %.1fs" % maxf(_decision_slowmo_time_left, 0.0))
+	_menu.note = " · ".join(notes)
 	hud.set_menu_style(FanMenu.Style.DRAWER, text)
+	hud.show_skill_info(sk, _fight_target)
+
+
+## Q/E: swap the Fight page and highlight its first row.
+func _change_fight_page(step: int) -> void:
+	var pages := maxi(1, ceili(float(_fight_skills.size()) / float(FIGHT_SLOTS)))
+	if pages <= 1:
+		return
+	_fight_page = posmod(_fight_page + step, pages)
+	_fill_fight(false)
+	_menu.select(0)
+	_update_fight_header(0)
 
 
 ## Uses a move on a target right now (Fight menu, number keys and Repeat all end here).
@@ -777,7 +922,7 @@ func _use_move(skill: Skill, target: Combatant) -> bool:
 			target = leader
 	elif target == null or not target.is_alive():
 		return false
-	if leader.is_stunned() or (battle.can_start_now(leader) and not leader.can_pay(skill.cost)):
+	if leader.is_stunned() or (battle.can_start_now(leader) and not leader.can_pay(skill.cost)) or leader.mp < skill.mp_cost:
 		return false
 	_last_skill = skill.display_name
 	_last_target = target.name
@@ -813,7 +958,7 @@ func _show_items() -> void:
 
 
 func _update_items_header() -> void:
-	var text := "ITENS // 1 ATB"
+	var text := "ITEMS // 1 ATB"
 	if _decision_slowmo_active:
 		text += " · ⏳ %.1fs" % maxf(_decision_slowmo_time_left, 0.0)
 	hud.set_menu_style(FanMenu.Style.DRAWER, text)
@@ -865,7 +1010,7 @@ func _close_status() -> void:
 
 func _show_tactics() -> void:
 	_set_state(S.TACTICS)
-	hud.set_menu_style(FanMenu.Style.DRAWER, "TACTICS // IA DOS ALIADOS")
+	hud.set_menu_style(FanMenu.Style.DRAWER, "TACTICS // ALLY AI")
 	_fill_tactics(false)
 
 
@@ -875,11 +1020,11 @@ func _fill_tactics(keep_index: bool) -> void:
 	for i in battle.party.size():
 		var a := battle.party[i]
 		if i > 0:
-			entries.append({"text": "%s · Ação" % a.name, "detail": ACT_NAMES[a.act_policy]})
+			entries.append({"text": "%s | Action" % a.name, "detail": ACT_NAMES[a.act_policy]})
 			_tactic_rows.append({"unit": a, "kind": "act"})
-			entries.append({"text": "%s · Reação" % a.name, "detail": REACT_NAMES[a.react_policy]})
+			entries.append({"text": "%s | Reaction" % a.name, "detail": REACT_NAMES[a.react_policy]})
 			_tactic_rows.append({"unit": a, "kind": "react"})
-		entries.append({"text": "%s · Posição  (←/→, 1 ATB)" % a.name, "detail": _pos_text(a, i == 0)})
+		entries.append({"text": "%s | Position  (←/→, 1 ATB)" % a.name, "detail": _pos_text(a, i == 0)})
 		_tactic_rows.append({"unit": a, "kind": "pos"})
 	_menu.set_entries(entries, keep_index)
 
@@ -917,6 +1062,7 @@ func _on_menu_side(direction: int) -> void:
 			hud.set_target(_fight_target)
 			_fill_fight(true)
 			_update_fight_header(_menu.index)
+			_focus_fight_target()
 		return
 	if state != S.TACTICS or _menu.index >= _tactic_rows.size():
 		return
@@ -942,18 +1088,38 @@ func _pick_target(candidates: Array[Combatant], on_target: Callable, back: Calla
 			_show_main()
 		return
 	_set_state(S.TARGET)
-	hud.set_menu_style(FanMenu.Style.DRAWER, "ESCOLHA O ALVO")
+	hud.set_menu_style(FanMenu.Style.DRAWER, "CHOOSE TARGET")
 	_targets.assign(alive)
 	_on_target = on_target
 	_back = back
 	var entries: Array = []
 	for t in _targets:
-		var weak := t.weakness_text()
-		entries.append({"text": t.name, "detail": ("Fraq: " + weak) if weak != "" else "HP %d/%d" % [t.hp, t.max_hp]})
+		entries.append({"text": t.name, "detail": _target_brief(t)})
 	_menu.set_entries(entries)
 	for n in _targets.size():
 		if _targets[n].name == _last_target:
 			_menu.select(n)
+
+
+## Compact target line for the picker: HP plus the statuses that change the choice.
+func _target_brief(t: Combatant) -> String:
+	var bits: Array[String] = ["HP %d/%d" % [t.hp, t.max_hp]]
+	if t.is_shielded():
+		bits.append("S%d" % t.shield_hp)
+	if t.is_guarding():
+		bits.append("G%.1fs" % t.guard_timer)
+	if t.is_blind():
+		bits.append("BLIND")
+	if t.is_burning():
+		bits.append("BURN")
+	if t.is_stunned():
+		bits.append("STUN")
+	if t.queued_skill != null:
+		bits.append("QUEUE")
+	var weak := t.weakness_text()
+	if weak != "":
+		bits.append("WEAK")
+	return " · ".join(bits)
 
 
 func _on_chosen(i: int) -> void:
@@ -971,9 +1137,15 @@ func _on_chosen(i: int) -> void:
 				3: _show_tactics()
 				4: _show_status()
 		S.FIGHT:
-			var sk := _fight_skills[i]
+			var idx := _fight_page * FIGHT_SLOTS + i
+			if idx < 0 or idx >= _fight_skills.size():
+				return
+			var sk := _fight_skills[idx]
+			if leader.mp < sk.mp_cost:
+				return
 			var tgt: Combatant = leader if sk.is_friendly else (_fight_target if _fight_target != null and _fight_target.is_alive() else _default_target())
 			if _use_move(sk, tgt):
+				_leave_fight_camera()
 				_show_main()
 		S.ITEMS:
 			var item := _item_list[i]
@@ -1001,7 +1173,10 @@ func _on_chosen(i: int) -> void:
 func _on_cancel() -> void:
 	_end_decision_slowmo()
 	match state:
-		S.FIGHT, S.ITEMS, S.TACTICS:
+		S.FIGHT:
+			_leave_fight_camera()
+			_show_main()
+		S.ITEMS, S.TACTICS:
 			_show_main()
 		S.TARGET:
 			_back.call()

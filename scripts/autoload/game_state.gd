@@ -15,7 +15,41 @@ var defeated: Array[String] = []
 var in_battle := false
 var transition: EncounterTransition
 var party: Array[Combatant] = []
+## D-981: species whose elements the player has discovered (a weakness hit). Session only (no save yet).
+var discovered_species: Dictionary = {}
+
+
+static func species_key(c: Combatant) -> String:
+	return c.species_id.to_lower() if c.species_id != "" else c.name.to_lower()
+
+
+## D-981: the elements of `c` are known when the same species is on the team or one of its weaknesses was found.
+func elements_known(c: Combatant, team: Array = []) -> bool:
+	var key := species_key(c)
+	if discovered_species.has(key):
+		return true
+	for m in (team + party):
+		if m != null and m != c and species_key(m) == key:
+			return true
+	return false
 var inventory: Dictionary = INITIAL_INVENTORY.duplicate()
+
+## QoL: dialogue typewriter speed (characters per second).
+const TEXT_SPEED_NAMES := ["Lento", "Normal", "Rápido"]
+const TEXT_SPEED_VALUES := [28.0, 46.0, 80.0]
+var text_speed := 1
+
+
+func text_speed_name() -> String:
+	return TEXT_SPEED_NAMES[clampi(text_speed, 0, TEXT_SPEED_NAMES.size() - 1)]
+
+
+func text_speed_value() -> float:
+	return float(TEXT_SPEED_VALUES[clampi(text_speed, 0, TEXT_SPEED_VALUES.size() - 1)])
+
+
+func cycle_text_speed(step: int) -> void:
+	text_speed = posmod(text_speed + step, TEXT_SPEED_NAMES.size())
 
 ## Current exploration floor. The layout is cached so leaving to a battle and
 ## coming back does not regenerate it (GDD R9-Q2).
@@ -224,30 +258,21 @@ func _register_key(action: String, keycode: Key) -> void:
 
 
 func _build_party() -> void:
-	var abra := Combatant.new("Abra", 32, 12, 0.50, true)
-	abra.species_id = "abra"
-	abra.inventory = inventory  # The leader uses the shared party inventory.
-	abra.weaknesses.assign([Element.Type.TREVAS, Element.Type.SOM])
-	abra.skills.assign([
-		Skill.new("Confusion", 1.4, 2, Element.Type.PSIQUICO, Skill.Kind.PROJECTILE, false, false, false, 1.5),
-		Skill.new("Psybeam", 1.7, 3, Element.Type.PSIQUICO, Skill.Kind.PROJECTILE, false, false, false, 1.5),
-		Skill.new("Shock Wave", 1.3, 2, Element.Type.RAIO, Skill.Kind.CAST, false, false, false, 1.5),
-		Skill.new("Teleport", 0.7, 1, Element.Type.PSIQUICO, Skill.Kind.MELEE, false, false, false, 0.5),
-		Skill.new("Media", 0.0, 2, Element.Type.LUZ, Skill.Kind.STATUS, false, true, true, 0.5),
-		Skill.new("Sukunda", 0.0, 1, Element.Type.VENTO, Skill.Kind.STATUS, false, false, false, 0.5),
-		Skill.new("Megido", 1.6, 3, Element.Type.LUZ, Skill.Kind.PROJECTILE, false, true, false, 1.5),
-	])
-	var pancham := Combatant.new("Pancham", 45, 10, 0.45, true)
-	pancham.species_id = "pancham"
-	pancham.weaknesses.assign([Element.Type.PSIQUICO, Element.Type.VENTO])
-	pancham.act_policy = Combatant.Act.SKILL  # Allies start out using their moves and dodging (D-168).
-	pancham.react_policy = Combatant.React.EVADE
-	pancham.skills.assign([
-		Skill.new("Mach Punch", 0.5, 1, Element.Type.FISICO, Skill.Kind.MELEE, false, false, false, 0.2),
-		Skill.new("Karate Chop", 1.5, 2, Element.Type.FISICO, Skill.Kind.MELEE, false, false, false, 1.0),
-		Skill.new("Brick Break", 1.8, 3, Element.Type.FISICO, Skill.Kind.MELEE, false, false, false, 1.5),
-		Skill.new("Taunt", 0.0, 1, Element.Type.FISICO, Skill.Kind.STATUS, false, false, false, 0.5),
-		Skill.new("Tarukaja", 0.0, 2, Element.Type.FOGO, Skill.Kind.STATUS, false, true, true, 0.5),
-		Skill.new("Hassou Tobi", 1.4, 3, Element.Type.FISICO, Skill.Kind.MELEE, false, true, false, 1.5),
-	])
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+
+	# D-1079: a ficha de Abra/Pancham vive em content/characters/.
+	var abra := CharacterFactory.create("abra", {
+		"is_player": true,
+		"forced_nature": "modest",
+		"rng": rng,
+		"inventory": inventory,  # The leader uses the shared party inventory.
+	})
+	var pancham := CharacterFactory.create("pancham", {
+		"is_player": true,
+		"forced_nature": "brave",
+		"rng": rng,
+		"act_policy": Combatant.Act.SKILL,  # Allies start out using their moves and dodging (D-168).
+		"react_policy": Combatant.React.EVADE,
+	})
 	party.assign([abra, pancham])

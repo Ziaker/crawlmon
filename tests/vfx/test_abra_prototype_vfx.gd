@@ -68,8 +68,15 @@ func _test_impacts(battle_fx: BattleFx) -> void:
 	_expect(battle_fx.find_children("AbraTeleporteRapidoImpact*", "Node3D", true, false).size() == 1, "Teleport impact must add the tesseract palm and Mach rings")
 
 
+func _inc_for(move_id: String) -> Incoming:
+	var inc := Incoming.new()
+	inc.move_id = move_id
+	inc.move_data = MoveCatalog.get_move(StringName(move_id))
+	return inc
+
+
 func _test_telegraph_hook(battle_fx: BattleFx) -> void:
-	var dict: Dictionary = battle_fx.fx_telegraph._telegraph_move(null, "confusao", Vector3(-3, 0, 6), Vector3(8, 0, -20), Color.RED, Color.RED, 0.5)
+	var dict: Dictionary = battle_fx.fx_telegraph._telegraph_move(_inc_for("confusao"), "confusao", Vector3(-3, 0, 6), Vector3(8, 0, -20), Color.RED, Color.RED, 0.5)
 	var nodes: Array = dict.get("nodes", [])
 	var found := false
 	for n in nodes:
@@ -78,7 +85,7 @@ func _test_telegraph_hook(battle_fx: BattleFx) -> void:
 	_expect(found, "Confusion telegraph must hand its wind-up layer to clear_telegraph")
 	for n in nodes:
 		(n as Node).queue_free()
-	var tele: Dictionary = battle_fx.fx_telegraph._telegraph_move(null, "teleporte_rapido", Vector3.ZERO, Vector3(0, 0, -8), Color.RED, Color.RED, 0.5)
+	var tele: Dictionary = battle_fx.fx_telegraph._telegraph_move(_inc_for("teleporte_rapido"), "teleporte_rapido", Vector3.ZERO, Vector3(0, 0, -8), Color.RED, Color.RED, 0.5)
 	var tele_nodes: Array = tele.get("nodes", [])
 	var tele_found := false
 	for n in tele_nodes:

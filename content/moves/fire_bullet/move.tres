@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_ecoyh"]
+
+[resource]
+script = ExtResource("1_ecoyh")
+id = &"fire_bullet"
+display_name = "Fire Bullet"
+kind = 1
+element = 1
+mp_cost = 3
+windup = 0.5
+visual_push = 1
+stand_gap = 2.6
+hold = 0.2
+plan_profile = &"projectile"
+tags = Array[StringName]([&"interrupt", &"burn", &"armor_worthy"])
+vfx_key = &"fire"
+ai_profile = {
+"armor_worthy": true
+}
+effect_line_text = "100% ATK fire damage | Projectile | Can interrupt a wind-up | 2 ATB"
+short_effect_text = "100% fire | interrupts"
+description_text = "A fast fire shot; hitting during a wind-up interrupts the target's action."
+mechanics_text = "High-velocity incendiary slug capable of staggering and interrupting opposing wind-ups on direct hit."
+visual_text = "Blazing orange fireball trailing yellow sparks and smoke streaks that explodes into flame splashes."
+motion_text = "Stationary shot. Caster launches a rapid linear projectile straight down the combat lane."
+windup_text = "1.00s wind-up. Finger/mouth ignition spark."
+tactical_text = "High-velocity incendiary slug capable of interrupting wind-ups. Single Target."
+visual_motion_text = "Stationary shot launching a linear incendiary slug."
+phase_visuals = {
+"impact": "Explosão de chamas e brasas radiais no alvo; se interromper wind-up, aplica Burn e empurrão reforçado (D-236/D-238).",
+"release": "A carga projeta-se para a frente convertendo-se no projétil incandescente com cone de saída.",
+"return": "Brasas e fumaça dissolvem suavemente até opacidade zero.",
+"strike": "Dread na ponta do projétil encerra 0,15s antes do contato para deixar o quadro de impacto limpo (D-1039).",
+"travel": "Bola de fogo laranja com rastro de faíscas amarelas, fumaça e aviso Dread na ponta que some 0,15s antes do impacto (D-1029/D-1039).",
+"windup": "Fagulha e orbe de ignição laranja-viva concentram-se à frente do lançador (0,50s, D-236)."
+}

@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_hyome"]
+
+[resource]
+script = ExtResource("1_hyome")
+id = &"sukunda"
+display_name = "Sukunda"
+kind = 3
+element = 8
+power = 0.0
+atb_cost = 1
+mp_cost = 2
+windup = 0.5
+stand_gap = 2.6
+hold = 0.2
+plan_profile = &"cast"
+tags = Array[StringName]([&"stage_vfx"])
+vfx_key = &"generic"
+effect_line_text = "-1 SPD to one enemy (min -5) | Lasts until battle ends | 1 ATB"
+short_effect_text = "-1 SPD"
+description_text = "A speed debuff. Stacks up to -5 and lasts for the rest of the battle."
+mechanics_text = "Temporal slowing hex that reduces the target's Speed (-1 SPD stage), slowing their ATB gauge accumulation."
+visual_text = "Swirling yellow-green gravitational clock gears that shatter and coat the target in slowing spectral sludge."
+motion_text = "Stationary hex cast. Manifests directly around the target's feet."
+windup_text = "0.90s wind-up. Clockwork temporal invocation."
+tactical_text = "Reduces target Speed (-1 SPD stage), slowing ATB accumulation. Single Target."
+visual_motion_text = "Stationary hex manifesting swirling yellow-green clockwork gears at target's feet."
+phase_visuals = {
+"impact": "Aplicação do efeito visual e badge de status: Swirling yellow-green gravitational clock gears that shatter and coat the target in slowing spectral sludge.",
+"release": "Liberação da invocação no próprio lançador/alvo: Stationary hex cast. Manifests directly around the target's feet.",
+"return": "Dissolução suave da cerimônia sem sobras e retomada do relógio do combate.",
+"strike": "Ativação do selo/aura de status sobre os alvos.",
+"travel": "Manifestação direta no campo (sem deslocamento de corpo): Stationary hex cast. Manifests directly around the target's feet.",
+"windup": "Canalização de status com motor pausado (D-031): 0.90s wind-up. Clockwork temporal invocation."
+}

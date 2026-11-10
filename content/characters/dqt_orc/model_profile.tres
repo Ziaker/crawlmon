@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="CharacterModelProfile" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/character_model_profile.gd" id="1_xvcu4"]
+
+[resource]
+script = ExtResource("1_xvcu4")
+profile = {
+"ally_scale": 1.2,
+"charge_clip": "32",
+"clip_prefix": "cm_00_0020_",
+"guard_clip": "12",
+"idle_full": true,
+"idle_pose_time": 1.9,
+"idle_source": "32",
+"native_height": 1.772,
+"rotation_y": 180.0,
+"target_height": 2.1,
+"weapon_follow": {
+"anims": ["down", "victory", "attack_special"],
+"bone": "n_buki_r_n_hara",
+"hand": "j_te_r",
+"ref_clip": "32"
+}
+}

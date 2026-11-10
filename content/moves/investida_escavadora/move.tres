@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_n5w1m"]
+
+[resource]
+script = ExtResource("1_n5w1m")
+id = &"investida_escavadora"
+display_name = "Dig"
+element = 7
+power = 1.5
+mp_cost = 3
+windup = 1.0
+ground = true
+stand_gap = 2.6
+run_base = 0.26
+hold = 0.2
+untargetable = true
+plan_profile = &"melee"
+hit_stop_duration = 0.12
+bw_pulse = true
+tags = Array[StringName]([&"untargetable"])
+vfx_key = &"generic"
+effect_line_text = "Earth damage x1.5 ATK | melee | 2 ATB"
+short_effect_text = "x1.5 Earth"
+description_text = "A earth melee move. Deals x1.5 ATK damage."
+mechanics_text = "Earth damage x1.5 ATK | melee | 2 ATB"
+visual_text = "Vibrant elemental VFX manifestation with light emission and impact shockwaves."
+motion_text = "Rushes forward into melee contact range and returns."
+windup_text = "1.00s preparation stance. Vulnerable to interruption by heavy hits."
+tactical_text = "Direct strike on single target."
+visual_motion_text = "Forward melee sprint with elemental impact."
+phase_visuals = {
+"impact": "Contato direto no ponto zero do alvo com hit-stop, flash e reação: Vibrant elemental VFX manifestation with light emission and impact shockwaves.",
+"release": "Partida física contínua a partir da carga rumo ao alvo: Rushes forward into melee contact range and returns.",
+"return": "Salto/corrida de recuo de volta à posição de origem e retomada de idle.",
+"strike": "Prelúdio de golpe e arco de swing/arma com aviso Dread na janela de Evade (D-986/D-992).",
+"travel": "Corrida pelo eixo atacante->alvo com trilha no chão (D-1013): Rushes forward into melee contact range and returns.",
+"windup": "Preparo em posição base com loop contínuo de carga (D-163): 1.00s preparation stance. Vulnerable to interruption by heavy hits."
+}

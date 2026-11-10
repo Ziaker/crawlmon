@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CharacterCatalog" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="1_mard0"]
+[ext_resource type="Resource" path="res://content/characters/gible/species.tres" id="2_0m4b2"]
+[ext_resource type="Resource" path="res://content/characters/abra/species.tres" id="3_4ub66"]
+[ext_resource type="Resource" path="res://content/characters/pancham/species.tres" id="4_q4bg5"]
+[ext_resource type="Resource" path="res://content/characters/dqt_slime/species.tres" id="5_muqot"]
+[ext_resource type="Resource" path="res://content/characters/dqt_orc/species.tres" id="6_uviqy"]
+[ext_resource type="Resource" path="res://content/characters/dqt_cyclops/species.tres" id="7_qyghv"]
+[ext_resource type="Script" path="res://scripts/data/character_catalog.gd" id="8_5idmk"]
+
+[resource]
+script = ExtResource("8_5idmk")
+characters = Array[ExtResource("1_mard0")]([ExtResource("2_0m4b2"), ExtResource("3_4ub66"), ExtResource("4_q4bg5"), ExtResource("5_muqot"), ExtResource("6_uviqy"), ExtResource("7_qyghv")])

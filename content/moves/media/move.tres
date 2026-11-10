@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_wwv0o"]
+[ext_resource type="Script" path="res://content/moves/media/behavior.gd" id="2_media"]
+
+[resource]
+script = ExtResource("1_wwv0o")
+behavior_script = ExtResource("2_media")
+id = &"media"
+display_name = "Media"
+kind = 3
+element = 9
+power = 0.0
+mp_cost = 4
+windup = 0.5
+is_aoe = true
+is_friendly = true
+stand_gap = 2.6
+hold = 0.2
+plan_profile = &"cast"
+tags = Array[StringName]([&"stage_vfx"])
+vfx_key = &"media"
+effect_line_text = "Heals all living allies for 10 + MAG | 2 ATB"
+short_effect_text = "heal 10+MAG | team"
+description_text = "A healing ritual for the whole team. Higher MAG heals more."
+mechanics_text = "Restorative prayer that heals missing HP for all living allies based on the caster's Wisdom (WIS)."
+visual_text = "Warm golden-green light rain descending gently over all allies, dissipating into rising healing motes."
+motion_text = "Stationary team heal. Caster kneels in prayer; healing light envelopes all friendly units at once."
+windup_text = "1.30s wind-up. Reverent prayer posture."
+tactical_text = "Restores missing HP to all living allies based on Wisdom (WIS). Team AoE."
+visual_motion_text = "Stationary prayer showering all allies with warm golden-green light rain."
+phase_visuals = {
+"impact": "Aplicação do efeito visual e badge de status: Warm golden-green light rain descending gently over all allies, dissipating into rising healing motes.",
+"release": "Liberação da invocação no próprio lançador/alvo: Stationary team heal. Caster kneels in prayer; healing light envelopes all friendly units at once.",
+"return": "Dissolução suave da cerimônia sem sobras e retomada do relógio do combate.",
+"strike": "Ativação do selo/aura de status sobre os alvos.",
+"travel": "Manifestação direta no campo (sem deslocamento de corpo): Stationary team heal. Caster kneels in prayer; healing light envelopes all friendly units at once.",
+"windup": "Canalização de status com motor pausado (D-031): 1.30s wind-up. Reverent prayer posture."
+}

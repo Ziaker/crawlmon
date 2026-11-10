@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_joho8"]
+
+[resource]
+script = ExtResource("1_joho8")
+id = &"golpe_carate"
+display_name = "Karate Chop"
+power = 1.5
+mp_cost = 3
+windup = 1.0
+stand_gap = 2.6
+run_base = 0.45
+strike_time = 0.45
+hold = 0.2
+plan_profile = &"melee"
+hit_stop_duration = 0.095
+bw_pulse = true
+tags = Array[StringName]([&"armor_worthy"])
+vfx_key = &"generic"
+ai_profile = {
+"armor_worthy": true,
+"contact_bonus": 6.0
+}
+effect_line_text = "150% ATK physical damage | Direct strike | 2 ATB"
+short_effect_text = "150% physical"
+description_text = "A sharp, direct strike with solid damage for 2 ATB."
+mechanics_text = "Heavy directional martial strike with a sharp cutting edge and elevated critical hit chance."
+visual_text = "Bright red momentum trails trailing the striking limb, culminating in a sharp directional slash and impact sparks."
+motion_text = "Forward melee sprint. Attacker closes the distance rapidly, delivers a vertical downward chop, and recovers."
+windup_text = "1.00s wind-up. Sharp martial stance with rapid execution."
+tactical_text = "Direct martial chop with elevated critical strike chance. Single Target."
+visual_motion_text = "Forward melee sprint with a sharp red-trailed vertical slash."
+phase_visuals = {
+"impact": "Contato direto no ponto zero do alvo com hit-stop, flash e reação: Bright red momentum trails trailing the striking limb, culminating in a sharp directional slash and impact sparks.",
+"release": "Partida física contínua a partir da carga rumo ao alvo: Forward melee sprint. Attacker closes the distance rapidly, delivers a vertical downward chop, and recovers.",
+"return": "Salto/corrida de recuo de volta à posição de origem e retomada de idle.",
+"strike": "Prelúdio de golpe e arco de swing/arma com aviso Dread na janela de Evade (D-986/D-992).",
+"travel": "Corrida pelo eixo atacante->alvo com trilha no chão (D-1013): Forward melee sprint. Attacker closes the distance rapidly, delivers a vertical downward chop, and recovers.",
+"windup": "Preparo em posição base com loop contínuo de carga (D-163): 1.00s wind-up. Sharp martial stance with rapid execution."
+}

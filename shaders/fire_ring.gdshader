@@ -11,6 +11,7 @@ uniform float thick = 0.05;
 uniform float fade : hint_range(0.0, 1.0) = 0.0;
 uniform float seed = 0.0;
 uniform float dashes = 18.0;
+uniform float solid : hint_range(0.0, 1.0) = 0.0;  // V1.12 (D-1026): 1 = a continuous thin line (a clean shock ring) instead of dashes; 0 keeps the old look
 
 float hash11(float x) {
 	return fract(sin(x * 127.1 + 311.7) * 43758.5453);
@@ -25,7 +26,7 @@ void fragment() {
 	float within = fract(ang * dashes + tt * 1.5 + seed);
 	float dash = smoothstep(0.0, 0.12, within) * smoothstep(1.0, 0.55, within);
 	float line = 1.0 - smoothstep(thick * 0.6, thick, abs(r - 0.78 - (hash11(seg) - 0.5) * 0.04));
-	float a = line * dash * on * (1.0 - fade);
+	float a = line * mix(dash * on, 1.0, solid) * (1.0 - fade);
 	if (a < 0.03) {
 		discard;
 	}

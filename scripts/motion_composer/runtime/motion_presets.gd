@@ -325,16 +325,13 @@ static func _media_ring(seed_value: int, count: int, radius: float, orbit_speed:
 static func media_effect(seed_value: int, anchors: Array, center: Vector3, windup := 0.5) -> MotionEffect:
 	var fx := MotionEffect.new()
 	var s := seed_value
-	# Círculo sagrado central da equipe (raio 5,2 m no HTML), no chão do grupo.
-	fx.add("windup", _c(&"media_center", s, 2, [] as Array[MotionLayer]),
-		[MotionRep.make("atelier", {"shape": "heal_circle", "size": 5.2, "duration": 2.4})],
-		{"length": 0.01, "world_anchor": Vector3(center.x, 0.0, center.z)})
 	for i in anchors.size():
 		var a: Vector3 = anchors[i]
 		var off_y := 0.0
-		# Círculo individual sob o aliado (raio 2,2 m, 2,4 s).
+		# Círculo individual sob o aliado (raio 2,2 m, 2,4 s), 20% menos opaco em todos os lados (D-353).
 		fx.add("windup", _c(&"media_circle_%d" % i, s + 1 + i, 2, [] as Array[MotionLayer]),
-			[MotionRep.make("atelier", {"shape": "heal_circle", "size": 2.2, "duration": 2.4})],
+			[MotionRep.make("atelier", {"shape": "heal_circle", "size": 2.2, "duration": 2.4,
+				"look": {"alpha_scale": 0.8}})], 
 			{"length": 0.01, "world_anchor": Vector3(a.x, 0.0, a.z)})
 		# Pilar volumétrico translúcido (1,85 s, atraso 0,35 + 0,08 por aliado).
 		fx.add("windup", _c(&"media_pillar_%d" % i, s + 11 + i, 2, [] as Array[MotionLayer]),
@@ -357,6 +354,16 @@ static func media_effect(seed_value: int, anchors: Array, center: Vector3, windu
 			_layers(_atelier_emit(&"pulse", 50, {"shape": 0, "radius": 0.5, "speed_min": 2.2, "speed_max": 5.2,
 				"drag": 0.94, "life_min": 0.65, "life_max": 1.15, "size_min": 0.65, "size_max": 1.25, "size_bell": false}))),
 			[_ptcl(1, MEDIA_LIME, MEDIA_GLOW)], {"length": 0.01, "start": 0.0, "world_anchor": Vector3(a.x, 1.3 + off_y, a.z)})
+	return fx
+
+
+## D-353: the old 5.2 m team circle, taken out of Media and kept for a future superior Media
+## move. Not referenced by the current game.
+static func media_superior_effect(seed_value: int, center: Vector3) -> MotionEffect:
+	var fx := MotionEffect.new()
+	fx.add("windup", _c(&"media_superior_center", seed_value, 2, [] as Array[MotionLayer]),
+		[MotionRep.make("atelier", {"shape": "heal_circle", "size": 5.2, "duration": 2.4})],
+		{"length": 0.01, "world_anchor": Vector3(center.x, 0.0, center.z)})
 	return fx
 
 
@@ -386,10 +393,471 @@ static func heal_gain_effect(seed_value: int, _origin: Vector3) -> MotionEffect:
 	return fx
 
 
+## D-377 / V1.10: Drain Spear. O efeito é um `MotionEffect` (nada de aparência na classe do Move): a lança 3D, a
+## formação, a estocada, o leque de shotgun, o sifão reverso do Badge Steal, a órbita e a dissolução. Todas as posições
+## vêm do atacante/alvo reais; não há personagem, time, lado nem coordenada fixa (D-235). `opts.steal_distance` é a
+## distância real contato→atacante, usada só pelo sifão (o alvo do M06 é local).
+static func drain_spear_effect(seed_value: int, opts := {}) -> MotionEffect:
+	var fx := MotionEffect.new()
+	var s := seed_value
+	var sd := s % 999983  # M24/M21 'seed' domain is [0, 1000000]; 20261106 would be rejected and the layer dropped.
+	var steal_distance := maxf(float(opts.get("steal_distance", 16.3)), 0.5)
+	var with_crown := bool(opts.get("crown", true))
+	var spark_look := {"hot": Color(0.92, 1.0, 1.0), "cool": Color(0.10, 0.52, 1.0), "energy": 2.6, "hard": 0.15}
+	var steal_look := {"hot": Color(0.55, 0.90, 1.0), "cool": Color(0.12, 0.45, 1.0), "energy": 1.1, "hard": 0.0}
+	var puff_look := {"light_col": Color(0.62, 0.86, 1.0), "mid_col": Color(0.30, 0.54, 0.80), "dark_col": Color(0.10, 0.22, 0.38), "churn": 0.5}
+	var mark_look := {"base_col": Color(0.02, 0.06, 0.12), "line_col": Color(0.38, 0.95, 1.0), "rim_col": Color(0.10, 0.30, 0.50), "line_amount": 0.9, "alpha": 0.55}
+	var spear_look := {"tip_color": Color(0.48, 0.92, 1.0), "edge_color": Color(0.62, 0.96, 1.0), "rim": 1.15}
+	var aura_look := {"rim_color": Color(0.72, 1.0, 1.0), "flow_speed": 0.75, "rim_power": 1.8, "edge_soft": 0.32, "light_dir": Vector3(-0.35, 0.85, 0.42)}
+
+	# --- WIND-UP: a lança nasce no chão (cabo → ponta), com 6 faixas de aura, sparkles, órbita da ponta e luz. ---
+	var spear_reveal := MotionRep.make("spear", {"spear_mode": "reveal", "spear_part": "full", "blade_length": 1.0,
+		"energy": 1.35, "color": Color(0.30, 0.80, 1.0), "look": spear_look})
+	fx.add("windup", _ds_spear_comp(s), [spear_reveal], {"length": "dest", "scalable": false, "dir": "axis"})
+	var aura_windup := MotionRep.make("aura", {"look": aura_look})
+	fx.add("windup", _ds_spear_comp(s + 1), [aura_windup], {"length": "dest", "scalable": false, "dir": "axis"})
+	var motes := _ds_rest(&"ds_motes", s + 2, 54, 6.4, [
+		_layer(&"turb", &"M24", MotionTypes.Op.OFFSET, {"scale": 1.2, "intensity": 0.28, "time_hz": 1.1, "seed": sd}),
+		_grow(0.85, 0.0),
+		_dissolve(0.80, 0.45, 0.30),
+	] as Array[MotionLayer])
+	fx.add("windup", motes, [MotionRep.make("spark", {"size": 0.13, "look": spark_look, "trail": true, "trail_gain": 2.2, "stride": 2})],
+		{"length": "dest", "scalable": false, "dir": "axis", "trail_dt": 0.05})
+	var tip_orbit := _ds_rest(&"ds_tip_orbit", s + 3, 24, 0.6, [
+		_layer(&"helix", &"M01", MotionTypes.Op.REPLACE, {"radius": 0.32, "radius_growth": 0.05, "pitch": 0.16, "turns": 2.0, "phase_deg": 0.0, "direction": 1, "spin_deg_s": 220.0}),
+		_dissolve(0.65, 0.40, 0.20),
+	] as Array[MotionLayer])
+	fx.add("windup", tip_orbit, [MotionRep.make("spark", {"size": 0.10, "look": spark_look, "trail": true, "trail_gain": 2.4})],
+		{"length": 0.6, "scalable": false, "frame": "head", "dir": "axis", "trail_dt": 0.03})
+	var aura_tip := _ds_rest(&"ds_aura_tip", s + 4, 2, 0.05, [] as Array[MotionLayer])
+	fx.add("windup", aura_tip, [
+		MotionRep.make("halo", {"size": 1.9, "strength": 0.9, "look": {"color": Color(0.30, 0.80, 1.0), "bands": 3.0, "falloff": 2.2}}),
+		MotionRep.make("light", {"color": Color(0.30, 0.78, 1.0), "size": 4.0, "strength": 1.1, "light_range": 4.5}),
+	], {"length": 0.05, "scalable": false, "frame": "head", "dir": "axis"})
+
+	# --- THRUST: uma lança única e conectada; o cabo cresce e a lâmina fica na ponta. Sem feixe, sem projétil. ---
+	var spear_thrust := MotionRep.make("spear", {"spear_mode": "none", "spear_part": "full", "blade_length": 1.0,
+		"ghosts": 2, "ghost_gap": 0.12, "ghost_alpha": 0.13, "energy": 1.55, "color": Color(0.34, 0.86, 1.0), "look": spear_look})
+	fx.add("thrust", _ds_spear_comp(s + 10), [
+		spear_thrust,
+		MotionRep.make("light", {"color": Color(0.34, 0.86, 1.0), "size": 4.5, "strength": 1.4, "light_range": 5.0}),
+	], {"length": "dest", "scalable": false, "dir": "axis"})
+	fx.add("thrust", _ds_spear_comp(s + 11), [MotionRep.make("aura", {"look": aura_look})],
+		{"length": "dest", "scalable": false, "dir": "axis"})
+	var speedlines := _ds_rest(&"ds_speedlines", s + 12, 28, 6.4, [
+		_layer(&"flow", &"M21", MotionTypes.Op.OFFSET, {"direction": Vector3(0, 0, -1), "distance": 1.8, "radius": 1.0, "core_radius": 0.1, "edge_noise": 0.25, "seed": sd, "t_start": 0.0, "t_duration": 0.25}),
+		_dissolve(0.10, 0.35, 0.20),
+	] as Array[MotionLayer])
+	fx.add("thrust", speedlines, [MotionRep.make("spark", {"size": 0.12, "look": spark_look, "trail": true, "trail_gain": 2.4, "stride": 2})],
+		{"length": "dest", "scalable": false, "dir": "axis", "trail_dt": 0.04})
+	var thrust_motes := _ds_rest(&"ds_thrust_motes", s + 13, 40, 6.4, [
+		_layer(&"turb", &"M24", MotionTypes.Op.OFFSET, {"scale": 0.9, "intensity": 0.22, "time_hz": 2.4, "seed": (sd + 3) % 999983}),
+		_dissolve(0.05, 0.40, 0.25),
+	] as Array[MotionLayer])
+	fx.add("thrust", thrust_motes, [MotionRep.make("spark", {"size": 0.10, "look": spark_look, "trail": true, "trail_gain": 2.0, "stride": 2})],
+		{"length": "dest", "scalable": false, "dir": "axis", "trail_dt": 0.035})
+
+	# --- DRILL (D-379): boost burst helicoidal no INÍCIO da estocada. Dura 0,6 s; após 0,4 s começa a
+	# desaparecer em opacidade; o giro é de ventilador. ---
+	var vortex := MotionRep.make("vortex", {"vortex_bands": 10, "vortex_length": 3.0, "vortex_radius": 1.10, "vortex_end_radius": 0.08,
+		"vortex_turns": 3.2, "vortex_spin": 4.2, "vortex_width": 0.12, "vortex_opacity": 0.41, "vortex_energy": 3.2, "vortex_split": 1.6,  # D-1015: -25% opacity, bands split apart on fade
+		"vortex_base_length": 5.0, "vortex_base_radius": 1.80, "vortex_base_end_radius": 0.22,
+		"vortex_cone_opacity": 0.0,  # D-1015: no solid cone (it read as an umbrella) "vortex_cone_energy": 3.2,
+		"vortex_color": Color(0.55, 0.95, 1.0), "look": {"flow_speed": 2.5, "rim_power": 1.4, "edge_soft": 0.35}})
+	var drill_comp := _c(&"ds_drill", s + 60, 2, [_dissolve(0.10, 0.15, 0.0)] as Array[MotionLayer])  # D-1016: gone 0.25 s after it appears
+	fx.add("drill", drill_comp, [vortex], {"length": "dest", "scalable": false, "dir": "axis"})
+	var drill_shock_base := _c(&"ds_drill_shock_base", s + 62, 2, [_dissolve(0.0, 0.24, 0.0)] as Array[MotionLayer])
+	fx.add("drill", drill_shock_base, [
+		MotionRep.make("halo", {"size": 5.0, "strength": 2.5, "look": {"color": Color(0.55, 0.95, 1.0), "bands": 3.0, "falloff": 1.9}}),
+		MotionRep.make("shock", {"size": 4.5, "strength": 3.0}),
+		MotionRep.make("light", {"color": Color(0.55, 0.95, 1.0), "size": 8.0, "strength": 6.0, "light_range": 8.0}),
+	], {"length": 0.01, "scalable": false, "frame": "origin", "dir": "axis"})
+	var drill_shock_tip := _c(&"ds_drill_shock_tip", s + 63, 2, [_dissolve(0.0, 0.26, 0.0)] as Array[MotionLayer])
+	fx.add("drill", drill_shock_tip, [
+		MotionRep.make("halo", {"size": 3.0, "strength": 1.8, "look": {"color": Color(0.55, 0.95, 1.0), "bands": 3.0, "falloff": 2.0}}),
+		MotionRep.make("shock", {"size": 2.6, "strength": 2.4}),
+	], {"length": 0.01, "scalable": false, "frame": "head", "dir": "axis"})
+	var drill_sparks := _c(&"ds_drill_sparks", s + 61, 64, [
+		_layer(&"burst", &"M16", MotionTypes.Op.OFFSET, {"direction": Vector3(0, 0, 1), "cone_deg": 30.0, "distance": 2.6, "distribution": 0.9, "t_start": 0.0, "t_duration": 0.40, "curve": 1.2, "dissipate": 0.0}),
+		_dissolve(0.10, 0.30, 0.10),
+	] as Array[MotionLayer])
+	drill_sparks.base_length = 0.01
+	fx.add("drill", drill_sparks, [MotionRep.make("spark", {"size": 0.26, "look": spark_look, "trail": true, "trail_gain": 3.0})],
+		{"length": 0.01, "scalable": false, "frame": "head", "dir": "axis", "trail_dt": 0.03})
+	var drill_sparks_wide := _c(&"ds_drill_sparks_wide", s + 64, 40, [
+		_layer(&"burst", &"M16", MotionTypes.Op.OFFSET, {"direction": Vector3(0, 0, 1), "cone_deg": 75.0, "distance": 3.2, "distribution": 0.8, "t_start": 0.0, "t_duration": 0.34, "curve": 1.4, "dissipate": 0.0}),
+		_dissolve(0.05, 0.30, 0.10),
+	] as Array[MotionLayer])
+	drill_sparks_wide.base_length = 0.01
+	fx.add("drill", drill_sparks_wide, [MotionRep.make("spark", {"size": 0.20, "look": spark_look, "trail": true, "trail_gain": 2.5})],
+		{"length": 0.01, "scalable": false, "frame": "origin", "dir": "axis", "trail_dt": 0.03})
+
+	# --- IMPACT (comum): leque de shotgun a partir do contato, para além do alvo. ---
+	var spines := _ds_burst(&"ds_spines", s + 20, 86, 55.0, 4.8, 0.55, 2.2, 0.9, 18.0, 6.0, 6.0)
+	fx.add("impact", spines, [MotionRep.make("spark", {"size": 0.28, "look": spark_look, "trail": true, "trail_gain": 2.8})],
+		{"length": 0.01, "scalable": true, "dir": "axis", "trail_dt": 0.035})
+	var shards := _ds_burst(&"ds_shards", s + 21, 36, 42.0, 3.4, 0.55, 1.8, 0.85, 10.0, 5.0, 5.0)
+	fx.add("impact", shards, [MotionRep.make("surface", {"shape": "fragments", "element": "water", "size": 0.35, "spin": 6.0})],
+		{"length": 0.01, "scalable": true, "dir": "axis"})
+	var fines := _ds_burst(&"ds_fines", s + 22, 60, 70.0, 2.4, 0.45, 1.4, 0.9, 8.0, 4.0, 4.0)
+	fx.add("impact", fines, [MotionRep.make("spark", {"size": 0.12, "look": spark_look})], {"length": 0.01, "scalable": true, "dir": "axis"})
+	var flash := _c(&"ds_flash", s + 23, 2, [_dissolve(0.0, 0.45, 0.15)] as Array[MotionLayer])
+	fx.add("impact_flash", flash, [
+		MotionRep.make("halo", {"size": 3.6, "strength": 1.6, "look": {"color": Color(0.85, 1.0, 1.0), "bands": 3.0, "falloff": 1.9}}),
+		MotionRep.make("light", {"color": Color(0.55, 0.90, 1.0), "size": 8.0, "strength": 4.0, "light_range": 8.0}),
+		MotionRep.make("shock", {"size": 3.4, "strength": 2.0}),
+	], {"length": 0.05, "scalable": true, "dir": "axis"})
+	var dust := _ds_burst(&"ds_dust", s + 24, 24, 80.0, 2.6, 0.55, 1.2, 0.9, 5.0, 3.0, 6.0)
+	fx.add("impact_flash", dust, [MotionRep.make("puff", {"size": 0.55, "appear": 0, "look": puff_look})], {"length": 0.01, "scalable": true, "dir": "axis"})
+	var ground := _c(&"ds_ground", s + 25, 2, [_dissolve(0.0, 0.60, 0.12)] as Array[MotionLayer])
+	fx.add("impact_flash", ground, [MotionRep.make("mark", {"size": 1.4, "look": mark_look})], {"length": 0.02, "scalable": true, "ground": true, "dir": "up"})
+
+	# --- BADGE STEAL (D-380, igual ao HTML): 56+36 streaks azuis + 34 orbes verdes + órbita única no atacante. ---
+	var reverse_streaks := _c(&"ds_reverse_streaks", s + 30, 56, [
+		_layer(&"burst", &"M16", MotionTypes.Op.OFFSET, {"direction": Vector3(0, 0, 1), "cone_deg": 18.0, "distance": steal_distance, "distribution": 0.9, "t_start": 0.0, "t_duration": 0.42, "curve": 1.25, "dissipate": 0.0}),
+		_layer(&"pull", &"M06", MotionTypes.Op.OFFSET, {"target": Vector3(0, 0, steal_distance), "strength": 0.35, "reach": steal_distance * 1.25, "curve": 1.0, "t_start": 0.0, "t_duration": 0.42}),
+		_layer(&"turb", &"M24", MotionTypes.Op.OFFSET, {"scale": 0.8, "intensity": 0.22, "time_hz": 2.2, "seed": sd}),
+		_dissolve(0.45, 0.24, 0.0),
+	] as Array[MotionLayer])
+	reverse_streaks.base_length = 1.0
+	fx.add("steal", reverse_streaks, [MotionRep.make("spark", {"size": 0.07, "size_jitter": 0.5, "look": steal_look, "stretch": 2.0})],
+		{"length": "dest", "scalable": false, "dir": "axis"})
+	var reverse_streaks_b := _c(&"ds_reverse_streaks_b", s + 32, 36, [
+		_layer(&"burst", &"M16", MotionTypes.Op.OFFSET, {"direction": Vector3(0, 0, 1), "cone_deg": 18.0, "distance": steal_distance, "distribution": 0.9, "t_start": 0.0, "t_duration": 0.42, "curve": 1.25, "dissipate": 0.0}),
+		_layer(&"pull", &"M06", MotionTypes.Op.OFFSET, {"target": Vector3(0, 0, steal_distance), "strength": 0.35, "reach": steal_distance * 1.25, "curve": 1.0, "t_start": 0.0, "t_duration": 0.42}),
+		_layer(&"turb", &"M24", MotionTypes.Op.OFFSET, {"scale": 0.8, "intensity": 0.22, "time_hz": 2.2, "seed": (sd + 9) % 999983}),
+		_dissolve(0.46, 0.23, 0.0),
+	] as Array[MotionLayer])
+	reverse_streaks_b.base_length = 1.0
+	fx.add("steal", reverse_streaks_b, [MotionRep.make("spark", {"size": 0.07, "size_jitter": 0.5, "look": steal_look, "stretch": 2.0})],
+		{"length": "dest", "scalable": false, "dir": "axis"})
+	var reverse_orbs := _c(&"ds_reverse_orbs", s + 31, 240, [
+		_layer(&"burst", &"M16", MotionTypes.Op.OFFSET, {"direction": Vector3(0, 0, 1), "cone_deg": 10.0, "distance": steal_distance, "distribution": 0.55, "t_start": 0.0, "t_duration": 0.50, "curve": 1.1, "dissipate": 0.0}),
+		_layer(&"pull", &"M06", MotionTypes.Op.OFFSET, {"target": Vector3(0, 0, steal_distance), "strength": 0.40, "reach": steal_distance * 1.3, "curve": 1.0, "t_start": 0.0, "t_duration": 0.69}),
+		_layer(&"turb", &"M24", MotionTypes.Op.OFFSET, {"scale": 0.6, "intensity": 0.16, "time_hz": 1.8, "seed": (sd + 5) % 999983}),
+		_dissolve(0.39, 0.30, 0.0),
+	] as Array[MotionLayer])
+	reverse_orbs.base_length = 1.0
+	fx.add("steal", reverse_orbs, [MotionRep.make("spark", {"size": 0.075, "size_jitter": 0.35,
+		"look": {"soft": 1.0, "energy": 0.95, "cam_fade": 1.0}, "stretch": 1.0})],
+		{"length": "dest", "scalable": false, "dir": "axis"})
+	# Órbita única no atacante, como o orbPoint do HTML, só depois que as esferas chegam.
+	var stolen_orbit := _c(&"ds_stolen_orbit", s + 40, 30, [
+		_layer(&"helix", &"M01", MotionTypes.Op.REPLACE, {"radius": 1.20, "radius_growth": 0.0, "pitch": 0.0, "turns": 1.0, "phase_deg": 0.0, "direction": 1, "spin_deg_s": 260.0}),
+		_dissolve(0.55, 0.14, 0.0),
+	] as Array[MotionLayer])
+	stolen_orbit.base_length = 0.01
+	if with_crown:
+		fx.add("steal", stolen_orbit, [MotionRep.make("spark", {"size": 0.17, "look": steal_look, "trail": true, "trail_gain": 1.6})],
+			{"length": 0.01, "scalable": false, "frame": "dest", "dir": "up", "z_offset": 1.20, "start": 0.30, "trail_dt": 0.04})
+
+	# --- DISSOLVE: a lança dá ré e some lentamente do cabo à ponta; brasas e faixas se apagam junto. ---
+	var spear_dissolve := MotionRep.make("spear", {"spear_mode": "dissolve", "spear_part": "full", "blade_length": 1.0,
+		"energy": 1.15, "color": Color(0.28, 0.74, 1.0), "look": spear_look})
+	fx.add("dissolve", _ds_spear_comp(s + 50), [spear_dissolve], {"length": "dest", "scalable": false, "dir": "axis"})
+	var lance_motes := _ds_rest(&"ds_lance_motes", s + 52, 48, 6.4, [
+		_layer(&"turb", &"M24", MotionTypes.Op.OFFSET, {"scale": 0.9, "intensity": 0.30, "time_hz": 1.8, "seed": (sd + 7) % 999983}),
+		_dissolve(0.05, 0.72, 0.18),
+	] as Array[MotionLayer])
+	fx.add("dissolve", lance_motes, [MotionRep.make("spark", {"size": 0.11, "look": spark_look, "trail": true, "trail_gain": 1.6, "stride": 2})],
+		{"length": "dest", "scalable": false, "dir": "axis", "trail_dt": 0.04})
+	var embers := _ds_burst(&"ds_embers", s + 53, 30, 60.0, 1.8, 0.45, 1.5, 0.9, 4.0, 5.0, 4.0)
+	fx.add("dissolve", embers, [MotionRep.make("spark", {"size": 0.09, "look": spark_look})], {"length": 0.01, "scalable": false, "dir": "up"})
+	return fx
+
+
+static func _ds_spear_comp(seed_value: int) -> MotionComposition:
+	var c := _c(&"ds_spear", seed_value, 2, [] as Array[MotionLayer])
+	c.base_length = 1.0
+	c.duration = 3.0
+	return c
+
+
+static func _ds_rest(id: StringName, seed_value: int, count: int, length: float, layers: Array[MotionLayer]) -> MotionComposition:
+	var c := _c(id, seed_value, count, layers)
+	c.base_length = length
+	c.duration = 1.5
+	return c
+
+
+static func _ds_burst(id: StringName, seed_value: int, count: int, cone: float, distance: float, duration: float,
+		curve: float, distribution: float, speed: float, drag: float, gravity: float) -> MotionComposition:
+	var layers := _burst(count, cone, distance, duration, curve, distribution)
+	layers.append(_layer(&"drag", &"M22", MotionTypes.Op.OFFSET, {"direction": Vector3(0, 0, 1), "speed": speed, "drag": drag, "spread": 0.6, "t_start": 0.0}))
+	layers.append(_layer(&"gravity", &"M23", MotionTypes.Op.OFFSET, {"direction": Vector3(0, -1, 0), "gravity": gravity, "spread": 0.4, "t_start": 0.0}))
+	var c := _c(id, seed_value, count, layers)
+	c.base_length = 0.01
+	c.duration = duration + 0.1
+	return c
+
+
+## D-953: a directional burst for the melee contract. `dir` is in the layer's local frame (+Z = along the
+## shot, so (0,0,-1) is behind the attacker, (0,0,1) is beyond the target). Two M16 layers: OFFSET + fade.
+static func _melee_burst(id: StringName, seed_value: int, count: int, dir: Vector3, cone: float, distance: float,
+		duration: float, curve: float, distribution: float, speed: float, drag: float, gravity: float,
+		floor_y := -1000.0, restitution := 0.0) -> MotionComposition:
+	var params := {"direction": dir, "cone_deg": cone, "distance": distance, "distribution": distribution,
+		"t_start": 0.0, "t_duration": duration, "curve": curve, "dissipate": 1.0}
+	var move := _layer(&"burst_move", &"M16", MotionTypes.Op.OFFSET, params)
+	var fade_params := params.duplicate()
+	fade_params["t_start"] = 0.3 * duration
+	fade_params["t_duration"] = 0.7 * duration
+	fade_params["curve"] = 1.0
+	var fade := _layer(&"burst_fade", &"M16", MotionTypes.Op.MULTIPLY_ATTRIBUTE, fade_params)
+	var layers: Array[MotionLayer] = [move, fade]
+	layers.append(_layer(&"drag", &"M22", MotionTypes.Op.OFFSET, {"direction": dir, "speed": speed, "drag": drag, "spread": 0.6, "t_start": 0.0}))
+	layers.append(_layer(&"gravity", &"M23", MotionTypes.Op.OFFSET, {"direction": Vector3(0, -1, 0), "gravity": gravity, "spread": 0.4, "t_start": 0.0,
+		"floor_y": floor_y, "restitution": restitution}))
+	var c := _c(id, seed_value, count, layers)
+	c.base_length = 0.01
+	c.duration = duration + 0.1
+	return c
+
+
+## REJECTED (D-953, 2026-11-06): kept only as a lab experiment; no Move uses it. The creator discarded the
+## melee results and pointed to the procedural motion itself as the cause.
+##
+## D-953: PRIMEIRO CORTE do Composer de Fases — MELEE. Tackle e Brick Break usam o mesmo contrato visual;
+## `brick` troca o acento (ciano -> vermelho) e o caco. Fases: windup, release, travel, impact, return.
+## O pós-wind-up é suportado pelo contrato, mas fica vazio nesses dois Moves (não seguram carga).
+## Tudo em metros do mundo, fixo nas duas vistas (D-334); nenhum personagem, time ou lado (D-235).
+static func tackle_rush_effect(seed_value: int, brick := false) -> MotionEffect:
+	var fx := MotionEffect.new()
+	var s := seed_value
+	var accent := Color(1.0, 0.46, 0.28) if brick else Color(0.36, 0.86, 0.95)
+	var warm := Color(1.0, 0.93, 0.72)
+	var spark_look := {"hot": Color(1.0, 0.97, 0.84), "cool": accent, "energy": 2.3, "hard": 0.1}
+	var shard_look := {"c0": Color(0.16, 0.14, 0.12), "c1": Color(0.42, 0.38, 0.32), "c2": Color(0.66, 0.61, 0.52), "c3": Color(0.86, 0.81, 0.69), "c4": Color(1.0, 0.97, 0.86),
+		"bands": 4.0, "core_sharp": 1.2, "noise_amp": 0.4, "shade_amount": 0.8, "rim_amount": 0.5, "rim_color": Color(0.95, 0.90, 0.78),
+		"flow": 0.2, "noise_scale": 2.0, "swirl": 0.0, "lick": 0.03, "rise": 0.0, "tail_erode": 0.1}
+	var air_look := {"c0": Color(0.18, 0.52, 0.60), "c1": Color(0.34, 0.74, 0.82), "c2": Color(0.56, 0.90, 0.95), "c3": Color(0.82, 0.98, 1.0), "c4": Color(1, 1, 1),
+		"bands": 3.0, "core_sharp": 1.5, "noise_amp": 0.45, "shade_amount": 0.2, "shade_tint": Color(0.7, 0.85, 0.9), "rim_amount": 0.8, "rim_width": 0.28, "rim_color": Color(1, 1, 1),
+		"flow": 6.0, "noise_scale": 3.2, "swirl": 1.0, "lick": 0.1, "rise": 0.0, "wave_amp": 0.05, "wave_freq": 5.0, "wave_speed": 6.0, "tail_erode": 0.75, "erode_edge_color": Color(0.6, 0.85, 0.9)}
+	var hit_look := {"c0": Color(0.40, 0.15, 0.05), "c1": Color(1.0, 0.55, 0.12), "c2": Color(1.0, 0.85, 0.45), "c3": Color(1.0, 0.97, 0.82), "c4": Color(1, 1, 1),
+		"bands": 4.0, "core_sharp": 1.8, "noise_amp": 0.5, "shade_amount": 0.3, "shade_tint": Color(0.7, 0.45, 0.25), "rim_amount": 0.8, "rim_width": 0.26, "rim_color": Color(1.0, 0.98, 0.82),
+		"flow": 2.0, "noise_scale": 2.4, "swirl": 0.2, "lick": 0.1, "rise": 0.0, "tail_erode": 0.5, "erode_edge_color": Color(0.8, 0.4, 0.08)}
+	var mark_look := {"base_col": Color(0.10, 0.08, 0.06), "line_col": accent, "rim_col": Color(0.35, 0.28, 0.20), "line_amount": 0.55, "rim_amount": 0.6, "alpha": 0.6, "cracks": 5.0, "radial": 0.6}
+
+	var dust_look := {"light_col": Color(0.75, 0.70, 0.61), "mid_col": Color(0.62, 0.56, 0.47), "dark_col": Color(0.48, 0.43, 0.36), "alpha": 0.50, "churn": 0.55}
+	var dust := MotionRep.make("puff", {"size": 0.55, "appear": 0, "look": dust_look})
+	var ground_dust := MotionRep.make("puff", {"size": 0.85, "appear": 0, "look": dust_look})
+	var spark := MotionRep.make("spark", {"size": 0.06, "look": spark_look, "trail": true, "trail_gain": 1.4})
+	var pebble := MotionRep.make("drops", {"size": 0.06, "stretch": 1.2, "stride": 3, "element": "earth", "look": shard_look})
+	var shard := MotionRep.make("surface", {"shape": "fragments", "element": "earth", "size": 0.28, "spin": 9.0, "look": shard_look})
+	var streak := MotionRep.make("streaks", {"size": 0.10, "length": 1.5, "width": 0.050, "radial": false, "strength": 0.9, "hot_every": 2})
+	var radial_streak := MotionRep.make("streaks", {"size": 0.10, "length": 1.5, "width": 0.045, "radial": true, "strength": 0.9, "hot_every": 2})
+	var ring := MotionRep.make("ring", {"element": "earth", "size": 1.6, "strength": 1.0})
+	var shock_ring := MotionRep.make("ring", {"element": "earth", "size": 3.0, "strength": 0.9, "expand": true})
+	var ground_ring := MotionRep.make("ring", {"element": "earth", "size": 4.5, "strength": 0.8, "expand": true})
+	var halo := MotionRep.make("halo", {"element": "air", "size": 2.0, "strength": 1.0, "look": {"color": Color(1.0, 0.85, 0.50), "falloff": 2.0}})
+	var impact_halo := MotionRep.make("halo", {"element": "air", "size": 5.2, "strength": 1.4, "look": {"color": warm, "falloff": 1.9}})
+	var flip := MotionRep.make("flipbook", {"sheet": "impact", "size": 5.2, "color": warm, "energy": 2.8, "size_jitter": 0.0})
+	var mark := MotionRep.make("mark", {"element": "earth", "size": 1.0, "look": mark_look})
+
+	# WINDUP: o chão puxa poeira e pedras para os pés; um anel fecha; linhas de pressão apontam para o alvo.
+	var gather := _ds_rest(&"melee_gather", s + 1, 24, 0.01, [
+		_layer(&"helix", &"M01", MotionTypes.Op.REPLACE, {"radius": 2.0, "radius_growth": -0.85, "pitch": 0.16, "turns": 1.1, "direction": 1, "phase_deg": 0.0, "spin_deg_s": 90.0}),
+		_layer(&"pull", &"M06", MotionTypes.Op.OFFSET, {"target": Vector3.ZERO, "strength": 0.55, "reach": 2.4, "curve": 1.2, "t_start": 0.0, "t_duration": 1.5}),
+		_layer(&"curl", &"M24", MotionTypes.Op.OFFSET, {"scale": 0.7, "intensity": 0.12, "time_hz": 1.4, "seed": s + 1}),
+		_dissolve(0.95, 0.55, 0.25),
+	] as Array[MotionLayer])
+	fx.add("windup", gather, [dust], {"length": 0.01, "dir": "up", "ground": true})
+	fx.add("windup", gather, [pebble], {"length": 0.01, "dir": "up", "ground": true, "start": 0.15})
+	fx.add("windup", _ds_rest(&"melee_wind_ring", s + 2, 2, 0.01, [] as Array[MotionLayer]), [ring], {"length": 0.01, "dir": "up", "ground": true})
+	fx.add("windup", _ds_rest(&"melee_wind_halo", s + 3, 2, 0.01, [] as Array[MotionLayer]), [halo], {"length": 0.01, "dir": "up", "z_offset": 0.85})
+	var wind_lines := _ds_rest(&"melee_wind_lines", s + 4, 30, 3.0, [
+		_layer(&"flow", &"M21", MotionTypes.Op.OFFSET, {"direction": Vector3(0, 0, 1), "distance": 0.6, "radius": 0.5, "core_radius": 0.1, "edge_noise": 0.2, "seed": s + 4, "t_start": 0.0, "t_duration": 1.2}),
+		_dissolve(0.9, 0.5, 0.2),
+	] as Array[MotionLayer])
+	fx.add("windup", wind_lines, [streak], {"length": 2.2, "dir": "axis", "start": 0.2})
+	var charge_orbit := _ds_rest(&"melee_charge_orbit", s + 5, 24, 1.6, [
+		_layer(&"helix", &"M01", MotionTypes.Op.REPLACE, {"radius": 0.65, "radius_growth": 0.10, "pitch": 0.50, "turns": 2.0, "direction": 1, "phase_deg": 0.0, "spin_deg_s": 180.0}),
+		_dissolve(0.9, 0.5, 0.2),
+	] as Array[MotionLayer])
+	fx.add("windup", charge_orbit, [MotionRep.make("spark", {"size": 0.06, "look": spark_look, "trail": true, "trail_gain": 1.8})],
+		{"length": 1.6, "dir": "up", "ground": true, "z_offset": 1.10, "trail_dt": 0.04, "start": 0.10})
+
+	# RELEASE: o impulso para trás, a rachadura e o anel de saída.
+	fx.add("release", _ds_rest(&"melee_release_ring", s + 10, 2, 0.01, [] as Array[MotionLayer]), [shock_ring], {"length": 0.01, "dir": "up", "ground": true})
+	fx.add("release", _ds_rest(&"melee_release_crack", s + 11, 2, 0.01, [_dissolve(0.15, 0.5)] as Array[MotionLayer]), [mark], {"length": 0.01, "dir": "up", "ground": true})
+	fx.add("release", _ds_rest(&"melee_release_flash", s + 14, 2, 0.01, [_dissolve(0.05, 0.28)] as Array[MotionLayer]), [halo], {"length": 0.01, "dir": "up", "ground": true, "z_offset": 0.25})
+	fx.add("release", _melee_burst(&"melee_push", s + 12, 30, Vector3(0, 0, -1), 55.0, 4.0, 0.35, 1.5, 0.9, 3.0, 2.2, 2.0), [ground_dust], {"length": 0.01, "dir": "axis", "ground": true})
+	fx.add("release", _melee_burst(&"melee_push_sparks", s + 13, 32, Vector3(0, 0, -1), 70.0, 3.2, 0.30, 1.4, 0.9, 5.0, 2.5, 4.0, 0.0, 0.25), [spark], {"length": 0.01, "dir": "axis", "ground": true, "trail_dt": 0.04})
+
+	# TRAVEL: a esteira de poeira, as pedras chutadas, as linhas de velocidade e o rastro de pressão.
+	var wake := _ds_rest(&"melee_wake", s + 20, 44, 3.5, [
+		_layer(&"lift", &"M23", MotionTypes.Op.OFFSET, {"direction": Vector3(0, 1, 0), "gravity": 0.9, "spread": 0.4, "t_start": 0.0}),
+		_layer(&"curl", &"M24", MotionTypes.Op.OFFSET, {"scale": 0.8, "intensity": 0.12, "time_hz": 1.8, "seed": s + 20}),
+		_dissolve(0.35, 0.65, 0.2),
+	] as Array[MotionLayer])
+	fx.add("travel", wake, [ground_dust], {"length": 3.5, "frame": "head", "back": true, "trail": true, "until_landed": true, "ground": true})
+	var kicked := _ds_rest(&"melee_kicked", s + 21, 20, 2.2, [
+		_layer(&"fall", &"M23", MotionTypes.Op.OFFSET, {"direction": Vector3(0, -1, 0), "gravity": 9.0, "spread": 0.4, "t_start": 0.0,
+			"floor_y": 0.0, "restitution": 0.3}),
+		_layer(&"drag", &"M22", MotionTypes.Op.OFFSET, {"direction": Vector3(0, 0, -1), "speed": 1.5, "drag": 1.5, "spread": 0.5, "t_start": 0.0}),
+		_dissolve(0.2, 0.7, 0.2),
+	] as Array[MotionLayer])
+	fx.add("travel", kicked, [pebble], {"length": 2.2, "frame": "head", "back": true, "trail": true, "until_landed": true, "ground": true})
+	var speed := _ds_rest(&"melee_speed", s + 22, 20, 3.0, [
+		_layer(&"flow", &"M21", MotionTypes.Op.OFFSET, {"direction": Vector3(0, 0, 1), "distance": 1.0, "radius": 0.5, "core_radius": 0.1, "edge_noise": 0.2, "seed": s + 22, "t_start": 0.0, "t_duration": 0.6}),
+		_dissolve(0.1, 0.6, 0.2),
+	] as Array[MotionLayer])
+	fx.add("travel", speed, [streak], {"length": 3.0, "frame": "head", "back": true, "trail": true, "until_landed": true})
+	var after := _ds_rest(&"melee_after", s + 23, 24, 2.4, [
+		_layer(&"flow", &"M21", MotionTypes.Op.OFFSET, {"direction": Vector3(0, 0, 1), "distance": 0.8, "radius": 0.5, "core_radius": 0.1, "edge_noise": 0.2, "seed": s + 23, "t_start": 0.0, "t_duration": 0.6}),
+		_dissolve(0.15, 0.7, 0.2),
+	] as Array[MotionLayer])
+	fx.add("travel", after, [MotionRep.make("streaks", {"size": 0.14, "length": 2.0, "width": 0.060, "radial": false, "strength": 0.8, "hot_every": 2})],
+		{"length": 2.4, "frame": "head", "back": true, "trail": true, "until_landed": true})
+
+	# PRELUDE (D-953): the hit-windup / dodge prelude at the target. A 3D tube from the attacking
+	# limb to the contact, a charge at the limb, the arrival skid and a target lock. The game node
+	# feeds the real limb position, so this follows the character's attack motion (not a vertical plane).
+	var prelude := _ds_rest(&"melee_prelude", s + 60, 20, 1.4, [
+		_grow(0.10),
+		_dissolve(0.35, 0.30, 0.10),
+	] as Array[MotionLayer])
+	fx.add("prelude", prelude, [MotionRep.make("surface", {"shape": "tube", "element": "air", "radius": 0.11, "sides": 10, "max_rings": 18, "look": hit_look})],
+		{"length": 1.4, "dir": "axis"})
+	fx.add("prelude", _ds_rest(&"melee_prelude_halo", s + 61, 2, 0.01, [_dissolve(0.0, 0.30)] as Array[MotionLayer]),
+		[MotionRep.make("halo", {"element": "air", "size": 1.4, "strength": 1.0, "look": {"color": warm, "falloff": 2.0}})],
+		{"length": 0.01, "dir": "axis"})
+	fx.add("prelude", _melee_burst(&"melee_skid", s + 62, 14, Vector3(0, 0, -1), 70.0, 1.6, 0.30, 1.5, 0.9, 3.0, 2.0, 1.0), [ground_dust], {"length": 0.01, "dir": "axis", "ground": true})
+	fx.add("prelude", _ds_rest(&"melee_lock", s + 63, 2, 0.01, [] as Array[MotionLayer]), [ring], {"length": 0.01, "frame": "dest", "ground": true, "dir": "up"})
+	fx.add("prelude", _ds_rest(&"melee_prelude_lines", s + 64, 12, 2.2, [_grow(0.08), _dissolve(0.30, 0.30, 0.1)] as Array[MotionLayer]), [streak], {"length": 2.2, "dir": "axis"})
+
+	# IMPACT: flash, flipbook, cone, arcos, faíscas, cacos, poeira radial, anel, marca e linhas.
+	fx.add("impact", _ds_rest(&"melee_impact_halo", s + 30, 2, 0.01, [_dissolve(0.05, 0.35)] as Array[MotionLayer]), [impact_halo], {"length": 0.01, "frame": "dest", "dir": "axis", "z_offset": -0.5})
+	fx.add("impact", _c(&"melee_flip", s + 31, 2, [_grow(0.05), _dissolve(0.08, 0.30)] as Array[MotionLayer]), [flip], {"length": 0.01, "frame": "dest", "dir": "axis", "z_offset": -0.5})
+	fx.add("impact", _ds_rest(&"melee_cone", s + 32, 24, 4.0, [_dissolve(0.05, 0.35)] as Array[MotionLayer]),
+		[MotionRep.make("surface", {"shape": "shell", "element": "air", "radius": 1.5, "profile_pow": 0.45, "sides": 16, "max_rings": 18, "look": hit_look})],
+		{"length": 4.0, "frame": "dest", "dir": "axis", "z_offset": -0.5})
+	fx.add("impact", _ds_rest(&"melee_arc_a", s + 33, 24, 3.2, [
+		_layer(&"bend", &"M09", MotionTypes.Op.DEFORM, {"amount_deg": 35.0, "plane_deg": 45.0, "center": 0.5, "extent": 1.0}),
+		_dissolve(0.05, 0.3),
+	] as Array[MotionLayer]),
+		[MotionRep.make("surface", {"shape": "arc", "element": "air", "radius": 0.80, "profile_pow": 0.55, "sides": 10, "camera_facing": true, "look": hit_look})],
+		{"length": 3.2, "frame": "dest", "dir": "axis", "z_offset": -0.6})
+	fx.add("impact", _ds_rest(&"melee_arc_b", s + 34, 24, 3.2, [
+		_layer(&"bend", &"M09", MotionTypes.Op.DEFORM, {"amount_deg": -35.0, "plane_deg": 45.0, "center": 0.5, "extent": 1.0}),
+		_dissolve(0.05, 0.3),
+	] as Array[MotionLayer]),
+		[MotionRep.make("surface", {"shape": "arc", "element": "air", "radius": 0.65, "profile_pow": 0.55, "sides": 10, "camera_facing": true, "look": hit_look})],
+		{"length": 3.2, "frame": "dest", "dir": "axis", "z_offset": -0.6})
+	fx.add("impact", _melee_burst(&"melee_sparks", s + 35, 60, Vector3(0, 0, 1), 80.0, 8.0, 0.45, 1.6, 0.95, 10.0, 3.0, 4.0, -1.2, 0.25), [spark], {"length": 0.01, "frame": "dest", "dir": "axis", "z_offset": -0.5, "trail_dt": 0.04})
+	fx.add("impact", _melee_burst(&"melee_shards", s + 36, 34, Vector3(0, 0, 1), 70.0, 5.5, 0.50, 1.5, 0.95, 6.0, 2.5, 9.0, -1.2, 0.35), [shard], {"length": 0.01, "frame": "dest", "dir": "axis", "z_offset": -0.5})
+	fx.add("impact", _melee_burst(&"melee_ground_dust", s + 37, 40, Vector3(0, 1, 0), 85.0, 5.0, 0.50, 1.4, 0.9, 4.0, 2.0, 0.0), [ground_dust], {"length": 0.01, "frame": "dest", "ground": true, "dir": "up"})
+	fx.add("impact", _ds_rest(&"melee_ground_ring", s + 38, 2, 0.01, [] as Array[MotionLayer]), [ground_ring], {"length": 0.01, "frame": "dest", "ground": true, "dir": "up"})
+	fx.add("impact", _melee_burst(&"melee_impact_lines", s + 40, 30, Vector3(0, 0, 1), 90.0, 5.0, 0.35, 1.2, 0.9, 6.0, 2.0, 0.0), [radial_streak], {"length": 0.01, "frame": "dest", "dir": "axis", "z_offset": -0.5})
+	fx.add("impact", _ds_rest(&"melee_light", s + 41, 2, 0.01, [_dissolve(0.02, 0.16)] as Array[MotionLayer]),
+		[MotionRep.make("light", {"color": Color(1.0, 0.72, 0.32), "strength": 2.2, "light_range": 7.0})],
+		{"length": 0.01, "frame": "dest", "dir": "axis", "z_offset": -0.5})
+
+	# RETURN: o salto de volta, o rastro e a poeira da chegada.
+	fx.add("return", _melee_burst(&"melee_return_dust", s + 50, 18, Vector3(0, 1, 0), 55.0, 2.2, 0.35, 2.0, 0.9, 3.0, 2.0, 0.0), [ground_dust], {"length": 0.01, "frame": "origin", "ground": true, "dir": "up"})
+	var ret_trail := _ds_rest(&"melee_return_trail", s + 51, 24, 2.4, [
+		_layer(&"flow", &"M21", MotionTypes.Op.OFFSET, {"direction": Vector3(0, 0, 1), "distance": 0.8, "radius": 0.5, "core_radius": 0.1, "edge_noise": 0.2, "seed": s + 51, "t_start": 0.0, "t_duration": 0.6}),
+		_dissolve(0.15, 0.7, 0.2),
+	] as Array[MotionLayer])
+	fx.add("return", ret_trail, [MotionRep.make("surface", {"shape": "tube", "element": "air", "radius": 0.20, "sides": 10, "max_rings": 20, "look": air_look})],
+		{"length": 2.4, "frame": "head", "back": true, "trail": true})
+	fx.add("return", _ds_rest(&"melee_return_sparks", s + 52, 16, 0.01, [_dissolve(0.0, 0.6, 0.2)] as Array[MotionLayer]), [MotionRep.make("spark", {"size": 0.10, "look": spark_look, "trail": true, "trail_gain": 2.4})], {"length": 0.01, "frame": "head", "trail_dt": 0.05})
+	fx.add("return", _ds_rest(&"melee_landing_ring", s + 53, 2, 0.01, [] as Array[MotionLayer]), [MotionRep.make("ring", {"element": "earth", "size": 1.8, "strength": 0.6, "expand": true})], {"length": 0.01, "frame": "dest", "ground": true, "dir": "up", "start": 0.80})
+	fx.add("return", _melee_burst(&"melee_landing_dust", s + 54, 20, Vector3(0, 1, 0), 60.0, 1.8, 0.30, 2.0, 0.9, 2.5, 2.0, 0.0), [ground_dust], {"length": 0.01, "frame": "dest", "ground": true, "dir": "up", "start": 0.80})
+	return fx
+
+
+## D-1026: Armored Bulk, option A ("Flexão e Cromagem de baixo para cima"). Start and release are one gesture (the wind-up is
+## instant). WINDUP = chrome glints climbing the body with the wave the model shader draws (0..0.38 s); IMPACT = the release at
+## 0.38 s: a short flash and short metal sparks (the shock rings were removed at the creator's request). The chrome film that settles on the model
+## is a surface material (shaders/armor_chrome.gdshader), not a particle. Fixed metres here; the node scales it by the real body
+## and the camera distance (D-235). No character, team or side.
+static func armored_bulk_effect(seed_value: int) -> MotionEffect:
+	var fx := MotionEffect.new()
+	var s := seed_value
+	var spark_look := {"hot": Color(1.0, 1.0, 1.0), "cool": Color(0.62, 0.72, 0.86), "energy": 2.0, "hard": 0.15}
+	var dust_look := {"light_col": Color(0.74, 0.71, 0.66), "mid_col": Color(0.60, 0.57, 0.52), "dark_col": Color(0.46, 0.43, 0.40), "alpha": 0.45, "churn": 0.5}
+	var spark := MotionRep.make("spark", {"size": 0.05, "look": spark_look, "trail": true, "trail_gain": 1.5})
+	var glint := MotionRep.make("spark", {"size": 0.045, "look": spark_look, "trail": false})
+	var halo := MotionRep.make("halo", {"element": "air", "size": 3.0, "strength": 1.1, "look": {"color": Color(0.85, 0.92, 1.0), "falloff": 2.0}})
+	var dust := MotionRep.make("puff", {"size": 0.55, "appear": 0, "look": dust_look})
+	# WINDUP: the chrome glints climb with the wave (helix that GROWS upward over the wave's 0.38 s, then dissolves).
+	var rise := _ds_rest(&"armor_rise", s + 1, 22, 2.2, [
+		_layer(&"helix", &"M01", MotionTypes.Op.REPLACE, {"radius": 0.8, "radius_growth": 0.0, "pitch": 0.55, "turns": 1.6, "direction": 1, "phase_deg": 0.0, "spin_deg_s": 380.0}),
+		_layer(&"grow", &"M17", MotionTypes.Op.MULTIPLY_ATTRIBUTE, {"direction": 0, "t_start": 0.0, "t_duration": 0.36, "curve": 1.0, "width": 0.12, "jitter": 0.0,
+			"affect_visibility": true, "affect_width": false, "affect_intensity": false, "affect_opacity": false}),
+		_dissolve(0.28, 0.2, 0.2),
+	] as Array[MotionLayer])
+	fx.add("windup", rise, [glint], {"length": 2.2, "dir": "up", "ground": true})
+	# IMPACT (the release, 0.38 s in): a short flash and short metal sparks (the shock rings were removed at the creator's request).
+	fx.add("impact", _ds_rest(&"armor_flash", s + 12, 2, 0.01, [_dissolve(0.04, 0.26)] as Array[MotionLayer]), [halo], {"length": 0.01, "dir": "up", "z_offset": 1.0})
+	fx.add("impact", _melee_burst(&"armor_sparks", s + 13, 34, Vector3(0, 0, 1), 80.0, 2.6, 0.32, 1.5, 0.9, 6.0, 2.6, 5.0, 0.0, 0.2), [spark], {"length": 0.01, "dir": "up", "ground": true, "z_offset": 0.15, "trail_dt": 0.04})
+	fx.add("impact", _melee_burst(&"armor_dust", s + 14, 14, Vector3(0, 1, 0), 85.0, 2.4, 0.4, 1.6, 0.9, 3.0, 2.0, 0.0), [dust], {"length": 0.01, "dir": "up", "ground": true})
+	return fx
+
+
+## D-1026: the ARMOR aura, drawn for as long as the badge lasts: small white sparkles that appear at random over the body, drift a
+## little and fade at random. A life cycle (V1.6) of M26 emitters: every cycle is a new composition (own seed) and each sparkle is born at a random moment inside it,
+## so they are sporadic, not a constant stream. NOTE: `ground` resets the layer's height AFTER `z_offset`, so a layer centred on the body must not use it. Fixed metres for a 1.6 m body (the node scales it by the real body, D-235); centred on the chest.
+static func armor_aura_effect(seed_value: int) -> MotionEffect:
+	var fx := MotionEffect.new()
+	var sparkle := _ptcl(1, Color(1, 1, 1), Color(0.85, 0.92, 1.0), 1.0, true, 2.5)
+	for slot in 3:
+		var base := seed_value * 7919 + slot * 104729
+		var factory := func(cycle: int) -> MotionComposition:
+			var emit := _atelier_emit(&"aura_emit", 9, {
+				"shape": 0, "radius": 3.6, "speed_min": 0.1, "speed_max": 0.7, "drag": 0.9, "delay": 1.1,
+				"life_min": 0.45, "life_max": 0.9, "size_min": 0.34, "size_max": 0.62, "size_bell": true})
+			return _c(&"armor_aura", base + cycle * 31, 5, _layers(emit))
+		var first: MotionComposition = factory.call(0)
+		fx.add("aura", first, [sparkle], {"factory": factory, "loop": 1.6, "cycle_phase": float(slot) / 3.0, "length": "keep", "dir": "up", "z_offset": 1.1})
+	return fx
+
+
+## D-1026 (option A, creator): the ARMOR badge breaks on the first contact: a white flash of 0.08 s and the chrome film comes off as
+## flat angular PLATES that fly outward from the body, fall with gravity and fade in 0.5 s. The node places the origin at the real
+## chest (measured from the model) and scales by the real body, so nothing here is tied to a character or a side (D-235).
+static func armor_break_effect(seed_value: int) -> MotionEffect:
+	var fx := MotionEffect.new()
+	var s := seed_value
+	var plate := MotionRep.make("plate", {"size": 0.7, "spin": 6.0})
+	var halo := MotionRep.make("halo", {"element": "air", "size": 3.0, "strength": 1.4, "look": {"color": Color(1.0, 1.0, 1.0), "falloff": 2.0}})
+	fx.add("break", _ds_rest(&"armor_break_flash", s + 1, 2, 0.01, [_dissolve(0.0, 0.08)] as Array[MotionLayer]), [halo], {"length": 0.01, "dir": "up"})
+	# The plates are born over the whole body (a sphere of emission around the chest) and leave it outward; M26 gives the size and alpha curves.
+	var emit := _atelier_emit(&"armor_plates", 18, {"shape": 0, "radius": 3.0, "speed_min": 2.5, "speed_max": 5.5, "drag": 0.97, "gravity": 8.0,
+		"life_min": 0.5, "life_max": 0.7, "size_min": 0.6, "size_max": 1.1, "size_bell": false})
+	fx.add("break", _c(&"armor_plates", s + 2, 18, _layers(emit)), [plate], {"length": 0.01, "dir": "up"})
+	return fx
+
+
 ## O efeito de cada Move de elemento (D-308 / D-236): um MotionEffect por `move_id` (nunca por personagem, D-235).
 static func effect_for(move_id: String, seed_value: int, anchors_ := [], center := Vector3.ZERO) -> MotionEffect:
+	if move_id == "armored_bulk":
+		return armored_bulk_effect(seed_value)
+	if move_id == "armor_break":
+		return armor_break_effect(seed_value)
+	if move_id == "armor_aura":
+		return armor_aura_effect(seed_value)
+	if move_id == "electric_beam":
+		return electric_beam_effect(seed_value)
+	if move_id == "drain_spear":
+		return drain_spear_effect(seed_value)
 	if move_id == "splitter_flames":
 		return splitter_effect(seed_value)
 	if move_id == "media":
 		return media_effect(seed_value, anchors_, center)
 	return fire_effect(seed_value)
+
+
+## V1.11 (D-957): the SECONDARY of the library's electric beam. The beam, the charge, the flashes and the impact arcs are
+## hand-made (D-954/D-956: ElectricBeamVfx); the Composer only paints the golden crackle around the held charge and the
+## spark burst of the impact. Fixed metres (D-308 item 6). No travel layer.
+static func electric_beam_effect(seed_value: int) -> MotionEffect:
+	var fx := MotionEffect.new()
+	var s := seed_value
+	var spark := MotionRep.make("spark", {"element": "electric", "size": 0.045, "size_jitter": 0.6, "trail": true, "trail_gain": 0.9})
+	fx.add("windup", _c(&"el_crackle", s, 10, _spark_layers(10, 180.0, 0.55, 0.35, 0.6, s + 1)), [spark],
+		{"length": 0.01, "z_offset": 0.0, "trail_dt": 0.03})
+	fx.add("impact", _c(&"el_burst", s + 2, 26, _spark_layers(26, 150.0, 1.5, 0.45, 2.2, s + 3)), [spark],
+		{"length": 0.01, "trail_dt": 0.04})
+	return fx

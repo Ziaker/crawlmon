@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_upl0t"]
+
+[resource]
+script = ExtResource("1_upl0t")
+id = &"rakunda"
+display_name = "Rakunda"
+kind = 3
+element = 10
+power = 0.0
+atb_cost = 1
+mp_cost = 3
+windup = 0.5
+stand_gap = 2.6
+hold = 0.2
+plan_profile = &"cast"
+tags = Array[StringName]([&"stage_vfx"])
+vfx_key = &"generic"
+effect_line_text = "-1 DEF to one enemy (min -5) | Lasts until battle ends | 1 ATB"
+short_effect_text = "-1 DEF"
+description_text = "Lowers the target's Defense. Stacks up to -5 and lasts for the battle."
+mechanics_text = "Enfeebling curse that lowers the target's Defense (-1 DEF stage) for the duration of the encounter."
+visual_text = "Descending indigo-black energy seal that stamps down onto the target with cracking spectral runes."
+motion_text = "Stationary curse cast. Caster gestures; the debuff seal manifests directly atop the target without projectile travel."
+windup_text = "0.90s wind-up. Dark sigil inscription."
+tactical_text = "Reduces target Defense (-1 DEF stage) until battle ends. Single Target."
+visual_motion_text = "Stationary curse stamping a descending indigo-black energy seal on target."
+phase_visuals = {
+"impact": "Aplicação do efeito visual e badge de status: Descending indigo-black energy seal that stamps down onto the target with cracking spectral runes.",
+"release": "Liberação da invocação no próprio lançador/alvo: Stationary curse cast. Caster gestures; the debuff seal manifests directly atop the target without projectile travel.",
+"return": "Dissolução suave da cerimônia sem sobras e retomada do relógio do combate.",
+"strike": "Ativação do selo/aura de status sobre os alvos.",
+"travel": "Manifestação direta no campo (sem deslocamento de corpo): Stationary curse cast. Caster gestures; the debuff seal manifests directly atop the target without projectile travel.",
+"windup": "Canalização de status com motor pausado (D-031): 0.90s wind-up. Dark sigil inscription."
+}

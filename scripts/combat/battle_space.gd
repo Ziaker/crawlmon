@@ -5,13 +5,11 @@ extends RefCounted
 
 const STEP_DIST := 1.5  ## World units per position step (kept short: the party stands near the camera).
 const RUN_SPEED := 30.0  ## Units per second while running at a target (slow enough to read as a run, not a teleport).
+const SPEAR_EXTRA_GAP := 4.4  ## D-997: migration source; the runtime reads MoveData.stand_gap.
 const STAND_GAP := 2.6  ## Where a melee attacker stops, in front of its target.
 const ANTICIP_T := 0.08  ## Brief crouch/pull-back anticipation before melee swing.
-## D-241: melee moves whose hit lands this many seconds after the anticipation (instead of the attack clip's own contact
-## time, ~0.8 s); the attack clip is sped up so its contact frame falls on that time. Mach Punch also drops the anticipation.
-const STRIKE_HIT := {"soco_rapido": 0.20, "golpe_carate": 0.45, "quebra_telha": 0.45}
-## D-281: melee moves (wind-up 1.5 s) whose attacker waits this long (total) at the target before hopping back.
-const RETURN_HOLD := {"tackle": 0.7, "quebra_telha": 0.7, "garra_dragao": 0.7, "hassou_tobi": 0.7, "titanomachia": 0.7}
+## D-281: migration source for `MoveData.hold`; the runtime reads the catalog.
+const RETURN_HOLD := {"tackle": 0.7, "quebra_telha": 0.7, "garra_dragao": 0.7, "hassou_tobi": 0.7, "titanomachia": 0.7, "drain_spear": 0.75}
 const RETURN_HOLD_DEFAULT := 0.2
 ## D-279: two opposing runners that meet bump back and hop; these are the calls made for the numbers the creator left open.
 const CLASH_DIST := 3.6  ## They clash when the two runners get this close (a little before the 2.6 contact gap, which both reach only as the run ends).

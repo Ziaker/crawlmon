@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="Resource" path="res://content/characters/dqt_orc/loadout.tres" id="1_5d87d"]
+[ext_resource type="Resource" path="res://content/characters/dqt_orc/model_profile.tres" id="2_1yfwk"]
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="3_e7la0"]
+
+[resource]
+script = ExtResource("3_e7la0")
+id = &"dqt_orc"
+display_name = "Orc"
+species_id = "dqt_orc"
+raw_stats = {
+"AGI": 60,
+"LUK": 61,
+"MAG": 30,
+"STR": 95,
+"VIT": 85,
+"WIS": 35
+}
+weaknesses = Array[int]([3])
+loadout = ExtResource("1_5d87d")
+travel_extra = 0.45
+model_profile = ExtResource("2_1yfwk")

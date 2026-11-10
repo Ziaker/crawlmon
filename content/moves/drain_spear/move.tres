@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_ruqp1"]
+
+[resource]
+script = ExtResource("1_ruqp1")
+id = &"drain_spear"
+display_name = "Drain Spear"
+mp_cost = 3
+windup = 1.0
+stand_gap = 16.3
+run_fixed = 0.35
+strike_time = 0.45
+hold = 0.75
+plan_profile = &"melee"
+hit_stop_duration = 0.1
+magic_flat = 5
+bypass_def = true
+transfer_time = 0.3
+tags = Array[StringName]([&"badge_steal"])
+vfx_key = &"drain_spear"
+effect_line_text = "5 + MAG magic damage (mitigated by SPI) | Steals positive buffs, shield and magic immunity before damage | 16.3u range | 2 ATB"
+short_effect_text = "5+MAG | steals badges"
+description_text = "A magic spear rises from the ground and strikes at 16.3 units. On contact it steals positive buffs, shield and magic immunity before dealing 5 + MAG magic damage, mitigated by SPI."
+mechanics_text = "Siphons protective shields, positive buffs, and invulnerabilities from the target before inflicting piercing magical damage."
+visual_text = "Translucent spectral spear with reverse cyan siphon vortex swirling backward along the shaft toward the user."
+motion_text = "Stationary extended thrust. Caster projects an elongated ethereal spearhead across 16.3 units."
+windup_text = "1.25s wind-up. Weapon charges with reverse siphon vortex."
+tactical_text = "Steals shields and buffs before dealing piercing magical damage. Extended Reach."
+visual_motion_text = "Stationary thrust projecting a spectral spearhead with reverse cyan siphon vortex."
+phase_visuals = {
+"impact": "Clarão branco curto, hit-stop de 0,10s nos corpos e círculo de 0,35s com estilhaços em flipbook voltando ao atacante no roubo de badges (D-1019/D-1021).",
+"release": "A lança deita no prelúdio e prepara a estocada 0,4s após o início do golpe (D-1017).",
+"return": "Transferência reversa de 0,30s conclui em aura no atacante e a lança dissolve.",
+"strike": "Estocada rápida nos últimos 0,25s sincronizada com o clipe de ataque.",
+"travel": "Alcance estendido de 16,3 unidades sem corrida longa; coroa separa-se com -25% de opacidade (D-1015).",
+"windup": "8 luzes ciano convergem em correntes formando a lança espectral à frente do atacante (D-1014/D-1016/D-1022)."
+}

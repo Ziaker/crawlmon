@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CharacterModelProfile" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/character_model_profile.gd" id="1_6uxwu"]
+
+[resource]
+script = ExtResource("1_6uxwu")
+profile = {
+"clip_prefix": "cm_00_0000_",
+"idle_full": true,
+"idle_pose_time": 0.95,
+"idle_source": "32",
+"native_height": 0.83,
+"rotation_y": 180.0,
+"target_height": 1.4
+}

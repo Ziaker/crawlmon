@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_usvg6"]
+
+[resource]
+script = ExtResource("1_usvg6")
+id = &"boulder_smash"
+display_name = "Boulder Smash"
+power = 1.2
+mp_cost = 4
+windup = 1.5
+stand_gap = 2.6
+hit_offset = 0.15
+hold = 0.2
+plan_profile = &"melee"
+tags = Array[StringName]([&"basic_variant", &"armor_worthy"])
+vfx_key = &"generic"
+ai_profile = {
+"armor_worthy": true
+}
+effect_line_text = "150% ATK earth damage | Heavy strike | 2 ATB"
+short_effect_text = "150% earth"
+description_text = "A crushing seismic blow slamming a massive boulder onto the target."
+mechanics_text = "Crushing seismic strike that drops a massive slab of stone onto the target with staggering impact."
+visual_text = "Chunky rock fragments and brown dust clouds burst outward as a giant stone slab shatters on contact."
+motion_text = "Attacker hoists stone overhead, lunges forward 2 units, and slams it down with full body weight."
+windup_text = "1.60s wind-up. Slow overhead lifting motion with high telegraph read."
+tactical_text = "Crushing seismic strike with staggering impact. Single Target."
+visual_motion_text = "Forward overhead smash slamming a massive stone slab."
+phase_visuals = {
+"impact": "Contato direto no ponto zero do alvo com hit-stop, flash e reação: Chunky rock fragments and brown dust clouds burst outward as a giant stone slab shatters on contact.",
+"release": "Partida física contínua a partir da carga rumo ao alvo: Attacker hoists stone overhead, lunges forward 2 units, and slams it down with full body weight.",
+"return": "Salto/corrida de recuo de volta à posição de origem e retomada de idle.",
+"strike": "Prelúdio de golpe e arco de swing/arma com aviso Dread na janela de Evade (D-986/D-992).",
+"travel": "Corrida pelo eixo atacante->alvo com trilha no chão (D-1013): Attacker hoists stone overhead, lunges forward 2 units, and slams it down with full body weight.",
+"windup": "Preparo em posição base com loop contínuo de carga (D-163): 1.60s wind-up. Slow overhead lifting motion with high telegraph read."
+}

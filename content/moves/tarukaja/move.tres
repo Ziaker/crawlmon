@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_lf5tt"]
+
+[resource]
+script = ExtResource("1_lf5tt")
+id = &"tarukaja"
+display_name = "Tarukaja"
+kind = 3
+element = 1
+power = 0.0
+mp_cost = 3
+windup = 0.5
+is_aoe = true
+is_friendly = true
+stand_gap = 2.6
+hold = 0.2
+plan_profile = &"cast"
+tags = Array[StringName]([&"stage_vfx"])
+vfx_key = &"generic"
+effect_line_text = "+1 ATK to all allies (max +5) | Lasts until battle ends | 2 ATB"
+short_effect_text = "+1 ATK | team"
+description_text = "Raises the Attack of every ally. Stacks up to +5."
+mechanics_text = "Team battle hymn that raises the Attack attribute (+1 ATK stage) of every ally for the remainder of combat."
+visual_text = "Rising crimson-orange energy auras and ascending runic rings enveloping each friendly combatant."
+motion_text = "Stationary team buff. Caster chants in place; energy columns rise simultaneously around all allies."
+windup_text = "1.10s wind-up. Vocal hymnal channeling."
+tactical_text = "Increases Attack (+1 ATK stage) for all allies until battle ends. Team AoE."
+visual_motion_text = "Stationary chant raising ascending crimson runic columns around all allies."
+phase_visuals = {
+"impact": "Aplicação do efeito visual e badge de status: Rising crimson-orange energy auras and ascending runic rings enveloping each friendly combatant.",
+"release": "Liberação da invocação no próprio lançador/alvo: Stationary team buff. Caster chants in place; energy columns rise simultaneously around all allies.",
+"return": "Dissolução suave da cerimônia sem sobras e retomada do relógio do combate.",
+"strike": "Ativação do selo/aura de status sobre os alvos.",
+"travel": "Manifestação direta no campo (sem deslocamento de corpo): Stationary team buff. Caster chants in place; energy columns rise simultaneously around all allies.",
+"windup": "Canalização de status com motor pausado (D-031): 1.10s wind-up. Vocal hymnal channeling."
+}

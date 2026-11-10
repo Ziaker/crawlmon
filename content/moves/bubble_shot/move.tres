@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_4j3el"]
+
+[resource]
+script = ExtResource("1_4j3el")
+id = &"bubble_shot"
+display_name = "Bubble Shot"
+kind = 1
+element = 2
+power = 1.3
+mp_cost = 3
+windup = 1.0
+stand_gap = 2.6
+hold = 0.2
+plan_profile = &"projectile"
+vfx_key = &"generic"
+effect_line_text = "130% ATK water/ice damage | Projectile | 2 ATB"
+short_effect_text = "130% ice"
+description_text = "A crossover water/ice projectile. Direct damage, no extra effect."
+mechanics_text = "Chilled aqueous sphere dealing water/ice impact damage on direct contact."
+visual_text = "Frosted cerulean water globes with internal ice crystal motes that burst into freezing spray upon impact."
+motion_text = "Stationary launch. Projectiles fly in a gentle ballistic arc toward the target."
+windup_text = "1.10s wind-up. Smooth spherical condensation."
+tactical_text = "Chilled aqueous sphere dealing water/ice impact damage. Single Target."
+visual_motion_text = "Stationary launch of frosted cerulean water globes."
+phase_visuals = {
+"impact": "Explosão/impacto no ponto de contato a 1,2 m de altura (D-1013 / D-308 Fase 4): Frosted cerulean water globes with internal ice crystal motes that burst into freezing spray upon impact.",
+"release": "Transição contínua da carga para o disparo sem sumiço brusco (D-308 Fase 2): Stationary launch. Projectiles fly in a gentle ballistic arc toward the target.",
+"return": "Dissipação completa de partículas/malhas (zero restos) e retorno do lançador ao idle.",
+"strike": "Janela final de aproximação (últimos 0,25 s) antes do contato.",
+"travel": "Voo do projétil/feixe ao longo do eixo atacante->alvo mantendo leitura de tela (D-308 Fase 3): Stationary launch. Projectiles fly in a gentle ballistic arc toward the target.",
+"windup": "Carga elemental contínua à frente do lançador (D-308 Fase 1): 1.10s wind-up. Smooth spherical condensation."
+}

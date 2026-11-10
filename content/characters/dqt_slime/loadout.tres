@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="CharacterLoadout" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/character_loadout.gd" id="1_avmxy"]
+
+[resource]
+script = ExtResource("1_avmxy")
+skills = Array[StringName]([&"tackle", &"bubble_shot", &"heal", &"electric_beam", &"tidal_surge"])

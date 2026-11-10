@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_8xmob"]
+
+[resource]
+script = ExtResource("1_8xmob")
+id = &"garra_dragao"
+display_name = "Dragon Claw"
+power = 1.6
+atb_cost = 3
+mp_cost = 4
+windup = 1.5
+stand_gap = 2.6
+run_base = 0.45
+hold = 0.7
+plan_profile = &"melee"
+hit_stop_duration = 0.105
+bw_pulse = true
+vfx_key = &"generic"
+effect_line_text = "160% ATK physical damage | Claw strike | 3 ATB"
+short_effect_text = "160% physical"
+description_text = "A heavy, tearing claw strike infused with draconic energy."
+mechanics_text = "Twin draconic energy claws that rend enemy armor with high base physical damage."
+visual_text = "Dual glowing crimson slash arcs cutting through the air, leaving glowing laceration scars."
+motion_text = "Attacker leaps forward in an aggressive forward pounce, executing a cross-slash."
+windup_text = "1.40s wind-up. Claws draw back accumulating crimson energy."
+tactical_text = "Twin draconic energy claws rending enemy armor. Single Target."
+visual_motion_text = "Aggressive forward pounce with dual crimson laceration arcs."
+phase_visuals = {
+"impact": "Contato direto no ponto zero do alvo com hit-stop, flash e reação: Dual glowing crimson slash arcs cutting through the air, leaving glowing laceration scars.",
+"release": "Partida física contínua a partir da carga rumo ao alvo: Attacker leaps forward in an aggressive forward pounce, executing a cross-slash.",
+"return": "Salto/corrida de recuo de volta à posição de origem e retomada de idle.",
+"strike": "Prelúdio de golpe e arco de swing/arma com aviso Dread na janela de Evade (D-986/D-992).",
+"travel": "Corrida pelo eixo atacante->alvo com trilha no chão (D-1013): Attacker leaps forward in an aggressive forward pounce, executing a cross-slash.",
+"windup": "Preparo em posição base com loop contínuo de carga (D-163): 1.40s wind-up. Claws draw back accumulating crimson energy."
+}

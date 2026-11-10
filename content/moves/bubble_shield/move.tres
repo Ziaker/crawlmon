@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_mpgd3"]
+
+[resource]
+script = ExtResource("1_mpgd3")
+id = &"bubble_shield"
+display_name = "Bubble Shield"
+kind = 3
+element = 2
+power = 0.0
+atb_cost = 3
+mp_cost = 4
+windup = 0.5
+is_aoe = true
+is_friendly = true
+stand_gap = 2.6
+hold = 0.2
+plan_profile = &"cast"
+vfx_key = &"generic"
+effect_line_text = "Grants 25 + MAG untyped shield to ALL allies | Absorbs damage before HP | Lasts 8 s | Reapplication resets | 3 ATB"
+short_effect_text = "25+MAG | 8 s | team"
+description_text = "A protective bubble on every ally. The untyped reserve absorbs damage before HP; excess damage carries over. Reapplication refreshes the shield and duration."
+mechanics_text = "Deploys an untyped protective bubble around all allies that absorbs incoming damage before HP. Reapplying refreshes duration and full shield pool."
+visual_text = "Iridescent translucent spheres with hexagonal water-surface refraction envelop each party member with a gentle pulse."
+motion_text = "Stationary team cast. Caster summons expanding water rings that form protective domes over all friendly units."
+windup_text = "1.20s wind-up. Harmonious fluid channeling across the party."
+tactical_text = "Untyped shield on all allies absorbing damage before HP for 8s. Team AoE."
+visual_motion_text = "Stationary team cast summoning iridescent refractive water domes."
+phase_visuals = {
+"impact": "Aplicação do efeito visual e badge de status: Iridescent translucent spheres with hexagonal water-surface refraction envelop each party member with a gentle pulse.",
+"release": "Liberação da invocação no próprio lançador/alvo: Stationary team cast. Caster summons expanding water rings that form protective domes over all friendly units.",
+"return": "Dissolução suave da cerimônia sem sobras e retomada do relógio do combate.",
+"strike": "Ativação do selo/aura de status sobre os alvos.",
+"travel": "Manifestação direta no campo (sem deslocamento de corpo): Stationary team cast. Caster summons expanding water rings that form protective domes over all friendly units.",
+"windup": "Canalização de status com motor pausado (D-031): 1.20s wind-up. Harmonious fluid channeling across the party."
+}

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="Resource" path="res://content/characters/gible/loadout.tres" id="1_52t2t"]
+[ext_resource type="Resource" path="res://content/characters/gible/model_profile.tres" id="2_tdukb"]
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="3_hwwe8"]
+
+[resource]
+script = ExtResource("3_hwwe8")
+id = &"gible"
+display_name = "Gible"
+species_id = "gible"
+raw_stats = {
+"AGI": 42,
+"LUK": 48,
+"MAG": 40,
+"STR": 70,
+"VIT": 45,
+"WIS": 45
+}
+weaknesses = Array[int]([2])
+loadout = ExtResource("1_52t2t")
+model_profile = ExtResource("2_tdukb")

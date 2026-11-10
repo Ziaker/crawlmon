@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="Resource" path="res://content/characters/abra/loadout.tres" id="1_w8ria"]
+[ext_resource type="Resource" path="res://content/characters/abra/model_profile.tres" id="2_1f4ya"]
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="3_2oooo"]
+
+[resource]
+script = ExtResource("3_2oooo")
+id = &"abra"
+display_name = "Abra"
+species_id = "abra"
+raw_stats = {
+"AGI": 90,
+"LUK": 57,
+"MAG": 105,
+"STR": 20,
+"VIT": 15,
+"WIS": 55
+}
+weaknesses = Array[int]([10, 6])
+loadout = ExtResource("1_w8ria")
+model_profile = ExtResource("2_1f4ya")

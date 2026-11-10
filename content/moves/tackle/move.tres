@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_dktdb"]
+
+[resource]
+script = ExtResource("1_dktdb")
+id = &"tackle"
+display_name = "Tackle"
+windup = 1.5
+stand_gap = 2.6
+hold = 0.7
+plan_profile = &"melee"
+hit_stop_duration = 0.075
+tags = Array[StringName]([&"basic_variant"])
+vfx_key = &"generic"
+effect_line_text = "100% ATK physical damage | Melee | 2 ATB"
+short_effect_text = "100% physical"
+description_text = "Reliable physical charge delivering direct blunt kinetic impact."
+mechanics_text = "Standard physical charge delivering direct baseline kinetic damage to a single target."
+visual_text = "Physical impact flash with white dust shockwaves and hit sparks radiating from the point of contact."
+motion_text = "Forward melee sprint. Attacker dashes across the field, impacts the target, and springs back into position."
+windup_text = "0.80s wind-up. Quick physical telegraph with low interruption risk."
+tactical_text = "Reliable basic physical strike. Single Target."
+visual_motion_text = "Forward dash collision with white dust shockwaves and hit sparks."
+phase_visuals = {
+"impact": "Clarão de impacto físico com ondas de poeira branca, faíscas, hit-stop por peso e recuo suave do alvo com clipe damage (D-1043).",
+"release": "Impulso inicial de arrancada saindo da casa do atacante.",
+"return": "Salto de retorno à base do atacante e restauração da pose idle.",
+"strike": "Antecipação, squash & stretch (D-1012), aviso Dread na arma/mão e arco de swing contínuo (D-992/D-1000).",
+"travel": "Corrida direta até o ponto de parada em frente ao alvo.",
+"windup": "Postura de preparo físico em loop contínuo (D-163) com preenchimento da faixa de trajeto no chão (D-1013)."
+}

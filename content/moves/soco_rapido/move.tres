@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_wfadr"]
+
+[resource]
+script = ExtResource("1_wfadr")
+id = &"soco_rapido"
+display_name = "Mach Punch"
+power = 0.5
+atb_cost = 1
+mp_cost = 1
+windup = 0.2
+stand_gap = 2.6
+run_base = 0.18
+strike_time = 0.2
+hold = 0.2
+plan_profile = &"melee"
+hit_stop_duration = 0.075
+tags = Array[StringName]([&"no_bw_pulse"])
+vfx_key = &"generic"
+effect_line_text = "50% ATK physical damage | Very fast, almost no wind-up | 1 ATB"
+short_effect_text = "50% | fast"
+description_text = "A lightning-fast punch with almost no wind-up."
+mechanics_text = "Supersonic physical jab with near-instant release, designed specifically to interrupt opposing charge phases."
+visual_text = "Supersonic shock cone and white air-pressure ripples forming an explosive point-blank fist shockwave."
+motion_text = "Instant forward burst step. Attacker covers short distance almost instantaneously."
+windup_text = "0.35s wind-up. Lightning fast execution; ideal for interrupting enemy wind-ups."
+tactical_text = "Lightning jab designed to interrupt enemy wind-ups. Single Target."
+visual_motion_text = "Instant forward burst step with supersonic air-pressure shockwaves."
+phase_visuals = {
+"impact": "Contato direto no ponto zero do alvo com hit-stop, flash e reação: Supersonic shock cone and white air-pressure ripples forming an explosive point-blank fist shockwave.",
+"release": "Partida física contínua a partir da carga rumo ao alvo: Instant forward burst step. Attacker covers short distance almost instantaneously.",
+"return": "Salto/corrida de recuo de volta à posição de origem e retomada de idle.",
+"strike": "Prelúdio de golpe e arco de swing/arma com aviso Dread na janela de Evade (D-986/D-992).",
+"travel": "Corrida pelo eixo atacante->alvo com trilha no chão (D-1013): Instant forward burst step. Attacker covers short distance almost instantaneously.",
+"windup": "Preparo em posição base com loop contínuo de carga (D-163): 0.35s wind-up. Lightning fast execution; ideal for interrupting enemy wind-ups."
+}

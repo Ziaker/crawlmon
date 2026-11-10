@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_oc5v4"]
+
+[resource]
+script = ExtResource("1_oc5v4")
+id = &"glare"
+display_name = "Glare"
+kind = 3
+element = 10
+power = 0.0
+atb_cost = 1
+mp_cost = 3
+windup = 0.5
+stand_gap = 2.6
+hold = 0.2
+plan_profile = &"cast"
+vfx_key = &"generic"
+effect_line_text = "Crossover glare | Combat effect not implemented | 1 ATB"
+short_effect_text = "crossover status"
+description_text = "Crossover glare. Its combat effect is not implemented yet."
+mechanics_text = "Hypnotic serpentine gaze that paralyzes the target's momentum."
+visual_text = "Twin yellow glowing serpentine eyes flashing in the dark, projecting paralyzing energy beams."
+motion_text = "Stationary stare. Zero physical travel."
+windup_text = "0.85s wind-up. Pupil contraction and locking stare."
+tactical_text = "Hypnotic serpentine gaze that paralyzes target momentum. Single Target."
+visual_motion_text = "Stationary stare with twin glowing yellow serpentine eye beams."
+phase_visuals = {
+"impact": "Aplicação do efeito visual e badge de status: Twin yellow glowing serpentine eyes flashing in the dark, projecting paralyzing energy beams.",
+"release": "Liberação da invocação no próprio lançador/alvo: Stationary stare. Zero physical travel.",
+"return": "Dissolução suave da cerimônia sem sobras e retomada do relógio do combate.",
+"strike": "Ativação do selo/aura de status sobre os alvos.",
+"travel": "Manifestação direta no campo (sem deslocamento de corpo): Stationary stare. Zero physical travel.",
+"windup": "Canalização de status com motor pausado (D-031): 0.85s wind-up. Pupil contraction and locking stare."
+}

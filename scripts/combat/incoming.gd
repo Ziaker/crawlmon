@@ -36,12 +36,17 @@ var evader_home := false  ## Dodged by a non-perfect Evade during the evader's r
 var perfect := false  ## Dodged by a perfect Evade, standing still or on its own run (D-164).
 var evader_teleported := false  ## The perfect Evade came during the evader's own run: it jumped to the opponent (D-027).
 var ghost := false  ## Not an attack: only the return of an engaged character.
+var ai_dodge_rolled := false  ## D-1007
+var ai_dodge_armed := false  ## D-1014: the AI picked its moment inside the window
+var ai_dodge_in := -1.0  ## D-1007: seconds until an AI target dodges (-1: it will not)
 var ai_evade_at := -1.0  ## Seconds into TRAVEL when an AI target will try to evade (-1: never).
 ## Kinematics, planned by AttackPlanner when the wind-up ends (flat x/z, seconds):
 var move_id := ""
+var move_data: MoveData = null  ## D-1079: ficha canônica do Move (planejamento, regras e IA).
 var motion := "cast"  ## "melee" (runs at the target), "engaged" (already next to it) or "cast"
 var from := Vector3.ZERO  ## Where the attacker starts its run
 var stand := Vector3.ZERO  ## Where it stops in front of the target (follows the target while it runs/strikes)
+var stand_gap := BattleSpace.STAND_GAP  ## Contact distance of this Move (mid-range Moves stop far away).
 var dir := Vector3.RIGHT
 var run_t := 0.0
 var antic := 0.0
@@ -66,6 +71,14 @@ var clash_land := Vector3.ZERO
 var clash_mode := ""  ## "strike" (both were running at each other: both strike from here) or "cancel" (different targets: back home)
 var arrived := false  ## An engaged evader's first attack: the rules just moved it next to its opponent.
 var data := {}  ## Drawing data owned by BattleFx (positions, clip times); logic never reads it.
+## D-1025: Tidal Surge's bounce chain. The main Incoming is the root; each bounce is its own Incoming with its own
+## travel, evade roll and hit, but no ATB/MP cost and no extra ATB/Burst. `bounce_targets` lives on the root and
+## lists every target already hit by the chain (main + bounces), so the next nearest never repeats one.
+var bounce_root: Incoming = null
+var bounce_index := 0
+var bounce_from_target: Combatant = null
+var bounce_no_reward := false
+var bounce_targets: Array = []
 
 
 func phase_len() -> float:
@@ -80,8 +93,33 @@ func progress() -> float:
 
 ## The manual Evade works only while the attack is on its way (the run or the projectile).
 func can_evade_now() -> bool:
-	# D-283: only in the last Battle.PERFECT_WINDOW seconds of the strike, and then it is always perfect.
-	return in_strike_window() and phase_len() - phase_time <= Battle.PERFECT_WINDOW
+	# D-988 (changes D-283/D-987): the PERFECT_WINDOW seconds that END Battle.PRELUDE_GAP seconds before the contact: the
+	# moment the attacker rises into the blow (measured on the Tackle: rises at 0.37-0.63 s of a 0.88 s strike).
+	# A strike shorter than both keeps a window from its start (never empty).
+	if not in_strike_window():
+		return false
+	var left := phase_len() - phase_time
+	return left > window_end() and left <= window_end() + Battle.PERFECT_WINDOW
+
+
+## D-1014: seconds before the contact at which the valid window closes: a melee strike closes it at the
+## prelude (PRELUDE_GAP before the contact, D-988); a projectile or an area spell closes it at the hit.
+func window_end() -> float:
+	if motion != "melee":
+		return 0.0
+	return minf(Battle.PRELUDE_GAP, maxf(phase_len() - Battle.PERFECT_WINDOW, 0.0))
+
+
+## D-1014: seconds left until the valid window closes (<= 0 when it is closed or not reached).
+func window_left() -> float:
+	return phase_len() - phase_time - window_end()
+
+
+## D-1006: the manual Evade works from the wind-up to the contact, and always counts as perfect.
+func can_dodge_now() -> bool:
+	if kind == Skill.Kind.STATUS or is_friendly or impacted or interrupted or ghost:
+		return false
+	return phase == Phase.WINDUP or phase == Phase.TRAVEL or phase == impact_phase
 
 
 ## The strike itself: the phase that ends with the hit (D-030), where the Evade prompt is shown. Status moves

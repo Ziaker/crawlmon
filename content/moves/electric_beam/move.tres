@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_xl2xf"]
+
+[resource]
+script = ExtResource("1_xl2xf")
+id = &"electric_beam"
+display_name = "Electric Beam"
+kind = 1
+element = 3
+mp_cost = 6
+windup = 0.5
+stand_gap = 2.6
+hold = 0.2
+plan_profile = &"projectile"
+tags = Array[StringName]([&"stun", &"armor_worthy"])
+vfx_key = &"electric"
+ai_profile = {
+"armor_worthy": true
+}
+effect_line_text = "Electric damage x1.0 ATK | projectile | 2 ATB"
+short_effect_text = "x1.0 Electric"
+description_text = "A electric projectile move. Deals x1.0 ATK damage."
+mechanics_text = "Fires one continuous electric beam at a single target and deals magical damage on contact. On a successful hit, it has a 20% chance, +1% per point of LUK above the target's, to STUN the target for 4 seconds: its ATB stops and it cannot act."
+visual_text = "A golden shock sphere charges in front of the caster and keeps growing while the strike is held; on release it swells and settles as a triple spinning crown splits backward and a burst of rays flashes, then a saturated gold zig-zag bolt with a bright head races to the target, leaving loose sparks and small discharges in the air, until on contact crowns of lightning burst out of the target's body and open outward and upward in every direction, flashing a ground ring, an electric ring and a white-gold star before they fade."
+motion_text = "Stationary. The caster stays in place; the beam leaves from the charge in front of the body and travels in a straight line to the target."
+windup_text = "0.50s wind-up: a crackling golden sphere forms in front of the caster, then grows during the held stance before the shot."
+tactical_text = "Single-target magical strike. On a successful hit, 20% + LUK chance to STUN the target for 4s."
+visual_motion_text = "Stationary channel; a golden zig-zag bolt snaps across the field and erupts into a pillar of lightning crowns on contact."
+phase_visuals = {
+"impact": "Coroas de relâmpagos explodem para fora e para cima do corpo do alvo com anel no chão, anel elétrico e estrela branco-dourada.",
+"release": "A esfera incha e assenta enquanto uma coroa tripla giratória se divide para trás e um clarão de raios dispara.",
+"return": "Raios e faíscas dissipam completamente sem sobras; se STUN aplicar, estrelas giram na cabeça do alvo (D-980).",
+"strike": "Aproximação final do raio nos últimos 0,25s antes do contato.",
+"travel": "Raio em zigue-zague amarelo-ouro saturado com cabeça brilhante cruza até o alvo deixando faíscas soltas no ar.",
+"windup": "Esfera dourada crepitante forma-se à frente do lançador e cresce durante a postura contínua (0,50s, D-977)."
+}
