@@ -38,18 +38,19 @@
 - `docs/referencias/exploracao/3d/state_icon_3d_side.png` — lateral, espessura de 0,16 m.
 - `docs/referencias/exploracao/3d/state_icon_3d_back.png` — fundo fechado.
 - `docs/referencias/exploracao/3d/state_icon_3d_inworld.png` — o `?` 3D dourado acima do Flat Card A, sem contorno.
+- `docs/referencias/exploracao/3d/ACEITACAO_D1098_D1099.md` — aceitação no lab (NPC/inimigo, 5 estados, perto/longe/espelho); folhas `acceptance_d1098_*.png`.
 
 ## O que foi verificado
 
 - Os 5 estados (`question`, `alert`, `anger`, `sweat`, `talked`) carregam frente e lateral, com tints diferentes, e agora **sem o contorno preto** (D-1099); a alpha e as malhas não mudaram.
-- O `?` 3D no cenário, dourado (quest), acima do Flat Card A; o ícone desceu **0,10 m** e o vão na escala-base ficou em **0,04 m** (era 0,14 m); na prova, o vão caiu de 125 px para 105 px.
+- O `?` 3D no cenário, dourado (quest), acima do Flat Card A; o ícone desceu **0,10 m**. Na aceitação, o vão foi **0,58/0,45/0,025 m** a 3,0/4,4/9,0 m; a 9 m o balanço pode encostar.
 - A partir de ~9 m, com o ícone em 1,10–1,15 e a placa em 1,10, o ícone pode encostar na placa; é consequência da escala por distância aprovada (não mudou).
 - `_set_icon` troca o estado e a malha; o `pop` e a escala por distância continuam.
 - Cena `scenes/debug/murky_forest_3d_lab.tscn` headless: `exit=0`; checks dos scripts OK.
 
 ## O que não foi verificado
 
-- Todos os estados em todos os ângulos/distâncias e no inimigo em jogo; a prova cobre os 5 estados e o `?` no NPC, com a escala a 4 m.
+- Todos os estados em todos os ângulos/distâncias e no inimigo em jogo; a prova cobre os 5 estados e o `?` no NPC, com a escala a 4 m. A aceitação cobre NPC/inimigo na câmera alta, perto/médio/longe/espelho; **câmera baixa, o inimigo em patrulha real e as 10 alturas de NPC com o ícone 3D** ficam fora.
 - Mobile/60 fps/resoluções e a cena principal completa (VFX de outra sessão).
 
 ## Estado

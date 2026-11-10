@@ -35,17 +35,19 @@ Na pergunta de esclarecimento, escolheu:
 - `docs/referencias/exploracao/3d/state_icon_3d_side.png` — lateral 3D.
 - `docs/referencias/exploracao/3d/state_icon_3d_back.png` — fundo.
 - `docs/referencias/exploracao/3d/state_icon_3d_inworld.png` — no cenário, acima do Flat Card A.
+- `docs/referencias/exploracao/3d/ACEITACAO_D1098_D1099.md` — aceitação no lab (5 estados no NPC/inimigo, perto/longe/espelho); folhas `acceptance_d1098_*.png`.
 
 ## O que foi verificado
 
 - As 5 texturas continuam com a **mesma alpha** (silhueta) e agora só têm RGB branco; o contorno preto virou a cor do ícone.
 - Os 5 estados (`question`, `alert`, `anger`, `sweat`, `talked`) renderizam em 3D sem contorno, com o tint de cada estado.
 - O `?` no cenário, sem contorno, na mesma altura `+1,75 m` e acima do Flat Card A.
+- Aceitação: 5 estados no NPC e no inimigo, perto/médio/longe/espelho; o ícone do inimigo aparece acima do Slime na câmera alta; vão do NPC **0,58/0,45/0,025 m** a 3,0/4,4/9,0 m.
 - `scenes/debug/murky_forest_3d_lab.tscn` headless: `exit=0`; check do script OK.
 
 ## O que não foi verificado
 
-- Todos os estados em todas as distâncias e no inimigo em jogo.
+- Todos os estados em todas as distâncias e no inimigo em jogo. A aceitação cobre a câmera alta, perto/médio/longe/espelho; **câmera baixa, o inimigo em patrulha real e as 10 alturas de NPC** ficam fora.
 - Mobile/60 fps/resoluções e a cena principal completa (VFX de outra sessão).
 
 ## Estado
