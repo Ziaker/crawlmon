@@ -3,7 +3,8 @@
 - **Data:** 2026-11-10.
 - **Área:** Exploração 3D / lab Murky Forest / câmera e controle.
 - **Relacionadas:** D-1124 (A/D reto, câmera sem auto-follow), D-1107 (WASD relativo à câmera), D-1123 (trava + auto-follow, revertida).
-- **Status:** **implementado/provado**; commit local; **sem push**.
+- **Status:** **substituída pela D-1127**; commit local; **sem push**.
+- **Nota D-1128 (2026-11-10):** o auto-follow foi removido; **A/D** agora giram a câmera a 3,0 rad/s e **W/S** andam. Detalhes na D-1128.
 
 ## O que o criador disse (literal)
 

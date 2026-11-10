@@ -16,10 +16,8 @@ const SPEED := 3.2
 const TURN_SPEED := 1.4
 ## D-1107: velocidade do giro do personagem para a direção do movimento.
 const TURN_RATE := 10.0
-## D-1126: auto-follow lento; A/D faz curva ampla, sem trava.
-const CAM_FOLLOW_RATE := 0.45
-const CAM_FOLLOW_DEADZONE := 0.12
-const CAM_FOLLOW_GRACE := 1.2
+## D-1128: A/D giram a câmera; W/S andam; sem giro automático.
+const CAM_TURN_SPEED := 3.0
 const FOLLOW_SPEED := 3.8
 const CATCH_UP_SPEED := 5.2
 const CAM_DISTANCE := 3.4
@@ -129,15 +127,16 @@ func _physics_process(delta: float) -> void:
 		if _player_dust != null:
 			_player_dust.emitting = false
 	else:
-		var input := Vector2(
-			Input.get_axis("ui_left", "ui_right"),
-			-Input.get_axis("ui_up", "ui_down"))
-		var moving := input.length_squared() > 0.001
-		if moving:
-			# D-1107: WASD relativo à câmera; o personagem vira para a direção.
+		# D-1128: A/D giram a câmera; W/S andam para frente/trás.
+		var turn := Input.get_axis("ui_right", "ui_left")
+		if turn != 0.0:
+			_cam_yaw += turn * CAM_TURN_SPEED * delta
+			_last_look = _time
+		var move := -Input.get_axis("ui_up", "ui_down")
+		if move != 0.0:
+			# D-1107: W/S relativo à câmera; o personagem vira para a direção.
 			var cam_forward := Vector3(sin(_cam_yaw), 0.0, cos(_cam_yaw))
-			var cam_right := Vector3(-cos(_cam_yaw), 0.0, sin(_cam_yaw))
-			dir = (cam_forward * input.y + cam_right * input.x).normalized()
+			dir = cam_forward * move
 			var target_yaw := atan2(dir.x, dir.z)
 			player_yaw = lerp_angle(player_yaw, target_yaw, clampf(delta * TURN_RATE, 0.0, 1.0))
 		player.velocity = dir * SPEED
@@ -147,16 +146,11 @@ func _physics_process(delta: float) -> void:
 			_player_dust.emitting = dir.length_squared() > 0.01 and player.velocity.length() > 0.1
 
 		if Input.is_key_pressed(KEY_Q):
-			_cam_yaw += 1.6 * delta
+			_cam_yaw += CAM_TURN_SPEED * delta
 			_last_look = _time
 		if Input.is_key_pressed(KEY_E):
-			_cam_yaw -= 1.6 * delta
+			_cam_yaw -= CAM_TURN_SPEED * delta
 			_last_look = _time
-		# D-1126: auto-follow lento, sem trava, para a câmera não sumir.
-		if moving and _time - _last_look > CAM_FOLLOW_GRACE:
-			var diff := wrapf(player_yaw - _cam_yaw, -PI, PI)
-			if absf(diff) > CAM_FOLLOW_DEADZONE:
-				_cam_yaw = lerp_angle(_cam_yaw, player_yaw, clampf(delta * CAM_FOLLOW_RATE, 0.0, 1.0))
 
 	_update_camera(delta)
 	_update_followers(delta)

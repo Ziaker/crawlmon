@@ -340,6 +340,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-1123] Câmera segue o jogador, com direção travada:** **implementado/provado**: câmera segue o yaw durante o movimento (rate 3,0), WASD travado, 1,2 s de graça manual; vídeo.
 - **[D-1124] Movimento normal de terceira pessoa: A/D de lado, câmera acompanha a posição:** **implementado/provado**: remove trava/auto-follow; A/D anda reto; câmera segue a posição; vídeo.
 - **[D-1126] Câmera volta a virar, bem devagar, sem trava:** **implementado/provado**: auto-follow lento (rate 0,45, deadzone 0,12), A/D faz curva ampla; vídeo.
+- **[D-1128] A/D giram a câmera; W/S andam; sem giro automático:** **implementado/provado**: A/D a 3,0 rad/s, W/S andam, auto-follow removido; HUD e vídeo.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).
@@ -1505,3 +1506,7 @@ Para o HTML dos oito Moves, o criador confirmou a entrega com Quarks.js como exc
 ## Decisão D-1126 — Câmera volta a virar, bem devagar, sem trava (2026-11-10)
 
 - **D-1126 (lab/câmera):** a câmera volta a seguir o yaw durante o movimento, mas **bem devagar**: `CAM_FOLLOW_RATE = 0.45`, zona morta de **0,12 rad** e **1,2 s** de graça após o olhar manual. O WASD continua relativo à câmera **sem trava**; A/D anda de lado e descreve uma **curva ampla**, não um giro de 450°. A D-1123 (trava + auto-follow rápido) continua revertida. Detalhes em `docs/decisoes/D-1126-camera-volta-a-virar-bem-devagar.md`.
+
+## Decisão D-1128 — A/D giram a câmera; W/S andam; sem giro automático (2026-11-10)
+
+- **D-1128 (lab/controle):** **A/D** giram a câmera a **3,0 rad/s** (A esquerda, D direita); **W/S** andam para frente/trás na direção da câmera e o personagem vira para o movimento. O **auto-follow foi removido**: nenhum giro automático controla ou disputa com A/D. Q/E e botão direito continuam como atalhos de câmera. O HUD passa a mostrar `W/S: andar · A/D ou botão direito: câmera`. Detalhes em `docs/decisoes/D-1128-ad-giram-camera-sem-auto-follow.md`.

@@ -801,7 +801,7 @@ func _build_hud() -> void:
 	var layer := CanvasLayer.new()
 	layer.layer = 20
 	var label := Label.new()
-	label.text = "Lab 3D — Murky Forest (SMT III + toon)\nWASD/setas: andar e virar · Q/E ou botão direito: câmera · 1: aliados · 2: trocar NPCs · F6: estilo do nome · Z/E: falar/saída · Esc: sair"
+	label.text = "Lab 3D — Murky Forest (SMT III + toon)\nW/S: andar · A/D ou botão direito: câmera · 1: aliados · 2: trocar NPCs · F6: estilo do nome · Z/E: falar/saída · Esc: sair"
 	label.position = Vector2(20, 16)
 	label.add_theme_font_size_override("font_size", 16)
 	label.add_theme_color_override("font_color", Color(0.70, 0.95, 0.72))
