@@ -16,6 +16,7 @@ const NPC_HUD := preload("res://scripts/debug/dialogue_hud_styles.gd")
 const ALLY_DIALOGUE := preload("res://scripts/dungeon/ally_dialogue.gd")
 const ALLY_BANNER := preload("res://scripts/debug/ally_banner.gd")
 const NAMEPLATE := preload("res://scripts/debug/floating_nameplate.gd")
+const STATE_ICON := preload("res://scripts/debug/overworld_state_icon.gd")
 const MARKER_RING_SHADER := preload("res://shaders/overworld_marker_ring.gdshader")
 const ICON_ANGER := preload("res://assets/ui/overworld_icons/state_anger.png")
 const ICON_SWEAT := preload("res://assets/ui/overworld_icons/state_sweat.png")
@@ -860,7 +861,7 @@ func _add_world_markers() -> void:
 				enemy_name = (child as Label3D).text
 				(child as Label3D).visible = false
 				break
-		var enemy_tag := _spawn_nameplate(_enemy_body, enemy_name, "ENEMY", 2.0)
+		var enemy_tag := _spawn_nameplate(_enemy_body, enemy_name, "ENEMY", 2.2)
 		_name_labels.append({"node": enemy_tag, "owner": _enemy_body})
 
 
@@ -875,7 +876,7 @@ func _decorate_npc(npc: Dictionary) -> void:
 	if str(npc["id"]) == "dqt_dracky":
 		top_y = height * 1.48
 	_add_ground_ring(body, clampf(height * 0.75, 0.45, 0.85), Color(1.0, 1.0, 1.0, 0.68), "npc")
-	npc["icon_entry"] = _add_state_icon(body, Vector3(0.0, top_y + 1.65, 0.0))
+	npc["icon_entry"] = _add_state_icon(body, Vector3(0.0, top_y + 1.85, 0.0))
 	var talking := Label3D.new()
 	talking.text = "..."
 	talking.font_size = 48
@@ -921,19 +922,14 @@ func _add_ground_ring(parent: Node3D, radius: float, color: Color, kind: String 
 
 
 func _add_state_icon(parent: Node3D, pos: Vector3) -> Dictionary:
-	var sprite := Sprite3D.new()
-	sprite.texture = ICON_QUESTION
-	# D-1090: 25% maiores que os ícones anteriores (0,0035).
-	sprite.pixel_size = 0.004375
-	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	sprite.shaded = false
-	sprite.double_sided = true
-	sprite.no_depth_test = false
-	sprite.position = pos
-	sprite.modulate = Color.WHITE
-	parent.add_child(sprite)
+	# D-1098: ícone 3D extrudado, 0,85 m, frente texturizada + lateral escura.
+	var icon = STATE_ICON.new()
+	icon.name = "StateIcon"
+	icon.setup(ICON_QUESTION, Color.WHITE)
+	icon.position = pos
+	parent.add_child(icon)
 	var entry := {
-		"sprite": sprite,
+		"sprite": icon,
 		"base_y": pos.y,
 		"phase": _rng.randf_range(0.0, TAU),
 		"state": "",
@@ -1017,19 +1013,19 @@ func _update_marker_rings(_delta: float) -> void:
 func _update_state_icons(delta: float) -> void:
 	for i in range(_state_icons.size() - 1, -1, -1):
 		var entry := _state_icons[i]
-		var sprite := entry["sprite"] as Sprite3D
-		if sprite == null or not is_instance_valid(sprite):
+		var icon := entry["sprite"] as Node3D
+		if icon == null or not is_instance_valid(icon):
 			_state_icons.remove_at(i)
 			continue
 		var pop := maxf(0.0, float(entry["pop"]) - delta * 4.0)
 		entry["pop"] = pop
-		sprite.position.y = float(entry["base_y"]) \
+		icon.position.y = float(entry["base_y"]) \
 			+ sin(_time * 2.4 + float(entry["phase"])) * 0.045 + pop * 0.15
 		var dist := 9.0
 		if _camera != null:
-			dist = _camera.global_position.distance_to(sprite.global_position)
+			dist = _camera.global_position.distance_to(icon.global_position)
 		var s := (1.0 + pop * 0.35) * clampf(dist / 8.0, 0.18, 1.1)
-		sprite.scale = Vector3(s, s, s)
+		icon.scale = Vector3(s, s, s)
 
 
 func _update_name_labels() -> void:
@@ -1081,11 +1077,11 @@ func _set_icon(entry: Dictionary, state: String, texture: Texture2D, tint: Color
 	if str(entry.get("state", "")) == state:
 		return
 	entry["state"] = state
-	var sprite := entry["sprite"] as Sprite3D
-	if sprite == null:
+	var icon = entry["sprite"]
+	if icon == null:
 		return
-	sprite.texture = texture
-	sprite.modulate = tint
+	if icon.has_method("set_state"):
+		icon.set_state(texture, tint)
 	entry["pop"] = 0.28
 
 

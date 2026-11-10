@@ -25,7 +25,7 @@
 
 - `assets/ui/nameplates/nameplate_unit_card.png`: forma `[(90,0),(768,0),(678,216),(0,216)]`, creme flat, sem detalhes.
 - `floating_nameplate.gd`: `STYLE_PIXEL_SIZE` com A = 0,0051714 e B/C = 0,003978; nome A = 120, centrado; papel oculto; `_base_tilt = deg_to_rad(-3.5)`.
-- `murky_forest_3d_lab.gd`: `name_style = "unit_card"` como padrão; `F6` continua alternando para B/C; alturas da placa A ajustadas (`+0,65 m`, ícone/reticências `+1,65 m`, inimigo `2,00 m`) após a validação do vão.
+- `murky_forest_3d_lab.gd`: `name_style = "unit_card"` como padrão; `F6` continua alternando para B/C; alturas da placa A ajustadas (`+0,65 m`, ícone `+1,85 m` na D-1098, reticências `+1,65 m`, inimigo `2,20 m`).
 
 ## Provas
 
@@ -46,7 +46,8 @@
 - **Padrão A:** `name_style = unit_card`; 6 placas (3 NPCs + 2 aliados + 1 inimigo).
 - **10 NPCs:** todos os nomes cabem; maior **CHARMANDER 3,37 m** de 3,51 m úteis.
 - **Papéis:** BULBASAUR/NPC, PANCHAM/ALLY, ORC/ALLY e SLIME/ENEMY usam a mesma placa A (o A é só nome).
-- **Vão do ícone:** topo da placa 1,989 m; base do ícone 2,118 m → **0,13 m** sem sobreposição; inimigo **0,11 m**.
+- **Vão do ícone (validação com o ícone 2D de 0,56 m):** topo da placa 1,989 m; base do ícone 2,118 m → **0,13 m** sem sobreposição; inimigo **0,11 m**.
+- **D-1098:** o ícone 2D foi substituído pelo **3D de 1,00 m** em `altura + 1,85 m`; o vão atual é **0,14 m** no NPC e **0,09 m** no inimigo (placa em 2,20 m). As provas `audit_d1097_icon.png` são históricas.
 - **F6:** `move_strip`, `expedition` e `unit_card` em todas as 6 placas; papel visível em B/C e oculto em A.
 - **Vistas:** frente e lado espelhado com o nome correto; perto (3 m) e longe (9 m) legíveis.
 - **Headless:** `exit=0`; checks dos scripts OK.

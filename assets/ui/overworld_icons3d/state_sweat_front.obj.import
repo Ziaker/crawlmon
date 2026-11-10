@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://mj4p2k3wylel"
+path="res://.godot/imported/state_sweat_front.obj-7c4daa2c6e3a6796283372390465ea5f.mesh"
+
+[deps]
+
+files=["res://.godot/imported/state_sweat_front.obj-7c4daa2c6e3a6796283372390465ea5f.mesh"]
+
+source_file="res://assets/ui/overworld_icons3d/state_sweat_front.obj"
+dest_files=["res://.godot/imported/state_sweat_front.obj-7c4daa2c6e3a6796283372390465ea5f.mesh", "res://.godot/imported/state_sweat_front.obj-7c4daa2c6e3a6796283372390465ea5f.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false
