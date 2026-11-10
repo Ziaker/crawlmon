@@ -3,11 +3,13 @@
 - **Data:** 2026-11-10.
 - **Área:** Exploração / overworld 3D / arte dos 5 ícones de estado (`?`, `!`, fúria, suor, conversado).
 - **Relacionadas:** D-1098 (ícones 3D), D-1086 (ícones de estado), D-1090 (ícones +25%), D-1095 (medalhão/retrato, que **não** muda), D-1097 (Flat Card A, que **não** muda), D-235 (nada depende de personagem/time/lado).
-- **Status:** **implementado/provado**; commit local; **sem push**.
+- **Status:** **implementado/provado e aprovado** pelo criador ("muito melhor, aprovo", 2026-11-10); commit local; **sem push**.
 
 ## O que o criador disse (literal)
 
 > eu tirava o outline preto dos ícones
+
+> muito melhor, aprovo
 
 Na pergunta de esclarecimento, escolheu:
 - **Quais ícones:** “Estado 3D: contorno da arte” — os 5 ícones de estado, não o medalhão do retrato.
@@ -48,4 +50,4 @@ Na pergunta de esclarecimento, escolheu:
 
 ## Estado
 
-Implementado e provado. Commit local; **sem push**.
+Implementado, provado e aprovado. Commit local; **sem push**.
