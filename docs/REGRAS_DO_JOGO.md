@@ -332,6 +332,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-1105] Cards 40% e ícones acima do nome:** **implementado/provado**: Flat Card A base 40% (1,588×0,448 m) e fator de distância que encolhe (metade na tela a 9 m); ícones no tamanho atual sempre acima do card — o inimigo saiu de baixo da placa; vídeo/provas.
 - **[D-1107] Controle 3D relativo à câmera:** **implementado/provado**: WASD relativo à câmera; personagem vira para o movimento; Q/E e botão direito orbitam; auto-alinhamento removido; lab e vídeo.
 - **[D-1110] Cards dos aliados 10% menores e mais altos:** **implementado/provado**: banners em 90% (342×74), base y 200 e espaçamento 83; ~20 px do painel do NPC; vídeo/print.
+- **[D-1111] Aliados sem placa branca:** **implementado/provado**: remove a placa branca dos aliados; NPC/inimigo e cards de diálogo ficam; print/vídeo.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).

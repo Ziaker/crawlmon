@@ -846,7 +846,6 @@ func _add_world_markers() -> void:
 		var body: Node3D = f["node"]
 		var height := float(f["height"])
 		_add_ground_ring(body, clampf(height * 0.55, 0.42, 0.95), Color(0.22, 0.48, 1.0, 0.65), "ally")
-		_add_ally_name(f)
 		_add_ally_talking(f)
 	if _enemy_body != null:
 		_enemy_marker_root = Node3D.new()
