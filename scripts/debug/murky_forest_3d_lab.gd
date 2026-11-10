@@ -1194,6 +1194,13 @@ func _circular_portrait(tex: Texture2D, region: Rect2) -> Texture2D:
 		return tex
 	var face := img.get_region(px)
 	face.resize(256, 256, Image.INTERPOLATE_LANCZOS)
+	# D-1095: o fundo do medalhão é cozido em dourado e o RGB de fora do
+	# círculo também fica dourado. Antes o transparente era preto e a borda
+	# da máscara puxava a "borda interna marrom" entre o fundo e o retrato.
+	var gold := Color(0.85, 0.68, 0.30, 1.0)
+	var canvas := Image.create_empty(256, 256, false, Image.FORMAT_RGBA8)
+	canvas.fill(gold)
+	canvas.blend_rect(face, Rect2i(0, 0, 256, 256), Vector2i.ZERO)
 	var center := Vector2(127.5, 127.5)
 	var radius := 124.0
 	for y in 256:
@@ -1202,10 +1209,10 @@ func _circular_portrait(tex: Texture2D, region: Rect2) -> Texture2D:
 			var a := clampf((radius - d) / 1.5, 0.0, 1.0)
 			if a >= 0.999:
 				continue
-			var c := face.get_pixel(x, y)
-			c.a *= a
-			face.set_pixel(x, y, c)
-	return ImageTexture.create_from_image(face)
+			var c := canvas.get_pixel(x, y)
+			c.a = a
+			canvas.set_pixel(x, y, c)
+	return ImageTexture.create_from_image(canvas)
 
 
 func _portrait_for_speaker(speaker: String) -> Texture2D:

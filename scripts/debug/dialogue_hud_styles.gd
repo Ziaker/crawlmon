@@ -439,13 +439,16 @@ func _build_paper() -> void:
 	_portrait_back.position = Vector2(28.0, 36.0)
 	_portrait_back.size = Vector2(142.0, 142.0)
 	_portrait_back.pivot_offset = Vector2(71.0, 71.0)
-	# D-1095: sem borda interna; o fundo marrom/dourado do medalhão continua.
+	# D-1095: a borda preta externa continua; a franja interna marrom sai
+	# pelo fundo dourado cozido no retrato, não por remover esta borda.
 	_portrait_back.add_theme_stylebox_override("panel", _flat(
-		Color(0.85, 0.68, 0.30), Color(0.85, 0.68, 0.30), 0, 71))
+		Color(0.85, 0.68, 0.30), Color(0.16, 0.25, 0.16), 2, 71))
 	_panel.add_child(_portrait_back)
-	_portrait_back.add_child(_portrait_rect(Vector2(8.0, 8.0), Vector2(126.0, 126.0), true))
-	_portrait_fallback = _label("B", Vector2(8.0, 8.0), Vector2(126.0, 126.0),
-		_font_name, 54, Color(0.16, 0.25, 0.16))
+	# D-1095: o retrato ocupa o medalhão inteiro; o aro dourado interno some,
+	# a borda preta externa continua e o fundo marrom do retrato permanece.
+	_portrait_back.add_child(_portrait_rect(Vector2(2.0, 2.0), Vector2(138.0, 138.0), true))
+	_portrait_fallback = _label("B", Vector2(2.0, 2.0), Vector2(138.0, 138.0),
+		_font_name, 58, Color(0.16, 0.25, 0.16))
 	_portrait_fallback.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_portrait_fallback.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_portrait_fallback.visible = false

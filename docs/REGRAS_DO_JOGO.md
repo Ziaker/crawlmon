@@ -324,7 +324,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-1092] Faixas laterais de aliados + câmera 3/4:** **teste implementado**: PANCHAM/ORC entram da esquerda em faixas Paper, o card BULBASAUR continua, uma por `[Z]`, ambas ficam; status cards ocultos; câmera 3/4 esquerda 50°/3,9 m/FOV 45; provas.
 - **[D-1093] Retratos/ícones usam o ícone estabelecido; 3 zooms do Bulbasaur:** **regra registrada/implementada**: Pancham/Bulbasaur usam face crop, Orc usa o retrato próprio; Bulbasaur B escolhido (0,78 + 0,03 para a esquerda); PNGs A/B/C mantidos.
 - **[D-1094] Overhaul dos nomes flutuantes — 3 estilos:** **3 protótipos implementados, aguardando escolha**: Paper & Pin, SMT Holo e Comic Impact; placa única para NPC/aliado/inimigo (D-235), F6 alterna, Paper provisório; provas e vídeo.
-- **[D-1095] Ícone do Bulbasaur, medalhão sem borda e nome centralizado:** **implementado/provado**: Bulbasaur com o recorte fechado, medalhão Paper e faixa sem borda interna (fundo marrom mantido) e nome centralizado; batalha/2D/HUD/regras intactos; provas antes/depois.
+- **[D-1095] Ícone do Bulbasaur, medalhão sem borda e nome centralizado:** **implementado/provado**: Bulbasaur com o recorte fechado, retrato até a borda preta (sem o aro dourado interno), fundo marrom mantido e nome centralizado; batalha/2D/HUD/regras intactos; provas antes/depois.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).

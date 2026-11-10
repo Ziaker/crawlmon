@@ -42,7 +42,7 @@
 
 ## Nota D-1095 (2026-11-10)
 
-O **medalhão da faixa do aliado** perdeu a borda interna escura, mantendo o fundo marrom/dourado; o resto da faixa continua igual.
+O **retrato da faixa do aliado ocupa o medalhão até a borda preta**, sem o aro dourado interno; a borda preta e o fundo marrom/dourado continuam, e o resto da faixa não muda.
 
 ## Estado
 
