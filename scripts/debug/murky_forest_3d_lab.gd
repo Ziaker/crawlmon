@@ -876,7 +876,8 @@ func _decorate_npc(npc: Dictionary) -> void:
 	if str(npc["id"]) == "dqt_dracky":
 		top_y = height * 1.48
 	_add_ground_ring(body, clampf(height * 0.75, 0.45, 0.85), Color(1.0, 1.0, 1.0, 0.68), "npc")
-	npc["icon_entry"] = _add_state_icon(body, Vector3(0.0, top_y + 1.85, 0.0))
+	# D-1098: desceu 0,10 m a pedido do criador; vão de ~0,04 m na escala-base.
+	npc["icon_entry"] = _add_state_icon(body, Vector3(0.0, top_y + 1.75, 0.0))
 	var talking := Label3D.new()
 	talking.text = "..."
 	talking.font_size = 48

@@ -11,6 +11,8 @@
 
 > aumente o tamanho e deixe 3D
 
+> está ótimo, só devia estar um pouquinho mais pra baixo
+
 (anexo: o ícone `?` amarelo acima do NPC)
 
 ## Regra
@@ -20,14 +22,14 @@
 3. **Escala por distância:** os ícones usam `0,55 + dist/16` (0,55..1,15), então não encolhem tanto quanto as placas; a 4 m o ícone fica em **0,80 m**.
 4. **Leitura 3D:** o ícone continua de frente para a câmera, mas com um **yaw de ~-28°** (mais uma oscilação suave), para a espessura/lateral aparecer sem perder a leitura.
 5. **Mesmo comportamento de estado:** os ícones continuam trocando por `_set_icon()` (questão, alerta, fúria, suor, conversado), com o mesmo tint e o mesmo "pop"; nada de regra de jogo muda.
-6. **Alturas:** placa A em `altura + 0,65 m`; **ícone de estado em `altura + 1,85 m`**; reticências de fala em `altura + 1,65 m`; inimigo: placa em `2,20 m` e ícone em `1,05 m`.
+6. **Alturas:** placa A em `altura + 0,65 m`; **ícone de estado em `altura + 1,75 m`** (desceu 0,10 m a pedido do criador; era `+1,85 m`); reticências de fala em `altura + 1,65 m`; inimigo: placa em `2,20 m` e ícone em `1,05 m`.
 7. **O que não muda:** batalha, 2D, HUD/status, cards, regras, falas, câmera, retratos e o Flat Card A (D-1097).
 
 ## Implementação
 
 - `assets/ui/overworld_icons3d/`: para cada um dos 5 ícones, uma malha de frente com UV e uma malha de lateral/fundo escuro.
 - `scripts/debug/overworld_state_icon.gd`: nó 3D com frente texturizada, lateral/fundo no tom escuro do tint, billboard com yaw de -28°, troca de estado e tint.
-- `murky_forest_3d_lab.gd`: `_add_state_icon`, `_update_state_icons` e `_set_icon` usam o nó 3D; ícone em `altura + 1,85 m`; inimigo em `2,20 m`; reticências em `altura + 1,65 m`; escala por distância `0,55 + dist/16`.
+- `murky_forest_3d_lab.gd`: `_add_state_icon`, `_update_state_icons` e `_set_icon` usam o nó 3D; ícone em `altura + 1,75 m`; inimigo em `2,20 m`; reticências em `altura + 1,65 m`; escala por distância `0,55 + dist/16`.
 
 ## Provas
 
@@ -40,7 +42,8 @@
 ## O que foi verificado
 
 - Os 5 estados (`question`, `alert`, `anger`, `sweat`, `talked`) carregam frente e lateral, com tints diferentes.
-- O `?` 3D no cenário, dourado (quest), acima do Flat Card A; vão de 0,14 m na escala-base (0,24 m a 4 m, onde o ícone fica em 0,80 m).
+- O `?` 3D no cenário, dourado (quest), acima do Flat Card A; o ícone desceu **0,10 m** e o vão na escala-base ficou em **0,04 m** (era 0,14 m); na prova, o vão caiu de 125 px para 105 px.
+- A partir de ~9 m, com o ícone em 1,10–1,15 e a placa em 1,10, o ícone pode encostar na placa; é consequência da escala por distância aprovada (não mudou).
 - `_set_icon` troca o estado e a malha; o `pop` e a escala por distância continuam.
 - Cena `scenes/debug/murky_forest_3d_lab.tscn` headless: `exit=0`; checks dos scripts OK.
 
