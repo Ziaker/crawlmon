@@ -5,9 +5,11 @@ extends Control
 const CIRCLE_SHADER := preload("res://shaders/dialogue_portrait_circle.gdshader")
 const BASE_W := 380.0
 const BASE_H := 82.0
+## D-1110: 10% menor e 88 px mais alto; o 3º não encosta no painel do NPC.
+const SCALE := 0.9
 
 var slot := 0
-var _base_y := 288.0
+var _base_y := 200.0
 var _font_name: Font
 var _font_body: Font
 var _panel: Control
@@ -29,12 +31,13 @@ func _ready() -> void:
 	_font_name = _font(["Georgia", "Times New Roman", "Cambria"], 700)
 	_font_body = _font(["Georgia", "Times New Roman", "Cambria"], 600)
 	_build()
+	scale = Vector2(SCALE, SCALE)
 	visible = false
 
 
 func setup(index: int) -> void:
 	slot = index
-	_base_y = 288.0 + float(index) * 92.0
+	_base_y = 200.0 + float(index) * 83.0
 	position = Vector2(-420.0, _base_y)
 	visible = false
 
