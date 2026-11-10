@@ -336,6 +336,8 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-1116] Paliçada de raízes + 5 variações nas paredes:** **implementado/provado**: 6 texturas (base + V1..V5) sorteadas entre as 6 paredes, uma por parede; 4 m/tile; print, contato e vídeo/GIF.
 - **[D-1117] Paredes com textura mais escura, 25% menos opaca e 5 m por tile:** **implementado/provado**: textura ×0,80, 75% textura + 25% cor antiga, tile 5 m; print, contato e vídeo/GIF.
 - **[D-1118] Texturas mais mescladas entre si, canto suave e 60% de opacidade:** **implementado/provado**: 20% média + contraste 1,25/ganho 1,35, 60% textura + 40% cor, crossfade 2 m; print, contato e vídeo/GIF.
+- **[D-1122] Paredes com 40% de opacidade:** **implementado/provado**: 40% textura + 60% cor antiga; prints/vídeo.
+- **[D-1123] Câmera segue o jogador, com direção travada:** **implementado/provado**: câmera segue o yaw durante o movimento (rate 3,0), WASD travado, 1,2 s de graça manual; vídeo.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).
@@ -1485,3 +1487,11 @@ Para o HTML dos oito Moves, o criador confirmou a entrega com Quarks.js como exc
 ## Decisão D-1118 — Texturas mais mescladas entre si, canto suave e 60% de opacidade (2026-11-10)
 
 - **D-1118 (lab/paredes):** as 6 paliçadas são misturadas **20%** com a média (contraste 1,25 e ganho 1,35); o shader entrega **60% de textura + 40% da cor antiga** (parede opaca) e faz **crossfade de 2 m** entre as texturas vizinhas nos cantos, chegando a 50/50 no canto exato. O sorteio de uma textura por parede (D-1116) e o tile de 5 m (D-1117) continuam. Detalhes em `docs/decisoes/D-1118-texturas-mescladas-canto-suave-60-opacidade.md`.
+
+## Decisão D-1122 — Paredes com 40% de opacidade (2026-11-10)
+
+- **D-1122 (lab/paredes):** o shader das paredes passa a **40% de textura + 60% da cor antiga** (`0.075, 0.145, 0.135`); a parede continua opaca. O resto da D-1118 (mistura 20%, contraste 1,25, ganho 1,35, crossfade de 2 m, tile de 5 m e sorteio de uma textura por parede) não muda. Detalhes em `docs/decisoes/D-1122-paredes-40-por-cento-de-opacidade.md`.
+
+## Decisão D-1123 — Câmera segue o jogador, com direção travada (2026-11-10)
+
+- **D-1123 (lab/câmera):** a câmera volta a seguir o **yaw** do jogador **durante o movimento**, com `CAM_FOLLOW_RATE = 3.0`. O WASD continua relativo à câmera no instante em que o input muda, mas a **direção fica travada** enquanto a mesma combinação é mantida, para a câmera não fazer o corpo girar em círculo. Q/E e o botão direito continuam orbitando e têm **1,2 s** de graça antes do auto-follow. Parado, a câmera não gira sozinha; diálogo e ataque ficam fora. Isto substitui a parte da D-1107 que dizia "a câmera segue a posição, não o yaw" e "o auto-alinhamento sai". Detalhes em `docs/decisoes/D-1123-camera-segue-jogador-direcao-travada.md`.

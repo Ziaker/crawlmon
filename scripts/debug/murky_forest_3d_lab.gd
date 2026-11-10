@@ -253,7 +253,7 @@ func _wall_material(index: int, texs: Array[Texture2D]) -> ShaderMaterial:
 	mat.set_shader_parameter("corner_b", Vector4(cb.x, cb.y, 0.0, 1.0))
 	mat.set_shader_parameter("corner_width", 2.0)
 	mat.set_shader_parameter("tile", 0.20)
-	mat.set_shader_parameter("strength", 0.60)
+	mat.set_shader_parameter("strength", 0.40)
 	mat.set_shader_parameter("base_color", Color(0.075, 0.145, 0.135, 1.0))
 	return mat
 
