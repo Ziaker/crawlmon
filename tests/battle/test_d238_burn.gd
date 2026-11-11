@@ -30,6 +30,10 @@ func make() -> Array:
 	for c in [p, e, e2]:
 		c.act_policy = Combatant.Act.HOLD
 		c.react_policy = Combatant.React.NONE
+		# D-413/D-1081: the test Skills cost MP; the old fixture had 0 MP and
+		# use_skill refused before the Fire Bullet scenario could run.
+		c.max_mp = 20
+		c.mp = 20
 	return [b, p, e, e2]
 
 

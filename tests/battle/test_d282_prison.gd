@@ -105,7 +105,8 @@ func _test_evade_while_held() -> void:
 		b._process(DT)
 		if not evaded and b.is_held(e):
 			var inc := b.find_evadable(e)
-			if inc != null and b.try_evade(e, inc):
+			# D-1014: the held target may Evade, but only inside the valid window.
+			if inc != null and inc.can_evade_now() and b.try_evade(e, inc):
 				evaded = true
 		t += DT
 	_expect(evaded, "preso, o alvo consegue usar Evade manual")

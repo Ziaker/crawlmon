@@ -42,23 +42,28 @@ func _test_move_timelines(battle_fx: BattleFx) -> void:
 	battle_fx.add_child(target_model)
 	battle_fx.register(attacker, attacker_model)
 	battle_fx.register(target, target_model)
-	var quick := Battle.Incoming.new()
+	var quick := Incoming.new()
 	quick.attacker = attacker
 	quick.target = target
 	quick.kind = Skill.Kind.MELEE
 	quick.element = Element.Type.FISICO
 	quick.label = "Soco Rápido"
-	battle_fx.fx_motion.begin_attack(quick)
-	_expect(is_equal_approx(float(quick.data["run_t"]), Battle.TRAVEL_MIN), "Quick Punch travel must clamp to Battle's fastest legal travel time")
-	var taunt := Battle.Incoming.new()
+	# The rules plan the timeline (D-1079); the FX layer only reads it. The old FxMotion.begin_attack
+	# did the planning itself and the test was calling it through the wrong layer.
+	var planner := AttackPlanner.new(null)
+	planner.plan(quick)
+	battle_fx.fx_attack_plan.begin_attack(quick)
+	_expect(is_equal_approx(quick.run_t, Battle.TRAVEL_MIN) and is_equal_approx(float(quick.data["run_t"]), Battle.TRAVEL_MIN), "Quick Punch travel must clamp to Battle's fastest legal travel time")
+	var taunt := Incoming.new()
 	taunt.attacker = attacker
 	taunt.target = target
 	taunt.kind = Skill.Kind.STATUS
 	taunt.element = Element.Type.FISICO
 	taunt.label = "Provocação"
-	battle_fx.fx_motion.begin_attack(taunt)
-	_expect(taunt.impact_phase == Battle.Phase.TRAVEL, "Taunt contact must occur after its travelling rings")
-	_expect(taunt.plan.any(func(segment) -> bool: return segment[0] == Battle.Phase.TRAVEL), "Taunt timeline must include a visual TRAVEL phase")
+	planner.plan(taunt)
+	battle_fx.fx_attack_plan.begin_attack(taunt)
+	_expect(taunt.impact_phase == Incoming.Phase.TRAVEL, "Taunt contact must occur after its travelling rings")
+	_expect(taunt.plan.any(func(segment) -> bool: return segment[0] == Incoming.Phase.TRAVEL), "Taunt timeline must include a visual TRAVEL phase")
 
 
 func _test_motion_choreography(battle_fx: BattleFx) -> void:

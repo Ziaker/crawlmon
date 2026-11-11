@@ -54,9 +54,11 @@ func _test_incoming_data_receives_move_id(battle_fx: BattleFx) -> void:
 
 func _test_impact_dispatch(battle_fx: BattleFx) -> void:
 	var authored: Array[Node3D] = battle_fx.fx_impacts._impact(Element.Type.FISICO, Vector3(1, 1, 2), Color.WHITE, false, Vector3.FORWARD, "investida")
-	_expect(_has_named(authored, "TackleImpactB1"), "authored move impact must dispatch B1 before elemental fallback")
+	# D-041: the current authored Tackle impact is the shock-cone composition (the old
+	# "TackleImpactB1" root no longer exists; B1/B2 were replaced, not merely renamed).
+	_expect(_has_named(authored, "TackleShockCone"), "authored move impact must dispatch the Tackle composition before elemental fallback")
 	var fallback: Array[Node3D] = battle_fx.fx_impacts._impact(Element.Type.FISICO, Vector3(-1, 1, 2), Color.WHITE, false, Vector3.FORWARD, "move_desconhecido")
-	_expect(not _has_named(fallback, "TackleImpactB1"), "unknown moves must retain elemental fallback")
+	_expect(not _has_named(fallback, "TackleShockCone"), "unknown moves must retain elemental fallback")
 	_expect(fallback.size() >= 2, "physical elemental fallback must remain active")
 
 

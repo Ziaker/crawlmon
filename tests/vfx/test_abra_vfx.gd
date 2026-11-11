@@ -32,26 +32,43 @@ func _test_profiles() -> void:
 func _test_projectile_dispatch(battle_fx: BattleFx) -> void:
 	var from := Vector3(0, 1, 0)
 	var to := Vector3(0, 1, -8)
-	var confusion := battle_fx.fx_projectiles._spawn_move(null, "confusao", from, to, Color("bd9afd"))
-	_expect(confusion != null and confusion.name == "ConfusionMentalWaves", "Confusion must emit authored mental waves")
-	_expect(confusion != null and confusion.get_child_count() == 3, "Confusion must emit three concentric waves")
-	var beam := battle_fx.fx_projectiles._spawn_move(null, "raio_psiquico", from, to, Color("bd9afd"))
-	_expect(beam != null and beam.name == "PsybeamContinuous", "Psybeam must use a continuous cylindrical beam")
-	_expect(beam != null and beam.get_child_count() == 4, "Psybeam must contain core, halo and two helices")
-	var shock := battle_fx.fx_projectiles._spawn_move(null, "onda_choque", from, to, Color("d6fa66"))
-	_expect(shock != null and shock.name == "ShockWaveTravel", "Shock Wave must own its ascending arc and target lock")
-	var teleport := battle_fx.fx_projectiles._spawn_move(null, "teleporte_rapido", from, to, Color("63d9ec"))
-	_expect(teleport != null and teleport.name == "RapidTeleportWarp", "Rapid Teleport must own its spatial choreography")
+	# D-170: the projectile root is only a handle; the authored flight is an AbraMoveVfx layer
+	# (TRAVEL stage) that reads the real caster and target. The old named scene-tree effects
+	# (ConfusionMentalWaves, PsybeamContinuous, ShockWaveTravel, RapidTeleportWarp) are gone.
+	var roots := {
+		"confusao": "AbraConfusionTravel",
+		"raio_psiquico": "AbraPsybeamTravel",
+		"onda_choque": "AbraShockWaveTravel",
+		"teleporte_rapido": "AbraTeleportTravel",
+	}
+	for move_id: String in roots:
+		var root := battle_fx.fx_projectiles._spawn_move(null, move_id, from, to, Color("bd9afd"))
+		_expect(root != null and root.name == roots[move_id], "%s must own its travel root" % move_id)
+		if root != null:
+			root.queue_free()
+		var layer := AbraMoveVfx.travel(battle_fx, move_id, from, to)
+		_expect(layer != null and layer.move_id == move_id and layer.stage == AbraMoveVfx.Stage.TRAVEL, "%s must use the authored Abra travel layer" % move_id)
+		if is_instance_valid(layer):
+			layer.queue_free()
 
 
 func _test_impact_dispatch(battle_fx: BattleFx) -> void:
 	var pos := Vector3(0, 1, -8)
-	var confusion := battle_fx.fx_impacts._impact(Element.Type.PSIQUICO, pos, Color("bd9afd"), false, Vector3.FORWARD, "confusao")
-	_expect(_has_named(confusion, "ConfusionGravityField"), "Confusion must dispatch the telekinetic gravity field")
-	var beam := battle_fx.fx_impacts._impact(Element.Type.PSIQUICO, pos, Color("bd9afd"), true, Vector3.FORWARD, "raio_psiquico")
-	_expect(_has_named(beam, "PsybeamPrismImpact"), "Psybeam must dispatch its prism refraction")
-	var shock := battle_fx.fx_impacts._impact(Element.Type.RAIO, pos, Color("d6fa66"), true, Vector3.FORWARD, "onda_choque")
-	_expect(_has_named(shock, "ShockWavePillar"), "Shock Wave must dispatch its double procedural lightning pillar")
+	var cases := {
+		"confusao": ["AbraConfusaoImpact", Element.Type.PSIQUICO],
+		"raio_psiquico": ["AbraRaioPsiquicoImpact", Element.Type.PSIQUICO],
+		"onda_choque": ["AbraOndaChoqueImpact", Element.Type.RAIO],
+	}
+	for move_id: String in cases:
+		var wanted: String = cases[move_id][0]
+		var layer := battle_fx.get_node_or_null(wanted)
+		if layer != null:
+			layer.queue_free()  # a previous case may have left one
+		battle_fx.fx_impacts._impact(cases[move_id][1], pos, Color("bd9afd"), true, Vector3.FORWARD, move_id)
+		layer = battle_fx.get_node_or_null(wanted)
+		_expect(layer is AbraMoveVfx and (layer as AbraMoveVfx).stage == AbraMoveVfx.Stage.IMPACT, "%s must spawn its authored Abra impact layer" % move_id)
+		if layer != null:
+			layer.queue_free()
 
 
 func _test_teleport_pinching(projectiles: FxProjectiles) -> void:
@@ -70,31 +87,36 @@ func _test_special_timelines_and_teleport_drive(battle_fx: BattleFx) -> void:
 	battle_fx.add_child(target_model)
 	battle_fx.register(abra, model)
 	battle_fx.register(target, target_model)
-	var shock := Battle.Incoming.new()
+	# D-1079: the rules plan the timeline; the FX layer only reads it.
+	var planner := AttackPlanner.new(null)
+	var shock := Incoming.new()
 	shock.attacker = abra
 	shock.target = target
 	shock.kind = Skill.Kind.CAST
 	shock.element = Element.Type.RAIO
 	shock.label = "Onda de Choque"
-	battle_fx.fx_motion.begin_attack(shock)
-	_expect(shock.plan[0][0] == Battle.Phase.TRAVEL and shock.plan[1][0] == Battle.Phase.STRIKE, "Shock Wave must telegraph in TRAVEL before its sky STRIKE")
-	_expect(shock.impact_phase == Battle.Phase.STRIKE, "Shock Wave damage must land with the descending pillar")
-	var teleport := Battle.Incoming.new()
+	planner.plan(shock)
+	battle_fx.fx_attack_plan.begin_attack(shock)
+	_expect(shock.plan[0][0] == Incoming.Phase.TRAVEL and shock.plan[1][0] == Incoming.Phase.STRIKE, "Shock Wave must telegraph in TRAVEL before its sky STRIKE")
+	_expect(shock.impact_phase == Incoming.Phase.STRIKE, "Shock Wave damage must land with the descending pillar")
+	var teleport := Incoming.new()
 	teleport.attacker = abra
 	teleport.target = target
 	teleport.kind = Skill.Kind.PROJECTILE
 	teleport.element = Element.Type.PSIQUICO
 	teleport.label = "Teleporte Rápido"
-	battle_fx.fx_motion.begin_attack(teleport)
+	planner.plan(teleport)
+	battle_fx.fx_attack_plan.begin_attack(teleport)
 	teleport.plan_i = 0
-	teleport.phase = Battle.Phase.TRAVEL
+	teleport.phase = Incoming.Phase.TRAVEL
 	teleport.phase_time = 0.12
-	battle_fx.fx_motion.on_phase(teleport, Battle.Phase.TRAVEL)
+	battle_fx.fx_motion.on_phase(teleport, Incoming.Phase.TRAVEL)
 	battle_fx.fx_projectiles.drive(teleport)
-	_expect(model.scale.is_equal_approx(Vector3(0.06, 2.1, 0.06)), "Teleport body must reach the approved pinch at 0.12s")
-	_expect(battle_fx.find_children("GhostSnapshot*", "Node3D", true, false).size() >= 1, "Teleport must leave a cyan decoy at its origin")
+	# D-170: the old pinch scale was removed; the body vanishes and the AbraMoveVfx warp owns the silhouette.
+	_expect(not model.visible, "Teleport must hide the body during TRAVEL (D-170 warp owns the silhouette)")
+	_expect(battle_fx.find_children("GhostSnapshot*", "Node3D", true, false).size() >= 1, "Teleport must leave a decoy at its origin")
 	teleport.plan_i = 2
-	teleport.phase = Battle.Phase.RETURN
+	teleport.phase = Incoming.Phase.RETURN
 	teleport.phase_time = 0.30
 	battle_fx.fx_projectiles.drive(teleport)
 	_expect(model.position.is_equal_approx(Vector3.ZERO), "Teleport RETURN must restore Abra to its logical slot")

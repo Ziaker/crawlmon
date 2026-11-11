@@ -31,17 +31,17 @@ func _run() -> void:
 
 func _test_tackle_vfx(battle_fx: BattleFx) -> void:
 	var pos := Vector3(0, 1, -5)
-	# Golpe A2
+	# Golpe A2: D-990 removed the two flat smear arcs fixed in space; the SwingTrail follows the real limb.
 	var smears := battle_fx.fx_motion._tackle_strike_vfx(pos, Vector3.FORWARD)
-	_expect(smears.size() == 2, "Tackle golpe A2 deve ter exatamente 2 laminas de smear")
+	_expect(smears.is_empty(), "Tackle golpe A2 nao deve recriar as laminas fixas removidas pela D-990")
 	for s in smears:
 		s.queue_free()
 
-	# Impacto B1
+	# D-041: the approved Tackle impact is the multilayer shock-cone composition; the old B1/B2 nodes are gone.
 	var impact := battle_fx.fx_impacts._tackle_impact(pos, Vector3.FORWARD, false)
-	_expect(_has_named(impact, "TackleImpactB1"), "Tackle impacto B1 deve conter a raiz da explosao estelar")
-	_expect(_has_named(impact, "TacklePlasmaGold"), "Tackle impacto B1 deve conter o anel de plasma dourado")
-	_expect(_has_named(impact, "TacklePlasmaOrange"), "Tackle impacto B1 deve conter o anel de plasma cruzado")
+	_expect(_has_named(impact, "TackleShockCone"), "Tackle impacto deve conter o cone de choque autoral")
+	_expect(_has_named(impact, "TackleSlashArcA") and _has_named(impact, "TackleSlashArcB"), "Tackle impacto deve conter os dois arcos cineticos")
+	_expect(_has_named(impact, "TackleFlipbookMain"), "Tackle impacto deve conter o flipbook principal")
 	for node in impact:
 		if is_instance_valid(node):
 			node.queue_free()
@@ -111,7 +111,9 @@ func _test_smt_moves_vfx(battle_fx: BattleFx) -> void:
 	var dir := Vector3.FORWARD
 
 	# 4 Status (Media, Tarukaja, Rakunda, Sukunda)
-	_expect(battle_fx.fx_impacts._status_impact_move("media", pos), "Media deve ter tratamento visual de status")
+	# D-337: Media is carried by its own stage ritual; the legacy white status burst must not run.
+	_expect(not battle_fx.fx_impacts._status_impact_move("media", pos), "Media nao deve usar o burst de status antigo (D-337)")
+	_expect(MoveVfxRegistry.family(&"media") == &"media", "Media deve rotear para o ritual proprio de palco")
 	_expect(battle_fx.fx_impacts._status_impact_move("tarukaja", pos), "Tarukaja deve ter tratamento visual de status")
 	_expect(battle_fx.fx_impacts._status_impact_move("rakunda", pos), "Rakunda deve ter tratamento visual de status")
 	_expect(battle_fx.fx_impacts._status_impact_move("sukunda", pos), "Sukunda deve ter tratamento visual de status")

@@ -46,6 +46,10 @@ func _unit(n: String, is_player: bool) -> Combatant:
 	var c := Combatant.new(n, 100, 10, 0.5, is_player)
 	c.act_policy = Combatant.Act.SKILL
 	c.react_policy = Combatant.React.EVADE
+	# D-413: the fixture's Skills cost MP; without MP use_skill refuses
+	# before the AI can choose a Move.
+	c.max_mp = 999
+	c.mp = 999
 	return c
 
 
@@ -259,17 +263,25 @@ func _test_own_run() -> void:
 	inc.attacker = e
 	inc.target = a
 	inc.kind = Skill.Kind.MELEE
+	inc.motion = "melee"  # the real planner sets this; window_end() reads it (D-988/D-1014)
 	inc.resolved = true
 	inc.phase = Battle.Phase.STRIKE
 	inc.impact_phase = Battle.Phase.STRIKE
 	inc.plan = [[Battle.Phase.STRIKE, 1.0]]
 	inc.plan_i = 0
-	inc.ai_evade_at = 0.1
+	# D-1007/D-1014: the AI rolls once whether it will dodge; the scheduler picks the moment
+	# INSIDE the valid window. It must never spend the Evade outside it.
+	inc.ai_dodge_rolled = true
+	inc.ai_dodge_in = 0.0
 	a.atb = 5.0
-	b._ai.try_evade(inc)
-	_expect(not inc.dodged and inc.ai_evade_at > 0.8, "no próprio trajeto espera a janela perfeita")
-	inc.phase_time = inc.ai_evade_at
-	b._ai.try_evade(inc)
+	inc.phase_time = 0.1
+	b._tick_ai_dodge(inc, 0.1)
+	_expect(not inc.dodged and not inc.evade_tried and not inc.can_evade_now(), "no próprio trajeto espera a janela perfeita")
+	# D-988: for a 1.0 s strike the window runs from 0.50 s to 0.75 s (0.25 s, ending 0.25 s before contact).
+	inc.phase_time = 0.55
+	b._tick_ai_dodge(inc, 1.0 / 60.0)  # arms inside the window
+	inc.phase_time = 0.60
+	b._tick_ai_dodge(inc, 0.25)  # the drawn delay always expires inside the window
 	_expect(inc.dodged and inc.perfect, "desvia na janela perfeita")
 	b.free()
 
