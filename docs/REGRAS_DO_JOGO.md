@@ -348,6 +348,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-1139] Animação de ataque preenche exatamente a duração do dash:** **implementado/provado**: clipe completo em `clip.length / dash`; log 1,9667 s em 0,18 s (10,93×); testes PASS.
 - **[D-1141] Wind-up de 0,15 s e endlag com a animação em velocidade normal:** **implementado/provado**: wind-up 0,15 s, dash 2 m, endlag até o clipe terminar a 1,0×; log/testes.
 - **[D-1142] Inimigos com o mesmo wind-up, endlag e animação normal:** **implementado/provado**: telegraph 0,4 + wind-up 0,15, dash 2 m, endlag a 1,0×; testes PASS.
+- **[D-1151] Três salas ao sul: Cyclops + item, item consumível e Orc:** **implementado/provado**: salas x -4..18/z -14..-22, amuleto + super poção, Cyclops/Orc; prints/log.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).
@@ -1545,3 +1546,7 @@ Para o HTML dos oito Moves, o criador confirmou a entrega com Quarks.js como exc
 ## Decisão D-1142 — Inimigos com o mesmo wind-up, endlag e animação normal (2026-11-11)
 
 - **D-1142 (lab/ataque/inimigos):** o inimigo mantém o telegraph de 0,4 s e passa a ter **0,15 s de pré-avanço** (antes 0,12); o dash continua com teto de **2,0 m**; o clipe `attack` roda a **1,0×** desde o wind-up e termina num **endlag** em que o inimigo fica travado. No acerto, a transição espera o maior entre 0,5 s e o endlag. Slime e Gible usam o comprimento do próprio clipe. Detalhes em `docs/decisoes/D-1142-inimigos-windup-endlag-animacao-normal.md`.
+
+## Decisão D-1151 — Três salas ao sul: Cyclops + item, item consumível e Orc (2026-11-11)
+
+- **D-1151 (lab/salas/itens):** a ala sul ganha três salas (x -4..4, 4..10 e 10..18; z -14..-22), com portas de 2 m. A oeste tem **Cyclops** patrulhando e o item **amulet**; a do meio só a **super_potion**; a leste um **Orc**. Os itens flutuam e são recolhidos automaticamente a 1,25 m, entrando no inventário; se a mochila estiver cheia, ficam no chão. Cyclops/Orc patrulham, perseguem e são registrados no ataque. Detalhes em `docs/decisoes/D-1151-tres-salas-sul-cyclops-item-orc.md`.
