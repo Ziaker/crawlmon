@@ -345,6 +345,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-1133] Novo cômodo a leste e Gible patrulhando:** **implementado/provado**: cômodo x4..18/z-6..6, porta de 3 m, Gible em (11,0) em PATROL; prints/vídeo.
 - **[D-1135] Ataque do Z: teto de 2,0 m e sem wind-up do jogador:** **implementado/provado**: 2,0 m nos dois, Z sem 0,12 s, inimigo mantém telegraph; testes PASS.
 - **[D-1137] Câmera um pouco mais lenta, personagem +50% e Z ataca sempre:** **implementado/provado**: A/D 2,6 rad/s, SPEED 4,8, ataque livre de 2 m sem batalha; print/testes.
+- **[D-1139] Animação de ataque preenche exatamente a duração do dash:** **implementado/provado**: clipe completo em `clip.length / dash`; log 1,9667 s em 0,18 s (10,93×); testes PASS.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).
@@ -1530,3 +1531,7 @@ Para o HTML dos oito Moves, o criador confirmou a entrega com Quarks.js como exc
 ## Decisão D-1137 — Câmera um pouco mais lenta, personagem +50% e Z ataca sempre (2026-11-10)
 
 - **D-1137 (lab/controle/ataque):** A/D giram a câmera a **2,6 rad/s** (antes 3,0); a velocidade do personagem passa de **3,2 para 4,8 m/s** (+50%); **Z ataca a qualquer momento**, mesmo sem inimigo. Sem alvo, o ataque avança **2,0 m** na direção do personagem, toca o clipe/VFX e **não inicia batalha**; com alvo, usa o inimigo mais próximo em 4,5 m. **E** continua falando/interagindo (prompt `[E] TALK`). Detalhes em `docs/decisoes/D-1137-camera-mais-lenta-personagem-50-ataque-sempre.md`.
+
+## Decisão D-1139 — Animação de ataque preenche exatamente a duração do dash (2026-11-10)
+
+- **D-1139 (lab/ataque/animação):** o clipe `attack` do jogador toca **do começo ao fim** na duração planejada do dash, com `speed_scale = clip.length / dash_duration`; sem loop. Vale para o Z com alvo e para o ataque livre; o inimigo continua a 2,0×. Detalhes em `docs/decisoes/D-1139-animacao-ataque-duracao-exata-do-dash.md`.
