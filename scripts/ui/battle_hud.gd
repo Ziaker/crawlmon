@@ -35,6 +35,9 @@ var _skill_info
 var _tabs: CameraTabs
 var _target: Combatant
 var _status: StatusPanel
+## Prototype hook: the portrait shield arc replaces the small shield badges.
+## Default false; only the shield-HUD lab turns it on.
+var hide_shield_badges := false
 var _status_open := false
 var _reward_layer: RewardLayer
 var _heal_layer: Control  ## D-347: the option 2 numbers above the HP cards/tags
@@ -875,7 +878,7 @@ class UnitCard extends Control:
 			badges.append({"text": "ARMOR %.1fs" % c.armor_timer, "bg": ARMOR_BG, "fg": ARMOR_FG, "icon": true})
 		if c.is_invulnerable:
 			badges.append({"text": "INVULN", "bg": Color("00838f"), "fg": Color.WHITE})
-		if c.is_shielded():
+		if c.is_shielded() and not hud.hide_shield_badges:
 			badges.append({"text": "SHIELD %d | %.1fs" % [c.shield_hp, c.shield_timer], "bg": Color("0b3f7a"), "fg": Color("8fe8ff")})
 		if c.is_magic_immune():
 			badges.append({"text": "MAG. IMMUNE %.1fs" % c.magic_immune_timer, "bg": Color("5b3f99"), "fg": Color("e2d6ff")})
@@ -1086,7 +1089,7 @@ class EnemyTag extends Control:
 			pos.append({"text": "ARMOR %.1fs" % c.armor_timer, "bg": ARMOR_BG, "fg": ARMOR_FG, "icon": true})
 		if c.is_invulnerable:
 			pos.append({"text": "INVULN", "bg": Color("00838f"), "fg": Color.WHITE})
-		if c.is_shielded():
+		if c.is_shielded() and not hud.hide_shield_badges:
 			pos.append({"text": "S %d | %.1fs" % [c.shield_hp, c.shield_timer], "bg": Color("0b3f7a"), "fg": Color("8fe8ff")})
 		if c.is_magic_immune():
 			pos.append({"text": "IMM %.1fs" % c.magic_immune_timer, "bg": Color("5b3f99"), "fg": Color("e2d6ff")})
