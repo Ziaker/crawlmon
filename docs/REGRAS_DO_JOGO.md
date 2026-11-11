@@ -342,6 +342,8 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-1126] Câmera volta a virar, bem devagar, sem trava:** **implementado/provado**: auto-follow lento (rate 0,45, deadzone 0,12), A/D faz curva ampla; vídeo.
 - **[D-1128] A/D giram a câmera; W/S andam; sem giro automático:** **implementado/provado**: A/D a 3,0 rad/s, W/S andam, auto-follow removido; HUD e vídeo.
 - **[D-1130] A/D só giram a câmera; as setas movem o boneco:** **implementado/provado**: A/D câmera, setas/W/S movimento, sem auto-follow; HUD e vídeo.
+- **[D-1133] Novo cômodo a leste e Gible patrulhando:** **implementado/provado**: cômodo x4..18/z-6..6, porta de 3 m, Gible em (11,0) em PATROL; prints/vídeo.
+- **[D-1135] Ataque do Z: teto de 2,0 m e sem wind-up do jogador:** **implementado/provado**: 2,0 m nos dois, Z sem 0,12 s, inimigo mantém telegraph; testes PASS.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).
@@ -1515,3 +1517,11 @@ Para o HTML dos oito Moves, o criador confirmou a entrega com Quarks.js como exc
 ## Decisão D-1130 — A/D só giram a câmera; as setas movem o boneco (2026-11-10)
 
 - **D-1130 (lab/controle):** **A/D** giram a câmera (3,0 rad/s) e **não movem** o personagem; **setas** ←/→/↑/↓ movem o boneco relativo à câmera e **W/S** continuam como atalhos de andar. O auto-follow não existe. O HUD passa a mostrar `Setas/W/S: andar · A/D ou botão direito: câmera`. A D-1128 usava `ui_left/ui_right` para a câmera, mas essas ações incluem A/D e setas; a D-1130 separa as teclas. Detalhes em `docs/decisoes/D-1130-ad-camera-setas-movem.md`.
+
+## Decisão D-1133 — Novo cômodo a leste e Gible patrulhando (2026-11-10)
+
+- **D-1133 (lab/geometria):** o vazio a leste (x 4..18, z -6..6) vira um cômodo com piso, paredes, porta de 3 m na parede interna (x 8..11), navmesh e minimapa. O Gible sai de (5,0,-5) e passa a nascer em **(11,0,0)**, patrulhando (6,4) → (16,4) → (16,-4) → (6,-4). A parede leste da sala inicial fica inteira. Detalhes em `docs/decisoes/D-1133-novo-comodo-leste-gible-patrulhando.md`.
+
+## Decisão D-1135 — Ataque do Z: teto de 2,0 m e sem wind-up do jogador (2026-11-10)
+
+- **D-1135 (ataque/overworld):** o avanço máximo do jogador e dos inimigos passa a **2,0 m** (limite; para no contato/parede). O **Z do jogador não tem mais o wind-up de 0,12 s**: o dash começa no mesmo frame, mantendo `player_dash_started`, o clipe `attack` a 2,0× e a origem de retorno. O inimigo mantém telegraph de 0,4 s + pré-avanço de 0,12 s; o impacto de 0,5 s e o alcance de 4,5 m continuam. Detalhes em `docs/decisoes/D-1135-ataque-2m-sem-windup-jogador.md`.
