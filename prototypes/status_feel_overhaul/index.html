@@ -1,0 +1,2201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Crawlmon — Status HUD: 3 opções de feeling</title>
+<style>
+  :root {
+    --paper: #f4eee1;
+    --paper-bright: #fdfde8;
+    --ink: #10263a;
+    --ink-soft: #080e18;
+    --lime: #d6fa66;
+    --coral: #ff746c;
+    --gold: #f0c57e;
+    --gold-deep: #dfc980;
+    --blue: #63d9ec;
+    --violet: #bd9afd;
+    --stage-w: 1280px;
+    --stage-h: 720px;
+    --dur-fast: 90ms;
+    --dur: 140ms;
+    --dur-slow: 220ms;
+    --ease: cubic-bezier(.2, .8, .2, 1);
+    --hover-y: -2px;
+    --hover-s: 1.005;
+    --press-y: 1.5px;
+    --press-s: .996;
+    --sel-y: -1px;
+    --sel-s: 1.01;
+    --elem: #cbd5e1;
+    --elem-ink: #080e18;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background:
+      radial-gradient(ellipse at 8% 0%, rgba(50, 104, 88, .30), transparent 40%),
+      radial-gradient(ellipse at 92% 100%, rgba(79, 52, 118, .26), transparent 44%),
+      #05090c;
+    color: #e9e5d8;
+    font-family: Arial, "Segoe UI", sans-serif;
+    padding: 24px 28px 42px;
+  }
+  button { font: inherit; }
+  .page-head {
+    max-width: 1360px;
+    margin: 0 auto 14px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 22px;
+  }
+  .eyebrow {
+    margin: 0 0 5px;
+    color: #9fb8ae;
+    font: 700 10px/1.2 Consolas, monospace;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+  }
+  h1 {
+    margin: 0;
+    color: #f2eedf;
+    font: 800 clamp(25px, 2.6vw, 38px)/1.02 Impact, Haettenschweiler, "Arial Black", sans-serif;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+  }
+  .lede {
+    margin: 7px 0 0;
+    max-width: 860px;
+    color: #a9b8b2;
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+  .lede b { color: #d8e6dc; }
+  .lede kbd, .footer kbd {
+    display: inline-block;
+    padding: 1px 5px;
+    border: 1px solid #557064;
+    border-bottom-width: 2px;
+    background: #0c1712;
+    color: #d6fa66;
+    font: 800 9px Consolas, monospace;
+    letter-spacing: .04em;
+  }
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    flex: 0 0 auto;
+  }
+  .btn {
+    border: 1px solid #456356;
+    background: #0d1712;
+    color: #cfe8d4;
+    padding: 9px 13px;
+    font: 800 10px/1 Consolas, monospace;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 #000;
+    transition: background 120ms ease, transform 90ms ease, box-shadow 90ms ease;
+  }
+  .btn:hover { background: #17251b; }
+  .btn:active { transform: translate(1px, 1px); box-shadow: 2px 2px 0 #000; }
+  .reduce {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #9fb8ae;
+    font: 700 10px/1 Consolas, monospace;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .reduce input { accent-color: #d6fa66; }
+  .mode-picker {
+    max-width: 1360px;
+    margin: 0 auto 14px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .mode-card {
+    position: relative;
+    overflow: hidden;
+    text-align: left;
+    border: 1px solid #2c4238;
+    background: #0b1310;
+    color: #dfe8df;
+    padding: 12px 14px 13px;
+    cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease, transform 160ms var(--ease), box-shadow 160ms ease;
+  }
+  .mode-card:hover { transform: translateY(-2px); background: #101b15; }
+  .mode-card.active {
+    border-color: var(--lime);
+    background: #121d16;
+    box-shadow: inset 4px 0 0 var(--lime), 4px 4px 0 rgba(0, 0, 0, .35);
+  }
+  .mode-card .mode-code {
+    display: block;
+    color: #8aa89a;
+    font: 800 10px/1 Consolas, monospace;
+    letter-spacing: .18em;
+  }
+  .mode-card.active .mode-code { color: var(--lime); }
+  .mode-card .mode-name {
+    display: block;
+    margin-top: 3px;
+    font: 800 22px/1 Impact, Haettenschweiler, "Arial Black", sans-serif;
+    letter-spacing: .03em;
+  }
+  .mode-card .mode-desc {
+    display: block;
+    margin-top: 5px;
+    color: #9fb3a5;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+  .stage-shell {
+    position: relative;
+    max-width: 1360px;
+    height: var(--stage-h);
+    margin: 0 auto;
+    border: 1px solid #2a3d36;
+    background: #000;
+    box-shadow: 0 20px 70px rgba(0, 0, 0, .55);
+    overflow: hidden;
+  }
+  .stage {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: var(--stage-w);
+    height: var(--stage-h);
+    transform-origin: top center;
+    transform: translateX(-50%) scale(1);
+    background:
+      radial-gradient(ellipse at 48% 54%, #26535f 0%, #143343 32%, #092133 66%, #051322 100%);
+    color: var(--paper);
+    overflow: hidden;
+    font-family: Arial, "Segoe UI", sans-serif;
+    user-select: none;
+  }
+  .stage::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(255,255,255,.025), transparent 18%, transparent 82%, rgba(0,0,0,.18));
+    z-index: 30;
+  }
+  .topline { position: absolute; top: 0; left: 0; width: 100%; height: 3px; display: flex; z-index: 31; }
+  .topline i:first-child { width: 25%; background: var(--lime); }
+  .topline i:last-child { width: 17%; background: var(--coral); }
+  .spires { position: absolute; left: 0; bottom: 28px; width: 100%; height: 330px; pointer-events: none; z-index: 0; }
+  .spire { position: absolute; bottom: 0; width: 27px; background: rgba(28, 64, 76, .36); }
+  .spire::before {
+    content: "";
+    position: absolute;
+    left: -6px;
+    top: -10px;
+    width: 39px;
+    height: 10px;
+    background: rgba(28, 69, 82, .40);
+    clip-path: polygon(0 100%, 100% 100%, 84% 0, 15% 0);
+  }
+  .spire::after {
+    content: "";
+    position: absolute;
+    left: 8px;
+    top: -48px;
+    width: 14px;
+    height: 40px;
+    background: rgba(16, 41, 54, .42);
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  }
+  .title {
+    position: absolute;
+    left: 29px;
+    top: 13px;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font: 800 50px/1 Impact, Haettenschweiler, "Arial Black", sans-serif;
+    letter-spacing: .01em;
+    z-index: 5;
+  }
+  .title .paper { color: var(--paper); }
+  .title .slash { color: var(--coral); font-size: 54px; }
+  .title .lime { color: var(--lime); }
+
+  /* ---------- roster ---------- */
+  .roster { position: absolute; left: 29px; top: 110px; width: 276px; z-index: 5; }
+  .roster-row {
+    position: relative;
+    display: block;
+    width: 276px;
+    height: 66px;
+    margin: 0 0 8px;
+    padding: 0;
+    border: 0;
+    background: var(--paper);
+    color: #0a1a27;
+    clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+    cursor: pointer;
+    text-align: left;
+    transition: transform var(--dur) var(--ease), background var(--dur) ease, filter var(--dur) ease;
+  }
+  .roster-row::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 7px;
+    height: 100%;
+    background: transparent;
+  }
+  .roster-row.active { background: var(--paper-bright); }
+  .roster-row.active::before { background: var(--lime); }
+  .roster-row:hover { transform: translateY(var(--hover-y)) scale(var(--hover-s)); z-index: 3; }
+  .roster-row.is-pressed { transform: translateY(var(--press-y)) scale(var(--press-s)); }
+  .roster-row .portrait {
+    position: absolute;
+    left: 14px;
+    top: 10px;
+    width: 46px;
+    height: 46px;
+    overflow: hidden;
+    background: #0c1a26;
+    border: 1px solid #46616e;
+  }
+  .roster-row .portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .roster-row .row-body { position: absolute; left: 70px; top: 7px; right: 12px; }
+  .row-top { display: flex; align-items: center; gap: 5px; height: 22px; }
+  .row-name {
+    font: 800 18px/1 Impact, Haettenschweiler, "Arial Black", sans-serif;
+    letter-spacing: .02em;
+    white-space: nowrap;
+  }
+  .row-tags { display: flex; gap: 3px; align-items: center; }
+  .row-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 14px;
+    background: var(--elem);
+    clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%);
+  }
+  .row-tag img { width: 11px; height: 11px; display: block; }
+  .row-lv {
+    margin-left: auto;
+    color: #536f80;
+    font: 800 9px/1 Arial, "Segoe UI", sans-serif;
+    white-space: nowrap;
+  }
+  .bar {
+    position: relative;
+    display: block;
+    width: 124px;
+    height: 9px;
+    margin-top: 3px;
+    background: #d8ccb7;
+    overflow: visible;
+  }
+  .bar > i { display: block; height: 100%; width: 100%; background: var(--coral); }
+  .bar.mp > i { background: #5f88f5; }
+  .bar > em {
+    position: absolute;
+    left: calc(100% + 4px);
+    top: 0;
+    color: #536f80;
+    font: 800 10px/9px Arial, "Segoe UI", sans-serif;
+    font-style: normal;
+    white-space: nowrap;
+    letter-spacing: -.02em;
+  }
+
+  /* ---------- satchel ---------- */
+  .satchel {
+    position: absolute;
+    left: 29px;
+    top: 268px;
+    width: 276px;
+    height: 288px;
+    padding: 9px 10px;
+    background: #2a1710;
+    border: 1px solid #5b3a22;
+    clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
+    z-index: 6;
+  }
+  .satchel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .satchel-title { color: var(--gold-deep); font: 800 16px/1 Impact, Haettenschweiler, "Arial Black", sans-serif; letter-spacing: .02em; }
+  .satchel-count { color: #dfc980; font: 800 9px/1 Arial, "Segoe UI", sans-serif; }
+  .satchel-foot {
+    position: absolute;
+    left: 16px;
+    bottom: 8px;
+    color: #a5915d;
+    font: 800 8px/1 Arial, "Segoe UI", sans-serif;
+  }
+  .satchel-foot.hidden { display: none; }
+  .slots { position: relative; margin-top: 10px; height: 190px; }
+  .slot {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 122px;
+    height: 22px;
+    padding: 0 4px;
+    border: 1px solid #4f2f18;
+    background: rgba(20, 10, 5, .42);
+    color: #a5915d;
+    clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
+    font: 800 9px/1 Arial, "Segoe UI", sans-serif;
+    cursor: pointer;
+    transition: transform var(--dur) var(--ease), background var(--dur) ease, color var(--dur) ease, border-color var(--dur) ease;
+  }
+  .slot:hover { background: #3a2415; color: #f1dfb2; border-color: #8f6733; transform: translateY(var(--hover-y)); z-index: 2; }
+  .slot.is-pressed { transform: translateY(var(--press-y)) scale(var(--press-s)); }
+  .slot.selected { background: #5a3a1e; color: #fff3cd; border-color: var(--gold-deep); }
+  .slot img { width: 14px; height: 14px; object-fit: contain; display: block; }
+  .slot .count { margin-left: auto; color: var(--gold-deep); }
+  .slot.empty { color: #6d513d; border-color: #3c2415; background: rgba(20, 10, 5, .22); cursor: default; }
+  .slot.empty:hover { transform: none; background: rgba(20, 10, 5, .22); color: #6d513d; border-color: #3c2415; }
+  .slot .slot-mark { color: #6d513d; font-size: 7px; }
+  .drawer {
+    position: absolute;
+    left: 8px;
+    bottom: 12px;
+    width: 260px;
+    height: 108px;
+    padding: 9px 11px;
+    background: #201007;
+    border: 1px solid var(--gold-deep);
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+    z-index: 8;
+    display: none;
+  }
+  .drawer.open { display: block; animation: drawer-in var(--dur) var(--ease); }
+  @keyframes drawer-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .drawer-head { display: flex; align-items: center; gap: 6px; }
+  .drawer-head img { width: 18px; height: 18px; object-fit: contain; }
+  .drawer-name { color: #dfc980; font: 800 18px/1 Impact, Haettenschweiler, "Arial Black", sans-serif; letter-spacing: .03em; }
+  .drawer-kind {
+    margin-left: 2px;
+    padding: 2px 5px;
+    background: #2e7d4e;
+    color: #fff;
+    font: 800 8px/1 Arial, "Segoe UI", sans-serif;
+    letter-spacing: .03em;
+    clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%);
+  }
+  .drawer-close {
+    margin-left: auto;
+    border: 0;
+    background: transparent;
+    color: #dfc980;
+    font: 800 8px/1 Arial, "Segoe UI", sans-serif;
+    cursor: pointer;
+    padding: 2px 0;
+  }
+  .drawer-close:hover { color: #fff3cd; }
+  .drawer-desc {
+    margin-top: 7px;
+    color: #d4c3b2;
+    font: 800 9px/1.3 Arial, "Segoe UI", sans-serif;
+    max-width: 228px;
+  }
+
+  /* ---------- character art ---------- */
+  .art { position: absolute; left: 382px; top: 60px; width: 420px; height: 520px; z-index: 1; pointer-events: none; }
+  .art .red-slab {
+    position: absolute;
+    left: 106px;
+    top: 16px;
+    width: 156px;
+    height: 430px;
+    background: #8f3d43;
+    clip-path: polygon(15px 0, 100% 0, calc(100% - 15px) 100%, 0 100%);
+    opacity: .9;
+  }
+  .art img {
+    position: absolute;
+    left: 32px;
+    bottom: 24px;
+    width: 350px;
+    height: 470px;
+    object-fit: contain;
+    opacity: 0;
+    transform: translateY(8px) scale(.99);
+    transition: opacity var(--dur-slow) var(--ease), transform var(--dur-slow) var(--ease);
+    filter: drop-shadow(10px 14px 0 rgba(0, 0, 0, .26));
+  }
+  .art img.active { opacity: 1; transform: translateY(0) scale(1); }
+  body[data-mode="c"] .art img { transition-duration: 360ms; }
+  .art .art-shadow {
+    position: absolute;
+    left: 115px;
+    bottom: 26px;
+    width: 270px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, .28);
+    filter: blur(8px);
+  }
+
+  /* ---------- hero panel ---------- */
+  .hero-name {
+    position: absolute;
+    left: 848px;
+    top: 98px;
+    z-index: 5;
+    color: var(--paper);
+    font: 800 46px/1 Impact, Haettenschweiler, "Arial Black", sans-serif;
+    letter-spacing: .02em;
+    white-space: nowrap;
+  }
+  .hero-tag {
+    position: absolute;
+    left: 848px;
+    top: 62px;
+    z-index: 6;
+    width: 168px;
+    height: 16px;
+    padding: 0 0 0 10px;
+    display: flex;
+    align-items: center;
+    background: rgba(7, 28, 43, .96);
+    color: var(--lime);
+    border-left: 3px solid var(--coral);
+    font: 800 9px/1 Arial, "Segoe UI", sans-serif;
+    clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
+  }
+  .hero-tag.ally { background: rgba(7, 28, 43, .96); color: var(--lime); }
+  .hero-elems {
+    position: absolute;
+    left: 1000px;
+    top: 108px;
+    display: flex;
+    gap: 7px;
+    z-index: 5;
+    pointer-events: none;
+  }
+  .hero-el {
+    width: 54px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--el);
+    clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
+  }
+  .hero-el.multi { width: 28px; height: 28px; }
+  .hero-el img { width: 24px; height: 24px; display: block; }
+  .level-box {
+    position: absolute;
+    left: 848px;
+    top: 152px;
+    width: 208px;
+    height: 56px;
+    padding: 4px 10px;
+    border: 1px solid #365365;
+    background: rgba(9, 31, 43, .86);
+    z-index: 5;
+  }
+  .level-box .lv-label { color: var(--paper); font: 800 11px/1 Arial, "Segoe UI", sans-serif; }
+  .level-box .lv-row { display: flex; align-items: baseline; gap: 9px; margin-top: 1px; }
+  .level-box .lv-num { color: var(--lime); font: 800 28px/1 Impact, Haettenschweiler, "Arial Black", sans-serif; }
+  .level-box .xp { color: #9ec0cc; font: 800 10px/1 Arial, "Segoe UI", sans-serif; }
+  .level-box .exp-bar { height: 8px; margin-top: 4px; background: #253844; }
+  .level-box .exp-bar i { display: block; height: 100%; width: 0%; background: var(--lime); }
+  .gauges {
+    position: absolute;
+    left: 848px;
+    top: 220px;
+    width: 208px;
+    height: 142px;
+    padding: 8px 10px;
+    border: 1px solid #4f7387;
+    background: var(--paper);
+    z-index: 5;
+  }
+  .gauges .panel-title { color: #0e2435; font: 800 10px/1 Arial, "Segoe UI", sans-serif; letter-spacing: .01em; }
+  .gauge-row { display: flex; align-items: center; gap: 6px; margin-top: 9px; color: #0e2435; font: 800 9px/1 Arial, "Segoe UI", sans-serif; }
+  .gauge-row .g-label { width: 18px; color: #0e2435; }
+  .gauge-track { position: relative; flex: 1; height: 8px; background: #8d9caa; overflow: hidden; }
+  .gauge-track i { display: block; height: 100%; background: var(--coral); }
+  .gauge-track.mp i { background: #5f88f5; }
+  .gauge-row .g-num { width: 44px; text-align: right; color: #0a1a27; }
+  .atb-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+  .atb-row .g-label { width: 18px; color: #0e2435; font: 800 9px/1 Arial, "Segoe UI", sans-serif; }
+  .atb-pips { display: flex; gap: 3px; }
+  .atb-pip { width: 14px; height: 7px; background: #138cb5; clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
+  .atb-pip.on { background: #38bdf8; }
+  .atb-speed { margin-left: auto; color: #0a1a27; font: 800 8px/1 Arial, "Segoe UI", sans-serif; }
+  .attrs {
+    position: absolute;
+    left: 1064px;
+    top: 220px;
+    width: 188px;
+    height: 142px;
+    padding: 8px 10px;
+    border: 1px solid #2b4454;
+    background: rgba(5, 19, 34, .58);
+    z-index: 5;
+  }
+  .attr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; margin-top: 7px; font: 800 9px/1.35 Arial, "Segoe UI", sans-serif; }
+  .attr-cell { display: flex; justify-content: space-between; gap: 4px; color: #b2c5cb; }
+  .attrs .panel-title { color: var(--gold-deep); font: 800 9px/1 Arial, "Segoe UI", sans-serif; letter-spacing: .04em; }
+  .attr-cell b { color: #f4eee1; font-weight: 800; }
+  .attr-cell em { color: var(--lime); font-style: normal; font-size: 8px; }
+  .attr-cell em.neg { color: var(--coral); }
+  .nature-row {
+    position: absolute;
+    left: 1064px;
+    top: 330px;
+    width: 188px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    z-index: 9;
+  }
+  .nature-badge {
+    display: inline-flex;
+    align-items: center;
+    border: 0;
+    border-left: 3.5px solid var(--gold);
+    padding: 0 0 0 7px;
+    background: transparent;
+    color: var(--gold);
+    font: 800 20px/1 Impact, Haettenschweiler, "Arial Black", sans-serif;
+    letter-spacing: .02em;
+    cursor: pointer;
+    transition: filter var(--dur) ease, transform var(--dur) var(--ease);
+  }
+  .nature-badge:hover { filter: brightness(1.12); transform: translateY(var(--hover-y)); }
+  .nature-badge.is-pressed { transform: translateY(var(--press-y)) scale(var(--press-s)); }
+  .nature-badge.pinned { filter: brightness(1.15); }
+  .nature-panel {
+    position: absolute;
+    left: 848px;
+    top: 376px;
+    width: 403px;
+    height: 144px;
+    background: rgba(6, 23, 38, .96);
+    clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+    display: none;
+    z-index: 12;
+  }
+  .nature-row:hover ~ .nature-panel, .nature-panel.pinned { display: block; }
+  .nature-panel::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--gold);
+  }
+  .np-title {
+    position: absolute;
+    left: 16px;
+    top: 10px;
+    color: var(--gold);
+    font: 800 22px/1 Impact, Haettenschweiler, "Arial Black", sans-serif;
+    letter-spacing: .02em;
+  }
+  .np-sub {
+    position: absolute;
+    right: 16px;
+    top: 13px;
+    color: #8ea9b5;
+    font: 800 9px/1 Arial, "Segoe UI", sans-serif;
+  }
+  .np-rule { position: absolute; left: 12px; right: 12px; top: 28px; height: 1px; background: rgba(102, 140, 166, .20); }
+  .np-rule2 { position: absolute; left: 12px; right: 12px; top: 116px; height: 1px; background: rgba(102, 140, 166, .15); }
+  .np-desc {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    top: 38px;
+    color: #e3f2fd;
+    font: 800 11px/1.18 Arial, "Segoe UI", sans-serif;
+  }
+  .np-ai {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    top: 122px;
+    color: #a5c2ce;
+    font: 800 9px/1.2 Arial, "Segoe UI", sans-serif;
+  }
+  .np-ai span:first-child { color: var(--gold); margin-right: 8px; }
+  .weak { margin-left: auto; display: flex; align-items: center; gap: 4px; color: #8ea9b5; font: 800 9px/1 Arial, "Segoe UI", sans-serif; }
+  .weak-label { margin-right: 1px; }
+  .weak .w-icon { width: 20px; height: 16px; display: inline-flex; align-items: center; justify-content: center; background: var(--elem); clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); }
+  .weak .w-icon img { width: 13px; height: 13px; }
+
+  /* ---------- moves ---------- */
+  .moves-head {
+    position: absolute;
+    left: 29px;
+    top: 574px;
+    width: 565px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    z-index: 6;
+    font: 800 9px/1 Arial, "Segoe UI", sans-serif;
+    letter-spacing: .04em;
+  }
+  .moves-head .lime { color: var(--lime); }
+  .moves-head .muted { color: #8ea7b0; }
+  .moves-head .right { margin-left: auto; color: #8ea7b0; }
+  .moves-rule { position: absolute; left: 29px; top: 587px; width: 565px; height: 1px; background: rgba(214, 250, 102, .25); z-index: 5; }
+  .move-grid {
+    position: absolute;
+    left: 29px;
+    top: 598px;
+    width: 573px;
+    height: 88px;
+    display: grid;
+    grid-template-columns: repeat(4, 136px);
+    grid-auto-rows: 38px;
+    gap: 12px 8px;
+    z-index: 7;
+  }
+  .strip {
+    position: relative;
+    width: 136px;
+    height: 38px;
+    padding: 0;
+    border: 0;
+    background: #0a1a27;
+    color: #e9e5d8;
+    clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
+    cursor: pointer;
+    text-align: left;
+    transition: transform var(--dur) var(--ease), background var(--dur) ease, filter var(--dur) ease;
+    overflow: hidden;
+  }
+  .strip:hover { transform: translateY(var(--hover-y)) scale(var(--hover-s)); z-index: 4; filter: brightness(1.08); }
+  .strip.is-pressed { transform: translateY(var(--press-y)) scale(var(--press-s)); }
+  .strip.selected { background: var(--elem); color: var(--elem-ink); }
+  .strip.just-selected { animation: sel-pulse 220ms var(--ease); }
+  @keyframes sel-pulse { 0% { transform: scale(1); } 40% { transform: scale(1.035); } 100% { transform: scale(1); } }
+  .strip .el-block {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--el);
+    clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
+  }
+  .strip .el-block img { width: 20px; height: 20px; display: block; }
+  .strip .strip-name {
+    position: absolute;
+    left: 45px;
+    top: 5px;
+    right: 8px;
+    overflow: hidden;
+    white-space: nowrap;
+    font: 800 14px/1 Impact, Haettenschweiler, "Arial Black", sans-serif;
+    letter-spacing: .02em;
+  }
+  .strip .strip-atb { position: absolute; left: 45px; bottom: 5px; display: flex; gap: 2px; }
+  .pip { width: 7px; height: 6px; background: #138cb5; clip-path: polygon(2px 0, 100% 0, calc(100% - 2px) 100%, 0 100%); }
+  .pip.on { background: #38bdf8; }
+  .strip.selected .pip { background: rgba(0, 0, 0, .22); }
+  .strip.selected .pip.on { background: #fff; }
+  .strip .strip-mp { position: absolute; right: 8px; bottom: 5px; color: #8da8b5; font: 800 10px/1 Arial, "Segoe UI", sans-serif; }
+  .strip.selected .strip-mp { color: var(--elem-ink); }
+  .strip .num-tab {
+    position: absolute;
+    right: -3px;
+    top: -1px;
+    width: 14px;
+    height: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #081722;
+    color: #fff;
+    border: 1px solid #1e384b;
+    font: 800 8px/1 Arial, "Segoe UI", sans-serif;
+    transform: skewX(-16deg);
+  }
+  .strip.selected .num-tab { background: var(--gold-deep); color: #1b120c; border-color: var(--gold-deep); }
+  .strip.empty { background: rgba(8, 23, 34, .5); border: 1px dashed #1e384b; cursor: default; color: #2b4a5c; }
+  .strip.empty:hover { transform: none; filter: none; }
+  .strip.empty .el-block { background: #0b1b28; }
+  .strip.empty .strip-name { color: #2b4a5c; font-size: 11px; }
+
+  /* ---------- move card ---------- */
+  .move-card {
+    position: absolute;
+    left: 618px;
+    top: 598px;
+    width: 633px;
+    height: 88px;
+    padding: 0;
+    border: 0;
+    background: var(--elem);
+    color: var(--elem-ink);
+    clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+    cursor: pointer;
+    text-align: left;
+    overflow: hidden;
+    z-index: 8;
+    transition: transform var(--dur) var(--ease), background var(--dur) ease;
+  }
+  .move-card:hover { transform: translateY(var(--hover-y)); }
+  .move-card.is-pressed { transform: translateY(var(--press-y)) scale(var(--press-s)); }
+  .move-card.swap { animation: card-swap 180ms var(--ease); }
+  @keyframes card-swap { from { opacity: .35; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
+  .move-card .mc-watermark { position: absolute; right: 16px; top: 5px; width: 78px; height: 78px; opacity: .18; object-fit: contain; }
+  .mc-title-row {
+    position: absolute;
+    left: 18px;
+    top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 390px;
+  }
+  .mc-name {
+    color: inherit;
+    font: 800 22px/1 Impact, Haettenschweiler, "Arial Black", sans-serif;
+    letter-spacing: .02em;
+    white-space: nowrap;
+  }
+  .mc-badges { display: flex; align-items: center; gap: 8px; }
+  .mc-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: #0a1a27;
+    color: #fff;
+    clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%);
+  }
+  .mc-badge img { width: 14px; height: 14px; display: block; }
+  .mc-badge.physical { background: #ef4444; }
+  .mc-badge.magical { background: #0ea5e9; }
+  .mc-badge.dodge { background: #fcb900; }
+  .mc-badge.guard { background: #cbd5e1; }
+  .mc-badge.range { background: rgba(0, 0, 0, .20); }
+  .mc-costs { position: absolute; right: 18px; top: 6px; display: flex; align-items: center; gap: 6px; }
+  .mc-pill {
+    display: inline-flex;
+    align-items: center;
+    height: 22px;
+    padding: 0 8px;
+    background: #0891b2;
+    color: #fff;
+    font: 800 11px/1 Arial, "Segoe UI", sans-serif;
+    clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
+  }
+  .mc-pill.mp { background: #2563eb; }
+  .mc-pill.power { background: #f59e0b; color: #080e18; }
+  .mc-rule {
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    top: 32px;
+    height: 1px;
+    background: color-mix(in srgb, currentColor 16%, transparent);
+  }
+  .mc-line {
+    position: absolute;
+    left: 18px;
+    right: 96px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: clip;
+    color: inherit;
+    font-family: Arial, "Segoe UI", sans-serif;
+    font-weight: 800;
+  }
+  .mc-line1 { top: 36px; font-size: 11px; line-height: 14px; }
+  .mc-line2 { top: 51px; font-size: 11px; line-height: 14px; opacity: .92; }
+  .mc-line3 { top: 67px; font-size: 10px; line-height: 12px; opacity: .88; }
+
+  /* ---------- footer ---------- */
+  .footer {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 29px;
+    background: rgba(3, 12, 22, .96);
+    border-top: 1px solid #365365;
+    color: #b2c5cb;
+    font: 800 10px/1 Arial, "Segoe UI", sans-serif;
+    letter-spacing: .02em;
+    z-index: 9;
+  }
+  .footer .keys { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .footer .key-hint { color: #d6fa66; }
+  .footer .gold { color: var(--gold); }
+
+  /* ---------- detail dossier ---------- */
+  .detail {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 40;
+  }
+  .detail.open { display: flex; }
+  .detail-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(4, 14, 24, .92);
+    opacity: 0;
+    transition: opacity var(--dur) ease;
+  }
+  .detail.open .detail-backdrop { opacity: 1; }
+  .dossier {
+    position: relative;
+    width: 780px;
+    height: 510px;
+    background: #061521;
+    border: 0;
+    box-shadow: none;
+    overflow: hidden;
+    transform-origin: center center;
+  }
+  .dossier .d-accent { position: absolute; left: 0; top: 0; width: 8px; height: 100%; background: var(--elem); }
+  .d-watermark {
+    position: absolute;
+    right: 24px;
+    top: 16px;
+    width: 130px;
+    height: 130px;
+    object-fit: contain;
+    opacity: .08;
+    pointer-events: none;
+  }
+  .d-eyebrow {
+    position: absolute;
+    left: 28px;
+    top: 18px;
+    color: var(--elem);
+    font: 800 10px/1 Arial, "Segoe UI", sans-serif;
+  }
+  .d-name {
+    position: absolute;
+    left: 28px;
+    top: 32px;
+    color: var(--paper);
+    font: 800 32px/1 Impact, Haettenschweiler, "Arial Black", sans-serif;
+    letter-spacing: .02em;
+    white-space: nowrap;
+  }
+  .d-badges { position: absolute; left: 28px; top: 42px; display: flex; gap: 8px; align-items: center; }
+  .d-costs { position: absolute; right: 24px; top: 42px; display: flex; gap: 8px; align-items: center; }
+  .d-rule { position: absolute; left: 28px; right: 28px; top: 76px; height: 1px; background: rgba(102, 140, 166, .25); }
+  .d-body { position: absolute; left: 28px; right: 28px; top: 86px; bottom: 48px; }
+  .d-section { position: relative; height: 46px; }
+  .d-label { font: 800 10px/1 Arial, "Segoe UI", sans-serif; }
+  .d-text { margin-top: 3px; font: 800 11px/1.12 Arial, "Segoe UI", sans-serif; white-space: normal; }
+  .d-close-btn {
+    position: absolute;
+    left: 28px;
+    bottom: 12px;
+    width: 130px;
+    height: 26px;
+    border: 0;
+    background: var(--lime);
+    color: #080e18;
+    font: 800 15px/1 Impact, Haettenschweiler, "Arial Black", sans-serif;
+    letter-spacing: .02em;
+    cursor: pointer;
+    clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
+  }
+  .d-close-btn:hover { filter: brightness(1.04); }
+  .d-close-btn:active { transform: translateY(1px); }
+
+  body[data-mode="a"] .detail.open .dossier { animation: doss-a 160ms var(--ease); }
+  body[data-mode="b"] .detail.open .dossier { animation: doss-b 180ms cubic-bezier(.34,1.56,.64,1); }
+  body[data-mode="c"] .detail.open .dossier { animation: doss-c 280ms var(--ease); }
+  @keyframes doss-a { from { opacity: 0; transform: scale(.965); } to { opacity: 1; transform: scale(1); } }
+  @keyframes doss-b { 0% { opacity: 0; transform: scale(.92); } 70% { opacity: 1; transform: scale(1.012); } 100% { transform: scale(1); } }
+  @keyframes doss-c { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+  /* ---------- click FX ---------- */
+  .fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 60; }
+  .ripple {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--fx);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: ripple-out 260ms ease-out forwards;
+  }
+  @keyframes ripple-out {
+    from { width: 14px; height: 14px; opacity: .9; }
+    to { width: 72px; height: 72px; opacity: 0; }
+  }
+  .shard {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    background: var(--fx);
+    animation: shard-out 320ms ease-out forwards;
+  }
+  @keyframes shard-out {
+    from { transform: translate(-50%, -50%) rotate(0deg); opacity: 1; }
+    to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot)); opacity: 0; }
+  }
+  .glow {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--fx), transparent 70%);
+    transform: translate(-50%, -50%);
+    animation: glow-out 400ms ease-out forwards;
+  }
+  @keyframes glow-out {
+    from { width: 18px; height: 18px; opacity: .55; }
+    to { width: 96px; height: 96px; opacity: 0; }
+  }
+  .flash::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, .55);
+    pointer-events: none;
+    animation: flash-out 130ms ease-out;
+  }
+  @keyframes flash-out { from { opacity: 1; } to { opacity: 0; } }
+
+  /* ---------- mode personalities ---------- */
+  body[data-mode="a"] {
+    --dur-fast: 70ms;
+    --dur: 110ms;
+    --dur-slow: 170ms;
+    --ease: cubic-bezier(.2, .8, .2, 1);
+    --hover-y: -2px;
+    --hover-s: 1.004;
+    --press-y: 1.5px;
+    --press-s: .996;
+  }
+  body[data-mode="b"] {
+    --dur-fast: 45ms;
+    --dur: 85ms;
+    --dur-slow: 140ms;
+    --ease: cubic-bezier(.34, 1.56, .64, 1);
+    --hover-y: -3px;
+    --hover-s: 1.015;
+    --press-y: 3px;
+    --press-s: .96;
+  }
+  body[data-mode="c"] {
+    --dur-fast: 110ms;
+    --dur: 180ms;
+    --dur-slow: 280ms;
+    --ease: cubic-bezier(.16, 1, .3, 1);
+    --hover-y: -2px;
+    --hover-s: 1.008;
+    --press-y: 1px;
+    --press-s: .985;
+  }
+  body[data-mode="b"] .strip.selected {
+    box-shadow: 0 3px 0 rgba(0, 0, 0, .35);
+    transform: translateY(-1px) scale(1.01);
+  }
+  body[data-mode="c"] .strip.selected {
+    box-shadow: 0 0 18px color-mix(in srgb, var(--elem) 55%, transparent);
+  }
+  body[data-mode="c"] .nature-panel,
+  body[data-mode="c"] .drawer {
+    box-shadow: 0 6px 24px rgba(0, 0, 0, .45);
+  }
+  body[data-mode="b"] .is-released { animation: release-b 180ms cubic-bezier(.34,1.56,.64,1); }
+  @keyframes release-b {
+    0% { transform: scale(1.045); }
+    55% { transform: scale(.992); }
+    100% { transform: scale(1); }
+  }
+  body[data-mode="c"] .roster-row:hover,
+  body[data-mode="c"] .strip:hover,
+  body[data-mode="c"] .move-card:hover {
+    filter: brightness(1.06);
+  }
+
+  /* ---------- intro ---------- */
+  .anim { opacity: 1; }
+  .stage.intro .anim {
+    animation-duration: var(--dur-slow);
+    animation-timing-function: var(--ease);
+    animation-fill-mode: both;
+    animation-delay: var(--d, 0ms);
+  }
+  body[data-mode="a"] .stage.intro .anim { animation-name: enter-a; }
+  body[data-mode="b"] .stage.intro .anim { animation-name: enter-b; }
+  body[data-mode="c"] .stage.intro .anim { animation-name: enter-c; }
+  @keyframes enter-a { from { opacity: 0; translate: 0 8px; } to { opacity: 1; translate: 0 0; } }
+  @keyframes enter-b { from { opacity: 0; translate: 0 15px; } to { opacity: 1; translate: 0 0; } }
+  @keyframes enter-c { from { opacity: 0; translate: 0 18px; } to { opacity: 1; translate: 0 0; } }
+
+  /* ---------- compare / notes ---------- */
+  .compare {
+    max-width: 1360px;
+    margin: 16px auto 0;
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 16px;
+  }
+  .compare-card {
+    border: 1px solid #26382f;
+    background: #0a110e;
+    padding: 14px 16px;
+  }
+  .compare-card h2 {
+    margin: 0 0 8px;
+    color: #e8f0e8;
+    font: 800 15px/1 Consolas, monospace;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .compare-card p { margin: 0; color: #9fb3a5; font-size: 11px; line-height: 1.5; }
+  table.compare-table { width: 100%; border-collapse: collapse; font: 700 10px/1.35 Consolas, monospace; }
+  .compare-table th, .compare-table td { padding: 5px 6px; border-bottom: 1px solid #1b2a22; text-align: left; vertical-align: top; }
+  .compare-table th { color: #d6fa66; font-weight: 800; }
+  .compare-table td:first-child { color: #8ea79a; white-space: nowrap; }
+  .compare-table td { color: #c9d8ce; }
+  .page-foot {
+    max-width: 1360px;
+    margin: 16px auto 0;
+    color: #6f887b;
+    font: 700 10px/1.4 Consolas, monospace;
+    letter-spacing: .03em;
+  }
+
+  /* ---------- reduced motion ---------- */
+  body.reduce *, body.reduce *::before, body.reduce *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+  body.reduce .fx { display: none; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .001ms !important;
+    }
+    .fx { display: none; }
+  }
+
+  @media (max-width: 1100px) {
+    .page-head { align-items: flex-start; flex-direction: column; }
+    .controls { justify-content: flex-start; }
+    .mode-picker { grid-template-columns: 1fr; }
+    .compare { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body data-mode="a">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">Crawlmon // UI Feel Lab // D-1165 / D-417 / D-434</p>
+      <h1>Status HUD — 3 opções de feeling</h1>
+      <p class="lede">
+        Sem áudio nesta rodada. Passe o mouse, clique nos membros, nas 8 skill strips, nos slots do satchel
+        e na Nature. <b>Z</b> abre o dossiê e <b>X</b> fecha. As três opções mudam só a sensação:
+        layout, cores, regras e informações continuam iguais.
+      </p>
+    </div>
+    <div class="controls">
+      <button class="btn" id="demo-btn" type="button">Demo</button>
+      <button class="btn" id="compare-btn" type="button">Comparar 3</button>
+      <button class="btn" id="replay-btn" type="button">Replay</button>
+      <label class="reduce"><input type="checkbox" id="reduce-motion"> Reduzir movimento</label>
+    </div>
+  </header>
+
+  <nav class="mode-picker" aria-label="Opções de feeling">
+    <button class="mode-card active" data-mode="a" type="button" aria-pressed="true">
+      <span class="mode-code">OPÇÃO A // SELO / PAPEL</span>
+      <span class="mode-name">Paper Tactical</span>
+      <span class="mode-desc">Hover de 2 px, pressão de 1,5 px, selo curto e sombra dura. Rápido, preciso, sem partículas. O mais próximo do HUD atual.</span>
+    </button>
+    <button class="mode-card" data-mode="b" type="button" aria-pressed="false">
+      <span class="mode-code">OPÇÃO B // IMPACTO</span>
+      <span class="mode-name">Impact Frame</span>
+      <span class="mode-desc">Pressão de 3 px + escala 0,96, overshoot de 1,04, flash de 1 quadro, ripple e 4 fragmentos de papel. Mais arcade, ainda flat.</span>
+    </button>
+    <button class="mode-card" data-mode="c" type="button" aria-pressed="false">
+      <span class="mode-code">OPÇÃO C // FLUXO SMT</span>
+      <span class="mode-name">SMT Flow</span>
+      <span class="mode-desc">Movimento mais longo (180–280 ms), glow suave, crossfade do retrato e do card, dossiê expandindo do centro. Mais atmosférico, menos seco.</span>
+    </button>
+  </nav>
+
+  <div class="stage-shell" id="stage-shell">
+    <div class="stage intro" id="stage">
+      <div class="spires" id="spires"></div>
+      <div class="topline"><i></i><i></i></div>
+
+      <div class="title anim" style="--d:20ms">
+        <span class="paper">TEAM</span><span class="slash">/</span><span class="lime">STATS</span>
+      </div>
+
+      <div class="roster anim" style="--d:60ms">
+        <button class="roster-row active" data-member="abra" data-interactive type="button">
+          <span class="portrait"><img src="../../personagens/portraits/abra.png" alt="Abra"></span>
+          <span class="row-body">
+            <span class="row-top">
+              <span class="row-name">ABRA</span>
+              <span class="row-tags"><span class="row-tag" style="--elem:#ec4899"><img src="../../assets/ui/icons/elements/psychic.svg" alt="Psychic"></span></span>
+              <span class="row-lv" id="lv-abra">LV. 1</span>
+            </span>
+            <span class="bar hp"><i id="hp-abra"></i><em id="hp-abra-text">HP 39/39</em></span>
+            <span class="bar mp"><i id="mp-abra"></i><em id="mp-abra-text">MP 20/20</em></span>
+          </span>
+        </button>
+        <button class="roster-row" data-member="pancham" data-interactive type="button">
+          <span class="portrait"><img src="../../personagens/portraits/pancham.png" alt="Pancham"></span>
+          <span class="row-body">
+            <span class="row-top">
+              <span class="row-name">PANCHAM</span>
+              <span class="row-tags"><span class="row-tag" style="--elem:#cbd5e1"><img src="../../assets/ui/icons/elements/neutral.svg" alt="Neutral"></span></span>
+              <span class="row-lv" id="lv-pancham">LV. 1</span>
+            </span>
+            <span class="bar hp"><i id="hp-pancham"></i><em id="hp-pancham-text">HP 39/39</em></span>
+            <span class="bar mp"><i id="mp-pancham"></i><em id="mp-pancham-text">MP 17/17</em></span>
+          </span>
+        </button>
+      </div>
+
+      <section class="satchel anim" style="--d:100ms" aria-label="Expedition satchel">
+        <div class="satchel-head">
+          <span class="satchel-title">EXPEDITION SATCHEL</span>
+          <span class="satchel-count" id="satchel-count">03 / 10</span>
+        </div>
+        <div class="slots" id="slots"></div>
+        <div class="satchel-foot" id="satchel-foot">CLICK ITEM FOR DETAILS (A+C)</div>
+        <div class="drawer" id="drawer">
+          <div class="drawer-head">
+            <img id="drawer-icon" src="../../assets/items/potion.png" alt="">
+            <span class="drawer-name" id="drawer-name">POTION</span>
+            <span class="drawer-kind" id="drawer-kind">CONSUMABLE</span>
+            <button class="drawer-close" data-close-drawer type="button">[X] CLOSE</button>
+          </div>
+          <div class="drawer-desc" id="drawer-desc"></div>
+        </div>
+      </section>
+
+      <div class="art anim" style="--d:80ms">
+        <div class="red-slab"></div>
+        <div class="art-shadow"></div>
+        <img id="art-abra" class="active" src="../../sugimori/por_nome/abra.png" alt="Abra">
+        <img id="art-pancham" src="../../sugimori/por_nome/pancham.png" alt="Pancham">
+      </div>
+
+      <div class="hero-name anim" style="--d:120ms" id="hero-name">ABRA</div>
+      <div class="hero-elems" id="hero-elems"></div>
+      <div class="hero-tag anim" style="--d:120ms" id="hero-tag">PROTAGONIST</div>
+
+      <div class="level-box anim" style="--d:150ms">
+        <div class="lv-label">LEVEL</div>
+        <div class="lv-row"><span class="lv-num" id="lv-num">1</span><span class="xp" id="xp-text">EXP 0 / 200  (Remaining 200)</span></div>
+        <div class="exp-bar"><i id="xp-fill"></i></div>
+      </div>
+
+      <div class="gauges anim" style="--d:180ms">
+        <div class="panel-title">COMBAT GAUGES</div>
+        <div class="gauge-row"><span class="g-label">HP</span><span class="gauge-track"><i id="g-hp"></i></span><span class="g-num" id="g-hp-text">39 / 39</span></div>
+        <div class="gauge-row"><span class="g-label">MP</span><span class="gauge-track mp"><i id="g-mp"></i></span><span class="g-num" id="g-mp-text">20 / 20</span></div>
+        <div class="atb-row"><span class="g-label">ATB</span><span class="atb-pips" id="atb-pips"></span><span class="atb-speed" id="atb-speed">0.42 blocks/s</span></div>
+      </div>
+
+      <div class="attrs anim" style="--d:200ms">
+        <div class="panel-title">ATTRIBUTES</div>
+        <div class="attr-grid" id="attr-grid"></div>
+      </div>
+
+      <div class="nature-row anim" style="--d:220ms">
+        <button class="nature-badge" id="nature-badge" data-nature data-interactive type="button">MODEST</button>
+        <span class="weak"><span class="weak-label">WEAK:</span><span id="weak-list"></span></span>
+      </div>
+      <div class="nature-panel" id="nature-panel">
+        <div class="np-title">NATURE // <span id="nature-panel-name">MODEST</span></div>
+        <div class="np-sub">COMBAT PERSONALITY</div>
+        <div class="np-rule"></div>
+        <div class="np-desc" id="nature-panel-desc"></div>
+        <div class="np-rule2"></div>
+        <div class="np-ai"><span>AI DOCTRINE:</span> <span id="nature-panel-ai"></span></div>
+      </div>
+
+      <div class="moves-head anim" style="--d:240ms">
+        <span class="lime" id="skills-head">SKILLS // 8 EQUIPPED</span>
+        <span class="muted">← → SELECT</span>
+        <span class="right">HOLD SHIFT: ADVANCED STATS · Z EXPAND</span>
+      </div>
+      <div class="moves-rule anim" style="--d:240ms"></div>
+      <div class="move-grid" id="move-grid"></div>
+
+      <button class="move-card anim" style="--d:270ms" id="move-card" data-detail data-interactive type="button">
+        <img class="mc-watermark" id="mc-watermark" src="../../assets/ui/icons/elements/neutral.svg" alt="">
+        <span class="mc-title-row">
+          <span class="mc-name" id="mc-name">TACKLE</span>
+          <span class="mc-badges">
+            <span class="mc-badge physical" id="mc-type"><img id="mc-type-img" src="../../assets/ui/icons/move_types/physical.svg" alt="Physical"></span>
+            <span class="mc-badge range" id="mc-range"><img id="mc-range-img" src="../../assets/ui/icons/range/melee.svg" alt="Melee"></span>
+          </span>
+        </span>
+        <span class="mc-costs">
+          <span class="mc-pill" id="mc-atb">2 ATB</span>
+          <span class="mc-pill mp" id="mc-mp">0 MP</span>
+          <span class="mc-pill power" id="mc-power">POWER ×1,0</span>
+        </span>
+        <span class="mc-rule"></span>
+        <span class="mc-line mc-line1" id="mc-line1"></span>
+        <span class="mc-line mc-line2" id="mc-line2"></span>
+        <span class="mc-line mc-line3" id="mc-line3"></span>
+      </button>
+
+      <div class="footer anim" style="--d:300ms">
+        <span class="keys">
+          <span><span class="key-hint">↑ ↓</span> MEMBER</span>
+          <span><span class="key-hint">← →</span> SKILLS</span>
+          <span><span class="key-hint">SHIFT</span> ADVANCED</span>
+          <span><span class="key-hint">Z</span> EXPAND</span>
+          <span><span class="key-hint">X</span> CLOSE</span>
+        </span>
+        <span class="gold">TEAM // STATUS</span>
+      </div>
+
+      <div class="detail" id="detail">
+        <div class="detail-backdrop" data-close-detail></div>
+        <div class="dossier" id="dossier">
+          <div class="d-accent" id="d-accent"></div>
+          <img class="d-watermark" id="d-watermark" src="../../assets/ui/icons/elements/neutral.svg" alt="">
+          <div class="d-eyebrow">SKILL DOSSIER // TECHNICAL SPECIFICATION</div>
+          <div class="d-name" id="d-name">TACKLE</div>
+          <div class="d-badges" id="d-badges"></div>
+          <div class="d-costs" id="d-costs"></div>
+          <div class="d-rule"></div>
+          <div class="d-body">
+            <div class="d-section">
+              <div class="d-label" id="d-label1">[ 01 // MECHANICS &amp; COMBAT EFFECT ]</div>
+              <div class="d-text" id="d-mech"></div>
+            </div>
+            <div class="d-section">
+              <div class="d-label" id="d-label2">[ 02 // VISUALS &amp; 3D AESTHETICS ]</div>
+              <div class="d-text" id="d-visual"></div>
+            </div>
+            <div class="d-section">
+              <div class="d-label" id="d-label3">[ 03 // MOTION &amp; SPATIAL DISPLACEMENT ]</div>
+              <div class="d-text" id="d-motion"></div>
+            </div>
+            <div class="d-section">
+              <div class="d-label" id="d-label4">[ 04 // WIND-UP &amp; TELEGRAPH BEHAVIOR ]</div>
+              <div class="d-text" id="d-windup"></div>
+            </div>
+            <div class="d-section">
+              <div class="d-label" id="d-label5">[ 05 // TACTICAL SYNERGY &amp; ATTRIBUTE SCALING ]</div>
+              <div class="d-text" id="d-scaling"></div>
+            </div>
+          </div>
+          <button class="d-close-btn" data-close-detail type="button">CLOSE (Z / X)</button>
+        </div>
+      </div>
+
+      <div class="fx" id="fx"></div>
+    </div>
+  </div>
+
+  <section class="compare">
+    <div class="compare-card">
+      <h2>O que muda</h2>
+      <table class="compare-table">
+        <thead><tr><th></th><th>A // Selo</th><th>B // Impacto</th><th>C // Fluxo</th></tr></thead>
+        <tbody>
+          <tr><td>Hover</td><td>-2 px, borda afiada</td><td>-3 px + escala 1.015</td><td>-2 px + brilho suave</td></tr>
+          <tr><td>Pressão</td><td>1,5 px</td><td>3 px + escala .96</td><td>1 px + escala .985</td></tr>
+          <tr><td>Clique</td><td>selo curto</td><td>ripple + 4 fragmentos</td><td>glow curto</td></tr>
+          <tr><td>Skill card</td><td>wipe 110 ms</td><td>snap 85 ms + flash</td><td>crossfade 180 ms</td></tr>
+          <tr><td>Dossiê</td><td>estampa 160 ms</td><td>punch 180 ms</td><td>expande 280 ms</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="compare-card">
+      <h2>Leitura do protótipo</h2>
+      <p>
+        Clique em <b>Pancham</b> para trocar o membro; nas <b>8 strips</b> para trocar o Move; nos
+        <b>10 slots</b> para abrir o drawer; na <b>Nature</b> para fixar o tooltip; e no <b>card da direita</b>
+        ou aperte <b>Z</b> para abrir o dossiê. <b>X</b> ou <b>Esc</b> fecha.
+      </p>
+      <p style="margin-top:8px">
+        Nenhuma opção tem áudio. Nenhuma altera layout, texto, stats, regras, pausa ou fila.
+        A opção vencedora vira uma decisão e só depois entra no `status_screen.gd`.
+      </p>
+    </div>
+  </section>
+
+  <p class="page-foot">
+    Protótipo visual — D-1165 / D-417 / D-434. Sem áudio. Sem commit/push. 1280 × 720, escalado para a janela.
+  </p>
+
+<script>
+(() => {
+  "use strict";
+
+  const ELEMENTS = {
+    neutral:    { color: "#cbd5e1", ink: "#080e18", icon: "neutral.svg",    label: "NEUTRAL" },
+    fire:       { color: "#f97316", ink: "#ffffff", icon: "fire.svg",       label: "FIRE" },
+    water_ice:  { color: "#0284c7", ink: "#ffffff", icon: "water_ice.svg",  label: "WATER/ICE" },
+    electric:   { color: "#fde047", ink: "#080e18", icon: "electric.svg",   label: "ELECTRIC" },
+    psychic:    { color: "#ec4899", ink: "#ffffff", icon: "psychic.svg",    label: "PSYCHIC" },
+    poison:     { color: "#84cc16", ink: "#080e18", icon: "nature.svg",     label: "POISON" },
+    sound:      { color: "#06b6d4", ink: "#080e18", icon: "sound.svg",      label: "SOUND" },
+    earth:      { color: "#b45309", ink: "#ffffff", icon: "earth.svg",      label: "EARTH" },
+    wind:       { color: "#4ff7ba", ink: "#080e18", icon: "wind.svg",       label: "WIND" },
+    light:      { color: "#fef08a", ink: "#080e18", icon: "light.svg",      label: "LIGHT" },
+    dark:       { color: "#6b21a8", ink: "#ffffff", icon: "dark.svg",       label: "DARK" },
+    mystic:     { color: "#65b5b3", ink: "#080e18", icon: "mystic.svg",     label: "MYSTIC" }
+  };
+
+  const BASE = "../../assets/ui/icons/";
+  const ICON = {
+    type: { physical: "move_types/physical.svg", magical: "move_types/magical.svg", dodge: "move_types/dodge.svg", guard: "move_types/guard.svg" },
+    range: { melee: "range/melee.svg", long: "range/long.svg", area: "range/area.svg", mid: "range/mid.svg" }
+  };
+
+  const m = (name, element, type, range, atb, mp, power, desc, visual, motion, windup, scaling) => ({
+    name, element, type, range, atb, mp, power, desc, visual, motion, windup, scaling
+  });
+
+  const MOVES_ABRA = [
+    { name: "TACKLE", element: "neutral", kind: 0, aoe: false, magical: false, cost: 2, mp: 0, power: 1.0, windup: 0.8,
+      tactical: "Reliable basic physical strike. Single Target.",
+      visualMotion: "Forward dash collision with white dust shockwaves and hit sparks.",
+      mechanics: "Standard physical charge delivering direct baseline kinetic damage to a single target.",
+      visual: "Physical impact flash with white dust shockwaves and hit sparks radiating from the point of contact.",
+      motion: "Forward melee sprint. Attacker dashes across the field, impacts the target, and springs back into position.",
+      windupText: "0.80s wind-up. Quick physical telegraph with low interruption risk." },
+    { name: "CONFUSION", element: "psychic", kind: 1, aoe: false, magical: true, cost: 2, mp: 3, power: 1.4, windup: 1.5,
+      tactical: "Disrupts mental focus with erratic psychic pressure. Single Target burst.",
+      visualMotion: "Stationary launch of swirling violet distortion orbs that detonate upon impact.",
+      mechanics: "Unstable telekinetic blast that assaults the target's mind. Has high damage variance and disrupts focus.",
+      visual: "Swirling violet distortions and concentric telekinetic ripples warp the surrounding air before condensing into an erratic glowing orb that implodes on impact.",
+      motion: "Stationary cast. Attacker channels spatial energy in place and launches an erratic curved homing bolt.",
+      windupText: "1.50s wind-up. Caster remains locked in casting stance; taking heavy hits during charge risks interruption." },
+    { name: "PSYBEAM", element: "psychic", kind: 1, aoe: false, magical: true, cost: 3, mp: 5, power: 1.7, windup: 1.8,
+      tactical: "High-velocity psychic laser that pierces barriers. Single Target.",
+      visualMotion: "Stationary horizontal magenta laser encased in geometric refractive rings.",
+      mechanics: "High-velocity piercing psychic beam that bypasses standard barrier mitigation and deals precise burst damage.",
+      visual: "Piercing magenta laser beam encased in geometric refractive rings that drill into the target with intense lens flare.",
+      motion: "Stationary cast. Attacker fires a direct horizontal beam across the field with zero projectile arc.",
+      windupText: "1.80s wind-up. Focused aim lock; vulnerable to disruption before release." },
+    { name: "SHOCK WAVE", element: "electric", kind: 2, aoe: false, magical: true, cost: 2, mp: 3, power: 1.3, windup: 1.2,
+      tactical: "Undodgeable electrical discharge bypassing standard evasion. Single Target.",
+      visualMotion: "Stationary discharge of golden electrical arcs wrapping the opponent.",
+      mechanics: "Undodgeable electrical discharge that arcs directly into the opponent, bypassing standard manual and passive evasion.",
+      visual: "Golden electrical arcs branching across the field with crackling corona discharges wrapping the opponent's silhouette.",
+      motion: "Stationary release. Electrical arcs branch instantly through the air directly to the target.",
+      windupText: "1.20s wind-up. Electrical aura charges around the body before discharge." },
+    { name: "TELEPORT", element: "psychic", kind: 0, aoe: false, magical: true, cost: 1, mp: 3, power: 0.7, windup: 0.9,
+      tactical: "User becomes untargetable during execution, striking safely. Single Target.",
+      visualMotion: "Spatial blink adjacent to target followed by an evasive back-hop.",
+      mechanics: "Spatial displacement strike. The user becomes completely untargetable during execution, striking before returning to safety.",
+      visual: "Violet dimensional distortion ripple where the user vanishes into particles and re-materializes at the destination.",
+      motion: "Zero ground travel. Instantaneous blink directly adjacent to the opponent followed by an evasive back-hop.",
+      windupText: "0.90s wind-up. Spatial distortion charges before user phases out." },
+    { name: "MEDIA", element: "light", kind: 3, aoe: true, magical: false, cost: 2, mp: 4, power: 0.0, windup: 1.3,
+      tactical: "Restores missing HP to all living allies based on Wisdom (WIS). Team AoE.",
+      visualMotion: "Stationary prayer showering all allies with warm golden-green light rain.",
+      mechanics: "Restorative prayer that heals missing HP for all living allies based on the caster's Wisdom (WIS).",
+      visual: "Warm golden-green light rain descending gently over all allies, dissipating into rising healing motes.",
+      motion: "Stationary team heal. Caster kneels in prayer; healing light envelopes all friendly units at once.",
+      windupText: "1.30s wind-up. Reverent prayer posture." },
+    { name: "SUKUNDA", element: "wind", kind: 3, aoe: false, magical: false, cost: 1, mp: 2, power: 0.0, windup: 0.9,
+      tactical: "Reduces target Speed (-1 SPD stage), slowing ATB accumulation. Single Target.",
+      visualMotion: "Stationary hex manifesting swirling yellow-green clockwork gears at target's feet.",
+      mechanics: "Temporal slowing hex that reduces the target's Speed (-1 SPD stage), slowing their ATB gauge accumulation.",
+      visual: "Swirling yellow-green gravitational clock gears that shatter and coat the target in slowing spectral sludge.",
+      motion: "Stationary hex cast. Manifests directly around the target's feet.",
+      windupText: "0.90s wind-up. Clockwork temporal invocation." },
+    { name: "MEGIDO", element: "mystic", kind: 1, aoe: true, magical: true, cost: 3, mp: 6, power: 1.6, windup: 2.2,
+      tactical: "Transcendent explosion hitting all enemies, bypassing resistances. Full AoE.",
+      visualMotion: "Stationary invocation summoning a pillar of blinding celestial light.",
+      mechanics: "Almighty/Mystic transcendent explosion that strikes all enemies simultaneously, bypassing elemental resistances.",
+      visual: "Pillar of blinding sacred white-cyan light descending from above, collapsing into a field-wide planar shockwave.",
+      motion: "Stationary invocation. Caster raises hands; strikes every enemy position simultaneously with zero projectile travel.",
+      windupText: "2.20s wind-up. Protracted celestial chant; vulnerable to team-wide disruption." }
+  ];
+
+  const MOVES_PANCHAM = [
+    { name: "TACKLE", element: "neutral", kind: 0, aoe: false, magical: false, cost: 2, mp: 0, power: 1.0, windup: 0.8,
+      tactical: "Reliable basic physical strike. Single Target.",
+      visualMotion: "Forward dash collision with white dust shockwaves and hit sparks.",
+      mechanics: "Standard physical charge delivering direct baseline kinetic damage to a single target.",
+      visual: "Physical impact flash with white dust shockwaves and hit sparks radiating from the point of contact.",
+      motion: "Forward melee sprint. Attacker dashes across the field, impacts the target, and springs back into position.",
+      windupText: "0.80s wind-up. Quick physical telegraph with low interruption risk." },
+    { name: "MACH PUNCH", element: "neutral", kind: 0, aoe: false, magical: false, cost: 1, mp: 1, power: 0.5, windup: 0.35,
+      tactical: "Lightning jab designed to interrupt enemy wind-ups. Single Target.",
+      visualMotion: "Instant forward burst step with supersonic air-pressure shockwaves.",
+      mechanics: "Supersonic physical jab with near-instant release, designed specifically to interrupt opposing charge phases.",
+      visual: "Supersonic shock cone and white air-pressure ripples forming an explosive point-blank fist shockwave.",
+      motion: "Instant forward burst step. Attacker covers short distance almost instantaneously.",
+      windupText: "0.35s wind-up. Lightning fast execution; ideal for interrupting enemy wind-ups." },
+    { name: "KARATE CHOP", element: "neutral", kind: 0, aoe: false, magical: false, cost: 2, mp: 3, power: 1.5, windup: 1.0,
+      tactical: "Direct martial chop with elevated critical strike chance. Single Target.",
+      visualMotion: "Forward melee sprint with a sharp red-trailed vertical slash.",
+      mechanics: "Heavy directional martial strike with a sharp cutting edge and elevated critical hit chance.",
+      visual: "Bright red momentum trails trailing the striking limb, culminating in a sharp directional slash and impact sparks.",
+      motion: "Forward melee sprint. Attacker closes the distance rapidly, delivers a vertical downward chop, and recovers.",
+      windupText: "1.00s wind-up. Sharp martial stance with rapid execution." },
+    { name: "BRICK BREAK", element: "neutral", kind: 0, aoe: false, magical: false, cost: 3, mp: 4, power: 1.8, windup: 1.4,
+      tactical: "Shatters Guard stances and refunds 1 ATB upon success. Single Target.",
+      visualMotion: "Leaping hammer fist with golden aura and crystalline fracture VFX.",
+      mechanics: "Crushing downward hammer strike that instantly shatters enemy Guard stances and refunds 1 ATB block upon guard break.",
+      visual: "Golden-yellow energy aura around the striking limb, shattering into barrier-cracking crystalline fracture particles upon impact.",
+      motion: "Attacker leaps forward with downward hammer fist directly over the enemy's defensive posture.",
+      windupText: "1.40s wind-up. Heavy overhead wind-up that telegraphs crushing momentum." },
+    { name: "TAUNT", element: "neutral", kind: 3, aoe: false, magical: false, cost: 1, mp: 1, power: 0.0, windup: 0.7,
+      tactical: "Forces target to focus next attack exclusively on user. Single Target.",
+      visualMotion: "Stationary provocation gesturing with flashing anger crosshairs.",
+      mechanics: "Enraging shout that forces the target to focus their next attack exclusively on the user.",
+      visual: "Pulsing red target crosshair and anger exclamation marks flashing above the enraged opponent's head.",
+      motion: "Stationary provocation. Caster gestures and shouts in place.",
+      windupText: "0.70s wind-up. Rapid taunting gesture." },
+    { name: "TARUKAJA", element: "fire", kind: 3, aoe: true, magical: false, cost: 2, mp: 3, power: 0.0, windup: 1.1,
+      tactical: "Increases Attack (+1 ATK stage) for all allies until battle ends. Team AoE.",
+      visualMotion: "Stationary chant raising ascending crimson runic columns around all allies.",
+      mechanics: "Team battle hymn that raises the Attack attribute (+1 ATK stage) of every ally for the remainder of combat.",
+      visual: "Rising crimson-orange energy auras and ascending runic rings enveloping each friendly combatant.",
+      motion: "Stationary team buff. Caster chants in place; energy columns rise simultaneously around all allies.",
+      windupText: "1.10s wind-up. Vocal hymnal channeling." },
+    { name: "HASSOU TOBI", element: "neutral", kind: 0, aoe: true, magical: false, cost: 3, mp: 6, power: 1.4, windup: 1.75,
+      tactical: "Flurry of rapid leaping slashes striking all enemies. Full AoE.",
+      visualMotion: "Rapid multidirectional leap with blurring white blade afterimages.",
+      mechanics: "Legendary physical flurry that strikes all enemies in rapid succession with leaping slashes.",
+      visual: "Blurring afterimages of white blade slashes and cherry blossom petal trails crisscrossing the field.",
+      motion: "Rapid multidirectional leap. Attacker jumps from target to target in a rapid zig-zag before returning.",
+      windupText: "1.75s wind-up. Focused blade drawing posture." }
+  ];
+
+  const PARTY = {
+    abra: {
+      name: "ABRA", role: "PROTAGONIST", tag: "hero", level: 1, xp: "0 / 200  (Remaining 200)",
+      hp: 39, maxHp: 39, mp: 20, maxMp: 20, atb: 4, atbSpeed: "0.42 blocks/s",
+      attack: 1, mag: 8,
+      nature: "MODEST",
+      natureDesc: "Backline spellcaster. Stays at long range and prioritizes casting high-impact magical skills, pacing actions carefully to conserve MP for crucial moments.",
+      natureAI: "Aggression 1.0×  ·  ATB Reserve Default",
+      elements: ["psychic"],
+      weak: ["dark", "sound"],
+      attrs: [["STR", "1", ""], ["MAG", "8", "+3"], ["VIT", "1", ""], ["WIS", "2", ""], ["AGI", "2", ""], ["LUK", "2", ""]],
+      art: "abra", moves: MOVES_ABRA
+    },
+    pancham: {
+      name: "PANCHAM", role: "ALLY", tag: "ally", level: 1, xp: "0 / 200  (Remaining 200)",
+      hp: 39, maxHp: 39, mp: 17, maxMp: 17, atb: 4, atbSpeed: "0.39 blocks/s",
+      attack: 9, mag: 1,
+      nature: "BRAVE",
+      natureDesc: "Frontline vanguard. Advances directly into melee range and spends ATB blocks immediately on attack skills, prioritizing continuous offensive pressure over dodging.",
+      natureAI: "Aggression 1.3×  ·  ATB Reserve Aggressive (-1.0s)",
+      elements: ["neutral", "dark"],
+      weak: ["psychic", "wind"],
+      attrs: [["STR", "9", "+2"], ["MAG", "1", ""], ["VIT", "2", "+1"], ["WIS", "3", "-1"], ["AGI", "2", ""], ["LUK", "3", ""]],
+      art: "pancham", moves: MOVES_PANCHAM
+    }
+  };
+
+  const ITEMS = [
+    { id: "potion", name: "POTION", kind: "CONSUMABLE", count: 3, icon: "potion.png", desc: "Restores 30 HP instantly on target ally. Usable in field or combat." },
+    { id: "amulet", name: "AMULET", kind: "HELD", count: 1, icon: "amulet-coin.png", desc: "Ancient protective charm. Held item passive ward." },
+    { id: "talisman", name: "TALISMAN", kind: "HELD", count: 1, icon: "cleanse-tag.png", desc: "Mystic lucky talisman. Held item passive boost." }
+  ];
+
+  const state = {
+    mode: "a",
+    member: "abra",
+    move: 0,
+    item: null,
+    detail: false,
+    naturePinned: false,
+    reduce: false,
+    demo: false,
+    closing: false
+  };
+
+  const stage = document.getElementById("stage");
+  const shell = document.getElementById("stage-shell");
+  const moveGrid = document.getElementById("move-grid");
+  const slotsEl = document.getElementById("slots");
+  const drawer = document.getElementById("drawer");
+  const detail = document.getElementById("detail");
+  const dossier = document.getElementById("dossier");
+  const fxLayer = document.getElementById("fx");
+
+  const $ = (id) => document.getElementById(id);
+
+  function iconPath(kind, name) {
+    return BASE + ICON[kind][name];
+  }
+
+  function elStyle(el, key) {
+    return ELEMENTS[key] || ELEMENTS.neutral;
+  }
+
+  function setStageElement(key) {
+    const el = elStyle(null, key);
+    stage.style.setProperty("--elem", el.color);
+    stage.style.setProperty("--elem-ink", el.ink);
+  }
+
+  function fitStage() {
+    const s = Math.min(1, shell.clientWidth / 1280);
+    stage.style.transform = `translateX(-50%) scale(${s})`;
+    shell.style.height = `${720 * s}px`;
+  }
+
+  function buildSpires() {
+    const host = $("spires");
+    host.innerHTML = "";
+    for (let i = 0; i < 12; i++) {
+      const h = 104 + ((i * 67) % 250) * 0.8;
+      const s = document.createElement("i");
+      s.className = "spire";
+      s.style.left = `${i * 114 + 20}px`;
+      s.style.height = `${h}px`;
+      host.appendChild(s);
+    }
+  }
+
+  function renderRoster() {
+    document.querySelectorAll(".roster-row").forEach((row) => {
+      const id = row.dataset.member;
+      const p = PARTY[id];
+      row.classList.toggle("active", id === state.member);
+      const hp = row.querySelector(".bar.hp > i");
+      const hpText = row.querySelector(".bar.hp > em");
+      const mp = row.querySelector(".bar.mp > i");
+      const mpText = row.querySelector(".bar.mp > em");
+      if (hp) hp.style.width = `${(p.hp / p.maxHp) * 100}%`;
+      if (hpText) hpText.textContent = `HP ${p.hp}/${p.maxHp}`;
+      if (mp) mp.style.width = `${(p.mp / p.maxMp) * 100}%`;
+      if (mpText) mpText.textContent = `MP ${p.mp}/${p.maxMp}`;
+      const lv = row.querySelector(".row-lv");
+      if (lv) lv.textContent = `LV. ${p.level}`;
+    });
+  }
+
+  function renderHero() {
+    const p = PARTY[state.member];
+    $("hero-name").textContent = p.name;
+    const heroElems = $("hero-elems");
+    heroElems.innerHTML = "";
+    (p.elements || []).forEach((key) => {
+      const e = ELEMENTS[key];
+      const block = document.createElement("span");
+      block.className = "hero-el" + ((p.elements || []).length > 1 ? " multi" : "");
+      block.style.setProperty("--el", e.color);
+      block.innerHTML = `<img src="${BASE}elements/${e.icon}" alt="${e.label}">`;
+      const img = block.querySelector("img");
+      if (e.ink === "#080e18") img.style.filter = "brightness(0)";
+      heroElems.appendChild(block);
+    });
+    heroElems.style.left = `${848 + $("hero-name").offsetWidth + 16}px`;
+    const tag = $("hero-tag");
+    tag.textContent = p.role;
+    tag.className = `hero-tag ${p.tag === "ally" ? "ally" : ""}`;
+    $("lv-num").textContent = p.level;
+    $("xp-text").textContent = `EXP ${p.xp}`;
+    const xpFill = $("xp-fill");
+    const xpParts = p.xp.split("/").map((v) => parseInt(v.trim(), 10) || 0);
+    xpFill.style.width = `${Math.min(100, (xpParts[0] / Math.max(1, xpParts[1])) * 100)}%`;
+    $("g-hp").style.width = `${(p.hp / p.maxHp) * 100}%`;
+    $("g-mp").style.width = `${(p.mp / p.maxMp) * 100}%`;
+    $("g-hp-text").textContent = `${p.hp} / ${p.maxHp}`;
+    $("g-mp-text").textContent = `${p.mp} / ${p.maxMp}`;
+    const pips = $("atb-pips");
+    pips.innerHTML = "";
+    for (let i = 0; i < 5; i++) {
+      const pip = document.createElement("i");
+      pip.className = `atb-pip${i < p.atb ? " on" : ""}`;
+      pips.appendChild(pip);
+    }
+    $("atb-speed").textContent = p.atbSpeed;
+    const grid = $("attr-grid");
+    grid.innerHTML = "";
+    p.attrs.forEach(([label, value, bonus]) => {
+      const cell = document.createElement("span");
+      cell.className = "attr-cell";
+      cell.innerHTML = `<span>${label}</span><b>${value}${bonus ? ` <em class="${bonus.startsWith("-") ? "neg" : ""}">${bonus}</em>` : ""}</b>`;
+      grid.appendChild(cell);
+    });
+    $("nature-badge").textContent = p.nature;
+    $("nature-panel-name").textContent = p.nature;
+    $("nature-panel-desc").textContent = p.natureDesc;
+    $("nature-panel-ai").textContent = p.natureAI;
+    const weak = $("weak-list");
+    weak.innerHTML = "";
+    p.weak.forEach((key) => {
+      const e = ELEMENTS[key];
+      const span = document.createElement("span");
+      span.className = "w-icon";
+      span.style.setProperty("--elem", e.color);
+      span.innerHTML = `<img src="${BASE}elements/${e.icon}" alt="${e.label}">`;
+      weak.appendChild(span);
+    });
+    $("lv-abra").textContent = `LV. ${PARTY.abra.level}`;
+    $("lv-pancham").textContent = `LV. ${PARTY.pancham.level}`;
+    const current = p.moves[state.move] || p.moves[0];
+    setStageElement(current.element);
+  }
+
+  function renderArt() {
+    $("art-abra").classList.toggle("active", state.member === "abra");
+    $("art-pancham").classList.toggle("active", state.member === "pancham");
+  }
+
+  function makePips(n) {
+    let out = "";
+    for (let i = 0; i < 3; i++) out += `<i class="pip${i < n ? " on" : ""}"></i>`;
+    return out;
+  }
+
+  function rangeOf(mv) {
+    if (mv.aoe) return "area";
+    if (mv.kind === 0) return "melee";
+    if (mv.kind === 1) return "long";
+    return "mid";
+  }
+
+  function typeOf(mv) {
+    if (mv.kind === 3) return "";
+    if (mv.name === "TELEPORT") return "dodge";
+    return mv.magical ? "magical" : "physical";
+  }
+
+  function powerText(mv) {
+    if (mv.kind === 3) return "—";
+    return "×" + mv.power.toFixed(1).replace(".", ",");
+  }
+
+  function scalingFor(mv) {
+    const p = PARTY[state.member];
+    const attr = mv.magical ? "MAG" : "STR";
+    const val = mv.magical ? p.mag : p.attack;
+    const regen = 10 + Math.floor(p.mag / 5);
+    const base = Math.max(0, Math.round(val * mv.power));
+    return { attr, val, regen, base };
+  }
+
+  function renderMoves() {
+    const p = PARTY[state.member];
+    moveGrid.innerHTML = "";
+    for (let i = 0; i < p.moves.length; i++) {
+      const mv = p.moves[i];
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "strip";
+      btn.dataset.move = String(i);
+      btn.dataset.interactive = "";
+      const el = ELEMENTS[mv.element];
+      btn.style.setProperty("--el", el.color);
+      btn.innerHTML = `
+        <span class="el-block"><img src="${BASE}elements/${el.icon}" alt="${el.label}"></span>
+        <span class="strip-name">${mv.name}</span>
+        <span class="strip-atb">${makePips(mv.cost)}</span>
+        <span class="strip-mp">${mv.mp > 0 ? mv.mp + "MP" : ""}</span>
+        <span class="num-tab">${i + 1}</span>
+      `;
+      if (i === state.move) btn.classList.add("selected");
+      moveGrid.appendChild(btn);
+    }
+    $("skills-head").textContent = `SKILLS // ${p.moves.length} EQUIPPED`;
+    renderCard();
+  }
+
+  function renderCard() {
+    const p = PARTY[state.member];
+    const mv = p.moves[state.move] || p.moves[0];
+    if (!mv) return;
+    const e = ELEMENTS[mv.element];
+    setStageElement(mv.element);
+    $("mc-name").textContent = mv.name;
+    $("mc-watermark").src = `${BASE}elements/${e.icon}`;
+    const typeName = typeOf(mv);
+    const typeBadge = $("mc-type");
+    const typeImg = $("mc-type-img");
+    typeBadge.style.display = typeName ? "inline-flex" : "none";
+    if (typeName) {
+      typeBadge.className = `mc-badge ${typeName}`;
+      typeImg.src = iconPath("type", typeName);
+    }
+    const rangeName = rangeOf(mv);
+    $("mc-range").style.display = mv.kind === 3 ? "none" : "inline-flex";
+    $("mc-range").className = "mc-badge range";
+    $("mc-range-img").src = iconPath("range", rangeName);
+    $("mc-atb").textContent = `${mv.cost} ATB`;
+    $("mc-mp").textContent = `${mv.mp} MP`;
+    $("mc-power").textContent = `POWER ${powerText(mv)}`;
+    $("mc-line1").textContent = mv.tactical;
+    $("mc-line2").textContent = mv.visualMotion;
+    const s = scalingFor(mv);
+    $("mc-line3").textContent = `Wind-up: ${mv.windup.toFixed(2)}s (interruptible) · Scales with ${s.attr} ${s.val} · MP Cycle: +${s.regen} MP / 8.0s`;
+    renderDetail(mv);
+  }
+
+  function renderDetail(mv) {
+    const e = ELEMENTS[mv.element];
+    $("d-accent").style.background = e.color;
+    $("d-watermark").src = `${BASE}elements/${e.icon}`;
+    const eyebrow = document.querySelector(".d-eyebrow");
+    if (eyebrow) eyebrow.style.color = e.color;
+    $("d-name").textContent = mv.name;
+    const badges = $("d-badges");
+    badges.innerHTML = "";
+    const typeName = typeOf(mv);
+    if (typeName) {
+      const b = document.createElement("span");
+      b.className = `mc-badge ${typeName}`;
+      b.innerHTML = `<img src="${iconPath("type", typeName)}" alt="">`;
+      badges.appendChild(b);
+      const range = document.createElement("span");
+      range.className = "mc-badge range";
+      range.innerHTML = `<img src="${iconPath("range", rangeOf(mv))}" alt="">`;
+      badges.appendChild(range);
+    }
+    const costs = $("d-costs");
+    costs.innerHTML = "";
+    const atb = document.createElement("span");
+    atb.className = "mc-pill";
+    atb.textContent = `${mv.cost} ATB`;
+    costs.appendChild(atb);
+    const mp = document.createElement("span");
+    mp.className = "mc-pill mp";
+    mp.textContent = `${mv.mp} MP`;
+    costs.appendChild(mp);
+    const pow = document.createElement("span");
+    pow.className = "mc-pill power";
+    pow.textContent = `POWER ${powerText(mv)}`;
+    costs.appendChild(pow);
+    $("d-label1").style.color = e.color;
+    $("d-label2").style.color = "#f0c57e";
+    $("d-label3").style.color = "#38bdf8";
+    $("d-label4").style.color = "#f87171";
+    $("d-label5").style.color = "#a78bfa";
+    $("d-mech").style.color = "#f4eee1";
+    $("d-visual").style.color = "#ffeaa7";
+    $("d-motion").style.color = "#bae6fd";
+    $("d-windup").style.color = "#fecaca";
+    $("d-scaling").style.color = "#ddd6fe";
+    $("d-mech").textContent = mv.mechanics;
+    $("d-visual").textContent = mv.visual;
+    $("d-motion").textContent = mv.motion;
+    $("d-windup").textContent = mv.windupText;
+    const s = scalingFor(mv);
+    $("d-scaling").textContent = `Scales with ${s.attr} (${s.val} pts, +${(s.val * 5).toFixed(1)}% dmg) · Base Damage: ${s.base} HP · Exploits target elemental weaknesses for 1.5× damage · MP Recovery cycle: +${s.regen} MP / 8.0s.`;
+    badges.style.left = `${28 + $("d-name").offsetWidth + 14}px`;
+  }
+
+  function renderSlots() {
+    slotsEl.innerHTML = "";
+    for (let i = 0; i < 10; i++) {
+      const item = ITEMS[i];
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "slot";
+      btn.style.left = `${(i % 2) * 128}px`;
+      btn.style.top = `${Math.floor(i / 2) * 26}px`;
+      if (item) {
+        btn.dataset.item = String(i);
+        btn.dataset.interactive = "";
+        btn.innerHTML = `<img src="../../assets/items/${item.icon}" alt=""><span>${item.name}</span><span class="count">×${item.count}</span>`;
+        if (state.item === i) btn.classList.add("selected");
+      } else {
+        btn.classList.add("empty");
+        btn.disabled = true;
+        btn.innerHTML = `<span class="slot-mark">[ SLOT ${String(i + 1).padStart(2, "0")} ]</span><span class="count">—</span>`;
+      }
+      slotsEl.appendChild(btn);
+    }
+    $("satchel-count").textContent = `${String(ITEMS.length).padStart(2, "0")} / 10`;
+    renderDrawer();
+  }
+
+  function renderDrawer() {
+    if (state.item === null) {
+      drawer.classList.remove("open");
+      $("satchel-foot").classList.remove("hidden");
+      return;
+    }
+    const item = ITEMS[state.item];
+    if (!item) {
+      state.item = null;
+      drawer.classList.remove("open");
+      return;
+    }
+    drawer.classList.add("open");
+    $("satchel-foot").classList.add("hidden");
+    $("drawer-icon").src = `../../assets/items/${item.icon}`;
+    $("drawer-name").textContent = item.name;
+    $("drawer-kind").textContent = item.kind;
+    $("drawer-desc").textContent = item.desc;
+  }
+
+  function selectMember(id) {
+    if (!PARTY[id] || state.member === id) return;
+    state.member = id;
+    state.move = 0;
+    state.item = null;
+    state.naturePinned = false;
+    $("nature-panel").classList.remove("pinned");
+    $("nature-badge").classList.remove("pinned");
+    renderRoster();
+    renderHero();
+    renderArt();
+    renderMoves();
+    renderSlots();
+    closeDetail(true);
+  }
+
+  function selectMove(index) {
+    const p = PARTY[state.member];
+    if (!p.moves[index]) return;
+    state.move = index;
+    document.querySelectorAll(".strip").forEach((s) => s.classList.toggle("selected", Number(s.dataset.move) === index));
+    renderCard();
+    const card = $("move-card");
+    card.classList.remove("swap");
+    void card.offsetWidth;
+    card.classList.add("swap");
+  }
+
+  function selectItem(index) {
+    if (!ITEMS[index]) return;
+    state.item = state.item === index ? null : index;
+    renderSlots();
+  }
+
+  function toggleNature() {
+    state.naturePinned = !state.naturePinned;
+    $("nature-panel").classList.toggle("pinned", state.naturePinned);
+    $("nature-badge").classList.toggle("pinned", state.naturePinned);
+  }
+
+  function openDetail() {
+    if (state.detail) return;
+    state.detail = true;
+    detail.classList.add("open");
+    detail.classList.remove("closing");
+    renderCard();
+  }
+
+  function closeDetail(instant = false) {
+    if (!state.detail) return;
+    state.detail = false;
+    if (instant) {
+      detail.classList.remove("open", "closing");
+      return;
+    }
+    detail.classList.add("closing");
+    setTimeout(() => {
+      detail.classList.remove("open", "closing");
+    }, state.mode === "c" ? 160 : 100);
+  }
+
+  function stagePoint(clientX, clientY) {
+    const r = stage.getBoundingClientRect();
+    const scale = r.width / 1280;
+    return { x: (clientX - r.left) / scale, y: (clientY - r.top) / scale };
+  }
+
+  function centerPoint(el) {
+    const r = el.getBoundingClientRect();
+    const sr = stage.getBoundingClientRect();
+    const scale = sr.width / 1280;
+    return { x: (r.left + r.width / 2 - sr.left) / scale, y: (r.top + r.height / 2 - sr.top) / scale };
+  }
+
+  function spawnFx(point, color, mode) {
+    if (state.reduce) return;
+    const p = point || { x: 640, y: 360 };
+    if (mode === "c") {
+      const g = document.createElement("i");
+      g.className = "glow";
+      g.style.setProperty("--fx", color);
+      g.style.left = `${p.x}px`;
+      g.style.top = `${p.y}px`;
+      fxLayer.appendChild(g);
+      setTimeout(() => g.remove(), 430);
+      return;
+    }
+    const ring = document.createElement("i");
+    ring.className = "ripple";
+    ring.style.setProperty("--fx", color);
+    ring.style.left = `${p.x}px`;
+    ring.style.top = `${p.y}px`;
+    fxLayer.appendChild(ring);
+    setTimeout(() => ring.remove(), 300);
+    if (mode === "b") {
+      for (let i = 0; i < 4; i++) {
+        const s = document.createElement("i");
+        s.className = "shard";
+        s.style.setProperty("--fx", color);
+        s.style.left = `${p.x}px`;
+        s.style.top = `${p.y}px`;
+        const a = (Math.PI * 2 * i) / 4 + Math.random() * 0.7;
+        const d = 18 + Math.random() * 22;
+        s.style.setProperty("--dx", `${Math.cos(a) * d}px`);
+        s.style.setProperty("--dy", `${Math.sin(a) * d}px`);
+        s.style.setProperty("--rot", `${Math.random() * 220 - 110}deg`);
+        fxLayer.appendChild(s);
+        setTimeout(() => s.remove(), 360);
+      }
+    }
+  }
+
+  function flashElement(el) {
+    if (state.mode !== "b" || state.reduce || !el) return;
+    el.classList.add("flash");
+    setTimeout(() => el.classList.remove("flash"), 150);
+  }
+
+  function pulseSelected(el) {
+    if (!el || state.reduce) return;
+    el.classList.remove("just-selected");
+    void el.offsetWidth;
+    el.classList.add("just-selected");
+    setTimeout(() => el.classList.remove("just-selected"), 260);
+  }
+
+  function colorFor(el) {
+    if (!el) return "#f4eee1";
+    const css = getComputedStyle(el).getPropertyValue("--el").trim();
+    return css || "#f4eee1";
+  }
+
+  function replayIntro() {
+    stage.classList.remove("intro");
+    void stage.offsetWidth;
+    stage.classList.add("intro");
+    setTimeout(() => stage.classList.remove("intro"), 1000);
+  }
+
+  function setMode(mode) {
+    if (!["a", "b", "c"].includes(mode)) return;
+    state.mode = mode;
+    document.body.dataset.mode = mode;
+    document.querySelectorAll(".mode-card").forEach((b) => {
+      const on = b.dataset.mode === mode;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    replayIntro();
+  }
+
+  const wait = (ms) => new Promise((res) => setTimeout(res, ms));
+
+  async function pressElement(sel, waitMs) {
+    const el = document.querySelector(sel);
+    if (!el) return;
+    el.classList.add("is-pressed");
+    await wait(80);
+    el.classList.remove("is-pressed");
+    if (state.mode === "b") {
+      el.classList.add("is-released");
+      setTimeout(() => el.classList.remove("is-released"), 190);
+    }
+    const point = centerPoint(el);
+    spawnFx(point, colorFor(el), state.mode);
+    flashElement(el);
+    await wait(70);
+    el.click();
+    await wait(waitMs);
+  }
+
+  function runDemo() {
+    if (state.demo) return;
+    state.demo = true;
+    (async () => {
+      selectMember("abra");
+      selectMove(0);
+      await wait(300);
+      await pressElement('[data-member="pancham"]', 650);
+      await pressElement('.strip[data-move="2"]', 700);
+      await pressElement('.slot[data-item="0"]', 750);
+      await pressElement("[data-close-drawer]", 450);
+      await pressElement("#move-card", 550);
+      await wait(650);
+      closeDetail();
+      await wait(400);
+      await pressElement('[data-member="abra"]', 500);
+      await pressElement('.strip[data-move="1"]', 500);
+      state.demo = false;
+    })();
+  }
+
+  function runCompare() {
+    if (state.demo) return;
+    state.demo = true;
+    (async () => {
+      for (const mode of ["a", "b", "c"]) {
+        setMode(mode);
+        selectMember("abra");
+        selectMove(0);
+        await wait(550);
+        await pressElement('.strip[data-move="1"]', 650);
+        await pressElement("#move-card", 500);
+        await wait(550);
+        closeDetail(true);
+        await wait(450);
+      }
+      state.demo = false;
+    })();
+  }
+
+  // ---------- events ----------
+  document.addEventListener("click", (e) => {
+    const memberBtn = e.target.closest("[data-member]");
+    if (memberBtn) {
+      selectMember(memberBtn.dataset.member);
+      spawnFx(stagePoint(e.clientX, e.clientY), "#f4eee1", state.mode);
+      flashElement(memberBtn);
+      return;
+    }
+    const strip = e.target.closest(".strip[data-move]");
+    if (strip && !strip.classList.contains("empty")) {
+      selectMove(Number(strip.dataset.move));
+      spawnFx(stagePoint(e.clientX, e.clientY), colorFor(strip), state.mode);
+      flashElement(strip);
+      pulseSelected(strip);
+      return;
+    }
+    const slot = e.target.closest(".slot[data-item]");
+    if (slot) {
+      selectItem(Number(slot.dataset.item));
+      spawnFx(stagePoint(e.clientX, e.clientY), "#dfc980", state.mode);
+      flashElement(slot);
+      return;
+    }
+    if (e.target.closest("[data-close-drawer]")) {
+      state.item = null;
+      renderDrawer();
+      spawnFx(stagePoint(e.clientX, e.clientY), "#dfc980", state.mode);
+      return;
+    }
+    if (e.target.closest("[data-nature]")) {
+      toggleNature();
+      spawnFx(stagePoint(e.clientX, e.clientY), "#dfc980", state.mode);
+      return;
+    }
+    const detailBtn = e.target.closest("[data-detail]");
+    if (detailBtn) {
+      openDetail();
+      spawnFx(stagePoint(e.clientX, e.clientY), ELEMENTS[(PARTY[state.member].moves[state.move] || {}).element || "neutral"].color, state.mode);
+      return;
+    }
+    if (e.target.closest("[data-close-detail]")) {
+      closeDetail();
+      return;
+    }
+  });
+
+  // Press/release visual on every interactive element.
+  document.addEventListener("pointerdown", (e) => {
+    const el = e.target.closest("[data-interactive], .stage button");
+    if (!el || el.disabled) return;
+    el.classList.add("is-pressed");
+  });
+  document.addEventListener("pointerup", () => {
+    document.querySelectorAll(".is-pressed").forEach((el) => {
+      el.classList.remove("is-pressed");
+      if (state.mode === "b" && !state.reduce && el.matches("[data-interactive], .stage button")) {
+        el.classList.add("is-released");
+        setTimeout(() => el.classList.remove("is-released"), 190);
+      }
+    });
+  });
+  document.addEventListener("pointercancel", () => {
+    document.querySelectorAll(".is-pressed").forEach((el) => el.classList.remove("is-pressed"));
+  });
+
+  document.querySelectorAll(".mode-card").forEach((btn) => {
+    btn.addEventListener("click", () => setMode(btn.dataset.mode));
+  });
+  $("replay-btn").addEventListener("click", replayIntro);
+  $("demo-btn").addEventListener("click", runDemo);
+  $("compare-btn").addEventListener("click", runCompare);
+  $("reduce-motion").addEventListener("change", (e) => {
+    state.reduce = e.target.checked;
+    document.body.classList.toggle("reduce", state.reduce);
+  });
+
+  // Keyboard parity with the real status screen.
+  window.addEventListener("keydown", (e) => {
+    if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
+    const k = e.key.toLowerCase();
+    if (state.detail) {
+      if (k === "x" || k === "escape") { e.preventDefault(); closeDetail(); }
+      if (k === "z") { e.preventDefault(); closeDetail(); }
+      return;
+    }
+    if (k === "arrowup") { e.preventDefault(); selectMember(state.member === "abra" ? "pancham" : "abra"); }
+    else if (k === "arrowdown") { e.preventDefault(); selectMember(state.member === "abra" ? "pancham" : "abra"); }
+    else if (k === "arrowleft") {
+      e.preventDefault();
+      const n = PARTY[state.member].moves.length;
+      selectMove((state.move - 1 + n) % n);
+    } else if (k === "arrowright") {
+      e.preventDefault();
+      const n = PARTY[state.member].moves.length;
+      selectMove((state.move + 1) % n);
+    } else if (k >= "1" && k <= "8") {
+      e.preventDefault();
+      selectMove(Number(k) - 1);
+    } else if (k === "z") {
+      e.preventDefault();
+      openDetail();
+    } else if (k === "x" || k === "escape") {
+      e.preventDefault();
+      if (state.item !== null) { state.item = null; renderDrawer(); }
+      else closeDetail();
+    }
+  });
+
+  window.addEventListener("resize", fitStage);
+
+  // ---------- boot ----------
+  buildSpires();
+  renderRoster();
+  renderHero();
+  renderArt();
+  renderMoves();
+  renderSlots();
+  fitStage();
+  replayIntro();
+})();
+</script>
+</body>
+</html>

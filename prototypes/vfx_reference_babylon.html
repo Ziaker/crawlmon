@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CRAWLMON — 3 VFX de referência (Babylon + Quarks)</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#050d16;color:#f4eee1;font-family:'Roboto Condensed','Segoe UI',system-ui,sans-serif}
+  .wrap{max-width:1600px;margin:0 auto;padding:22px 18px 34px}
+  header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;border-bottom:1px solid #1b3a4f;padding-bottom:14px;margin-bottom:18px}
+  .brand{font-family:Impact,'Arial Black',sans-serif;font-style:italic;font-size:42px;letter-spacing:.02em;line-height:1}
+  .brand span:first-child{color:#f4eee1}.brand span:last-child{color:#d6fa66}.brand .slash{color:#ff624f}
+  h1{font-size:21px;margin:0;letter-spacing:.06em;text-transform:uppercase}
+  .sub{color:#8fb3c9;font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-top:4px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  button{appearance:none;border:1px solid #2b556e;background:#0b2133;color:#f4eee1;padding:9px 14px;font:800 11px/1 'Roboto Condensed',sans-serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%)}
+  button:hover{border-color:#63d9ec;color:#d6fa66}
+  button.on{background:#d6fa66;color:#06101b;border-color:#d6fa66}
+  #scrub{width:160px;accent-color:#d6fa66;cursor:pointer}
+  .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+  @media(max-width:1080px){.grid{grid-template-columns:1fr}}
+  .card{background:linear-gradient(180deg,#0a1d2d,#07131f);border:1px solid #1c4057;border-radius:2px;overflow:hidden;display:flex;flex-direction:column;min-height:420px}
+  .card-head{padding:13px 14px 10px;border-bottom:1px solid #153447}
+  .tag{font-size:10px;letter-spacing:.16em;color:#63d9ec;font-weight:800}
+  .name{font-family:Impact,'Arial Black',sans-serif;font-style:italic;font-size:26px;letter-spacing:.03em;line-height:1;margin:3px 0 4px}
+  .desc{font-size:12px;line-height:1.35;color:#a9c3d3}
+  .phases{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
+  .ph{font-size:9px;letter-spacing:.1em;padding:4px 6px;border:1px solid #244c63;color:#6f96ab;background:#08141e}
+  .ph.on{background:#ff624f;border-color:#ff624f;color:#06101b;font-weight:900}
+  canvas{width:100%;height:auto;display:block;background:#040a12;aspect-ratio:16/10;touch-action:none;outline:none}
+  .card-foot{padding:10px 14px 13px;display:flex;justify-content:space-between;gap:8px;align-items:center;border-top:1px solid #153447;margin-top:auto}
+  .note{font-size:10px;color:#7d9aab;letter-spacing:.04em}
+  .pill{font-size:10px;color:#0a1a11;background:#c7f36e;padding:4px 7px;font-weight:900;letter-spacing:.08em}
+  footer{margin-top:20px;border-top:1px solid #17384c;padding-top:13px;color:#7e9fb2;font-size:11px;line-height:1.6}
+  .err{margin-top:12px;background:#3a1010;border:1px solid #a33;padding:10px;color:#ffb4ab;font-size:12px;white-space:pre-wrap;display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="brand"><span>CRAWL</span><span class="slash">/</span><span>MON</span></div>
+      <h1>VFX de referência — Babylon.js + Quarks</h1>
+      <div class="sub">impacto · corte · aura &nbsp;·&nbsp; câmera do jogo &nbsp;·&nbsp; normal / espelhado / oblíquo</div>
+    </div>
+    <div class="controls">
+      <button id="btn-view">Câmera: normal</button>
+      <button id="btn-side">Lado: A</button>
+      <button id="btn-play" class="on">Pausar</button>
+      <input id="scrub" type="range" min="0" max="2.4" step="0.01" value="0">
+    </div>
+  </header>
+  <div class="grid" id="grid"></div>
+  <div class="err" id="err"></div>
+  <footer>
+    Três efeitos <b>sem projétil</b>, reutilizáveis em futuros Moves: impacto de área, corte corpo a corpo e aura/carga. Partículas e rastros com <b>Babylon.quarks</b>; malhas, anéis, coluna e shaders com <b>Babylon.js</b>. O eixo e a posição vêm dos dois atores reais (D-235); a câmera tem normal, espelhada e oblíqua para testar leitura e profundidade.
+  </footer>
+</div>
+
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/babylon.quarks@0.30.0/dist/babylon.quarks.umd.min.js"></script>
+<script>
+const Q=BabylonQuarks;
+const OPTIONS=[
+  {id:'A',name:'RUPTURA',tag:'IMPACTO DE ÁREA',color:new BABYLON.Color3(1,.62,.18),hot:new BABYLON.Color3(1,.95,.72),
+   desc:'Impacto no chão: anel de choque, coluna de energia, poeira e detritos. Serve para golpes de área, quedas e explosões.',
+   strengths:'área · peso · poeira'},
+  {id:'B',name:'CORTE',tag:'ARCO CORPO A CORPO',color:new BABYLON.Color3(.55,.95,1),hot:new BABYLON.Color3(1,1,1),
+   desc:'Arco de corte 3D com faíscas, linha de corte atrasada e anel no alvo. Serve para espadas, garras e golpes de arco.',
+   strengths:'corte · leitura · faíscas'},
+  {id:'C',name:'AURA',tag:'CARGA / BUFF',color:new BABYLON.Color3(.78,.55,1),hot:new BABYLON.Color3(1,.9,1),
+   desc:'Aura contínua em volta do personagem, com anéis pulsando, brasas subindo e explosão no pico. Serve para buffs, cargas e status.',
+   strengths:'aura · carga · pulso'}
+];
+const WINDUP=.55,HIT=.78,TOTAL=2.4;
+
+function softTexture(scene){
+  const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');
+  const g=x.createRadialGradient(32,32,0,32,32,32);
+  g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.35,'rgba(255,255,255,.7)');
+  g.addColorStop(.7,'rgba(255,255,255,.12)');g.addColorStop(1,'rgba(255,255,255,0)');
+  x.fillStyle=g;x.fillRect(0,0,64,64);
+  return new BABYLON.Texture(c.toDataURL(),scene);
+}
+function mat(scene,color,emissive,alpha){
+  const m=new BABYLON.StandardMaterial('m',scene);
+  m.diffuseColor=color;m.emissiveColor=emissive||color;m.specularColor=new BABYLON.Color3(0,0,0);
+  m.disableLighting=true;m.alpha=alpha===undefined?1:alpha;m.backFaceCulling=false;
+  return m;
+}
+function ringMesh(scene,diam,thick,color,alpha){
+  const m=BABYLON.MeshBuilder.CreateTorus('ring',{diameter:diam,thickness:thick,tessellation:64},scene);
+  m.material=mat(scene,color,color,alpha);m.isPickable=false;return m;
+}
+function makeCaster(scene,color){
+  const g=new BABYLON.TransformNode('caster',scene);
+  const body=BABYLON.MeshBuilder.CreateCapsule('body',{height:1.7,radius:.35},scene);body.parent=g;body.position.y=.95;
+  const bm=new BABYLON.StandardMaterial('bodyMat',scene);bm.diffuseColor=new BABYLON.Color3(.18,.34,.46);
+  bm.specularColor=new BABYLON.Color3(.1,.15,.2);body.material=bm;
+  const head=BABYLON.MeshBuilder.CreateSphere('head',{diameter:.5,segments:12},scene);head.parent=g;head.position.y=1.85;
+  const hm=new BABYLON.StandardMaterial('headMat',scene);hm.diffuseColor=new BABYLON.Color3(.65,.75,.8);
+  hm.specularColor=new BABYLON.Color3(.2,.2,.2);head.material=hm;
+  const cloak=BABYLON.MeshBuilder.CreateCylinder('cloak',{height:1.2,diameterTop:.15,diameterBottom:1.0,tessellation:12},scene);
+  cloak.parent=g;cloak.position.y=.65;cloak.material=mat(scene,color,color.scale(.18),.9);
+  const mark=ringMesh(scene,1.1,.05,color,.55);mark.parent=g;mark.position.y=.02;
+  return g;
+}
+class Lab{
+  constructor(canvas,opt){
+    this.canvas=canvas;this.opt=opt;this.t=0;this.playing=true;this.view='normal';
+    this.engine=new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:true,stencil:true});
+    this.scene=new BABYLON.Scene(this.engine);
+    this.scene.clearColor=new BABYLON.Color4(.02,.05,.08,1);
+    this.camera=new BABYLON.FreeCamera('cam',new BABYLON.Vector3(.75,3,9.6),this.scene);
+    this.camera.setTarget(new BABYLON.Vector3(0,1.1,0));
+    this.glow=new BABYLON.GlowLayer('glow',this.scene,{mainTextureRatio:.5,blurKernelSize:32});this.glow.intensity=.9;
+    this.buildLights();this.buildArena();this.buildActors();this.buildFx();
+    this.tex=softTexture(this.scene);this.batch=new Q.BatchedRenderer('particles',this.scene);
+    this.buildParticles();this.buildView();
+    this.scene.onBeforeRenderObservable.add(()=>this.tick());
+    this.engine.runRenderLoop(()=>this.scene.render());
+  }
+  buildLights(){
+    new BABYLON.HemisphericLight('h',new BABYLON.Vector3(0,1,0),this.scene).intensity=.75;
+    const p=new BABYLON.PointLight('p',new BABYLON.Vector3(-4,3,2),this.scene);p.diffuse=new BABYLON.Color3(1,.7,.4);p.intensity=25;
+    const r=new BABYLON.PointLight('r',new BABYLON.Vector3(5,3,-3),this.scene);r.diffuse=new BABYLON.Color3(.4,.8,1);r.intensity=20;
+  }
+  buildArena(){
+    const g=BABYLON.MeshBuilder.CreateGround('ground',{width:34,height:34},this.scene);g.position.y=0;
+    g.material=mat(this.scene,new BABYLON.Color3(.035,.09,.13),new BABYLON.Color3(.01,.02,.03),1);
+    const ring=ringMesh(this.scene,11.4,.06,new BABYLON.Color3(.08,.3,.4),.45);ring.position.y=.02;
+    const back=BABYLON.MeshBuilder.CreateBox('back',{width:26,height:7,depth:.4},this.scene);back.position.set(0,3.5,-8);
+    back.material=mat(this.scene,new BABYLON.Color3(.02,.04,.06),new BABYLON.Color3(0,0,0),1);
+  }
+  buildActors(){this.caster=makeCaster(this.scene,this.opt.color);this.target=makeCaster(this.scene,new BABYLON.Color3(.2,.35,.45));}
+  buildFx(){
+    const c=this.opt.color,h=this.opt.hot;
+    this.impactRing=ringMesh(this.scene,2,.10,h,.0);this.impactRing.position.y=.04;
+    this.cutRing=ringMesh(this.scene,2.2,.07,c,.0);this.cutRing.position.y=.05;
+    this.column=BABYLON.MeshBuilder.CreateCylinder('column',{height:1,diameterTop:.15,diameterBottom:1.4,tessellation:32,cap:BABYLON.Mesh.NO_CAP},this.scene);
+    this.column.material=mat(this.scene,c,c,.0);this.column.position.y=.5;
+    this.flash=BABYLON.MeshBuilder.CreateSphere('flash',{diameter:1,segments:16},this.scene);
+    this.flash.material=mat(this.scene,h,h,.0);
+    this.slash=BABYLON.MeshBuilder.CreateTorus('slash',{diameter:3.2,thickness:.12,tessellation:80,arc:.58},this.scene);
+    this.slash.material=mat(this.scene,h,h,0);this.slash.rotation.x=Math.PI/2;
+    this.cutLine=BABYLON.MeshBuilder.CreateBox('cut',{width:4.5,height:.05,depth:.05},this.scene);
+    this.cutLine.material=mat(this.scene,h,h,0);
+    this.auraRing=ringMesh(this.scene,1.6,.05,c,.0);this.auraRing.position.y=.03;
+  }
+  buildParticles(){
+    // impact: dust + sparks
+    this.dust=this.makeBurst(160,new BABYLON.Color4(.55,.45,.35,1),.45,2.5,7.0,1.6,false,new BABYLON.Vector3(0,0,0));
+    this.impactSparks=this.makeBurst(110,new BABYLON.Color4(1,.85,.55,1),.16,5.0,13.0,1.0,true,new BABYLON.Vector3(0,1,0));
+    // slash sparks
+    this.cutSparks=this.makeBurst(90,new BABYLON.Color4(.8,1,1,1),.13,5.0,14.0,.8,true,new BABYLON.Vector3(0,1,0));
+    // aura continuous + peak burst
+    this.aura=this.makeContinuous(90,new BABYLON.Color4(.8,.6,1,1),.16,.18,1.2,new Q.SphereEmitter({radius:.65}),new BABYLON.Vector3(0,1,0));
+    this.auraSparks=this.makeBurst(80,new BABYLON.Color4(1,.9,1,1),.14,2.5,6.0,1.0,true,new BABYLON.Vector3(0,1,0));
+  }
+  makeEmitter(pos){
+    const n=new BABYLON.TransformNode('fxEmitter',this.scene);
+    n.position.copyFrom(pos||BABYLON.Vector3.Zero());
+    return n;
+  }
+  makeBurst(count,color4,size,smin,smax,life,additive,pos){
+    const ps=new BABYLON.ParticleSystem('burst',count,this.scene);
+    ps.particleTexture=this.tex;
+    ps.emitter=pos||new BABYLON.Vector3(0,0,0);
+    ps.minEmitBox=new BABYLON.Vector3(-.2,-.1,-.2);
+    ps.maxEmitBox=new BABYLON.Vector3(.2,.3,.2);
+    ps.color1=color4;ps.color2=color4;
+    ps.colorDead=new BABYLON.Color4(color4.r,color4.g,color4.b,0);
+    ps.minSize=size*.55;ps.maxSize=size*1.35;
+    ps.minLifeTime=life*.7;ps.maxLifeTime=life*1.2;
+    ps.emitRate=0;ps.manualEmitCount=count;
+    ps.minEmitPower=smin;ps.maxEmitPower=smax;
+    ps.updateSpeed=.016;
+    ps.gravity=new BABYLON.Vector3(0,additive?-2.5:-.7,0);
+    ps.blendMode=additive?BABYLON.ParticleSystem.BLENDMODE_ADD:BABYLON.ParticleSystem.BLENDMODE_STANDARD;
+    ps.targetStopDuration=.08;ps.disposeOnStop=false;ps._fxCount=count;
+    ps.start();ps.stop();
+    return ps;
+  }
+  makeContinuous(count,color4,size,smin,smax,shape,pos){
+    const ps=new BABYLON.ParticleSystem('continuous',count,this.scene);
+    ps.particleTexture=this.tex;
+    ps.emitter=pos||new BABYLON.Vector3(0,0,0);
+    ps.minEmitBox=new BABYLON.Vector3(-.3,-.1,-.3);
+    ps.maxEmitBox=new BABYLON.Vector3(.3,.3,.3);
+    ps.color1=color4;ps.color2=color4;
+    ps.colorDead=new BABYLON.Color4(color4.r,color4.g,color4.b,0);
+    ps.minSize=size*.55;ps.maxSize=size*1.35;
+    ps.minLifeTime=.7;ps.maxLifeTime=1.4;
+    ps.emitRate=count;ps.minEmitPower=smin;ps.maxEmitPower=smax;
+    ps.updateSpeed=.016;ps.gravity=new BABYLON.Vector3(0,.4,0);
+    ps.blendMode=BABYLON.ParticleSystem.BLENDMODE_ADD;
+    ps.start();ps.stop();
+    return ps;
+  }
+  place(ps,pos){if(ps)ps.emitter=pos;}
+  fire(ps,pos){if(!ps)return;ps.emitter=pos;ps.manualEmitCount=ps._fxCount||80;ps.start();}
+  buildView(){
+    this.view='normal';
+    this.caster.position.set(-3.2,0,1.4);this.target.position.set(3.2,0,-1.8);
+    this.caster.lookAt(this.target.position);this.target.lookAt(this.caster.position);
+    this.camera.position.set(.75,3,9.6);this.camera.setTarget(new BABYLON.Vector3(0,1.1,0));
+    this.reset();
+  }
+  setView(v){
+    this.view=v;
+    if(v==='normal'){this.caster.position.set(-3.2,0,1.4);this.target.position.set(3.2,0,-1.8);this.camera.position.set(.75,3,9.6);}
+    else if(v==='mirror'){this.caster.position.set(3.2,0,-1.8);this.target.position.set(-3.2,0,1.4);this.camera.position.set(-.75,3,9.6);}
+    else {this.caster.position.set(-3.2,0,1.4);this.target.position.set(3.2,0,-1.8);this.camera.position.set(6.8,3.8,7.2);}
+    this.caster.lookAt(this.target.position);this.target.lookAt(this.caster.position);
+    this.camera.setTarget(new BABYLON.Vector3(0,1.1,0));
+    this.reset();
+  }
+  swapSides(){
+    const a=this.caster.position.clone(),t=this.target.position.clone();
+    this.caster.position.copyFrom(t);this.target.position.copyFrom(a);
+    this.caster.lookAt(this.target.position);this.target.lookAt(this.caster.position);
+    this.reset();
+  }
+  reset(){
+    this.t=0;this._hit=false;
+    for(const m of [this.impactRing,this.cutRing,this.column,this.flash,this.slash,this.cutLine,this.auraRing]){
+      if(m){m.visibility=0;m.scaling.setAll(1);m.isVisible=false;}
+    }
+    for(const ps of [this.dust,this.impactSparks,this.cutSparks,this.aura,this.auraSparks])ps&&ps.stop();
+    const tgt=this.target.position, cas=this.caster.position;
+    this.place(this.dust,tgt);
+    this.place(this.impactSparks,new BABYLON.Vector3(tgt.x,tgt.y+1.0,tgt.z));
+    this.place(this.cutSparks,new BABYLON.Vector3(tgt.x,tgt.y+1.0,tgt.z));
+    this.place(this.aura,new BABYLON.Vector3(cas.x,cas.y+1.0,cas.z));
+    this.place(this.auraSparks,new BABYLON.Vector3(cas.x,cas.y+1.0,cas.z));
+  }
+  tick(){
+    const dt=Math.min(.05,this.engine.getDeltaTime()/1000);
+    if(this.playing)this.t+=dt;
+    if(this.t>=TOTAL){this.reset();this.t=0;}
+    this.batch.update(dt);
+    const t=this.t, wind=Math.min(1,t/WINDUP), after=Math.max(0,t-HIT);
+    const hit=this.target.position.clone().add(new BABYLON.Vector3(0,.8,0));
+    const ground=this.target.position.clone();ground.y=.04;
+    const casterBase=this.caster.position.clone();
+    // shared idle / charge
+    this.caster.rotation.z=Math.sin(t*2.0)*.02;
+    if(this.opt.id==='A'){
+      this.impactRing.isVisible=t>=WINDUP*.7;
+      const k=Math.min(1,Math.max(0,(t-WINDUP*.7)/.35));
+      this.impactRing.scaling.setAll(.4+k*1.8);this.impactRing.visibility=(1-k)*.55;
+      this.impactRing.position.copyFrom(ground);
+      if(t>=HIT&&!this._hit){
+        this._hit=true;
+        this.impactRing.isVisible=true;this.impactRing.scaling.setAll(.6);this.impactRing.visibility=.95;
+        this.column.isVisible=true;this.column.position.set(ground.x,.5,ground.z);this.column.scaling.set(1,.1,1);this.column.visibility=.9;
+        this.flash.isVisible=true;this.flash.position.copyFrom(hit);this.flash.scaling.setAll(.6);this.flash.visibility=.95;
+        this.fire(this.dust,ground);
+        this.fire(this.impactSparks,hit);
+      }
+      if(this._hit&&after<.9){
+        this.impactRing.scaling.setAll(.6+after*7.0);this.impactRing.visibility=Math.max(0,.95-after*1.1);
+        this.column.scaling.set(1,.1+after*6.0,1);this.column.position.y=.5+after*1.5;this.column.visibility=Math.max(0,.9-after*1.4);
+        this.flash.scaling.setAll(.6+after*4.5);this.flash.visibility=Math.max(0,.95-after*3.0);
+      } else if(this._hit){this.column.isVisible=false;this.flash.isVisible=false;}
+    } else if(this.opt.id==='B'){
+      this.cutRing.isVisible=t>=WINDUP*.8;
+      this.cutRing.position.copyFrom(ground);
+      this.cutRing.scaling.setAll(.5+Math.min(1,(t-WINDUP*.8)/.3)*.6);this.cutRing.visibility=(1-Math.min(1,(t-WINDUP*.8)/.3))*.45;
+      if(t>=HIT&&!this._hit){
+        this._hit=true;
+        this.slash.isVisible=true;this.slash.position.copyFrom(hit);this.slash.scaling.setAll(.5);this.slash.visibility=1;
+        this.cutLine.isVisible=true;this.cutLine.position.copyFrom(hit);this.cutLine.visibility=0;
+        this.flash.isVisible=true;this.flash.position.copyFrom(hit);this.flash.scaling.setAll(.5);this.flash.visibility=.8;
+        this.fire(this.cutSparks,hit);
+      }
+      if(this._hit&&after<.55){
+        this.slash.scaling.setAll(.5+after*4.5);this.slash.rotation.z=after*3.5;
+        this.slash.visibility=Math.max(0,1-after*2.2);
+        this.cutLine.isVisible=after>.06;this.cutLine.visibility=Math.max(0,1-after*4.0);
+        this.flash.scaling.setAll(.5+after*3.0);this.flash.visibility=Math.max(0,.8-after*4.0);
+        this.cutRing.isVisible=true;this.cutRing.scaling.setAll(1.0+after*2.5);this.cutRing.visibility=Math.max(0,.5-after*.9);
+      } else if(this._hit){this.slash.isVisible=false;this.cutLine.isVisible=false;this.flash.isVisible=false;}
+    } else {
+      // aura: continuous around the caster, pulse at HIT
+      this.auraRing.isVisible=true;this.auraRing.position.set(casterBase.x,.03,casterBase.z);
+      const pulse=.5+.5*Math.sin(t*5.0);
+      this.auraRing.scaling.setAll(.8+pulse*.5);this.auraRing.visibility=.25+pulse*.35;
+      if(!this._auraStarted){this._auraStarted=true;this.place(this.aura,casterBase.clone().add(new BABYLON.Vector3(0,1.0,0)));this.aura.start();}
+      if(this.aura.emitter&&this.aura.emitter.position)this.aura.emitter.position.copyFrom(casterBase.clone().add(new BABYLON.Vector3(0,1.0,0)));
+      if(t>=HIT&&!this._hit){
+        this._hit=true;
+        this.flash.isVisible=true;this.flash.position.copyFrom(casterBase.clone().add(new BABYLON.Vector3(0,1.0,0)));this.flash.scaling.setAll(.8);this.flash.visibility=.7;
+        this.fire(this.auraSparks,casterBase.clone().add(new BABYLON.Vector3(0,1.0,0)));
+      }
+      if(this._hit&&after<.7){
+        this.flash.scaling.setAll(.8+after*3.0);this.flash.visibility=Math.max(0,.7-after*1.8);
+        this.impactRing.isVisible=true;this.impactRing.position.set(casterBase.x,.04,casterBase.z);
+        this.impactRing.scaling.setAll(.6+after*5);this.impactRing.visibility=Math.max(0,.7-after*1.2);
+      } else if(this._hit)this.flash.isVisible=false;
+    }
+  }
+  resize(){this.engine.resize();}
+}
+
+const grid=document.getElementById('grid'),labs=[];
+for(const opt of OPTIONS){
+  const card=document.createElement('section');card.className='card';
+  card.innerHTML=`
+    <div class="card-head">
+      <div class="tag">OPÇÃO ${opt.id} · ${opt.tag}</div>
+      <div class="name" style="color:#${opt.color.toHexString().slice(1)}">${opt.name}</div>
+      <div class="desc">${opt.desc}</div>
+      <div class="phases"><span class="ph" data-p="0">WIND-UP</span><span class="ph" data-p="1">RELEASE</span><span class="ph" data-p="2">IMPACTO</span><span class="ph" data-p="3">PÓS</span></div>
+    </div>
+    <canvas></canvas>
+    <div class="card-foot"><span class="note">${opt.strengths}</span><span class="pill">${opt.id}</span></div>`;
+  grid.appendChild(card);
+  try{const lab=new Lab(card.querySelector('canvas'),opt);lab.card=card;labs.push(lab);}catch(e){console.error(e);document.getElementById('err').style.display='block';document.getElementById('err').textContent='Erro: '+e.message;}
+}
+
+let view='normal',side=1;
+const btnView=document.getElementById('btn-view'),btnSide=document.getElementById('btn-side');
+btnView.onclick=()=>{view=view==='normal'?'mirror':view==='mirror'?'oblique':'normal';labs.forEach(l=>l.setView(view));btnView.textContent='Câmera: '+(view==='normal'?'normal':view==='mirror'?'espelhada':'oblíqua');};
+btnSide.onclick=()=>{side*=-1;labs.forEach(l=>l.swapSides());btnSide.textContent='Lado: '+(side===1?'A':'B');};
+const btnPlay=document.getElementById('btn-play');
+btnPlay.onclick=()=>{const p=!labs.every(l=>l.playing);labs.forEach(l=>l.playing=p);btnPlay.textContent=p?'Pausar':'Retomar';btnPlay.classList.toggle('on',p);};
+const scrub=document.getElementById('scrub');
+scrub.oninput=()=>{const v=parseFloat(scrub.value);labs.forEach(l=>{l.t=v;l.playing=false;l._hit=false;});};
+const qs=new URLSearchParams(location.search);
+if(qs.has('view')){labs.forEach(l=>l.setView(qs.get('view')));}
+if(qs.has('t')){const v=parseFloat(qs.get('t'));labs.forEach(l=>{l.t=v;l.playing=false;l._hit=false;l.tick();});}
+function phase(t){if(t<WINDUP)return 0;if(t<HIT-.15)return 1;if(t<HIT+.25)return 2;return 3;}
+let prev=performance.now();
+function frame(now){
+  const dt=Math.min(.05,(now-prev)/1000);prev=now;
+  for(const l of labs){
+    if(l.playing)l.engine.resize();
+    const ph=phase(l.t);l.card.querySelectorAll('[data-p]').forEach((el,i)=>el.classList.toggle('on',i===ph));
+  }
+  if(document.activeElement!==scrub)scrub.value=String(Math.min(TOTAL,(labs[0]&&labs[0].t)||0));
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+window.addEventListener('resize',()=>labs.forEach(l=>l.resize()));
+window.__labs=labs;
+window.addEventListener('error',e=>{const el=document.getElementById('err');el.style.display='block';el.textContent='Erro: '+(e.message||e.error);});
+</script>
+</body>
+</html>

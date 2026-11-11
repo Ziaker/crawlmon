@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crawlmon — Notificação de coleta de item (3 opções)</title>
+<style>
+  :root {
+    --ink: #1c1712;
+    --paper: #e8dfc8;
+    --paper-dark: #c9bda0;
+    --green: #9dffb2;
+    --cyan: #66e6ff;
+    --amber: #ffd24a;
+    --red: #c7352a;
+    --bg: #0a0d0c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background:
+      radial-gradient(ellipse at 18% 8%, rgba(48, 95, 77, .35), transparent 42%),
+      radial-gradient(ellipse at 88% 90%, rgba(61, 38, 91, .35), transparent 46%),
+      #080b0a;
+    color: #e9e5d8;
+    font-family: "Segoe UI", Arial, sans-serif;
+    padding: 22px 26px 30px;
+  }
+  header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    max-width: 1600px;
+    margin: 0 auto 18px;
+  }
+  .eyebrow {
+    margin: 0 0 4px;
+    color: #a9c9b4;
+    font: 600 11px/1.2 Consolas, monospace;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+  }
+  h1 {
+    margin: 0;
+    color: #f2eedf;
+    font: 800 clamp(22px, 2.4vw, 34px)/1.05 Georgia, "Times New Roman", serif;
+    letter-spacing: -.02em;
+  }
+  .lede {
+    margin: 6px 0 0;
+    max-width: 760px;
+    color: #aebbb1;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .replay-all {
+    flex: 0 0 auto;
+    border: 1px solid #6d8c78;
+    background: #101812;
+    color: #cfe8d4;
+    padding: 10px 16px;
+    font: 700 11px/1 Consolas, monospace;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 4px 4px 0 #000;
+  }
+  .replay-all:hover { background: #17251b; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+  .option {
+    min-width: 0;
+    background: #0d1210;
+    border: 1px solid #26332a;
+    box-shadow: 0 18px 40px rgba(0,0,0,.35);
+  }
+  .option.selected { border-color: #c9a85a; box-shadow: 0 0 0 1px #c9a85a, 0 18px 40px rgba(0,0,0,.35); }
+  .stage {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse at 50% 120%, rgba(77, 39, 96, .9), transparent 55%),
+      radial-gradient(ellipse at 84% 18%, rgba(19, 75, 59, .65), transparent 42%),
+      linear-gradient(180deg, #080c0b 0%, #0b1612 48%, #1b1122 100%);
+    isolation: isolate;
+  }
+  /* mock forest silhouettes */
+  .stage::before {
+    content: "";
+    position: absolute;
+    inset: 10% -10% 34% -10%;
+    background:
+      radial-gradient(ellipse at 14% 48%, #143126 0 8%, transparent 8.5%),
+      radial-gradient(ellipse at 30% 30%, #123b2b 0 10%, transparent 10.5%),
+      radial-gradient(ellipse at 48% 55%, #0f2c22 0 9%, transparent 9.5%),
+      radial-gradient(ellipse at 67% 25%, #174331 0 11%, transparent 11.5%),
+      radial-gradient(ellipse at 88% 50%, #123428 0 10%, transparent 10.5%);
+    filter: blur(2px);
+    opacity: .85;
+    z-index: -1;
+  }
+  .stage::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg, transparent 55%, rgba(32, 15, 42, .9) 100%),
+      radial-gradient(ellipse at 50% 45%, transparent 45%, rgba(0,0,0,.55) 100%);
+    pointer-events: none;
+  }
+  .hud {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    justify-content: space-between;
+    color: rgba(220, 236, 224, .58);
+    font: 600 8px/1.2 Consolas, monospace;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    z-index: 2;
+    text-shadow: 0 1px 0 #000;
+  }
+  .hud .dot { color: #91ffb1; }
+  .floor {
+    position: absolute;
+    left: -8%;
+    right: -8%;
+    bottom: -18%;
+    height: 43%;
+    background: linear-gradient(180deg, #2d1a39, #1a0f22);
+    transform: perspective(280px) rotateX(56deg);
+    transform-origin: top center;
+    border-top: 1px solid rgba(147, 111, 173, .22);
+    z-index: 1;
+  }
+  .floor::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(90deg, transparent 48%, rgba(120, 87, 140, .18) 49%, transparent 50%),
+      linear-gradient(0deg, transparent 48%, rgba(120, 87, 140, .12) 49%, transparent 50%);
+    background-size: 54px 54px;
+    opacity: .5;
+  }
+  .tree {
+    position: absolute;
+    bottom: 19%;
+    width: 5.5%;
+    height: 64%;
+    background: linear-gradient(90deg, #080706, #211310 42%, #0b0908);
+    border-radius: 40% 40% 0 0;
+    z-index: 0;
+    filter: drop-shadow(8px 0 10px rgba(0,0,0,.55));
+  }
+  .tree.t1 { left: 12%; height: 58%; }
+  .tree.t2 { right: 15%; height: 68%; width: 6.5%; }
+  .tree.t3 { right: 31%; height: 44%; width: 3.5%; opacity: .8; }
+
+  /* ---------- shared notification frame ---------- */
+  .notif {
+    position: absolute;
+    left: 22px;
+    top: 52px;
+    z-index: 4;
+    opacity: 1;
+    will-change: transform, opacity, clip-path;
+  }
+  .notif img {
+    display: block;
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    image-rendering: pixelated;
+  }
+
+  /* ---------- A — PAPER TAG ---------- */
+  .paper {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr) 38px;
+    align-items: center;
+    gap: 11px;
+    width: 300px;
+    padding: 12px 14px 12px 12px;
+    background:
+      linear-gradient(105deg, rgba(255,255,255,.22), transparent 35%),
+      var(--paper);
+    color: var(--ink);
+    border: 2px solid #211b15;
+    box-shadow: 7px 8px 0 rgba(0,0,0,.48);
+    transform: rotate(-1.6deg);
+    clip-path: polygon(0 4%, 2% 0, 98% 1%, 100% 6%, 99% 96%, 96% 100%, 3% 99%, 0 94%);
+  }
+  .paper::before {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    border: 1px solid rgba(58, 45, 31, .22);
+    pointer-events: none;
+  }
+  .paper-icon {
+    display: grid;
+    place-items: center;
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: #2b251d;
+    border: 2px solid #17120e;
+    box-shadow: inset 0 0 0 3px #cbbf9f;
+  }
+  .paper-icon img { width: 40px; height: 40px; }
+  .paper .kicker {
+    color: #7e2b24;
+    font: 800 8px/1.1 Consolas, monospace;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+  }
+  .paper .name {
+    margin-top: 3px;
+    font: 800 22px/.95 Georgia, "Times New Roman", serif;
+    letter-spacing: -.02em;
+    color: #241b13;
+  }
+  .paper .sub {
+    margin-top: 5px;
+    color: #5d5140;
+    font: 600 8px/1.1 Consolas, monospace;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .paper .qty {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 2px solid #7e2b24;
+    border-radius: 50%;
+    color: #7e2b24;
+    font: 800 15px/1 Georgia, serif;
+    transform: rotate(9deg);
+    background: rgba(255,255,255,.22);
+  }
+  .paper.play { animation: paperIn 4.2s ease-in-out 1 forwards; }
+  @keyframes paperIn {
+    0% { transform: translate(-118%, 12px) rotate(-7deg); opacity: 0; }
+    12% { transform: translate(0, 0) rotate(-1.6deg); opacity: 1; }
+    74% { transform: translate(0, 0) rotate(-1.6deg); opacity: 1; }
+    100% { transform: translate(0, 0) rotate(-1.6deg); opacity: 1; }
+  }
+
+  /* ---------- B — SMT UPLINK ---------- */
+  .terminal {
+    width: 318px;
+    background:
+      repeating-linear-gradient(0deg, rgba(124,255,166,.035) 0 1px, transparent 1px 4px),
+      linear-gradient(135deg, #07120c, #06100b 55%, #0a1a10);
+    border: 1px solid #8dffb0;
+    color: var(--green);
+    box-shadow: 0 0 0 1px #07120c, 0 0 22px rgba(92, 255, 143, .16), 7px 8px 0 rgba(0,0,0,.5);
+    clip-path: polygon(0 0, 94% 0, 100% 18%, 100% 100%, 6% 100%, 0 82%);
+    font-family: Consolas, "Courier New", monospace;
+    overflow: hidden;
+  }
+  .terminal::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 3px);
+    mix-blend-mode: screen;
+    pointer-events: none;
+  }
+  .term-top {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 11px 5px;
+    border-bottom: 1px solid rgba(141,255,176,.35);
+    font-size: 8px;
+    letter-spacing: .14em;
+  }
+  .term-top span:first-child { color: #d4ffe0; }
+  .term-body {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) 38px;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 11px 8px;
+  }
+  .term-icon {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border: 1px solid rgba(141,255,176,.6);
+    background: rgba(7, 20, 12, .85);
+    box-shadow: inset 0 0 14px rgba(102,230,255,.12);
+  }
+  .term-icon img { width: 38px; height: 38px; }
+  .terminal .name {
+    color: #ecfff0;
+    font: 700 17px/1.05 Consolas, monospace;
+    letter-spacing: .04em;
+    text-shadow: 0 0 8px rgba(157,255,178,.35);
+  }
+  .terminal .desc {
+    margin-top: 4px;
+    color: #79b78a;
+    font-size: 8px;
+    letter-spacing: .07em;
+  }
+  .terminal .qty {
+    color: var(--cyan);
+    font: 700 20px/1 Consolas, monospace;
+    text-align: right;
+  }
+  .term-foot {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 11px 6px;
+    border-top: 1px solid rgba(141,255,176,.22);
+    color: #6ca97e;
+    font-size: 7px;
+    letter-spacing: .12em;
+  }
+  .term-foot b { color: var(--green); font-weight: 700; }
+  .terminal.play { animation: terminalIn 4.2s steps(1, end) 1 forwards; }
+  @keyframes terminalIn {
+    0% { clip-path: inset(0 100% 0 0); opacity: 0; transform: translateX(-12px); }
+    4% { clip-path: inset(0 0 0 0); opacity: 1; transform: translateX(0); }
+    6% { opacity: .35; }
+    7% { opacity: 1; }
+    12% { opacity: .75; }
+    13% { opacity: 1; }
+    76% { clip-path: inset(0 0 0 0); opacity: 1; transform: translateX(0); }
+    82% { opacity: .4; }
+    84% { opacity: 1; }
+    100% { clip-path: inset(0 0 0 0); opacity: 1; transform: translateX(0); }
+  }
+
+  /* ---------- C — COMIC BURST ---------- */
+  .comic {
+    width: 298px;
+    padding: 12px 13px;
+    display: grid;
+    grid-template-columns: 62px minmax(0,1fr) 34px;
+    align-items: center;
+    gap: 9px;
+    background:
+      radial-gradient(circle at 18% 15%, rgba(255,255,255,.32) 0 2px, transparent 2.5px),
+      radial-gradient(circle at 72% 80%, rgba(0,0,0,.13) 0 1.5px, transparent 2px),
+      var(--amber);
+    background-size: 12px 12px, 9px 9px, 100% 100%;
+    border: 4px solid #130f0b;
+    color: #130f0b;
+    box-shadow: 8px 9px 0 #000, 12px 14px 0 rgba(0,0,0,.28);
+    transform: rotate(1.8deg);
+    clip-path: polygon(2% 4%, 9% 0, 18% 5%, 27% 0, 38% 4%, 49% 0, 60% 5%, 72% 0, 83% 4%, 93% 0, 100% 7%, 97% 18%, 100% 29%, 97% 42%, 100% 55%, 97% 68%, 100% 80%, 96% 93%, 86% 100%, 73% 96%, 61% 100%, 48% 96%, 36% 100%, 23% 96%, 10% 100%, 1% 94%, 4% 82%, 0 70%, 3% 57%, 0 44%, 3% 31%, 0 18%);
+  }
+  .comic::before {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    border: 2px solid rgba(19,15,11,.75);
+    clip-path: inherit;
+    pointer-events: none;
+  }
+  .comic-icon {
+    display: grid;
+    place-items: center;
+    width: 57px;
+    height: 57px;
+    border-radius: 50%;
+    background: #fff7dc;
+    border: 4px solid #130f0b;
+    transform: rotate(-5deg);
+    box-shadow: 3px 3px 0 rgba(0,0,0,.35);
+  }
+  .comic-icon img { width: 42px; height: 42px; }
+  .comic .got {
+    font: 900 22px/.82 "Arial Black", Impact, sans-serif;
+    letter-spacing: -.05em;
+    text-transform: uppercase;
+    color: #130f0b;
+    text-shadow: 2px 2px 0 #fff2c2;
+    transform: rotate(-2deg);
+  }
+  .comic .name {
+    margin-top: 3px;
+    font: 900 13px/1 "Arial Black", Impact, sans-serif;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    color: #efeee2;
+    -webkit-text-stroke: 3px #130f0b;
+    paint-order: stroke fill;
+  }
+  .comic .sub {
+    margin-top: 4px;
+    font: 800 7px/1 Consolas, monospace;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: #4a3c1a;
+  }
+  .comic .qty {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    background: var(--red);
+    color: #fff7dc;
+    border: 3px solid #130f0b;
+    border-radius: 50%;
+    font: 900 14px/1 "Arial Black", sans-serif;
+    transform: rotate(8deg);
+  }
+  .comic.play { animation: comicPop 4.2s cubic-bezier(.2, .8, .2, 1) 1 forwards; }
+  @keyframes comicPop {
+    0% { transform: scale(.42) rotate(-8deg); opacity: 0; }
+    10% { transform: scale(1.06) rotate(2.4deg); opacity: 1; }
+    15% { transform: scale(.98) rotate(1.8deg); opacity: 1; }
+    19% { transform: scale(1) rotate(1.8deg); opacity: 1; }
+    74% { transform: scale(1) rotate(1.8deg); opacity: 1; }
+    100% { transform: scale(1) rotate(1.8deg); opacity: 1; }
+  }
+
+  /* ---------- captions ---------- */
+  .meta {
+    padding: 14px 15px 15px;
+    border-top: 1px solid #26332a;
+    background: #0f1512;
+  }
+  .meta-head {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 5px;
+  }
+  .letter {
+    display: grid;
+    place-items: center;
+    width: 21px;
+    height: 21px;
+    background: #d7cba9;
+    color: #17130e;
+    font: 800 11px/1 Consolas, monospace;
+  }
+  .selected-label { margin-left: auto; color: #c9a85a; font: 800 7px/1 Consolas, monospace; letter-spacing: .14em; }
+  .meta h2 {
+    margin: 0;
+    color: #e7e3d4;
+    font: 700 14px/1.15 Georgia, serif;
+  }
+  .meta p {
+    margin: 0 0 10px;
+    color: #91a396;
+    font-size: 11px;
+    line-height: 1.42;
+  }
+  .meta p b { color: #c9d8cd; font-weight: 700; }
+  .replay {
+    border: 1px solid #3d5546;
+    background: #121c16;
+    color: #b9d4c0;
+    padding: 7px 11px;
+    font: 700 9px/1 Consolas, monospace;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .replay:hover { background: #1a2a20; }
+  .hint {
+    max-width: 1600px;
+    margin: 16px auto 0;
+    color: #73857a;
+    font: 500 10px/1.5 Consolas, monospace;
+    letter-spacing: .04em;
+  }
+  .hint b { color: #a9c9b4; }
+  @media (max-width: 1100px) {
+    .grid { grid-template-columns: 1fr; max-width: 620px; }
+    header { align-items: flex-start; flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .notif { animation: none !important; opacity: 1; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <p class="eyebrow">Crawlmon · UI / overworld 3D</p>
+    <h1>Notificação de coleta de item</h1>
+    <p class="lede">Três direções visuais para o feedback de pickup. Todas usam o ícone real do item; no jogo, a A nasce do impacto do orbe. Clique em <b>Repetir</b> para reencenar a entrada.</p>
+  </div>
+  <button class="replay-all" id="replayAll">↻ Repetir todas</button>
+</header>
+
+<main class="grid">
+  <!-- A -->
+  <section class="option selected">
+    <div class="stage">
+      <div class="hud"><span><span class="dot">●</span> MURKY FOREST / EXPEDITION</span><span>ITEMS 02</span></div>
+      <div class="tree t1"></div><div class="tree t2"></div><div class="tree t3"></div>
+      <div class="floor"></div>
+      <div class="notif paper">
+        <div class="paper-icon"><img src="icons/amulet.png" alt="Amulet"></div>
+        <div>
+          <div class="kicker">Item collected</div>
+          <div class="name">AMULET</div>
+          <div class="sub">AMULET · HELD</div>
+        </div>
+        <div class="qty">+1</div>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="meta-head"><span class="letter">A</span><h2>Paper Tag — Expedição</h2><span class="selected-label">ESCOLHIDA</span></div>
+      <p><b>O que muda:</b> etiqueta de papel rasgada, tinta escura e selo de cota. No jogo, o card fica invisível até o orbe atingir o ícone e então cresce desse ponto. É a opção mais próxima dos cards de diálogo (D-1090/D-1094).</p>
+      <button class="replay">↻ Repetir A</button>
+    </div>
+  </section>
+
+  <!-- B -->
+  <section class="option">
+    <div class="stage">
+      <div class="hud"><span><span class="dot">●</span> MURKY FOREST / UPLINK</span><span>ITEM 01/01</span></div>
+      <div class="tree t1"></div><div class="tree t2"></div><div class="tree t3"></div>
+      <div class="floor"></div>
+      <div class="notif terminal">
+        <div class="term-top"><span>ITEM ACQUIRED</span><span>[ 01 ]</span></div>
+        <div class="term-body">
+          <div class="term-icon"><img src="icons/super-potion.png" alt="Super Poção"></div>
+          <div>
+            <div class="name">SUPER POTION</div>
+            <div class="desc">CONSUMABLE // RESTORE 60 HP</div>
+          </div>
+          <div class="qty">+1</div>
+        </div>
+        <div class="term-foot"><span>PRESS <b>[E]</b> TO ACKNOWLEDGE</span><span>INV 04</span></div>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="meta-head"><span class="letter">B</span><h2>SMT Uplink — Terminal</h2></div>
+      <p><b>O que muda:</b> placa preta recortada, verde-fósforo e ciano, scanlines e “ITEM ACQUIRED”. Entra por um wipe lateral com flicker curto. Puxa o visual SMT III e conversa com a UI de status.</p>
+      <button class="replay">↻ Repetir B</button>
+    </div>
+  </section>
+
+  <!-- C -->
+  <section class="option">
+    <div class="stage">
+      <div class="hud"><span><span class="dot">●</span> MURKY FOREST / TOON</span><span>PICKUP!</span></div>
+      <div class="tree t1"></div><div class="tree t2"></div><div class="tree t3"></div>
+      <div class="floor"></div>
+      <div class="notif comic">
+        <div class="comic-icon"><img src="icons/potion.png" alt="Poção"></div>
+        <div>
+          <div class="got">GOT IT!</div>
+          <div class="name">POTION</div>
+          <div class="sub">CONSUMABLE · 30 HP</div>
+        </div>
+        <div class="qty">+1</div>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="meta-head"><span class="letter">C</span><h2>Comic Burst — Toon</h2></div>
+      <p><b>O que muda:</b> explosão amarela com meio-tom, contorno grosso e “GOT IT!”. Entra com pop e overshoot, como um carimbo de quadrinhos. É a opção mais expressiva e a que mais contrasta com o cenário escuro.</p>
+      <button class="replay">↻ Repetir C</button>
+    </div>
+  </section>
+</main>
+
+<p class="hint"><b>Onde fica:</b> todas foram ancoradas no canto superior esquerdo, abaixo da faixa de ajuda. <b>Entrada:</b> ~0,5 s; depois ficam visíveis para comparar. <b>Estado:</b> a A está implementada no HUD 3D do lab (D-1156), com orbe de coleta; B e C ficam como referência.</p>
+
+<script>
+  function replay(notif) {
+    notif.classList.remove("play");
+    void notif.offsetWidth;
+    notif.classList.add("play");
+  }
+  document.querySelectorAll(".replay").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const notif = btn.closest(".option").querySelector(".notif");
+      replay(notif);
+    });
+  });
+  document.getElementById("replayAll").addEventListener("click", () => {
+    document.querySelectorAll(".notif").forEach(replay);
+  });
+</script>
+</body>
+</html>

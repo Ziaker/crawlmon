@@ -1,0 +1,15 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Crawlmon · Drain Spear Lab</title><link rel="stylesheet" href="style.css"></head><body>
+<canvas id="stage"></canvas><div id="error" hidden></div>
+<header><strong>CRAWLMON</strong><span>DRAIN SPEAR <small>VISUAL LAB · move_drain_spear</small></span><div id="phase">PREPARAÇÃO</div></header>
+<div id="battlelog"><b>BATTLELOG</b><div id="entries"></div></div>
+<div id="targetHud" class="fighter target"><b>ALVO</b><div class="badges"></div></div><div id="actorHud" class="fighter actor"><b>ATACANTE</b><div class="badges"></div></div>
+<aside><div class="heading"><b>CONTROLES</b><button id="collapse">−</button></div><div id="controls">
+<label>Cenário <select id="scenario"><option value="A">A · Sem buffs</option><option value="B">B · ATK +1 e escudo</option><option value="C">C · Imunidade mágica</option><option value="D">D · Evade</option><option value="E">E · Recuo</option><option value="F">F · Alvo se aproxima</option><option value="G">G · Espelhado</option><option value="H">H · Anatomias diferentes</option></select></label>
+<label>Alternativa visual <select id="variant"><option value="0">1 · Extensão etérea</option><option value="1">2 · Impulso segmentado</option><option value="2">3 · Linha prismática</option></select></label>
+<div class="buttons"><button id="play">Pause</button><button id="restart">Restart</button><button id="replay">Replay</button><button id="next">Próxima fase</button></div>
+<label>Velocidade <select id="speed"><option>.25</option><option>.5</option><option selected>1</option><option>2</option></select></label>
+<label>Tempo <input id="scrub" type="range" min="0" max="3.6" step="0.005" value="0"><output id="time">0.00 s</output></label>
+<div class="marks">0 formação · 1,0 movimento · 1,65 estocada · 2,0 contato · 2,55 dissipação · 3,6 fim</div>
+<label><input id="mirror" type="checkbox"> Espelhar atacante</label><label><input id="buffs" type="checkbox"> Buffs roubáveis</label><label><input id="evade" type="checkbox"> Evade</label><label><input id="interrupt" type="checkbox"> Interrupção</label><label><input id="range" type="checkbox"> Mostrar faixa 15,3–17,3</label><label><input id="freecam" type="checkbox"> Câmera livre (debug)</label><label>Partículas <select id="quality"><option value="high">Alta</option><option value="low">Baixa</option></select></label>
+<div id="readout"></div><p>Modelos substitutos · tempos de wind-up/execução/recovery provisórios · alternativas de contato experimentais.</p></div></aside>
+<script type="module" src="main.js"></script></body></html>

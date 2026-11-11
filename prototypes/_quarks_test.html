@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#050d16}canvas{width:800px;height:500px;display:block}</style></head>
+<body>
+<canvas id="c"></canvas>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/babylon.quarks@0.30.0/dist/babylon.quarks.umd.min.js"></script>
+<script>
+const canvas=document.getElementById('c');
+const engine=new BABYLON.Engine(canvas,true);
+const scene=new BABYLON.Scene(engine);
+scene.clearColor=new BABYLON.Color4(0.02,0.05,0.08,1);
+const cam=new BABYLON.FreeCamera('cam',new BABYLON.Vector3(0,3,10),scene);
+cam.setTarget(new BABYLON.Vector3(0,1,0));
+new BABYLON.HemisphericLight('h',new BABYLON.Vector3(0,1,0),scene);
+const ground=BABYLON.MeshBuilder.CreateGround('g',{width:20,height:20},scene);
+const gm=new BABYLON.StandardMaterial('gm',scene);gm.diffuseColor=new BABYLON.Color3(.05,.12,.18);ground.material=gm;
+const tc=document.createElement('canvas');tc.width=tc.height=64;const tx=tc.getContext('2d');
+const gr=tx.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.4,'rgba(255,255,255,.7)');gr.addColorStop(1,'rgba(255,255,255,0)');
+tx.fillStyle=gr;tx.fillRect(0,0,64,64);
+const tex=new BABYLON.Texture(tc.toDataURL(),scene);
+console.log('BABYLON',BABYLON.Engine.Version,'Q?',typeof BabylonQuarks, BabylonQuarks&&Object.keys(BabylonQuarks).filter(k=>/Emitter|Value|Color|RenderMode|ParticleSystem|Batched/.test(k)).slice(0,30));
+const Q=BabylonQuarks;
+const batch=new Q.BatchedRenderer('particles',scene);
+const ps=new Q.ParticleSystem({
+  scene,duration:2,looping:true,
+  startLife:new Q.IntervalValue(1,2),
+  startSpeed:new Q.IntervalValue(2,5),
+  startSize:new Q.IntervalValue(.2,.5),
+  startColor:new Q.ConstantColor(new BABYLON.Color4(1,.6,.2,1)),
+  emissionOverTime:new Q.ConstantValue(60),
+  shape:new Q.SphereEmitter({radius:.3}),
+  renderMode:Q.RenderMode.BillBoard,
+  texture:tex,transparent:true,blendMode:BABYLON.Constants.ALPHA_ADD
+});
+batch.addSystem(ps);
+scene.onBeforeRenderObservable.add(()=>batch.update(engine.getDeltaTime()/1000));
+engine.runRenderLoop(()=>scene.render());
+window.addEventListener('resize',()=>engine.resize());
+</script>
+</body></html>
