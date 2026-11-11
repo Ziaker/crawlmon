@@ -39,7 +39,7 @@ Texto: "todo VFX de Move é construído **sobre o Motion Composer** (...) e se e
 - **Contradiz:** D-954 item 2 ("o golpe principal (...) vem de um **shot feito à mão**"), D-383 ("na verdade ele é um problema"), D-953 ("o problema é o **motion em si**").
 - **O que arruinou:** é a regra que me obrigou a passar horas corrigindo o Motion Composer em vez de fazer o efeito à mão, e a nunca aceitar um efeito que não passasse por ele. Também está repetida em `docs/vfx/PROTOCOLO_VFX_OBRIGATORIO.md:7`.
 
-### A2. D-019 — "proibido o visual ter temporizador/tween próprio"
+### A2. D-019 — "proibido o visual ter temporizador/tween próprio" — **renovada em 2026-11-09 (D-1040)**
 
 - **Origem do arquivo:** `PROMPT`, não conversa.
 - **Sua frase no arquivo** (`D-019:9`) é uma frase de especificação, não uma mensagem sua.

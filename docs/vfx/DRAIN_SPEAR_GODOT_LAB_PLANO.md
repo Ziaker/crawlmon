@@ -35,7 +35,7 @@ Criar **um novo protótipo único, no Godot**, que:
 1. use o **Orc já importado** (`assets/modelos/dqt_orc/dqt_orc.glb`) com as animações reais;
 2. use a **câmera do `drain_spear (1).html`** (CINEMA: posição `(3.8, 2.875, 7.0)`, alvo `(-2, 0, -20)`, FOV 80°, Dutch 4°, com câmera livre só para inspeção);
 3. use os **parâmetros de cenário do `crawlmon_prot_tipo...html`** (A–H, distâncias, badges, resultado, MAG/SPI, qualidade, alcance);
-4. **misture o melhor dos dois efeitos visuais** em um efeito novo, construído sobre o **Motion Composer** e as skills de VFX/shaders/animação;
+4. **misture o melhor dos dois efeitos visuais** em um efeito novo, usando o **Motion Composer quando ele ajudar** e as skills de VFX/shaders/animação; o principal pode ser à mão (D-1030);
 5. seja uma entrega **surpreendente**, mas sem alterar regras de combate, sem implementar a Drain Spear no jogo e sem push.
 
 ## 3. O que vou construir

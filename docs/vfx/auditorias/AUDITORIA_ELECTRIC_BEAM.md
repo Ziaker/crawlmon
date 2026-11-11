@@ -43,7 +43,7 @@ O que funcionou bem: decisões registradas antes do código (D-955 a D-985), ví
 | Regra | Situação | Observação |
 |---|---|---|
 | **D-235 / AGENTS §7** (independente de personagem e lado) | **Parcial** | Nada usa nome, espécie ou `is_player`. Testado com Abra e Slime como atacantes, nos dois lados. **Não testado**: atacante grande, alvo grande, vários alvos reais. As três buscas por "modelo mais próximo" (seção 4.2) podem pegar o modelo errado com corpos próximos. |
-| **D-308** (sobre o Motion Composer) | **Violada na prática** | O Composer V1.11 ganhou o preset `electric_beam_effect`, mas o efeito final **não desenha nada com ele** (`USE_COMPOSER_SPARKS = false`); o painter ainda é criado. D-954 permite o principal à mão, mas o secundário deveria passar pelo Composer. Tudo que foi adicionado depois (flipbooks, rastro, pilar, faíscas laterais) é código à mão. |
+| **D-308** (sobre o Motion Composer) | **Resolvido por D-1030** | O Composer V1.11 ganhou o preset `electric_beam_effect`, mas o efeito final **não desenha nada com ele** (`USE_COMPOSER_SPARKS = false`). Isso deixou de ser violação: D-1030 torna o Composer **auxiliar e opcional**; D-954 já permitia o principal à mão. O preset e o painter sem uso continuam dívida técnica, não regra. |
 | **D-956** (seis fases) | **Ok, com ressalva** | Start, Wind-up, Release, Trajeto, Impacto existem. Pós-impacto virou "resolução do impacto" por decisão do criador (D-973); a classe base ainda tem `POST_LEN` próprio, o que é confuso. |
 | **D-957** (sem Glow) | **Ok** | Brilho falso por sprites aditivos. |
 | **D-019** (efeito não mexe no tempo do combate) | **Ok** | O efeito só lê os tempos. A pausa/tremor de impacto foi proposta e não feita. |
@@ -56,7 +56,7 @@ O que funcionou bem: decisões registradas antes do código (D-955 a D-985), ví
 
 ## 4. Auditoria do código
 
-Arquivos principais: `scripts/combat/fx/projectile_lib/electric_beam_vfx.gd` (869 linhas), `projectile_lib_vfx.gd` (base), `fx_impacts.gd`, `fx_projectiles.gd`, `fx_telegraph.gd`, `battle.gd` (STUN), `skill.gd` (ficha).
+Arquivos principais: `scripts/vfx/combat/projectile_lib/electric_beam_vfx.gd` (869 linhas), `projectile_lib_vfx.gd` (base), `fx_impacts.gd`, `fx_projectiles.gd`, `fx_telegraph.gd`, `battle.gd` (STUN), `skill.gd` (ficha).
 
 ### 4.1 Código morto e restos
 
@@ -96,7 +96,7 @@ Sala de VFX (`vfx_room.gd`): `--clean`, `--cam`, `--stun=always|never`, `--targe
 
 1. Slime aliado do grupo DQT com **0 MP** em batalha `--dqt`: não paga o Electric Beam (8 MP) nem o Bubble Shot (5 MP).
 2. Vista normal com o alvo a ~37 m: pilar, anel, estrelas e texto ficam pequenos. A regra de metros fixos (D-308) e o pedido de legibilidade estão em tensão; falta uma decisão (ex.: a câmera de impacto enquadrar o contato, ou escala mínima na tela).
-3. D-308: decidir se o secundário volta ao Composer ou se a biblioteca de projéteis fica oficialmente fora dele.
+3. **Resolvido por D-1030:** o Composer é auxiliar; o secundário pode ficar à mão. Não é mais uma decisão pendente.
 4. Tempos do move (carga segurada e viagem) a decidir na mecânica.
 5. Vários alvos no combate (D-007/D-009).
 6. Sincronia visual × mecânica: o criador disse que faria "depois de finalizar a parte mecânica".
@@ -113,7 +113,7 @@ Sala de VFX (`vfx_room.gd`): `--clean`, `--cam`, `--stun=always|never`, `--targe
 
 **Ao construir**
 5. Receber atacante e alvo do combate; nunca adivinhar pelo "modelo mais próximo".
-6. Usar o Motion Composer para o secundário ou registrar, antes, a decisão de não usar (D-308).
+6. Se usar o Motion Composer no secundário, registrar; se não usar, o caminho à mão é válido (D-1030).
 7. Uma mudança visível por entrega (≥ 3–4 quadros a 30 fps).
 8. Remover o que foi substituído na mesma entrega (constantes, funções, nós).
 

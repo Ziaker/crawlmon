@@ -47,6 +47,7 @@ Ela **não** substitui as sete fases da biblioteca e não foi usada para encurta
 | `01_formas.md` | LIB 01–05: vórtice, tornado, fita, hélice, erosão |
 | `02_movimento.md` | LIB 06–12: thrust, speed lines, trail, aura, poeira, frenagem, arranhão |
 | `03_impacto.md` | LIB 13–16: shockwave, coroa, blast cone, fratura |
+| `WAR_CRY_REFERENCIAS.md` | **War Cry — referências e 3 direções visuais (D-308); nada aprovado** |
 | `04_complementos.md` | LIB 17–20: flipbook, faíscas, detritos, slash |
 | `refs.json` | As 100 fichas da primeira passada (a entrada da coroa está desatualizada) |
 | `crown_frames/` | Quadros extraídos da segunda passada |

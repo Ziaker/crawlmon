@@ -73,7 +73,7 @@ A troca modular está **publicamente documentada em packs comerciais e em engine
 - **Riot:** o guia de estilo diz que VFX deve comunicar espaço de jogo, poder e função, sem distrair — [Riot, resumo da busca](https://nexus.leagueoflegends.com/en-us/2017/10/dev-leagues-vfx-style-guide/) (a página agora redireciona para a home; não consegui ler o texto).
 - **Palestra Riot/Blizzard:** cobre fundamentos adaptáveis a qualquer gênero ou estilo, com casos de League of Legends e Hearthstone — [GDC Vault](https://www.gdcvault.com/play/1024439/Visual-Effects-Bootcamp-Artistic-Principles). Não encontrei confirmação de que trate de templates.
 - **Pixel Dreamer (Godot):** cada efeito é uma `.tscn`; há um helper para instanciar, escalar, inclinar e mirar, e `set_intensity()` — [fórum Godot](https://forum.godotengine.org/t/1-187-vfx-for-godot-4-drag-and-drop-presets-effect-browser-free-web-demo/146113). Afirmação do vendedor.
-- **Contexto do projeto:** D-954 põe o Composer só no secundário; o protocolo D-308 diz que todo VFX de Move é sobre o Composer. D-955 registra esse conflito como aberto.
+- **Contexto do projeto:** D-954 põe o Composer no secundário; D-1030 (2026-11-09) o torna **auxiliar e opcional**, resolvendo o antigo conflito com o protocolo D-308.
 
 ### Inferências
 Hipótese de estrutura única, para o criador avaliar:

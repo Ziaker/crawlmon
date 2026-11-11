@@ -5,6 +5,8 @@
 - **Origem:** pedido direto do criador, ao ser perguntado o que fazer com o texto colado (protocolo VFX + proposta D-274).
 - **Estado:** registrada; **nenhum código escrito**; ambiguidades abaixo em aberto.
 
+> **Nota D-1030 (2026-11-09):** o Motion Composer é **auxiliar e opcional**. As menções abaixo a "usar o MC" e a "melhorar o MC até conseguir" são históricas; não são gate. O efeito pode ser feito à mão.
+
 ## Frase literal do criador
 
 > refazz todos do zero, use as skills, shaders do godot, o MC, quero qualidade visual extrema, se não conseguir me dar uma qualidade visual digna, então melhore o MC até conseguir

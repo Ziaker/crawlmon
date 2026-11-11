@@ -12,7 +12,7 @@ Resposta à pergunta: “Para este pedido, o HTML com Quarks.js continua sendo a
 
 ## Decisão
 
-A entrega permanece HTML com Quarks.js. Para este pedido, há exceção aos requisitos de construir sobre o Motion Composer e validar na batalha Godot. Preservar as demais regras: independência dos participantes, relógio único, inspeção das duas vistas, vídeo e aprovação artística. Nenhuma integração ao jogo Godot autorizada.
+A entrega permanece HTML com Quarks.js. Para este pedido, há exceção aos requisitos de construir sobre o Motion Composer e validar na batalha Godot. **Com D-1030, o Composer é auxiliar e opcional**, então a exceção é histórica; não há mais obrigação de usá-lo. Preservar as demais regras: independência dos participantes, relógio único, inspeção das duas vistas, vídeo e aprovação artística. Nenhuma integração ao jogo Godot autorizada.
 
 ## Ambiguidades
 

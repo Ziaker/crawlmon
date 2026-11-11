@@ -31,7 +31,7 @@ O criador não consegue pedir efeitos com precisão e os resultados anteriores f
 
 ### 3.1 Princípio
 
-**Herói por shot; secundário pelo Composer.**
+**Herói por shot; Composer opcional no secundário (D-1030).**
 
 - **Herói:** silhueta do ataque, contato, movimento do corpo, câmera, materiais principais e impacto. Autorado à mão, com referência aprovada.
 - **Secundário:** poeira, brasas, fumaça, cacos, detritos, rastros, ondas, campos e timing de fases. Pode usar o MC.

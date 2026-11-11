@@ -23,3 +23,7 @@ Respostas: o clipe é o **"down"** ("Sim, o down", mesmo sendo reservado ao K.O.
 ## Estado
 
 Implementado para revisão (`fx_dodge.gd`, `battle_fx.gd`, `battle_scene.gd`, `battle.gd`, `battle_evade.gd`).
+
+## Extensão posterior — D-1166 (2026-11-11)
+
+O criador relatou que, nos modelos Pokémon, o clipe `down` quase não move o corpo e o dodge errado parecia não ter indicação visual. A D-1166 mantém o `down` e acrescenta **WHIFF**, **poeira** e uma **queda assistida por código** quando o clipe não derruba o corpo. A D-1167 acrescenta o fallback para o clipe **`damage`** quando não há queda utilizável. A exceção do item 4 (“se não tiver `down`, nada toca”) fica ampliada: agora sempre há WHIFF + poeira + queda assistida. Ver `D-1166-dodge-errado-queda-whiff-poeira.md` e `D-1167-fallback-damage-quando-down-nao-cai.md`.

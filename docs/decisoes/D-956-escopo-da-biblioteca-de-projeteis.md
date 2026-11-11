@@ -26,7 +26,7 @@
 ## Perguntas refeitas (2026-11-07)
 
 - **Pausa do VFX (D-953):** "Sim, pausa encerrada". O assistente propõe o primeiro elemento e só constrói depois da aprovação, um por vez.
-- **Papel do Motion Composer:** "D-954: principal à mão". A cabeça do projétil, o trajeto e o impacto são feitos à mão, com malhas, flipbooks e shaders. O Composer faz o secundário (poeira, brasas, rastros) e o timing. Para esta biblioteca, isso prevalece sobre a regra-mãe do protocolo D-308 ("tudo sobre o Composer"); falta atualizar o protocolo.
+- **Papel do Motion Composer:** "D-954: principal à mão". A cabeça do projétil, o trajeto e o impacto são feitos à mão, com malhas, flipbooks e shaders. O Composer é **auxiliar e opcional** (D-1030); quando usado, faz o secundário (poeira, brasas, rastros) e o timing. O protocolo foi atualizado por D-1030.
 
 ## Em aberto (histórico)
 

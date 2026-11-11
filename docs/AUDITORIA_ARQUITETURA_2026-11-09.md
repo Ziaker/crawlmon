@@ -45,3 +45,25 @@
 - `test_tackle_vfx` e `test_abra_prototype_vfx` verdes depois da atualização.
 - `test_bubble_shield`, `test_body_alignment` e `test_melee_timers_karate_brick` seguem como pendências de teste, não de regra.
 - Nenhum commit e nenhum push.
+
+## Reauditoria — 2026-11-10
+
+- **HEAD de referência:** `1f41d05b` (`wip(architecture): checkpoint of Move/Character packages, VFX split and tests`); o relatório anterior citava `2bec47e9`/`ef48c3ee`.
+- **Item 1 (pacote parcial):** 38 pastas com `move.tres`; o piloto **Media** já tem `behavior.gd` e `icon.svg`; os outros 37 só têm `move.tres`; **0** `vfx.gd`; **1** `.tres` usa `behavior_script` (Media); **0** usam `vfx_script`.
+- **Item 2 corrigido:** `MoveData.vfx_script` **já é lido** por `MoveVfxRegistry.move_vfx_for()` (instancia e cacheia `MoveVfx`). O que falta: nenhum `.tres` usa, nenhum caminho de combate chama `move_vfx_for` (só `test_content_contract`) e não há piloto visual. `MoveVfx` tem `windup/travel/tick/impact/finish/cleanup`, mas não release/strike/return explícitos.
+- **Item 3 corrigido:** o `match move_id` principal de impacto está em `move_vfx_registry.gd` (linhas 139–181). `fx_projectiles.gd` ainda tem `match _move_id` (linha 137) e vários `if _move_id`; `fx_impacts.gd` ainda tem `match mid` em `_status_impact_move` (linha 391) e `match element` (linha 487). A substância continua: há coreografia específica por `move_id`.
+- **Itens 4, 5 e 6 confirmados:** `DirAccess.get_files_at` só no reload da sala (linhas 997/1010); `vfx_room_analysis.gd` acessa `_landing`/`_returning`/`_status_pause` (429–431); aliases PT/EN em `battle_space.gd`/`MoveBehaviorRegistry`; `CharacterFactory` cai para Gible com `push_warning` (14–16). Não há `export_presets.cfg`; a main scene é `scenes/exploration.tscn`.
+- **Item 7 detalhado:** `test_bubble_shield` (não rastreado) falha em `Abra possui Bubble Shield`; a party atual é Abra + Pancham, mas **nenhum loadout** inclui `bubble_shield`. `test_body_alignment` (não rastreado) falha no parse por **quatro** APIs ausentes: `body_info_node`, `body_bounds`, `body_front_node`, `move_impact_is_around`.
+- **Item 8 corrigido:** a falha reproduzida não era só log antigo. A party canônica atual é Abra + Pancham; **Gible não está nela**, então `_unit("Gible")` retornava `-1` e o teste media o atacante anteriormente selecionado (Cyclops/Orc, com `travel_extra`), produzindo 1,17/0,81 s contra 0,36/0,57 s. O log de uma medição “Gible->Abra” mostrava um único ciclo de **Cyclops**. O teste passou a injetar Gible pelo spawn de debug e recalcular `_units`.
+- **Log antigo:** o `_retire_scene` do HEAD já tentava desconectar a `_battle` antiga com o filtro `cb.get_object() == self`; para garantir que as conexões saiam sem depender de como o `Callable` da lambda reporta o objeto, troquei pela desconexão direta. O loop de combatentes existente continua inócuo porque `_load_battle` limpa `_units` antes de `_retire_scene`, mas não é a causa das linhas de fase.
+- **Validação desta reauditoria:** 28/28 testes verdes (sem `[FAIL]`/`SCRIPT ERROR`); `run_agent_combat_tests.py` 16/16; `test_melee_timers_karate_brick` 3/3 verde após a correção; `test_bubble_shield` e `test_body_alignment` continuam vermelhos, como esperado.
+- **Alterações desta rodada:** `tests/vfx/test_melee_timers_karate_brick.gd` (Gible de teste) e `scripts/debug/vfx_room.gd` (`_retire_scene`). Nenhuma regra, dano, tempo, VFX ou visual alterado. Sem commit e sem push.
+
+### Auditoria da reauditoria — 2026-11-10
+
+- **HEAD atual:** `cc41091f`; a seção anterior foi escrita em `1f41d05b`, e outra sessão commitou depois.
+- **Correção do melee confirmada:** `test_melee_timers_karate_brick` passou **3/3** execuções sem `--fixed-fps`; a injeção de Gible pelo spawn de debug e a desconexão direta dos sinais da `_battle` antiga funcionam.
+- **Suíte 16/16 confirmada** e contratos `test_content_catalog`/`test_content_contract`, `test_tackle_vfx` e `test_abra_prototype_vfx` verdes.
+- **28/28 não reproduzido:** em uma execução da lista, `test_d160_d164_combat_fixes` falhou em `KO com Confusion` (`dot 0.00, dist 0.00`); em 3 execuções isoladas, 1 falhou em Tackle (`dot -0.99, dist 0.90`) e 2 passaram. É uma intermitência independente da correção do melee, provavelmente de timing/retry do próprio teste; não foi alterada.
+- **Nenhuma mudança de regra/VFX** foi feita nesta auditoria; `test_bubble_shield` e `test_body_alignment` continuam não rastreados e vermelhos, como esperado.
+- A Fase 3 (ícone por Move, piloto Media) está no worktree, **não commitada**, aguardando aprovação visual.

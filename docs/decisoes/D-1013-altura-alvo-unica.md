@@ -20,3 +20,5 @@
 ## Estado
 
 Implementado para revisão.
+
+> **D-1034 (2026-11-09):** a altura de **1,2 m** valia também para o trio DQT; essa parte foi **superada por D-1043** após o teste visual. **D-1043:** o DQT usa as proporções dos perfis (Orc 2,1 / Slime 1,4 / Cyclops 2,5 com teto), enquanto os Pokémon comuns continuam em 1,2 m. **D-1046:** o criador pediu **+30% em todos**; o alvo dos Pokémon comuns passou a **1,56 m**, com teto de 2,5 m para os DQT. **D-1047:** o criador pediu para reverter tudo; o jogo voltou à escala anterior, mantendo só **Cyclops 3,22 m** e **Slime 1,40 m** pelos perfis DQT. **D-1053:** o Cyclops foi ajustado para 3,58 m; **D-1054:** depois para **4,00 m**.

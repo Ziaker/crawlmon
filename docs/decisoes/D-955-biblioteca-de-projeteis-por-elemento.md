@@ -56,7 +56,7 @@
 
 - **D-308 / protocolo VFX:** quatro fases obrigatórias (Wind-up, Release, Trajeto, Impacto). Esta decisão pede seis para a biblioteca. Falta confirmar se as seis substituem as quatro em todo VFX de projétil ou só na biblioteca.
 - **D-953:** pós-wind-up (carga segurada) como sub-fase e VFX **pausado** até o pipeline ser definido. Falta confirmar se este pedido encerra a pausa quando a pesquisa acabar.
-- **D-954 x protocolo D-308:** Composer só no secundário x todo VFX de Move sobre o Composer. Falta confirmar qual vale para a biblioteca.
+- **D-954 x protocolo D-308:** **resolvido por D-1030:** o Composer é auxiliar e opcional; a biblioteca pode fazer o principal à mão e, se quiser, o secundário no Composer.
 - **`docs/vfx/referencias/README.md`:** sete fases de biblioteca anteriores, com Prelude. Esta decisão não cita Prelude.
 - **D-009 / D-077:** AoE de projétil é onda única, com geometria por Move; "múltiplos alvos como placeholder" ainda não define a forma.
 - **D-308 item 6 / D-334:** tamanho fixo no mundo; **D-308 item 7:** definição de Move poderoso pendente.

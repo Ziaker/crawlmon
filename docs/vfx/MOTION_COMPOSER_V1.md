@@ -1131,8 +1131,8 @@ Pedido do criador: aplicar no jogo a **opção 2 (Persona Kinetic Cross)** do pr
 | `MotionRep.progress_source` | `scripts/motion_composer/representations/motion_rep.gd` | O flipbook pode escolher o quadro por `intensity` (a idade normalizada que o M26 grava em cada amostra) em vez de `1 - opacity` ou `u`. Assim a cruz anima do nascimento à morte mesmo com a curva de alfa do emissor. Vazio = comportamento antigo, sem alterar os efeitos existentes. |
 | Flipbook `heal_cross` | `assets/vfx/flipbook_heal_cross.png` | 16 quadros (4×4, 256 px) de uma cruz verde (`#78F0A4` no corpo, `#B7FFC9` no núcleo), halo `#53E28B` e faíscas brancas; reproduzível por `tests/vfx/bake_heal_cross.gd`. |
 | Preset `heal_gain_effect` | `scripts/motion_composer/runtime/motion_presets.gd` | Uma camada M26 (anel de 12 amostras, subida, órbita, arrasto e atraso) pintada pela representação `flipbook` com `progress_source: "intensity"`. A origem é o âncora real do número de cura, passado a cada quadro; a escala vem da distância da câmera (referência 4 m, limites 0,5–2,2) para o anel e as cruzes lerem igual nas duas vistas; nenhum personagem/time/lado (D-235). |
-| Reprodução | `scripts/combat/fx/heal_gain_fx.gd` | Entrega ao `MotionEffect` o relógio explícito, o âncora atual (que sobe com o número) e a escala de câmera; não desenha nada por conta própria. |
-| Número `+HP` | `scripts/combat/fx/heal_gain_mark.gd` | A opção 2 é desenhada num `SubViewport` e exibida numa `CanvasLayer` 2D abaixo do HUD, projetando o alvo real. As cores do HTML ficam exatas (sem o tonemap Filmic do quad 3D) e o número continua com tamanho fixo na tela. |
+| Reprodução | `scripts/vfx/combat/heal_gain_fx.gd` | Entrega ao `MotionEffect` o relógio explícito, o âncora atual (que sobe com o número) e a escala de câmera; não desenha nada por conta própria. |
+| Número `+HP` | `scripts/vfx/combat/heal_gain_mark.gd` | A opção 2 é desenhada num `SubViewport` e exibida numa `CanvasLayer` 2D abaixo do HUD, projetando o alvo real. As cores do HTML ficam exatas (sem o tonemap Filmic do quad 3D) e o número continua com tamanho fixo na tela. |
 | Verificação isolada | `tests/vfx/heal_gain_lab.gd`, `tests/vfx/probe_heal_gain.gd` | Laboratório de aparência e sonda determinística das amostras do M26. |
 
 **D-347 (2026-11-06):** o **número** passou a aparecer acima do `UnitCard`/`EnemyTag` (fora da ficha, perto do HP), com rotação de ±6° e deslocamento diagonal para cima na direção do lado (inimigo à direita, aliado à esquerda), em 1,4 s. As **cruzes continuam no personagem** como VFX 3D do M26. O odômetro de HP foi arquivado e o HP/barra são imediatos.
@@ -1150,3 +1150,16 @@ O Armored Bulk precisa de um anel de choque **prateado e contínuo** no chão qu
 | uniform `solid` | `shaders/fire_ring.gdshader` | 1 = linha contínua; 0 (padrão) = tracejado antigo |
 
 Uso: `MotionRep.make("floor_ring", {"size": 3.0, "strength": 1.1, "look": {"orange": prata, "red": aço, "solid": 1.0, "thick": 0.05}})`. Tudo em metros do mundo; o nó que desenha escala pelo corpo real (D-235). Preset: `MotionPresets.armored_bulk_effect` e `armor_break_effect`.
+
+
+## V1.13 (D-1026, 2026-11-09): rep `plate`
+
+Placas triangulares cromadas que giram e se dissolvem (a perda da ARMOR). Cada amostra do compositor vira uma placa de borda reta em um quad (`shaders/mc_plate.gdshader`), sombreada pelo mesmo reflexo de estúdio do filme da ARMOR, girando em eixo e ritmo próprios (`spin`).
+
+| Mudança | Onde | Efeito |
+|---|---|---|
+| rep `plate` | `motion_rep.gd` | `size` (m) x largura da amostra; gira com `spin` (rad/s); dissolve com a opacidade da composição |
+| `MotionPainter.plate(pos, size, rot, fade, seed)` | `motion_painter.gd` | um nó por placa (pincel `plate`) |
+| shader `mc_plate` | `shaders/mc_plate.gdshader` | triângulo por descarte, reflexo cromado, borda clara |
+
+Uso: `MotionRep.make("plate", {"size": 0.7, "spin": 6.0})`. Preset: `MotionPresets.armor_break_effect`.

@@ -4,6 +4,8 @@
 - **Área:** Visual / VFX / Motion Composer / Combate
 - **Origem:** Conversa (envio do arquivo `brawlmon_3d_atb_vfx_atelier_8_moves_media_mabufula_dig_sand_attack_dragon_ra o_orb.html` e respostas às perguntas da auditoria)
 
+> **Nota D-1030 (2026-11-09):** o Motion Composer é **auxiliar e opcional**. A menção a "construídos sobre o Motion Composer" no item 4 é histórica; não é gate.
+
 ## O que o criador disse (literal)
 
 > "faz uma auditoria extrema desses efeitos visuais e os implemente no jogo, quanto aos moves que ja nao estao codados, vamos fazer um brainstorm sobre eles depois, entao deixe eles por ultimo, splitter fire tem todo um doc so pra ele no repositorio ddo gitbhub, veja o agaents md e os documentos do repositorio antes fazer a auditoria e faca a auditoria logo apos, e preciso que sejam o mais fieis possiveis, perfeitamente fieis todos"
@@ -27,7 +29,7 @@ Respostas às perguntas da auditoria:
    - **Dragon Rage:** mandíbula 3D espectral de dragão com 2 chifres, 2 olhos amarelos e 8 presas abrindo no wind-up + decalque de fissuras dracônicas sob o lançador + 95 chamas convergentes + 28 rochas levitando + bola de fogo dracônica monstruosa (núcleo branco-ouro, casca com deslocamento de espinhos no vértice, coroa de 12 línguas/espinhos 3D girando e 5 raios bio-elétricos 3D) + rastro de fumaça abissal e labaredas no voo + cataclismo no impacto (cratera de fissuras dracônicas de 4,4 m, 10 espirais 3D de chamas dracônicas em 2 anéis, 8 raios dracônicos 3D, pluma de 70 fumaças abissais, inferno de 145 chamas e 65 rochas de magma quicando).
    - **Splitter Flames:** corrigir a fidelidade ao HTML (mãos simétricas em `±0,95 m`, 35 chamas convergentes por mão no wind-up, 2 vórtices estacionários de `0,30 s` com 26 chamas orbitais que viram cinza no release, rastro de chamas deixadas no mundo que caem com gravidade e esfriam para carvão no voo, pilar de fogo que vira cinza + 90 chamas sem estouro branco + 75 flocos poligonais de cinza `ash` caindo), e implementar na Sala de VFX e no motor os modos **Dois Alvos (`dual`)** e **Redirecionamento Especial (`retarget`)** da ficha `D-236`.
 3. **Cilindros translúcidos autorizados:** os cilindros abertos do HTML (`Media`, `Sand Attack` e `Splitter Flames`) entram exatamente como no HTML (exceção expressa à D-036 para reproduzir fielmente o HTML).
-4. **Sincronia e regras:** todos os efeitos são construídos sobre o **Motion Composer** (`D-308`), sincronizados com o relógio real do `Battle` (`D-019`), independentes de personagem, time e lado (`D-235`) e com tamanho fixo no mundo (`D-334`).
+4. **Sincronia e regras:** os efeitos são sincronizados com o relógio real do `Battle`, independentes de personagem, time e lado (`D-235`) e com tamanho fixo no mundo (`D-334`). O Motion Composer é **auxiliar e opcional** (`D-1030`); o efeito pode ser feito à mão.
 
 ## Ambiguidades em aberto
 

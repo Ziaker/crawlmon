@@ -5,6 +5,8 @@
 - **Origem:** pedido direto do criador, depois de eu ter começado a **trocar** peças antigas do fogo por shaders novos (pedido interrompido por ele).
 - **Estado:** registrada; **nenhum código escrito depois dela**; escopo das melhorias em aberto (ver abaixo).
 
+> **Nota D-1030 (2026-11-09):** o Motion Composer é **auxiliar e opcional**. A ordem "melhorar o Composer antes de qualquer efeito" **deixou de ser gate**; o efeito pode ser feito à mão. O histórico abaixo fica preservado.
+
 ## Frase literal do criador
 
 > ao invés de trocar, eu quero que vc melhore a capacidade do composer pra conseguir fazer elementos direito, estilizados, semi-realistas se possível, melhore o composer antes de fazer qualquer coisa

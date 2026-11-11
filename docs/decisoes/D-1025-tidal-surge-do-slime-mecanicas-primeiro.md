@@ -78,6 +78,18 @@ D-1021 (Tidal Surge, seis fases e Start em espera), D-955/D-956 (biblioteca de p
 - **Correção de integração (2026-11-09):** o `attack_resolved` do salto chamava `FxTelegraph.resolve_attack`, que **replanejava** o salto e mexia na câmera como um ataque novo; o travamento do DQT com Tidal Surge vinha daí. O `resolve_attack` agora **ignora** `inc.bounce_root != null`. O run DQT de 1 inimigo completou; um run com 2+ inimigos (para o salto real) ainda não foi reproduzido porque o encontro DQT é aleatório.
 - **Não verificado:** o salto desenhado na sala real com 2+ inimigos, o desenho dos saltos, o Start no corpo do Slime (a carga está 3,19 m à frente, mas o corpo largo a oculta; proposta de subir para o topo da frente em D-1021, aguardando aprovação), outros atacantes e desempenho.
 
+## Tidal Surge finalizado; Bubble Shot liberado (2026-11-11)
+
+Frase literal do criador:
+
+> o tidal surge ta finalizado ja
+>
+> ainda tem que redefinir as mecanicas do bubble shot
+
+- O criador declara o Tidal Surge **finalizado**. A condição do item 2 da decisão parcial ("refeito do zero depois que o Tidal Surge terminar") está cumprida: o **Bubble Shot pode ser refeito**.
+- A ordem é a mesma do Tidal Surge: **mecânica primeiro**, VFX depois. As mecânicas novas do Bubble Shot **ainda não foram definidas**; propostas em rodada na conversa, nada aprovado.
+- Esta nota **não** altera código, VFX nem a ficha do Tidal Surge. O texto abaixo ("VFX em espera") é o registro anterior do código e não foi reverificado nesta data.
+
 ## Estado no código
 
 **Mecânica do Tidal Surge implementada e testada; VFX em espera.** A fase Start continua no código, mas **não aprovada**; os saltos ainda não são desenhados. Nada commitado ou publicado (D-022).

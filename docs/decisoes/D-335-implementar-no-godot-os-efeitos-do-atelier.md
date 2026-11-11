@@ -5,6 +5,8 @@
 - **Origem:** o criador, depois de me mandar o `prototypes/vfx_atelier/atelier.html` e pedir para "ignorar essas idiotices por ora".
 - **Estado:** em andamento; **1 de 8 implementado** (Splitter Flames, só alvo único); aguarda a aprovação do criador antes do próximo.
 
+> **Nota D-1030 (2026-11-09):** o Motion Composer é **auxiliar e opcional**. "Construir sobre o Composer" era obrigação histórica; o efeito pode ser feito à mão.
+
 ## Frases literais do criador
 
 > so implementa os efeitos visuais que estao no html ignora essas idiotices por ora
@@ -15,7 +17,7 @@ Perguntado qual implementar e em que ordem (os 8: Media, Mabufula, Dig, Sand Att
 
 ## Decisão
 
-1. Implementar no Godot, **sobre o Motion Composer** (protocolo, D-308), os efeitos visuais dos 8 Moves do atelier, **um de cada**, **um por vez, com aprovação** antes do seguinte (AGENTS §8).
+1. Implementar no Godot os efeitos visuais dos 8 Moves do atelier, **um de cada**, **um por vez, com aprovação** antes do seguinte (AGENTS §8). O Motion Composer é **auxiliar e opcional** (D-1030); o efeito pode ser feito à mão.
 2. **Manter o visual do HTML**; só melhorar com shaders do Godot (fbm no lugar de simplex, cel-shading opcional, tempo explícito).
 3. Tamanho: **fixo no mundo** (D-334), valores do HTML. Os ajustes pedidos antes sobre o Flame Stream (escala de volta, impacto médio com opacidade caindo) foram aplicados e **o clarão de release que eu tinha acrescentado sem pedido foi removido**.
 4. Ordem escolhida por mim (o criador não disse): Splitter Flames primeiro, por já estar em andamento (D-236). Corrigir se não for isso.

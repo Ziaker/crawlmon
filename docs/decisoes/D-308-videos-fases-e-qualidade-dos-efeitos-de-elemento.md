@@ -3,7 +3,7 @@
 - **Data:** 2026-11-05
 - **Área:** VFX / Processo / Motion Composer
 - **Origem:** pedido direto do criador, na conversa, depois de ver as receitas de fogo, água, terra e ar (D-274).
-- **Estado:** regras registradas; as receitas atuais foram **reprovadas** e serão refeitas. **Aguardando o próximo vídeo.**
+- **Estado:** regras registradas; as receitas atuais foram **reprovadas** e serão refeitas. **Aguardando o próximo vídeo.** **D-1030 (2026-11-09):** o item 4 abaixo foi superado — o Motion Composer é **auxiliar e opcional**. **D-1033 (2026-11-09):** o item 6 (tamanho fixo em metros) foi superado — vale o tamanho coerente com o corpo real e sem obstruir a visão. Os demais itens continuam.
 - **Numeração:** D-308 evita os números já usados no GitHub (até D-307) e nas sessões locais (até D-282).
 
 > **Escopo (D-383, 2026-11-06):** estas regras valem para **VFX de Move/elemento em combate**. Clima/exploração (névoa, calor ondulado, chuva/neve, distorção temporal) é camada 2D de ambiente, não é Move e **não usa o Motion Composer**.
@@ -21,13 +21,13 @@
 1. **Sempre entregar vídeo** do efeito funcionando (não só folhas de contato nem imagens). **Um único vídeo** mostra os dois pontos de vista que existem no jogo: o **normal** (o jogador ataca, alvo longe) e o **espelhado** (o inimigo ataca, alvo perto da câmera), na **cena de batalha real**, com a câmera do jogo.
 2. Todo efeito tem **quatro fases**: **Wind-up**, **Release**, **Trajeto** e **Impacto**. O criador olha sobretudo **Trajeto e Impacto**; o **Impacto precisa ser forte, legível e bonito**.
 3. **Padrão de qualidade:** nada que pareça "HTML genérico" (formas planas, fitas finas, pontinhos). Os efeitos devem usar o que o Godot e o projeto oferecem de verdade: flipbooks, malhas 3D, shaders com textura, partículas com sprite, brilho, tremor e impacto, no estilo do jogo.
-4. **Motion Composer:** se o Motion Composer não der conta, **ele deve ser melhorado**. Os efeitos devem ser construídos **sobre** ele, não ao lado dele.
+4. **Motion Composer (superado por D-1030):** ele é **auxiliar e opcional**. Use-o quando ajudar no movimento secundário/timing; se não der conta, o efeito pode ser feito à mão. Não é gate nem obrigação. *(Texto original, mantido como histórico: "se o Motion Composer não der conta, ele deve ser melhorado; os efeitos devem ser construídos sobre ele".)*
 
 5. **Transição entre fases (criador, 2026-11-05):** o VFX **não some** ao fim do wind-up: a carga **fica** (segura até o disparo) e **vira** o tiro, de forma contínua e suave. Vale para todos os efeitos de elemento.
 
 > não existe isso do vfx do move sumir após o fim do wind-up, muito pelo contrário, a transição deve ocorrerr corretamente e suavemente
 
-6. **Tamanho fixo (criador, 2026-11-05):** o tamanho do VFX é **fixo, o mesmo nas duas posições** (normal e espelhada), em unidades do mundo. **Não** depende da altura do alvo, do atacante, nem da distância à câmera.
+6. **Tamanho (superado por D-1033):** o criador escolheu, em 2026-11-09, **D-1033**: o VFX deve ser **coerente com o corpo real e não obstruir a visão**, não fixo em metros. O texto original ("tamanho fixo, o mesmo nas duas posições, em unidades do mundo") fica preservado como histórico. *(D-308 item 6 original.)*
 7. **Intensidade do contato:** o impacto deste Move (que **não é poderoso**) estava exagerado; **por ora reduzir** o tamanho dos efeitos visuais no contato. **Ainda é preciso definir o que é um Move poderoso e o que não é**, para então definir a intensidade do VFX (pendente; nada inventado agora).
 8. **Release:** o release da bola de fogo estava "muito básico e genérico"; deve ser refeito (o criador não disse como).
 

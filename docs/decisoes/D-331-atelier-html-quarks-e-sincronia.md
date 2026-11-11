@@ -24,7 +24,7 @@ A autorização não é migração para Godot, nem autorização para substituir
 
 ## Atualização de instruções durante o trabalho
 
-O criador enviou a nova seção 8 de AGENTS e pediu “continua”. D-308/protocolo exigem Motion Composer e validação na batalha Godot, enquanto este pedido explicitamente trata de HTML com Quarks.js. Foram solicitados esclarecimentos sobre manter o HTML como exceção ou mudar a entrega, e sobre a contradição entre tamanho fixo no mundo (D-308) e tamanho por tela (protocolo). Nenhuma resposta foi presumida. Após a atualização, apenas validação e gravação da versão existente, documentação e empacotamento; sem novos ajustes de aparência.
+O criador enviou a nova seção 8 de AGENTS e pediu “continua”. Na época, D-308/protocolo exigiam Motion Composer e validação na batalha Godot; **D-1030 (2026-11-09) tornou o Composer auxiliar e opcional**, então essa exigência é histórica. Foram solicitados esclarecimentos sobre manter o HTML como exceção ou mudar a entrega, e sobre a contradição entre tamanho fixo no mundo (D-308) e tamanho por tela (protocolo). Nenhuma resposta foi presumida. Após a atualização, apenas validação e gravação da versão existente, documentação e empacotamento; sem novos ajustes de aparência.
 
 ## Resolução posterior
 
