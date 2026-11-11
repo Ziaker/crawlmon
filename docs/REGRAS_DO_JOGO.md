@@ -346,6 +346,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-1135] Ataque do Z: teto de 2,0 m e sem wind-up do jogador:** **implementado/provado**: 2,0 m nos dois, Z sem 0,12 s, inimigo mantém telegraph; testes PASS.
 - **[D-1137] Câmera um pouco mais lenta, personagem +50% e Z ataca sempre:** **implementado/provado**: A/D 2,6 rad/s, SPEED 4,8, ataque livre de 2 m sem batalha; print/testes.
 - **[D-1139] Animação de ataque preenche exatamente a duração do dash:** **implementado/provado**: clipe completo em `clip.length / dash`; log 1,9667 s em 0,18 s (10,93×); testes PASS.
+- **[D-1141] Wind-up de 0,15 s e endlag com a animação em velocidade normal:** **implementado/provado**: wind-up 0,15 s, dash 2 m, endlag até o clipe terminar a 1,0×; log/testes.
 
 ### 14.2 Inimigos no mapa
 - **[GDD R8-Q5, R9-Q3]** Inimigos **visíveis** no mapa; **patrulham** e **perseguem** após detectar; **o contato inicia o combate 3D** (não a mera detecção).
@@ -1535,3 +1536,7 @@ Para o HTML dos oito Moves, o criador confirmou a entrega com Quarks.js como exc
 ## Decisão D-1139 — Animação de ataque preenche exatamente a duração do dash (2026-11-10)
 
 - **D-1139 (lab/ataque/animação):** o clipe `attack` do jogador toca **do começo ao fim** na duração planejada do dash, com `speed_scale = clip.length / dash_duration`; sem loop. Vale para o Z com alvo e para o ataque livre; o inimigo continua a 2,0×. Detalhes em `docs/decisoes/D-1139-animacao-ataque-duracao-exata-do-dash.md`.
+
+## Decisão D-1141 — Wind-up de 0,15 s e endlag com a animação em velocidade normal (2026-11-10)
+
+- **D-1141 (lab/ataque/animação):** o Z do jogador volta a ter **0,15 s de wind-up**; o clipe `attack` roda a **1,0×** desde o wind-up, continua no dash de 2,0 m e termina num **endlag** em que o jogador fica travado. O endlag é `clip.length - (wind-up + dash)` (~1,64 s com o clipe de 1,9667 s). No acerto, a transição espera o endlag; o impacto de 0,5 s continua no contato. O ataque livre usa a mesma regra e não inicia batalha. A D-1139 (animação acelerada para caber no dash) fica substituída para o jogador; o inimigo continua a 2,0×. Detalhes em `docs/decisoes/D-1141-windup-15-endlag-animacao-normal.md`.
