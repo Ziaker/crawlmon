@@ -8,6 +8,7 @@ extends BattleHudDraw
 ## "MP N/D" instead of an invented value.
 
 const SkillInfoPanelScript = preload("res://scripts/ui/skill_info_panel.gd")
+const AttackTagShatterScript = preload("res://scripts/ui/attack_tag_shatter.gd")
 const ROMAN := ["I", "II", "III", "IV"]
 const FOOTER_H := 36.0
 const MARGIN := 28.0
@@ -34,10 +35,10 @@ var _log_lines: Array[String] = []
 var _skill_info
 var _tabs: CameraTabs
 var _target: Combatant
-var _status: StatusPanel
 ## Prototype hook: the portrait shield arc replaces the small shield badges.
 ## Default false; only the shield-HUD lab turns it on.
 var hide_shield_badges := false
+var _status: StatusPanel
 var _status_open := false
 var _reward_layer: RewardLayer
 var _heal_layer: Control  ## D-347: the option 2 numbers above the HP cards/tags
@@ -45,6 +46,11 @@ var _inc_tags: Dictionary = {}  ## Battle.Incoming -> AttackTag
 var _hint: EvadeHint
 var _burn_k: Dictionary = {}  ## D-239: Combatant -> 0..1, how much its card is burning (eases in and out)
 var _stun_k: Dictionary = {}  ## D-980: Combatant -> 0..1, how dizzy its card is (eases in and out)
+var _blind_k: Dictionary = {}  ## D-1121: Combatant -> 0..1, how blurry its portrait is (eases in and out)
+var _blind_snap: Dictionary = {}  ## D-1121: Combatant -> 0..1, focus-snap flash after BLIND ends
+var _blind_prev: Dictionary = {}  ## D-1121: previous blind_k, to detect the end
+var _card_ghosts: Dictionary = {}  ## D-1134: Combatant -> Array[UnitCard] (two translucent copies)
+var _menu_ghosts: Array[FanMenu] = []  ## D-1134: two translucent copies of the leader's action menu
 var _burn_ticks: Dictionary = {}  ## D-239: Combatant -> {t0 (msec), dmg} of its last Burn tick
 
 
@@ -92,6 +98,22 @@ func setup(battle: Battle, party: Array[Combatant], enemies: Array[Combatant], c
 		card.order = i
 		add_child(card)
 		_cards.append(card)
+		# D-1134: two translucent copies of the whole card for the BLIND ghost.
+		var ghosts: Array[UnitCard] = []
+		for g in 2:
+			var ghost := UnitCard.new()
+			ghost.combatant = party[i]
+			ghost.hud = self
+			ghost.hero = card.hero
+			ghost.order = i
+			ghost.is_ghost = true
+			ghost.z_index = 1
+			ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			ghost.visible = false
+			add_child(ghost)
+			ghost.process_mode = Node.PROCESS_MODE_DISABLED
+			ghosts.append(ghost)
+		_card_ghosts[party[i]] = ghosts
 	for e in enemies:
 		var tag := EnemyTag.new()
 		tag.combatant = e
@@ -106,6 +128,15 @@ func setup(battle: Battle, party: Array[Combatant], enemies: Array[Combatant], c
 	menu = FanMenu.new()
 	menu.position = Vector2(MARGIN, 424)
 	add_child(menu)
+	# D-1134: two translucent copies of the whole action menu for the BLIND ghost.
+	for g in 2:
+		var menu_ghost := FanMenu.new()
+		menu_ghost.z_index = 1
+		menu_ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		menu_ghost.visible = false
+		add_child(menu_ghost)
+		menu_ghost.process_mode = Node.PROCESS_MODE_DISABLED
+		_menu_ghosts.append(menu_ghost)
 	_alert = _make_label(Vector2(0, 28), 14, CORAL)
 	_alert.size = Vector2(1280, 60)
 	_alert.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -266,6 +297,35 @@ func _set_status_mode(on: bool) -> void:
 		(_tags[e] as Control).visible = false
 
 
+## Debug/test tool: after party[0] changes, rebind every card to the same party
+## index (hero card = new leader) without touching the combatants or their state.
+func debug_rebind_party(party: Array[Combatant]) -> void:
+	if party.size() != _cards.size():
+		return
+	var old: Array[Dictionary] = []
+	for i in _cards.size():
+		old.append({
+			"combatant": _cards[i].combatant,
+			"ghosts": _card_ghosts.get(_cards[i].combatant, []),
+		})
+	_card_ghosts.clear()
+	for i in _cards.size():
+		var c := party[i]
+		var card := _cards[i]
+		card.combatant = c
+		card.hero = i == 0
+		card.order = i
+		card.queue_redraw()
+		var ghosts: Array = old[i].get("ghosts", [])
+		for ghost in ghosts:
+			ghost.combatant = c
+			ghost.hero = i == 0
+			ghost.order = i
+			ghost.queue_redraw()
+		_card_ghosts[c] = ghosts
+	_layout_cards()
+
+
 func set_target(c: Combatant) -> void:
 	_target = c
 
@@ -306,12 +366,79 @@ func _process(_delta: float) -> void:
 			t.pulse = maxf(t.pulse - _delta * 2.5, 0.0)
 	_sync_incoming()
 	_draw_engaged()
+	_sync_blind_ghosts()
+	_sync_blind_menu()
 	queue_redraw()
+
+
+## D-1134: the whole card (background, name, bars, ATB and portrait) gets two
+## translucent copies when its owner is BLIND. Both orbit clockwise in opposite
+## phases. The real card keeps the sharp text, the crisp badge and the blurred
+## portrait; the ghosts are only the double image.
+func _sync_blind_ghosts() -> void:
+	var now := BattleHud.clock_ms()
+	for card in _cards:
+		var k := blind_k(card.combatant)
+		var show := k > 0.01 and card.visible
+		var ghosts: Array = _card_ghosts.get(card.combatant, [])
+		for gi in ghosts.size():
+			var ghost: UnitCard = ghosts[gi]
+			ghost.visible = show
+			if not show:
+				continue
+			# Screen Y points down: increasing angle goes right -> down -> left -> up (clockwise).
+			var angle := float(now) * 0.0015 + float(gi) * PI
+			var radius := 8.0 + 1.0 * sin(float(now) * 0.0011 + float(gi) * 1.7)
+			var off := Vector2(cos(angle), sin(angle)) * radius
+			ghost.position = card.position + off
+			ghost.rotation = card.rotation
+			ghost.pivot_offset = card.pivot_offset
+			ghost.scale = card.scale
+			ghost.size = card.size
+			ghost.modulate = Color(1, 1, 1, 0.20 * k)
+			ghost.queue_redraw()
+
+
+## D-1134: the action menu is the leader's; while the leader is BLIND, two
+## translucent copies of the whole FanMenu orbit clockwise around it.
+func _sync_blind_menu() -> void:
+	if _menu_ghosts.is_empty() or menu == null or _battle == null:
+		return
+	var now := BattleHud.clock_ms()
+	var k := blind_k(_battle.party[0])
+	var show := menu.visible and k > 0.01
+	for gi in _menu_ghosts.size():
+		var mg := _menu_ghosts[gi]
+		mg.visible = show
+		if not show:
+			continue
+		mg.style = menu.style
+		mg.header = menu.header
+		mg.note = menu.note
+		mg.index = menu.index
+		mg._texts = menu._texts.duplicate()
+		mg._details = menu._details.duplicate()
+		mg._enabled = menu._enabled.duplicate()
+		mg._accents = menu._accents.duplicate()
+		mg._hilite = menu._hilite.duplicate()
+		mg._shield = menu._shield.duplicate()
+		mg._skills = menu._skills.duplicate()
+		mg.custom_minimum_size = menu.custom_minimum_size
+		mg.size = menu.size
+		var angle := float(now) * 0.0013 + float(gi) * PI
+		var radius := 6.0 + 0.8 * sin(float(now) * 0.0011 + float(gi) * 1.7)
+		mg.position = menu.position + Vector2(cos(angle), sin(angle)) * radius
+		mg.modulate = Color(1, 1, 1, 0.18 * k)
+		mg.queue_redraw()
 
 
 ## Damage numbers pop the instant a hit lands (hit_resolved is emitted at the impact).
 func _on_hit_pop(_attacker: Combatant, target: Combatant, _element: Element.Type, info: Dictionary) -> void:
 	if info.get("evaded", false) or info.get("status", false):
+		return
+	# D-1113: the bubble absorbed everything; the Move's impact still plays, but
+	# there is no damage number (especially not a misleading "0").
+	if int(info.get("dmg", 0)) <= 0 and int(info.get("shield_absorbed", 0)) > 0:
 		return
 	_pops.append({"c": target, "value": int(info["dmg"]), "crit": bool(info["crit"]), "weak": bool(info["weak"]),
 		"magic": bool(info.get("magic", false)),
@@ -417,14 +544,28 @@ func _screen_pos(c: Combatant, height: float) -> Variant:
 	return _camera.unproject_position(world)
 
 
+## D-1160: only a real interruption (hit before the impact, War Cry/status cancel,
+## clash) destroys the card. A dodged or auto-dodged action is a miss (D-104/D-106),
+## and a hit during the return is not an interruption of the action; both leave normally.
+static func shows_interruption_feedback(inc) -> bool:
+	return inc != null and bool(inc.interruption_feedback)
+
+
 func _sync_incoming() -> void:
 	var live := {}
 	if not _status_open:
 		for inc in _battle.active_attacks():
-			if inc.dodged:
+			var tag: AttackTag = _inc_tags.get(inc)
+			# D-1104 as corrected by D-1160: only a real interruption breaks the card.
+			if shows_interruption_feedback(inc):
+				if tag != null:
+					if tag.visible:
+						tag.shatter()
+					else:
+						tag.queue_free()
+					_inc_tags.erase(inc)
 				continue
 			live[inc] = true
-			var tag: AttackTag = _inc_tags.get(inc)
 			if tag == null:
 				tag = AttackTag.new()
 				tag.inc = inc
@@ -440,7 +581,16 @@ func _sync_incoming() -> void:
 			tag.queue_redraw()
 	for inc in _inc_tags.keys():
 		if not live.has(inc):
-			(_inc_tags[inc] as AttackTag).leave()  # D-985: leaves upward, then frees itself
+			var tag: AttackTag = _inc_tags[inc]
+			# D-1104 as corrected by D-1160: only a real interruption breaks the card
+			# (War Cry and a hit erase it from the active list already interrupted).
+			if shows_interruption_feedback(inc):
+				if tag.visible:
+					tag.shatter()
+				else:
+					tag.queue_free()
+			else:
+				tag.leave()  # D-985: leaves upward, then frees itself
 			_inc_tags.erase(inc)
 	# Evade prompt on the player's character.
 	var leader: Combatant = _battle.party[0]
@@ -567,6 +717,13 @@ func _track_burn(delta: float) -> void:
 		var goal := 1.0 if (c.is_burning() and c.is_alive()) else 0.0
 		_burn_k[c] = move_toward(float(_burn_k.get(c, 0.0)), goal, delta * 2.8)
 		_stun_k[c] = move_toward(float(_stun_k.get(c, 0.0)), 1.0 if (c.is_stunned() and c.is_alive()) else 0.0, delta * 4.0)  # D-980
+		var prev_blind := float(_blind_prev.get(c, 0.0))
+		var cur_blind := move_toward(float(_blind_k.get(c, 0.0)), 1.0 if (c.is_blind() and c.is_alive()) else 0.0, delta * 4.0)  # D-1121
+		if prev_blind > 0.98 and cur_blind < prev_blind:
+			_blind_snap[c] = 1.0  # D-1121: BLIND ended -> focus snaps back
+		_blind_prev[c] = cur_blind
+		_blind_k[c] = cur_blind
+		_blind_snap[c] = maxf(0.0, float(_blind_snap.get(c, 0.0)) - delta * 4.0)
 
 
 const STUN_SWAY_HZ := 0.3  ## D-982: slower again (D-981: 0.5, before: 0.9)
@@ -575,6 +732,22 @@ const STUN_SWAY_HZ := 0.3  ## D-982: slower again (D-981: 0.5, before: 0.9)
 ## D-980/D-981: dizzy portrait overlay (spiral eyes by the frame's proportions, stars circling over it).
 func stun_k(c: Combatant) -> float:
 	return float(_stun_k.get(c, 0.0))
+
+
+## D-1121: how much the “Olhar turvo” (blurred, double-vision portrait) is showing.
+func blind_k(c: Combatant) -> float:
+	return float(_blind_k.get(c, 0.0))
+
+
+## D-1121: 0..1 focus-snap flash right after BLIND ends (decays in 0.25 s).
+func blind_snap(c: Combatant) -> float:
+	return float(_blind_snap.get(c, 0.0))
+
+
+## D-1121: BLIND badge pulse, faster as the timer runs out.
+static func blind_badge_pulse(c: Combatant, now: int) -> float:
+	var urgency := 1.0 - clampf(c.blind_timer / 4.0, 0.0, 1.0)
+	return 0.5 + 0.5 * sin(float(now) * (0.004 + urgency * 0.007))
 
 
 ## D-980: a small five-point star for the HUD.
@@ -721,6 +894,7 @@ class UnitCard extends Control:
 			else:
 				scale = Vector2.ONE
 	var order := 0
+	var is_ghost := false  ## D-1134: translucent whole-card copy; skips the portrait overlay
 	var _portrait: Texture2D
 
 	# Animation states for ATB and Burst
@@ -738,8 +912,13 @@ class UnitCard extends Control:
 	func extra_slot_global(k: int) -> Vector2:
 		return position + Vector2(84.0 + 30.0 + k * 11.0 + 4.5, 99.0) * scale
 
+	func _burst_slot_rect() -> Rect2:
+		return Rect2(size.x - 12.4 - 33.06, 70.3, 33.06, 22.48)
+
 	func burst_slot_global() -> Vector2:
-		return position + Vector2(84.0 + 30.0 + 5.0 * 29.0 + 4.0 + 12.5, 86.5) * scale
+		# D-1102/D-1127: the reward token lands on the slot's real centre (it used to
+		# stop ~25 px to the left, over the HP/MP rows).
+		return position + _burst_slot_rect().get_center() * scale
 
 	func _init() -> void:
 		size = Vector2(330, 104)
@@ -830,13 +1009,19 @@ class UnitCard extends Control:
 		# Portrait.
 		var pr := Rect2(16, 26, 56, 62)
 		BattleHud.slant(self, pr, 6.0, (Color("263d57") if hero else Color("54456c")).lerp(Color("4a1a06"), bk))
+		var portrait_rect := pr.grow(-2.0)
+		var portrait_skew := 5.0
 		if _portrait != null:
 			if _portrait.get_width() > 64:
 				# High-res portraits (DQT art) fill the whole slanted frame, clipped to its shape.
-				BattleHud.slant_texture(self, pr.grow(-2.0), 5.0, _portrait)
+				BattleHud.slant_texture(self, portrait_rect, portrait_skew, _portrait)
 			else:
-				draw_texture_rect(_portrait, Rect2(pr.position + Vector2(8, 6), Vector2(44, 44)), false)
-		BattleHud.draw_dizzy(self, pr, hud.stun_k(c), now)  # D-980
+				portrait_rect = Rect2(pr.position + Vector2(8, 6), Vector2(44, 44))
+				portrait_skew = 0.0
+				draw_texture_rect(_portrait, portrait_rect, false)
+		if not is_ghost:
+			BattleHud.draw_blind(self, portrait_rect, portrait_skew, _portrait, hud.blind_k(c), now, 1.0, hud.blind_snap(c))  # D-1121
+			BattleHud.draw_dizzy(self, pr, hud.stun_k(c), now)  # D-980
 		# Name.
 		draw_string(font, Vector2(84, 44), c.name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, 150, 18, fg)
 		if not hero:  # D-982: the "PLAYER" label was removed
@@ -869,7 +1054,7 @@ class UnitCard extends Control:
 		if c.is_burning():  # D-239
 			badges.append({"text": "BURN %.1fs" % BattleHud.burn_left(c), "bg": Color("b5470b"), "fg": Color("fff3d6")})
 		if c.is_blind():
-			badges.append({"text": "BLIND %.1fs" % c.blind_timer, "bg": Color("c29b38"), "fg": Color.WHITE})
+			badges.append({"text": "BLIND %.1fs" % c.blind_timer, "bg": Color.BLACK, "fg": Color.WHITE, "blind": true})
 		if c.taunted_by != null:
 			badges.append({"text": "TAUNT", "bg": Color("c2185b"), "fg": Color.WHITE})
 		if c.is_guarding():
@@ -892,16 +1077,24 @@ class UnitCard extends Control:
 		var bx := 8.0
 		var by := -2.0  # D-982: a bit farther above the card (was 5) and 15% bigger (font 8 -> 9.2, height 11 -> 12.65)
 		for b in badges:
+			if is_ghost:
+				break  # D-1134: the status badge stays crisp on the real card only
 			var txt: String = b["text"]
 			var icon_w := 10.5 if b.has("icon") else 0.0
 			var tw := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 9).x + 9.2 + icon_w
 			if bx + tw > size.x - 10:
 				break
 			var br := Rect2(bx, by, tw, 12.65)
-			BattleHud.slant(self, br, 2.3, b["bg"])
+			var badge_bg: Color = b["bg"]
+			var badge_fg: Color = b["fg"]
+			if bool(b.get("blind", false)):  # D-1134: black badge, white text, neutral pulse
+				var p := BattleHud.blind_badge_pulse(c, BattleHud.clock_ms())
+				BattleHud.slant(self, Rect2(bx - 2.0 - p * 1.6, by - 1.5 - p * 1.6, tw + 4.0 + p * 3.2, 15.65 + p * 3.2), 2.3,
+					Color(0.84, 0.88, 0.93, 0.18 + 0.24 * p))
+			BattleHud.slant(self, br, 2.3, badge_bg)
 			if b.has("icon"):
-				ArmorIcons.draw(self, Rect2(bx + 3.6, by + 1.6, 9.4, 9.4), b["fg"], b["bg"])
-			draw_string(font, Vector2(bx + 4.6 + icon_w, by + 10.4), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, b["fg"])
+				ArmorIcons.draw(self, Rect2(bx + 3.6, by + 1.6, 9.4, 9.4), badge_fg, badge_bg)
+			draw_string(font, Vector2(bx + 4.6 + icon_w, by + 10.4), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, badge_fg)
 			bx += tw + 5.0
 
 		# ATB blocks + burst slot.
@@ -961,8 +1154,8 @@ class UnitCard extends Control:
 				var flash_col := Color(1, 1, 1, flash_alpha * 0.8)
 				BattleHud.slant(self, Rect2(r.position - Vector2(1, 1), r.size + Vector2(2, 2)), 3.0, flash_col)
 
-		# Burst slot
-		var slot := Rect2(size.x - 12.4 - 33.06, 70.3, 33.06, 22.48)  # creator: moved up and right (clear of the card edges), 15% bigger again (28.75 x 19.55)
+		# Burst slot (creator: moved up and right, clear of the card edges, 15% bigger again).
+		var slot := _burst_slot_rect()
 		var bskew := 5.19  # the ATB blocks' slant (3.0 on 13 px) scaled to this height: the same angle
 		var sb := c.shown_burst()
 		if sb > 0:
@@ -1044,8 +1237,11 @@ class EnemyTag extends Control:
 	func extra_slot_global(k: int) -> Vector2:
 		return position + Vector2(X0 + k * 8.0 + 3.0, ATB_Y + 13.0)
 
+	func _burst_slot_rect() -> Rect2:
+		return Rect2(X0 + 5 * 13.0 + 1.0, ATB_Y - 1.675, 14.95, 10.35)
+
 	func burst_slot_global() -> Vector2:
-		return position + Vector2(X0 + 5 * 13.0 + 7.0, ATB_Y + 4.0)
+		return position + _burst_slot_rect().get_center() * scale
 
 	func _process(_d: float) -> void:
 		if combatant == null or hud == null:
@@ -1074,7 +1270,7 @@ class EnemyTag extends Control:
 		if c.is_burning():
 			neg.append({"text": "BURN %.1fs" % BattleHud.burn_left(c), "bg": Color("b5470b"), "fg": Color("fff3d6")})
 		if c.is_blind():
-			neg.append({"text": "BLIND %.1fs" % c.blind_timer, "bg": Color("c29b38"), "fg": Color.WHITE})
+			neg.append({"text": "BLIND %.1fs" % c.blind_timer, "bg": Color.BLACK, "fg": Color.WHITE, "blind": true})
 		if c.taunted_by != null:
 			neg.append({"text": "TAUNT", "bg": Color("c2185b"), "fg": Color.WHITE})
 		for bd in [["ATK", c.atk_buff], ["DEF", c.def_buff], ["SPD", c.speed_buff]]:
@@ -1099,8 +1295,14 @@ class EnemyTag extends Control:
 		for b in neg:
 			var txt: String = b["text"]
 			var tw := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x + 7.0
-			BattleHud.slant(self, Rect2(lx, -14, tw, 11), 2.0, b["bg"])
-			draw_string(font, Vector2(lx + 3.0, -5.0), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, b["fg"])
+			var badge_bg: Color = b["bg"]
+			var badge_fg: Color = b["fg"]
+			if bool(b.get("blind", false)):  # D-1134: black badge, white text, neutral pulse
+				var p := BattleHud.blind_badge_pulse(c, BattleHud.clock_ms())
+				BattleHud.slant(self, Rect2(lx - 1.6 - p * 1.2, -15.6 - p * 1.2, tw + 3.2 + p * 2.4, 13.2 + p * 2.4), 2.0,
+					Color(0.84, 0.88, 0.93, 0.18 + 0.24 * p))
+			BattleHud.slant(self, Rect2(lx, -14, tw, 11), 2.0, badge_bg)
+			draw_string(font, Vector2(lx + 3.0, -5.0), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, badge_fg)
 			lx += tw + 3.0
 		var rx := size.x
 		for b in pos:
@@ -1123,6 +1325,7 @@ class EnemyTag extends Control:
 		BattleHud.slant(self, PR, 4.0, Color("54456c").lerp(Color("4a1a06"), bk))
 		if _portrait != null:
 			BattleHud.slant_texture(self, PR.grow(-1.5), 3.5, _portrait)
+		BattleHud.draw_blind(self, PR.grow(-1.5), 3.5, _portrait, hud.blind_k(c), now, 0.75, hud.blind_snap(c))  # D-1121
 		BattleHud.draw_dizzy(self, PR, hud.stun_k(c), now, 0.6)
 
 		# Name + element icons ("?" black on white until discovered).
@@ -1166,8 +1369,8 @@ class EnemyTag extends Control:
 				var rsv := 0.5 + 0.5 * sin(now * 0.012 + i)
 				var o := PackedVector2Array([Vector2(r.position.x + 2.0, r.position.y), Vector2(r.end.x, r.position.y), Vector2(r.end.x - 2.0, r.end.y), Vector2(r.position.x, r.end.y), Vector2(r.position.x + 2.0, r.position.y)])
 				draw_polyline(o, Color(0.45, 0.92, 1.0, 0.35 + 0.4 * rsv), 1.2)
-		# Burst slot.
-		var slot := Rect2(X0 + 5 * 13.0 + 1.0, ATB_Y - 1.675, 14.95, 10.35)  # 15% bigger than before (13 x 9), same centre
+		# Burst slot (15% bigger than before, 13 x 9, same centre).
+		var slot := _burst_slot_rect()
 		var bskew := 2.96  # the tag's ATB slant (2.0 on 7 px) scaled to this height
 		var sb := c.shown_burst()
 		if sb > 0:
@@ -1266,6 +1469,7 @@ class AttackTag extends Control:
 	var inc
 	var hud: BattleHud
 	var leaving := false
+	var broken := false
 	var _t := 0.0
 	var _portrait: Texture2D
 	var _portrait_tried := false
@@ -1292,6 +1496,41 @@ class AttackTag extends Control:
 		tw.tween_property(self, "position:y", position.y - 14.0, LEAVE_LEN)
 		tw.tween_property(self, "modulate:a", 0.0, LEAVE_LEN)
 		tw.chain().tween_callback(queue_free)
+
+	## D-1104: the action was interrupted. Hide this card, capture its real pixels into a
+	## transparent SubViewport, then hand them to AttackTagShatter (9 shards + "interrupted").
+	func shatter() -> void:
+		if broken:
+			return
+		broken = true
+		visible = false
+		if hud == null or not is_instance_valid(hud):
+			queue_free()
+			return
+		var vp := SubViewport.new()
+		vp.size = Vector2i(int(size.x), int(size.y))
+		vp.transparent_bg = true
+		vp.disable_3d = true
+		vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+		hud.add_child(vp)
+		var copy := AttackTag.new()
+		copy.inc = inc
+		copy.hud = hud
+		copy.size = size
+		copy.position = Vector2.ZERO
+		copy.set_process(false)
+		copy._t = STAMP_LEN
+		vp.add_child(copy)
+		await RenderingServer.frame_post_draw
+		var img: Image = null
+		if is_instance_valid(vp):
+			img = vp.get_texture().get_image()
+			vp.queue_free()
+		if not is_instance_valid(hud) or img == null or img.is_empty():
+			queue_free()
+			return
+		AttackTagShatterScript.spawn(hud, position, size, ImageTexture.create_from_image(img))
+		queue_free()
 
 	func _process(delta: float) -> void:
 		_t += delta
@@ -1343,14 +1582,17 @@ class AttackTag extends Control:
 		draw_string(title, Vector2(10, 17), name, HORIZONTAL_ALIGNMENT_LEFT, room, fsz, fg)
 		var nw := minf(title.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fsz).x, room)
 		var sk: Skill = inc.skill if inc.get("skill") != null else null
-		var type_name := "magical"
-		var range_name := "long"
-		if sk != null:
-			if sk.kind == Skill.Kind.MELEE or (sk.element == Element.Type.FISICO and sk.kind != Skill.Kind.STATUS):
-				type_name = "physical"
+		var type_name := sk.type_icon_name() if sk != null else ""
+		var range_name := ""
+		if sk != null and sk.kind != Skill.Kind.STATUS:
 			range_name = "area" if sk.is_aoe else ("melee" if sk.kind == Skill.Kind.MELEE else ("long" if sk.kind == Skill.Kind.PROJECTILE else "mid"))
+		var icon_paths: Array[String] = []
+		if not type_name.is_empty():
+			icon_paths.append("res://assets/ui/icons/move_types/%s.svg" % type_name)
+		if not range_name.is_empty():
+			icon_paths.append("res://assets/ui/icons/range/%s.svg" % range_name)
 		var ix := 10.0 + nw + 6.0
-		for path in ["res://assets/ui/icons/move_types/%s.svg" % type_name, "res://assets/ui/icons/range/%s.svg" % range_name]:
+		for path in icon_paths:
 			var ic := _icon(path)
 			if ic != null:
 				var ic_fg := Color("ef4444") if (type_name == "physical" and not is_known and path.contains("move_types")) else fg

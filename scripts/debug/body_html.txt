@@ -1,0 +1,460 @@
+<body class="flex flex-col min-h-screen justify-between relative selection:bg-cyan-500 selection:text-black">
+
+<!-- Particles & Celebration Canvas -->
+<canvas id="fxCanvas"></canvas>
+
+<!-- Screen Flash removed per D-418 -->
+
+<!-- ===================================================================== -->
+<!-- INTERACTIVE EXPLANATION MODAL (POPUP ON ICON CLICK - 5S AUTO-DISMISS) -->
+<!-- ===================================================================== -->
+<div id="explanationModal" onclick="if (event.target === this) closeExplanationModal();" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all cursor-pointer">
+  <div class="skew-panel bg-[#f5f6f8] text-[#08101a] border-2 border-black neo-border max-w-md w-full p-5 relative shadow-[8px_8px_0px_#000]">
+    <div class="unskew space-y-3">
+      <!-- Modal Header -->
+      <div class="flex items-start justify-between border-b-2 border-black pb-2.5">
+        <div class="flex items-center gap-3">
+          <div id="expModalIconBox" class="w-10 h-10 rounded neo-border flex items-center justify-center text-white shrink-0">
+            <!-- Icon injected -->
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span id="expModalCategory" class="px-2 py-0.5 rounded text-[10px] font-mono font-black uppercase bg-black text-white">
+                CATEGORY
+              </span>
+              <span class="text-[11px] font-mono text-neutral-500 font-bold">GAME RULES</span>
+            </div>
+            <h3 id="expModalTitle" class="font-teko text-3xl font-black text-black leading-none mt-0.5 tracking-wide">
+              TITLE
+            </h3>
+          </div>
+        </div>
+        <!-- Close Button (X) -->
+        <button onclick="closeExplanationModal()" class="w-8 h-8 bg-black hover:bg-neutral-800 text-white font-mono font-bold rounded flex items-center justify-center neo-border text-sm transition-all" title="Close (or wait 5s)">
+          ✕
+        </button>
+      </div>
+
+      <!-- Description Body -->
+      <p id="expModalDesc" class="text-sm font-mono text-neutral-800 leading-relaxed pt-1">
+        Description here...
+      </p>
+
+      <!-- Auto-dismiss Visual Timer Bar -->
+      <div class="pt-2">
+        <div class="flex justify-between text-[10px] font-mono text-neutral-500 mb-1">
+          <span>AUTO-DISMISS TIMER</span>
+          <span>5 SECONDS</span>
+        </div>
+        <div class="h-1.5 w-full bg-neutral-300 rounded overflow-hidden border border-neutral-400">
+          <div id="expModalTimerBar" class="h-full bg-cyan-600 modal-timer-bar"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================== -->
+<!-- HEADER: D-413 COMPLIANT (TEAM / STATS TOP-LEFT, 100% ENGLISH)         -->
+<!-- ===================================================================== -->
+<header class="relative z-20 px-4 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4 bg-[#070e17]/95 border-b-2 border-black">
+  <!-- Left Header: TEAM / STATS -->
+  <div class="flex items-center gap-4">
+    <div class="skew-panel bg-white text-black px-3.5 py-1 neo-border">
+      <div class="unskew font-teko text-3xl lg:text-4xl font-black uppercase leading-none tracking-widest">
+        TEAM / STATS
+      </div>
+    </div>
+    <div>
+      <div class="text-xs font-mono font-bold text-cyan-400 tracking-wider">POST-COMBAT STATUS & PROGRESSION</div>
+      <div class="text-[11px] font-mono text-neutral-400">SMT III NOCTURNE FIDELITY • D-413 / D-401 / D-394 / D-393</div>
+    </div>
+  </div>
+
+  <!-- Center Party Switcher with Level Up Badges -->
+  <div class="flex items-center gap-2.5">
+    <div class="text-xs font-mono text-neutral-400 mr-1 hidden md:block">PARTY:</div>
+    
+    <!-- Hero 1: Abra (Leader) -->
+    <button id="btnPartyAbra" onclick="switchHero('abra')" class="skew-panel px-4 py-1.5 bg-[#f5f6f8] text-[#08101a] border-2 border-cyan-400 font-bold text-sm hover:scale-105 transition-all relative">
+      <div class="unskew flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+        <span class="font-teko text-lg leading-none">ABRA</span>
+        <span class="text-[10px] font-mono px-1 bg-[#ec4899] text-white rounded font-bold">PSY</span>
+        <span id="abraLvUpBadge" class="px-1.5 py-0.5 bg-[#d4ff32] text-black text-[10px] font-mono font-black rounded neo-border">
+          LV UP!
+        </span>
+      </div>
+    </button>
+
+    <!-- Hero 2: Pancham (Ally AI) -->
+    <button id="btnPartyPancham" onclick="switchHero('pancham')" class="skew-panel px-4 py-1.5 bg-[#142334] text-neutral-300 border-2 border-black font-bold text-sm hover:scale-105 transition-all relative">
+      <div class="unskew flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+        <span class="font-teko text-lg leading-none">PANCHAM</span>
+        <span class="text-[10px] font-mono px-1 bg-red-600 text-white rounded font-bold">PHY</span>
+        <span id="panchamLvUpBadge" class="px-1.5 py-0.5 bg-[#d4ff32] text-black text-[10px] font-mono font-black rounded neo-border">
+          LV UP!
+        </span>
+      </div>
+    </button>
+  </div>
+
+  <!-- Right Controls: Audio, Sequence Replay & Shift Toggle -->
+  <div class="flex items-center gap-2.5">
+    <!-- Play/Replay XP Celebration Sequence -->
+    <button id="btnReplayXP" onclick="triggerCelebrationSequence()" class="skew-panel bg-[#d4ff32] hover:bg-[#b8e61e] text-black border-2 border-black px-3 py-1 text-xs font-mono font-black transition-all neo-border" title="Replay animated EXP accumulation and victory celebration">
+      <div class="unskew flex items-center gap-1.5">
+        <span>▶ REPLAY EXP</span>
+      </div>
+    </button>
+
+    <!-- Milestone L10 Test Toggle -->
+    <button id="btnMilestone" onclick="toggleMilestoneTest()" class="skew-panel bg-[#142334] hover:bg-[#1d334b] text-neutral-200 border-2 border-black px-3 py-1 text-xs font-mono font-bold transition-all" title="Toggle Level 1->2 (1 pt) vs Level 9->10 Milestone (3 pts)">
+      <div class="unskew flex items-center gap-1.5">
+        <span id="milestoneDot" class="w-2 h-2 rounded-full bg-neutral-500"></span>
+        <span id="milestoneLabel">LV 1->2 (1 PT)</span>
+      </div>
+    </button>
+
+    <!-- Shift Math Toggle -->
+    <button id="btnShiftToggle" onclick="toggleShiftManual()" class="skew-panel bg-[#142334] hover:bg-[#1d334b] text-amber-300 border-2 border-black px-3 py-1 text-xs font-mono font-bold transition-all">
+      <div class="unskew flex items-center gap-1.5">
+        <kbd class="px-1.5 py-0.5 bg-black text-amber-400 rounded text-[10px]">SHIFT</kbd>
+        <span id="shiftStatusText">MATH: OFF</span>
+      </div>
+    </button>
+
+    <!-- Audio Mute -->
+    <button id="btnAudio" onclick="toggleAudio()" class="skew-panel bg-[#142334] hover:bg-[#1d334b] text-cyan-400 border-2 border-black px-2.5 py-1 text-xs font-mono font-bold transition-all">
+      <div class="unskew" id="audioIcon">🔊 AUDIO</div>
+    </button>
+  </div>
+</header>
+
+<!-- ===================================================================== -->
+<!-- MAIN VIEWPORT: SMT III THREE-COLUMN COMPOSITION                       -->
+<!-- ===================================================================== -->
+<main class="relative z-10 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5 px-4 lg:px-8 py-3 items-stretch max-w-[1800px] w-full mx-auto">
+
+  <!-- =================================================================== -->
+  <!-- LEFT COLUMN (5 COLS): IDENTITY, NATURE (D-393), HP=GREEN, EXP=YELLOW -->
+  <!-- =================================================================== -->
+  <section class="lg:col-span-5 flex flex-col gap-3 justify-between">
+
+    <!-- 1. IDENTIFICATION CARD WITH GENEROUS PADDING (PX-8) & CORRECTED COLORS -->
+    <div class="skew-panel bg-[#f5f6f8] text-[#08101a] px-8 py-4 neo-border">
+      <div class="unskew">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <span class="text-xs font-mono font-extrabold uppercase px-2 py-0.5 bg-black text-white rounded">
+              <span id="heroRoleLabel">PROTAGONIST / LEADER</span>
+            </span>
+            <span class="text-xs font-mono text-neutral-500 font-bold" id="heroSpeciesSub">PSI POKÉMON</span>
+          </div>
+          <!-- Level & Next EXP (D-399 quadratic curve) -->
+          <div class="text-right flex items-baseline gap-3">
+            <div>
+              <span class="text-xs font-mono text-neutral-600 font-bold">LV</span>
+              <span class="font-teko text-3xl font-black text-black leading-none ml-1" id="heroLevelNumber">2</span>
+            </div>
+            <div>
+              <span class="text-[11px] font-mono text-neutral-500 font-bold">NEXT</span>
+              <span class="font-mono text-xs font-bold text-black ml-1" id="heroNextExpNumber">200 EXP</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Name & Element Badges (D-413 Specification) -->
+        <div class="flex items-center justify-between mt-2 pt-1 border-t border-neutral-300">
+          <div class="flex items-center gap-3">
+            <h2 class="font-teko text-4xl lg:text-5xl font-black text-black leading-none tracking-wider" id="heroNameHeading">
+              ABRA
+            </h2>
+            <!-- Clickable Element Badges Container -->
+            <div id="heroElementBadges" class="flex items-center gap-1.5">
+              <!-- Injected dynamically -->
+            </div>
+          </div>
+          <div class="flex items-center gap-1">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#22c55e] animate-pulse"></span>
+            <span class="text-xs font-mono font-bold text-neutral-700">ACTIVE BATTLE READY</span>
+          </div>
+        </div>
+
+
+        <!-- EXP Progression Bar (YELLOW AS SPECIFIED BY USER!) -->
+        <div class="mt-2.5">
+          <div class="flex justify-between text-[11px] font-mono text-neutral-600 font-bold mb-1">
+            <span>EXP PROGRESSION</span>
+            <span class="text-amber-600 font-bold font-mono" id="heroExpGainLabel">+60 EXP EARNED</span>
+          </div>
+          <div class="h-2.5 bg-neutral-300 rounded overflow-hidden neo-border border-black">
+            <!-- Yellow Bar per user prompt -->
+            <div id="heroExpBarFill" class="h-full bg-gradient-to-r from-amber-400 to-[#d4ff32] transition-all duration-700 w-[0%]"></div>
+          </div>
+        </div>
+
+        <!-- Dual HP & MP Bars (HP IS GREEN AS SPECIFIED BY USER!) -->
+        <div class="grid grid-cols-2 gap-3 mt-3 pt-2.5 border-t border-neutral-300">
+          <!-- HP Meter (GREEN PER USER PROMPT) -->
+          <div>
+            <div class="flex justify-between items-baseline mb-0.5">
+              <span class="font-teko text-lg font-bold text-emerald-700 leading-none">HP</span>
+              <span class="font-mono text-xs font-bold text-black" id="heroHpText">49 / 49</span>
+            </div>
+            <div class="h-2 bg-neutral-300 rounded overflow-hidden border border-neutral-400">
+              <div id="heroHpBarFill" class="h-full bg-[#22c55e] w-full transition-all duration-300"></div>
+            </div>
+            <div class="text-[10px] font-mono text-neutral-500 mt-0.5" id="heroHpFormulaHint">
+              25 + 10L + 25⌊L/10⌋ + 2VIT (D-392)
+            </div>
+          </div>
+
+          <!-- MP Meter (Purple with Abra floor 20 per D-413) -->
+          <div>
+            <div class="flex justify-between items-baseline mb-0.5">
+              <span class="font-teko text-lg font-bold text-purple-700 leading-none">MP</span>
+              <span class="font-mono text-xs font-bold text-black" id="heroMpText">26 / 26</span>
+            </div>
+            <div class="h-2 bg-neutral-300 rounded overflow-hidden border border-neutral-400">
+              <div id="heroMpBarFill" class="h-full bg-purple-600 w-full transition-all duration-300"></div>
+            </div>
+            <div class="flex items-center justify-between text-[10px] font-mono text-purple-700 font-bold mt-0.5" id="heroMpSubHint">
+              <span>REGEN: +4 MP / 8s</span>
+              <span id="heroMpFloorHint" class="text-neutral-500">FLOOR: 20 MP</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 2. SMT V / PERSONA 5 STYLE 12-ELEMENT AFFINITIES STRIP -->
+    <div class="skew-panel bg-[#0d1824] p-3 neo-border border-cyan-900/60">
+      <div class="unskew">
+        <div class="flex items-center justify-between text-xs font-mono text-neutral-400 mb-2">
+          <span class="text-cyan-400 font-bold uppercase tracking-wider">ELEMENTAL AFFINITIES & WEAKNESSES</span>
+          <span class="text-[11px] text-neutral-500">CLICK ANY ELEMENT FOR DETAILS</span>
+        </div>
+        <!-- 12 Elements Strip -->
+        <div class="grid grid-cols-6 sm:grid-cols-12 gap-1" id="affinitiesStrip">
+          <!-- Injected dynamically via JS with all 12 elements -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. SMT III STATS WITH SEGMENTED PIPS & NATURE MODIFIERS (FOLLOWING PARALLELOGRAM ANGULATION) -->
+    <div class="skew-panel bg-[#0d1824] px-8 py-4 neo-border flex-1 flex flex-col justify-between">
+      <div class="space-y-2">
+        <!-- Header (Slanted container with unskewed text) -->
+        <div class="flex items-center justify-between pb-1.5 border-b border-neutral-800">
+          <div class="unskew">
+            <span class="font-teko text-2xl font-bold text-white tracking-wide leading-none" id="attributesHeaderTitle">
+              ATTRIBUTES (6 STATS)
+            </span>
+            <span class="text-[10px] font-mono text-neutral-400 block mt-0.5" id="attributesSubHint">
+              D-390: 15 PTS BUDGET • SMT III SEGMENTED PIPS
+            </span>
+          </div>
+          <!-- Points Badge (Leader Only) -->
+          <div id="pointsBadgeBox" class="px-2.5 py-1 bg-[#d4ff32] text-black font-mono font-black text-xs rounded neo-border flex items-center gap-1.5">
+            <div class="unskew flex items-center gap-1">
+              <span>AVAILABLE:</span>
+              <span id="availPointsCount" class="text-sm font-black">1 PT</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- NATURE BADGE & AI TACTICS CARD (D-393) - FOLLOWS ANGULATION -->
+        <div class="p-2 bg-neutral-900/90 rounded border border-neutral-700/80 flex items-center justify-between cursor-pointer hover:border-amber-400/60 transition-all neo-border mb-1" onclick="explainNature()" title="Click to view Nature rules (D-393)">
+          <div class="unskew flex items-center justify-between w-full">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-mono font-black uppercase px-2 py-0.5 bg-black text-amber-300 rounded border border-amber-500/40">
+                NATURE: <span id="heroNatureName">MODEST</span>
+              </span>
+              <span id="heroNatureModifier" class="text-xs font-mono font-bold text-emerald-400">
+                (+3 MAG, -2 STR, -1 AGI)
+              </span>
+            </div>
+            <div class="text-[11px] font-mono font-bold text-neutral-400 flex items-center gap-1">
+              <span id="heroNatureTactic" class="text-neutral-300">Ranged Spellcaster (D-393)</span>
+              <span class="text-cyan-400">ℹ</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Segmented Pip Bars Container for 6 Stats (Angled inside parallelogram) -->
+        <div class="space-y-1.5 pt-0.5" id="statRowsContainer">
+          <!-- Injected via JS with matching angulation -->
+        </div>
+
+        <!-- Ally Automatic Proficiency Card (D-394) -->
+        <div id="allyProficiencyCard" class="hidden p-3 bg-neutral-900/90 border-2 border-amber-500/50 rounded neo-border space-y-1">
+          <div class="unskew space-y-1">
+            <div class="flex items-center justify-between text-xs font-mono">
+              <span class="text-amber-400 font-bold uppercase">AUTOMATIC LEVEL UP (D-394)</span>
+              <span id="allyGrantedBadge" class="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-bold">+1 STR GRANTED</span>
+            </div>
+            <div class="text-xs text-neutral-200 font-mono">
+              <strong>Proficiency Cause:</strong> Executed 5 Physical moves (Karate Chop & Tackle) in combat.
+            </div>
+            <div class="text-[11px] text-neutral-400 font-mono">
+              Tactics Mode: <span class="text-cyan-300 font-bold">Direct Offensive (D-393)</span>. Allies gain stat points organically without manual distribution.
+            </div>
+          </div>
+        </div>
+
+        <!-- Shift Mathematical Explanations (Shown when Shift is held) -->
+        <div id="shiftStatMathPanel" class="hidden p-2.5 bg-neutral-900/95 border border-cyan-500/40 rounded text-xs font-mono text-cyan-300 space-y-1">
+          <div class="unskew space-y-1">
+            <div class="text-[11px] font-bold text-amber-400 uppercase">[SHIFT FORMULAS ACTIVE]</div>
+            <div>• <strong class="text-white">VIT:</strong> HP = 25 + 10L + 25⌊L/10⌋ + 2VIT (+2 HP/pt).</div>
+            <div>• <strong class="text-white">WIS:</strong> MP = 10 + 2L + 3WIS (Abra floor: 20 MP) | Regen: +4 MP / 8s.</div>
+            <div>• <strong class="text-white">STR / MAG:</strong> Direct multipliers for physical and magical damage equations.</div>
+            <div>• <strong class="text-white">AGI / LUK:</strong> ATB interval & critical hit chance (D-001).</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leader Allocation Controls: Reset & Confirm (Angled & inside block) -->
+      <div id="leaderAllocationControls" class="flex items-center gap-3 pt-3 border-t border-neutral-800 mt-2">
+        <button id="btnResetPoints" onclick="resetPoints()" class="px-3 py-1.5 bg-[#142334] hover:bg-neutral-700 text-neutral-300 text-xs font-mono font-bold rounded neo-border transition-all">
+          <span class="unskew inline-block">RESET</span>
+        </button>
+        <button id="btnConfirmAllocation" onclick="confirmAllocation()" class="flex-1 py-1.5 bg-[#d4ff32] hover:bg-[#b8e61e] text-black font-teko text-xl font-black rounded neo-border transition-all flex items-center justify-center gap-2">
+          <span class="unskew inline-block">CONFIRM ALLOCATION (D-401)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Action Advancing Lock Notice (D-401): FLAT WHITE BLOCK BELOW STATUS ATTRIBUTES (Item 2) -->
+    <div id="advanceLockNotice" class="skew-panel bg-white text-black px-6 py-2.5 border-2 border-black neo-border flex items-center justify-between shadow-[4px_4px_0px_#000]">
+      <div class="unskew flex items-center gap-2.5 font-mono text-xs font-black">
+        <span class="text-base">⚠️</span>
+        <span id="advanceLockText">Leader has unallocated stat points! Distribution is required before exit (D-401).</span>
+      </div>
+      <div class="unskew shrink-0">
+        <span class="text-[10px] font-mono font-black uppercase px-2 py-0.5 bg-black text-[#d4ff32] rounded">
+          REQUIRED (D-401)
+        </span>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- =================================================================== -->
+  <!-- CENTER COLUMN (3 COLS): 3D HERO STAGE (PURE SMT III MINIMALIST)    -->
+  <!-- =================================================================== -->
+  <section class="lg:col-span-3 flex flex-col items-center justify-between relative min-h-[460px] lg:min-h-0 py-2">
+    <!-- 3D Canvas Container -->
+    <div class="relative w-full h-full flex items-center justify-center overflow-hidden">
+      <div id="threeHeroCanvas"></div>
+      
+      <!-- SMT III Minimalist Vignette Overlay (NO BOUNCING BLOCK PER USER PROMPT) -->
+      <div class="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#060a10] via-transparent to-transparent z-10"></div>
+
+      <!-- Drag to Rotate Hint -->
+      <div class="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 text-[10px] font-mono text-neutral-500 uppercase tracking-widest bg-black/60 px-2.5 py-0.5 rounded border border-neutral-800">
+        Click & Drag to Rotate 3D Model
+      </div>
+    </div>
+  </section>
+
+  <!-- =================================================================== -->
+  <!-- RIGHT COLUMN (4 COLS): 8 MOVES WITH FLAT ELEMENT BACKGROUNDS & WATERMARK -->
+  <!-- =================================================================== -->
+  <section class="lg:col-span-4 flex flex-col gap-3 justify-between">
+    <div class="skew-panel bg-[#0d1824] px-8 py-4 neo-border flex-1 flex flex-col justify-between">
+      <div class="space-y-3">
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-neutral-800 pb-2">
+          <div class="unskew">
+            <span class="font-teko text-2xl font-bold text-white tracking-wide leading-none">
+              MOVES & SKILLS (8 SLOTS)
+            </span>
+            <div class="text-[10px] font-mono text-neutral-400 mt-0.5">
+              FLAT ELEMENT COLOR CARDS • EMBOSSED WATERMARK • CLICK FOR RULES
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 8 Skill Slots (2 cols x 4 rows) - FLAT ELEMENT COLORS + WATERMARK -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="skillGridContainer">
+          <!-- Injected via JS with element-colored flat backgrounds & watermarks -->
+        </div>
+
+        <!-- BATTLE SPOILS & LOOT PANEL (D-400) - NATURAL -9DEG PARALLELOGRAM INSIDE CONTAINER -->
+        <div class="p-3 bg-neutral-900/90 border-2 border-neutral-700/80 rounded neo-border space-y-2 shadow-[3px_3px_0px_#000]">
+          <div class="unskew space-y-2">
+            <div class="flex items-center justify-between text-xs font-mono border-b border-neutral-800 pb-1">
+              <span class="text-amber-400 font-bold uppercase">BATTLE SPOILS & LOOT (D-400)</span>
+              <span class="text-neutral-400 text-[10px]">ALL FOES DEFEATED</span>
+            </div>
+            <div class="flex items-center justify-between text-xs font-mono">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold text-xs border border-amber-500/40">G</span>
+                <div>
+                  <div class="font-bold text-white">+140 GOLD</div>
+                  <div class="text-[10px] text-neutral-400">Dungeon Currency</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-sm bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold text-xs border border-emerald-500/40">🧪</span>
+                <div>
+                  <div class="font-bold text-white">POTION ×1</div>
+                  <div class="text-[10px] text-neutral-400">Restores 50 HP</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+    </div>
+  </section>
+
+</main>
+
+<!-- ===================================================================== -->
+<!-- FOOTER: SMT III CONTROLS STRIP (D-401 LOCK & 100% ENGLISH)            -->
+<!-- ===================================================================== -->
+<footer class="relative z-20 bg-[#070e17] border-t-2 border-black px-4 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+  <!-- Left Keys -->
+  <div class="flex items-center gap-4 text-neutral-300 font-mono">
+    <div class="flex items-center gap-1.5">
+      <kbd class="px-2 py-0.5 bg-neutral-800 text-white rounded neo-border text-[11px]">Q</kbd>
+      <kbd class="px-2 py-0.5 bg-neutral-800 text-white rounded neo-border text-[11px]">D</kbd>
+      <span>Switch Hero</span>
+    </div>
+    <div class="flex items-center gap-1.5">
+      <kbd class="px-2 py-0.5 bg-neutral-800 text-amber-300 rounded neo-border text-[11px]">SHIFT</kbd>
+      <span>Toggle Advanced Formulas</span>
+    </div>
+    <div class="flex items-center gap-1.5 hidden sm:flex">
+      <kbd class="px-2 py-0.5 bg-neutral-800 text-neutral-400 rounded neo-border text-[11px]">SPACE</kbd>
+      <span>Fast-Forward Animation</span>
+    </div>
+  </div>
+
+  <!-- Center Guidance -->
+  <div class="text-xs font-mono text-neutral-400 hidden md:block">
+    <span class="text-cyan-400 font-bold">STATUS:</span> Click any icon to view mechanical rules. Allocate leader points to proceed.
+  </div>
+
+  <!-- Right Advance Button (Locked if points pending D-401) -->
+  <div>
+    <button id="btnReturnDungeon" onclick="attemptReturnDungeon()" class="skew-panel px-5 py-2 bg-neutral-700 text-neutral-400 font-teko text-xl font-black rounded neo-border cursor-not-allowed transition-all">
+      <div class="unskew flex items-center gap-2">
+        <kbd class="px-1.5 py-0.5 bg-black text-white text-xs font-mono rounded">Z / ENTER</kbd>
+        <span id="btnReturnText">RETURN TO DUNGEON (LOCKED)</span>
+      </div>
+    </button>
+  </div>
+</footer>
+
+<!-- ===================================================================== -->
+<!-- JAVASCRIPT: LOGIC, 3D ENGINE, SOUNDS, PIPS & D-413/D-401 RULES        -->
+<!-- ===================================================================== -->

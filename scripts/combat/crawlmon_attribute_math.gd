@@ -169,6 +169,17 @@ static func status_application_chance(base_chance: float, applier_luk: int, targ
 	return clampf(base_chance + float(applier_luk - target_luk) * 0.01, 0.0, 1.0)
 
 
+## D-1142: mitigacao natural de dano magico por WIS. WIS 10 = metade; nunca zera.
+## A decisao foi delegada ao assistente pelo criador ("inventa").
+static func magic_mitigation_multiplier(wis: int) -> float:
+	return 10.0 / (10.0 + maxf(float(wis), 0.0))
+
+
+## D-1142: aplica a mitigacao de WIS a um dano magico ja calculado. Minimo 1.
+static func mitigate_magic_damage(amount: int, wis: int) -> int:
+	return maxi(1, roundi(float(amount) * magic_mitigation_multiplier(wis)))
+
+
 ## Esquiva automatica baseada na diferenca de LUK com retornos decrescentes simetricos (D-152 / D-153).
 static func automatic_dodge_chance(attacker_luk: int, defender_luk: int) -> float:
 	var difference: int = defender_luk - attacker_luk

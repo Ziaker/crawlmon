@@ -21,6 +21,7 @@ const BEHAVIORS := {
 	&"rakunda": MoveBehaviorsScript.Rakunda,
 	&"sukunda": MoveBehaviorsScript.Sukunda,
 	&"armored_bulk": MoveBehaviorsScript.ArmoredBulk,
+	&"war_cry": MoveBehaviorsScript.WarCry,
 	&"provocacao": MoveBehaviorsScript.Taunt,
 	&"taunt": MoveBehaviorsScript.Taunt,
 }

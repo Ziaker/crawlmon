@@ -9,6 +9,7 @@ const BREAK_SECONDS := 0.62
 const EXPIRE_SECONDS := 1.35
 const FADE_SECONDS := 0.35
 const FORM_FADE_SECONDS := 0.25
+const WIDTH_SCALE := 1.15  ## D-1108: 15% a mais só no diâmetro horizontal (X/Z); a altura não muda.
 
 var fx
 var target: Combatant
@@ -351,7 +352,8 @@ func update(delta: float) -> void:
 
 	shell_mat.set_shader_parameter("opacity", shell_opacity)
 	facet_mat.set_shader_parameter("opacity", facet_opacity)
-	root.scale = Vector3.ONE * (_scale_ratio * effect_scale)
+	var s := _scale_ratio * effect_scale
+	root.scale = Vector3(s * WIDTH_SCALE, s, s * WIDTH_SCALE)
 
 
 func _update_transform(delta: float) -> void:
@@ -363,7 +365,7 @@ func _update_transform(delta: float) -> void:
 			var anchor: Vector3 = fx.body_anchor(model)
 			center = Vector3(anchor.x, maxf(anchor.y, radius), anchor.z)
 	root.global_position = center
-	root.scale = Vector3.ONE * _scale_ratio
+	root.scale = Vector3(_scale_ratio * WIDTH_SCALE, _scale_ratio, _scale_ratio * WIDTH_SCALE)
 	if release_stream != null and release_stream.position.y != -center.y + 0.05:
 		release_stream.position.y = -center.y + 0.05
 	if wave_root != null and wave_root.position.y != -center.y:
@@ -430,7 +432,8 @@ func _camera_azimuth() -> float:
 func hit() -> void:
 	if done:
 		return
-	var point: Vector3 = fx.camera_hit_point(center, radius)
+	var hit_radius := radius * WIDTH_SCALE
+	var point: Vector3 = fx.camera_hit_point(center, hit_radius)
 	var local_dir: Vector3 = root.to_local(point).normalized()
 	flash = 0.25
 	hit_pulse = 1.0
@@ -447,8 +450,8 @@ func hit() -> void:
 
 	var world_dir: Vector3 = (point - center).normalized()
 	fx.flash(point, Color("2f8fd0"), 0.16, 0.12)
-	fx.impact_splash(center, radius, point, world_dir, 14)
-	fx.facet_shards(center, radius, "hit", 6, point)
+	fx.impact_splash(center, hit_radius, point, world_dir, 14)
+	fx.facet_shards(center, hit_radius, "hit", 6, point)
 	var bubble_tex := FxBubbleShield.bubble_texture()
 	var drop_tex := FxBubbleShield.drop_texture()
 	var spark_tex := FxBubbleShield.spark_texture()

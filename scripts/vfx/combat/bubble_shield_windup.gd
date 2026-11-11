@@ -2,10 +2,11 @@ class_name BubbleShieldWindup
 extends RefCounted
 ## Wind-up do Bubble Shield: uma coroa de papel em volta de CADA aliado, com
 ## raio próprio (1,12x o raio do corpo), painéis em camadas, fitas mágicas em
-## contra-movimento e confete. Permanece durante a formação e se desfaz em 1,45 s.
+## contra-movimento e confete. Permanece durante a formação e se desfaz em 2,45 s
+## (D-1108: 1 s a mais que os 1,45 s anteriores).
 
 const WINDUP := 0.7
-const RELEASE_SECONDS := 1.45
+const RELEASE_SECONDS := 2.45  ## D-1108: a saída lenta do wind-up leva 1 s a mais.
 const SPIN := 0.85
 
 var fx

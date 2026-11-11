@@ -146,6 +146,10 @@ func _input(event: InputEvent) -> void:
 				_cycle_attacker(1 if not event.shift_pressed else -1)
 			KEY_F2:
 				_fill_all_atb()
+			KEY_BRACKETRIGHT:  # D-1070: ATB of the selected fighter (Tab cycles): ] +1 block, Shift+] full
+				_set_atb(_current_attacker(), 99.0 if event.shift_pressed else 1.0, true)
+			KEY_BRACKETLEFT:  # [ -1 block, Shift+[ zero
+				_set_atb(_current_attacker(), 0.0 if event.shift_pressed else -1.0, event.shift_pressed == false)
 			KEY_F3:
 				if _enemies.size() > 0 and _party.size() > 0:
 					_force_attack(_enemies[0], _party[0])
@@ -177,6 +181,10 @@ func _input(event: InputEvent) -> void:
 			KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8:
 				var idx: int = event.keycode - KEY_1
 				_select_skill(idx)
+			KEY_F9:
+				_apply_test_damage(10, event.shift_pressed)
+			KEY_F10:
+				_apply_test_ko()
 
 	# Controles de mouse da Câmera Livre
 	if _free_cam_active:
@@ -283,12 +291,65 @@ func _all_combatants() -> Array[Combatant]:
 	return list
 
 
+## D-1070: ATB of one fighter. `amount` is added (relative) or set (absolute); 99 means full. Clamped to 0..5 blocks.
+func _set_atb(c: Combatant, amount: float, relative: bool) -> void:
+	if c == null:
+		return
+	c.atb = clampf(c.atb + amount if relative else amount, 0.0, Combatant.BLOCKS)
+	_note = "ATB de %s: %.1f" % [c.name, c.atb]
+
+
 func _fill_all_atb() -> void:
 	for c in _all_combatants():
 		c.atb = Combatant.BLOCKS
 	if _party.size() > 0:
 		_party[0].burst = mini(_party[0].burst + 1, Combatant.BURST_MAX)
 	_note = "ATB cheio para todos e +1 Burst no líder"
+
+
+## D-1042 / D-1044: aplica dano de teste passando pelo pipeline real de hit_resolved (animação damage, flash, hit-stop, recuo e texto flutuante).
+func _apply_test_damage(amount: int, is_crit := false) -> void:
+	var att := _current_attacker()
+	var tgt := _current_target()
+	if tgt == null:
+		return
+	if att == null:
+		att = tgt
+	var guard_res := ""
+	if tgt.is_guarding():
+		guard_res = "absorbed"
+		amount = DamageMath.apply_guard(amount)
+		tgt.end_guard("hit")
+	var armor_res := ""
+	if tgt.is_armored() and guard_res == "":
+		armor_res = "hit"
+		tgt.end_armor("hit")
+	tgt.take_damage(amount)
+	if _battle != null:
+		_battle.hit_resolved.emit(att, tgt, Element.Type.FISICO, {
+			"evaded": false, "dmg": amount, "weak": false, "crit": is_crit,
+			"gain": 1 if is_crit else 0, "whiffed": false, "power": 1.0,
+			"skill_name": "Tackle", "guard": guard_res, "armor": armor_res,
+		})
+	_note = "Dano de Teste: %s levou %d dano%s (HP %d/%d)" % [tgt.name, amount, " CRÍTICO!" if is_crit else "", tgt.hp, tgt.max_hp]
+
+
+## D-1042 / D-1044: aplica K.O. de teste passando por hit_resolved para disparar o lançamento balístico de K.O. (D-049/D-160/D-166).
+func _apply_test_ko() -> void:
+	var att := _current_attacker()
+	var tgt := _current_target()
+	if tgt == null:
+		return
+	if att == null:
+		att = tgt
+	var fatal := maxi(1, tgt.hp)
+	tgt.take_damage(fatal, true)
+	if _battle != null:
+		_battle.hit_resolved.emit(att, tgt, Element.Type.FISICO, {
+			"evaded": false, "dmg": fatal, "weak": false, "crit": true,
+			"gain": 0, "whiffed": false, "power": 1.5, "skill_name": "Tackle",
+		})
+	_note = "K.O. de Teste (com lançamento): %s eliminado" % tgt.name
 
 
 func _force_attack(actor: Combatant, target: Combatant) -> void:
@@ -321,7 +382,7 @@ func _trigger_strike_vfx_only() -> void:
 	else:
 		_fx.flash(actor)
 	_fx._play(actor, "attack")
-	_note = "VFX de Golpe isolado: %s" % sk.display_name
+	_note = "VFX de Golpe isolado: %s (%s)" % [sk.display_name, sk.visual_phase_text("strike")]
 
 
 ## Dispara isoladamente apenas o VFX de impacto no alvo selecionado.
@@ -342,7 +403,7 @@ func _trigger_impact_vfx_only() -> void:
 	_fx.float_text(to_pos + Vector3(0, 1.8, 0), sk.display_name.to_upper(), color, 42)
 	if _director != null:
 		_director.impact_post(to_pos, color, true, BattleFx.move_uses_bw_pulse(mid))
-	_note = "VFX de Impacto isolado: %s" % sk.display_name
+	_note = "VFX de Impacto isolado: %s (%s)" % [sk.display_name, sk.visual_phase_text("impact")]
 
 
 func _toggle_ai() -> void:
@@ -511,7 +572,7 @@ func _update_hud_text() -> void:
 		speed_str, "ATIVA" if _free_cam_active else "Combate", "ON" if _gizmos_enabled else "OFF", "ON" if _god else "off"
 	])
 	lines.append("CONTROLES: [P] Pausa | [N/.] Quadro a quadro (1/60s) | [V] Só Golpe VFX | [B] Só Impacto VFX | [Tab] Cicla Lutador | [1..8] Habilidade")
-	lines.append("ATALHOS: F2 ATB cheio | F3 Inimigo->Líder | F4 Inimigo->Aliado | F8 Aliado->Inimigo | F6 IA on/off")
+	lines.append("ATALHOS: F2 ATB cheio (todos) | ] +1 ATB, Shift+] cheio, [ -1 ATB, Shift+[ zerado (lutador do Tab) | F3 Inimigo->Líder | F4 Inimigo->Aliado | F8 Aliado->Inimigo | F6 IA on/off | F9 Dano (Shift=Crit) | F10 KO")
 	if _director != null:
 		lines.append("CÂMERA (teste): [K] Enquadrar inimigos=%s | [L] Reage com menu de alvo=%s | [M] Prioridade do líder=%s" % [
 			["OFF", "SUAVE", "ZONA MORTA"][_director.frame_mode],

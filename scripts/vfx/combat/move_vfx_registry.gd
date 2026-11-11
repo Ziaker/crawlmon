@@ -122,6 +122,10 @@ static func windup(fx: BattleFx, inc: Incoming, move_id: String, from: Vector3, 
 			if barrier != null:
 				nodes.append(barrier)
 			return {"handled": true, "nodes": nodes}
+		&"javelin_throw":
+			# D-1162: the authored FxJavelinThrow owns the whole 5-piece assembly, the
+			# sightline, the reticle and the crown; the generic aura/lane would double it.
+			return {"handled": true, "nodes": nodes}
 	return {"handled": false, "nodes": nodes}
 
 

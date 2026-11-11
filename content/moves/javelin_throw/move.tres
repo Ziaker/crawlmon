@@ -8,26 +8,26 @@ id = &"javelin_throw"
 display_name = "Javelin Throw"
 kind = 1
 power = 1.2
-mp_cost = 3
-windup = 1.0
+mp_cost = 5
+windup = 0.75
 stand_gap = 2.6
 hold = 0.2
 plan_profile = &"projectile"
-vfx_key = &"generic"
-effect_line_text = "120% ATK physical damage | Projectile | 2 ATB"
-short_effect_text = "120% physical"
-description_text = "A heavy thrown javelin that impales the target at range."
-mechanics_text = "Long-range ballistic spear throw that impales the target with heavy armor-piercing kinetic force."
-visual_text = "Spinning javelin with trailing wind spirals and heavy earth impact dust upon landing."
+vfx_key = &"javelin_throw"
+effect_line_text = "120% ATK physical damage | Crit chance rises as the target's HP falls | 2 ATB"
+short_effect_text = "120% physical | crit scales with missing HP"
+description_text = "A heavy javelin throw that finds the weak point of a wounded target."
+mechanics_text = "Physical projectile. Critical chance = 10% + 1 pp per point of LUK difference (attacker - target) + up to 20 pp based on the target's missing HP (cap 100%)."
+visual_text = "A gold/white five-piece javelin assembles in the hand, a 14-blade prismatic crown (7 inner + 7 outer) opens behind the tip, seven solid 3D afterimages follow the throw, and a giant red 3D cross perforates the weak point with a single critical flash, a delayed ring and ground spikes."
 motion_text = "Stationary throw. Attacker leans back and hurls the javelin in a direct ballistic trajectory."
-windup_text = "1.30s wind-up. Throwing arm draws back into full tension."
-tactical_text = "Long-range ballistic spear throw dealing kinetic damage. Single Target."
-visual_motion_text = "Stationary ballistic hurl with trailing wind spirals."
+windup_text = "0.75s wind-up. Throwing arm draws back into full tension."
+tactical_text = "Long-range physical throw. Crit chance rises as the target loses HP. Single Target."
+visual_motion_text = "Stationary ballistic hurl with a 14-blade prismatic crown, solid afterimages and a giant critical cross impact."
 phase_visuals = {
-"impact": "Explosão/impacto no ponto de contato a 1,2 m de altura (D-1013 / D-308 Fase 4): Spinning javelin with trailing wind spirals and heavy earth impact dust upon landing.",
-"release": "Transição contínua da carga para o disparo sem sumiço brusco (D-308 Fase 2): Stationary throw. Attacker leans back and hurls the javelin in a direct ballistic trajectory.",
-"return": "Dissipação completa de partículas/malhas (zero restos) e retorno do lançador ao idle.",
-"strike": "Janela final de aproximação (últimos 0,25 s) antes do contato.",
-"travel": "Voo do projétil/feixe ao longo do eixo atacante->alvo mantendo leitura de tela (D-308 Fase 3): Stationary throw. Attacker leans back and hurls the javelin in a direct ballistic trajectory.",
-"windup": "Carga elemental contínua à frente do lançador (D-308 Fase 1): 1.30s wind-up. Throwing arm draws back into full tension."
+"impact": "Giant red 3D cross (5.94 m arms), single critical flash, delayed fine ring at +0.08s, ground ring, 8 earth spikes, 10 dust blocks and 8 radial sparks.",
+"release": "The 14-blade prismatic crown (7 inner + 7 outer) is born at the real javelin tip and opens while receding along the shaft; it never spins on its own axis.",
+"return": "Complete dissolve of the javelin and every layer, with zero leftovers.",
+"strike": "Final 0.25s approach before contact.",
+"travel": "Ballistic flight with seven solid 3D afterimages and a straight piercing beam from the hand.",
+"windup": "0.75s wind-up: the five pieces fly in and lock (tip last), an amber pulse runs to the tip, a two-spike 3D star ignites, and a 3D sightline and octahedral reticle mark the weak point."
 }

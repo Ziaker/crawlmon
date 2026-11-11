@@ -294,6 +294,7 @@ const ELEMENT_COLORS := {
 	Element.Type.VENENO: Color("84cc16"),
 	Element.Type.SOM: Color("06b6d4"),
 	Element.Type.TERRA: Color("b45309"),
+	Element.Type.MYSTIC: Color("65b5b3"),
 }
 
 const ELEMENT_GLYPH_COLORS := {
@@ -308,6 +309,7 @@ const ELEMENT_GLYPH_COLORS := {
 	Element.Type.VENENO: Color("080e18"),
 	Element.Type.SOM: Color("080e18"),
 	Element.Type.TERRA: Color.WHITE,
+	Element.Type.MYSTIC: Color("080e18"),
 }
 
 var _icon_cache: Dictionary = {}
@@ -337,6 +339,8 @@ func _get_element_icon(elem: Element.Type) -> Texture2D:
 			name_key = "light"
 		Element.Type.TREVAS:
 			name_key = "dark"
+		Element.Type.MYSTIC:
+			name_key = "mystic"
 		_:
 			name_key = "neutral"
 	if not _icon_cache.has("elem_" + name_key):
@@ -437,6 +441,7 @@ func _draw() -> void:
 	_draw_inventory()
 	_draw_art(c)
 	_draw_panel(c)
+	_draw_affinities(c)
 	_draw_moves(c)
 
 	# Footer
@@ -490,7 +495,7 @@ func _draw_roster() -> void:
 		if u_elems.size() == 1:
 			var ew := 36.0
 			var er := Rect2(ex, ey, ew, eh)
-			var bg_c: Color = ELEMENT_COLORS.get(u_elems[0], BattleFx.COLORS[u_elems[0]])
+			var bg_c: Color = ELEMENT_COLORS.get(u_elems[0], BattleFx.COLORS.get(u_elems[0], Color("cbd5e1")))
 			var fg_c: Color = ELEMENT_GLYPH_COLORS.get(u_elems[0], Color("080e18"))
 			_draw_para_flat(Vector2(ex, ey), Vector2(ew, eh), 2.5, bg_c)
 			var icon := _get_element_icon(u_elems[0])
@@ -503,7 +508,7 @@ func _draw_roster() -> void:
 				var ew := 18.0
 				var bx := ex + k * (ew + 4.0)
 				var er := Rect2(bx, ey, ew, eh)
-				var bg_c: Color = ELEMENT_COLORS.get(u_elems[k], BattleFx.COLORS[u_elems[k]])
+				var bg_c: Color = ELEMENT_COLORS.get(u_elems[k], BattleFx.COLORS.get(u_elems[k], Color("cbd5e1")))
 				var fg_c: Color = ELEMENT_GLYPH_COLORS.get(u_elems[k], Color("080e18"))
 				_draw_para_flat(Vector2(bx, ey), Vector2(ew, eh), 2.5, bg_c)
 				var icon := _get_element_icon(u_elems[k])
@@ -795,7 +800,7 @@ func _draw_panel(c: Combatant) -> void:
 	if c_elems.size() == 1:
 		var ew := 54.0
 		var eh := 28.0
-		var bg_c: Color = ELEMENT_COLORS.get(c_elems[0], BattleFx.COLORS[c_elems[0]])
+		var bg_c: Color = ELEMENT_COLORS.get(c_elems[0], BattleFx.COLORS.get(c_elems[0], Color("cbd5e1")))
 		var fg_c: Color = ELEMENT_GLYPH_COLORS.get(c_elems[0], Color("080e18"))
 		_draw_para_flat(Vector2(e_start_x, e_y), Vector2(ew, eh), skew_elem, bg_c)
 		var icon := _get_element_icon(c_elems[0])
@@ -809,7 +814,7 @@ func _draw_panel(c: Combatant) -> void:
 			var ew := 28.0
 			var eh := 28.0
 			var sx_k := e_start_x + k * (ew + 7.0)
-			var bg_c: Color = ELEMENT_COLORS.get(c_elems[k], BattleFx.COLORS[c_elems[k]])
+			var bg_c: Color = ELEMENT_COLORS.get(c_elems[k], BattleFx.COLORS.get(c_elems[k], Color("cbd5e1")))
 			var fg_c: Color = ELEMENT_GLYPH_COLORS.get(c_elems[k], Color("080e18"))
 			_draw_para_flat(Vector2(sx_k, e_y), Vector2(ew, eh), skew_elem, bg_c)
 			var icon := _get_element_icon(c_elems[k])
@@ -908,29 +913,8 @@ func _draw_panel(c: Combatant) -> void:
 	_draw_para_flat(Vector2(sx + 8, sy + 114), Vector2(3.5, 20.0), 1.0, GOLD)
 	_text(title, Vector2(sx + 15, sy + 132), nat_name, 20, GOLD)
 
-	# Right of footer: WEAK with element parallelogram badges (D-413, D-416, D-421, D-431)
-	if c.weaknesses.is_empty():
-		_text_right(body, sx + sw - 10, sy + 128, "WEAK: —", 9, Color("6e8a97"))
-	else:
-		var w_box_w := 20.0
-		var w_box_h := 16.0
-		var w_gap := 4.0
-		var total_w := float(c.weaknesses.size()) * (w_box_w + w_gap) - w_gap
-		var wx := sx + sw - 10.0 - total_w
-		var weak_lbl := "WEAK:"
-		var weak_sz := body.get_string_size(weak_lbl, HORIZONTAL_ALIGNMENT_LEFT, -1, 9).x
-		_text(body, Vector2(wx - weak_sz - 6.0, sy + 128.0), weak_lbl, 9, Color("8ea9b5"))
-		for w_elem in c.weaknesses:
-			var w_col: Color = ELEMENT_COLORS.get(w_elem, BattleFx.COLORS[w_elem])
-			var fg_c: Color = ELEMENT_GLYPH_COLORS.get(w_elem, Color("080e18"))
-			_draw_para_flat(Vector2(wx, sy + 116.0), Vector2(w_box_w, w_box_h), 2.0, w_col)
-			var icon := _get_element_icon(w_elem)
-			if icon != null:
-				var ic_sz := 13.0
-				var center_pos := Vector2(wx + w_box_w * 0.5 + 1.0, sy + 116.0 + w_box_h * 0.5)
-				var ic_r := Rect2(center_pos - Vector2(ic_sz * 0.5, ic_sz * 0.5), Vector2(ic_sz, ic_sz))
-				draw_texture_rect(icon, ic_r, false, fg_c)
-			wx += w_box_w + w_gap
+	# Right of the footer: as afinidades saíram daqui e viraram um bloco próprio
+	# em _draw_affinities() (D-1165), para WEAK e RESIST aparecerem juntos.
 
 	# Tooltip and Combat Personality Paragraph (D-422, D-431: Redundant subtitle removed)
 	if is_nat_active:
@@ -954,6 +938,63 @@ func _draw_panel(c: Combatant) -> void:
 		var doc_w := body.get_string_size(doc_lbl, HORIZONTAL_ALIGNMENT_LEFT, -1, 9).x
 		_text(body, Vector2(x + 16, py + 132), doc_lbl, 9, GOLD)
 		_text(body, Vector2(x + 16 + doc_w + 10.0, py + 132), ai_bias_str, 9, Color("a5c2ce"))
+
+
+## D-1166: grade de afinidades no estilo SMT IV / Persona 5 — todos os elementos
+## em células iguais, com 1 letra embaixo (W = fraco, R = resiste, – = neutro).
+const AFFINITY_CELL := 36.0
+const AFFINITY_GRID_W := 12.0 * AFFINITY_CELL - 8.0
+
+
+func _draw_affinity_grid(c: Combatant, origin: Vector2) -> void:
+	var body := FanMenu.body_font()
+	var x := origin.x
+	for element in Element.NAMES.keys():
+		var kind := c.affinity_for(element)
+		var col: Color = ELEMENT_COLORS.get(element, BattleFx.COLORS.get(element, Color("cbd5e1")))
+		var glyph: Color = ELEMENT_GLYPH_COLORS.get(element, Color("080e18"))
+		var neutral := kind == Affinity.Type.NEUTRAL
+		var chip := Color(col.r, col.g, col.b, 0.22) if neutral else col
+		_draw_para_flat(Vector2(x, origin.y), Vector2(24, 22), 2.5, chip)
+		var icon := _get_element_icon(element)
+		if icon != null:
+			var tint := Color(glyph, 0.38) if neutral else glyph
+			draw_texture_rect(icon, Rect2(x + 4.0, origin.y + 3.0, 16, 16), false, tint)
+		var letter := "–"
+		var letter_col := Color(0.31, 0.42, 0.47, 0.8)
+		if kind == Affinity.Type.WEAK:
+			letter = "W"
+			letter_col = CORAL
+		elif kind == Affinity.Type.RESIST:
+			letter = "R"
+			letter_col = BLUE
+		_text(body, Vector2(x + 8.5, origin.y + 38.0), letter, 11, letter_col)
+		x += AFFINITY_CELL
+
+
+func _draw_affinities(c: Combatant) -> void:
+	# Base da arte: cunha escura com lados inclinados (mesma linguagem do
+	# parallelogram da arte) e fade para cima, em vez de barra retangular.
+	var x0 := 336.0
+	var w := 488.0
+	var top := 486.0
+	var bottom := 572.0
+	var slant := 30.0
+	var bands := 44
+	for i in bands:
+		var t := float(i) / float(bands - 1)          # 0 = base, 1 = topo
+		var alpha := 0.90 * pow(1.0 - t, 1.35)
+		var inset := slant * t
+		draw_rect(
+			Rect2(
+				x0 + inset,
+				bottom - (bottom - top) * float(i + 1) / float(bands),
+				w - inset * 2.0,
+				(bottom - top) / float(bands) + 1.0
+			),
+			Color(0.016, 0.055, 0.09, alpha)
+		)
+	_draw_affinity_grid(c, Vector2(x0 + (w - AFFINITY_GRID_W) * 0.5, 518))
 
 
 func _panel_bar(x: float, y: float, w: float, label: String, k: float, color: Color, value: String) -> void:
@@ -997,7 +1038,7 @@ func _draw_moves(c: Combatant) -> void:
 		var sx := grid_x + float(col) * (strip_w + gap_x)
 		var sy := grid_y + float(row) * (strip_h + gap_y)
 
-		var elem_col: Color = ELEMENT_COLORS.get(m.element, BattleFx.COLORS[m.element])
+		var elem_col: Color = ELEMENT_COLORS.get(m.element, BattleFx.COLORS.get(m.element, Color("cbd5e1")))
 		var glyph_col: Color = ELEMENT_GLYPH_COLORS.get(m.element, Color.WHITE)
 
 		# Outer Strip Body (Parallelogram with 7.0px slant)
@@ -1074,10 +1115,10 @@ func _draw_moves(c: Combatant) -> void:
 	var cr := Rect2(card_x, card_y, card_w, card_h)
 
 	var active_m := list[_move]
-	var active_col: Color = ELEMENT_COLORS.get(active_m.element, BattleFx.COLORS[active_m.element])
+	var active_col: Color = ELEMENT_COLORS.get(active_m.element, BattleFx.COLORS.get(active_m.element, Color("cbd5e1")))
 	var is_light := active_m.element in [
 		Element.Type.RAIO, Element.Type.VENTO, Element.Type.LUZ,
-		Element.Type.SOM, Element.Type.VENENO, Element.Type.FISICO
+		Element.Type.SOM, Element.Type.VENENO, Element.Type.FISICO, Element.Type.MYSTIC
 	]
 	var text_col: Color = Color("080e18") if is_light else Color.WHITE
 	var desc_col: Color = Color(0.08, 0.14, 0.20, 0.95) if is_light else Color(0.95, 0.97, 1.0, 0.95)
@@ -1107,19 +1148,15 @@ func _draw_moves(c: Combatant) -> void:
 	var badge_w := 20.0
 	var badge_y := card_y + 6.0
 
-	var type_name := "magical"
+	var type_name := active_m.type_icon_name()
 	var type_col := Color("0ea5e9")
 	var type_fg := Color.WHITE
-	if active_m.kind == Skill.Kind.MELEE or (active_m.element == Element.Type.FISICO and active_m.kind != Skill.Kind.STATUS):
-		type_name = "physical"
+	if type_name == "physical":
 		type_col = Color("ef4444")
-		type_fg = Color.WHITE
-	elif active_m.display_name.to_lower() == "guard":
-		type_name = "guard"
+	elif type_name == "guard":
 		type_col = Color("cbd5e1")
 		type_fg = Color("080e18")
-	elif active_m.display_name.to_lower() == "teleport":
-		type_name = "dodge"
+	elif type_name == "dodge":
 		type_col = Color("fcb900")
 		type_fg = Color("080e18")
 
@@ -1180,10 +1217,10 @@ func _draw_moves(c: Combatant) -> void:
 
 	# Expanded Information Section (D-419: dense, informative, clean typography)
 	if _shift_held:
-		# Shift Mode: Advanced Formulas, Scaling math & MP cycles (D-413, D-419)
-		var base_dmg := roundi(float(c.attack) * active_m.power)
-		var scale_attr := "MAG" if (active_m.kind != Skill.Kind.MELEE and active_m.element != Element.Type.FISICO) else "STR"
-		var attr_val := c.mag if scale_attr == "MAG" else c.str
+		# Shift Mode: Advanced Formulas, Scaling math & MP cycles (D-413, D-419, D-1140)
+		var scale_attr := "MAG" if active_m.is_magical() else "STR"
+		var attr_val := c.mag if active_m.is_magical() else c.attack
+		var base_dmg := DamageMath.base_damage(attr_val, active_m.power, false)
 		var mod_str := "FORMULA: Base ×%.2f (%d Dmg) · Scaling: %s %d (+%.1f%%) · Nature Bonus: %+d" % [
 			active_m.power, base_dmg, scale_attr, attr_val, float(attr_val) * 5.0, c.innate_stats.get(scale_attr, 0)
 		]
@@ -1207,9 +1244,9 @@ func _draw_moves(c: Combatant) -> void:
 		# Line 2: Visual Aesthetic & Displacement / Motion
 		var line2_str := active_m.visual_motion_summary()
 
-		# Line 3: Scaling Attribute, Wind-up & MP Cycle (clean metrics)
-		var scale_attr := "MAG" if (active_m.kind != Skill.Kind.MELEE and active_m.element != Element.Type.FISICO) else "STR"
-		var attr_val := c.mag if scale_attr == "MAG" else c.str
+		# Line 3: Scaling Attribute, Wind-up & MP Cycle (clean metrics; D-1140)
+		var scale_attr := "MAG" if active_m.is_magical() else "STR"
+		var attr_val := c.mag if active_m.is_magical() else c.attack
 		var wind_sec := active_m.windup if active_m.windup >= 0.0 else 1.0
 		var line3_str := "Wind-up: %.2fs (interruptible) · Scales with %s %d · MP Cycle: +%d MP / 8.0s" % [
 			wind_sec, scale_attr, attr_val, c.mp_regen_amount()
@@ -1264,19 +1301,15 @@ func _draw_detail(c: Combatant) -> void:
 	var badge_y := hy + 16.0
 	var badge_sz := 22.0
 
-	var type_name := "magical"
+	var type_name := m.type_icon_name()
 	var type_col := Color("0ea5e9")
 	var type_fg := Color.WHITE
-	if m.kind == Skill.Kind.MELEE or (m.element == Element.Type.FISICO and m.kind != Skill.Kind.STATUS):
-		type_name = "physical"
+	if type_name == "physical":
 		type_col = Color("ef4444")
-		type_fg = Color.WHITE
-	elif m.display_name.to_lower() == "guard":
-		type_name = "guard"
+	elif type_name == "guard":
 		type_col = Color("cbd5e1")
 		type_fg = Color("080e18")
-	elif m.display_name.to_lower() == "teleport":
-		type_name = "dodge"
+	elif type_name == "dodge":
 		type_col = Color("fcb900")
 		type_fg = Color("080e18")
 
@@ -1367,9 +1400,9 @@ func _draw_detail(c: Combatant) -> void:
 	# 5. TACTICAL SYNERGY & SCALING (Escala e Tática)
 	_text(body, Vector2(hx, cy), "[ 05 // TACTICAL SYNERGY & ATTRIBUTE SCALING ]", 10, Color("a78bfa"))
 	cy += 16.0
-	var scale_attr_d := "MAG" if (m.kind != Skill.Kind.MELEE and m.element != Element.Type.FISICO) else "STR"
-	var attr_val_d := c.mag if scale_attr_d == "MAG" else c.str
-	var base_dmg := roundi(float(c.attack) * m.power)
+	var scale_attr_d := "MAG" if m.is_magical() else "STR"
+	var attr_val_d := c.mag if m.is_magical() else c.attack
+	var base_dmg := DamageMath.base_damage(attr_val_d, m.power, false)
 	var syn_txt := "Scales with %s (%d pts, +%.1f%% dmg) · Base Damage: %d HP · Exploits target elemental weaknesses for 1.5× damage · MP Recovery cycle: +%d MP / 8.0s." % [
 		scale_attr_d, attr_val_d, float(attr_val_d) * 5.0, base_dmg, c.mp_regen_amount()
 	]

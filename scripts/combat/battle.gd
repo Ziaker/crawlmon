@@ -38,6 +38,9 @@ signal hit_resolved(attacker: Combatant, target: Combatant, element: Element.Typ
 signal healed(actor: Combatant, target: Combatant, amount: int)
 signal attack_clashed(inc_a, inc_b, point: Vector3, mutual: bool)  ## D-279: two opposing runners bumped into each other.
 signal attack_interrupted(inc)  ## A hit stopped an attack on its way: BattleFx fills its recovery plan.
+signal action_interrupted(actor: Combatant)  ## D-1105: a non-damaging interrupt (War Cry) makes the actor play the damage reaction.
+signal windup_interrupted(actor: Combatant, source: Combatant)  ## D-1129: War Cry/status cancelled `actor`'s wind-up; `source` is the interrupter.
+signal windup_hit_interrupted(actor: Combatant, source: Combatant)  ## D-1129: a hit cancelled `actor`'s wind-up (it already has the normal hit shake).
 signal burn_applied(target: Combatant)  ## D-238
 signal burn_ticked(target: Combatant, damage: int)  ## D-238: for the future HUD / VFX of the Burn
 signal burn_ended(target: Combatant)  ## D-238: the Burn ran out (not when the target died)
@@ -58,7 +61,7 @@ const SKILL_BLOCKS := 2.0
 const ITEM_BLOCKS := 1.0
 const GUARD_BLOCKS := 1.0  ## D-272: Guard costs 1 ATB; Burst does not pay it.
 const GUARD_SECONDS := 2.0  ## D-272: no cancelling; ends by time, contact or Brick Break.
-const GUARD_REDUCTION := 0.5  ## PROVISIONAL (D-272): until VIT/SPI exist. Damage taken = ceil(damage x (1 - this)).
+const GUARD_REDUCTION := DamageMath.GUARD_REDUCTION  ## D-1153: single source in DamageMath; D-272 provisional until VIT/SPI exist.
 const AI_GUARD_CHANCE := 0.25  ## D-272/D-116: chance an AI target guards when an attack is declared on it.
 
 
@@ -87,6 +90,7 @@ var debug_roll := 0  ## Sala de VFX (debug): 0 = sorteio normal, 1 = acerto sem 
 const STATUS_WINDUP := 0.5  ## Status moves prepare faster, with the engine paused (D-031).
 const STATUS_VFX_TAIL := 1.0  ## Seconds the engine stays paused after the status effect is applied.
 const ARMORED_BULK := "armored_bulk"  ## D-1026: SELF status move, instant wind-up.
+const WAR_CRY := "war_cry"  ## D-1127: the only status move that does NOT pause the engine (experimental).
 const ARMORED_BULK_PAUSE := 1.5  ## D-1026: kept for FX timing; the rule reads MoveData.status_pause.
 const BURN_DMG := 2  ## D-238 (D-236 sheet): fixed damage of each Burn tick
 const BURN_INTERVAL := 1.0  ## seconds between ticks; the first comes one interval after the hit
@@ -96,11 +100,11 @@ const STEP_COST := 1.0  ## ATB blocks per step; nothing else.
 const STEP_TIME := 0.35  ## Seconds a step takes to walk.
 const TRAVEL_PER_STEP := 0.10  ## Seconds off an attack's travel per step of attacker + target.
 const TRAVEL_MIN := 0.25
-const DMG_PER_STEP := 0.10  ## +10% dealt per step in front, -10% taken per step behind.
+const DMG_PER_STEP := DamageMath.DMG_PER_STEP  ## D-1153: single source in DamageMath.
 const ENGAGE_SECONDS := 2.0  ## Real seconds the evader stays next to the opponent (the Burst slow-motion).
-const WEAKNESS_MULT := 1.5
+const WEAKNESS_MULT := DamageMath.WEAKNESS_MULT  ## D-1153: single source in DamageMath.
 const CRIT_CHANCE := 0.1
-const CRIT_MULT := 2.0
+const CRIT_MULT := DamageMath.CRIT_MULT  ## D-1153: single source in DamageMath.
 const START_ATB := 3.0  ## Every combatant starts a battle with this many blocks.
 const AI_HEAL_BELOW := 0.5  ## AI combatants drink a potion at or below this HP fraction.
 
@@ -116,6 +120,7 @@ var _badges: BattleBadges
 var _landing: Array[Incoming] = []  ## Resolved attacks whose strike has not landed yet.
 var _returning: Array[Incoming] = []  ## Struck already: only the return is left to play.
 var _status_pause: Incoming = null  ## A status move is being performed: only it runs (D-031).
+var _war_cry_active: Array[Incoming] = []  ## D-1127: War Cries run outside the status pause; each closes its own banner when done.
 var _status_tail := -1.0
 var _status_total := 0.0  ## D-1026: when > 0 the move fixes the TOTAL length of the pause (no default tail).
 var _status_elapsed := 0.0
@@ -145,6 +150,7 @@ func start(p_party: Array[Combatant], p_enemies: Array[Combatant]) -> void:
 	_landing.clear()
 	_ai.reset()
 	_status_pause = null
+	_war_cry_active.clear()
 	_returning.clear()
 	rewards.clear()
 	_badges.clear()
@@ -203,11 +209,20 @@ func _process(delta: float) -> void:
 			c.step_t = minf(c.step_t + delta / STEP_TIME, 1.0)
 	_update_positions()
 	_ai.run(delta)
+	if _status_pause != null:
+		# D-031/D-1150: the pause starts when the status move is declared. Do not let an
+		# attack resolve later in this same frame and interrupt/cancel the player's action.
+		state_changed.emit()
+		return
 	_resolve_incoming(delta)
 	_step_attacks(delta)
 	_run_queued()
+	if _status_pause != null:
+		state_changed.emit()
+		return
 	_reward_queue.step(delta)
 	_evade.step_engage(delta)
+	_finish_war_cry_if_done()
 	state_changed.emit()
 
 
@@ -216,8 +231,8 @@ func _process(delta: float) -> void:
 func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
 	if not actor.is_alive() or actor.is_stunned() or actor.is_guarding() or is_winding_up(actor) or not actor.can_pay_skill(skill):
 		return false
-	if _status_pause != null:
-		return false  # The engine is paused by a status move (D-031).
+	if _status_pause != null and skill.kind == Skill.Kind.STATUS:
+		return false  # D-1159: attacks may start their wind-up during the pause; status moves wait.
 	if (skill.data != null and skill.data.has_tag(&"self_status")) or BattleSpace.move_id(skill.display_name) == ARMORED_BULK:
 		target = actor  # D-1026: SELF
 	elif skill.is_friendly:
@@ -263,7 +278,11 @@ func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
 
 	incoming.append(inc)
 	if inc.kind == Skill.Kind.STATUS:
-		_status_pause = inc  # From the wind-up until its effect has played (D-031).
+		var no_pause := BattleSpace.move_id(inc.label) == WAR_CRY  # D-1127: experimental exception
+		if no_pause:
+			_war_cry_active.append(inc)
+		else:
+			_status_pause = inc  # From the wind-up until its effect has played (D-031).
 		_status_tail = -1.0
 		var status_pause := inc.move_data.status_pause if inc.move_data != null and inc.move_data.status_pause >= 0.0 else 0.0
 		if status_pause <= 0.0 and BattleSpace.move_id(inc.label) == ARMORED_BULK:
@@ -283,8 +302,11 @@ func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
 func request_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
 	if not running or not actor.is_alive() or actor.is_stunned() or actor.is_guarding() or actor.mp < skill.mp_cost:
 		return false
-	if can_start_now(actor):
-		return _start_move(actor, skill, target)
+	if can_start_windup_now(actor, skill):
+		var started := _start_move(actor, skill, target)
+		if started:
+			_clear_queued(actor)  # D-1146: the new choice replaces the old slot; it cannot run later too.
+		return started
 	if not skill.is_friendly and (target == null or not target.is_alive()):
 		return false
 	actor.queued_skill = skill
@@ -296,6 +318,19 @@ func request_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
 ## False during a status pause (D-031) and until its own attack has ended, return included.
 func can_start_now(actor: Combatant) -> bool:
 	return _status_pause == null and not is_attacking(actor) and not actor.is_guarding()
+
+
+## D-1159: an attack (non-status) may start its wind-up during a status pause and stay
+## frozen; a status move still waits so pauses never stack.
+func can_start_windup_now(actor: Combatant, skill: Skill) -> bool:
+	if not actor.is_alive() or is_attacking(actor) or actor.is_guarding() or actor.is_stunned():
+		return false
+	return _status_pause == null or (skill != null and skill.kind != Skill.Kind.STATUS)
+
+
+## D-1146: the HUD uses this to block Items/Steps without reading the private field.
+func is_status_paused() -> bool:
+	return _status_pause != null
 
 
 func _start_move(actor: Combatant, skill: Skill, target: Combatant) -> bool:
@@ -327,6 +362,8 @@ func _clear_queued(c: Combatant) -> void:
 
 
 func use_item(actor: Combatant, item: Item, target: Combatant) -> bool:
+	if _status_pause != null:
+		return false  # D-1146: items may not skip the status pause (Evade/Guard are the exceptions).
 	if item.kind != Item.Kind.CONSUMABLE or actor.is_stunned() or actor.is_guarding() or not actor.can_pay(ITEM_BLOCKS):
 		return false
 	if not actor.is_alive() or actor.item_count(item.id) <= 0:
@@ -354,8 +391,9 @@ func guard_block_reason(actor: Combatant) -> String:
 		return "atordoado"
 	if actor.engaged_with != null:
 		return "engajado"
-	if _status_pause != null or (is_attacking(actor) and not is_held(actor)):  # D-282: held in its idle it may Guard
+	if is_attacking(actor) and not is_held(actor):  # D-282: held in its idle it may Guard
 		return "em ação"
+	# D-1146: an otherwise free actor may Guard during the status pause (Evade/Guard are allowed).
 	if actor.blocks() < GUARD_BLOCKS:
 		return "falta ATB"  # Burst never pays the Guard (D-272).
 	return ""
@@ -413,6 +451,8 @@ static func travel_seconds(base: float, attacker: Combatant, target: Combatant) 
 ## No step while preparing/executing its own attack, while an attack involves it (as
 ## attacker or target), while engaged, while still walking a step, or without 1 ATB.
 func can_step(c: Combatant, dir: int) -> bool:
+	if _status_pause != null:
+		return false  # D-1146: steps are blocked during the status pause.
 	if not running or not c.is_alive() or dir == 0 or c.is_stunned() or c.is_guarding():
 		return false
 	var to := c.pos_step + dir
@@ -431,6 +471,8 @@ func can_step(c: Combatant, dir: int) -> bool:
 func step_block_reason(c: Combatant) -> String:
 	if not running or not c.is_alive():
 		return ""
+	if _status_pause != null:
+		return "pausa de status"  # D-1146
 	if c.is_guarding():
 		return "em Guard"
 	if c.engaged_with != null:
@@ -470,12 +512,11 @@ static func estimate_damage(attacker: Combatant, target: Combatant, skill: Skill
 	if move_data == null:
 		move_data = MoveCatalog.get_move(StringName(BattleSpace.move_id(skill.display_name)))
 	var flat := move_data.magic_flat if move_data != null else -1
-	if flat >= 0:
-		# Drain Spear: magic damage 5 + MAG, mitigated by SPI (never by DEF/crit/weakness).
-		return maxi(1, flat + attacker.mag - target.spi)
-	var weak := skill.element in target.weaknesses
-	var step_mult := (1.0 + DMG_PER_STEP * maxi(attacker.pos_step, 0)) * (1.0 - DMG_PER_STEP * maxi(-target.pos_step, 0))
-	return maxi(1, roundi(attacker.attack * skill.power * (WEAKNESS_MULT if weak else 1.0) * step_mult))
+	var step_mult := DamageMath.step_multiplier(attacker.pos_step, target.pos_step)
+	var magical := skill.is_magical()
+	var attack_stat := attacker.mag if magical else attacker.attack
+	var affinity_mult := DamageMath.affinity_multiplier(target.affinity_for(skill.element))
+	return DamageMath.resolve_offense(attack_stat, skill.power, affinity_mult, false, step_mult, magical, target.wis, flat, attacker.mag, target.spi)
 
 
 ## A projectile that meets another opponent on its way hits that one instead.
@@ -525,6 +566,33 @@ func is_winding_up(c: Combatant) -> bool:
 		if inc.attacker == c and inc.phase == Phase.STAGGER:
 			return true  # Interrupted: stunned until the engaged state ends.
 	return false
+
+
+## D-1102: true only while `c` has an attack that has not resolved yet (the WINDUP window).
+func has_windup(c: Combatant) -> bool:
+	for inc in incoming:
+		if inc.attacker == c and not inc.ghost and inc.phase == Phase.WINDUP:
+			return true
+	return false
+
+
+## D-1102: War Cry cancels only the WINDUP attack of `c`, without damage, knockback or a
+## return animation from a hit. The ATB already spent by `c` is not refunded.
+func interrupt_windup_of(c: Combatant, hitter: Combatant) -> bool:
+	var stopped := false
+	for inc in incoming.duplicate():
+		if inc.attacker == c and not inc.ghost and inc.phase == Phase.WINDUP:
+			incoming.erase(inc)
+			inc.interrupted = true
+			inc.interruption_feedback = true  # D-1160: War Cry really cancelled the wind-up.
+			stopped = true
+			attack_cancelled.emit(inc)
+			log_message.emit("%s é interrompido!" % c.name)
+	if stopped:
+		_clear_queued(c)
+		action_interrupted.emit(c)
+		windup_interrupted.emit(c, hitter)  # D-1129: one shake for the War Cry-style interrupt
+	return stopped
 
 
 func _resolve_incoming(delta: float, only: Incoming = null) -> void:
@@ -681,6 +749,7 @@ func _clash(ia: Incoming, ib: Incoming) -> void:
 		else:
 			_landing.erase(inc)
 			inc.interrupted = true
+			inc.interruption_feedback = true  # D-1160: the clash really stopped this run.
 			AttackMotion.begin_hit_return(inc, -toward * BattleSpace.CLASH_BACK)
 			attack_interrupted.emit(inc)
 			_returning.append(inc)
@@ -704,6 +773,16 @@ func _step_status_pause(delta: float) -> void:
 		if _status_tail <= 0.0:
 			_status_pause = null
 			status_pause_ended.emit(inc)
+
+
+## D-1127: War Cry does not pause the engine, so nothing closes its banner for it.
+## Emit the end event once its attack left the clock (finished or cancelled).
+func _finish_war_cry_if_done() -> void:
+	for inc in _war_cry_active.duplicate():
+		if incoming.has(inc) or _landing.has(inc) or _returning.has(inc):
+			continue
+		_war_cry_active.erase(inc)
+		status_pause_ended.emit(inc)
 
 
 ## A computer-controlled target reacts on the way in with a chance equal to its speed.
@@ -863,8 +942,8 @@ func grant_atb(owner: Combatant, amount: int, source: Combatant) -> void:
 	_reward_queue.grant_atb(owner, amount, source)
 
 
-func grant_burst(owner: Combatant, source: Combatant) -> void:
-	_reward_queue.grant_burst(owner, source)
+func grant_burst(owner: Combatant, source: Combatant, fast := false) -> void:
+	_reward_queue.grant_burst(owner, source, fast)
 
 
 # --- Helpers ---------------------------------------------------------------
@@ -876,9 +955,24 @@ func steal_badges(attacker: Combatant, target: Combatant) -> Array:
 	return _badges.steal(attacker, target)
 
 
+## D-1103: Javelin Throw keeps the D-150 base (10% + LUK difference) and adds up to
+## 20 percentage points linearly as the target's current HP falls. Other Moves keep CRIT_CHANCE.
+func crit_chance_for(attacker: Combatant, target: Combatant, label: String) -> float:
+	if BattleSpace.move_id(label) == "javelin_throw":
+		var missing := 1.0 - float(target.hp) / float(maxi(target.max_hp, 1))
+		# D-150 raw base: clamping only at the end keeps a negative LUK difference
+		# able to cancel the life bonus instead of being floored at 0 first.
+		var base := 0.10 + float(attacker.luk - target.luk) * 0.01
+		return clampf(base + 0.20 * missing, 0.0, 1.0)
+	return CRIT_CHANCE
+
+
 func _hit(attacker: Combatant, target: Combatant, power: float, element: Element.Type, label: String, whiffed := false, auto_dodged := false, opts := {}) -> Dictionary:
 	var info := {"evaded": false, "dmg": 0, "weak": false, "crit": false, "gain": 0, "whiffed": whiffed, "power": power, "skill_name": label}
 	info["visual_push"] = bool(opts.get("visual_push", true))  # D-1073: the contact FX may skip the shove.
+	var hit_move_data: MoveData = opts.get("move_data", null)
+	if hit_move_data == null:
+		hit_move_data = MoveCatalog.get_move(StringName(BattleSpace.move_id(label)))
 	if bool(opts.get("bounce", false)):
 		# D-1025: a bounce hit is a normal hit for weakness/crit/evade, but the FX and the reward rules can tell it
 		# apart from the main beam.
@@ -925,17 +1019,24 @@ func _hit(attacker: Combatant, target: Combatant, power: float, element: Element
 	var weak := false
 	var crit := false
 	var dmg := 0
+	var affinity_kind := target.affinity_for(element)
+	var affinity_mult := DamageMath.affinity_multiplier(affinity_kind)
+	info["affinity"] = affinity_kind
+	info["affinity_mult"] = affinity_mult
+	info["affinity_applied"] = magic_flat < 0
 	if magic_flat >= 0:
 		# Drain Spear: 5 + MAG - SPI, minimum 1. No weakness, crit or position multiplier.
-		dmg = maxi(1, magic_flat + attacker.mag - target.spi)
+		dmg = DamageMath.drain(magic_flat, attacker.mag, target.spi)
 		info["magic"] = true
 	else:
-		weak = element in target.weaknesses
-		crit = whiffed or debug_roll == 3 or (debug_roll == 0 and randf() < CRIT_CHANCE)
+		weak = affinity_kind == Affinity.Type.WEAK
+		crit = whiffed or debug_roll == 3 or (debug_roll == 0 and randf() < crit_chance_for(attacker, target, label))
 		# Position: +10% per step in front for the attacker, -10% per step behind for the target.
-		var step_mult := (1.0 + DMG_PER_STEP * maxi(attacker.pos_step, 0)) * (1.0 - DMG_PER_STEP * maxi(-target.pos_step, 0))
-		dmg = maxi(1, roundi(attacker.attack * power * (WEAKNESS_MULT if weak else 1.0) * (CRIT_MULT if crit else 1.0) * step_mult))
-	var hit_move_data: MoveData = opts.get("move_data", null)
+		var step_mult := DamageMath.step_multiplier(attacker.pos_step, target.pos_step)
+		# D-1140/D-122: a Move declared magic scales with MAG instead of STR; the rest of the formula is the same.
+		var magical := hit_move_data != null and hit_move_data.damage_type == MoveData.DamageType.MAGICAL
+		var attack_stat := attacker.mag if magical else attacker.attack
+		dmg = DamageMath.resolve_offense(attack_stat, power, affinity_mult, crit, step_mult, magical, target.wis)
 	var guard_break := false
 	if hit_move_data != null:
 		guard_break = hit_move_data.has_tag(&"guard_break")
@@ -951,7 +1052,7 @@ func _hit(attacker: Combatant, target: Combatant, power: float, element: Element
 			target.end_guard("broken")
 		else:
 			guard_result = "absorbed"
-			dmg = maxi(1, ceili(float(dmg) * (1.0 - GUARD_REDUCTION)))
+			dmg = DamageMath.apply_guard(dmg)
 			target.end_guard("hit")
 	info["guard"] = guard_result
 	# D-1026: ARMOR. The Guard has priority and keeps the badge. Otherwise the first contact of a Move destroys it: the
@@ -969,6 +1070,7 @@ func _hit(attacker: Combatant, target: Combatant, power: float, element: Element
 		dmg -= shield_absorbed
 		info["shield_absorbed"] = shield_absorbed
 		if target.shield_hp <= 0:
+			info["shield_broke"] = true
 			target.end_shield("broken")
 	if shield_absorbed > 0:
 		info["shield_hit"] = true
@@ -991,7 +1093,7 @@ func _hit(attacker: Combatant, target: Combatant, power: float, element: Element
 	log_message.emit("%s usa %s (%s) em %s (%d dano)%s%s" % [
 		attacker.name, label, element_name, target.name, dmg,
 		(" [escudo -%d]" % shield_absorbed if shield_absorbed > 0 else ""),
-		(" FRAQUEZA! +2 bloco(s)" if weak else "") + (" CRÍTICO! +1 bloco" if crit else "")])
+		(" FRAQUEZA! +2 bloco(s)" if weak else "") + (" RESISTIU! (x0.5)" if affinity_kind == Affinity.Type.RESIST and magic_flat < 0 else "") + (" CRÍTICO! +1 bloco" if crit else "")])
 
 	# Efeitos de contato adicionais (D-032/D-1005/D-977/D-238), por Move (D-1079).
 	if armor_result != "":
@@ -1072,15 +1174,18 @@ func _drop_returns_of(c: Combatant) -> void:
 ## Returns true when it really stopped an action of `c` (D-236: Fire Bullet draws another impact then; nothing else reads it).
 func _interrupt_attacks_of(c: Combatant, hitter: Combatant, force: float) -> bool:
 	var stopped := false
-	if is_attacking(c):
-		_clear_queued(c)  # Whatever it had lined up after this action is gone with it (D-161).
+	var stopped_windup := false
 	for inc in incoming.duplicate():
 		if inc.attacker == c and not inc.ghost:
 			incoming.erase(inc)
 			inc.interrupted = true
+			inc.interruption_feedback = true  # D-1160: the hit really cancelled the wind-up.
 			stopped = true
+			stopped_windup = true
 			log_message.emit("%s é interrompido!" % c.name)
 			attack_cancelled.emit(inc)
+	if stopped_windup:
+		windup_hit_interrupted.emit(c, hitter)  # D-1129: the hit already shakes; this only feeds the slow-motion.
 	# The knockback it takes: away from the hit, or straight back from its own facing.
 	var own_back := -Vector3(sin(c.yaw), 0.0, cos(c.yaw))
 	var hit_push := BattleSpace.flat_dir(hitter.pos, c.pos)
@@ -1093,6 +1198,7 @@ func _interrupt_attacks_of(c: Combatant, hitter: Combatant, force: float) -> boo
 			continue  # Projectile already fired and in flight: hitting the caster no longer destroys it.
 		_landing.erase(inc)
 		inc.interrupted = true
+		inc.interruption_feedback = true  # D-1160: the hit stopped it before its impact.
 		stopped = true
 		if not c.is_alive():
 			c.set_rest(c.pos)  # It falls where it is: no hop home for a body.
@@ -1115,7 +1221,7 @@ func _interrupt_attacks_of(c: Combatant, hitter: Combatant, force: float) -> boo
 		attack_phase.emit(inc, inc.phase)
 	for inc in _returning.duplicate():
 		if inc.attacker == c and inc.phase == Phase.RETURN and not inc.interrupted and not inc.ghost and inc.kind == Skill.Kind.MELEE:
-			inc.interrupted = true
+			inc.interrupted = true  # D-1160: the action already hit; a hit during the return is not shown as an interruption.
 			stopped = true
 			if inc.motion == "cast":
 				inc.plan = [[Phase.RETURN, 0.55 + AttackMotion.HIT_STUN_EXTRA]]
@@ -1124,6 +1230,8 @@ func _interrupt_attacks_of(c: Combatant, hitter: Combatant, force: float) -> boo
 			else:
 				AttackMotion.begin_hit_return(inc, push)
 			attack_interrupted.emit(inc)
+	if stopped:
+		_clear_queued(c)  # D-1146: only an action that was really interrupted drops the slot.
 	return stopped
 
 
@@ -1150,7 +1258,7 @@ func _check_end() -> void:
 		if inc.attacker.is_alive() and AttackMotion.carries(inc):
 			AttackMotion.begin_plain_return(inc, inc.attacker.pos)
 			inc.impacted = true
-			inc.interrupted = true
+			inc.interrupted = true  # D-1160: battle-end cleanup is not an interruption on screen.
 			inc.plan_i = 0
 			inc.phase = Phase.RETURN
 			inc.phase_time = 0.0

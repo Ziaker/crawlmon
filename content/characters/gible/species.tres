@@ -18,5 +18,19 @@ raw_stats = {
 "WIS": 45
 }
 weaknesses = Array[int]([2])
+affinities = {
+0: 2,
+1: 0,
+2: 1,
+3: 0,
+4: 0,
+5: 2,
+6: 0,
+7: 0,
+8: 0,
+9: 0,
+10: 2,
+11: 0
+}
 loadout = ExtResource("1_52t2t")
 model_profile = ExtResource("2_tdukb")

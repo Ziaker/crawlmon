@@ -7,6 +7,8 @@ extends Resource
 ## `Skill`/`Incoming`; este Resource é carregado uma vez e tratado como somente
 ## leitura.
 
+enum DamageType { PHYSICAL, MAGICAL }
+
 @export var id: StringName = &""
 @export var display_name: String = ""
 
@@ -14,6 +16,8 @@ extends Resource
 ## `Skill.Kind`: 0 = MELEE, 1 = PROJECTILE, 2 = CAST, 3 = STATUS.
 @export_enum("Melee", "Projectile", "Cast", "Status") var kind: int = 0
 @export var element: Element.Type = Element.Type.FISICO
+## D-1140: the Move declares whether its damage scales with STR or MAG (D-122).
+@export_enum("Physical", "Magical") var damage_type: int = DamageType.PHYSICAL
 @export var power: float = 1.0
 @export var atb_cost: int = 2
 @export var mp_cost: int = 0

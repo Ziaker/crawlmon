@@ -1,0 +1,1475 @@
+[gd_scene format=3 uid="uid://dlvluphud001"]
+
+[ext_resource type="Script" path="res://scripts/ui/level_up_hud.gd" id="1_lvhud"]
+[ext_resource type="FontFile" uid="uid://dbjxunvbanise" path="res://assets/fonts/kanit/Kanit-BlackItalic.ttf" id="2_font"]
+[ext_resource type="Script" path="res://scripts/ui/components/slanted_panel.gd" id="3_spanel"]
+[ext_resource type="Script" path="res://scripts/ui/components/slanted_button.gd" id="4_sbtn"]
+[ext_resource type="PackedScene" path="res://scenes/ui/components/stat_pips_strip.tscn" id="5_pips"]
+[ext_resource type="PackedScene" path="res://scenes/ui/components/move_inspection_modal.tscn" id="6_modal"]
+[ext_resource type="Shader" path="res://shaders/ui/dragonball_aura.gdshader" id="7_aura"]
+[ext_resource type="Shader" path="res://shaders/ui/ground_shock_ring.gdshader" id="8_ring"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_none"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exp_bg"]
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exp_fill"]
+bg_color = Color(0.98, 0.8, 0.08, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_bg"]
+bg_color = Color(0.82, 0.84, 0.88, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.4, 0.45, 0.5, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_fill"]
+bg_color = Color(0.133, 0.773, 0.369, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mp_fill"]
+bg_color = Color(0.659, 0.333, 0.969, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_element_badge"]
+bg_color = Color(0.925, 0.282, 0.6, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_circle_gold"]
+bg_color = Color(0.98, 0.75, 0.14, 0.25)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.98, 0.75, 0.14, 0.5)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_circle_potion"]
+bg_color = Color(0.133, 0.773, 0.369, 0.25)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.133, 0.773, 0.369, 0.5)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_aura"]
+render_priority = 0
+shader = ExtResource("7_aura")
+shader_parameter/aura_color = Color(0.2, 0.85, 1, 1)
+shader_parameter/flame_speed = 3.5
+shader_parameter/ray_density = 16.0
+shader_parameter/alpha_fade = 0.0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_aura"]
+material = SubResource("ShaderMaterial_aura")
+top_radius = 1.1
+bottom_radius = 1.4
+height = 2.4
+rings = 1
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ring"]
+render_priority = 0
+shader = ExtResource("8_ring")
+shader_parameter/ring_color = Color(0.1, 0.8, 1, 1)
+shader_parameter/ring_radius = 0.05
+shader_parameter/ring_width = 0.08
+shader_parameter/opacity = 0.0
+
+[sub_resource type="QuadMesh" id="QuadMesh_ring"]
+material = SubResource("ShaderMaterial_ring")
+size = Vector2(3.6, 3.6)
+orientation = 1
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_anchor"]
+render_priority = 0
+shader = ExtResource("8_ring")
+shader_parameter/ring_color = Color(0, 0.847, 0.965, 0.85)
+shader_parameter/ring_radius = 0.55
+shader_parameter/ring_thickness = 0.035
+shader_parameter/opacity = 0.75
+
+[sub_resource type="QuadMesh" id="QuadMesh_anchor"]
+material = SubResource("ShaderMaterial_anchor")
+size = Vector2(2.6, 2.6)
+orientation = 1
+
+[node name="LevelUpHUD" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_lvhud")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.024, 0.039, 0.063, 1)
+
+[node name="MainVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 4
+
+[node name="HeaderBar" type="PanelContainer" parent="MainVBox"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_none")
+
+[node name="Margin" type="MarginContainer" parent="MainVBox/HeaderBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 2
+
+[node name="HBox" type="HBoxContainer" parent="MainVBox/HeaderBar/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TeamStatsBadge" type="PanelContainer" parent="MainVBox/HeaderBar/Margin/HBox"]
+custom_minimum_size = Vector2(136, 32)
+layout_mode = 2
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(1, 1, 1, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 2.0
+shadow_offset = Vector2(3, 3)
+shadow_color = Color(0, 0, 0, 0.85)
+
+[node name="Label" type="Label" parent="MainVBox/HeaderBar/Margin/HBox/TeamStatsBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = "TEAM / STATS"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TitlesVBox" type="VBoxContainer" parent="MainVBox/HeaderBar/Margin/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="Sub1" type="Label" parent="MainVBox/HeaderBar/Margin/HBox/TitlesVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0.847, 0.965, 1)
+theme_override_font_sizes/font_size = 10.5
+text = "POST-COMBAT STATUS & PROGRESSION"
+
+[node name="Sub2" type="Label" parent="MainVBox/HeaderBar/Margin/HBox/TitlesVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.392, 0.455, 0.545, 1)
+theme_override_font_sizes/font_size = 8.5
+text = "SMT III NOCTURNE FIDELITY • D-413 / D-401 / D-394 / D-393"
+
+[node name="Spacer1" type="Control" parent="MainVBox/HeaderBar/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PartyLabel" type="Label" parent="MainVBox/HeaderBar/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 10.5
+text = "PARTY:"
+
+[node name="TabsContainer" type="HBoxContainer" parent="MainVBox/HeaderBar/Margin/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Spacer2" type="Control" parent="MainVBox/HeaderBar/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HeaderControls" type="HBoxContainer" parent="MainVBox/HeaderBar/Margin/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ReplayBtn" type="Button" parent="MainVBox/HeaderBar/Margin/HBox/HeaderControls"]
+custom_minimum_size = Vector2(96, 26)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 11.5
+text = "▶ REPLAY EXP"
+script = ExtResource("4_sbtn")
+skew_deg = -9.0
+bg_color = Color(0.831, 1, 0.196, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 1.5
+shadow_offset = Vector2(2, 2)
+shadow_color = Color(0, 0, 0, 0.8)
+
+[node name="MilestoneBtn" type="Button" parent="MainVBox/HeaderBar/Margin/HBox/HeaderControls"]
+custom_minimum_size = Vector2(88, 26)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "• LV 1->2 (1 PT)"
+script = ExtResource("4_sbtn")
+skew_deg = -9.0
+bg_color = Color(0.078, 0.137, 0.204, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 1.5
+shadow_offset = Vector2(2, 2)
+shadow_color = Color(0, 0, 0, 0.8)
+
+[node name="ShiftBtn" type="Button" parent="MainVBox/HeaderBar/Margin/HBox/HeaderControls"]
+custom_minimum_size = Vector2(84, 26)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.984, 0.749, 0.141, 1)
+theme_override_font_sizes/font_size = 9
+text = "SHIFT MATH: OFF"
+script = ExtResource("4_sbtn")
+skew_deg = -9.0
+bg_color = Color(0.078, 0.137, 0.204, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 1.5
+shadow_offset = Vector2(2, 2)
+shadow_color = Color(0, 0, 0, 0.8)
+
+[node name="AudioBtn" type="Button" parent="MainVBox/HeaderBar/Margin/HBox/HeaderControls"]
+custom_minimum_size = Vector2(62, 26)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0.847, 0.965, 1)
+theme_override_font_sizes/font_size = 9
+text = "🔊 AUDIO"
+script = ExtResource("4_sbtn")
+skew_deg = -9.0
+bg_color = Color(0.078, 0.137, 0.204, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 1.5
+shadow_offset = Vector2(2, 2)
+shadow_color = Color(0, 0, 0, 0.8)
+
+[node name="ContentArea" type="HBoxContainer" parent="MainVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+
+[node name="MarginLeft" type="Control" parent="MainVBox/ContentArea"]
+custom_minimum_size = Vector2(0, 0)
+layout_mode = 2
+
+[node name="LeftCol" type="VBoxContainer" parent="MainVBox/ContentArea"]
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HeroCard" type="PanelContainer" parent="MainVBox/ContentArea/LeftCol"]
+custom_minimum_size = Vector2(420, 150)
+layout_mode = 2
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0.961, 0.965, 0.973, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 2.0
+shadow_offset = Vector2(3, 3)
+shadow_color = Color(0, 0, 0, 0.85)
+
+[node name="Margin" type="MarginContainer" parent="MainVBox/ContentArea/LeftCol/HeroCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 22
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TopRow" type="HBoxContainer" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="RoleBadge" type="PanelContainer" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/TopRow"]
+layout_mode = 2
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0, 0, 0, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 1.0
+shadow_offset = Vector2(1, 1)
+shadow_color = Color(0, 0, 0, 0.5)
+
+[node name="Margin" type="MarginContainer" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/TopRow/RoleBadge"]
+layout_mode = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 1
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 1
+
+[node name="RoleLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/TopRow/RoleBadge/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "PROTAGONIST / LEADER"
+
+[node name="SpeciesLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/TopRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.392, 0.455, 0.545, 1)
+theme_override_font_sizes/font_size = 9.5
+text = "PSI POKÉMON"
+
+[node name="Spacer" type="Control" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LevelBox" type="HBoxContainer" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/TopRow"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="LvTag" type="Label" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/TopRow/LevelBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.35, 0.45, 1)
+theme_override_font_sizes/font_size = 10
+text = "LV"
+
+[node name="HeroLevel" type="Label" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/TopRow/LevelBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 24
+text = "2"
+
+[node name="NextExp" type="Label" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/TopRow/LevelBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 9.5
+text = "NEXT 200 EXP"
+
+[node name="NameRow" type="HBoxContainer" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HeroName" type="Label" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/NameRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 34
+text = "ABRA"
+
+[node name="ElementBadge" type="PanelContainer" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/NameRow"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_element_badge")
+
+[node name="Margin" type="MarginContainer" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/NameRow/ElementBadge"]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 1
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 1
+
+[node name="Label" type="Label" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/NameRow/ElementBadge/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9.5
+text = "PSYCHIC"
+
+[node name="Spacer" type="Control" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/NameRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ReadyRow" type="HBoxContainer" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/NameRow"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Dot" type="Label" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/NameRow/ReadyRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.133, 0.773, 0.369, 1)
+theme_override_font_sizes/font_size = 12
+text = "•"
+
+[node name="ReadyLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/NameRow/ReadyRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.25, 0.35, 1)
+theme_override_font_sizes/font_size = 9.5
+text = "ACTIVE BATTLE READY"
+
+[node name="ExpBox" type="VBoxContainer" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="ExpTextRow" type="HBoxContainer" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/ExpBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/ExpBox/ExpTextRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.4, 0.5, 1)
+theme_override_font_sizes/font_size = 9.5
+text = "EXP PROGRESSION"
+
+[node name="Spacer" type="Control" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/ExpBox/ExpTextRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ExpEarnedLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/ExpBox/ExpTextRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.45, 0.05, 1)
+theme_override_font_sizes/font_size = 9.5
+text = "+60 EXP EARNED"
+
+[node name="ExpProgressBar" type="ProgressBar" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/ExpBox"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_exp_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_exp_fill")
+show_percentage = false
+
+[node name="GaugesRow" type="HBoxContainer" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HpGauge" type="VBoxContainer" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/GaugesRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+
+[node name="TextRow" type="HBoxContainer" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/GaugesRow/HpGauge"]
+layout_mode = 2
+
+[node name="Tag" type="Label" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/GaugesRow/HpGauge/TextRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.082, 0.502, 0.239, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "HP"
+
+[node name="Spacer" type="Control" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/GaugesRow/HpGauge/TextRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ValLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/GaugesRow/HpGauge/TextRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 10.5
+text = "49 / 49"
+
+[node name="ProgressBar" type="ProgressBar" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/GaugesRow/HpGauge"]
+custom_minimum_size = Vector2(0, 7)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_hp_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_hp_fill")
+show_percentage = false
+
+[node name="FormulaHint" type="Label" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/GaugesRow/HpGauge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.5, 0.6, 1)
+theme_override_font_sizes/font_size = 8.5
+text = "25 + 10L + 25[L/10] + 2VIT (D-392)"
+
+[node name="MpGauge" type="VBoxContainer" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/GaugesRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+
+[node name="TextRow" type="HBoxContainer" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/GaugesRow/MpGauge"]
+layout_mode = 2
+
+[node name="Tag" type="Label" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/GaugesRow/MpGauge/TextRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.494, 0.133, 0.808, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "MP"
+
+[node name="Spacer" type="Control" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/GaugesRow/MpGauge/TextRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ValLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/GaugesRow/MpGauge/TextRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 10.5
+text = "26 / 26"
+
+[node name="ProgressBar" type="ProgressBar" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/GaugesRow/MpGauge"]
+custom_minimum_size = Vector2(0, 7)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_hp_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_mp_fill")
+show_percentage = false
+
+[node name="RegenHint" type="Label" parent="MainVBox/ContentArea/LeftCol/HeroCard/Margin/VBox/GaugesRow/MpGauge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.494, 0.133, 0.808, 1)
+theme_override_font_sizes/font_size = 7.5
+text = "REGEN: +4 MP / 8s • FLOOR: 20 MP"
+
+[node name="AffinitiesCard" type="PanelContainer" parent="MainVBox/ContentArea/LeftCol"]
+custom_minimum_size = Vector2(420, 60)
+layout_mode = 2
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0.051, 0.094, 0.141, 0.98)
+border_color = Color(0, 0, 0, 1)
+border_width = 1.5
+shadow_offset = Vector2(3, 3)
+shadow_color = Color(0, 0, 0, 0.85)
+
+[node name="Margin" type="MarginContainer" parent="MainVBox/ContentArea/LeftCol/AffinitiesCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 4
+
+[node name="VBox" type="VBoxContainer" parent="MainVBox/ContentArea/LeftCol/AffinitiesCard/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="TopRow" type="HBoxContainer" parent="MainVBox/ContentArea/LeftCol/AffinitiesCard/Margin/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MainVBox/ContentArea/LeftCol/AffinitiesCard/Margin/VBox/TopRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0.847, 0.965, 1)
+theme_override_font_sizes/font_size = 9.5
+text = "ELEMENTAL AFFINITIES & WEAKNESSES"
+
+[node name="Spacer" type="Control" parent="MainVBox/ContentArea/LeftCol/AffinitiesCard/Margin/VBox/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Sub" type="Label" parent="MainVBox/ContentArea/LeftCol/AffinitiesCard/Margin/VBox/TopRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.392, 0.455, 0.545, 1)
+theme_override_font_sizes/font_size = 8.5
+text = "CLICK FOR DETAILS"
+
+[node name="AffinitiesRow" type="HBoxContainer" parent="MainVBox/ContentArea/LeftCol/AffinitiesCard/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 3
+alignment = 1
+
+[node name="AttributesCard" type="PanelContainer" parent="MainVBox/ContentArea/LeftCol"]
+custom_minimum_size = Vector2(420, 266)
+layout_mode = 2
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0.051, 0.094, 0.141, 0.98)
+border_color = Color(0, 0, 0, 1)
+border_width = 2.0
+shadow_offset = Vector2(3, 3)
+shadow_color = Color(0, 0, 0, 0.85)
+
+[node name="Margin" type="MarginContainer" parent="MainVBox/ContentArea/LeftCol/AttributesCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 6
+
+[node name="VBox" type="VBoxContainer" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HeaderRow" type="HBoxContainer" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/HeaderRow"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Title" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/HeaderRow/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = "ATTRIBUTES (6 STATS)"
+
+[node name="Sub" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/HeaderRow/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.392, 0.455, 0.545, 1)
+theme_override_font_sizes/font_size = 8.5
+text = "D-390: 15 PTS BUDGET • SMT III SEGMENTED PIPS"
+
+[node name="Spacer" type="Control" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PointsAvailablePill" type="PanelContainer" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/HeaderRow"]
+layout_mode = 2
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0.831, 1, 0.196, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 1.5
+shadow_offset = Vector2(2, 2)
+shadow_color = Color(0, 0, 0, 0.8)
+
+[node name="Margin" type="MarginContainer" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/HeaderRow/PointsAvailablePill"]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 2
+
+[node name="Label" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/HeaderRow/PointsAvailablePill/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 10
+text = "AVAILABLE: 1 PT"
+
+[node name="NatureBanner" type="PanelContainer" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox"]
+layout_mode = 2
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0.067, 0.094, 0.153, 0.9)
+border_color = Color(0.792, 0.541, 0.016, 0.7)
+border_width = 1.0
+
+[node name="Margin" type="MarginContainer" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/NatureBanner"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 3
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 3
+
+[node name="HBox" type="HBoxContainer" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/NatureBanner/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="NatureName" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/NatureBanner/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.984, 0.749, 0.141, 1)
+theme_override_font_sizes/font_size = 9
+text = "NATURE: MODEST"
+
+[node name="NatureMods" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/NatureBanner/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.85, 0.5, 1)
+theme_override_font_sizes/font_size = 9
+text = "(+3 MAG, -2 STR, -1 AGI)"
+
+[node name="Spacer" type="Control" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/NatureBanner/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NatureTactic" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/NatureBanner/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 8.5
+text = "Ranged Spellcaster (D-393) ℹ"
+
+[node name="StatsVBox" type="VBoxContainer" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="STR" type="HBoxContainer" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="NameLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/STR"]
+custom_minimum_size = Vector2(26, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 11
+text = "STR"
+
+[node name="NatModLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/STR"]
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.97, 0.44, 0.44, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 9
+text = "-2"
+horizontal_alignment = 1
+
+[node name="ValLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/STR"]
+custom_minimum_size = Vector2(16, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 11
+text = "1"
+horizontal_alignment = 1
+
+[node name="StatPipsStrip" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/STR" instance=ExtResource("5_pips")]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MinusBtn" type="Button" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/STR"]
+custom_minimum_size = Vector2(22, 18)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 10
+text = "-"
+script = ExtResource("4_sbtn")
+skew_deg = -9.0
+bg_color = Color(0.078, 0.137, 0.204, 1)
+border_color = Color(0.2, 0.25, 0.35, 1)
+border_width = 1.0
+
+[node name="PlusBtn" type="Button" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/STR"]
+custom_minimum_size = Vector2(22, 18)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 10
+text = "+"
+script = ExtResource("4_sbtn")
+skew_deg = -9.0
+bg_color = Color(0, 0.847, 0.965, 1)
+border_color = Color(1, 1, 1, 1)
+border_width = 1.0
+
+[node name="MAG" type="HBoxContainer" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="NameLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/MAG"]
+custom_minimum_size = Vector2(26, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 11
+text = "MAG"
+
+[node name="NatModLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/MAG"]
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.85, 0.5, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 9
+text = "+3"
+horizontal_alignment = 1
+
+[node name="ValLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/MAG"]
+custom_minimum_size = Vector2(16, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 11
+text = "8"
+horizontal_alignment = 1
+
+[node name="StatPipsStrip" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/MAG" instance=ExtResource("5_pips")]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MinusBtn" type="Button" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/MAG"]
+custom_minimum_size = Vector2(22, 18)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 10
+text = "-"
+script = ExtResource("4_sbtn")
+skew_deg = -9.0
+bg_color = Color(0.078, 0.137, 0.204, 1)
+border_color = Color(0.2, 0.25, 0.35, 1)
+border_width = 1.0
+
+[node name="PlusBtn" type="Button" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/MAG"]
+custom_minimum_size = Vector2(22, 18)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 10
+text = "+"
+script = ExtResource("4_sbtn")
+skew_deg = -9.0
+bg_color = Color(0, 0.847, 0.965, 1)
+border_color = Color(1, 1, 1, 1)
+border_width = 1.0
+
+[node name="VIT" type="HBoxContainer" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="NameLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/VIT"]
+custom_minimum_size = Vector2(26, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 11
+text = "VIT"
+
+[node name="NatModLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/VIT"]
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 9
+horizontal_alignment = 1
+
+[node name="ValLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/VIT"]
+custom_minimum_size = Vector2(16, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 11
+text = "2"
+horizontal_alignment = 1
+
+[node name="StatPipsStrip" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/VIT" instance=ExtResource("5_pips")]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MinusBtn" type="Button" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/VIT"]
+custom_minimum_size = Vector2(22, 18)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 10
+text = "-"
+script = ExtResource("4_sbtn")
+skew_deg = -9.0
+bg_color = Color(0.078, 0.137, 0.204, 1)
+border_color = Color(0.2, 0.25, 0.35, 1)
+border_width = 1.0
+
+[node name="PlusBtn" type="Button" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/VIT"]
+custom_minimum_size = Vector2(22, 18)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 10
+text = "+"
+script = ExtResource("4_sbtn")
+skew_deg = -9.0
+bg_color = Color(0, 0.847, 0.965, 1)
+border_color = Color(1, 1, 1, 1)
+border_width = 1.0
+
+[node name="WIS" type="HBoxContainer" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="NameLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/WIS"]
+custom_minimum_size = Vector2(26, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 11
+text = "WIS"
+
+[node name="NatModLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/WIS"]
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 9
+horizontal_alignment = 1
+
+[node name="ValLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/WIS"]
+custom_minimum_size = Vector2(16, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 11
+text = "4"
+horizontal_alignment = 1
+
+[node name="StatPipsStrip" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/WIS" instance=ExtResource("5_pips")]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MinusBtn" type="Button" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/WIS"]
+custom_minimum_size = Vector2(22, 18)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 10
+text = "-"
+script = ExtResource("4_sbtn")
+skew_deg = -9.0
+bg_color = Color(0.078, 0.137, 0.204, 1)
+border_color = Color(0.2, 0.25, 0.35, 1)
+border_width = 1.0
+
+[node name="PlusBtn" type="Button" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/WIS"]
+custom_minimum_size = Vector2(22, 18)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 10
+text = "+"
+script = ExtResource("4_sbtn")
+skew_deg = -9.0
+bg_color = Color(0, 0.847, 0.965, 1)
+border_color = Color(1, 1, 1, 1)
+border_width = 1.0
+
+[node name="AGI" type="HBoxContainer" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="NameLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/AGI"]
+custom_minimum_size = Vector2(26, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 11
+text = "AGI"
+
+[node name="NatModLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/AGI"]
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.97, 0.44, 0.44, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 9
+text = "-1"
+horizontal_alignment = 1
+
+[node name="ValLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/AGI"]
+custom_minimum_size = Vector2(16, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 11
+text = "1"
+horizontal_alignment = 1
+
+[node name="StatPipsStrip" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/AGI" instance=ExtResource("5_pips")]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MinusBtn" type="Button" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/AGI"]
+custom_minimum_size = Vector2(22, 18)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 10
+text = "-"
+script = ExtResource("4_sbtn")
+skew_deg = -9.0
+bg_color = Color(0.078, 0.137, 0.204, 1)
+border_color = Color(0.2, 0.25, 0.35, 1)
+border_width = 1.0
+
+[node name="PlusBtn" type="Button" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/AGI"]
+custom_minimum_size = Vector2(22, 18)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 10
+text = "+"
+script = ExtResource("4_sbtn")
+skew_deg = -9.0
+bg_color = Color(0, 0.847, 0.965, 1)
+border_color = Color(1, 1, 1, 1)
+border_width = 1.0
+
+[node name="LUK" type="HBoxContainer" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="NameLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/LUK"]
+custom_minimum_size = Vector2(26, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 11
+text = "LUK"
+
+[node name="NatModLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/LUK"]
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 9
+horizontal_alignment = 1
+
+[node name="ValLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/LUK"]
+custom_minimum_size = Vector2(16, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 11
+text = "1"
+horizontal_alignment = 1
+
+[node name="StatPipsStrip" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/LUK" instance=ExtResource("5_pips")]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MinusBtn" type="Button" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/LUK"]
+custom_minimum_size = Vector2(22, 18)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 10
+text = "-"
+script = ExtResource("4_sbtn")
+skew_deg = -9.0
+bg_color = Color(0.078, 0.137, 0.204, 1)
+border_color = Color(0.2, 0.25, 0.35, 1)
+border_width = 1.0
+
+[node name="PlusBtn" type="Button" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/StatsVBox/LUK"]
+custom_minimum_size = Vector2(22, 18)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 10
+text = "+"
+script = ExtResource("4_sbtn")
+skew_deg = -9.0
+bg_color = Color(0, 0.847, 0.965, 1)
+border_color = Color(1, 1, 1, 1)
+border_width = 1.0
+
+[node name="AllyProfPanel" type="PanelContainer" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox"]
+visible = false
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/AllyProfPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.984, 0.749, 0.141, 1)
+theme_override_font_sizes/font_size = 9
+
+[node name="LeaderControls" type="HBoxContainer" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ResetBtn" type="Button" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/LeaderControls"]
+custom_minimum_size = Vector2(64, 26)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.796, 0.835, 0.882, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 11
+text = "RESET"
+script = ExtResource("4_sbtn")
+skew_deg = -9.0
+bg_color = Color(0.078, 0.137, 0.204, 1)
+border_color = Color(0.2, 0.25, 0.35, 1)
+border_width = 1.0
+
+[node name="ConfirmAllocBtn" type="Button" parent="MainVBox/ContentArea/LeftCol/AttributesCard/Margin/VBox/LeaderControls"]
+custom_minimum_size = Vector2(0, 26)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "ALLOCATE ALL POINTS (1 REMAINING)"
+script = ExtResource("4_sbtn")
+skew_deg = -9.0
+bg_color = Color(0.165, 0.208, 0.271, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 1.5
+
+[node name="AdvanceLockNotice" type="PanelContainer" parent="MainVBox/ContentArea/LeftCol"]
+custom_minimum_size = Vector2(420, 32)
+layout_mode = 2
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(1, 1, 1, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 2.0
+shadow_offset = Vector2(3, 3)
+shadow_color = Color(0, 0, 0, 0.85)
+
+[node name="Margin" type="MarginContainer" parent="MainVBox/ContentArea/LeftCol/AdvanceLockNotice"]
+layout_mode = 2
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 22
+theme_override_constants/margin_bottom = 4
+
+[node name="HBox" type="HBoxContainer" parent="MainVBox/ContentArea/LeftCol/AdvanceLockNotice/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Warn" type="Label" parent="MainVBox/ContentArea/LeftCol/AdvanceLockNotice/Margin/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "⚠️"
+
+[node name="NoticeLabel" type="Label" parent="MainVBox/ContentArea/LeftCol/AdvanceLockNotice/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 8.5
+text = "Leader has unallocated stat points! Distribution is required (D-401)."
+autowrap_mode = 2
+
+[node name="RequiredBadge" type="PanelContainer" parent="MainVBox/ContentArea/LeftCol/AdvanceLockNotice/Margin/HBox"]
+layout_mode = 2
+size_flags_vertical = 4
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0, 0, 0, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 1.0
+
+[node name="Margin" type="MarginContainer" parent="MainVBox/ContentArea/LeftCol/AdvanceLockNotice/Margin/HBox/RequiredBadge"]
+layout_mode = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 1
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 1
+
+[node name="Label" type="Label" parent="MainVBox/ContentArea/LeftCol/AdvanceLockNotice/Margin/HBox/RequiredBadge/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.831, 1, 0.196, 1)
+theme_override_font_sizes/font_size = 8
+text = "REQUIRED (D-401)"
+
+[node name="CenterCol" type="VBoxContainer" parent="MainVBox/ContentArea"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 4
+
+[node name="ViewportContainer" type="SubViewportContainer" parent="MainVBox/ContentArea/CenterCol"]
+layout_mode = 2
+size_flags_vertical = 3
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="MainVBox/ContentArea/CenterCol/ViewportContainer"]
+own_world_3d = true
+transparent_bg = true
+handle_input_locally = false
+size = Vector2i(360, 520)
+render_target_update_mode = 4
+
+[node name="Camera3D" type="Camera3D" parent="MainVBox/ContentArea/CenterCol/ViewportContainer/SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 1.8, 4.2)
+fov = 40.0
+current = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="MainVBox/ContentArea/CenterCol/ViewportContainer/SubViewport"]
+transform = Transform3D(0.866025, -0.25, 0.433013, 0, 0.866025, 0.5, -0.5, -0.433013, 0.75, 2, 4, 3)
+light_color = Color(0.9, 0.95, 1, 1)
+light_energy = 1.2
+
+[node name="ModelMount" type="Node3D" parent="MainVBox/ContentArea/CenterCol/ViewportContainer/SubViewport"]
+
+[node name="GroundAnchorRing" type="MeshInstance3D" parent="MainVBox/ContentArea/CenterCol/ViewportContainer/SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.01, 0)
+material_override = SubResource("ShaderMaterial_anchor")
+mesh = SubResource("QuadMesh_anchor")
+
+[node name="AuraCylinder" type="MeshInstance3D" parent="MainVBox/ContentArea/CenterCol/ViewportContainer/SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+visible = false
+mesh = SubResource("CylinderMesh_aura")
+
+[node name="ShockRing1" type="MeshInstance3D" parent="MainVBox/ContentArea/CenterCol/ViewportContainer/SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+visible = false
+material_override = SubResource("ShaderMaterial_ring")
+mesh = SubResource("QuadMesh_ring")
+
+[node name="ShockRing2" type="MeshInstance3D" parent="MainVBox/ContentArea/CenterCol/ViewportContainer/SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+visible = false
+material_override = SubResource("ShaderMaterial_ring")
+mesh = SubResource("QuadMesh_ring")
+
+[node name="RotateHint" type="Label" parent="MainVBox/ContentArea/CenterCol"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.392, 0.455, 0.545, 1)
+theme_override_font_sizes/font_size = 9.5
+text = "Click & Drag to Rotate 3D Model"
+horizontal_alignment = 1
+
+[node name="RightCol" type="PanelContainer" parent="MainVBox/ContentArea"]
+custom_minimum_size = Vector2(444, 0)
+layout_mode = 2
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0.051, 0.094, 0.141, 0.98)
+border_color = Color(0, 0, 0, 1)
+border_width = 2.0
+shadow_offset = Vector2(3, 3)
+shadow_color = Color(0, 0, 0, 0.85)
+
+[node name="Margin" type="MarginContainer" parent="MainVBox/ContentArea/RightCol"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="MainVBox/ContentArea/RightCol/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HeaderBox" type="VBoxContainer" parent="MainVBox/ContentArea/RightCol/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Title" type="Label" parent="MainVBox/ContentArea/RightCol/Margin/VBox/HeaderBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = "MOVES & SKILLS (8 SLOTS)"
+
+[node name="Subtitle" type="Label" parent="MainVBox/ContentArea/RightCol/Margin/VBox/HeaderBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.392, 0.455, 0.545, 1)
+theme_override_font_sizes/font_size = 8.5
+text = "FLAT ELEMENT COLOR CARDS • EMBOSSED WATERMARK • CLICK FOR RULES"
+
+[node name="MovesGrid" type="GridContainer" parent="MainVBox/ContentArea/RightCol/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+columns = 2
+
+[node name="LootPanel" type="PanelContainer" parent="MainVBox/ContentArea/RightCol/Margin/VBox"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0.067, 0.094, 0.153, 0.95)
+border_color = Color(0.2, 0.27, 0.35, 1)
+border_width = 1.0
+shadow_offset = Vector2(2, 2)
+shadow_color = Color(0, 0, 0, 0.7)
+
+[node name="Margin" type="MarginContainer" parent="MainVBox/ContentArea/RightCol/Margin/VBox/LootPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 4
+
+[node name="VBox" type="VBoxContainer" parent="MainVBox/ContentArea/RightCol/Margin/VBox/LootPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="TopRow" type="HBoxContainer" parent="MainVBox/ContentArea/RightCol/Margin/VBox/LootPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainVBox/ContentArea/RightCol/Margin/VBox/LootPanel/Margin/VBox/TopRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.984, 0.749, 0.141, 1)
+theme_override_font_sizes/font_size = 9
+text = "BATTLE SPOILS & LOOT (D-400)"
+
+[node name="Spacer" type="Control" parent="MainVBox/ContentArea/RightCol/Margin/VBox/LootPanel/Margin/VBox/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Sub" type="Label" parent="MainVBox/ContentArea/RightCol/Margin/VBox/LootPanel/Margin/VBox/TopRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.392, 0.455, 0.545, 1)
+theme_override_font_sizes/font_size = 8.5
+text = "ALL FOES DEFEATED"
+
+[node name="ItemsRow" type="HBoxContainer" parent="MainVBox/ContentArea/RightCol/Margin/VBox/LootPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="GoldItem" type="HBoxContainer" parent="MainVBox/ContentArea/RightCol/Margin/VBox/LootPanel/Margin/VBox/ItemsRow"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Badge" type="PanelContainer" parent="MainVBox/ContentArea/RightCol/Margin/VBox/LootPanel/Margin/VBox/ItemsRow/GoldItem"]
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_circle_gold")
+
+[node name="Label" type="Label" parent="MainVBox/ContentArea/RightCol/Margin/VBox/LootPanel/Margin/VBox/ItemsRow/GoldItem/Badge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.984, 0.749, 0.141, 1)
+theme_override_font_sizes/font_size = 11
+text = "G"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VBox" type="VBoxContainer" parent="MainVBox/ContentArea/RightCol/Margin/VBox/LootPanel/Margin/VBox/ItemsRow/GoldItem"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Val" type="Label" parent="MainVBox/ContentArea/RightCol/Margin/VBox/LootPanel/Margin/VBox/ItemsRow/GoldItem/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 10.5
+text = "+140 GOLD"
+
+[node name="Desc" type="Label" parent="MainVBox/ContentArea/RightCol/Margin/VBox/LootPanel/Margin/VBox/ItemsRow/GoldItem/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.392, 0.455, 0.545, 1)
+theme_override_font_sizes/font_size = 8.5
+text = "Dungeon Currency"
+
+[node name="PotionItem" type="HBoxContainer" parent="MainVBox/ContentArea/RightCol/Margin/VBox/LootPanel/Margin/VBox/ItemsRow"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Badge" type="PanelContainer" parent="MainVBox/ContentArea/RightCol/Margin/VBox/LootPanel/Margin/VBox/ItemsRow/PotionItem"]
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_circle_potion")
+
+[node name="Label" type="Label" parent="MainVBox/ContentArea/RightCol/Margin/VBox/LootPanel/Margin/VBox/ItemsRow/PotionItem/Badge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.133, 0.773, 0.369, 1)
+theme_override_font_sizes/font_size = 10
+text = "🧪"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VBox" type="VBoxContainer" parent="MainVBox/ContentArea/RightCol/Margin/VBox/LootPanel/Margin/VBox/ItemsRow/PotionItem"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Val" type="Label" parent="MainVBox/ContentArea/RightCol/Margin/VBox/LootPanel/Margin/VBox/ItemsRow/PotionItem/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 10.5
+text = "POTION ×1"
+
+[node name="Desc" type="Label" parent="MainVBox/ContentArea/RightCol/Margin/VBox/LootPanel/Margin/VBox/ItemsRow/PotionItem/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.392, 0.455, 0.545, 1)
+theme_override_font_sizes/font_size = 8.5
+text = "Restores 50 HP"
+
+[node name="MarginRight" type="Control" parent="MainVBox/ContentArea"]
+custom_minimum_size = Vector2(0, 0)
+layout_mode = 2
+
+[node name="FooterBar" type="PanelContainer" parent="MainVBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_none")
+
+[node name="Margin" type="MarginContainer" parent="MainVBox/FooterBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 4
+
+[node name="HBox" type="HBoxContainer" parent="MainVBox/FooterBar/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="KeysRow" type="HBoxContainer" parent="MainVBox/FooterBar/Margin/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SwitchHeroKey" type="HBoxContainer" parent="MainVBox/FooterBar/Margin/HBox/KeysRow"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="KbdQ" type="Label" parent="MainVBox/FooterBar/Margin/HBox/KeysRow/SwitchHeroKey"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "[Q]"
+
+[node name="KbdD" type="Label" parent="MainVBox/FooterBar/Margin/HBox/KeysRow/SwitchHeroKey"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "[D]"
+
+[node name="Label" type="Label" parent="MainVBox/FooterBar/Margin/HBox/KeysRow/SwitchHeroKey"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.796, 0.835, 0.882, 1)
+theme_override_font_sizes/font_size = 10
+text = "Switch Hero"
+
+[node name="ShiftKey" type="HBoxContainer" parent="MainVBox/FooterBar/Margin/HBox/KeysRow"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="KbdShift" type="Label" parent="MainVBox/FooterBar/Margin/HBox/KeysRow/ShiftKey"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.984, 0.749, 0.141, 1)
+theme_override_font_sizes/font_size = 10
+text = "[SHIFT]"
+
+[node name="Label" type="Label" parent="MainVBox/FooterBar/Margin/HBox/KeysRow/ShiftKey"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.796, 0.835, 0.882, 1)
+theme_override_font_sizes/font_size = 10
+text = "Toggle Advanced Formulas"
+
+[node name="SpaceKey" type="HBoxContainer" parent="MainVBox/FooterBar/Margin/HBox/KeysRow"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="KbdSpace" type="Label" parent="MainVBox/FooterBar/Margin/HBox/KeysRow/SpaceKey"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.72, 0.82, 1)
+theme_override_font_sizes/font_size = 10
+text = "[SPACE]"
+
+[node name="Label" type="Label" parent="MainVBox/FooterBar/Margin/HBox/KeysRow/SpaceKey"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.72, 0.82, 1)
+theme_override_font_sizes/font_size = 10
+text = "Fast-Forward Animation"
+
+[node name="Spacer1" type="Control" parent="MainVBox/FooterBar/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StatusLabel" type="Label" parent="MainVBox/FooterBar/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 10.5
+text = "STATUS: Click any card to inspect mechanics & visual effects."
+
+[node name="Spacer2" type="Control" parent="MainVBox/FooterBar/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ReturnBtn" type="Button" parent="MainVBox/FooterBar/Margin/HBox"]
+custom_minimum_size = Vector2(230, 28)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 15
+text = "RETURN TO DUNGEON (LOCKED)"
+script = ExtResource("4_sbtn")
+skew_deg = -9.0
+bg_color = Color(0.25, 0.28, 0.35, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 1.5
+shadow_offset = Vector2(2, 2)
+shadow_color = Color(0, 0, 0, 0.8)
+
+[node name="InspectionModal" parent="." instance=ExtResource("6_modal")]
+visible = false
+layout_mode = 1

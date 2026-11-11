@@ -235,59 +235,63 @@ func _draw_drawer() -> void:
 
 		var fg := (INK if enabled else Color("64748b")) if active else (CREAM if _accents[i].a == 0.0 else _accents[i])
 
-		# 3 Icons on the right side of the row: Element, Type, Range (D-438)
+		# Icons on the right side of the row: Element, Type, Range (D-438, D-1145)
 		var icons_w := 0.0
 		if sk != null:
 			var ic_y := y + 3.0
 			var ic_sz := 13.0
 			var ic_gap := 3.0
-			var rx := DRAWER_W - 16.0 - (3.0 * ic_sz + 2.0 * ic_gap)
-			icons_w = 3.0 * ic_sz + 2.0 * ic_gap + 4.0
+			var icons: Array[Dictionary] = []
 
 			# Icon 1: Element SVG (D-438, D-440)
 			var elem_ic := BattleHud.element_icon(sk.element)
 			if elem_ic != null:
-				draw_rect(Rect2(rx, ic_y, ic_sz, ic_sz), Color(0, 0, 0, 0.5 * alpha))
-				draw_texture_rect(elem_ic, Rect2(rx + 1, ic_y + 1, ic_sz - 2, ic_sz - 2), false, Color(elem_col if not active else INK, alpha))
-			rx += ic_sz + ic_gap
+				icons.append({"tex": elem_ic, "bg": Color(0, 0, 0, 0.5 * alpha), "fg": Color(elem_col if not active else INK, alpha)})
 
-			# Icon 2: Type SVG (physical, magical, guard, dodge)
-			var type_name := "magical"
-			var type_col := Color("0ea5e9")
-			if sk.kind == Skill.Kind.MELEE or (sk.element == Element.Type.FISICO and sk.kind != Skill.Kind.STATUS):
-				type_name = "physical"
-				type_col = Color("ef4444")
-			elif sk.display_name.to_lower() == "guard":
-				type_name = "guard"
-				type_col = Color("cbd5e1")
-			elif sk.display_name.to_lower() == "teleport":
-				type_name = "dodge"
-				type_col = Color("fcb900")
-			var badge_col := type_col
-			if sk.data != null and sk.data.icon_color.a > 0.0:
-				badge_col = sk.data.icon_color
-			var type_ic := _get_icon("res://assets/ui/icons/move_types/%s.svg" % type_name)
-			if sk.data != null:
-				var move_ic: Texture2D = MoveIcons.for_move(sk.data.id)
-				if move_ic != null:
-					type_ic = move_ic
-			if type_ic != null:
-				draw_rect(Rect2(rx, ic_y, ic_sz, ic_sz), Color(badge_col, 0.7 * alpha))
-				draw_texture_rect(type_ic, Rect2(rx + 1, ic_y + 1, ic_sz - 2, ic_sz - 2), false, Color(Color.WHITE if not active else INK, alpha))
-			rx += ic_sz + ic_gap
+			# Icon 2: Type SVG (physical, magical, guard, dodge; pure status has none)
+			var type_name := sk.type_icon_name()
+			if not type_name.is_empty():
+				var type_col := Color("0ea5e9")
+				if type_name == "physical":
+					type_col = Color("ef4444")
+				elif type_name == "guard":
+					type_col = Color("cbd5e1")
+				elif type_name == "dodge":
+					type_col = Color("fcb900")
+				var badge_col := type_col
+				if sk.data != null and sk.data.icon_color.a > 0.0:
+					badge_col = sk.data.icon_color
+				var type_ic := _get_icon("res://assets/ui/icons/move_types/%s.svg" % type_name)
+				if sk.data != null:
+					var move_ic: Texture2D = MoveIcons.for_move(sk.data.id)
+					if move_ic != null:
+						type_ic = move_ic
+				if type_ic != null:
+					icons.append({"tex": type_ic, "bg": Color(badge_col, 0.7 * alpha), "fg": Color(Color.WHITE if not active else INK, alpha)})
 
-			# Icon 3: Range SVG (melee, mid, long, area)
-			var range_name := "mid"
-			if sk.is_aoe:
-				range_name = "area"
-			elif sk.kind == Skill.Kind.MELEE:
-				range_name = "melee"
-			elif sk.kind == Skill.Kind.PROJECTILE:
-				range_name = "long"
-			var range_ic := _get_icon("res://assets/ui/icons/range/%s.svg" % range_name)
-			if range_ic != null:
-				draw_rect(Rect2(rx, ic_y, ic_sz, ic_sz), Color(0.9, 0.95, 1.0, 0.8 * alpha))
-				draw_texture_rect(range_ic, Rect2(rx + 1, ic_y + 1, ic_sz - 2, ic_sz - 2), false, Color(Color("080e18"), alpha))
+			# Icon 3: Range SVG (melee, mid, long, area; pure status has none)
+			var range_name := ""
+			if sk.kind != Skill.Kind.STATUS:
+				range_name = "mid"
+				if sk.is_aoe:
+					range_name = "area"
+				elif sk.kind == Skill.Kind.MELEE:
+					range_name = "melee"
+				elif sk.kind == Skill.Kind.PROJECTILE:
+					range_name = "long"
+			if not range_name.is_empty():
+				var range_ic := _get_icon("res://assets/ui/icons/range/%s.svg" % range_name)
+				if range_ic != null:
+					icons.append({"tex": range_ic, "bg": Color(0.9, 0.95, 1.0, 0.8 * alpha), "fg": Color("080e18", alpha)})
+
+			var icon_count := icons.size()
+			if icon_count > 0:
+				var rx := DRAWER_W - 16.0 - (float(icon_count) * ic_sz + float(icon_count - 1) * ic_gap)
+				icons_w = float(icon_count) * ic_sz + float(icon_count - 1) * ic_gap + 4.0
+				for icon in icons:
+					draw_rect(Rect2(rx, ic_y, ic_sz, ic_sz), icon["bg"])
+					draw_texture_rect(icon["tex"], Rect2(rx + 1, ic_y + 1, ic_sz - 2, ic_sz - 2), false, icon["fg"])
+					rx += ic_sz + ic_gap
 
 		# Move Name
 		var name_size := 14

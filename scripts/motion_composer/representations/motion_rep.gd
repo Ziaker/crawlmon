@@ -47,6 +47,8 @@ var head_bulge := 0.25  ## tube: extra thickness at the head
 var sides := 12  ## tube: sides around
 var max_rings := 56  ## tube: points used along a branch (the strand is resampled down to this)
 var flip := false  ## tube: the first sample is the thick base and the last the eroding tip (tongues that start at a contact point)
+var expand := false  ## ring D-953: true = the ring opens and fades (a shockwave); false = it closes in (the old heat ring)
+var light_range := 5.0  ## light D-953: omni range (metres); `strength` is the energy multiplier
 var sheet := "fire"  ## flipbook: which flipbook (fire, impact, smoke, ...)
 var color := Color(1, 1, 1, 1)  ## flipbook
 var energy := 2.0  ## flipbook
@@ -59,6 +61,7 @@ var grow := 0.0  ## fireball: seconds the ball takes to grow from 0.05 to 1.05 o
 var duration := 1.0  ## vortex_disc / pillar: life of the effect in seconds (progress = local time / duration)
 var age_u := false  ## flipbook / puff: age by position along the strand (tail = old) instead of by dissolve
 var progress_source := ""  ## flipbook V1.9 (D-343): "intensity" (M26 age t) or "u"; empty = 1 - opacity
+var tint := false  ## flipbook D-953: multiply the sheet by `color` (mc_sprite_tint); existing presets keep false
 var follow := false  ## cel_flame: the tip turns toward the motion (false = the tip stays up on screen)
 var sway_speed := 1.4  ## cel_flame: cycles of sway per second
 var element := "fire"  ## V1.2: which element's MotionLooks to use
@@ -69,6 +72,39 @@ var stretch := 2.5  ## spark / drops: how long along the motion
 var appear := 1  ## puff: 1 = shows while the sample dissolves (residue), 0 = shows whole while it lives
 var camera_facing := true  ## ribbon / blade / arc: the strip faces the camera (false = lies flat, face = UP)
 var look := {}  ## tube / bulb: overrides of the shader uniforms (colours, flow, lick, rise, noise_scale, swirl, bias, tail_erode)
+# --- V1.10 (D-377): lança da Drain Spear ---
+var spear_mode := "none"  ## "reveal" (cresce do cabo à ponta), "dissolve" (apaga do cabo à ponta) ou "none"
+var spear_part := "full"  ## D-378: "full" (cabo + lâmina), "shaft" ou "blade"
+var blade_length := 1.0  ## D-378: comprimento fixo da lâmina na ponta (metros); o cabo é o resto
+var ghosts := 0  ## cópias atrasadas da lança na estocada (pós-imagens)
+var ghost_gap := 0.10  ## fração do comprimento entre as pós-imagens
+var ghost_alpha := 0.22  ## opacidade de cada pós-imagem
+# --- D-378: aura em faixas espirais ---
+var aura_bands := 6  ## 6 faixas no total (D-378)
+var aura_radius := 0.46  ## raio da hélice em volta do cabo (metros)
+var aura_width := 0.055  ## largura da fita (metros)
+var aura_turns := 2.4  ## voltas ao longo da lança inteira
+var aura_spin := 0.55  ## voltas por segundo (o giro é derivado do relógio do efeito)
+var aura_opacity := 0.18  ## baixa opacidade, como pedido
+var aura_energy := 1.25
+var aura_color := Color(0.32, 0.82, 1.0, 1.0)
+# --- D-379: vórtice helicoidal do início da estocada ---
+var vortex_bands := 10
+var vortex_length := 3.0  ## metros atrás da ponta
+var vortex_radius := 1.10  ## raio na base do vórtice
+var vortex_end_radius := 0.08  ## raio na ponta (afina como uma broca)
+var vortex_turns := 3.2
+var vortex_spin := 4.2  ## voltas por segundo (giro de ventilador)
+var vortex_width := 0.12
+var vortex_split := 0.0  ## D-1015: m each band drifts outward as the vortex fades (0 = off)
+var vortex_opacity := 0.55
+var vortex_energy := 3.2
+var vortex_color := Color(0.55, 0.95, 1.0, 1.0)
+var vortex_base_length := 5.0  ## segundo cone, a partir da mão: é o "boost" visível no início
+var vortex_base_radius := 1.80
+var vortex_base_end_radius := 0.25
+var vortex_cone_opacity := 0.42
+var vortex_cone_energy := 3.2
 
 
 func _jit(id: int) -> float:
@@ -183,11 +219,32 @@ func draw(painter: MotionPainter, items: Array, origin: Vector3, k: float, sc :=
 				elif progress_source == "u" or age_u:
 					prog = float(it["u"])
 				prog = clampf(prog, 0.0, 1.0)
-				painter.flipbook(it["pos"], size * sc * float(it["width"]), prog, sheet, color, energy, float(int(it["id"]) % 360))
+				painter.flipbook(it["pos"], size * sc * float(it["width"]), prog, sheet, color, energy, float(int(it["id"]) % 360), tint)
 		"ring":
 			var kk := clampf(k, 0.0, 1.0)
 			var ek := 1.0 - pow(1.0 - kk, 3.0)
-			painter.ring(Vector3(origin.x, 0.05, origin.z), Vector3.UP, lerpf(size, size * 0.4, ek) * sc, 1.0 - (0.3 + 0.7 * kk) * 0.9, strength, 4.0, 0.06)
+			var rr := lerpf(size * 0.2, size, ek) if expand else lerpf(size, size * 0.4, ek)
+			var aa := (1.0 - kk) if expand else 1.0 - (0.3 + 0.7 * kk) * 0.9
+			painter.ring(Vector3(origin.x, 0.05, origin.z), Vector3.UP, rr * sc, aa, strength, 4.0, 0.06)
+		"plate":
+			# V1.13 (D-1026): every sample is a flat chrome triangular plate; it turns about its own axis (`spin` rad/s, a different axis and
+			# rate per sample) and dissolves with the composition's opacity. The size is `size` metres times the sample's width.
+			for i in range(0, items.size(), stride):
+				var it: Dictionary = items[i]
+				var idn := int(it["id"])
+				var h1 := fposmod(sin(float(idn) * 12.9898) * 43758.5453, 1.0)
+				var h2 := fposmod(sin(float(idn) * 78.233 + 1.7) * 43758.5453, 1.0)
+				var h3 := fposmod(sin(float(idn) * 39.346 + 5.1) * 43758.5453, 1.0)
+				var axis := Vector3(h1 - 0.5, h2 - 0.5, h3 - 0.5)
+				axis = axis.normalized() if axis.length() > 0.05 else Vector3.UP
+				var ang := h3 * TAU + painter.time * spin * (0.5 + h1)
+				painter.plate(it["pos"], size * sc * float(it["width"]), Basis(axis, ang), clampf(1.0 - float(it["opacity"]) + fade_bias, 0.0, 0.99), h2 * 6.28)
+		"floor_ring":
+			# V1.12 (D-1026): a clean shock ring on the floor that OPENS from the origin and FADES OUT as `k` goes 0 -> 1 (the old `ring`
+			# with `expand` fades the other way and is kept untouched for the presets that already use it). The colour comes from `look`.
+			var fk := clampf(k, 0.0, 1.0)
+			var fe := 1.0 - pow(1.0 - fk, 3.0)
+			painter.ring(Vector3(origin.x, 0.05, origin.z), Vector3.UP, lerpf(size * 0.12, size, fe) * sc, fk, strength, 4.0, float(look.get("thick", 0.045)), look)
 		"flame_life":
 			# V1.5 (D-332): cada amostra do compositor é um EMISSOR; cada emissor solta chamas em ciclos, sem estado: a idade e a semente saem
 			# do relógio do efeito e do id (a semente muda a cada ciclo, então cada chama nasce com outra forma, outro balanço e outra
@@ -298,6 +355,18 @@ func draw(painter: MotionPainter, items: Array, origin: Vector3, k: float, sc :=
 			hl.merge(look, true)
 			var lh: Dictionary = items[items.size() - 1]
 			painter.halo(lh["pos"], size * sc * float(lh["width"]), strength * float(lh["opacity"]), hl)
+		"light":
+			# D-953: a short pooled omni pulse at the contact. The opacity curve of the composition fades it.
+			var li: Dictionary = items[items.size() - 1]
+			painter.light(li["pos"], color, strength * float(li["opacity"]), light_range)
+		"shock":
+			# D-377: anel de choque no primeiro ponto, virado para a câmera. `k` abre o raio.
+			var sh: Dictionary = items[0]
+			var sp := Vector3(sh["pos"])
+			var sn := (painter.cam_pos() - sp)
+			sn = sn.normalized() if sn.length() > 0.01 else Vector3.FORWARD
+			var sr := lerpf(size * 0.22, size, clampf(k, 0.0, 1.0)) * sc
+			painter.shock_ring(sp, sn, sr, k, clampf(1.0 - float(sh["opacity"]), 0.0, 0.99), strength, float(int(sh["id"]) % 997) * 0.37, 0.055)
 		"mark":
 			var mk := MotionLooks.get_look("mark", element)
 			mk.merge(look, true)
@@ -306,6 +375,96 @@ func draw(painter: MotionPainter, items: Array, origin: Vector3, k: float, sc :=
 		"scorch":
 			var first: Dictionary = items[0]
 			painter.scorch(first["pos"], size * sc, clampf(1.0 - float(first["opacity"]), 0.0, 0.99), strength, 3.0)
+		"spear":
+			# V1.10 (D-377) / D-378: a lança é o segmento entre a primeira e a última amostra. O cabo cresce e a
+			# lâmina fica fixa na ponta; as duas partes têm malha própria e reveal/dissolve próprios. Nada depende de
+			# personagem, time, lado ou alvo (D-235).
+			var first_s: Dictionary = items[0]
+			var last_s: Dictionary = items[items.size() - 1]
+			var base_s := Vector3(first_s["pos"])
+			var tip_s := Vector3(last_s["pos"])
+			var axis_s := tip_s - base_s
+			var len_s := axis_s.length()
+			if len_s > 0.01:
+				var unit_s := axis_s / len_s
+				var rev_s := 1.0
+				var dis_s := 0.0
+				if spear_mode == "reveal":
+					rev_s = clampf(k, 0.0, 1.0)
+				elif spear_mode == "dissolve":
+					dis_s = clampf(k, 0.0, 1.0)
+				var op_s := clampf(float(first_s["opacity"]), 0.0, 1.0) * strength
+				var blade_len := clampf(blade_length, 0.15, len_s)
+				var shaft_len := maxf(len_s - blade_len, 0.02)
+				var shaft_base := base_s
+				var blade_base := base_s + unit_s * shaft_len
+				var rev_shaft := clampf(rev_s * len_s / shaft_len, 0.0, 1.0)
+				var rev_blade := clampf((rev_s * len_s - shaft_len) / blade_len, 0.0, 1.0)
+				var dis_shaft := clampf(dis_s * len_s / shaft_len, 0.0, 1.0)
+				var dis_blade := clampf((dis_s * len_s - shaft_len) / blade_len, 0.0, 1.0)
+				# The shaft is 20% thinner; the blade/tip meshes keep their own thickness.
+				var thick_s := clampf(1.0 + maxf(len_s - 3.0, 0.0) * 0.055, 1.0, 1.65) * 0.8
+				if spear_part == "full" or spear_part == "shaft":
+					painter.spear_part(shaft_base, axis_s, shaft_len, "shaft", rev_shaft, dis_shaft, op_s, energy, color, look, thick_s)
+				if spear_part == "full" or spear_part == "blade":
+					painter.spear_part(blade_base, axis_s, blade_len, "blade", rev_blade, dis_blade, op_s, energy, color, look)
+				if ghosts > 0 and spear_mode != "dissolve" and dis_s <= 0.0:
+					for g in ghosts:
+						var off_s := -unit_s * (ghost_gap * len_s * float(g + 1))
+						var ga := op_s * ghost_alpha * (1.0 - 0.18 * float(g))
+						if spear_part == "full" or spear_part == "shaft":
+							painter.spear_part(shaft_base + off_s, axis_s, shaft_len, "shaft", rev_shaft, 0.0, ga, energy * 0.65, color, look, thick_s)
+						if spear_part == "full" or spear_part == "blade":
+							painter.spear_part(blade_base + off_s, axis_s, blade_len, "blade", rev_blade, 0.0, ga, energy * 0.65, color, look)
+		"aura":
+			# D-378: 6 faixas espirais em volta da lança inteira, baixa opacidade. O segmento vem do compositor; o
+			# giro vem do relógio do efeito; a cor/energia vêm do preset. Nada de personagem, time ou lado (D-235).
+			var first_a: Dictionary = items[0]
+			var last_a: Dictionary = items[items.size() - 1]
+			var base_a := Vector3(first_a["pos"])
+			var tip_a := Vector3(last_a["pos"])
+			var axis_a := tip_a - base_a
+			var len_a := axis_a.length()
+			if len_a > 0.05:
+				var op_a := maxf(float(first_a["opacity"]), float(last_a["opacity"])) * strength
+				var spin_a := aura_spin * TAU * painter.time
+				for b in aura_bands:
+					var ph := TAU * float(b) / float(maxi(aura_bands, 1)) + spin_a
+					painter.aura_band(base_a, axis_a, len_a, ph, aura_turns, aura_radius, aura_width, aura_opacity * op_a, aura_energy, aura_color, look)
+		"vortex":
+			# D-379: vórtice cônico no começo da estocada, girando como um ventilador. A opacidade vem da última
+			# amostra (o fade começa em 0,4 s no preset). Nada de personagem/time/lado (D-235).
+			var first_v: Dictionary = items[0]
+			var last_v: Dictionary = items[items.size() - 1]
+			var base_v := Vector3(first_v["pos"])
+			var tip_v := Vector3(last_v["pos"])
+			var axis_v := tip_v - base_v
+			var len_v := axis_v.length()
+			if len_v > 0.10:
+				var unit_v := axis_v / len_v
+				var vlen := minf(vortex_length, len_v)
+				var vbase := tip_v - unit_v * vlen
+				var op_v := float(last_v["opacity"]) * strength
+				if op_v > 0.01:
+					var spin_v := vortex_spin * TAU * painter.time
+					# Funis grandes: a parte que o olho lê como "vórtice drill".
+					painter.vortex_cone(base_v, axis_v, minf(vortex_base_length, len_v), vortex_base_radius * 1.15, vortex_cone_opacity * op_v, vortex_cone_energy, vortex_color, look)
+					painter.vortex_cone(vbase, axis_v, vlen, vortex_radius * 1.10, vortex_cone_opacity * op_v, vortex_cone_energy, vortex_color, look)
+					var sp_k := (1.0 - clampf(op_v / maxf(strength, 0.001), 0.0, 1.0)) * vortex_split  # D-1015
+					var px := unit_v.cross(Vector3.UP)
+					px = px.normalized() if px.length() > 0.01 else Vector3.RIGHT
+					var py := unit_v.cross(px).normalized()
+					for b in vortex_bands:
+						var ph := TAU * float(b) / float(maxi(vortex_bands, 1)) + spin_v
+						var off_b := (px * cos(ph) + py * sin(ph)) * sp_k
+						painter.vortex_band(vbase + off_b, axis_v, vlen, ph, vortex_turns, vortex_radius, vortex_end_radius, vortex_width, vortex_opacity * op_v, vortex_energy, vortex_color, look)
+					# D-379: segundo cone na BASE (mão), para o boost ser visível já no primeiro quadro da estocada.
+					var blen := minf(vortex_base_length, len_v)
+					var bphase := PI / float(maxi(vortex_bands, 1))
+					for b in vortex_bands:
+						var phb := TAU * float(b) / float(maxi(vortex_bands, 1)) + spin_v + bphase
+						var off_bb := (px * cos(phb) + py * sin(phb)) * sp_k
+						painter.vortex_band(base_v + off_bb, axis_v, blen, phb, vortex_turns, vortex_base_radius, vortex_base_end_radius, vortex_width, vortex_opacity * op_v, vortex_energy, vortex_color, look)
 		"atelier":
 			_draw_atelier(painter, items, origin, k, sc)
 
@@ -340,7 +499,7 @@ func _draw_atelier(painter: MotionPainter, items: Array, origin: Vector3, _k: fl
 				MotionAtelierMeshes.draw_ptcl(painter, it["pos"], size * sc * km * float(it["width"]), sid,
 					c0.lerp(c1, t), float(it["opacity"]) * base_a, ang, add)
 		"heal_circle":
-			MotionAtelierMeshes.draw_heal_circle(painter, origin, size * sc, pr)
+			MotionAtelierMeshes.draw_heal_circle(painter, origin, size * sc, pr, float(look.get("alpha_scale", 1.0)))
 		"heal_pillar":
 			MotionAtelierMeshes.draw_heal_pillar(painter, origin, pr)
 		"cryo_decal":

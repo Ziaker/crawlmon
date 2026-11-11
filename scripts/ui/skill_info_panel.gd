@@ -217,50 +217,51 @@ func _draw() -> void:
 		draw_texture_rect(elem_icon, Rect2(Vector2(bx + 2.0, badge_y + 2.0), Vector2(13.0, 13.0)), false, gcol)
 		bx += badge_sz + 4.0
 
-	# Icon 2: Type Badge (Physical, Magical, Guard, Dodge)
-	var type_name := "magical"
+	# Icon 2: Type Badge (Physical, Magical, Guard, Dodge; pure status has none)
+	var type_name := skill.type_icon_name()
 	var type_col := Color("0ea5e9")
 	var type_fg := Color.WHITE
-	if skill.kind == Skill.Kind.MELEE or (skill.element == Element.Type.FISICO and skill.kind != Skill.Kind.STATUS):
-		type_name = "physical"
+	if type_name == "physical":
 		type_col = Color("ef4444")
 		type_fg = Color.WHITE
-	elif skill.display_name.to_lower() == "guard":
-		type_name = "guard"
+	elif type_name == "guard":
 		type_col = Color("cbd5e1")
 		type_fg = Color("080e18")
-	elif skill.display_name.to_lower() == "teleport":
-		type_name = "dodge"
+	elif type_name == "dodge":
 		type_col = Color("fcb900")
 		type_fg = Color("080e18")
 
-	var badge_col := type_col
-	if skill.data != null and skill.data.icon_color.a > 0.0:
-		badge_col = skill.data.icon_color
-	var type_ic := _get_type_icon(type_name)
-	if skill.data != null:
-		var move_ic: Texture2D = MoveIcons.for_move(skill.data.id)
-		if move_ic != null:
-			type_ic = move_ic
-	if type_ic != null:
-		_draw_para_flat(Rect2(Vector2(bx, badge_y), Vector2(badge_sz, badge_sz)), 2.0, badge_col)
-		draw_texture_rect(type_ic, Rect2(Vector2(bx + 2.0, badge_y + 2.0), Vector2(13.0, 13.0)), false, type_fg)
-		bx += badge_sz + 4.0
+	if not type_name.is_empty():
+		var badge_col := type_col
+		if skill.data != null and skill.data.icon_color.a > 0.0:
+			badge_col = skill.data.icon_color
+		var type_ic := _get_type_icon(type_name)
+		if skill.data != null:
+			var move_ic: Texture2D = MoveIcons.for_move(skill.data.id)
+			if move_ic != null:
+				type_ic = move_ic
+		if type_ic != null:
+			_draw_para_flat(Rect2(Vector2(bx, badge_y), Vector2(badge_sz, badge_sz)), 2.0, badge_col)
+			draw_texture_rect(type_ic, Rect2(Vector2(bx + 2.0, badge_y + 2.0), Vector2(13.0, 13.0)), false, type_fg)
+			bx += badge_sz + 4.0
 
-	# Icon 3: Range / Delivery Badge (Melee, Mid, Long, Area)
-	var range_name := "mid"
-	if skill.is_aoe:
-		range_name = "area"
-	elif skill.kind == Skill.Kind.MELEE:
-		range_name = "melee"
-	elif skill.kind == Skill.Kind.PROJECTILE:
-		range_name = "long"
+	# Icon 3: Range / Delivery Badge (Melee, Mid, Long, Area; pure status has none)
+	var range_name := ""
+	if skill.kind != Skill.Kind.STATUS:
+		range_name = "mid"
+		if skill.is_aoe:
+			range_name = "area"
+		elif skill.kind == Skill.Kind.MELEE:
+			range_name = "melee"
+		elif skill.kind == Skill.Kind.PROJECTILE:
+			range_name = "long"
 
-	var range_ic := _get_range_icon(range_name)
-	if range_ic != null:
-		_draw_para_flat(Rect2(Vector2(bx, badge_y), Vector2(badge_sz, badge_sz)), 2.0, Color.WHITE)
-		draw_texture_rect(range_ic, Rect2(Vector2(bx + 2.0, badge_y + 2.0), Vector2(13.0, 13.0)), false, Color("080e18"))
-		bx += badge_sz + 6.0
+	if not range_name.is_empty():
+		var range_ic := _get_range_icon(range_name)
+		if range_ic != null:
+			_draw_para_flat(Rect2(Vector2(bx, badge_y), Vector2(badge_sz, badge_sz)), 2.0, Color.WHITE)
+			draw_texture_rect(range_ic, Rect2(Vector2(bx + 2.0, badge_y + 2.0), Vector2(13.0, 13.0)), false, Color("080e18"))
+			bx += badge_sz + 6.0
 
 
 
@@ -310,7 +311,9 @@ func _draw() -> void:
 		draw_string(font, Vector2(18, tbox_y + 32), s_fc, HORIZONTAL_ALIGNMENT_LEFT, w - 36.0, 9, GOLD)
 	elif target != null:
 		var raw := Battle.estimate_damage(caster, target, skill) if caster != null and battle != null else int(skill.power * 10)
-		var is_weak := skill.element in target.weaknesses
+		var affinity_kind := target.affinity_for(skill.element)
+		var is_weak := affinity_kind == Affinity.Type.WEAK
+		var is_resist := affinity_kind == Affinity.Type.RESIST
 		var dmg_str := "~%d DMG" % raw
 		draw_string(font, Vector2(18, tbox_y + 33), dmg_str, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, GOLD)
 
@@ -318,6 +321,9 @@ func _draw() -> void:
 		if is_weak:
 			_draw_para_flat(Rect2(tag_x, tbox_y + 22, 62, 14), 2.0, AMBER)
 			draw_string(font, Vector2(tag_x + 5, tbox_y + 32), "WEAK 1.5×", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, INK)
+		elif is_resist:
+			_draw_para_flat(Rect2(tag_x, tbox_y + 22, 74, 14), 2.0, Color("38bdf8"))
+			draw_string(font, Vector2(tag_x + 5, tbox_y + 32), "RESIST 0.5×", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, INK)
 		elif target.is_guarding() and _breaks_guard(skill):
 			_draw_para_flat(Rect2(tag_x, tbox_y + 22, 76, 14), 2.0, CORAL)
 			draw_string(font, Vector2(tag_x + 4, tbox_y + 32), "GUARD BREAK", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, INK)
@@ -346,7 +352,7 @@ func _draw() -> void:
 	next_y = _draw_wrapped_text(font, Vector2(12, maxf(next_y + 3.0, text_y + 34.0)), motion_desc, text_w, 9, 2.5, Color(CREAM, 0.8))
 
 	# Line 3: Attribute scaling (Wind-up is already in cost row at top - D-439)
-	var stat_name := "MAG" if (skill.element != Element.Type.FISICO and skill.kind != Skill.Kind.MELEE) else "STR"
+	var stat_name := "MAG" if skill.is_magical() else "STR"
 	var scale_desc := "Scales with %s (%d%%)" % [stat_name, int(round(skill.power * 100.0))] if skill.kind != Skill.Kind.STATUS else "Fixed status potency"
 	draw_string(font, Vector2(12, maxf(next_y + 3.0, text_y + 58.0)), scale_desc, HORIZONTAL_ALIGNMENT_LEFT, text_w, 9, AQUA)
 
@@ -376,15 +382,20 @@ func _forecast() -> String:
 	if target.is_invulnerable_target():
 		return "Untargetable | 0 damage (Teleport/Dig)"
 	var raw := Battle.estimate_damage(caster, target, skill)
-	var weak := skill.element in target.weaknesses
-	var text := "~%d%s (no crit)" % [raw, " | WEAK" if weak else ""]
+	var affinity_kind := target.affinity_for(skill.element)
+	var affinity_tag := ""
+	if affinity_kind == Affinity.Type.WEAK:
+		affinity_tag = " | WEAK"
+	elif affinity_kind == Affinity.Type.RESIST:
+		affinity_tag = " | RESIST"
+	var text := "~%d%s (no crit)" % [raw, affinity_tag]
 	if caster.is_blind():
 		text += " | 35% miss (blind)"
 	if target.is_guarding():
 		if _breaks_guard(skill):
 			text += " | BREAKS Guard (+1 ATB)"
 		else:
-			raw = maxi(1, ceili(float(raw) * (1.0 - Battle.GUARD_REDUCTION)))
+			raw = DamageMath.apply_guard(raw)
 			text += " | Guard cuts to %d and breaks" % raw
 	if target.is_shielded():
 		var absorbed := mini(raw, target.shield_hp)

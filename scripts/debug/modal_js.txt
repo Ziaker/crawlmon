@@ -1,0 +1,181 @@
+function openMoveInspectionModal(moveName) {
+  try { Sound.click(); } catch (e) {}
+  const h = HEROES[currentHero];
+  const move = h.moves.find(m => m.name === moveName) || h.moves[0];
+  if (!move) return;
+
+  const typeData = MOVE_TYPES[move.type] || MOVE_TYPES.PHYSICAL;
+  const rangeData = MOVE_RANGES[move.range] || MOVE_RANGES.MELEE;
+  const elData = ELEMENTS_12.find(e => e.id === move.element) || ELEMENTS_12[0];
+  const liveDmg = move.baseDmg > 0 ? Math.round(move.baseDmg + (move.scalingRatio * getEffectiveStat(h, move.scalingStat))) : 0;
+
+  // Header injection: Unskewed components inside -9deg slanted modal
+  const header = document.getElementById('moveModalHeader');
+  header.innerHTML = `
+    <div class="unskew flex items-center gap-3">
+      <div class="w-14 h-14 rounded neo-border flex items-center justify-center shrink-0 border-2 border-black" style="background-color: ${elData.bg}; color: ${elData.fg};">
+        <svg class="w-9 h-9" viewBox="0 0 24 24" fill="currentColor">${elData.svg}</svg>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 rounded text-[10px] font-mono font-black uppercase text-white neo-border-sm" style="background-color: ${typeData.bg};">
+            ${typeData.name}
+          </span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-mono font-black uppercase bg-white text-black neo-border-sm">
+            ${rangeData.name}
+          </span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-mono font-black uppercase neo-border-sm border border-black/40" style="background-color: ${elData.bg}; color: ${elData.fg};">
+            ${elData.name}
+          </span>
+        </div>
+        <h2 class="font-teko text-4xl lg:text-5xl font-black uppercase tracking-wider leading-none text-white mt-1">
+          ${move.name}
+        </h2>
+      </div>
+    </div>
+
+    <!-- Right: Flat Parallelogram Cost Chips & Close [X] -->
+    <div class="unskew flex items-center gap-2">
+      <div class="flex items-center gap-1.5 font-mono text-xs font-black">
+        <div class="skew-panel px-2 py-1 bg-[#00d8f6] text-black neo-border-sm shadow-[1px_1px_0px_#000]"><div class="unskew">${move.atb} ATB</div></div>
+        <div class="skew-panel px-2 py-1 bg-[#a855f7] text-white neo-border-sm shadow-[1px_1px_0px_#000]"><div class="unskew">${move.mp} MP</div></div>
+        ${move.baseDmg > 0 ? `<div class="skew-panel px-2 py-1 bg-[#f97316] text-black neo-border-sm shadow-[1px_1px_0px_#000]"><div class="unskew">${liveDmg} DMG</div></div>` : ''}
+      </div>
+      <button onclick="closeMoveInspectionModal()" class="w-8 h-8 bg-black hover:bg-neutral-800 text-white font-mono font-bold rounded flex items-center justify-center neo-border text-sm transition-all ml-1 shadow-[2px_2px_0px_#000]" title="Close Inspection">
+        ✕
+      </button>
+    </div>
+  `;
+
+  // Body injection: EXACTLY 2 CONSOLIDATED BLOCKS FULLY PARALLELOGRAMED & ANGLED (-9DEG)
+  const body = document.getElementById('moveModalBody');
+  body.innerHTML = `
+    <!-- BLOCK 1: MECHANICS & DAMAGE SCALES (PARALLELOGRAMED ANGLED TEXT & SHAPE) -->
+    <div class="p-5 bg-neutral-900/95 border-2 border-neutral-700/80 rounded neo-border space-y-3 shadow-[4px_4px_0px_#000]">
+      <div class="font-teko text-3xl font-black text-amber-400 uppercase tracking-wider border-b border-neutral-800 pb-1 leading-none whitespace-nowrap">
+        MECHANICS & DAMAGE SCALES
+      </div>
+      
+      <p class="text-neutral-200 text-xs leading-relaxed">${move.desc}</p>
+      
+      <div class="grid grid-cols-2 gap-x-4 gap-y-2 pt-1.5 border-t border-neutral-800 text-xs">
+        <div class="whitespace-nowrap">Targets: <strong class="text-white">${move.target || 'Single Opponent'}</strong></div>
+        <div class="whitespace-nowrap">Pierces Barrier: <strong class="${move.name === 'PSYBEAM' ? 'text-emerald-400 font-bold' : 'text-neutral-400'}">${move.name === 'PSYBEAM' ? 'YES (Ignores Shield)' : 'NO (Blocked)'}</strong></div>
+        <div class="whitespace-nowrap">Wind-up Time: <strong class="text-white">${move.atb === 1 ? '0.80s (Fast)' : move.atb === 2 ? '1.40s (Standard)' : '2.10s (Heavy)'}</strong></div>
+        <div class="whitespace-nowrap">Interrupt Window: <strong class="${move.atb > 1 ? 'text-amber-400' : 'text-neutral-400'}">${move.atb > 1 ? 'Interruptible' : 'Protected'}</strong></div>
+      </div>
+
+      ${move.baseDmg > 0 ? `
+        <div class="p-3 bg-black/70 border-2 border-neutral-800 rounded space-y-1.5 shadow-[2px_2px_0px_#000]">
+          <div class="text-[10px] font-bold text-amber-300 uppercase tracking-wider whitespace-nowrap">Exact Damage Formula:</div>
+          <div class="text-cyan-300 font-black text-xs md:text-sm whitespace-nowrap flex items-center gap-2">
+            <span>${move.baseDmg} [Base] + (${move.scalingRatio} × ${getEffectiveStat(h, move.scalingStat)} [${move.scalingStat}])</span>
+            <span>=</span>
+            <span class="inline-block px-2.5 py-0.5 bg-[#f97316] text-black font-black rounded neo-border-sm whitespace-nowrap shadow-[1px_1px_0px_#000]">${liveDmg} DMG</span>
+          </div>
+          <div class="text-[10px] text-neutral-400 whitespace-nowrap">
+            Synergy: Includes <span class="text-emerald-400 font-bold">${h.nature.name}</span> Nature modifier on effective ${move.scalingStat}.
+          </div>
+        </div>
+      ` : `
+        <div class="p-3 bg-black/70 border-2 border-neutral-800 rounded text-neutral-300 text-xs shadow-[2px_2px_0px_#000]">
+          <strong class="text-amber-300">TACTICAL UTILITY ACTION:</strong> Non-damaging battlefield control / status debuff. No direct damage calculation.
+        </div>
+      `}
+    </div>
+
+    <!-- BLOCK 2: VISUAL EFFECTS (PARALLELOGRAMED ANGLED TEXT & SHAPE) -->
+    <div class="p-5 bg-neutral-900/95 border-2 border-neutral-700/80 rounded neo-border space-y-3 shadow-[4px_4px_0px_#000]">
+      <div class="font-teko text-3xl font-black text-cyan-400 uppercase tracking-wider border-b border-neutral-800 pb-1 leading-none whitespace-nowrap">
+        VISUAL EFFECTS
+      </div>
+      
+      <div>
+        <div class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1 whitespace-nowrap">3D Visual Manifestation:</div>
+        <p class="text-neutral-200 text-xs leading-relaxed">
+          ${move.name === 'PSYBEAM' ? 'Concentrated high-energy psychic laser beam with violet distortion rings and particle fracture burst on impact.' :
+            move.name === 'CONFUSION' ? 'Fires swirling telekinetic sonic pressure waves that ripple through space, distorting the opponent\'s vision.' :
+            move.name === 'SHOCK WAVE' ? 'Instant crackling golden electrical discharge arcing directly into the foe without projectile travel time.' :
+            move.name === 'TACKLE' ? 'Physical bodily charge accompanied by ground dust puffs and a blunt kinetic shockwave.' :
+            move.name === 'KARATE CHOP' ? 'Swift downward diagonal strike with sharp crimson speed-lines and critical impact spark burst.' :
+            move.name === 'DARK FLING' ? 'Shadow-infused projectile lobbed in an arc, exploding into dark violet miasma upon contact.' :
+            move.name === 'GUARD' ? 'Translucent protective barrier manifestation mitigating incoming physical and elemental trauma.' :
+            'Intimidating battle roar sending reverberating shockwaves that disorient and enrage the target.'}
+        </p>
+      </div>
+
+      <div>
+        <div class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1 whitespace-nowrap">Motion & Displacement:</div>
+        <p class="text-neutral-200 text-xs leading-relaxed">
+          ${move.range === 'MELEE' ? 'User lunges forward 2.5m into close combat range, executes the strike, then springs back to formation.' :
+            move.range === 'MID' ? 'User remains stationary in casting stance; launches projectile or shockwave across midfield.' :
+            move.range === 'LONG' ? 'User anchors securely in backline formation; fires linear high-velocity projectile piercing target.' :
+            'User generates non-directional omni-spherical shockwave expanding outward from feet.'}
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-x-4 gap-y-2 pt-1.5 border-t border-neutral-800 text-[11px] text-neutral-400">
+        <div class="whitespace-nowrap">Delivery: <strong class="text-white">${rangeData.name}</strong></div>
+        <div class="whitespace-nowrap">Trajectory: <strong class="text-white">${move.range === 'MELEE' ? 'Linear Lunge' : 'Direct Line / Arc'}</strong></div>
+        <div class="whitespace-nowrap">Element: <strong class="text-white">${elData.name}</strong></div>
+        <div class="whitespace-nowrap">Watermark: <strong class="text-white">Embossed Low-Relief</strong></div>
+      </div>
+    </div>
+  `;
+
+  const modal = document.getElementById('moveInspectionModal');
+  modal.classList.remove('hidden');
+}
+
+function closeMoveInspectionModal() {
+  const modal = document.getElementById('moveInspectionModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function syncHUD() {
+  const h = HEROES[currentHero];
+  const isLeader = h.isLeader;
+  const remPoints = getPointsRemaining();
+  const lvl = isMilestoneMode ? 10 : 2;
+
+  // Header party tabs active state & color contrast
+  const btnAbra = document.getElementById('btnPartyAbra');
+  const btnPancham = document.getElementById('btnPartyPancham');
+  if (currentHero === 'abra') {
+    btnAbra.className = "skew-panel px-4 py-1.5 bg-[#f5f6f8] text-[#08101a] border-2 border-cyan-400 font-bold text-sm shadow-[0_0_12px_rgba(0,216,246,0.35)] hover:scale-105 transition-all relative";
+    btnPancham.className = "skew-panel px-4 py-1.5 bg-[#142334] text-neutral-300 border-2 border-black font-bold text-sm hover:scale-105 transition-all relative";
+  } else {
+    btnAbra.className = "skew-panel px-4 py-1.5 bg-[#142334] text-neutral-300 border-2 border-black font-bold text-sm hover:scale-105 transition-all relative";
+    btnPancham.className = "skew-panel px-4 py-1.5 bg-[#f5f6f8] text-[#08101a] border-2 border-cyan-400 font-bold text-sm shadow-[0_0_12px_rgba(0,216,246,0.35)] hover:scale-105 transition-all relative";
+  }
+
+  // Level Up notification badges in party tabs (Hide when allocated/seen)
+  const abraLvBadge = document.getElementById('abraLvUpBadge');
+  if (abraLvBadge) {
+    abraLvBadge.classList.toggle('hidden', !heroLevelUpNotifs.abra);
+  }
+  const panchamLvBadge = document.getElementById('panchamLvUpBadge');
+  if (panchamLvBadge) {
+    panchamLvBadge.classList.toggle('hidden', !heroLevelUpNotifs.pancham);
+  }
+
+  // Hero Identification Card
+  document.getElementById('heroRoleLabel').textContent = isLeader ? 'PROTAGONIST / LEADER' : 'TACTICAL ALLY (AI)';
+  document.getElementById('heroSpeciesSub').textContent = h.species;
+  document.getElementById('heroNameHeading').textContent = h.name;
+  document.getElementById('heroLevelNumber').textContent = lvl;
+  document.getElementById('heroNextExpNumber').textContent = `${calcNextExp(lvl)} EXP`;
+
+  // Nature (D-393)
+  document.getElementById('heroNatureName').textContent = h.nature.name.toUpperCase();
+  document.getElementById('heroNatureModifier').textContent = `(${h.nature.modText})`;
+  document.getElementById('heroNatureTactic').textContent = h.nature.tacticText;
+
+  // Badges per D-413: 1 wide block if mono-element, 2 blocks if dual-element
+  const badgesContainer = document.getElementById('heroElementBadges');
+  badgesContainer.innerHTML = '';
+  if (h.elements.length === 1) {
+    const elData = ELEMENTS_12.find(e => e.id === h.elements[0]) || ELEMENTS_12[0];
+    badgesContainer.innerHTML = `
+      <div onclick="explainElement('${elData.id}')" class="h-8 px-3.5 flex items-center justify-center font-mono font-black text-xs rounded neo-border cursor-pointer hover:scale-105 active:scale-95 transition-all" style="background-color: ${elData.bg}; color: ${elData.fg};" title="Click for ${elData.name} rules">
+        ${elData.name

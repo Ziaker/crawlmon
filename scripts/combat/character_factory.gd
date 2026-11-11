@@ -48,6 +48,7 @@ static func create(species_id: String, opts: Dictionary = {}) -> Combatant:
 	combatant.nature_id = nat_id
 	combatant.individual_offsets = offsets
 	combatant.innate_stats = innate
+	combatant.uses_effective_strength = true  # D-1143: the catalog character follows STR, including level-up points.
 	combatant.sync_effective_stats()
 	combatant.update_resource_maximums()
 	combatant.hp = combatant.max_hp
@@ -56,7 +57,9 @@ static func create(species_id: String, opts: Dictionary = {}) -> Combatant:
 
 	combatant.weaknesses.clear()
 	for weakness in data.weaknesses:
-		combatant.weaknesses.append(weakness)
+		if not (weakness in combatant.weaknesses):
+			combatant.weaknesses.append(weakness)
+	_apply_affinities(combatant, data)
 	combatant.travel_extra = data.travel_extra
 	combatant.act_policy = int(opts.get("act_policy", data.act_policy))
 	combatant.react_policy = int(opts.get("react_policy", data.react_policy))
@@ -81,6 +84,7 @@ static func create(species_id: String, opts: Dictionary = {}) -> Combatant:
 		combatant.max_mp = int(opts["max_mp"])
 		combatant.mp = combatant.max_mp
 	if opts.has("attack"):
+		combatant.uses_effective_strength = false  # D-1143: an explicit test override must survive a later sync.
 		combatant.base_attack = int(opts["attack"])
 		combatant.mag = combatant.base_attack
 	if opts.has("speed"):
@@ -105,7 +109,9 @@ static func _create_bare(data: CharacterData, opts: Dictionary) -> Combatant:
 	combatant.base_experience = data.base_experience
 	combatant.weaknesses.clear()
 	for weakness in data.weaknesses:
-		combatant.weaknesses.append(weakness)
+		if not (weakness in combatant.weaknesses):
+			combatant.weaknesses.append(weakness)
+	_apply_affinities(combatant, data)
 	combatant.travel_extra = data.travel_extra
 	combatant.skills.clear()
 	for move_id in data.skill_ids():
@@ -118,3 +124,26 @@ static func _create_bare(data: CharacterData, opts: Dictionary) -> Combatant:
 	combatant.max_mp = int(opts.get("max_mp", 0))
 	combatant.mp = combatant.max_mp
 	return combatant
+
+
+## D-1157: fill the affinity table. Missing entries derive from `weaknesses`
+## as WEAK, so existing species keep working without editing every .tres.
+static func _apply_affinities(c: Combatant, data: CharacterData) -> void:
+	c.affinities.clear()
+	if data.affinities != null:
+		for key in data.affinities.keys():
+			var elem := int(key)
+			var kind := int(data.affinities[key])
+			if not Element.NAMES.has(elem):
+				push_warning("CharacterFactory: elemento de afinidade inválido %s em '%s'" % [key, data.id])
+				continue
+			if not Affinity.NAMES.has(kind):
+				push_warning("CharacterFactory: afinidade inválida %s em '%s'" % [kind, data.id])
+				continue
+			if kind == Affinity.Type.NULL or kind == Affinity.Type.REPEL or kind == Affinity.Type.DRAIN:
+				push_warning("CharacterFactory: %s reservada e ignorada em '%s' (D-1161)" % [Affinity.name_of(kind), data.id])
+				continue
+			c.affinities[elem] = kind
+	for weakness in data.weaknesses:
+		if not c.affinities.has(int(weakness)):
+			c.affinities[int(weakness)] = Affinity.Type.WEAK

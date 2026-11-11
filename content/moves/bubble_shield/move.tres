@@ -1,9 +1,11 @@
 [gd_resource type="Resource" script_class="MoveData" format=3]
 
 [ext_resource type="Script" path="res://scripts/data/move_data.gd" id="1_mpgd3"]
+[ext_resource type="Script" path="res://content/moves/bubble_shield/behavior.gd" id="2_bubble"]
 
 [resource]
 script = ExtResource("1_mpgd3")
+behavior_script = ExtResource("2_bubble")
 id = &"bubble_shield"
 display_name = "Bubble Shield"
 kind = 3

@@ -5,6 +5,7 @@ extends RefCounted
 
 var fx: BattleFx
 var _vis_tweens: Dictionary = {}  ## Combatant -> Tween (dedicated vanish/appear timer; never killed by fx._move)
+var last_whiff: Dictionary = {}  ## D-1166/D-1167 debug audit: what the last mistimed Evade played.
 
 
 func _init(p_fx: BattleFx) -> void:
@@ -78,20 +79,123 @@ func arrive_to_attack(actor: Combatant, opponent: Combatant) -> void:
 
 
 ## Visual feedback when the player presses Evade too early (Whiff state: vulnerable to critical hit).
-## D-1015: a dodge pressed outside the valid window plays the fall ("down") clip on the one who
-## mistimed it, then it goes back to its idle on its own. The hit still lands.
+## D-1015 + D-1166: a dodge pressed outside the valid window plays the fall ("down") clip on the one
+## who mistimed it, shows WHIFF above it and kicks dust at its feet. Pokemon "down" clips barely
+## drop the body, so those get a code-driven fall. The hit still lands and no rule changes.
 func mistimed(actor: Combatant, _inc) -> void:
-	if not actor.is_alive() or fx.fx_motion.is_driven(actor):
-		return  # Its own melee run owns the body (one timeline).
-	var ap := fx._anim_player(actor)
-	if ap == null or not ap.has_animation("down"):
+	if not actor.is_alive():
 		return
-	var len := clampf(ap.get_animation("down").length, 0.4, 1.6)
-	fx._busy_for(actor, len + 0.1)
-	fx._play(actor, "down")
-	await fx.get_tree().create_timer(len, false).timeout
-	if is_instance_valid(fx) and actor.is_alive() and not fx.fx_motion.is_driven(actor):
+	if fx.fx_motion.is_driven(actor):
+		# Its own melee run owns the body (one timeline): no fall, but the mistake is still shown.
+		var text_driven := _whiff_text(actor)
+		var dust_driven := _whiff_dust(actor)
+		last_whiff = {"actor": actor.name, "clip": "", "fall_assist": false, "down_falls": false,
+			"whiff_text": text_driven, "dust": dust_driven}
+		return
+	var ap := fx._anim_player(actor)
+	var has_down := ap != null and ap.has_animation("down")
+	var down_falls := has_down and _down_clip_falls(ap)
+	var clip := ""
+	if down_falls:
+		clip = "down"
+	elif ap != null and ap.has_animation("damage"):
+		clip = "damage"  # D-1167: no usable fall clip -> use the damage clip.
+	elif has_down:
+		clip = "down"
+	var dur := clampf(ap.get_animation(clip).length, 0.4, 1.6) if clip != "" else 0.9
+	fx._busy_for(actor, dur + 0.1)
+	if clip != "":
+		fx._play(actor, clip)
+	var assist := not down_falls
+	var m: Node3D = fx._models.get(actor)
+	var base_x := 0.0
+	if assist and m != null:
+		base_x = m.rotation.x
+		var tw := fx._move(actor)
+		tw.tween_property(m, "rotation:x", base_x - PI * 0.5, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw.tween_interval(maxf(dur - 0.40, 0.0))
+		tw.tween_property(m, "rotation:x", base_x, 0.15).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	var text_ok := _whiff_text(actor)
+	# Dust when the body reaches the floor (the DQT fall clips land later than the assisted one).
+	var dust_delay := 0.28 if assist else clampf(dur * 0.45, 0.3, 0.7)
+	_whiff_dust_later(actor, dust_delay)
+	last_whiff = {"actor": actor.name, "clip": clip, "fall_assist": assist, "down_falls": down_falls,
+		"whiff_text": text_ok, "dust_scheduled": true, "dust_delay": dust_delay}
+	await fx.get_tree().create_timer(dur, false).timeout
+	if not is_instance_valid(fx):
+		return
+	if assist and is_instance_valid(m):
+		m.rotation.x = base_x
+	if actor.is_alive() and not fx.fx_motion.is_driven(actor):
 		fx._reset_idle(actor)
+
+
+## True when the model's "down" clip itself drops the body. The Pokemon clips only move
+## limbs/head a little; the DQT "Die" clips rotate/translate the hip or root bone.
+func _down_clip_falls(ap: AnimationPlayer) -> bool:
+	if ap == null or not ap.has_animation("down"):
+		return false
+	var a := ap.get_animation("down")
+	var max_y := 0.0
+	var max_angle := 0.0
+	for i in a.get_track_count():
+		var path := str(a.track_get_path(i)).to_lower()
+		var is_body := false
+		for suffix in [":origin", ":root", ":waist", ":n_hara", ":j_kosi", ":hip", ":hips", ":pelvis", ":cog"]:
+			if path.ends_with(suffix):
+				is_body = true
+				break
+		if not is_body:
+			continue
+		var typ := a.track_get_type(i)
+		var n := a.track_get_key_count(i)
+		if n == 0:
+			continue
+		if typ == Animation.TYPE_POSITION_3D:
+			var lo := INF
+			var hi := -INF
+			for k in n:
+				var y: float = (a.track_get_key_value(i, k) as Vector3).y
+				lo = minf(lo, y)
+				hi = maxf(hi, y)
+			max_y = maxf(max_y, hi - lo)
+		elif typ == Animation.TYPE_ROTATION_3D:
+			var first: Quaternion = a.track_get_key_value(i, 0)
+			for k in n:
+				max_angle = maxf(max_angle, first.angle_to(a.track_get_key_value(i, k)))
+	return max_y > 0.25 or max_angle > 0.6
+
+
+## D-1166: the exact word above the one who mistimed the Evade.
+func _whiff_text(actor: Combatant) -> bool:
+	var m: Node3D = fx._models.get(actor)
+	if m == null:
+		return false
+	var head := float(m.get_meta("head_y", 2.0)) if m.has_meta("head_y") else 2.0
+	fx.float_text(fx.to_local(m.global_position) + Vector3(0, head + 0.35, 0), "WHIFF", Color("ffb020"), 56)
+	return true
+
+
+## D-1166: floor dust at the character's feet (the code fall lands around this moment).
+func _whiff_dust(actor: Combatant) -> bool:
+	var m: Node3D = fx._models.get(actor)
+	if m == null:
+		return false
+	var p := fx.to_local(m.global_position)
+	p.y = 0.0
+	fx._smoke(p + Vector3(0, 0.15, 0), Color(0.72, 0.66, 0.55), 12, Vector2(0.8, 1.8), 0.65, 0.8)
+	return true
+
+
+func _whiff_dust_later(actor: Combatant, delay: float) -> void:
+	await fx.get_tree().create_timer(delay, false).timeout
+	if is_instance_valid(fx):
+		_whiff_dust(actor)
+
+
+## D-1166/D-1167 debug audit: the last mistimed Evade visual (clip, fall assist, WHIFF/dust).
+func last_whiff_info() -> Dictionary:
+	return last_whiff.duplicate(true)
 
 
 func evade_whiff(actor: Combatant, _inc) -> void:

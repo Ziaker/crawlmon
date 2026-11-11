@@ -9,6 +9,8 @@ var _font: Font
 var _time := 0.0
 var _action := "TALK"
 var _npc_name := ""
+var _alt_key_visible := true
+var _primary_key := "Z"
 var _shown_once := false
 
 
@@ -22,9 +24,12 @@ func _ready() -> void:
 	_font.font_weight = 800
 
 
-func show_prompt(npc_name: String, action: String = "TALK") -> void:
+func show_prompt(npc_name: String, action: String = "TALK", alt_key := true,
+		primary_key := "Z") -> void:
 	_npc_name = npc_name
 	_action = action
+	_alt_key_visible = alt_key
+	_primary_key = primary_key
 	if not visible:
 		visible = true
 		modulate.a = 0.0
@@ -79,14 +84,15 @@ func _draw() -> void:
 	])
 	draw_colored_polygon(key, Color(0.12, 0.10, 0.14, 0.98))
 	draw_polyline(key + PackedVector2Array([key[0]]), Color(1.0, 0.78, 0.35, 0.95), 2.0, true)
-	var z_size := _font.get_string_size("Z", HORIZONTAL_ALIGNMENT_LEFT, -1, 26)
+	var z_size := _font.get_string_size(_primary_key, HORIZONTAL_ALIGNMENT_LEFT, -1, 26)
 	draw_string(_font, Vector2(kx + (kw - z_size.x) * 0.5, ky + kh * 0.72),
-		"Z", HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(1.0, 0.92, 0.70))
-	draw_string(_font, Vector2(kx + kw + 5.0, ky + kh * 0.82),
-		"E", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.78, 0.84, 0.78, 0.9))
+		_primary_key, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(1.0, 0.92, 0.70))
+	if _alt_key_visible:
+		draw_string(_font, Vector2(kx + kw + 5.0, ky + kh * 0.82),
+			"E", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.78, 0.84, 0.78, 0.9))
 
 	# ação + nome
-	var tx := kx + kw + 22.0
+	var tx := kx + kw + (22.0 if _alt_key_visible else 12.0)
 	draw_string(_font, Vector2(tx, 33.0), _action, HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color(0.97, 0.96, 0.90))
 	var name_size := 12
 	var shown := _npc_name

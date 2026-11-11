@@ -4,4 +4,4 @@
 
 [resource]
 script = ExtResource("1_avmxy")
-skills = Array[StringName]([&"tackle", &"bubble_shot", &"heal", &"electric_beam", &"tidal_surge"])
+skills = Array[StringName]([&"tackle", &"bubble_shot", &"heal", &"electric_beam", &"tidal_surge", &"bubble_shield"])

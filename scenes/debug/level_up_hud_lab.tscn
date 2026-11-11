@@ -1,0 +1,37 @@
+[gd_scene format=3 uid="uid://clab001"]
+
+[ext_resource type="Script" path="res://scripts/debug/level_up_hud_lab.gd" id="1_lab"]
+[ext_resource type="PackedScene" path="res://scenes/ui/level_up_hud.tscn" id="2_hud"]
+
+[node name="LevelUpHUDLab" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_lab")
+
+[node name="LevelUpHUD" parent="." instance=ExtResource("2_hud")]
+layout_mode = 1
+
+[node name="DebugControls" type="HBoxContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -380.0
+offset_top = 16.0
+offset_right = -24.0
+offset_bottom = 48.0
+grow_horizontal = 0
+theme_override_constants/separation = 12
+
+[node name="MilestoneBtn" type="Button" parent="DebugControls"]
+layout_mode = 2
+text = "MILESTONE MODE: OFF (1 PT)"
+
+[node name="ReplayBtn" type="Button" parent="DebugControls"]
+layout_mode = 2
+text = "REPLAY CELEBRATION"

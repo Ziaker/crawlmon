@@ -31,7 +31,10 @@ const SCENARIOS := [
 	{"id": "alvo_empurrado_tarde", "g": "Perseguição e prisão", "label": "Alvo empurrado logo antes do impacto", "atk": [["A1", "Tackle", "E1", 0.0], ["A2", "Fire Bullet", "E1", 2.4]]},
 	# --- Evade e contra-ataque (D-283, D-284) ---
 	{"id": "evade_janela", "g": "Evade", "label": "Evade na janela final (0,25 s)", "atk": [["A1", "Tackle", "E1", 0.0]], "acts": [[0.0, "evade", "E1"]]},
-	{"id": "evade_cedo", "g": "Evade", "label": "Evade cedo demais: sem efeito", "atk": [["A1", "Tackle", "E1", 0.0]], "acts": [[2.7, "evade_once", "E1"]]},
+	{"id": "evade_cedo", "g": "Evade", "label": "Evade cedo demais: WHIFF + queda + poeira", "atk": [["A1", "Tackle", "E1", 0.0]], "acts": [[2.7, "evade_once", "E1"]]},
+	{"id": "dodge_errado_pokemon", "g": "Evade", "label": "AUTO — Dodge errado (Pokémon): WHIFF + damage + queda + poeira", "atk": [["E1", "Tackle", "A1", 0.0]], "acts": [[2.7, "evade_once", "A1"]]},
+	{"id": "dodge_dread_valido", "g": "Evade", "label": "Dodge certo no Dread: Evade válido, sem WHIFF", "atk": [["E1", "Tackle", "A1", 0.0]], "acts": [[0.0, "evade", "A1"]]},
+	{"id": "dodge_manual", "g": "Evade", "label": "Dodge manual: aperte no Dread (sem ação automática)", "atk": [["E1", "Tackle", "A1", 0.0]]},
 	{"id": "evade_contra", "g": "Evade", "label": "Evade + contra-ataque (wind-up 0,3 s)", "atk": [["A1", "Tackle", "E1", 0.0]], "acts": [[0.0, "evade", "E1"], [3.55, "attack", "E1", "Tackle", "A1"]]},
 	{"id": "evade_projetil", "g": "Evade", "label": "Evade de projétil", "atk": [["A1", "Fire Bullet", "E1", 0.0]], "acts": [[0.0, "evade", "E1"]]},
 	{"id": "evade_na_corrida", "g": "Evade", "label": "Evade durante a própria corrida", "atk": [["E1", "Tackle", "A2", 0.0], ["A1", "Fire Bullet", "E1", 1.1]], "acts": [[0.0, "evade", "E1"]]},
@@ -73,6 +76,13 @@ const SCENARIOS := [
 	{"id": "media", "g": "Status e buffs", "label": "Media (grupo)", "hp": 55, "atk": [["A1", "Media", "A1", 0.0]]},
 	{"id": "taunt", "g": "Status e buffs", "label": "Taunt redireciona o ataque", "enemies": 3, "atk": [["A1", "Taunt", "E1", 0.0], ["E1", "Tackle", "A2", 3.2]]},
 	{"id": "status_pausa", "g": "Status e buffs", "label": "Status pausa um ataque em curso", "atk": [["E1", "Tackle", "A1", 0.0], ["A1", "Tarukaja", "A1", 0.5]]},
+	# --- Fila e pausa de status (D-161/D-1150) ---
+	{"id": "fila_status_pausa", "g": "Fila e pausa", "label": "Fila sobrevive à pausa real (Move enfileirado antes)", "atk": [["A1", "Tackle", "E1", 0.0], ["E1", "Rakunda", "A1", 0.30]], "acts": [[0.05, "queue", "A1", "Sukunda", "E1"]]},
+	{"id": "fila_status_click", "g": "Fila e pausa", "label": "Fila escolhida durante a pausa real", "atk": [["E1", "Rakunda", "A1", 0.0]], "acts": [[0.40, "queue", "A1", "Sukunda", "E1"]]},
+	{"id": "fila_war_cry", "g": "Fila e pausa", "label": "War Cry interrompe o ataque e limpa a fila (esperado D-064)", "atk": [["A1", "Tackle", "E1", 0.0], ["E1", "War Cry", "A1", 0.10]], "acts": [[0.05, "queue", "A1", "Sukunda", "E1"]]},
+	{"id": "windup_pausa_com_ataque", "g": "Fila e pausa", "label": "Wind-up durante a pausa com ataque em voo (D-1159)", "enemies": 2, "atk": [["E1", "Tackle", "A1", 0.0], ["E2", "Rakunda", "A1", 0.6]], "acts": [[0.8, "queue", "A1", "Tackle", "E1"]]},
+	{"id": "war_cry_interrupt", "g": "Status e buffs", "label": "War Cry interrompe o wind-up do inimigo e dá +1 Burst (D-1102)", "atk": [["E1", "Tackle", "A1", 0.0], ["A1", "War Cry", "E1", 0.0]]},
+	{"id": "war_cry_interrupt_enemy", "g": "Status e buffs", "label": "War Cry do inimigo interrompe o wind-up do aliado", "atk": [["A1", "Tackle", "E1", 0.0], ["E1", "War Cry", "A1", 0.0]]},
 	{"id": "buff_atk", "g": "Status e buffs", "label": "ATK +3 e depois Tackle", "atk": [["A1", "Tackle", "E1", 1.0]], "acts": [[0.0, "buff", "A1", "atk", 3]]},
 	{"id": "debuff_def", "g": "Status e buffs", "label": "DEF −3 no alvo e depois Tackle", "atk": [["A1", "Tackle", "E1", 1.0]], "acts": [[0.0, "buff", "E1", "def", -3]]},
 	# --- Morte e fim de combate ---

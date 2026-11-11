@@ -6,15 +6,24 @@ extends Node
 const EXPLORATION := "res://scenes/exploration.tscn"
 const BATTLE := "res://scenes/battle.tscn"
 const DungeonGen = preload("res://scripts/dungeon/dungeon_generator.gd")
+const DebugPartySelectorClass = preload("res://scripts/ui/debug_party_selector.gd")
 ## Baseline non-held stock for a fresh expedition (R25-Q4/R31-Q1).
 const INITIAL_INVENTORY := {"potion": 3, "amulet": 1, "charm": 1}
 
 var player_pos := Vector2.INF  ## INF = use the map's spawn point.
 var encounter_id := ""
+## D-1100/D-1101: encounter variant and the 3D return point. return_scene == ""
+## keeps the 2D path returning to EXPLORATION, exactly as before.
+var encounter_advantage: int = EncounterRules.Advantage.NORMAL
+var return_scene := ""
+var return_pos_3d := Vector3.ZERO
+var return_yaw := 0.0
 var defeated: Array[String] = []
 var in_battle := false
-var transition: EncounterTransition
+var transition: EncounterShatterTransition  ## D-1172: replaces the old EncounterTransition (kept in the repo, unused)
 var party: Array[Combatant] = []
+## Debug/test tool: global E selector for choosing which party member is controlled.
+var debug_party_selector: CanvasLayer
 ## D-981: species whose elements the player has discovered (a weakness hit). Session only (no save yet).
 var discovered_species: Dictionary = {}
 
@@ -75,6 +84,10 @@ func _ready() -> void:
 	_register_key("guard", KEY_SHIFT)  ## D-272: Guard hotkey.
 	_register_key("new_dungeon", KEY_R)  ## Debug: regenerate the exploration floor.
 	_build_party()
+	if debug_party_selector == null:
+		debug_party_selector = DebugPartySelectorClass.new()
+		debug_party_selector.name = "DebugPartySelector"
+		add_child(debug_party_selector)
 	if "--battle" in OS.get_cmdline_user_args():  # godot --path . -- --battle
 		_debug_battle.call_deferred()
 
@@ -126,18 +139,48 @@ func start_battle(id: String, pos: Vector2) -> void:
 	encounter_id = id
 	player_pos = pos
 	in_battle = true
+	return_scene = ""
+	return_pos_3d = Vector3.ZERO
+	return_yaw = 0.0
+	encounter_advantage = EncounterRules.Advantage.NORMAL
 	_transition().play_to(BATTLE)
 
 
+## D-1100: starts a battle from the 3D lab and remembers the exact spot/direction
+## to return to. The transition reads the variant (white/blue/red).
+func start_battle_3d(id: String, scene_path: String, pos: Vector3, yaw: float, advantage: int) -> void:
+	encounter_id = id
+	return_scene = scene_path
+	return_pos_3d = pos
+	return_yaw = yaw
+	encounter_advantage = advantage
+	in_battle = true
+	_transition().play_to(BATTLE, advantage, _screen_uv_of(pos + Vector3.UP))
+
+
 ## Encounter transition overlay, created on first use and kept under the root.
-func _transition() -> EncounterTransition:
+func _transition() -> EncounterShatterTransition:
 	if transition == null:
-		transition = EncounterTransition.new()
+		transition = EncounterShatterTransition.new()
 		get_tree().root.add_child(transition)
 	return transition
 
 
+## D-1172: where a world point sits on screen (0..1 from the top-left), for the
+## transition's shockwave centre. Screen centre when there is no 3D camera.
+func _screen_uv_of(world_pos: Vector3) -> Vector2:
+	var vp := get_viewport()
+	var cam := vp.get_camera_3d() if vp != null else null
+	if cam == null or cam.is_position_behind(world_pos):
+		return Vector2(0.5, 0.5)
+	var view := vp.get_visible_rect().size
+	if view.x <= 0.0 or view.y <= 0.0:
+		return Vector2(0.5, 0.5)
+	return cam.unproject_position(world_pos) / view
+
+
 func end_battle(player_won: bool) -> void:
+	var returning_to_3d := return_scene != ""
 	if player_won:
 		defeated.append(encounter_id)
 	else:
@@ -145,14 +188,29 @@ func end_battle(player_won: bool) -> void:
 		# new expedition from floor 1 (D-316/D-317), with a fresh layout and biome.
 		# There is no hub/campaign scene yet (D-324), so the player respawns at the
 		# map's P spawn. XP/levels are preserved on the same Combatant objects (R32-Q3).
+		# D-1106: coming from the 3D lab, defeat returns there without resetting the 2D expedition.
 		revive_party()
-		reset_expedition_inventory()
-		visual_floor = 1
-		biome_seed = 0  # new_dungeon rolls a new seed and adopts it for the biome.
-		new_dungeon(0, false)
+		if not returning_to_3d:
+			reset_expedition_inventory()
+			visual_floor = 1
+			biome_seed = 0  # new_dungeon rolls a new seed and adopts it for the biome.
+			new_dungeon(0, false)
 	encounter_id = ""
 	in_battle = false
-	get_tree().change_scene_to_file.call_deferred(EXPLORATION)
+	var target := return_scene if return_scene != "" else EXPLORATION
+	get_tree().change_scene_to_file.call_deferred(target)
+	if returning_to_3d:
+		# The lab reads the return point in _ready; clear it only after the new scene is up.
+		await get_tree().scene_changed
+	_clear_return_point()
+
+
+## D-1100/D-1101: the return point and the advantage are one-shot.
+func _clear_return_point() -> void:
+	return_scene = ""
+	return_pos_3d = Vector3.ZERO
+	return_yaw = 0.0
+	encounter_advantage = EncounterRules.Advantage.NORMAL
 
 
 ## R23-Q3/R33-Q1: all active party members return at full HP for the new attempt.

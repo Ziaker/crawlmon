@@ -10,14 +10,18 @@ extends Node3D
 
 const DQT_PROFILES := preload("res://scripts/combat/dqt_model_profiles.gd")
 const VIGNETTE_SHADER := preload("res://shaders/vignette.gdshader")
+const WALK_DUST_SCRIPT := preload("res://scripts/overworld/vfx/overworld_walk_dust.gd")
 
 const WALL_HEIGHT := 4.6
-const SPEED := 3.2
+## D-1136: movimento do personagem +50% (3,2 -> 4,8 m/s).
+const SPEED := 4.8
 const TURN_SPEED := 1.4
 ## D-1107: velocidade do giro do personagem para a direção do movimento.
 const TURN_RATE := 10.0
 ## D-1128: A/D giram a câmera; W/S andam; sem giro automático.
-const CAM_TURN_SPEED := 3.0
+## D-1136: giro um pouco mais lento (3,0 -> 2,6 rad/s).
+const CAM_TURN_SPEED := 2.6
+## D-1124: A/D andam de lado; a câmera acompanha a posição, não o yaw.
 const FOLLOW_SPEED := 3.8
 const CATCH_UP_SPEED := 5.2
 const CAM_DISTANCE := 3.4
@@ -28,6 +32,47 @@ const PARTY_CAM_HEIGHT := 1.5
 const PARTY_CAM_PITCH := 22.0
 const SOLO_CAM_PITCH := 8.0
 const NAV_Y := 0.05
+## Correção da câmera perto de paredes: a sonda esférica já usava 0.18 m; a
+## margem do raio passa a ser a mesma para o ponto resolvido nunca cruzar o
+## pivô (o offset antigo de 0.4 m atravessava o jogador quando a parede estava
+## entre 0.32 e 0.40 m e invertia o yaw em ~180°).
+const CAM_WALL_MARGIN := 0.18
+## Distância mínima do pivô. Abaixo disso a câmera procura uma direção lateral
+## livre em vez de entrar no jogador.
+const CAM_MIN_DISTANCE := 1.0
+## Quando a parede obriga a sair de trás, a câmera fica perto (não orbita 6 m
+## para o lado). O valor é um teto, não a distância normal.
+const CAM_FALLBACK_MAX := 1.8
+const CAM_PROBE_STEP := 0.12
+## Suavização exponencial da posição (k). Entrar na parede é rápido para não
+## atravessar geometria; sair é lento para não teleportar de ~0.4 m para 3.4 m.
+const CAM_POS_RATE := 14.0
+const CAM_POS_IN_RATE := 30.0
+## Tetos de velocidade por quadro. A saída é lenta; a entrada é mais rápida,
+## mas nunca um teleporte. Se o segmento pivô→câmera cruzar parede, a câmera
+## vai direto para o alvo seguro (correção de oclusão).
+const CAM_MAX_OUT_SPEED := 12.0
+const CAM_MAX_IN_SPEED := 24.0
+## Histerese: mantém o último ponto curto por alguns quadros quando o raio
+## alterna entre bater e não bater (bordas de porta, quinas).
+const CAM_WALL_HOLD := 0.15
+const CAM_WALL_HOLD_JUMP := 0.35
+## Busca lateral quando a parede está mais perto que CAM_MIN_DISTANCE.
+## Parede muito colada (< 0.55 m de folga): começa em 90° para a câmera ir
+## para o lado do jogador em vez de espremer entre ele e a parede. Com folga
+## maior, começa em 30° e procura o menor desvio que ainda caiba 1 m.
+const CAM_SIDE_STEP_DEG := 10.0
+const CAM_SIDE_MIN_DEG_CLOSE := 90.0
+const CAM_SIDE_MIN_DEG_FAR := 30.0
+const CAM_SIDE_CLOSE_CLEARANCE := 0.55
+const CAM_SIDE_MAX_DEG := 180.0
+const CAM_SIDE_RETURN_DEG := 70.0
+## Queda permitida para o fallback vertical (caso não haja direção lateral
+## livre). O alvo continua com componente horizontal para o look não ficar
+## quase vertical. Serve também para completar CAM_MIN_DISTANCE quando a
+## folga lateral é menor que 1 m.
+const CAM_FALLBACK_LIFT := 0.9
+const CAM_LOOK_GUARD := 0.25
 
 enum AllyState { IDLE, FOLLOW, CATCH_UP, AVOID, RECOVER }
 enum EnemyState { PATROL, CHASE, SEARCH, RETURN, FLEE }
@@ -55,6 +100,8 @@ const HEIGHTS := {
 var player: CharacterBody3D
 var player_model: Node3D
 var player_ap: AnimationPlayer
+var player_height := 1.0
+var player_model_id := "abra"
 var player_yaw := PI  ## frente do modelo +Z; PI = olhando para -Z.
 
 var _followers: Array[Dictionary] = []
@@ -65,6 +112,13 @@ var _last_look := -100.0
 var _time := 0.0
 var _cam_pivot := Vector3.ZERO
 var _cam_probe := SphereShape3D.new()
+## Estado da correção de parede: posição suavizada, distância segurada pela
+## histerese e ângulo lateral escolhido quando o pivô está colado na parede.
+var _cam_smooth_pos := Vector3.ZERO
+var _cam_smooth_ready := false
+var _cam_held_dist := 0.0
+var _cam_hold_left := 0.0
+var _cam_side_angle := 0.0
 var _camera: Camera3D
 var _dialogue_focus: Node3D
 var _dialogue_active := false
@@ -112,9 +166,35 @@ func _process(delta: float) -> void:
 		_torches[i].light_energy = base * (0.86 + 0.14 * sin(_time * 7.0 + float(i) * 1.7))
 
 
+## D-1100 hooks. The base lab has no attack controller; the Murky Forest lab
+## overrides these to lend the player/enemy movement to OverworldAttackController.
+func _is_attack_player_locked() -> bool:
+	return false
+
+
+func _is_attack_enemy_locked(_enemy: Node3D) -> bool:
+	return false
+
+
+func _is_interaction_claimed_by_attack() -> bool:
+	return false
+
+
+## The base third-person lab keeps E for its camera/talk controls. The party
+## selector adapter belongs to the Murky Forest lab, so do not open it here.
+func debug_party_selector_blocked() -> bool:
+	return true
+
+
+## D-1112: the attack clip owns the player animation at the start of the advance.
+func _is_attack_animation_locked() -> bool:
+	return false
+
+
 func _physics_process(delta: float) -> void:
 	var dir := Vector3.ZERO
 	var dialogue_locked := _dialogue_focus != null and is_instance_valid(_dialogue_focus)
+	var attack_locked := _is_attack_player_locked()
 	if dialogue_locked:
 		# D-1088: durante a conversa o jogador fica parado, virado para o NPC.
 		var face := _dialogue_focus.global_position - player.global_position
@@ -126,6 +206,10 @@ func _physics_process(delta: float) -> void:
 		player.rotation.y = player_yaw
 		if _player_dust != null:
 			_player_dust.emitting = false
+	elif attack_locked:
+		# D-1100: the attack controller owns velocity/move_and_slide and the
+		# player rotation during the short advance. Do not move twice.
+		pass
 	else:
 		# D-1130: A/D só giram a câmera; setas e W/S movem o boneco.
 		var turn := 0.0
@@ -167,7 +251,8 @@ func _physics_process(delta: float) -> void:
 	_update_followers(delta)
 	_update_enemy(delta)
 	_update_door_prompt()
-	_play_move(player_ap, dir.length_squared() > 0.01)
+	if not _is_attack_animation_locked():
+		_play_move(player_ap, dir.length_squared() > 0.01 or attack_locked)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -386,33 +471,12 @@ func _add_blob_shadow(parent: Node3D, width: float, depth: float) -> void:
 
 
 func _add_footstep_dust(parent: Node3D) -> CPUParticles3D:
-	var quad := QuadMesh.new()
-	quad.size = Vector2(0.11, 0.11)
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	mat.albedo_texture = _shadow_texture()
-	mat.albedo_color = Color(0.62, 0.52, 0.40, 0.42)
-	var dust := CPUParticles3D.new()
+	# D-1173: same run-trail dust as the combat (`fx_motion._dust_trail`).
+	# The node is an invisible CPUParticles3D ticker; the visible bursts are
+	# its children, so every existing `dust.emitting = moving` keeps working.
+	var dust: CPUParticles3D = WALK_DUST_SCRIPT.new()
 	dust.name = "FootDust"
 	dust.position = Vector3(0.0, 0.08, 0.0)
-	dust.amount = 6
-	dust.lifetime = 0.45
-	dust.emitting = false
-	dust.local_coords = false
-	dust.mesh = quad
-	dust.material_override = mat
-	dust.direction = Vector3(0.0, 1.0, 0.0)
-	dust.spread = 35.0
-	dust.initial_velocity_min = 0.15
-	dust.initial_velocity_max = 0.5
-	dust.gravity = Vector3(0.0, -0.6, 0.0)
-	dust.scale_amount_min = 0.4
-	dust.scale_amount_max = 0.8
-	dust.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	dust.emission_sphere_radius = 0.12
 	parent.add_child(dust)
 	return dust
 
@@ -440,6 +504,8 @@ func _build_player() -> void:
 	player_model = _make_model("abra", float(HEIGHTS["abra"]))
 	player.add_child(player_model)
 	player_ap = _anim_player(player_model)
+	player_height = float(HEIGHTS["abra"])
+	player_model_id = "abra"
 	_play(player_ap, "idle")
 	_add_blob_shadow(player, 0.9, 0.6)
 
@@ -726,59 +792,122 @@ func _build_exit() -> void:
 func _update_camera(delta: float) -> void:
 	var distance := PARTY_CAM_DISTANCE if _party_visible else CAM_DISTANCE
 	var height := PARTY_CAM_HEIGHT if _party_visible else CAM_HEIGHT
+	# Debug party swap: a larger controlled body (Orc) needs more room, or it
+	# fills the whole frame. Abra (1.0 m) keeps the original framing.
+	if not _party_visible:
+		var body_scale := clampf(player_height / 1.0, 1.0, 2.0)
+		distance = minf(distance * body_scale, 8.0)
+		height += (body_scale - 1.0) * 0.8
 	_cam_pivot = player.global_position + Vector3(0.0, height, 0.0)
 	var forward := Vector3(sin(_cam_yaw), 0.0, cos(_cam_yaw))
 	var pitch := deg_to_rad(_cam_pitch)
-	var desired := _cam_pivot - forward * (cos(pitch) * distance) + Vector3(0.0, sin(pitch) * distance, 0.0)
-	var query := PhysicsRayQueryParameters3D.create(_cam_pivot, desired, 1)
-	query.collide_with_areas = false
-	query.collide_with_bodies = true
+	var base_dir := (-forward * cos(pitch) + Vector3.UP * sin(pitch)).normalized()
 	# Só o cenário deve puxar a câmera; atores (jogador, aliados e inimigo)
 	# nunca entram no raycast, senão a câmera cola no corpo.
-	var actors: Array[RID] = [player.get_rid()]
-	for f in _followers:
-		actors.append((f["node"] as CollisionObject3D).get_rid())
-	if _enemy_body != null:
-		actors.append(_enemy_body.get_rid())
-	query.exclude = actors
-	var hit := get_world_3d().direct_space_state.intersect_ray(query)
-	if not hit.is_empty():
-		desired = (hit["position"] as Vector3) + (hit["normal"] as Vector3) * 0.4
-	# Se o ponto final ainda raspa a parede, recua em direção ao pivô até folgar.
-	var probe := PhysicsShapeQueryParameters3D.new()
-	probe.shape = _cam_probe
-	probe.collision_mask = 1
-	probe.collide_with_bodies = true
-	probe.collide_with_areas = false
-	probe.exclude = actors
-	var to_pivot := (_cam_pivot - desired).normalized()
-	for i in 6:
-		probe.transform = Transform3D(Basis(), desired)
-		if get_world_3d().direct_space_state.intersect_shape(probe, 1).is_empty():
-			break
-		desired += to_pivot * 0.15
+	var actors := _camera_actors()
+	var resolved := _resolve_camera_position(_cam_pivot, base_dir, distance, actors, delta)
+	var target_pos: Vector3 = resolved["pos"]
+	var target_distance := _cam_pivot.distance_to(target_pos)
+
+	# Histerese para o raio que alterna hit/não-hit perto de portas e quinas:
+	# mantém o último ponto curto por alguns quadros em vez de pular para 3.4 m.
+	if (_cam_hold_left > 0.0 and _cam_held_dist > 0.0
+			and target_distance > _cam_held_dist + CAM_WALL_HOLD_JUMP):
+		if target_distance > 0.001:
+			var hold_dir := (target_pos - _cam_pivot) / target_distance
+			target_pos = _cam_pivot + hold_dir * _cam_held_dist
+		target_distance = _cam_held_dist
+		_cam_hold_left = maxf(0.0, _cam_hold_left - delta)
+	else:
+		_cam_held_dist = target_distance
+		if bool(resolved["collided"]):
+			_cam_hold_left = CAM_WALL_HOLD
+		else:
+			_cam_hold_left = maxf(0.0, _cam_hold_left - delta)
+
+	# Suavização exponencial. Entrar na parede é rápido (não deixa a câmera
+	# atravessar geometria); sair é lento (não teleporta de 0.4 m para 3.4 m).
+	var before := _cam_smooth_pos
+	if not _cam_smooth_ready or delta <= 0.0:
+		_cam_smooth_pos = target_pos
+		_cam_smooth_ready = true
+	else:
+		var current_distance := _cam_pivot.distance_to(_cam_smooth_pos)
+		var inward := target_distance < current_distance - 0.01
+		var rate := CAM_POS_IN_RATE if inward else CAM_POS_RATE
+		var blend := 1.0 - exp(-rate * delta)
+		_cam_smooth_pos = _cam_smooth_pos.lerp(target_pos, blend)
+		# Limita a velocidade por quadro nas duas direções. Sem isso, uma troca
+		# de lado perto de uma porta move a câmera metros em um único quadro.
+		var max_speed := CAM_MAX_IN_SPEED if inward else CAM_MAX_OUT_SPEED
+		var max_step := max_speed * minf(delta, 0.05)
+		var step := _cam_smooth_pos - before
+		if step.length() > max_step:
+			_cam_smooth_pos = before + step.normalized() * max_step
+		# Em uma troca lateral, não deixa o raio encolher enquanto o alvo está
+		# mais longe: orbita o pivô em vez de cortar por dentro dele.
+		var before_radius := _cam_pivot.distance_to(before)
+		var after_offset := _cam_smooth_pos - _cam_pivot
+		var after_radius := after_offset.length()
+		if (before_radius > 0.001 and after_radius > 0.001
+				and target_distance >= before_radius - 0.01
+				and after_radius < before_radius - 0.02):
+			var after_dir := after_offset / after_radius
+			_cam_smooth_pos = _cam_pivot + after_dir * before_radius
+	# Distância mínima do pivô: o caminho suavizado não pode passar por dentro
+	# do jogador quando o alvo já está a >= CAM_MIN_DISTANCE.
+	var smooth_offset := _cam_smooth_pos - _cam_pivot
+	var smooth_distance := smooth_offset.length()
+	if (smooth_distance > 0.001 and smooth_distance < CAM_MIN_DISTANCE
+			and target_distance >= CAM_MIN_DISTANCE):
+		var min_candidate := _cam_pivot + smooth_offset / smooth_distance * CAM_MIN_DISTANCE
+		# Só completa a distância se o ponto continuar visível do pivô; subir a
+		# distância "para dentro" da parede é pior que ficar alguns quadros perto.
+		if _camera_segment_distance(_cam_pivot, min_candidate, actors) >= CAM_MIN_DISTANCE - 0.02:
+			_cam_smooth_pos = min_candidate
+	# Oclusão: se houver parede entre o pivô e a câmera suavizada, ela não pode
+	# ficar do outro lado. Vai para o alvo seguro resolvido neste quadro.
+	var smooth_distance_now := _cam_smooth_pos.distance_to(_cam_pivot)
+	if smooth_distance_now > 0.001:
+		var visible_distance := _camera_segment_distance(_cam_pivot, _cam_smooth_pos, actors)
+		if visible_distance < smooth_distance_now - 0.02:
+			_cam_smooth_pos = target_pos
+	# Segurança final: nunca terminar o quadro com a sonda dentro da parede.
+	_cam_smooth_pos = _camera_pull_clear(_cam_smooth_pos, _cam_pivot, actors)
 
 	# D-1088: mistura a câmera normal com o dois-shot do diálogo.
 	var target_blend := 1.0 if _dialogue_active and _dialogue_focus != null and is_instance_valid(_dialogue_focus) else 0.0
 	_dialogue_blend = move_toward(_dialogue_blend, target_blend, delta / 0.4)
-	var final_pos := desired
+	var final_pos := _cam_smooth_pos
 	var look_target := _cam_pivot + Vector3(0.0, 0.1, 0.0)
 	if _dialogue_focus != null and is_instance_valid(_dialogue_focus) and _dialogue_blend > 0.001:
 		var pose := _dialogue_camera_pose(actors)
-		final_pos = desired.lerp(pose["pos"], _dialogue_blend)
+		final_pos = _cam_smooth_pos.lerp(pose["pos"], _dialogue_blend)
 		look_target = look_target.lerp(pose["look"], _dialogue_blend)
 	if _dialogue_blend <= 0.001 and not _dialogue_active:
 		_dialogue_focus = null
 
-	var to_look := (look_target - final_pos).normalized()
-	for i in 6:
-		probe.transform = Transform3D(Basis(), final_pos)
-		if get_world_3d().direct_space_state.intersect_shape(probe, 1).is_empty():
-			break
-		final_pos += to_look * 0.15
+	# Nunca deixar o look_at quase vertical quando a câmera é empurrada para
+	# cima do pivô: se não houver componente horizontal, olha para a frente.
+	var flat_look := look_target - final_pos
+	flat_look.y = 0.0
+	if flat_look.length() < CAM_LOOK_GUARD:
+		look_target = final_pos + forward * 0.6 + Vector3(0.0, look_target.y - final_pos.y, 0.0)
 	_camera.global_position = final_pos
 	_camera.look_at(look_target, Vector3.UP)
 	_camera.fov = lerpf(CAM_FOV, 45.0, _dialogue_blend)
+	# D-1125: quando uma parede puxa a câmera para dentro do jogador, esconde o
+	# modelo do jogador para a cabeça não cobrir o inimigo. A câmera lateral
+	# (fallback de parede) não esconde: o jogador continua visível de perfil.
+	var cam_to_player := _camera.global_position.distance_to(player.global_position + Vector3(0.0, 0.8, 0.0))
+	var cam_offset := _camera.global_position - _cam_pivot
+	cam_offset.y = 0.0
+	var behind_dot := 1.0
+	if cam_offset.length_squared() > 0.0001:
+		behind_dot = cam_offset.normalized().dot(-forward)
+	var hide_player := cam_to_player < 1.25 and behind_dot > 0.45
+	for node in player.find_children("*", "MeshInstance3D", true, false):
+		(node as MeshInstance3D).visible = not hide_player
 
 
 func set_dialogue_focus(target: Node3D) -> void:
@@ -837,11 +966,192 @@ func _camera_free_distance(from: Vector3, to: Vector3, actors: Array[RID]) -> fl
 	return from.distance_to(hit["position"] as Vector3)
 
 
+func _camera_actors() -> Array[RID]:
+	var actors: Array[RID] = [player.get_rid()]
+	for f in _followers:
+		actors.append((f["node"] as CollisionObject3D).get_rid())
+	if _enemy_body != null:
+		actors.append(_enemy_body.get_rid())
+	return actors
+
+
+## Distância livre ao longo de `dir` até `max_distance`, já com a margem da
+## parede. O raio é barato e filtra as direções; a sonda esférica confirma que
+## o corpo da câmera cabe no ponto.
+func _camera_ray_distance(from: Vector3, dir: Vector3, max_distance: float, actors: Array[RID]) -> float:
+	var query := PhysicsRayQueryParameters3D.create(from, from + dir * max_distance, 1)
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+	query.exclude = actors
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return max_distance
+	return clampf(from.distance_to(hit["position"] as Vector3) - CAM_WALL_MARGIN, 0.0, max_distance)
+
+
+func _camera_segment_distance(from: Vector3, to: Vector3, actors: Array[RID]) -> float:
+	var distance := from.distance_to(to)
+	if distance < 0.001:
+		return 0.0
+	var query := PhysicsRayQueryParameters3D.create(from, to, 1)
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+	query.exclude = actors
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return distance
+	return clampf(from.distance_to(hit["position"] as Vector3) - CAM_WALL_MARGIN, 0.0, distance)
+
+
+func _camera_clear_distance(from: Vector3, dir: Vector3, max_distance: float, actors: Array[RID]) -> float:
+	var free := _camera_ray_distance(from, dir, max_distance, actors)
+	if free <= 0.001:
+		return 0.0
+	var probe := PhysicsShapeQueryParameters3D.new()
+	probe.shape = _cam_probe
+	probe.collision_mask = 1
+	probe.collide_with_bodies = true
+	probe.collide_with_areas = false
+	probe.exclude = actors
+	var steps := int(ceil(free / CAM_PROBE_STEP)) + 1
+	for i in steps:
+		if free <= 0.0:
+			return 0.0
+		probe.transform = Transform3D(Basis(), from + dir * free)
+		if get_world_3d().direct_space_state.intersect_shape(probe, 1).is_empty():
+			return free
+		free -= CAM_PROBE_STEP
+	return 0.0
+
+
+## Quando a parede está mais perto que CAM_MIN_DISTANCE, procura a direção
+## lateral mais próxima que ainda caiba a câmera. O ângulo anterior tem
+## prioridade para não alternar de lado a cada quadro.
+func _camera_search_side(pivot: Vector3, base_dir: Vector3, full_distance: float, actors: Array[RID], raw_clear: float) -> Dictionary:
+	var min_deg := CAM_SIDE_MIN_DEG_CLOSE if raw_clear < CAM_SIDE_CLOSE_CLEARANCE else CAM_SIDE_MIN_DEG_FAR
+	var min_angle := deg_to_rad(min_deg)
+	if absf(_cam_side_angle) >= min_angle - 0.001:
+		var prev_dir := base_dir.rotated(Vector3.UP, _cam_side_angle)
+		var prev_clear := _camera_clear_distance(pivot, prev_dir, full_distance, actors)
+		if prev_clear >= CAM_MIN_DISTANCE:
+			return {"dir": prev_dir, "clear": prev_clear, "angle": _cam_side_angle}
+	var step := deg_to_rad(CAM_SIDE_STEP_DEG)
+	var max_steps := int(round(CAM_SIDE_MAX_DEG / CAM_SIDE_STEP_DEG))
+	var first_step := maxi(1, int(ceil(min_deg / CAM_SIDE_STEP_DEG)))
+	var best_dir := base_dir
+	var best_clear := -1.0
+	var best_angle := 0.0
+	var preferred := 0.0
+	if absf(_cam_side_angle) >= min_angle - 0.001:
+		preferred = signf(_cam_side_angle)
+	else:
+		# Sem ângulo anterior, prefere o lado em que a câmera já está. Isso evita
+		# atravessar o jogador para trocar de lado quando a parede aparece.
+		var offset_h := _camera.global_position - pivot
+		offset_h.y = 0.0
+		var base_h := Vector3(base_dir.x, 0.0, base_dir.z)
+		if offset_h.length_squared() > 0.0001 and base_h.length_squared() > 0.0001:
+			var cross_y := base_h.normalized().cross(offset_h.normalized()).y
+			if absf(cross_y) > 0.05:
+				preferred = signf(cross_y)
+	var signs: Array[float] = [1.0, -1.0]
+	if preferred != 0.0:
+		signs = [preferred, -preferred]
+	for i in range(first_step, max_steps + 1):
+		var a := step * float(i)
+		for side in signs:
+			var dir := base_dir.rotated(Vector3.UP, a * side)
+			var ray_clear := _camera_ray_distance(pivot, dir, full_distance, actors)
+			if ray_clear > best_clear:
+				best_clear = ray_clear
+				best_dir = dir
+				best_angle = a * side
+			if ray_clear < CAM_MIN_DISTANCE:
+				continue
+			var clear := _camera_clear_distance(pivot, dir, full_distance, actors)
+			if clear > best_clear:
+				best_clear = clear
+				best_dir = dir
+				best_angle = a * side
+			if clear >= CAM_MIN_DISTANCE:
+				return {"dir": dir, "clear": clear, "angle": a * side}
+	var best_probe := _camera_clear_distance(pivot, best_dir, full_distance, actors)
+	return {"dir": best_dir, "clear": best_probe, "angle": best_angle}
+
+
+func _resolve_camera_position(pivot: Vector3, base_dir: Vector3, full_distance: float, actors: Array[RID], delta: float) -> Dictionary:
+	var raw_clear := _camera_clear_distance(pivot, base_dir, full_distance, actors)
+	var dir_used := base_dir
+	var clear_used := raw_clear
+	var collided := raw_clear < full_distance - 0.001
+	if raw_clear < CAM_MIN_DISTANCE:
+		var side := _camera_search_side(pivot, base_dir, full_distance, actors, raw_clear)
+		dir_used = side["dir"] as Vector3
+		clear_used = float(side["clear"])
+		_cam_side_angle = float(side["angle"])
+		collided = true
+	elif absf(_cam_side_angle) > 0.001:
+		var eased := move_toward(_cam_side_angle, 0.0, deg_to_rad(CAM_SIDE_RETURN_DEG) * delta)
+		var eased_dir := base_dir.rotated(Vector3.UP, eased)
+		var eased_clear := _camera_clear_distance(pivot, eased_dir, full_distance, actors)
+		if eased_clear >= CAM_MIN_DISTANCE:
+			dir_used = eased_dir
+			clear_used = eased_clear
+			_cam_side_angle = eased
+		else:
+			# A direção de trás está livre: volta direto para ela e deixa a
+			# suavização de posição absorver o movimento.
+			_cam_side_angle = 0.0
+		collided = true
+	else:
+		_cam_side_angle = 0.0
+	var final_distance := minf(full_distance, clear_used)
+	if raw_clear < CAM_MIN_DISTANCE:
+		# A parede obrigou a sair de trás: fica perto do jogador em vez de
+		# orbitar metros para o lado.
+		final_distance = minf(final_distance, CAM_FALLBACK_MAX)
+	var lift := 0.0
+	if final_distance < CAM_MIN_DISTANCE:
+		# Completa a distância mínima subindo, sem deixar o look vertical.
+		var needed_lift := sqrt(maxf(CAM_MIN_DISTANCE * CAM_MIN_DISTANCE - final_distance * final_distance, 0.0))
+		var max_lift := tan(deg_to_rad(55.0)) * maxf(final_distance, 0.3)
+		lift = minf(needed_lift, minf(max_lift, CAM_FALLBACK_LIFT))
+	if dir_used.length_squared() > 0.0001:
+		dir_used = dir_used.normalized()
+	else:
+		dir_used = base_dir
+	var pos := pivot + dir_used * final_distance + Vector3.UP * lift
+	return {"pos": pos, "collided": collided, "distance": final_distance, "clear": clear_used}
+
+
+## Segurança final: se a posição suavizada ficou dentro de uma parede, anda em
+## direção ao pivô até a sonda caber. O pivô é sempre um ponto livre.
+func _camera_pull_clear(pos: Vector3, pivot: Vector3, actors: Array[RID]) -> Vector3:
+	var probe := PhysicsShapeQueryParameters3D.new()
+	probe.shape = _cam_probe
+	probe.collision_mask = 1
+	probe.collide_with_bodies = true
+	probe.collide_with_areas = false
+	probe.exclude = actors
+	var point := pos
+	for i in 64:
+		probe.transform = Transform3D(Basis(), point)
+		if get_world_3d().direct_space_state.intersect_shape(probe, 1).is_empty():
+			return point
+		if point.distance_to(pivot) < 0.05:
+			break
+		point = point.move_toward(pivot, CAM_PROBE_STEP)
+	return point
+
+
 func _update_followers(delta: float) -> void:
 	var forward := Vector3(sin(player_yaw), 0.0, cos(player_yaw))
 	var right := Vector3(-cos(player_yaw), 0.0, sin(player_yaw))
 	var player_moving := player.velocity.length() > 0.15
 	for f in _followers:
+		# D-1157: o controlador de coleta do aliado assume o corpo enquanto busca o item.
+		if bool(f.get("busy", false)):
+			continue
 		var body: CharacterBody3D = f["node"]
 		var behind := float(f["behind"])
 		var side := float(f["side"])
@@ -1007,6 +1317,9 @@ func _separation(f: Dictionary) -> Vector3:
 func _update_enemy(delta: float) -> void:
 	if _enemy_body == null:
 		return
+	# D-1100: during the enemy advance the attack controller owns movement.
+	if _is_attack_enemy_locked(_enemy_body):
+		return
 	_enemy_alert_timer = maxf(0.0, _enemy_alert_timer - delta)
 	var body := _enemy_body
 	var to_player := player.global_position - body.global_position
@@ -1115,10 +1428,15 @@ func _update_enemy(delta: float) -> void:
 	_play_move(_enemy_ap, moving)
 	_enemy_ap.speed_scale = clampf(hv.length() / 1.6, 0.75, 1.35) if moving else 1.0
 	_enemy_dust.emitting = moving
-	# Não deixar o inimigo gigante entre a câmera e o jogador (lab).
+	# D-1125: o alvo não pode sumir quando o jogador chega perto. O esconde
+	# antigo (câmera a <6,2 m) escondia o Slime justamente na hora do ataque.
+	# Só esconde se o inimigo estiver atrás do jogador e quase dentro da câmera.
 	var cam_delta := _camera.global_position - _enemy_body.global_position
 	cam_delta.y = 0.0
-	_enemy_body.visible = cam_delta.length() > 6.2
+	var cam_to_player := _camera.global_position - player.global_position
+	cam_to_player.y = 0.0
+	var enemy_behind := (_enemy_body.global_position - player.global_position).dot(cam_to_player) > 0.0
+	_enemy_body.visible = not (enemy_behind and cam_delta.length() < 1.2)
 
 
 func _enemy_has_los() -> bool:
@@ -1176,6 +1494,7 @@ func _build_vignette() -> void:
 func _build_hud() -> void:
 	var layer := CanvasLayer.new()
 	layer.layer = 20
+	layer.add_to_group("overworld_hud")
 	var label := Label.new()
 	label.text = "Lab 3D — terceira pessoa (SMT III)\nWASD/setas: andar e virar · Q/E ou botão direito: câmera · 1: aliados · Esc: sair"
 	label.position = Vector2(20, 16)
@@ -1201,6 +1520,10 @@ func _build_hud() -> void:
 
 func _update_door_prompt() -> void:
 	if _door_prompt == null or player == null:
+		return
+	# D-1100: an enemy inside the attack range owns the contextual E/Z.
+	if _is_interaction_claimed_by_attack():
+		_door_prompt.visible = false
 		return
 	var from := player.global_position + Vector3(0.0, 0.9, 0.0)
 	var forward := Vector3(sin(player_yaw), 0.0, cos(player_yaw))

@@ -139,6 +139,73 @@ func _unhandled_input(event: InputEvent) -> void:
 	get_tree().reload_current_scene.call_deferred()
 
 
+## Debug/test tool (E selector): the player takes the place of party[i] and the
+## follower takes the player's old place. Party order and the 2D/3D visuals are
+## swapped together so the body the player controls always matches party[0].
+func debug_swap_party(i: int) -> Dictionary:
+	if player == null:
+		return {"ok": false, "message": "A exploração ainda não tem jogador."}
+	if i <= 0 or i >= GameState.party.size():
+		return {"ok": false, "message": "Índice de aliado inválido."}
+	var follower: Node2D = null
+	var follower_index := i - 1
+	if follower_index >= 0 and follower_index < followers.size():
+		follower = followers[follower_index]
+
+	if follower == null:
+		# Safe fallback: still change the controlled member, keep the exact map
+		# position and let the scene rebuild the player/followers from party[0].
+		_swap_party_entries(0, i)
+		GameState.player_pos = player.global_position
+		print("[DebugPartySwap] sem follower para o índice %d; recarregando a cena em segurança." % i)
+		get_tree().reload_current_scene.call_deferred()
+		return {"ok": true, "message": "Sem follower: líder trocado e cena recarregada."}
+
+	var old_player_species := str(player.get("species_id"))
+	var old_follower_species := str(follower.get("species_id"))
+	var player_pos := player.global_position
+	var follower_pos := follower.global_position
+
+	_swap_party_entries(0, i)
+	player.global_position = follower_pos
+	follower.global_position = player_pos
+	player.velocity = Vector2.ZERO
+
+	_set_actor_species(player, old_follower_species)
+	_set_actor_species(follower, old_player_species)
+	if follower.has_method("debug_reset_trail"):
+		follower.call("debug_reset_trail")
+	$Visuals.queue_redraw()
+
+	var message := "%s agora controla; %s ficou no lugar." % [
+		str(GameState.party[0].name), str(GameState.party[i].name)]
+	print("[DebugPartySwap] ", message)
+	return {"ok": true, "message": message}
+
+
+func _swap_party_entries(a: int, b: int) -> void:
+	var tmp: Combatant = GameState.party[a]
+	GameState.party[a] = GameState.party[b]
+	GameState.party[b] = tmp
+
+
+## Rebuilds both the 2D sprite and the optional 3D model view for a new species.
+func _set_actor_species(actor: Node2D, species_id: String) -> void:
+	for child in actor.get_children():
+		if child is DungeonModel3DView:
+			actor.remove_child(child)
+			child.queue_free()
+			break
+	if actor.has_meta("model_3d"):
+		actor.remove_meta("model_3d")
+	var sprite = actor.get("_sprite")
+	if sprite is CanvasItem:
+		(sprite as CanvasItem).visible = true
+	if actor.has_method("debug_set_species"):
+		actor.call("debug_set_species", species_id)
+	_attach_model_view(actor, species_id)
+
+
 ## Uses the position saved when the battle started, unless it is now inside a
 ## wall (e.g. the map changed), in which case the map's spawn point is used.
 func _resolve_spawn(fallback: Vector2) -> Vector2:

@@ -21,6 +21,8 @@ const TAG_LIFT := 44.0  ## D-982: higher again (D-981: 16), so the tag does not 
 
 static var _fixed_fps := -1.0
 static var _elem_icons: Dictionary = {}
+static var _blind_vignette_tex: GradientTexture2D = null  ## D-1121: cached radial vignette
+static var _blind_tex_cache: Dictionary = {}  ## D-1121: portrait texture -> blurred/desaturated copy
 
 static func clock_ms() -> int:
 	if _fixed_fps < 0.0:
@@ -38,7 +40,7 @@ static func slant(c: CanvasItem, r: Rect2, skew: float, color: Color) -> void:
 		Vector2(r.position.x + skew, r.position.y), Vector2(r.end.x, r.position.y),
 		Vector2(r.end.x - skew, r.end.y), Vector2(r.position.x, r.end.y)]), color)
 
-static func slant_texture(c: CanvasItem, r: Rect2, skew: float, tex: Texture2D) -> void:
+static func slant_texture(c: CanvasItem, r: Rect2, skew: float, tex: Texture2D, modulate := Color.WHITE) -> void:
 	var pts := PackedVector2Array([
 		Vector2(r.position.x + skew, r.position.y), Vector2(r.end.x, r.position.y),
 		Vector2(r.end.x - skew, r.end.y), Vector2(r.position.x, r.end.y)])
@@ -54,7 +56,7 @@ static func slant_texture(c: CanvasItem, r: Rect2, skew: float, tex: Texture2D) 
 	for p in pts:
 		var k := (p - r.position) / r.size
 		uvs.append(Vector2(0.5 + (k.x - 0.5) * u_span, 0.5 + (k.y - 0.5) * v_span))
-	c.draw_polygon(pts, PackedColorArray([Color.WHITE, Color.WHITE, Color.WHITE, Color.WHITE]), uvs, tex)
+	c.draw_polygon(pts, PackedColorArray([modulate, modulate, modulate, modulate]), uvs, tex)
 
 static func draw_mp_fast_marker(ci: CanvasItem, top_center: Vector2, now: int) -> void:
 	var t := float(now) * 0.001
@@ -242,6 +244,98 @@ static func draw_dizzy(ci: CanvasItem, pr: Rect2, k: float, now: int, scale_k :=
 		var a := tt * 3.0 + float(si) * TAU / 4.0
 		var sp := pr.position + Vector2(pr.size.x * 0.5, 2.0) + Vector2(cos(a) * pr.size.x * 0.43, sin(a) * 5.0 * scale_k)
 		hud_star(ci, sp, float(sizes[si]) * k * scale_k, tt * float(spins[si]), Color(1.0, 0.86, 0.15, k))
+
+
+## D-1121: “Olhar turvo” for BLIND. The portrait crossfades into a blurred,
+## desaturated copy; 2–3 drifting ghost copies create the double vision, a dark
+## vignette closes around the frame and `snap` (0..1) fires the focus “snap” back.
+## The texture is clipped to the same slanted frame as the portrait.
+static func draw_blind(ci: CanvasItem, pr: Rect2, skew: float, tex: Texture2D, k: float, now: int, scale_k := 1.0, snap := 0.0) -> void:
+	if tex == null:
+		return
+	if k <= 0.01 and snap <= 0.01:
+		return
+	var tt := now / 1000.0
+	var blurred := _blind_portrait(tex)
+	# The sharp portrait disappears under the blurred/desaturated copy.
+	_blind_texture(ci, pr, skew, blurred, Color(1, 1, 1, k))
+	var wobble := sin(tt * 1.7)
+	var off := (6.0 + 1.4 * wobble) * scale_k * k
+	var breathe := 0.88 + 0.12 * sin(tt * 1.1)
+	# Three visible sharp ghosts: near, far and a vertical trail, all drifting slowly.
+	_blind_texture(ci, Rect2(pr.position + Vector2(-off, 0.28 * off), pr.size), skew, tex,
+		Color(0.55, 0.76, 1.0, 0.40 * k * breathe))
+	_blind_texture(ci, Rect2(pr.position + Vector2(off * 0.92, -0.24 * off), pr.size), skew, tex,
+		Color(0.82, 0.91, 1.0, 0.30 * k * breathe))
+	_blind_texture(ci, Rect2(pr.position + Vector2(0.12 * off, off * 0.72), pr.size), skew, tex,
+		Color(0.62, 0.80, 1.0, 0.20 * k * breathe))
+	var pulse := 0.82 + 0.10 * sin(tt * 2.1)
+	_blind_texture(ci, pr, skew, _blind_vignette(), Color(1, 1, 1, clampf(k * pulse, 0.0, 1.0)))
+	if snap > 0.01:
+		# D-1121: the focus snaps back: a white-cyan flash and a bright rim.
+		if skew > 0.01:
+			slant(ci, pr, skew, Color(0.82, 0.96, 1.0, 0.52 * snap))
+			var pts := PackedVector2Array([
+				Vector2(pr.position.x + skew, pr.position.y), Vector2(pr.end.x, pr.position.y),
+				Vector2(pr.end.x - skew, pr.end.y), Vector2(pr.position.x, pr.end.y),
+				Vector2(pr.position.x + skew, pr.position.y)])
+			ci.draw_polyline(pts, Color(0.88, 0.99, 1.0, snap), 3.0, true)
+		else:
+			ci.draw_rect(pr, Color(0.82, 0.96, 1.0, 0.52 * snap))
+
+
+## One-time blurred + desaturated copy of a portrait, cached per texture. The
+## downscale/upscale is the blur; the pixel pass also drains the colour.
+static func _blind_portrait(tex: Texture2D) -> Texture2D:
+	var key := tex.get_instance_id()
+	if _blind_tex_cache.has(key):
+		return _blind_tex_cache[key]
+	var img := tex.get_image()
+	if img == null:
+		_blind_tex_cache[key] = tex
+		return tex
+	img = img.duplicate()
+	if img.is_compressed():
+		img.decompress()
+	var w := img.get_width()
+	var h := img.get_height()
+	if w > 2 and h > 2:
+		var sw := maxi(1, int(round(w / 1.7)))
+		var sh := maxi(1, int(round(h / 1.7)))
+		img.resize(sw, sh, Image.INTERPOLATE_BILINEAR)
+		for y in sh:
+			for x in sw:
+				var c := img.get_pixel(x, y)
+				var l := c.get_luminance()
+				img.set_pixel(x, y, Color(l * 0.82, l * 0.90, l * 0.98, c.a))
+		img.resize(w, h, Image.INTERPOLATE_BILINEAR)
+	var out := ImageTexture.create_from_image(img)
+	_blind_tex_cache[key] = out
+	return out
+
+
+static func _blind_texture(ci: CanvasItem, r: Rect2, skew: float, tex: Texture2D, col: Color) -> void:
+	if skew > 0.01:
+		slant_texture(ci, r, skew, tex, col)
+	else:
+		ci.draw_texture_rect(tex, r, false, col)
+
+
+## Soft radial gradient used as the BLIND vignette. Built once and shared by every card.
+static func _blind_vignette() -> GradientTexture2D:
+	if _blind_vignette_tex == null:
+		var g := Gradient.new()
+		g.offsets = PackedFloat32Array([0.0, 0.52, 1.0])
+		g.colors = PackedColorArray([Color(0, 0, 0, 0), Color(0, 0, 0, 0.04), Color(0, 0, 0, 0.88)])
+		var t := GradientTexture2D.new()
+		t.gradient = g
+		t.fill = GradientTexture2D.FILL_RADIAL
+		t.fill_from = Vector2(0.5, 0.5)
+		t.fill_to = Vector2(1.0, 1.0)
+		t.width = 64
+		t.height = 64
+		_blind_vignette_tex = t
+	return _blind_vignette_tex
 
 static func hud_star(ci: CanvasItem, c: Vector2, r: float, ang: float, col: Color) -> void:
 	var pts := PackedVector2Array()

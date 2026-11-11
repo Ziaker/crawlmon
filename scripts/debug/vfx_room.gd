@@ -153,6 +153,7 @@ var _scn_pos: Dictionary = {}
 var _need_enemies := 1  ## 3 = os 2 inimigos extras entram junto
 var _catalog: Dictionary = {}  ## todo Move conhecido por nome: qualquer unidade pode usar qualquer Move (D-235)
 var _killed := false  ## alguém morreu de propósito: o próximo disparo recarrega a batalha
+var _room_prev_queue: Dictionary = {}  ## D-1150: Combatant -> Move na vaga no quadro anterior
 # --- Telemetria de Combate e 10 Ferramentas de Análise de VFX (D-1042 / D-1044) ---
 var _tick_from_fire := 0
 var _step_ticks_limit := -1
@@ -701,6 +702,7 @@ func _process(delta: float) -> void:
 			get_tree().quit()
 	_tick_record()
 	_run_schedule()
+	_track_room_queue()
 	if _battle == null or not _battle.running or not _fired:
 		return
 	if _busy() == false:  # (wind-up também conta como ação em curso)
@@ -784,6 +786,18 @@ func _connect_events() -> void:
 			_macro_slow_until = _clock + 0.025
 		_event("impact"))
 	_battle.attack_cancelled.connect(func(inc) -> void: _note("CANCELADO: %s" % inc.label))
+	_battle.evade_mistimed.connect(func(actor: Combatant, inc) -> void:
+		if not _telemetry.has("evade_mistimed_count"):
+			return
+		_telemetry["evade_mistimed_count"] = int(_telemetry.get("evade_mistimed_count", 0)) + 1
+		_telemetry["evade_mistimed_actor"] = actor.name
+		_telemetry["evade_mistimed_skill"] = inc.label if inc != null else "")
+	_battle.manual_evaded.connect(func(actor: Combatant, inc) -> void:
+		if not _telemetry.has("evade_ok_count"):
+			return
+		_telemetry["evade_ok_count"] = int(_telemetry.get("evade_ok_count", 0)) + 1
+		_telemetry["evade_ok_actor"] = actor.name
+		_telemetry["evade_ok_skill"] = inc.label if inc != null else "")
 	_battle.battle_ended.connect(func(won: bool) -> void:
 		_note("BATALHA TERMINOU: %s" % ("vitória" if won else "derrota"))
 		if _quit_flag:
@@ -1682,7 +1696,16 @@ func _reload_keep_selection() -> void:
 
 func _restore_weakness() -> void:
 	for pair in _weak_added:
-		(pair[0] as Combatant).weaknesses.erase(pair[1])
+		var c := pair[0] as Combatant
+		var e: Element.Type = pair[1]
+		var prev = pair[2]
+		var had_weakness: bool = pair[3]
+		if prev == null:
+			c.affinities.erase(e)
+		else:
+			c.affinities[e] = prev
+		if not had_weakness:
+			c.weaknesses.erase(e)
 	_weak_added.clear()
 
 
@@ -1736,9 +1759,13 @@ func _fire() -> void:
 		a.luk = 0
 		t.luk = 1000
 	_battle.debug_roll = int(FORCE_ROLL[_force.selected])
-	if _force.selected == 4 and not (skill.element in t.weaknesses):
-		t.weaknesses.append(skill.element)
-		_weak_added.append([t, skill.element])
+	if _force.selected == 4 and not t.is_weak_to(skill.element):
+		var prev = t.affinities.get(skill.element, null)
+		var had_weakness := skill.element in t.weaknesses
+		t.affinities[skill.element] = Affinity.Type.WEAK
+		if not had_weakness:
+			t.weaknesses.append(skill.element)
+		_weak_added.append([t, skill.element, prev, had_weakness])
 	_apply_camera()
 	_fire_clock = _clock
 	_log.clear()
@@ -1794,7 +1821,8 @@ func _fire() -> void:
 
 ## Ainda há wind-up, golpe ou retorno em andamento (um disparo novo começaria sujo).
 func _busy() -> bool:
-	return not _battle.incoming.is_empty() or not _battle.attacks_in_flight().is_empty() or not _sched.is_empty() or not _polls.is_empty()
+	return not _battle.incoming.is_empty() or not _battle.attacks_in_flight().is_empty() \
+		or not _sched.is_empty() or not _polls.is_empty() or _battle.is_status_paused()
 
 
 func _find_skill(c: Combatant, skill_name: String) -> Skill:
@@ -1910,6 +1938,12 @@ func _do_act(what: String, u: Combatant, args: Array, t: float) -> void:
 			_note("%s: %s %s -> %s" % ["CONTRA/AÇÃO" if ok3 else "AÇÃO RECUSADA", u.name, String(args[0]), tgt.name if tgt != null else "?"])
 			if ok3:
 				_fired = true
+		"queue":
+			var skill_q := _shaped(_find_skill(u, String(args[0])))
+			var tgt_q := _role(String(args[1]))
+			var ok_q := skill_q != null and tgt_q != null and _battle.request_skill(u, skill_q, tgt_q)
+			_note("FILA %s: %s -> %s%s" % ["aceita" if ok_q else "recusada", u.name, String(args[0]),
+				" (na vaga)" if u.queued_skill != null else " (iniciou agora)"])
 		"evade":
 			_polls.append({"u": u, "until": t + 4.5})  # D-1014: a janela válida chega depois do wind-up
 		"evade_once":
@@ -2456,7 +2490,46 @@ func _parse_acts_ticks(spec: String) -> void:
 			_sched.append({"tick": tk, "at": 0.0, "kind": "act", "what": what, "role": role, "args": rest})
 
 
+## D-1150: queue changes inside the room run, so SUMMARY_JSON can prove whether the slot
+## survived, started or was lost (and the state at that instant).
+func _track_room_queue() -> void:
+	if _battle == null or _telemetry.is_empty():
+		return
+	for c in _battle.party + _battle.enemies:
+		var q := c.queued_skill.display_name if c.queued_skill != null else ""
+		var prev: String = _room_prev_queue.get(c, "")
+		if q == prev or (q == "" and prev == ""):
+			continue
+		_room_prev_queue[c] = q
+		var current := _current_attack_label(c)
+		var ev := {
+			"t": snappedf(_clock - _fire_clock, 0.01), "actor": c.name,
+			"status_pause": _battle.is_status_paused(), "attacking": _battle.is_attacking(c),
+			"alive": c.is_alive(), "atb": snappedf(c.atb, 0.01), "current": current,
+		}
+		if q != "":
+			ev["skill"] = q
+			ev["target"] = c.queued_target.name if c.queued_target != null else ""
+			(_telemetry["queue_events"] as Array).append(ev)
+			_telemetry["queue_started"] = int(_telemetry.get("queue_started", 0)) + 1
+		else:
+			ev["previous"] = prev
+			ev["started"] = current == prev  # a vaga esvaziou porque o Move começou
+			(_telemetry["queue_events"] as Array).append(ev)
+			if not ev["started"]:
+				ev["lost"] = prev
+				_telemetry["queue_lost"] = int(_telemetry.get("queue_lost", 0)) + 1
+
+
+func _current_attack_label(c: Combatant) -> String:
+	for inc in _battle.incoming + _battle._landing + _battle._returning:
+		if inc.attacker == c and not inc.ghost:
+			return String(inc.label)
+	return ""
+
+
 func _init_fire_telemetry(a: Combatant, t: Combatant, skill: Skill) -> void:
+	_room_prev_queue.clear()
 	_baseline_fx_ids.clear()
 	if _bs != null and _bs.fx != null:
 		for ch in _bs.fx.get_children():
@@ -2482,7 +2555,17 @@ func _init_fire_telemetry(a: Combatant, t: Combatant, skill: Skill) -> void:
 		"hits_count": 0,
 		"crit_count": 0,
 		"weak_count": 0,
+		"queue_events": [],
+		"queue_started": 0,
+		"queue_lost": 0,
 		"evaded_count": 0,
+		"evade_mistimed_count": 0,
+		"evade_mistimed_actor": "",
+		"evade_mistimed_skill": "",
+		"evade_ok_count": 0,
+		"evade_ok_actor": "",
+		"evade_ok_skill": "",
+		"whiff_visual": {},
 		"guard_result": "",
 		"armor_result": "",
 		"stun_timer_after": 0.0,
@@ -2544,6 +2627,8 @@ func _emit_summary_json() -> void:
 	_telemetry["leaks_detected"] = _last_leaks.size()
 	_telemetry["envelope_pops"] = _envelope_pops
 	_telemetry["bone_peak_speed"] = snappedf(_bone_peak_speed, 0.01)
+	if _bs != null and is_instance_valid(_bs.fx):
+		_telemetry["whiff_visual"] = _bs.fx.fx_dodge.last_whiff_info()
 	print("[vfx_room] SUMMARY_JSON: ", JSON.stringify(_telemetry))
 
 

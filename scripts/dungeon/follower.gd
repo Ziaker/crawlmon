@@ -131,3 +131,36 @@ func _set_texture(dir: String, frame: int) -> void:
 	if ResourceLoader.exists(path):
 		_sprite.texture = load(path)
 		_tex_path = path
+
+
+## Debug/test tool: changes the species this follower draws and refreshes the
+## sprite immediately. The 3D view is handled by exploration.gd.
+func debug_set_species(new_species: String) -> void:
+	species_id = new_species
+	_last_dir = "down"
+	_anim_timer = 0.0
+	_anim_frame = 1
+	_tex_path = ""
+	if _sprite == null:
+		_sprite = Sprite2D.new()
+		_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_sprite.scale = Vector2(1.2, 1.2)
+		add_child(_sprite)
+	_sprite.visible = true
+	_set_texture("down", 1)
+
+
+## Debug/test tool: after a position swap, rebuild the trail from the new spot
+## to the leader so the follower does not walk back through the old path.
+func debug_reset_trail() -> void:
+	_trail.clear()
+	_index = 0
+	_stuck = 0.0
+	if leader == null:
+		return
+	_trail.append(position)
+	var dist := position.distance_to(leader.position)
+	var steps := maxi(1, int(dist / TRAIL_STEP))
+	for i in range(1, steps):
+		_trail.append(position.lerp(leader.position, float(i) / steps))
+	_trail.append(leader.position)

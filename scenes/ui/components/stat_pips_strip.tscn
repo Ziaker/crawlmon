@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://c8statpipstrip01"]
+
+[ext_resource type="Script" path="res://scripts/ui/components/stat_pips_strip.gd" id="1_strip"]
+
+[node name="StatPipsStrip" type="Control"]
+custom_minimum_size = Vector2(216, 14)
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_strip")

@@ -23,6 +23,8 @@ func grant_atb(owner: Combatant, amount: int, source: Combatant) -> void:
 		r.id = _next_id
 		r.owner = owner
 		r.source = source
+		r.float_time = battle.REWARD_FLOAT
+		r.fly_time = battle.REWARD_FLY
 		r.delay = k * 0.09
 		if before + float(k) >= Combatant.BLOCKS - 0.001:  # No room in the bar: an extra block.
 			r.extra = true
@@ -37,13 +39,17 @@ func grant_atb(owner: Combatant, amount: int, source: Combatant) -> void:
 	owner.add_atb(float(amount))
 
 
-func grant_burst(owner: Combatant, source: Combatant) -> void:
+func grant_burst(owner: Combatant, source: Combatant, fast := false) -> void:
 	var r := BattleReward.new()
 	_next_id += 1
 	r.id = _next_id
 	r.kind = "burst"
 	r.owner = owner
 	r.source = source
+	# Long-distance interruptions (War Cry): the token is born where the victim was
+	# interrupted and zips to the owner's slot instead of hovering for 0.6 s.
+	r.float_time = 0.15 if fast else battle.REWARD_FLOAT
+	r.fly_time = 0.18 if fast else battle.REWARD_FLY
 	owner.pending_burst += 1
 	items.append(r)
 	battle.reward_spawned.emit(r)
@@ -52,11 +58,11 @@ func grant_burst(owner: Combatant, source: Combatant) -> void:
 func step(delta: float) -> void:
 	for r in items.duplicate():
 		r.t += delta
-		if not r.landed and r.age() >= battle.REWARD_FLOAT + battle.REWARD_FLY:
+		if not r.landed and r.age() >= r.float_time + r.fly_time:
 			r.landed = true
 			release_pending(r)
 			battle.reward_landed.emit(r)
-		if r.age() >= battle.REWARD_FLOAT + battle.REWARD_FLY + battle.REWARD_IMPACT:
+		if r.age() >= r.float_time + r.fly_time + battle.REWARD_IMPACT:
 			items.erase(r)
 
 

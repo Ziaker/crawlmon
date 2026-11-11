@@ -19,6 +19,10 @@ const COLORS := {
 }
 const FxLaneScript = preload("res://scripts/vfx/combat/fx_lane.gd")
 const FxDrainSpearScript = preload("res://scripts/vfx/combat/fx_drain_spear.gd")
+const FxJavelinThrowScript = preload("res://scripts/vfx/combat/fx_javelin_throw.gd")
+const FxBubbleShotScript = preload("res://scripts/vfx/combat/fx_bubble_shot.gd")
+const FxBubbleShieldScript = preload("res://scripts/vfx/combat/fx_bubble_shield.gd")
+const WarCryVfxScript = preload("res://scripts/vfx/combat/war_cry_vfx.gd")
 const STEP_DIST := BattleSpace.STEP_DIST
 const FLY_TIME := BattleSpace.FLY_TIME
 const TELEGRAPH_COLOR := Color(1.0, 0.22, 0.18)
@@ -71,6 +75,9 @@ var fx_impacts: FxImpacts
 var fx_guard: FxGuard
 var fx_armor: FxArmor  ## D-1026
 var fx_drain_spear: RefCounted
+var fx_javelin: RefCounted  ## D-1162: Javelin Throw's authored 3D effect, drawn from the attack's own phases
+var fx_bubble_shot: RefCounted  ## D-1170: Bubble Shot's authored 3D effect, drawn from the attack's own phases
+var fx_bubble: RefCounted  ## D-323/D-324: Bubble Shield wind-up, domes and hits
 var fx_projectiles: FxProjectiles
 var fx_text: FxText
 
@@ -87,6 +94,9 @@ func _init() -> void:
 	fx_guard = FxGuard.new(self)
 	fx_armor = FxArmor.new(self)
 	fx_drain_spear = FxDrainSpearScript.new(self)
+	fx_javelin = FxJavelinThrowScript.new(self)
+	fx_bubble_shot = FxBubbleShotScript.new(self)
+	fx_bubble = FxBubbleShieldScript.new(self)
 	fx_projectiles = FxProjectiles.new(self)
 	fx_text = FxText.new(self)
 
@@ -131,6 +141,8 @@ func register(c: Combatant, model: Node3D) -> void:
 	_add_ready_ring(model)
 	if not c.buff_changed.is_connected(_on_buff_changed):
 		c.buff_changed.connect(_on_buff_changed)
+	if not c.shield_ended.is_connected(_on_shield_ended):
+		c.shield_ended.connect(_on_shield_ended)
 	apply_buff_visuals(c, false)
 
 
@@ -139,6 +151,8 @@ func register(c: Combatant, model: Node3D) -> void:
 func unregister(c: Combatant) -> void:
 	if c.buff_changed.is_connected(_on_buff_changed):
 		c.buff_changed.disconnect(_on_buff_changed)
+	if c.shield_ended.is_connected(_on_shield_ended):
+		c.shield_ended.disconnect(_on_shield_ended)
 	if _buff_tweens.has(c) and (_buff_tweens[c] as Tween).is_valid():
 		(_buff_tweens[c] as Tween).kill()
 	for d in [_models, _home, _home_yaw, _tweens, _hit_at, _slot, _busy_until, _ready_off,
@@ -149,6 +163,11 @@ func unregister(c: Combatant) -> void:
 
 func _on_buff_changed(c: Combatant, _stat: String, _new_val: int) -> void:
 	apply_buff_visuals(c, true)
+
+
+func _on_shield_ended(c: Combatant, reason: String) -> void:
+	if fx_bubble != null:
+		fx_bubble.on_shield_ended(c, reason)
 
 
 ## Applies physical and visual manifestations of buffs/debuffs (D-158):
@@ -201,7 +220,7 @@ func apply_buff_visuals(c: Combatant, animated := true) -> void:
 		_buff_tweens[c] = tw
 		tw.set_parallel(true)
 		tw.tween_property(m, "scale", target_scale, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		if ap != null:
+		if ap != null and not fx_motion._frozen.has(ap):  # D-1146: the status pause owns the frozen speed
 			tw.tween_property(ap, "speed_scale", target_speed, 0.35).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 		var checked_mats: Array[BaseMaterial3D] = []
@@ -240,7 +259,7 @@ func apply_buff_visuals(c: Combatant, animated := true) -> void:
 							tw.tween_method((func(target_mat: ShaderMaterial): return func(a: float): target_mat.set_shader_parameter("amount", a)).call(crack), cur_crack, target_crack, 0.35)
 	else:
 		m.scale = target_scale
-		if ap != null:
+		if ap != null and not fx_motion._frozen.has(ap):  # D-1146: do not wake a frozen attack animation
 			ap.speed_scale = target_speed
 		var checked_mats: Array[BaseMaterial3D] = []
 		var checked_lines: Array[ShaderMaterial] = []
@@ -301,7 +320,19 @@ func _move_has_tag_or(move_id: String, tag: StringName, legacy_ids: Array) -> bo
 	return normalize_move_id(move_id) in legacy_ids
 
 
+## D-1105: a non-damaging interruption (War Cry) plays the authentic damage clip and
+## flinch, without HP loss, flash, knockback or hit-stop.
+func play_damage_reaction(actor: Combatant) -> void:
+	if actor == null or not actor.is_alive():
+		return
+	_hit_react(actor, 0.0)
+
+
 func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, info: Dictionary) -> void:
+	if bool(info.get("shield", false)):
+		if fx_bubble != null:
+			fx_bubble.on_shield_started(attacker, target)
+		return
 	var color: Color = COLORS[element]
 	var move_id := normalize_move_id(String(info.get("skill_name", "")))
 	if _move_has_tag_or(move_id, &"badge_steal", ["drain_spear"]):
@@ -311,10 +342,25 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 	var t_pos: Vector3 = (_models[target] as Node3D).position if _models.has(target) else rest_pos(target)
 	t_pos.y = 0.0
 	var to := t_pos + Vector3(0, 1, 0)
+	var shield_absorbed := int(info.get("shield_absorbed", 0))
+	if shield_absorbed > 0 and fx_bubble != null:
+		fx_bubble.on_hit(target, shield_absorbed)
+		if int(info.get("dmg", 0)) <= 0:
+			# D-1113: the bubble absorbed everything, but the attacking Move still
+			# shows its own impact. No number, flinch, knockback, hit-stop or shake.
+			if move_id == "bubble_shot" and fx_bubble_shot != null:
+				fx_bubble_shot.on_hit(attacker, target, info)  # D-1170: the bubble bursts on the shield's surface
+			if move_id == "javelin_throw" and fx_javelin != null:
+				fx_javelin.on_hit(attacker, target, info)  # D-1162: pin and burst on the shield's surface
+			_shield_absorbed_impact(element, info, color, move_id, a_pos, to)
+			return
 	var evaded: bool = info["evaded"]
 	if info.get("status", false):
 		if _move_has_tag_or(move_id, &"stage_vfx", ["tarukaja", "rakunda", "sukunda", "media", "armored_bulk"]):  # D-1026
 			# D-038 / D-337: buffs, debuffs and Media are carried entirely by their own stage VFX, with no white flash.
+			return
+		if move_id == "war_cry":
+			WarCryVfxScript.impact(self, target, to)  # D-1106
 			return
 		var before_status := get_child_count()
 		var handled := fx_impacts._status_impact_move(move_id, to)
@@ -350,7 +396,9 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 	var power: float = info.get("power", 1.0)
 	var fire_stop: bool = _move_has_tag_or(move_id, &"burn", ["fire_bullet"]) and bool(info.get("interrupted", false))  # D-236
 	var drain_spear := _move_has_tag_or(move_id, &"badge_steal", ["drain_spear"])
-	var heavy := weak or crit or power >= 1.4 or fire_stop or drain_spear
+	var javelin := move_id == "javelin_throw"  # D-1162: its own 3D impact, no generic burst
+	var bubble_shot := move_id == "bubble_shot"  # D-1170: its own hydraulic burst, no generic burst
+	var heavy := weak or crit or power >= 1.4 or fire_stop or drain_spear or javelin
 	var strike_dir := _flat_dir(a_pos, t_pos)
 	var is_ko := not target.is_player and not target.is_alive()
 
@@ -366,9 +414,14 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 
 	last_hit_info = info  # D-236: a move-authored impact may read whether the hit interrupted an action
 	# move_drain_spear: its Motion effect already draws the cyan spray/reverse steal at this contact.
+	# D-1162: Javelin Throw owns its 3D cross/flash/rings; the generic elemental burst is skipped.
 	var impact_fx: Array[Node3D] = []
-	if not drain_spear:
+	if not drain_spear and not javelin and not bubble_shot:
 		impact_fx = _impact(element, to, color, heavy or is_ko, strike_dir, move_id)
+	if javelin and fx_javelin != null:
+		fx_javelin.on_hit(attacker, target, info)
+	if bubble_shot and fx_bubble_shot != null:
+		fx_bubble_shot.on_hit(attacker, target, info)
 	if _move_has_tag_or(move_id, &"guard_break", ["quebra_telha"]):
 		impact_fx.append(fx_impacts.shatter_brick_barrier(target, to, strike_dir))
 
@@ -413,6 +466,19 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 		float_text(to + Vector3(0, 2.0, 0), "FRAQUEZA!", Color(1.0, 0.5, 0.15), 48)
 
 
+## D-1113: the bubble absorbed all the damage; the attacking Move keeps its own
+## impact VFX, but nothing that belongs to losing HP (number, flinch, knockback,
+## hit-stop, camera shake) is played.
+func _shield_absorbed_impact(element: Element.Type, info: Dictionary, color: Color,
+		move_id: String, from: Vector3, to: Vector3) -> void:
+	if _move_has_tag_or(move_id, &"badge_steal", ["drain_spear"]):
+		return  # its Motion effect already draws the contact
+	last_hit_info = info
+	var power := float(info.get("power", 1.0))
+	var heavy := bool(info.get("weak", false)) or bool(info.get("crit", false)) or power >= 1.4
+	_impact(element, to, color, heavy, _flat_dir(from, to), move_id)
+
+
 ## Where the character stands now when it is not moving: its home, or the spot an
 ## Evade left it at (the evader next to its opponent, the stunned attacker where it stopped).
 func rest_pos(c: Combatant) -> Vector3:
@@ -438,6 +504,8 @@ func _process(delta: float) -> void:
 	clock += delta
 	fx_lane.process(delta)  # D-1019: the live path on the floor
 	fx_drain_spear.process(delta)  # move_drain_spear: formation, thrust, steal and dissolve
+	fx_bubble_shot.process(delta)  # D-1170: bubble wind-up, bounce flight and burst from the attack's phases
+	fx_javelin.process(delta)  # D-1162: javelin wind-up, flight, crown and impact from the attack's phases
 	fx_motion.drive()
 	# Position steps: the home spot is the step-0 spot moved along the facing axis by
 	# the logic's own (animated) step value; the run clip plays while it walks.
@@ -491,6 +559,7 @@ func _process(delta: float) -> void:
 			ring.visible = true  # D-240: the shadow is always under the character (it used to be a ring shown only while it could act)
 	fx_evade_flash.update(delta)  # D-986: Dread-like tell in the Evade window
 	fx_stun.update(delta)  # D-979: dizzy body + spinning stars while stunned (after the idle pose is set)
+	fx_bubble.process(delta)  # D-323/D-324: domes, paper wind-up and shield hits
 
 
 func _is_idle(c: Combatant) -> bool:
@@ -631,6 +700,9 @@ func _line(a: Vector3, b: Vector3, color: Color, thick: float) -> MeshInstance3D
 func telegraph(inc) -> void:
 	fx_telegraph.telegraph(inc)
 	fx_drain_spear.start(inc)
+	fx_bubble_shot.start(inc)  # D-1170: the bubble inflates with the wind-up
+	fx_javelin.start(inc)  # D-1162: the javelin's pieces are born with the wind-up
+	_freeze_new_windup_if_paused(inc.attacker)  # D-1159: a wind-up started during the pause stays stopped.
 
 
 func clear_telegraph(inc) -> void:
@@ -640,6 +712,8 @@ func clear_telegraph(inc) -> void:
 func on_attack_cancelled(inc) -> void:
 	fx_telegraph.on_attack_cancelled(inc)
 	fx_drain_spear.cancel(inc)
+	fx_javelin.cancel(inc)
+	fx_bubble_shot.cancel(inc)
 
 
 func resolve_attack(inc) -> void:
@@ -707,9 +781,20 @@ func intro() -> void:
 
 
 func finish(player_won: bool) -> void:
+	for batch in _status_freeze_batches.values():
+		for ap in batch:
+			if is_instance_valid(ap):
+				fx_motion._unfreeze(ap)
+	_status_freeze_batches.clear()
 	fx_motion.finish(player_won)
 	if fx_drain_spear != null:
 		fx_drain_spear.clear_all()
+	if fx_javelin != null:
+		fx_javelin.clear_all()
+	if fx_bubble_shot != null:
+		fx_bubble_shot.clear_all()
+	if fx_bubble != null:
+		fx_bubble.clear_all("battle_end")
 
 
 func _hit_stop(attacker: Combatant, target: Combatant, heavy: bool, strike_dir := Vector3.FORWARD, impact_fx: Array[Node3D] = [], duration_override := -1.0, slow_target := false) -> void:
@@ -819,28 +904,59 @@ func miss_text(pos: Vector3) -> void:
 
 ## The modules point back at this node; cut the cycle so everything can be freed.
 func _exit_tree() -> void:
-	for mod in [fx_telegraph, fx_motion, fx_attack_plan, fx_dodge, fx_impacts, fx_armor, fx_drain_spear, fx_projectiles, fx_text]:
+	for mod in [fx_telegraph, fx_motion, fx_attack_plan, fx_dodge, fx_impacts, fx_armor, fx_drain_spear, fx_javelin, fx_bubble_shot, fx_bubble, fx_projectiles, fx_text]:
 		mod.fx = null
 
 
 func on_phase(inc, phase: int) -> void:
+	# War Cry: the shout leaves at the impact, like every other Move (not at the
+	# status-pause start). RETURN is emitted right after the STRIKE that resolves it.
+	# D-1147: an interrupted cast emits a synthetic RETURN; the cone must not appear then.
+	if phase == Battle.Phase.RETURN and normalize_move_id(inc.label) == "war_cry" and not inc.interrupted:
+		WarCryVfxScript.start(self, inc)
 	fx_motion.on_phase(inc, phase)
 
 
-## D-031: while a status move pauses the engine, everyone caught in an attack animation is
-## frozen (idles keep breathing); the caster keeps animating and gets a burst of aura.
-var _status_frozen: Array[AnimationPlayer] = []
+## D-031/D-1147: while a status pause (or War Cry) freezes attack animations, each event
+## owns the AnimationPlayers it froze, so one ending cannot wake the other's freeze.
+var _status_freeze_batches: Dictionary = {}  # Incoming -> Array[AnimationPlayer]
+
+
+func _freeze_new_windup_if_paused(c: Combatant) -> void:
+	if battle == null or battle._status_pause == null or c == null:
+		return
+	var pause := battle._status_pause
+	if c == pause.attacker:
+		return
+	var ap := _anim_player(c)
+	if ap == null:
+		return
+	var batch: Array = _status_freeze_batches.get(pause, [])
+	if batch.has(ap):
+		return
+	fx_motion._freeze(ap)
+	batch.append(ap)
+	_status_freeze_batches[pause] = batch
 
 
 func on_status_pause_started(inc) -> void:
 	var caster: Combatant = inc.attacker
+	var frozen: Array[AnimationPlayer] = []
 	for c in _models:
 		if c == caster:
 			continue
 		var ap := _anim_player(c)
 		if ap != null and ap.is_playing() and not (ap.current_animation in ["idle", "battle_idle"]):
 			fx_motion._freeze(ap)
-			_status_frozen.append(ap)
+			frozen.append(ap)
+	if not frozen.is_empty():
+		_status_freeze_batches[inc] = frozen
+	if normalize_move_id(inc.label) == "war_cry":
+		return  # D-1147: the visual freeze stays, but the War Cry VFX is the cone, not the generic aura.
+	if normalize_move_id(inc.label) == "bubble_shield":
+		if fx_bubble != null:
+			fx_bubble.begin_cast(caster)
+		return
 	var m: Node3D = _models.get(caster)
 	if m == null:
 		return
@@ -866,11 +982,14 @@ func on_mp_regenerated(c: Combatant, amount: int) -> void:
 
 
 func on_status_pause_ended(_inc) -> void:
+	if _inc != null and normalize_move_id(_inc.label) == "bubble_shield" and fx_bubble != null:
+		fx_bubble.cancel_cast()
 	fx_armor.on_status_pause_ended(_inc)  # D-1026
-	for ap in _status_frozen:
-		if is_instance_valid(ap):
-			fx_motion._unfreeze(ap)
-	_status_frozen.clear()
+	if _inc != null and _status_freeze_batches.has(_inc):
+		for ap in _status_freeze_batches[_inc]:
+			if is_instance_valid(ap):
+				fx_motion._unfreeze(ap)
+		_status_freeze_batches.erase(_inc)
 
 
 func on_evade_returned(actor: Combatant, from: Vector3) -> void:

@@ -71,7 +71,7 @@ static func draw_ptcl(painter: MotionPainter, pos: Vector3, size: float, shape_i
 
 
 ## 2. Media: Círculo Sagrado no chão (spawnSacredHealCircle).
-static func draw_heal_circle(painter: MotionPainter, center: Vector3, radius: float, progress: float) -> void:
+static func draw_heal_circle(painter: MotionPainter, center: Vector3, radius: float, progress: float, alpha_scale := 1.0) -> void:
 	if radius <= 0.05 or progress <= 0.0 or progress >= 0.999:
 		return
 	if painter.neutral:
@@ -84,6 +84,7 @@ static func draw_heal_circle(painter: MotionPainter, center: Vector3, radius: fl
 	var mat := mi.material_override as ShaderMaterial
 	mat.set_shader_parameter("tt", painter.time)
 	mat.set_shader_parameter("progress", progress)
+	mat.set_shader_parameter("alpha_scale", alpha_scale)
 
 
 ## 3. Media: Pilar Volumétrico de Cura (spawnVolumetricHealPillar).

@@ -31,16 +31,16 @@ func _draw() -> void:
 		if dest == null:
 			continue
 		var src: Variant = hud.reward_source(r)
-		if a >= Battle.REWARD_FLOAT + Battle.REWARD_FLY:
-			_draw_impact(r, dest as Vector2, a - Battle.REWARD_FLOAT - Battle.REWARD_FLY)
+		if a >= r.float_time + r.fly_time:
+			_draw_impact(r, dest as Vector2, a - r.float_time - r.fly_time)
 			continue
 		if src == null:
 			continue
 		var pos := _token_pos(r, src as Vector2, dest as Vector2, a)
 		var pop := clampf(a / 0.15, 0.0, 1.0)
 		var s := lerpf(0.3, 1.0, pop * pop * (3.0 - 2.0 * pop))
-		if a > Battle.REWARD_FLOAT:  # Shrinks a little while it flies in.
-			s *= lerpf(1.0, 0.75, (a - Battle.REWARD_FLOAT) / Battle.REWARD_FLY)
+		if a > r.float_time:  # Shrinks a little while it flies in.
+			s *= lerpf(1.0, 0.75, (a - r.float_time) / maxf(r.fly_time, 0.001))
 			_draw_trail(r, src as Vector2, dest as Vector2, a, s)
 		if r.kind == "burst":
 			_draw_burst_token(pos, s, r.id)
@@ -56,16 +56,16 @@ func _token_pos(r, src: Vector2, dest: Vector2, a: float) -> Vector2:
 	var ang := fposmod(sin(r.id * 12.9898) * 43758.5453, 1.0) * TAU
 	var fan := Vector2(cos(ang), sin(ang)) * 72.0 * rise
 	var hover := src + fan + Vector2(sin(a * 3.0 + r.id) * 5.0, sin(a * 2.2 + r.id * 1.7) * 4.0) * rise
-	if a <= Battle.REWARD_FLOAT:
+	if a <= r.float_time:
 		return hover
-	var k := clampf((a - Battle.REWARD_FLOAT) / Battle.REWARD_FLY, 0.0, 1.0)
+	var k := clampf((a - r.float_time) / maxf(r.fly_time, 0.001), 0.0, 1.0)
 	return hover.lerp(dest, k * k)  # Straight line to the slot, accelerating.
 
 
 func _draw_trail(r, src: Vector2, dest: Vector2, a: float, s: float) -> void:
 	for j in range(1, 7):
 		var back := a - j * 0.022
-		if back < Battle.REWARD_FLOAT:
+		if back < r.float_time:
 			break
 		var p := _token_pos(r, src, dest, back)
 		var fade := 1.0 - j / 7.0

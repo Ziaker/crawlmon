@@ -40,7 +40,8 @@ func telegraph(inc) -> void:
 	var move_id := BattleFx.normalize_move_id(inc.label)
 	var authored := _telegraph_move(inc, move_id, a_home, t_home, warn, elem_col, w)
 	nodes.append_array(authored.get("nodes", []))
-	nodes.append(fx.fx_lane.add(inc, warn, elem_col, not inc.attacker.is_player))  # D-1013/D-1019: live path on the floor
+	if move_id != "javelin_throw":
+		nodes.append(fx.fx_lane.add(inc, warn, elem_col, not inc.attacker.is_player))  # D-1013/D-1019: live path on the floor
 	if not authored.get("handled", false):
 		nodes.append_array(_ground_telegraph(a_ring, t_ring, warn, elem_col, w, not inc.attacker.is_player))
 		nodes.append_array(_charge_aura(inc.attacker, a_ring, warn, elem_col, w))
@@ -58,6 +59,13 @@ func _ring_center(c: Combatant, fallback: Vector3) -> Vector3:
 ## Move telegraphs can replace the elemental/default warning without changing wind-up time.
 ## D-1079/Etapa 3: the family comes from MoveVfxRegistry/vfx_key, not a list of ids here.
 func _telegraph_move(inc, move_id: String, from: Vector3, to: Vector3, _warn: Color, _elem_col: Color, duration: float) -> Dictionary:
+	if move_id == "javelin_throw":
+		# D-1162: FxJavelinThrow owns the assembly, line, reticle and crown; never add the
+		# generic aura/reticle even if the MoveData lookup is unavailable.
+		return {"handled": true, "nodes": []}
+	if move_id == "bubble_shot":
+		# D-1170: FxBubbleShot owns the charge (bubble, micro-bubbles, guide); no generic aura/reticle.
+		return {"handled": true, "nodes": []}
 	return MoveVfxRegistry.windup(fx, inc, move_id, from, to, duration)
 
 

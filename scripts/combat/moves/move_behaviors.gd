@@ -335,4 +335,44 @@ class Taunt extends MoveBehavior:
 		return 4.0
 
 
+class WarCry extends MoveBehavior:
+	## D-1102: interrupts every enemy still in WINDUP. No damage, STUN or push; the spent
+	## ATB is not refunded. One Burst for the caster if at least one enemy is interrupted.
+	func on_status(inc: Incoming, battle: Battle) -> bool:
+		var foes: Array[Combatant] = battle.enemies if inc.attacker.is_player else battle.party
+		var interrupted := 0
+		var interrupted_at: Combatant = null
+		for foe in foes:
+			if not foe.is_alive():
+				continue
+			if battle.interrupt_windup_of(foe, inc.attacker):
+				interrupted += 1
+				if interrupted_at == null:
+					interrupted_at = foe  # The Burst flies from where the rupture happened.
+				battle.hit_resolved.emit(inc.attacker, foe, inc.element, {
+					"status": true, "evaded": false, "dmg": 0, "weak": false,
+					"crit": false, "gain": 0, "whiffed": false, "power": 0.0,
+					"skill_name": inc.label, "interrupted": true
+				})
+		if interrupted > 0:
+			var burst_before := inc.attacker.burst
+			inc.attacker.burst = mini(inc.attacker.burst + 1, Combatant.BURST_MAX)
+			var burst_gained := inc.attacker.burst > burst_before
+			if burst_gained:
+				battle.grant_burst(inc.attacker, interrupted_at, true)
+			battle.log_message.emit("%s usa War Cry! %d inimigo(s) interrompido(s)! %s" % [
+				inc.attacker.name, interrupted, "(+1 Burst)" if burst_gained else "(Burst já cheio)"])
+		else:
+			battle.log_message.emit("%s usa War Cry, mas ninguém estava em wind-up." % inc.attacker.name)
+		return true
+
+	func ai_status_value(c: Combatant, _target: Combatant, battle: Battle) -> float:
+		var foes: Array[Combatant] = battle.enemies if c.is_player else battle.party
+		var count := 0
+		for foe in foes:
+			if foe.is_alive() and battle.has_windup(foe):
+				count += 1
+		return 0.0 if count == 0 else 25.0 + 10.0 * float(count)
+
+
 

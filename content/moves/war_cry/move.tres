@@ -8,21 +8,24 @@ id = &"war_cry"
 display_name = "War Cry"
 kind = 3
 power = 0.0
-atb_cost = 1
+atb_cost = 3
 mp_cost = 3
-windup = 0.5
+windup = 0.3
+is_aoe = true
+is_friendly = false
+status_pause = 1.3
 stand_gap = 2.6
 hold = 0.2
 plan_profile = &"cast"
 vfx_key = &"generic"
-effect_line_text = "Crossover war cry | Combat effect not implemented | 1 ATB"
-short_effect_text = "crossover status"
-description_text = "Crossover war cry. Its combat effect is not implemented yet."
-mechanics_text = "Intimidating battle roar that bolsters allies and unsettles nearby opponents."
+effect_line_text = "Interrupts enemies in wind-up | +1 Burst if it interrupts at least one | 3 ATB"
+short_effect_text = "interrupts wind-up | +1 Burst"
+description_text = "A rupturing war cry that breaks the nerve of enemies already winding up their attacks."
+mechanics_text = "Interrupts every enemy in WINDUP; the attack is cancelled and the spent ATB is not refunded. No damage, STUN or push. If at least one enemy is interrupted, the caster gains 1 Burst (once per cast)."
 visual_text = "Expanding translucent red shock rings radiating from the caster's mouth with arena dust kickback."
 motion_text = "Stationary shout. Caster plants feet firmly on the ground."
-windup_text = "0.90s wind-up. Deep chest expansion."
-tactical_text = "Intimidating battle roar bolstering allies and rattling enemies. Team AoE."
+windup_text = "0.30s wind-up. Deep chest expansion."
+tactical_text = "Anti-telegraph tool: interrupts enemies in wind-up; +1 Burst if it interrupts at least one. Enemy AoE, no damage."
 visual_motion_text = "Stationary battle shout expanding red shock rings."
 phase_visuals = {
 "impact": "Aplicação do efeito visual e badge de status: Expanding translucent red shock rings radiating from the caster's mouth with arena dust kickback.",
@@ -30,5 +33,5 @@ phase_visuals = {
 "return": "Dissolução suave da cerimônia sem sobras e retomada do relógio do combate.",
 "strike": "Ativação do selo/aura de status sobre os alvos.",
 "travel": "Manifestação direta no campo (sem deslocamento de corpo): Stationary shout. Caster plants feet firmly on the ground.",
-"windup": "Canalização de status com motor pausado (D-031): 0.90s wind-up. Deep chest expansion."
+"windup": "Canalização de status com motor pausado (D-031): 0.30s wind-up. Deep chest expansion."
 }

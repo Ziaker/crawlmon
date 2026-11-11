@@ -5,12 +5,15 @@ extends CanvasLayer
 enum Mode { NONE, TABS, PICK, SETTINGS }
 
 const TABS := ["Itens", "Status", "Segurar"]
+## HUDs de overworld entram neste grupo e ficam ocultos enquanto o status está aberto.
+const OVERWORLD_HUD_GROUP := "overworld_hud"
 
 var mode := Mode.NONE
 var tab := 0
 
 var _was_paused := false
 var _status_screen: StatusScreen
+var _hidden_huds: Dictionary = {}
 
 var _root: Control
 var _title: Label
@@ -18,6 +21,10 @@ var _list: MenuList
 var _detail: Label
 var _pick_action: Callable
 var _shown_items: Array[Item] = []
+
+var _toast: Label
+var _toast_elapsed := 0.0
+var _toast_hold := 2.0
 
 
 func _ready() -> void:
@@ -51,7 +58,65 @@ func _ready() -> void:
 	_status_screen = StatusScreen.new()
 	add_child(_status_screen)
 	_status_screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_status_screen.closed.connect(func() -> void: _root.visible = true)
+	_status_screen.closed.connect(_on_status_closed)
+	_build_toast()
+
+
+## QoL: short feedback for pickups, full inventory and other small events.
+func toast(text: String, color := Color("d7fd6a"), seconds := 2.0) -> void:
+	if _toast == null:
+		return
+	_toast.text = text
+	_toast.add_theme_color_override("font_color", color)
+	_toast.modulate.a = 0.0
+	_toast.visible = true
+	_toast_elapsed = 0.0
+	_toast_hold = maxf(seconds, 0.4)
+	_place_toast()
+
+
+func _build_toast() -> void:
+	_toast = Label.new()
+	_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_toast.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_toast.add_theme_font_override("font", FanMenu.body_font())
+	_toast.add_theme_font_size_override("font_size", 15)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.02, 0.06, 0.10, 0.95)
+	sb.border_color = Color("62d8e7")
+	sb.border_width_left = 2
+	sb.border_width_right = 2
+	sb.border_width_top = 2
+	sb.border_width_bottom = 2
+	sb.content_margin_left = 18.0
+	sb.content_margin_right = 18.0
+	sb.content_margin_top = 9.0
+	sb.content_margin_bottom = 9.0
+	_toast.add_theme_stylebox_override("normal", sb)
+	add_child(_toast)
+	_toast.visible = false
+
+
+func _place_toast() -> void:
+	if _toast == null:
+		return
+	var vp := get_viewport().get_visible_rect().size
+	_toast.reset_size()
+	_toast.position = Vector2((vp.x - _toast.size.x) * 0.5, vp.y - 152.0)
+
+
+func _process(delta: float) -> void:
+	if _toast == null or not _toast.visible:
+		return
+	_toast_elapsed += delta
+	_place_toast()
+	var a := clampf(_toast_elapsed / 0.12, 0.0, 1.0)
+	if _toast_elapsed > _toast_hold:
+		a = clampf(1.0 - (_toast_elapsed - _toast_hold) / 0.3, 0.0, 1.0)
+	_toast.modulate.a = a
+	if _toast_elapsed >= _toast_hold + 0.3:
+		_toast.visible = false
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -82,6 +147,33 @@ func _close() -> void:
 	mode = Mode.NONE
 	_root.visible = false
 	get_tree().paused = _was_paused
+
+
+# --- Status screen: esconde o HUD do overworld enquanto ele está aberto ------
+
+func _on_status_closed() -> void:
+	_root.visible = true
+	_restore_overworld_huds()
+
+
+func _hide_overworld_huds() -> void:
+	_restore_overworld_huds()
+	for node in get_tree().get_nodes_in_group(OVERWORLD_HUD_GROUP):
+		if not is_instance_valid(node):
+			continue
+		if node is CanvasLayer:
+			_hidden_huds[node] = node.visible
+			node.visible = false
+		elif node is CanvasItem:
+			_hidden_huds[node] = node.visible
+			node.visible = false
+
+
+func _restore_overworld_huds() -> void:
+	for node in _hidden_huds.keys():
+		if is_instance_valid(node) and (node is CanvasLayer or node is CanvasItem):
+			node.visible = bool(_hidden_huds[node])
+	_hidden_huds.clear()
 
 
 # --- Tabs: Itens / Status / Segurar ----------------------------------------
@@ -152,9 +244,9 @@ func _status_text(c: Combatant) -> String:
 	for s in c.skills:
 		skill_names.append(s.display_name)
 	return "%s\nHP %d/%d    Ataque %d    ATB %.2f blocos/s\nItem: %s\nHabilidades: %s
-Fraquezas: %s" % [
+Afinidades: %s" % [
 		c.name, c.hp, c.max_hp, c.attack, c.speed,
-		held.display_name if held else "-", ", ".join(skill_names), c.weakness_text()]
+		held.display_name if held else "-", ", ".join(skill_names), c.affinity_text()]
 
 
 # --- Settings --------------------------------------------------------------
@@ -163,6 +255,7 @@ func _build_settings(keep_index: bool) -> void:
 	mode = Mode.SETTINGS
 	_title.text = "Configurações  (X ou C fecha)"
 	_list.set_entries([
+		{"text": "Velocidade do diálogo: %s  (← →)" % GameState.text_speed_name()},
 		{"text": "Debug: iniciar batalha agora  (F9 em qualquer tela)"}
 	], keep_index)
 
@@ -173,11 +266,15 @@ func _on_chosen(i: int) -> void:
 	match mode:
 		Mode.SETTINGS:
 			if i == 0:
+				GameState.cycle_text_speed(1)
+				_build_settings(true)
+			elif i == 1:
 				_close()
 				GameState._debug_battle()
 		Mode.TABS:
 			if tab == 1:
 				_root.visible = false
+				_hide_overworld_huds()
 				_status_screen.open(GameState.party, i)
 			elif tab == 0 and not _shown_items.is_empty():
 				var item := _shown_items[i]
@@ -201,10 +298,16 @@ func _on_side(direction: int) -> void:
 	if mode == Mode.TABS:
 		tab = posmod(tab + direction, TABS.size())
 		_build_tab()
+	elif mode == Mode.SETTINGS and _list.index == 0:
+		GameState.cycle_text_speed(direction)
+		_build_settings(true)
 
 
 func _on_moved(i: int) -> void:
 	_detail.text = ""
+	if mode == Mode.SETTINGS:
+		_detail.text = "Lento 28 · Normal 46 · Rápido 80 caracteres por segundo.\nZ ou ← → troca a velocidade. No diálogo, Z completa a fala atual."
+		return
 	if mode != Mode.TABS:
 		return
 	match tab:

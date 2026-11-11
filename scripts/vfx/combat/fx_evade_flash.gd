@@ -17,6 +17,7 @@ const FIRE_SIZE := 1.2  ## D-1052: the Fire Bullet's Dread is 1.2x the body-deri
 ## D-1078: a long-range Move only shows the Dread tell when it was explicitly asked for (Fire Bullet, D-1029).
 ## For now the creator removed it from these two; Electric Beam keeps it and the other projectiles are untouched.
 const NO_DREAD_MOVES := ["Tidal Surge", "Bubble Shot"]
+const JAVELIN_MOVE := "javelin_throw"
 const RING_COL := Color(1.0, 0.86, 0.3)
 const CORE_COL := Color(1.0, 1.0, 0.9)
 const RAY_COL := Color(1.0, 0.95, 0.65)
@@ -34,8 +35,12 @@ func update(delta: float) -> void:
 	if fx.battle == null:
 		return
 	var seen := {}
+	var leader: Combatant = fx.battle.party[0] if not fx.battle.party.is_empty() else null
 	for inc in fx.battle.active_attacks():
 		if inc.attacker == null or inc.attacker.is_player:
+			continue
+		# D-1168: the Dread is the player's prompt; an attack aimed only at an ally is not dodgeable by the leader.
+		if not targets_leader(inc, leader):
 			continue
 		if inc.skill != null and DrainSpearMove.reach(inc.skill) > 0.0:
 			continue  # D-1016 (Drain Spear): that mid-range move has no Dread tell (melee only). D-1029: Fire Bullet is the exception.
@@ -46,6 +51,8 @@ func update(delta: float) -> void:
 			# D-1029: an instant Fire Bullet may not know its launch point on the first flight frame;
 			# wait one frame for the real tip instead of showing the tell on the body.
 			if inc.move_id in FireMoveVfx.IDS and _fire_tip(inc) == null:
+				continue
+			if _is_javelin(inc) and _javelin_tip(inc) == null:
 				continue
 			_live[inc] = {"node": _make(), "t": 0.0, "out": -1.0, "eta0": inc.eta()}
 		if _live.has(inc):
@@ -89,6 +96,16 @@ static func _no_dread(inc) -> bool:
 	return false
 
 
+## D-1168: the Dread belongs to the player's leader; an attack aimed only at an ally
+## must not light it. An area attack that also reaches the leader still counts.
+static func targets_leader(inc, leader) -> bool:
+	if inc == null:
+		return false
+	if leader == null:
+		return true
+	return inc.target == leader or inc.is_aoe
+
+
 func _make() -> MeshInstance3D:
 	if _mat == null:
 		_mat = StandardMaterial3D.new()
@@ -113,6 +130,16 @@ func _make() -> MeshInstance3D:
 ## projectile's speed, instead of the caster's hand or body.
 func _anchor(inc) -> Array:
 	var an := _body_anchor(inc)
+	var jt: Variant = _javelin_tip(inc)
+	if jt != null:
+		var stj: Dictionary = _live.get(inc, {})
+		stj["pos"] = jt as Vector3
+		stj["has_pos"] = true
+		return [jt as Vector3, float(an[1])]
+	if _is_javelin(inc):
+		var stj2: Dictionary = _live.get(inc, {})
+		if bool(stj2.get("has_pos", false)):
+			return [stj2["pos"] as Vector3, float(an[1])]
 	var tip: Variant = _fire_tip(inc)
 	if tip != null:
 		var st: Dictionary = _live.get(inc, {})
@@ -136,6 +163,25 @@ func _fire_tip(inc) -> Variant:
 	if not is_instance_valid(fire):
 		return null
 	return (fire as FireMoveVfx).bullet_tip()
+
+
+## D-1176: the Javelin Throw tell rides the real javelin tip, like the Fire Bullet (D-1029).
+static func _is_javelin(inc) -> bool:
+	if inc == null:
+		return false
+	return BattleSpace.move_id(String(inc.move_id)) == JAVELIN_MOVE
+
+
+func _javelin_tip(inc) -> Variant:
+	if not _is_javelin(inc):
+		return null
+	var j: Variant = inc.data.get("javelin")
+	if not is_instance_valid(j):
+		return null
+	var n := j as Node
+	if n == null or not n.has_method("javelin_tip"):
+		return null
+	return n.call("javelin_tip")
 
 
 func _body_anchor(inc) -> Array:

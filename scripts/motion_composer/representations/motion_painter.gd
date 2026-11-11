@@ -13,11 +13,36 @@ var neutral := false  ## spec 8.3: neutral material (white unshaded dots) to jud
 var _pool: Dictionary = {}
 var _used: Dictionary = {}
 var _prims: Dictionary = {}  ## D-337: shared meshes of the atelier primitives (cone4/5/7, funnel, frag_one, cyl)
+var _lights: Array[OmniLight3D] = []
+var _lights_used := 0
+
+## D-377: perfil da lança da Drain Spear. y em 0..1; raios em metros (a mesma silhueta do protótipo de 6,4 m).
+const SPEAR_LEVELS := [
+	Vector3(0.000, 0.018, 0.018),
+	Vector3(0.020, 0.150, 0.150),
+	Vector3(0.042, 0.110, 0.110),
+	Vector3(0.056, 0.080, 0.080),
+	Vector3(0.078, 0.140, 0.140),
+	Vector3(0.098, 0.145, 0.145),
+	Vector3(0.600, 0.145, 0.145),
+	Vector3(0.618, 0.250, 0.250),
+	Vector3(0.634, 0.250, 0.250),
+	Vector3(0.650, 0.180, 0.180),
+	Vector3(0.675, 0.180, 0.180),
+	Vector3(0.690, 0.340, 0.260),
+	Vector3(0.720, 0.520, 0.330),
+	Vector3(0.780, 0.440, 0.280),
+	Vector3(0.860, 0.300, 0.210),
+	Vector3(0.940, 0.160, 0.130),
+	Vector3(1.000, 0.000, 0.000),
+]
+
 
 
 func begin_frame() -> void:
 	for k in _used.keys():
 		_used[k] = 0
+	_lights_used = 0
 
 
 ## Custos do quadro desenhado (ferramentas de avaliação, D-323): nós visíveis, triângulos enviados ao desenho e nós por pincel.
@@ -42,7 +67,7 @@ func stats() -> Dictionary:
 				tris += 24 * 14 * 2
 			else:
 				tris += 2
-	return {"nodes": nodes, "tris": tris, "by_key": by_key}
+	return {"nodes": nodes, "tris": tris, "by_key": by_key, "lights": _lights_used}
 
 
 func end_frame() -> void:
@@ -50,10 +75,17 @@ func end_frame() -> void:
 		var arr: Array = _pool[k]
 		for i in range(int(_used.get(k, 0)), arr.size()):
 			(arr[i] as MeshInstance3D).visible = false
+	for i in range(_lights_used, _lights.size()):
+		_lights[i].visible = false
+		_lights[i].light_energy = 0.0
 
 
 func _cam_pos() -> Vector3:
 	return cam_pos_fn.call() if cam_pos_fn.is_valid() else Vector3(0, 3, 8)
+
+
+func cam_pos() -> Vector3:
+	return _cam_pos()
 
 
 func _cam_basis() -> Basis:
@@ -136,6 +168,32 @@ func _prim(kind: String) -> Mesh:
 			m = _cone_mesh(7)
 		"frag_one":
 			m = _dodeca_mesh()
+		"spear":  # D-377: malha fechada da lança (MotionMesh.spear), compartilhada por todas as instâncias
+			var am := ArrayMesh.new()
+			MotionMesh.upload(am, MotionMesh.spear(SPEAR_LEVELS, 8))
+			m = am
+		"spear_shaft":  # D-378: cabo que cresce; a lâmina é uma malha separada, fixa na ponta
+			var ams := ArrayMesh.new()
+			MotionMesh.upload(ams, MotionMesh.spear_shaft(8))
+			m = ams
+		"spear_blade":
+			var amb := ArrayMesh.new()
+			MotionMesh.upload(amb, MotionMesh.spear_blade(8))
+			m = amb
+		"aura":  # D-378: fita espiral procedural (a malha real é reconstruída por instância, por quadro)
+			m = ArrayMesh.new()
+		"vortex":  # D-379: vórtice helicoidal cônico do início da estocada (malha por instância)
+			m = ArrayMesh.new()
+		"vortex_cone":  # D-379: funil visível do boost (base larga, ponta fina)
+			var vc := CylinderMesh.new()
+			vc.top_radius = 0.06
+			vc.bottom_radius = 1.0
+			vc.height = 1.0
+			vc.radial_segments = 48
+			vc.rings = 24
+			vc.cap_top = false
+			vc.cap_bottom = false
+			m = vc
 		_:
 			var q := QuadMesh.new()
 			q.size = Vector2.ONE
@@ -333,6 +391,134 @@ func tube(data: Dictionary, params: Dictionary) -> void:
 		mat.set_shader_parameter(k, params[k])
 
 
+## V1.10 (D-377): a lança mágica 3D da Drain Spear. `base` é o cabo; `axis` aponta para a ponta; `length` em metros
+## estica só o eixo Y (a espessura fica em metros, então a lança alongada continua fina). `reveal`/`dissolve` vão de 0
+## a 1 ao longo do cabo→ponta; `opacity` e `energy` são o brilho. Uma malha compartilhada, um material por instância.
+func spear(base: Vector3, axis: Vector3, length: float, reveal: float, dissolve: float, opacity: float, energy: float, tint: Color, params := {}) -> void:
+	if length <= 0.01 or opacity <= 0.01 or dissolve >= 0.999 or reveal <= 0.001:
+		return
+	if neutral:
+		dot(base + axis.normalized() * length * 0.5, minf(length * 0.12, 0.5))
+		return
+	var mi := _node("spear", "mc_drain_spear", "spear")
+	var ax := axis.normalized() if axis.length() > 0.001 else Vector3.UP
+	var basis := Basis(Quaternion(Vector3.UP, ax)) if absf(ax.dot(Vector3.UP)) < 0.999 else (Basis.IDENTITY if ax.y > 0.0 else Basis(Vector3.RIGHT, PI))
+	mi.transform = Transform3D(basis * Basis.from_scale(Vector3(1.0, length, 1.0)), base)
+	var mat := mi.material_override as ShaderMaterial
+	mat.set_shader_parameter("reveal", clampf(reveal, 0.0, 1.0))
+	mat.set_shader_parameter("dissolve", clampf(dissolve, 0.0, 1.0))
+	mat.set_shader_parameter("opacity", clampf(opacity, 0.0, 1.0))
+	mat.set_shader_parameter("energy", energy)
+	mat.set_shader_parameter("tint", tint)
+	mat.set_shader_parameter("tt", time)
+	for k in params.keys():
+		mat.set_shader_parameter(k, params[k])
+
+
+## D-378: desenha uma PARTE da lança (cabo ou lâmina). Cada parte tem a sua própria malha e o seu próprio
+## reveal/dissolve; o cabo cresce sem esticar a lâmina. `part` = "shaft" | "blade".
+func spear_part(base: Vector3, axis: Vector3, length: float, part: String, reveal: float, dissolve: float, opacity: float, energy: float, tint: Color, params := {}, thickness := 1.0) -> void:
+	if length <= 0.01 or opacity <= 0.01 or dissolve >= 0.999 or reveal <= 0.001:
+		return
+	if neutral:
+		dot(base + axis.normalized() * length * 0.5, minf(length * 0.12, 0.5))
+		return
+	var key := "spear_" + part
+	var mi := _node(key, "mc_drain_spear", key)
+	if part == "shaft":
+		# D-378: o cabo é reconstruído com o comprimento real para o punho não esticar.
+		var sm := mi.mesh as ArrayMesh
+		if sm == null:
+			sm = ArrayMesh.new()
+			mi.mesh = sm
+		MotionMesh.upload(sm, MotionMesh.spear_shaft_mesh(length, 8))
+	var ax := axis.normalized() if axis.length() > 0.001 else Vector3.UP
+	var basis := Basis(Quaternion(Vector3.UP, ax)) if absf(ax.dot(Vector3.UP)) < 0.999 else (Basis.IDENTITY if ax.y > 0.0 else Basis(Vector3.RIGHT, PI))
+	mi.transform = Transform3D(basis * Basis.from_scale(Vector3(thickness, length, thickness)), base)
+	var mat := mi.material_override as ShaderMaterial
+	mat.set_shader_parameter("reveal", clampf(reveal, 0.0, 1.0))
+	mat.set_shader_parameter("dissolve", clampf(dissolve, 0.0, 1.0))
+	mat.set_shader_parameter("opacity", clampf(opacity, 0.0, 1.0))
+	mat.set_shader_parameter("energy", energy)
+	mat.set_shader_parameter("tint", tint)
+	mat.set_shader_parameter("tt", time)
+	for k in params.keys():
+		mat.set_shader_parameter(k, params[k])
+
+
+## D-378: uma faixa espiral de aura em volta da lança. A fita é reconstruída em coordenadas locais e girada para
+## o eixo da lança; `phase` em radianos, `turns` voltas ao longo do comprimento. Sem personagem/time/lado (D-235).
+func aura_band(base: Vector3, axis: Vector3, length: float, phase: float, turns: float, radius: float, width: float, opacity: float, energy: float, color: Color, params := {}) -> void:
+	if length <= 0.05 or opacity <= 0.01 or radius <= 0.01:
+		return
+	if neutral:
+		dot(base + axis.normalized() * length * 0.5, minf(length * 0.10, 0.4))
+		return
+	var mi := _node("aura", "mc_aura_band", "aura")
+	var am := mi.mesh as ArrayMesh
+	if am == null:
+		am = ArrayMesh.new()
+		mi.mesh = am
+	MotionMesh.upload(am, MotionMesh.helix_band(length, radius, turns, phase, width, 64, true))
+	var ax := axis.normalized() if axis.length() > 0.001 else Vector3.UP
+	var basis := Basis(Quaternion(Vector3.UP, ax)) if absf(ax.dot(Vector3.UP)) < 0.999 else (Basis.IDENTITY if ax.y > 0.0 else Basis(Vector3.RIGHT, PI))
+	mi.transform = Transform3D(basis, base)
+	var mat := mi.material_override as ShaderMaterial
+	mat.set_shader_parameter("color", color)
+	mat.set_shader_parameter("opacity", clampf(opacity, 0.0, 1.0))
+	mat.set_shader_parameter("energy", energy)
+	mat.set_shader_parameter("tt", time)
+	for k in params.keys():
+		mat.set_shader_parameter(k, params[k])
+
+
+## D-379: vórtice helicoidal cônico do começo da estocada. A fita começa larga na base do vórtice e afina na
+## ponta, girando como um ventilador. O fade vem da opacidade da composição (após 0,4 s).
+func vortex_band(base: Vector3, axis: Vector3, length: float, phase: float, turns: float, radius_start: float, radius_end: float, width: float, opacity: float, energy: float, color: Color, params := {}) -> void:
+	if length <= 0.05 or opacity <= 0.01 or maxf(radius_start, radius_end) <= 0.01:
+		return
+	if neutral:
+		dot(base + axis.normalized() * length * 0.5, minf(length * 0.10, 0.4))
+		return
+	var mi := _node("vortex", "mc_aura_band", "vortex")
+	var am := mi.mesh as ArrayMesh
+	if am == null:
+		am = ArrayMesh.new()
+		mi.mesh = am
+	MotionMesh.upload(am, MotionMesh.helix_band(length, radius_start, turns, phase, width, 72, true, radius_end))
+	var ax := axis.normalized() if axis.length() > 0.001 else Vector3.UP
+	var basis := Basis(Quaternion(Vector3.UP, ax)) if absf(ax.dot(Vector3.UP)) < 0.999 else (Basis.IDENTITY if ax.y > 0.0 else Basis(Vector3.RIGHT, PI))
+	mi.transform = Transform3D(basis, base)
+	var mat := mi.material_override as ShaderMaterial
+	mat.set_shader_parameter("color", color)
+	mat.set_shader_parameter("opacity", clampf(opacity, 0.0, 1.0))
+	mat.set_shader_parameter("energy", energy)
+	mat.set_shader_parameter("tt", time)
+	for k in params.keys():
+		mat.set_shader_parameter(k, params[k])
+
+
+## D-379: funil aditivo do boost. A base larga fica em `base` e a ponta fina em `base + axis*length`.
+## O shader desenha as linhas espirais girando; é a parte mais visível do "vórtice drill".
+func vortex_cone(base: Vector3, axis: Vector3, length: float, radius: float, opacity: float, energy: float, color: Color, params := {}) -> void:
+	if length <= 0.05 or opacity <= 0.01 or radius <= 0.01:
+		return
+	if neutral:
+		dot(base + axis.normalized() * length * 0.5, minf(length * 0.12, 0.5))
+		return
+	var mi := _node("vortex_cone", "mc_vortex_drill", "vortex_cone")
+	var ax := axis.normalized() if axis.length() > 0.001 else Vector3.UP
+	var basis := Basis(Quaternion(Vector3.UP, ax)) if absf(ax.dot(Vector3.UP)) < 0.999 else (Basis.IDENTITY if ax.y > 0.0 else Basis(Vector3.RIGHT, PI))
+	mi.transform = Transform3D(basis * Basis.from_scale(Vector3(radius, length, radius)), base + ax * length * 0.5)
+	var mat := mi.material_override as ShaderMaterial
+	mat.set_shader_parameter("color", color)
+	mat.set_shader_parameter("opacity", clampf(opacity, 0.0, 1.0))
+	mat.set_shader_parameter("energy", energy)
+	mat.set_shader_parameter("tt", time)
+	for k in params.keys():
+		mat.set_shader_parameter(k, params[k])
+
+
 ## V1.1 (D-322): the flame shader on a sphere/spindle (the charge ball, the head). `axis`/`length` stretch it into a spindle.
 func bulb(pos: Vector3, radius: float, axis: Vector3, length: float, params: Dictionary) -> void:
 	if radius <= 0.01:
@@ -354,13 +540,13 @@ func bulb(pos: Vector3, radius: float, axis: Vector3, length: float, params: Dic
 
 
 ## V1.1 (D-322): a game flipbook sprite (assets/vfx/flipbook_<sheet>.png), camera-facing, frame chosen by `progress` 0..1.
-func flipbook(pos: Vector3, size: float, progress: float, sheet: String, color: Color, energy: float, roll_deg: float) -> void:
+func flipbook(pos: Vector3, size: float, progress: float, sheet: String, color: Color, energy: float, roll_deg: float, tint := false) -> void:
 	if size <= 0.02 or progress >= 0.999:
 		return
 	if neutral:
 		dot(pos, size * 0.3)
 		return
-	var mi := _node("fb_" + sheet, "flipbook")
+	var mi := _node("fb_" + sheet + ("_tint" if tint else ""), "mc_sprite_tint" if tint else "flipbook")
 	mi.position = pos
 	mi.scale = Vector3(size, size, 1.0)
 	var mat := mi.material_override as ShaderMaterial
@@ -459,6 +645,26 @@ func puff(pos: Vector3, size: float, alpha: float, fade: float, seed_: float, ro
 	mat.set_shader_parameter("roll", roll)
 	for k in params.keys():
 		mat.set_shader_parameter(k, params[k])
+
+
+## V1.10 (D-377): luz pontual de curta duração para a lança e o impacto. A luz não decide nada: só ilumina a cena
+## enquanto o efeito a desenha. Pool próprio, apagada no fim do quadro.
+func light(pos: Vector3, color: Color, energy: float, range_m: float) -> void:
+	if energy <= 0.01 or range_m <= 0.1 or neutral:
+		return
+	if _lights_used >= _lights.size():
+		var l := OmniLight3D.new()
+		l.shadow_enabled = false
+		l.light_specular = 0.4
+		add_child(l)
+		_lights.append(l)
+	var li := _lights[_lights_used]
+	_lights_used += 1
+	li.visible = true
+	li.position = pos
+	li.light_color = color
+	li.light_energy = energy
+	li.omni_range = range_m
 
 
 ## V1.2: halo de luz estilizado.
@@ -619,6 +825,24 @@ func pillar(base: Vector3, sxz: float, progress: float, params: Dictionary) -> v
 		mat.set_shader_parameter(k, params[k])
 
 
+## D-377: anel de choque ciano/branco da Drain Spear, virado para a câmera (`normal` = direção do olhar). `radius` em
+## metros; `progress` 0..1 abre o anel; `fade` 0..1 apaga. Não é o ring de fogo.
+func shock_ring(center: Vector3, normal: Vector3, radius: float, progress: float, fade: float, intensity: float, seed_ := 0.0, thick := 0.06) -> void:
+	if radius <= 0.05 or fade >= 0.99 or intensity <= 0.02 or neutral:
+		return
+	var mi := _node("shock", "mc_shock_ring")
+	var n := normal.normalized() if normal.length() > 0.01 else Vector3.FORWARD
+	var up := Vector3.UP if absf(n.dot(Vector3.UP)) < 0.98 else Vector3.RIGHT
+	mi.transform = Transform3D(Basis.looking_at(n, up), center)
+	mi.scale = Vector3(radius / 0.78 * 2.0, radius / 0.78 * 2.0, 1.0)
+	var mat := mi.material_override as ShaderMaterial
+	mat.set_shader_parameter("tt", time)
+	mat.set_shader_parameter("fade", clampf(fade, 0.0, 1.0))
+	mat.set_shader_parameter("intensity", intensity)
+	mat.set_shader_parameter("seed", seed_)
+	mat.set_shader_parameter("thick", thick)
+
+
 func scorch(center: Vector3, radius: float, fade: float, intensity: float, seed_ := 0.0) -> void:
 	if radius <= 0.05 or fade >= 0.99 or neutral:
 		return
@@ -632,7 +856,7 @@ func scorch(center: Vector3, radius: float, fade: float, intensity: float, seed_
 	mat.set_shader_parameter("seed", seed_)
 
 
-func ring(center: Vector3, normal: Vector3, radius: float, fade: float, intensity: float, seed_ := 0.0, thick := 0.05) -> void:
+func ring(center: Vector3, normal: Vector3, radius: float, fade: float, intensity: float, seed_ := 0.0, thick := 0.05, params := {}) -> void:
 	if radius <= 0.02 or fade >= 0.99 or neutral:
 		return
 	var mi := _node("ring", "fire_ring")
@@ -645,6 +869,19 @@ func ring(center: Vector3, normal: Vector3, radius: float, fade: float, intensit
 	mat.set_shader_parameter("intensity", intensity)
 	mat.set_shader_parameter("seed", seed_)
 	mat.set_shader_parameter("thick", thick)
+	for k in params.keys():  # V1.12 (D-1026): optional look overrides (colours `orange` / `red`, `solid`, `dashes`); empty = the old look
+		mat.set_shader_parameter(k, params[k])
+
+
+## V1.13 (D-1026): a flat chrome plate (a straight-edged triangle) at `pos`, turned by `rot`, `size` metres, dissolving with `fade`.
+func plate(pos: Vector3, size: float, rot: Basis, fade: float, seed_: float) -> void:
+	if size <= 0.02 or fade >= 0.99 or neutral:
+		return
+	var mi := _node("plate", "mc_plate")
+	mi.transform = Transform3D(rot.scaled(Vector3(size, size, size)), pos)
+	var mat := mi.material_override as ShaderMaterial
+	mat.set_shader_parameter("fade", fade)
+	mat.set_shader_parameter("seed", seed_)
 
 
 ## Neutral marker (spec 8.3): a plain unshaded white dot, to see the motion without any look.

@@ -1,0 +1,669 @@
+{
+  "schema": "crawlmon.affinities.v1",
+  "exportedAt": "2026-11-11T15:34:47.585Z",
+  "activeAffinities": [
+    "neutral",
+    "weak",
+    "resist"
+  ],
+  "elements": [
+    "neutral",
+    "fire",
+    "water",
+    "electric",
+    "wind",
+    "earth",
+    "nature",
+    "psychic",
+    "sound",
+    "light",
+    "dark",
+    "mystic"
+  ],
+  "godotMapping": {
+    "elements": {
+      "neutral": 0,
+      "fire": 1,
+      "water": 2,
+      "electric": 3,
+      "wind": 8,
+      "earth": 7,
+      "nature": 5,
+      "psychic": 4,
+      "sound": 6,
+      "light": 9,
+      "dark": 10,
+      "mystic": 11
+    },
+    "affinities": {
+      "neutral": 0,
+      "weak": 1,
+      "resist": 2
+    }
+  },
+  "byElement": {
+    "neutral": {
+      "weak": [],
+      "resist": [
+        "gible",
+        "dqt_orc",
+        "dqt_cyclops"
+      ]
+    },
+    "fire": {
+      "weak": [
+        "dqt_slime",
+        "bulbasaur",
+        "dqt_dracky",
+        "dqt_healslime",
+        "dqt_fungi"
+      ],
+      "resist": [
+        "charmander",
+        "squirtle"
+      ]
+    },
+    "water": {
+      "weak": [
+        "gible"
+      ],
+      "resist": [
+        "dqt_slime",
+        "dqt_healslime"
+      ]
+    },
+    "electric": {
+      "weak": [
+        "abra",
+        "dqt_slime",
+        "dqt_orc",
+        "bulbasaur",
+        "squirtle",
+        "dqt_dracky",
+        "dqt_healslime"
+      ],
+      "resist": [
+        "pikachu"
+      ]
+    },
+    "wind": {
+      "weak": [],
+      "resist": [
+        "dqt_dracky",
+        "dqt_healslime"
+      ]
+    },
+    "earth": {
+      "weak": [
+        "charmander",
+        "pikachu",
+        "eevee",
+        "dqt_dracky",
+        "dqt_healslime"
+      ],
+      "resist": [
+        "dqt_orc",
+        "dqt_cyclops",
+        "bulbasaur",
+        "squirtle"
+      ]
+    },
+    "nature": {
+      "weak": [],
+      "resist": [
+        "pancham",
+        "gible",
+        "dqt_slime",
+        "bulbasaur",
+        "charmander",
+        "squirtle",
+        "dqt_healslime",
+        "dqt_fungi"
+      ]
+    },
+    "psychic": {
+      "weak": [
+        "pancham",
+        "dqt_orc",
+        "dqt_cyclops",
+        "eevee",
+        "dqt_platypunk"
+      ],
+      "resist": [
+        "abra"
+      ]
+    },
+    "sound": {
+      "weak": [
+        "abra",
+        "dqt_orc",
+        "dqt_sabrecub",
+        "dqt_platypunk"
+      ],
+      "resist": [
+        "dqt_dracky"
+      ]
+    },
+    "light": {
+      "weak": [
+        "dqt_cyclops",
+        "dqt_dracky",
+        "dqt_platypunk"
+      ],
+      "resist": []
+    },
+    "dark": {
+      "weak": [
+        "abra"
+      ],
+      "resist": [
+        "pancham",
+        "gible",
+        "dqt_orc",
+        "dqt_cyclops"
+      ]
+    },
+    "mystic": {
+      "weak": [
+        "abra"
+      ],
+      "resist": []
+    }
+  },
+  "characters": [
+    {
+      "id": "abra",
+      "name": "Abra",
+      "isNew": false,
+      "reviewed": true,
+      "active": true,
+      "elements": [],
+      "affinities": {
+        "neutral": "neutral",
+        "fire": "neutral",
+        "water": "neutral",
+        "electric": "weak",
+        "wind": "neutral",
+        "earth": "neutral",
+        "nature": "neutral",
+        "psychic": "resist",
+        "sound": "weak",
+        "light": "neutral",
+        "dark": "weak",
+        "mystic": "weak"
+      },
+      "weak": [
+        "electric",
+        "sound",
+        "dark",
+        "mystic"
+      ],
+      "resist": [
+        "psychic"
+      ],
+      "portrait": "abra.png"
+    },
+    {
+      "id": "pancham",
+      "name": "Pancham",
+      "isNew": false,
+      "reviewed": true,
+      "active": true,
+      "elements": [],
+      "affinities": {
+        "neutral": "neutral",
+        "fire": "neutral",
+        "water": "neutral",
+        "electric": "neutral",
+        "wind": "neutral",
+        "earth": "neutral",
+        "nature": "resist",
+        "psychic": "weak",
+        "sound": "neutral",
+        "light": "neutral",
+        "dark": "resist",
+        "mystic": "neutral"
+      },
+      "weak": [
+        "psychic"
+      ],
+      "resist": [
+        "nature",
+        "dark"
+      ],
+      "portrait": "pancham.png"
+    },
+    {
+      "id": "gible",
+      "name": "Gible",
+      "isNew": false,
+      "reviewed": true,
+      "active": true,
+      "elements": [],
+      "affinities": {
+        "neutral": "resist",
+        "fire": "neutral",
+        "water": "weak",
+        "electric": "neutral",
+        "wind": "neutral",
+        "earth": "neutral",
+        "nature": "resist",
+        "psychic": "neutral",
+        "sound": "neutral",
+        "light": "neutral",
+        "dark": "resist",
+        "mystic": "neutral"
+      },
+      "weak": [
+        "water"
+      ],
+      "resist": [
+        "neutral",
+        "nature",
+        "dark"
+      ],
+      "portrait": "gible.png"
+    },
+    {
+      "id": "dqt_slime",
+      "name": "Slime",
+      "isNew": false,
+      "reviewed": true,
+      "active": true,
+      "elements": [],
+      "affinities": {
+        "neutral": "neutral",
+        "fire": "weak",
+        "water": "resist",
+        "electric": "weak",
+        "wind": "neutral",
+        "earth": "neutral",
+        "nature": "resist",
+        "psychic": "neutral",
+        "sound": "neutral",
+        "light": "neutral",
+        "dark": "neutral",
+        "mystic": "neutral"
+      },
+      "weak": [
+        "fire",
+        "electric"
+      ],
+      "resist": [
+        "water",
+        "nature"
+      ],
+      "portrait": "slime.png"
+    },
+    {
+      "id": "dqt_orc",
+      "name": "Orc",
+      "isNew": false,
+      "reviewed": true,
+      "active": true,
+      "elements": [],
+      "affinities": {
+        "neutral": "resist",
+        "fire": "neutral",
+        "water": "neutral",
+        "electric": "weak",
+        "wind": "neutral",
+        "earth": "resist",
+        "nature": "neutral",
+        "psychic": "weak",
+        "sound": "weak",
+        "light": "neutral",
+        "dark": "resist",
+        "mystic": "neutral"
+      },
+      "weak": [
+        "electric",
+        "psychic",
+        "sound"
+      ],
+      "resist": [
+        "neutral",
+        "earth",
+        "dark"
+      ],
+      "portrait": "orc.png"
+    },
+    {
+      "id": "dqt_cyclops",
+      "name": "Cyclops",
+      "isNew": false,
+      "reviewed": true,
+      "active": true,
+      "elements": [],
+      "affinities": {
+        "neutral": "resist",
+        "fire": "neutral",
+        "water": "neutral",
+        "electric": "neutral",
+        "wind": "neutral",
+        "earth": "resist",
+        "nature": "neutral",
+        "psychic": "weak",
+        "sound": "neutral",
+        "light": "weak",
+        "dark": "resist",
+        "mystic": "neutral"
+      },
+      "weak": [
+        "psychic",
+        "light"
+      ],
+      "resist": [
+        "neutral",
+        "earth",
+        "dark"
+      ],
+      "portrait": "cyclops.png"
+    },
+    {
+      "id": "bulbasaur",
+      "name": "Bulbasaur",
+      "isNew": false,
+      "reviewed": true,
+      "active": true,
+      "elements": [],
+      "affinities": {
+        "neutral": "neutral",
+        "fire": "weak",
+        "water": "neutral",
+        "electric": "weak",
+        "wind": "neutral",
+        "earth": "resist",
+        "nature": "resist",
+        "psychic": "neutral",
+        "sound": "neutral",
+        "light": "neutral",
+        "dark": "neutral",
+        "mystic": "neutral"
+      },
+      "weak": [
+        "fire",
+        "electric"
+      ],
+      "resist": [
+        "earth",
+        "nature"
+      ],
+      "portrait": "bulbasaur.png"
+    },
+    {
+      "id": "charmander",
+      "name": "Charmander",
+      "isNew": false,
+      "reviewed": true,
+      "active": true,
+      "elements": [],
+      "affinities": {
+        "neutral": "neutral",
+        "fire": "resist",
+        "water": "neutral",
+        "electric": "neutral",
+        "wind": "neutral",
+        "earth": "weak",
+        "nature": "resist",
+        "psychic": "neutral",
+        "sound": "neutral",
+        "light": "neutral",
+        "dark": "neutral",
+        "mystic": "neutral"
+      },
+      "weak": [
+        "earth"
+      ],
+      "resist": [
+        "fire",
+        "nature"
+      ],
+      "portrait": "charmander.png"
+    },
+    {
+      "id": "squirtle",
+      "name": "Squirtle",
+      "isNew": false,
+      "reviewed": true,
+      "active": true,
+      "elements": [],
+      "affinities": {
+        "neutral": "neutral",
+        "fire": "resist",
+        "water": "neutral",
+        "electric": "weak",
+        "wind": "neutral",
+        "earth": "resist",
+        "nature": "resist",
+        "psychic": "neutral",
+        "sound": "neutral",
+        "light": "neutral",
+        "dark": "neutral",
+        "mystic": "neutral"
+      },
+      "weak": [
+        "electric"
+      ],
+      "resist": [
+        "fire",
+        "earth",
+        "nature"
+      ],
+      "portrait": "squirtle.png"
+    },
+    {
+      "id": "pikachu",
+      "name": "Pikachu",
+      "isNew": false,
+      "reviewed": true,
+      "active": true,
+      "elements": [],
+      "affinities": {
+        "neutral": "neutral",
+        "fire": "neutral",
+        "water": "neutral",
+        "electric": "resist",
+        "wind": "neutral",
+        "earth": "weak",
+        "nature": "neutral",
+        "psychic": "neutral",
+        "sound": "neutral",
+        "light": "neutral",
+        "dark": "neutral",
+        "mystic": "neutral"
+      },
+      "weak": [
+        "earth"
+      ],
+      "resist": [
+        "electric"
+      ],
+      "portrait": "pikachu.png"
+    },
+    {
+      "id": "eevee",
+      "name": "Eevee",
+      "isNew": false,
+      "reviewed": true,
+      "active": true,
+      "elements": [],
+      "affinities": {
+        "neutral": "neutral",
+        "fire": "neutral",
+        "water": "neutral",
+        "electric": "neutral",
+        "wind": "neutral",
+        "earth": "weak",
+        "nature": "neutral",
+        "psychic": "weak",
+        "sound": "neutral",
+        "light": "neutral",
+        "dark": "neutral",
+        "mystic": "neutral"
+      },
+      "weak": [
+        "earth",
+        "psychic"
+      ],
+      "resist": [],
+      "portrait": "eevee.png"
+    },
+    {
+      "id": "dqt_dracky",
+      "name": "Dracky",
+      "isNew": false,
+      "reviewed": true,
+      "active": true,
+      "elements": [],
+      "affinities": {
+        "neutral": "neutral",
+        "fire": "weak",
+        "water": "neutral",
+        "electric": "weak",
+        "wind": "resist",
+        "earth": "weak",
+        "nature": "neutral",
+        "psychic": "neutral",
+        "sound": "resist",
+        "light": "weak",
+        "dark": "neutral",
+        "mystic": "neutral"
+      },
+      "weak": [
+        "fire",
+        "electric",
+        "earth",
+        "light"
+      ],
+      "resist": [
+        "wind",
+        "sound"
+      ],
+      "dqt": "dracky",
+      "dqtIconZoom": "c"
+    },
+    {
+      "id": "dqt_healslime",
+      "name": "Heal Slime",
+      "isNew": false,
+      "reviewed": true,
+      "active": true,
+      "elements": [],
+      "affinities": {
+        "neutral": "neutral",
+        "fire": "weak",
+        "water": "resist",
+        "electric": "weak",
+        "wind": "resist",
+        "earth": "weak",
+        "nature": "resist",
+        "psychic": "neutral",
+        "sound": "neutral",
+        "light": "neutral",
+        "dark": "neutral",
+        "mystic": "neutral"
+      },
+      "weak": [
+        "fire",
+        "electric",
+        "earth"
+      ],
+      "resist": [
+        "water",
+        "wind",
+        "nature"
+      ],
+      "dqt": "healslime",
+      "dqtIconZoom": "c"
+    },
+    {
+      "id": "dqt_sabrecub",
+      "name": "Sabrecub",
+      "isNew": false,
+      "reviewed": true,
+      "active": true,
+      "elements": [],
+      "affinities": {
+        "neutral": "neutral",
+        "fire": "neutral",
+        "water": "neutral",
+        "electric": "neutral",
+        "wind": "neutral",
+        "earth": "neutral",
+        "nature": "neutral",
+        "psychic": "neutral",
+        "sound": "weak",
+        "light": "neutral",
+        "dark": "neutral",
+        "mystic": "neutral"
+      },
+      "weak": [
+        "sound"
+      ],
+      "resist": [],
+      "dqt": "sabrecub",
+      "dqtIconZoom": "c"
+    },
+    {
+      "id": "dqt_platypunk",
+      "name": "Platypunk",
+      "isNew": false,
+      "reviewed": true,
+      "active": true,
+      "elements": [],
+      "affinities": {
+        "neutral": "neutral",
+        "fire": "neutral",
+        "water": "neutral",
+        "electric": "neutral",
+        "wind": "neutral",
+        "earth": "neutral",
+        "nature": "neutral",
+        "psychic": "weak",
+        "sound": "weak",
+        "light": "weak",
+        "dark": "neutral",
+        "mystic": "neutral"
+      },
+      "weak": [
+        "psychic",
+        "sound",
+        "light"
+      ],
+      "resist": [],
+      "dqt": "platypunk",
+      "dqtIconZoom": "c"
+    },
+    {
+      "id": "dqt_fungi",
+      "name": "Funghoul",
+      "isNew": false,
+      "reviewed": true,
+      "active": true,
+      "elements": [],
+      "affinities": {
+        "neutral": "neutral",
+        "fire": "weak",
+        "water": "neutral",
+        "electric": "neutral",
+        "wind": "neutral",
+        "earth": "neutral",
+        "nature": "resist",
+        "psychic": "neutral",
+        "sound": "neutral",
+        "light": "neutral",
+        "dark": "neutral",
+        "mystic": "neutral"
+      },
+      "weak": [
+        "fire"
+      ],
+      "resist": [
+        "nature"
+      ],
+      "dqt": "funghoul",
+      "dqtIconZoom": "c"
+    }
+  ]
+}

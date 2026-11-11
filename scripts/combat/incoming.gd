@@ -31,7 +31,14 @@ var plan_i := -1
 var phase := Phase.WINDUP
 var phase_time := 0.0  ## Seconds spent in the current phase.
 var impacted := false
-var interrupted := false  ## Stopped on its way by a manual Evade: it never hits.
+## Mechanical stop: the action no longer advances its timeline. It is also set by ends that
+## are NOT an interruption on screen (battle end, a non-perfect Evade cancelling its own run,
+## a hit during the return). Do not use it alone for the HUD (D-1160).
+var interrupted := false
+## D-1160: the action was REALLY stopped in progress (hit before its impact, War Cry/status
+## cancel, clash). Only this flag destroys the AttackTag; dodged/auto_dodged are misses
+## (D-104/D-106) and the card leaves normally.
+var interruption_feedback := false
 var evader_home := false  ## Dodged by a non-perfect Evade during the evader's run: it went home (D-029).
 var perfect := false  ## Dodged by a perfect Evade, standing still or on its own run (D-164).
 var evader_teleported := false  ## The perfect Evade came during the evader's own run: it jumped to the opponent (D-027).

@@ -105,6 +105,179 @@ static func tube(pts: PackedVector3Array, radii: PackedFloat32Array, dissolve: P
 	return {"vertices": verts, "normals": norms, "uvs": uvs, "colors": cols, "indices": idxs, "rings": rings, "length": run}
 
 
+## V1.10 (D-377): malha de lança em revolução. `levels` = [Vector3(y, rx, rz)] com y em 0..1 e os raios em METROS
+## (a mesma escala do protótipo: 6,4 m de comprimento). O comprimento é aplicado depois no pincel, no eixo Y; os raios
+## ficam em metros para a lança poder esticar sem engordar. Fecha a base e a ponta quando o raio não é zero.
+static func spear(levels: Array, sides := 8) -> Dictionary:
+	var n := levels.size()
+	if n < 2 or sides < 3:
+		return {}
+	var verts := PackedVector3Array()
+	var norms := PackedVector3Array()
+	var uvs := PackedVector2Array()
+	var cols := PackedColorArray()
+	for r in n:
+		var lev: Vector3 = levels[r]
+		var y := lev.x
+		var rx := maxf(lev.y, MIN_RADIUS)
+		var rz := maxf(lev.z, MIN_RADIUS)
+		var prev: Vector3 = levels[maxi(r - 1, 0)]
+		var next: Vector3 = levels[mini(r + 1, n - 1)]
+		var dy := next.x - prev.x
+		var drx := next.y - prev.y
+		var drz := next.z - prev.z
+		for j in sides:
+			var a := TAU * float(j) / float(sides)
+			var ca := cos(a)
+			var sa := sin(a)
+			verts.append(Vector3(ca * rx, y, sa * rz))
+			# Tangente do anel x tangente do perfil = normal da superfície.
+			var ring := Vector3(-sa * rx, 0.0, ca * rz)
+			var profile := Vector3(drx * ca, dy, drz * sa)
+			var nrm := ring.cross(profile)
+			if nrm.length_squared() < 1e-10:
+				nrm = Vector3(ca, 0.0, sa)
+			nrm = nrm.normalized()
+			if nrm.dot(Vector3(ca, 0.0, sa)) < 0.0:
+				nrm = -nrm
+			norms.append(nrm)
+			uvs.append(Vector2(float(j) / float(sides), y))
+			cols.append(Color(y, 1.0, 0.0, rx))
+	var idxs := PackedInt32Array()
+	for r in n - 1:
+		for j in sides:
+			var a0 := r * sides + j
+			var a1 := r * sides + (j + 1) % sides
+			var b0 := (r + 1) * sides + j
+			var b1 := (r + 1) * sides + (j + 1) % sides
+			idxs.append_array(PackedInt32Array([a0, b0, a1, a1, b0, b1]))
+	# Tampa da base (o cabo não fica oco).
+	var base_i := verts.size()
+	verts.append(Vector3(0.0, float((levels[0] as Vector3).x), 0.0))
+	norms.append(Vector3.DOWN)
+	uvs.append(Vector2(0.5, 0.0))
+	cols.append(Color(0.0, 1.0, 0.0, 0.0))
+	for j in sides:
+		idxs.append_array(PackedInt32Array([base_i, (j + 1) % sides, j]))
+	# Tampa da ponta (só se o último nível tiver raio).
+	var last: Vector3 = levels[n - 1]
+	if last.y > MIN_RADIUS * 2.0 or last.z > MIN_RADIUS * 2.0:
+		var tip_i := verts.size()
+		verts.append(Vector3(0.0, last.x, 0.0))
+		norms.append(Vector3.UP)
+		uvs.append(Vector2(0.5, 1.0))
+		cols.append(Color(1.0, 1.0, 0.0, 0.0))
+		var first_i := (n - 1) * sides
+		for j in sides:
+			idxs.append_array(PackedInt32Array([tip_i, first_i + j, first_i + (j + 1) % sides]))
+	return {"vertices": verts, "normals": norms, "uvs": uvs, "colors": cols, "indices": idxs, "rings": n, "length": 1.0}
+
+
+## D-378: perfil do CABO (local y 0..1) e da LÂMINA (local y 0..1), separados para o cabo crescer e a lâmina
+## continuar fixa na ponta. Raios em METROS: o cabo é fino e a lâmina tem a largura de uma folha.
+const SHAFT_LEVELS := [
+	Vector3(0.000, 0.020, 0.020),
+	Vector3(0.014, 0.155, 0.155),
+	Vector3(0.032, 0.112, 0.112),
+	Vector3(0.048, 0.082, 0.082),
+	Vector3(0.085, 0.145, 0.145),
+	Vector3(0.105, 0.145, 0.145),
+	Vector3(0.940, 0.145, 0.145),
+	Vector3(0.975, 0.185, 0.185),
+	Vector3(1.000, 0.170, 0.170),
+]
+const BLADE_LEVELS := [
+	Vector3(0.000, 0.110, 0.110),
+	Vector3(0.035, 0.205, 0.170),
+	Vector3(0.090, 0.330, 0.160),
+	Vector3(0.175, 0.300, 0.135),
+	Vector3(0.330, 0.240, 0.115),
+	Vector3(0.560, 0.180, 0.090),
+	Vector3(0.780, 0.120, 0.062),
+	Vector3(0.920, 0.070, 0.040),
+	Vector3(1.000, 0.000, 0.000),
+]
+
+
+static func spear_shaft(sides := 8) -> Dictionary:
+	return spear(SHAFT_LEVELS, sides)
+
+
+## D-378: cabo com comprimento REAL. O punho e a ponteira ficam com medidas fixas em metros; só o miolo
+## entre eles cresce. Devolve y normalizado em 0..1 (o pincel aplica a escala Y = comprimento), então o
+## detalhe do punho não estica quando a lança vai de 2,7 m a ~16 m.
+static func spear_shaft_mesh(length: float, sides := 8) -> Dictionary:
+	var l := maxf(length, 0.2)
+	var fixed := [
+		Vector3(0.000, 0.020, 0.020),
+		Vector3(0.020, 0.155, 0.155),
+		Vector3(0.045, 0.112, 0.112),
+		Vector3(0.070, 0.082, 0.082),
+		Vector3(0.120, 0.145, 0.145),
+		Vector3(0.160, 0.145, 0.145),
+	]
+	var levels: Array[Vector3] = []
+	if l <= 0.6:
+		levels.append(Vector3(0.0, 0.145, 0.145))
+		levels.append(Vector3(l, 0.145, 0.145))
+	else:
+		for v in fixed:
+			levels.append(v)
+		levels.append(Vector3(l - 0.20, 0.145, 0.145))
+		levels.append(Vector3(l - 0.08, 0.185, 0.185))
+		levels.append(Vector3(l, 0.170, 0.170))
+	var norm: Array[Vector3] = []
+	for v in levels:
+		norm.append(Vector3(v.x / l, v.y, v.z))
+	return spear(norm, sides)
+
+
+static func spear_blade(sides := 8) -> Dictionary:
+	return spear(BLADE_LEVELS, sides)
+
+
+## D-378: faixa espiral (aura) em volta de +Y. `length` em metros no eixo Y; `radius`/`width` em metros.
+## A fita é construída em coordenadas locais (base em y=0, ponta em y=length) e o pincel aplica a rotação/base.
+## UV.x = ao longo da fita (0..1), UV.y = através da largura (0..1); a normal aponta para fora do eixo (iluminação).
+static func helix_band(length: float, radius: float, turns: float, phase: float, width: float, segments := 64, taper := true, radius_end := -1.0) -> Dictionary:
+	var n := maxi(segments, 6)
+	var l := maxf(length, 0.001)
+	var r := maxf(radius, 0.001)
+	var r1 := maxf(radius_end, 0.001) if radius_end >= 0.0 else r
+	var w := maxf(width, 0.001)
+	var verts := PackedVector3Array()
+	var norms := PackedVector3Array()
+	var uvs := PackedVector2Array()
+	var cols := PackedColorArray()
+	var idxs := PackedInt32Array()
+	var dr := r1 - r
+	for i in n + 1:
+		var u := float(i) / float(n)
+		var ang := phase + u * turns * TAU
+		var ca := cos(ang)
+		var sa := sin(ang)
+		var rr := lerpf(r, r1, u)
+		var c := Vector3(ca * rr, u * l, sa * rr)
+		var radial := Vector3(ca, 0.0, sa)
+		var tan := Vector3(-sa * rr * turns * TAU + ca * dr, l, ca * rr * turns * TAU + sa * dr)
+		tan = tan.normalized() if tan.length_squared() > 1e-10 else Vector3.UP
+		var side := tan.cross(radial)
+		side = side.normalized() if side.length_squared() > 1e-10 else Vector3.UP
+		var tw := w * (pow(sin(PI * u), 0.55) if taper else 1.0)
+		verts.append(c - side * tw * 0.5)
+		verts.append(c + side * tw * 0.5)
+		norms.append(radial)
+		norms.append(radial)
+		uvs.append(Vector2(u, 0.0))
+		uvs.append(Vector2(u, 1.0))
+		cols.append(Color(u, 1.0, 0.0, 1.0))
+		cols.append(Color(u, 1.0, 0.0, 1.0))
+	for i in n:
+		var a := i * 2
+		idxs.append_array(PackedInt32Array([a, a + 2, a + 1, a + 1, a + 2, a + 3]))
+	return {"vertices": verts, "normals": norms, "uvs": uvs, "colors": cols, "indices": idxs, "rings": n + 1, "length": l}
+
+
 ## Uploads the arrays into `mesh` (cleared first). Returns false when the arrays are empty.
 static func upload(mesh: ArrayMesh, data: Dictionary) -> bool:
 	mesh.clear_surfaces()

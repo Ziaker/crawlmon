@@ -7,6 +7,7 @@ signal damaged(combatant: Combatant, amount: int)
 signal died(combatant: Combatant)
 signal buff_changed(combatant: Combatant, stat: String, new_val: int)  ## Visual and physical buff updates (D-158)
 signal guard_ended(combatant: Combatant, reason: String)  ## D-272: "expired", "hit" or "broken".
+signal shield_ended(combatant: Combatant, reason: String)  ## "expired", "broken", "hit" or "battle_end".
 signal armor_changed(combatant: Combatant, state: String)  ## D-1026: "started", "extended", "hit", "expired" or "battle_end".
 signal experience_gained(amount: int, current_xp: int, xp_required: int)
 signal level_up_occurred(new_level: int, points_gained: int)
@@ -25,7 +26,8 @@ var species_id := ""  ## Overworld sprite id (e.g. "abra"); empty for enemies wi
 var max_hp: int
 var hp: int
 var base_attack: int
-var mag: int  ## Magic (MAG, D-122/D-131). PROVISIONAL: mirrors base_attack until the real attribute data exists.
+var uses_effective_strength := false  ## D-1143: normal characters derive attack from effective STR; test overrides keep an explicit attack.
+var mag: int  ## Magic (MAG, D-122/D-131). Set from the innate attributes by CharacterFactory; scales magical damage (D-1140).
 var base_speed: float  ## Blocks per second.
 ## Atributos permanentes canonicos (D-120, D-130, D-131, D-391).
 var str: int = 0
@@ -80,6 +82,7 @@ func get_elements() -> Array[Element.Type]:
 		return [Element.Type.FISICO]
 	return [Element.Type.FISICO]
 var weaknesses: Array[Element.Type] = []
+var affinities: Dictionary = {}  ## D-1157: element int -> Affinity.Type int. WEAK active; the rest is schema.
 var held_item_id := ""
 var inventory: Dictionary = {}  ## item id -> count (the leader shares GameState.inventory).
 var act_policy := Act.ATTACK
@@ -187,9 +190,12 @@ func absorb_shield(amount: int) -> int:
 	return absorbed
 
 
-func end_shield(_reason := "") -> void:
+func end_shield(reason := "") -> void:
+	var was_active := shield_timer > 0.0 or shield_hp > 0
 	shield_hp = 0
 	shield_timer = 0.0
+	if was_active:
+		shield_ended.emit(self, reason)
 
 
 func tick_shield(delta: float) -> void:
@@ -198,6 +204,7 @@ func tick_shield(delta: float) -> void:
 	shield_timer = maxf(shield_timer - delta, 0.0)
 	if shield_timer <= 0.0:
 		shield_hp = 0
+		shield_ended.emit(self, "expired")
 
 
 ## Receives a shield taken by Badge Steal: current reserve preserved, duration reset.
@@ -316,6 +323,8 @@ func sync_effective_stats() -> void:
 	wis = get_effective_stat("WIS")
 	agi = get_effective_stat("AGI")
 	luk = get_effective_stat("LUK")
+	if uses_effective_strength:
+		base_attack = str  # D-1143: STR allocated on level-up must reach the physical damage.
 	base_speed = CrawlmonAttributeMath.natural_atb_increment(1.0, float(agi))
 
 
@@ -560,13 +569,7 @@ func revive_full() -> void:
 
 ## `fixed` (D-238, Burn): o dano não passa por Defense nem por estágios de buff e não tem o mínimo de 1.
 func take_damage(amount: int, fixed := false) -> void:
-	var final_dmg: int
-	if fixed:
-		final_dmg = amount
-	elif def_buff >= 0:
-		final_dmg = maxi(1, roundi(float(amount) / (1.0 + float(def_buff) * 0.25)))
-	else:
-		final_dmg = maxi(1, roundi(float(amount) * (1.0 + float(abs(def_buff)) * 0.25)))
+	var final_dmg := DamageMath.final_damage(amount, def_buff, fixed)  # D-1153: single defense formula.
 
 	# D-347: the rolling odometer is archived; HP changes immediately.
 	hp = maxi(hp - final_dmg, 0)
@@ -682,11 +685,53 @@ func clear_pending() -> void:
 	clear_buffs()
 
 
+## D-1157/D-1158: an explicit `affinities` entry wins, including NEUTRAL and WEAK.
+## `weaknesses` is the legacy fallback for manual Combatants and old data.
+func affinity_for(element: Element.Type) -> int:
+	if affinities.has(element):
+		return int(affinities[element])
+	if element in weaknesses:
+		return Affinity.Type.WEAK
+	return Affinity.Type.NEUTRAL
+
+
+func is_weak_to(element: Element.Type) -> bool:
+	return affinity_for(element) == Affinity.Type.WEAK
+
+
 func weakness_text() -> String:
 	var names := PackedStringArray()
 	for w in weaknesses:
 		names.append(Element.name_of(w))
 	return ", ".join(names)
+
+
+## D-1165: afinidades nao neutras, na ordem dos elementos.
+## Cada entrada: {"element": Element.Type, "type": Affinity.Type}.
+func affinity_entries() -> Array:
+	var entries: Array = []
+	for element in Element.NAMES.keys():
+		var kind := affinity_for(element)
+		if kind != Affinity.Type.NEUTRAL:
+			entries.append({"element": element, "type": kind})
+	return entries
+
+
+## D-1165: texto compacto para paineis/menus. Ex.: "W: Fire, Sound  ·  R: Water".
+func affinity_text() -> String:
+	var weak := PackedStringArray()
+	var resist := PackedStringArray()
+	for entry in affinity_entries():
+		if int(entry["type"]) == Affinity.Type.WEAK:
+			weak.append(Element.name_of(entry["element"]))
+		else:
+			resist.append(Element.name_of(entry["element"]))
+	var parts := PackedStringArray()
+	if not weak.is_empty():
+		parts.append("W: " + ", ".join(weak))
+	if not resist.is_empty():
+		parts.append("R: " + ", ".join(resist))
+	return "  ·  ".join(parts)
 
 
 ## Snapshot e Rollback em memória para testes de ramificação por agentes de IA (D-1042 / D-1044).
@@ -704,6 +749,7 @@ func save_state() -> Dictionary:
 		"guard_timer": guard_timer, "armor_timer": armor_timer,
 		"burn_ticks_left": burn_ticks_left, "burn_clock": burn_clock,
 		"taunt_atk_bonus": taunt_atk_bonus,
+		"queued_skill": queued_skill, "queued_target": queued_target,  # D-1146 / D-1042
 	}
 
 
@@ -745,3 +791,5 @@ func restore_state(s: Dictionary) -> void:
 	burn_ticks_left = int(s.get("burn_ticks_left", burn_ticks_left))
 	burn_clock = float(s.get("burn_clock", burn_clock))
 	taunt_atk_bonus = bool(s.get("taunt_atk_bonus", taunt_atk_bonus))
+	queued_skill = s.get("queued_skill", null)  # D-1146: snapshot keeps the one-slot queue
+	queued_target = s.get("queued_target", null)

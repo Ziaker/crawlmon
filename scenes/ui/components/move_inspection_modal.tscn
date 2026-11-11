@@ -1,0 +1,551 @@
+[gd_scene format=3 uid="uid://dmvmodal001"]
+
+[ext_resource type="Script" path="res://scripts/ui/components/move_inspection_modal.gd" id="1_modal"]
+[ext_resource type="FontFile" uid="uid://dbjxunvbanise" path="res://assets/fonts/kanit/Kanit-BlackItalic.ttf" id="2_font"]
+[ext_resource type="Script" path="res://scripts/ui/components/slanted_panel.gd" id="3_spanel"]
+[ext_resource type="Script" path="res://scripts/ui/components/slanted_button.gd" id="4_sbtn"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill_cyan"]
+bg_color = Color(0, 0.847, 0.965, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill_white"]
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill_pink"]
+bg_color = Color(0.925, 0.282, 0.6, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close_btn"]
+bg_color = Color(0, 0, 0, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.3, 0.38, 1)
+
+[node name="MoveInspectionModal" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_modal")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.94)
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ModalCard" type="PanelContainer" parent="CenterContainer"]
+clip_contents = true
+custom_minimum_size = Vector2(940, 520)
+layout_mode = 2
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0.051, 0.094, 0.141, 0.98)
+border_color = Color(0, 0, 0, 1)
+border_width = 2.5
+shadow_offset = Vector2(10, 10)
+shadow_color = Color(0, 0, 0, 0.9)
+
+[node name="Margin" type="MarginContainer" parent="CenterContainer/ModalCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 36
+theme_override_constants/margin_bottom = 22
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/ModalCard/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="TopBar" type="HBoxContainer" parent="CenterContainer/ModalCard/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ElementIconBox" type="PanelContainer" parent="CenterContainer/ModalCard/Margin/VBox/TopBar"]
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill_pink")
+
+[node name="Icon" type="TextureRect" parent="CenterContainer/ModalCard/Margin/VBox/TopBar/ElementIconBox"]
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleBox" type="VBoxContainer" parent="CenterContainer/ModalCard/Margin/VBox/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="PillsRow" type="HBoxContainer" parent="CenterContainer/ModalCard/Margin/VBox/TopBar/TitleBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TypePillBox" type="PanelContainer" parent="CenterContainer/ModalCard/Margin/VBox/TopBar/TitleBox/PillsRow"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill_cyan")
+
+[node name="Margin" type="MarginContainer" parent="CenterContainer/ModalCard/Margin/VBox/TopBar/TitleBox/PillsRow/TypePillBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 1
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 1
+
+[node name="TypePill" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/TopBar/TitleBox/PillsRow/TypePillBox/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 9
+text = "MAGICAL"
+horizontal_alignment = 1
+
+[node name="RangePillBox" type="PanelContainer" parent="CenterContainer/ModalCard/Margin/VBox/TopBar/TitleBox/PillsRow"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill_white")
+
+[node name="Margin" type="MarginContainer" parent="CenterContainer/ModalCard/Margin/VBox/TopBar/TitleBox/PillsRow/RangePillBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 1
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 1
+
+[node name="RangePill" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/TopBar/TitleBox/PillsRow/RangePillBox/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 9
+text = "LONG RANGE"
+horizontal_alignment = 1
+
+[node name="ElementPillBox" type="PanelContainer" parent="CenterContainer/ModalCard/Margin/VBox/TopBar/TitleBox/PillsRow"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill_pink")
+
+[node name="Margin" type="MarginContainer" parent="CenterContainer/ModalCard/Margin/VBox/TopBar/TitleBox/PillsRow/ElementPillBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 1
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 1
+
+[node name="ElementPill" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/TopBar/TitleBox/PillsRow/ElementPillBox/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "PSYCHIC"
+horizontal_alignment = 1
+
+[node name="MoveTitle" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/TopBar/TitleBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 36
+text = "PSYBEAM"
+
+[node name="ChipsBox" type="HBoxContainer" parent="CenterContainer/ModalCard/Margin/VBox/TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="AtbChip" type="PanelContainer" parent="CenterContainer/ModalCard/Margin/VBox/TopBar/ChipsBox"]
+custom_minimum_size = Vector2(58, 24)
+layout_mode = 2
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0, 0.847, 0.965, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 1.0
+shadow_offset = Vector2(2, 2)
+shadow_color = Color(0, 0, 0, 0.8)
+
+[node name="Label" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/TopBar/ChipsBox/AtbChip"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 11
+text = "3 ATB"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MpChip" type="PanelContainer" parent="CenterContainer/ModalCard/Margin/VBox/TopBar/ChipsBox"]
+custom_minimum_size = Vector2(52, 24)
+layout_mode = 2
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0.659, 0.333, 0.969, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 1.0
+shadow_offset = Vector2(2, 2)
+shadow_color = Color(0, 0, 0, 0.8)
+
+[node name="Label" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/TopBar/ChipsBox/MpChip"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 11
+text = "5 MP"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DmgChip" type="PanelContainer" parent="CenterContainer/ModalCard/Margin/VBox/TopBar/ChipsBox"]
+custom_minimum_size = Vector2(62, 24)
+layout_mode = 2
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0.976, 0.451, 0.086, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 1.0
+shadow_offset = Vector2(2, 2)
+shadow_color = Color(0, 0, 0, 0.8)
+
+[node name="Label" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/TopBar/ChipsBox/DmgChip"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 11
+text = "49 DMG"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CloseBtn" type="Button" parent="CenterContainer/ModalCard/Margin/VBox/TopBar"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_close_btn")
+text = "✕"
+
+[node name="BlocksRow" type="HBoxContainer" parent="CenterContainer/ModalCard/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="Block1" type="PanelContainer" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow"]
+clip_contents = true
+layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0.082, 0.114, 0.157, 0.95)
+border_color = Color(0.2, 0.27, 0.35, 1)
+border_width = 1.5
+shadow_offset = Vector2(4, 4)
+shadow_color = Color(0, 0, 0, 0.8)
+
+[node name="Margin" type="MarginContainer" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1"]
+layout_mode = 2
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.984, 0.749, 0.141, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "MECHANICS & DAMAGE SCALES"
+
+[node name="Desc" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.9, 0.94, 1)
+theme_override_font_sizes/font_size = 11
+text = "Projects a concentrated psychic laser beam piercing barriers."
+autowrap_mode = 2
+
+[node name="Grid" type="GridContainer" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 4
+columns = 2
+
+[node name="TargetLabel" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.72, 0.82, 1)
+theme_override_font_sizes/font_size = 10
+text = "Targets:"
+
+[node name="TargetVal" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "Single Opponent"
+
+[node name="PierceLabel" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.72, 0.82, 1)
+theme_override_font_sizes/font_size = 10
+text = "Pierces Barrier:"
+
+[node name="PierceVal" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.85, 0.5, 1)
+theme_override_font_sizes/font_size = 10
+text = "YES (Ignores Shield)"
+
+[node name="WindupLabel" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.72, 0.82, 1)
+theme_override_font_sizes/font_size = 10
+text = "Wind-up Time:"
+
+[node name="WindupVal" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "2.10s (Heavy)"
+
+[node name="InterruptLabel" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.72, 0.82, 1)
+theme_override_font_sizes/font_size = 10
+text = "Interrupt Window:"
+
+[node name="InterruptVal" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.984, 0.749, 0.141, 1)
+theme_override_font_sizes/font_size = 10
+text = "Interruptible"
+
+[node name="FormulaBox" type="PanelContainer" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin/VBox"]
+layout_mode = 2
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0.04, 0.06, 0.09, 0.9)
+border_color = Color(0.18, 0.22, 0.3, 1)
+border_width = 1.0
+shadow_offset = Vector2(2, 2)
+shadow_color = Color(0, 0, 0, 0.6)
+
+[node name="Margin" type="MarginContainer" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin/VBox/FormulaBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin/VBox/FormulaBox/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Header" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin/VBox/FormulaBox/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.984, 0.749, 0.141, 1)
+theme_override_font_sizes/font_size = 9
+text = "EXACT DAMAGE FORMULA:"
+
+[node name="HBox" type="HBoxContainer" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin/VBox/FormulaBox/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="FormulaLabel" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin/VBox/FormulaBox/Margin/VBox/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0.847, 0.965, 1)
+theme_override_font_sizes/font_size = 12
+text = "40 [Base] + (1.2 × 8 [MAG]) ="
+
+[node name="DmgBadge" type="PanelContainer" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin/VBox/FormulaBox/Margin/VBox/HBox"]
+custom_minimum_size = Vector2(58, 20)
+layout_mode = 2
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0.976, 0.451, 0.086, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 1.0
+
+[node name="Label" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin/VBox/FormulaBox/Margin/VBox/HBox/DmgBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 10
+text = "49 DMG"
+horizontal_alignment = 1
+
+[node name="SynergyLabel" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block1/Margin/VBox/FormulaBox/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.65, 0.75, 1)
+theme_override_font_sizes/font_size = 9
+text = "Synergy: Includes Modest Nature modifier on effective MAG."
+autowrap_mode = 2
+
+[node name="Block2" type="PanelContainer" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow"]
+clip_contents = true
+layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0.082, 0.114, 0.157, 0.95)
+border_color = Color(0.2, 0.27, 0.35, 1)
+border_width = 1.5
+shadow_offset = Vector2(4, 4)
+shadow_color = Color(0, 0, 0, 0.8)
+
+[node name="Margin" type="MarginContainer" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block2"]
+layout_mode = 2
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block2/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block2/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0.847, 0.965, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "VISUAL EFFECTS"
+
+[node name="ManifestHeader" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block2/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.65, 0.75, 1)
+theme_override_font_sizes/font_size = 9
+text = "3D VISUAL MANIFESTATION:"
+
+[node name="ManifestLabel" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block2/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.9, 0.94, 1)
+theme_override_font_sizes/font_size = 10.5
+text = "Concentrated high-energy psychic laser beam with violet distortion rings and particle fracture burst on impact."
+autowrap_mode = 2
+
+[node name="MotionHeader" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block2/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.65, 0.75, 1)
+theme_override_font_sizes/font_size = 9
+text = "MOTION & DISPLACEMENT:"
+
+[node name="MotionLabel" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block2/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.9, 0.94, 1)
+theme_override_font_sizes/font_size = 10.5
+text = "User anchors securely in backline formation; fires linear high-velocity projectile piercing target."
+autowrap_mode = 2
+
+[node name="Grid" type="GridContainer" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block2/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 3
+columns = 2
+
+[node name="DeliveryLabel" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block2/Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.72, 0.82, 1)
+theme_override_font_sizes/font_size = 9.5
+text = "Delivery:"
+
+[node name="DeliveryVal" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block2/Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9.5
+text = "LONG RANGE"
+
+[node name="TrajectoryLabel" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block2/Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.72, 0.82, 1)
+theme_override_font_sizes/font_size = 9.5
+text = "Trajectory:"
+
+[node name="TrajectoryVal" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block2/Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9.5
+text = "Direct Line / Arc"
+
+[node name="ElementLabel" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block2/Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.72, 0.82, 1)
+theme_override_font_sizes/font_size = 9.5
+text = "Element:"
+
+[node name="ElementVal" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block2/Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9.5
+text = "Psychic"
+
+[node name="WatermarkLabel" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block2/Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.72, 0.82, 1)
+theme_override_font_sizes/font_size = 9.5
+text = "Watermark:"
+
+[node name="WatermarkVal" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/BlocksRow/Block2/Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9.5
+text = "Embossed Low-Relief"
+
+[node name="Footer" type="HBoxContainer" parent="CenterContainer/ModalCard/Margin/VBox"]
+layout_mode = 2
+
+[node name="Hint" type="Label" parent="CenterContainer/ModalCard/Margin/VBox/Footer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.68, 0.78, 1)
+theme_override_font_sizes/font_size = 11
+text = "Click backdrop or press ESC / ENTER to close"
+
+[node name="Spacer" type="Control" parent="CenterContainer/ModalCard/Margin/VBox/Footer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BottomCloseBtn" type="Button" parent="CenterContainer/ModalCard/Margin/VBox/Footer"]
+custom_minimum_size = Vector2(160, 32)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "CLOSE INSPECTION"
+script = ExtResource("4_sbtn")
+skew_deg = -9.0
+bg_color = Color(0.831, 1, 0.196, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 1.5
+shadow_offset = Vector2(3, 3)
+shadow_color = Color(0, 0, 0, 0.8)

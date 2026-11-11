@@ -19,7 +19,26 @@ var windup: float = -1.0  ## Individual windup in seconds (-1.0 uses default).
 var aoe_on_contact := false  ## Single target projectile that explodes AoE upon hitting main target (D-032).
 var mp_cost: int = 0  ## MP cost consumed when cast (D-413).
 var visual_push := -1  ## D-1073: -1 = by kind (projectile no; melee/CAST yes); 0 = never; 1 = always.
+var damage_type: int = MoveData.DamageType.PHYSICAL  ## D-1140: STR or MAG scaling, declared by the Move.
 var data: MoveData = null  ## D-1079: definição canônica no catálogo; null em Skills avulsos de teste.
+
+
+## D-1140: the Move deals magic damage and scales with MAG (D-122).
+func is_magical() -> bool:
+	return damage_type == MoveData.DamageType.MAGICAL
+
+
+## D-1145/D-395/D-396: UI type badge. The damage type decides Magical/Physical;
+## Guard and Dodge are special categories; pure status has no type icon.
+func type_icon_name() -> String:
+	var id := BattleSpace.move_id(display_name)
+	if id == "teleporte_rapido" or id == "evade":
+		return "dodge"
+	if id == "guard":
+		return "guard"
+	if kind == Kind.STATUS:
+		return ""
+	return "magical" if is_magical() else "physical"
 
 
 ## D-1073: whether the target is pushed visually on contact. A Move may override this at creation.
@@ -54,6 +73,7 @@ static func from_data(move: MoveData) -> Skill:
 	)
 	skill.data = move
 	skill.visual_push = move.visual_push
+	skill.damage_type = move.damage_type
 	return skill
 
 
@@ -204,7 +224,7 @@ static func smt_skills() -> Array[Skill]:
 		Skill.new("Sukunda", 0.0, 1, Element.Type.VENTO, Kind.STATUS, false, false, false, 0.5),
 		# 2 AoE Projectiles
 		Skill.new("Mabufula", 1.35, 2, Element.Type.AGUA_GELO, Kind.PROJECTILE, false, true, false, 1.5),
-		Skill.new("Megido", 1.6, 3, Element.Type.LUZ, Kind.PROJECTILE, false, true, false, 1.5),
+		Skill.new("Megido", 1.6, 3, Element.Type.MYSTIC, Kind.PROJECTILE, false, true, false, 1.5),
 		# 2 AoE Physical
 		Skill.new("Hassou Tobi", 1.4, 3, Element.Type.FISICO, Kind.MELEE, false, true, false, 1.5),
 		Skill.new("Titanomachia", 1.5, 3, Element.Type.TERRA, Kind.MELEE, false, true, false, 1.5),
@@ -262,7 +282,7 @@ func visual_motion_summary() -> String:
 
 ## Attribute scaling summary (MAG vs STR) and wind-up for combat sheet (D-436).
 func scaling_timing_summary() -> String:
-	var stat_name := "MAG" if (element != Element.Type.FISICO and kind != Kind.MELEE) else "STR"
+	var stat_name := "MAG" if is_magical() else "STR"
 	var w := windup if windup >= 0.0 else 1.0
 	return "Scales with %s (%d%%) · Wind-up: %.2fs" % [stat_name, int(round(power * 100.0)), w]
 
@@ -386,11 +406,11 @@ static func legacy_catalog_skills() -> Array[Skill]:
 		Skill.new("Dragon Rage", 1.6, 3, Element.Type.FISICO, Kind.PROJECTILE, false, false, false, 2.0, true),
 		Skill.new("Dig", 1.5, 2, Element.Type.TERRA, Kind.MELEE, true, false, false, 1.0),
 		Skill.new("Dragon Claw", 1.6, 3, Element.Type.FISICO, Kind.MELEE, false, false, false, 1.5),
-		Skill.new("Bubble Shot", 1.3, 2, Element.Type.AGUA_GELO, Kind.PROJECTILE, false, false, false, 1.0),
+		Skill.new("Bubble Shot", 1.0, 2, Element.Type.AGUA_GELO, Kind.PROJECTILE, false, false, false, 0.7),  # D-1170
 		Skill.new("Heal", 0.0, 2, Element.Type.LUZ, Kind.STATUS, false, true, true, 0.5),
 		Skill.new("Spear Thrust", 1.3, 2, Element.Type.FISICO, Kind.MELEE, false, false, false, 1.2),
-		Skill.new("Javelin Throw", 1.2, 2, Element.Type.FISICO, Kind.PROJECTILE, false, false, false, 1.0),
-		Skill.new("War Cry", 0.0, 1, Element.Type.FISICO, Kind.STATUS, false, false, false, 0.5),
+		Skill.new("Javelin Throw", 1.2, 2, Element.Type.FISICO, Kind.PROJECTILE, false, false, false, 0.75),
+		Skill.new("War Cry", 0.0, 3, Element.Type.FISICO, Kind.STATUS, false, true, false, 0.3),
 		Skill.new("Armored Bulk", 0.0, 1, Element.Type.TERRA, Kind.STATUS, false, false, true, 0.0),
 		Skill.new("Boulder Smash", 1.2, 2, Element.Type.FISICO, Kind.MELEE, false, false, false, 1.5),
 		Skill.new("Rock Throw", 1.3, 2, Element.Type.TERRA, Kind.PROJECTILE, true, false, false, 1.0),

@@ -6,7 +6,7 @@ extends RefCounted
 ## de uma receita sem mexer no movimento (movimento e aparência são independentes, spec 2.1). Nada aqui conhece
 ## personagem, time ou lado (D-235).
 
-const ELEMENTS := ["fire", "water", "earth", "air"]
+const ELEMENTS := ["fire", "water", "earth", "air", "electric"]  ## V1.11 (D-957): electric = spark look only; other kinds fall back to fire
 
 
 static func _c(r: float, g: float, b: float) -> Color:
@@ -69,6 +69,8 @@ static func _spark(e: String) -> Dictionary:
 			return {"hot": _c(0.95, 0.85, 0.6), "cool": _c(0.55, 0.38, 0.22), "energy": 1.2, "hard": 1.0}
 		"air":
 			return {"hot": _c(1.0, 1.0, 1.0), "cool": _c(0.6, 0.9, 0.95), "energy": 1.3, "hard": 0.0}
+		"electric":
+			return {"hot": _c(1.0, 0.97, 0.78), "cool": _c(0.98, 0.7, 0.12), "energy": 1.8, "hard": 1.0}
 	return {"hot": _c(1.0, 0.85, 0.45), "cool": _c(1.0, 0.28, 0.05), "energy": 2.0, "hard": 0.0}
 
 

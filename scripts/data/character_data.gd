@@ -18,6 +18,8 @@ extends Resource
 
 @export var raw_stats: Dictionary = {}
 @export var weaknesses: Array[int] = []
+## D-1157/D-1158: element int -> Affinity.Type int. Missing weaknesses derive as WEAK.
+@export var affinities: Dictionary = {}
 @export var nature_id: String = ""
 @export var loadout: CharacterLoadout = null
 @export var travel_extra: float = 0.0

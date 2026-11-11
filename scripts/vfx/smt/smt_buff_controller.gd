@@ -45,6 +45,8 @@ func on_hit_resolved(_attacker: Object, target: Object, _element: int, info: Dic
 		return  # Already at the limit: nothing changed, so nothing to show (D-167).
 	var move_name: String = str(info.get("skill_name", ""))
 	var mid := _normalize(move_name)
+	if info.get("def_down_proc", false):
+		mid = "rakunda"  # D-1005: Boulder Smash's DEF-1 shows the Rakunda visual on the impact
 	if mid.is_empty():
 		if info.get("buff") == "atk":
 			mid = "tarukaja"

@@ -223,7 +223,7 @@ func _damage_value(c: Combatant, skill: Skill, move_id: String, target: Combatan
 		value += minf(float(damage) / float(foe.hp), 1.0) * 100.0
 		if damage >= foe.hp:
 			value += KO_BONUS
-		if skill.element in foe.weaknesses:
+		if foe.is_weak_to(skill.element):
 			value += WEAK_BONUS
 	var contact_bonus: float = float(CONTACT_BONUS.get(move_id, 0.0))
 	if skill.data != null:
@@ -233,14 +233,11 @@ func _damage_value(c: Combatant, skill: Skill, move_id: String, target: Combatan
 
 ## The hit's damage, including the target's defense stage (same numbers as take_damage).
 func _damage_to(c: Combatant, skill: Skill, foe: Combatant) -> int:
-	var damage := float(Battle.estimate_damage(c, foe, skill))
+	var damage := int(Battle.estimate_damage(c, foe, skill))
 	var bypass_def := skill.data != null and skill.data.bypass_def
 	if not bypass_def:
 		bypass_def = BattleSpace.move_id(skill.display_name) == "drain_spear"  # fallback for Skills without MoveData
-	if bypass_def:
-		return roundi(damage)  # magical damage uses SPI, not the DEF stage
-	var stage := float(abs(foe.def_buff)) * 0.25
-	return roundi(damage / (1.0 + stage) if foe.def_buff >= 0 else damage * (1.0 + stage))
+	return DamageMath.final_damage(damage, foe.def_buff, bypass_def, false)  # D-1153: same defense as take_damage; AI keeps the old 0 floor.
 
 
 ## Will this hit land while the target is still winding up its own attack?

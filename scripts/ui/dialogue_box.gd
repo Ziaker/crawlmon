@@ -349,6 +349,7 @@ func show_dialogue(speaker_name: String, portrait_texture: Texture2D, dialogue_t
 	_text_label.text = dialogue_text
 	_text_label.visible_characters = 0
 	_char_accumulator = 0.0
+	_type_speed = GameState.text_speed_value()  # QoL: settings apply to the next line immediately.
 	_is_typing = true
 	_anim_timer = 0.0
 

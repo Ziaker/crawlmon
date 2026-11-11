@@ -1,0 +1,222 @@
+[gd_scene format=3 uid="uid://dmvcard001"]
+
+[ext_resource type="Script" path="res://scripts/ui/components/move_card.gd" id="1_mcard"]
+[ext_resource type="FontFile" uid="uid://dbjxunvbanise" path="res://assets/fonts/kanit/Kanit-BlackItalic.ttf" id="2_font"]
+[ext_resource type="Script" path="res://scripts/ui/components/slanted_panel.gd" id="3_spanel"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_badge"]
+bg_color = Color(0.937, 0.267, 0.267, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_range"]
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0, 0, 1)
+
+[node name="MoveCard" type="Control"]
+clip_contents = true
+custom_minimum_size = Vector2(196, 114)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 196.0
+offset_bottom = 114.0
+mouse_filter = 0
+script = ExtResource("1_mcard")
+
+[node name="BgPanel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0.69, 0.745, 0.773, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 1.5
+shadow_offset = Vector2(3, 3)
+shadow_color = Color(0, 0, 0, 0.85)
+
+[node name="WatermarkIcon" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -76.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 76.0
+grow_horizontal = 0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ContentMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 5
+
+[node name="VBox" type="VBoxContainer" parent="ContentMargin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="TopRow" type="HBoxContainer" parent="ContentMargin/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="BadgesRow" type="HBoxContainer" parent="ContentMargin/VBox/TopRow"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 3
+
+[node name="TypeBadge" type="PanelContainer" parent="ContentMargin/VBox/TopRow/BadgesRow"]
+custom_minimum_size = Vector2(17, 17)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
+
+[node name="Icon" type="TextureRect" parent="ContentMargin/VBox/TopRow/BadgesRow/TypeBadge"]
+layout_mode = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RangeBadge" type="PanelContainer" parent="ContentMargin/VBox/TopRow/BadgesRow"]
+custom_minimum_size = Vector2(17, 17)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_range")
+
+[node name="Icon" type="TextureRect" parent="ContentMargin/VBox/TopRow/BadgesRow/RangeBadge"]
+layout_mode = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Spacer" type="Control" parent="ContentMargin/VBox/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="ChipsRow" type="HBoxContainer" parent="ContentMargin/VBox/TopRow"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 3
+
+[node name="AtbChip" type="PanelContainer" parent="ContentMargin/VBox/TopRow/ChipsRow"]
+custom_minimum_size = Vector2(46, 17)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0, 0.847, 0.965, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 1.0
+shadow_offset = Vector2(1.5, 1.5)
+shadow_color = Color(0, 0, 0, 0.8)
+
+[node name="Label" type="Label" parent="ContentMargin/VBox/TopRow/ChipsRow/AtbChip"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 9
+text = "2 ATB"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MpChip" type="PanelContainer" parent="ContentMargin/VBox/TopRow/ChipsRow"]
+custom_minimum_size = Vector2(36, 16)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0.659, 0.333, 0.969, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 1.0
+shadow_offset = Vector2(1.5, 1.5)
+shadow_color = Color(0, 0, 0, 0.8)
+
+[node name="Label" type="Label" parent="ContentMargin/VBox/TopRow/ChipsRow/MpChip"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "0 MP"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DmgChip" type="PanelContainer" parent="ContentMargin/VBox/TopRow/ChipsRow"]
+custom_minimum_size = Vector2(42, 16)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("3_spanel")
+skew_deg = -9.0
+bg_color = Color(0.976, 0.451, 0.086, 1)
+border_color = Color(0, 0, 0, 1)
+border_width = 1.0
+shadow_offset = Vector2(1.5, 1.5)
+shadow_color = Color(0, 0, 0, 0.8)
+
+[node name="Label" type="Label" parent="ContentMargin/VBox/TopRow/ChipsRow/DmgChip"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 9
+text = "21 DMG"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TitleLabel" type="Label" parent="ContentMargin/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "TACKLE"
+
+[node name="DescLabel" type="Label" parent="ContentMargin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_font_sizes/font_size = 8.5
+text = "Charges headfirst into the opponent with full bodily force."
+autowrap_mode = 2
+clip_text = true
+
+[node name="EmptyLabel" type="Label" parent="."]
+visible = false
+clip_text = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.35, 0.45, 0.58, 1)
+theme_override_font_sizes/font_size = 11
+text = "-- Empty Slot 1 --"
+horizontal_alignment = 1
+vertical_alignment = 1

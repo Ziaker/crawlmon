@@ -17,7 +17,21 @@ raw_stats = {
 "VIT": 75,
 "WIS": 25
 }
-weaknesses = Array[int]([4])
+weaknesses = Array[int]([4, 9])
+affinities = {
+0: 2,
+1: 0,
+2: 0,
+3: 0,
+4: 1,
+5: 0,
+6: 0,
+7: 2,
+8: 0,
+9: 1,
+10: 2,
+11: 0
+}
 loadout = ExtResource("1_ka3d6")
 travel_extra = 0.8
 model_profile = ExtResource("2_txqg3")

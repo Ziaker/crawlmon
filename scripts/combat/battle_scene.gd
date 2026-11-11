@@ -44,6 +44,11 @@ var leader: Combatant
 const DECISION_SLOWMO_SCALE := 0.2
 const DECISION_SLOWMO_SECONDS := 3.0  ## Itens (D-047).
 const FIGHT_SLOWMO_SECONDS := 2.0  ## Fight (D-162).
+## D-1129: a real interruption briefly slows the whole game and shakes the camera.
+const INTERRUPTION_SLOWMO_SCALE := 0.35
+const INTERRUPTION_SLOWMO_SECONDS := 0.45  ## Real seconds at 0.35x.
+const INTERRUPTION_SLOWMO_RETURN := 0.12  ## Real seconds easing back to 1.0x.
+const INTERRUPTION_MULTI_COOLDOWN_MS := 6000  ## Only multi-target interruptions are throttled.
 
 var _slow_token := 0
 var _shown_queue: Skill = null  ## The queued move the menu title shows now (D-161).
@@ -52,6 +57,13 @@ var _decision_slowmo_available := true  ## Reset to true whenever the player per
 var _decision_slowmo_active := false
 var _decision_slowmo_time_left := 0.0
 var _decision_slowmo_token := 0
+## D-1129: interruptions that happen in the same frame are one event.
+var _interrupt_batch: Dictionary = {}  ## Combatant -> {source: Combatant, already_shakes: bool}
+var _interrupt_flush_queued := false
+var _interrupt_multi_ready_at := 0  ## Time.get_ticks_msec() when the next multi-target event may play.
+var _interrupt_slowmo_active := false
+var _interrupt_slowmo_token := 0
+var _interrupt_tween: Tween
 var _status_unit: Combatant
 var _saved_anim: Dictionary = {}  ## AnimationPlayer -> [name, position]
 
@@ -141,6 +153,10 @@ func _ready() -> void:
 	battle.evade_teleported.connect(fx.on_evade_teleported)
 	battle.evade_returned.connect(fx.on_evade_returned)
 	battle.attack_interrupted.connect(fx.on_attack_interrupted)
+	battle.attack_interrupted.connect(_on_interrupted_by_hit)  # D-1129
+	battle.windup_hit_interrupted.connect(_on_hit_interrupted_windup)  # D-1129
+	battle.windup_interrupted.connect(_on_interrupted_windup)  # D-1129
+	battle.action_interrupted.connect(fx.play_damage_reaction)  # D-1105
 	battle.attack_clashed.connect(fx.on_attack_clashed)
 	if BattleTrace.wanted():  # Flight recorder: every frame and event to user://battle_trace.jsonl
 		var trace := BattleTrace.new()
@@ -179,6 +195,9 @@ func _ready() -> void:
 		await tr.revealed  # The run-in plays while the panels open.
 	await fx.intro()
 	battle.start(party, enemies)
+	# D-1101: encounter advantage applied after the base START_ATB (4 vs 2 for the winner).
+	EncounterRules.apply_atb(party, enemies, GameState.encounter_advantage)
+	GameState.encounter_advantage = EncounterRules.Advantage.NORMAL
 	director.watch_safe_area(_safe_area_units, hud.free_rect)  # D-1010
 	director.watch_enemies(_enemy_frame_points)  # D-015 test: the living enemies the framing must keep in view.
 	_show_main()
@@ -229,6 +248,89 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		elif battle.try_evade(leader, battle.find_evadable(leader)):
 			get_viewport().set_input_as_handled()
+
+
+## Debug/test tool (E selector). In S.FIGHT, E pages the move list and must stay
+## there; in the paused Tactics/Status screens the selector would overlap a menu.
+func debug_party_selector_blocked() -> bool:
+	if not battle.running:
+		return true
+	if state == S.FIGHT:
+		return true
+	if get_tree().paused:
+		return true
+	if battle.is_status_paused():
+		return true
+	for c in battle.party + battle.enemies:
+		if battle.is_in_action(c):
+			return true
+	return false
+
+
+## The selector must list the real battle party (DQT/debug parties differ from
+## GameState.party). Index i is the same index passed to debug_swap_party.
+func debug_party_selector_entries() -> Array[Dictionary]:
+	var entries: Array[Dictionary] = []
+	for i in battle.party.size():
+		var c: Combatant = battle.party[i]
+		entries.append({
+			"name": str(c.name),
+			"species": str(c.species_id),
+			"leader": i == 0,
+		})
+	return entries
+
+
+## Debug/test tool (E selector): swaps party[0] with party[i] and makes the two
+## Combatants trade places. The battle is not restarted; rules, ATB and damage
+## are untouched. All position/step fields move together so each body keeps its
+## own numeric state under the other character.
+func debug_swap_party(i: int) -> Dictionary:
+	if not battle.running:
+		return {"ok": false, "message": "A batalha não está rodando."}
+	if i <= 0 or i >= battle.party.size():
+		return {"ok": false, "message": "Índice de aliado inválido."}
+	if state == S.STATUS or state == S.TACTICS:
+		return {"ok": false, "message": "Feche o menu de pausa antes de trocar."}
+	var a: Combatant = battle.party[0]
+	var b: Combatant = battle.party[i]
+	if a == null or b == null:
+		return {"ok": false, "message": "Combatente inválido."}
+	if not b.is_alive():
+		return {"ok": false, "message": "%s está fora de combate." % str(b.name)}
+	if battle.is_in_action(a) or battle.is_in_action(b):
+		return {"ok": false, "message": "Aguarde o golpe atual terminar."}
+
+	battle.party[0] = b
+	battle.party[i] = a
+	leader = battle.party[0]
+	if fx != null:
+		fx.leader = leader
+
+	for field in ["home", "pos", "rest", "has_rest", "yaw", "pos_step", "step_from", "step_t"]:
+		var tmp: Variant = a.get(field)
+		a.set(field, b.get(field))
+		b.set(field, tmp)
+	if fx != null:
+		# BattleFx rebuilds _home from stand_pos() each frame; update its yaw and
+		# immediate home/slot so the models do not take a one-frame detour.
+		fx._home[a] = a.stand_pos()
+		fx._home[b] = b.stand_pos()
+		fx._home_yaw[a] = a.yaw
+		fx._home_yaw[b] = b.yaw
+		fx._slot[a] = a.home
+		fx._slot[b] = b.home
+	if hud != null:
+		hud.debug_rebind_party(battle.party)
+	if state == S.FIGHT:
+		_leave_fight_camera()
+	_end_decision_slowmo()
+	_show_main()
+	_refresh()
+
+	var message := "%s agora controla; %s ficou no lugar." % [str(b.name), str(a.name)]
+	print("[DebugPartySwap] ", message)
+	return {"ok": true, "message": message}
 
 
 # --- Stage -----------------------------------------------------------------
@@ -541,6 +643,104 @@ func _end_slowmo() -> void:
 	Engine.time_scale = 1.0
 
 
+## D-1129: one hit interrupted an action. The hit itself already shakes the camera (D-157),
+## so this event must not add a second shake.
+func _on_interrupted_by_hit(inc) -> void:
+	var actor: Combatant = inc.attacker if inc != null else null
+	_note_interruption(actor, null, true)
+
+
+func _on_hit_interrupted_windup(actor: Combatant, _source: Combatant) -> void:
+	_note_interruption(actor, null, true)
+
+
+## D-1129: War Cry (or another no-damage wind-up cancel) interrupted `actor`.
+func _on_interrupted_windup(actor: Combatant, source: Combatant) -> void:
+	_note_interruption(actor, source, false)
+
+
+func _note_interruption(actor: Combatant, source: Combatant, already_shakes: bool) -> void:
+	if actor == null:
+		return
+	if not _interrupt_batch.has(actor):
+		_interrupt_batch[actor] = {"source": source, "already_shakes": already_shakes}
+	else:
+		var entry: Dictionary = _interrupt_batch[actor]
+		entry["already_shakes"] = bool(entry.get("already_shakes", false)) or already_shakes
+		if entry.get("source") == null:
+			entry["source"] = source
+	if not _interrupt_flush_queued:
+		_interrupt_flush_queued = true
+		call_deferred("_flush_interruptions")
+
+
+## Every interruption this frame is one event: 2+ victims = multi-target (one effect, 6 s
+## cooldown); a single victim always plays (even during the multi-target cooldown).
+func _flush_interruptions() -> void:
+	_interrupt_flush_queued = false
+	var batch := _interrupt_batch
+	_interrupt_batch = {}
+	if batch.is_empty():
+		return
+	var now := Time.get_ticks_msec()
+	var multi := batch.size() >= 2
+	if multi and now < _interrupt_multi_ready_at:
+		return
+	var started := _start_interruption_slowmo()
+	if multi and started:
+		_interrupt_multi_ready_at = now + INTERRUPTION_MULTI_COOLDOWN_MS
+	var already_shakes := false
+	var source: Combatant = null
+	var victim: Combatant = null
+	for c in batch:
+		var entry: Dictionary = batch[c]
+		if bool(entry.get("already_shakes", false)):
+			already_shakes = true
+		if source == null and entry.get("source") != null:
+			source = entry["source"]
+			victim = c
+	# Only the interruptions that had no shake of their own add one, and only once per event.
+	if not already_shakes and source != null and victim != null and director != null:
+		director.hit_shake(BattleSpace.flat_dir(source.pos, victim.pos), false, 1.0)
+
+
+func _start_interruption_slowmo() -> bool:
+	if _interrupt_slowmo_active or _decision_slowmo_active:
+		return false
+	if not is_equal_approx(Engine.time_scale, 1.0):
+		return false  # Do not fight the Evade or menu slow-motion (D-027/D-047).
+	_interrupt_slowmo_active = true
+	_interrupt_slowmo_token += 1
+	var token := _interrupt_slowmo_token
+	Engine.time_scale = INTERRUPTION_SLOWMO_SCALE
+	_run_interruption_slowmo(token)
+	return true
+
+
+func _run_interruption_slowmo(token: int) -> void:
+	await get_tree().create_timer(INTERRUPTION_SLOWMO_SECONDS, true, false, true).timeout
+	if token != _interrupt_slowmo_token or not _interrupt_slowmo_active:
+		return
+	if not is_equal_approx(Engine.time_scale, INTERRUPTION_SLOWMO_SCALE):
+		_interrupt_slowmo_active = false  # Another slow-motion took over.
+		return
+	_interrupt_tween = create_tween().set_ignore_time_scale(true)
+	_interrupt_tween.tween_property(Engine, "time_scale", 1.0, INTERRUPTION_SLOWMO_RETURN)
+	_interrupt_tween.tween_callback(func() -> void:
+		if token == _interrupt_slowmo_token:
+			_interrupt_slowmo_active = false)
+
+
+func _end_interruption_slowmo() -> void:
+	_interrupt_slowmo_token += 1
+	if _interrupt_tween != null and _interrupt_tween.is_valid():
+		_interrupt_tween.kill()
+	_interrupt_tween = null
+	if _interrupt_slowmo_active:
+		_interrupt_slowmo_active = false
+		Engine.time_scale = 1.0
+
+
 func _start_decision_slowmo(seconds := DECISION_SLOWMO_SECONDS) -> void:
 	if not _decision_slowmo_available or _decision_slowmo_active:
 		return
@@ -593,6 +793,7 @@ func _on_player_action_executed() -> void:
 
 func _exit_tree() -> void:
 	_end_decision_slowmo()
+	_end_interruption_slowmo()  # D-1129
 	Engine.time_scale = 1.0
 	if is_inside_tree():
 		get_tree().paused = false
@@ -600,6 +801,7 @@ func _exit_tree() -> void:
 
 func _on_battle_ended(player_won: bool) -> void:
 	_end_decision_slowmo()
+	_end_interruption_slowmo()  # D-1129
 	_end_slowmo()
 	fx.finish(player_won)
 	_menu.hide()
@@ -715,7 +917,8 @@ func _main_title() -> String:
 
 ## What the open move list depends on: it is redrawn when any of this changes.
 func _fight_signature() -> Array:
-	return [battle.can_start_now(leader), floori(leader.blocks()), leader.burst, leader.is_stunned()]
+	return [battle.can_start_now(leader), floori(leader.blocks()), leader.burst, leader.is_stunned(),
+		leader.is_guarding(), battle.is_status_paused()]
 
 
 func _show_main() -> void:
@@ -742,14 +945,25 @@ func _main_entries() -> Array:
 
 func _update_main_enabled() -> void:
 	var min_cost := Battle.min_skill_cost(leader)
-	var waits := not battle.can_start_now(leader)  # Busy or paused: the choice goes to the slot (D-161).
-	var can_fight := not leader.is_stunned() and (waits or leader.can_pay(min_cost))
+	var guarding := leader.is_guarding()  # D-1146: Guard cannot hold a queue slot either.
+	var waits := not battle.can_start_windup_now(leader, Skill.basic()) and not guarding  # D-1159: an attack may start during the pause
+	var can_fight := not leader.is_stunned() and not guarding and (waits or leader.can_pay(min_cost))
 	_menu.set_enabled(0, can_fight)
-	var fight_detail := "queue" if can_fight and waits else (("FREE" if leader.burst > 0 else "%d ATB" % int(min_cost)) if can_fight else ("stunned" if leader.is_stunned() else "need ATB"))
+	var fight_detail := "queue" if can_fight and waits else (("FREE" if leader.burst > 0 else "%d ATB" % int(min_cost)) if can_fight else ("GUARD" if guarding else ("stunned" if leader.is_stunned() else "need ATB")))
 	_menu.set_detail(0, fight_detail)
-	var can_item := leader.can_pay(Battle.ITEM_BLOCKS) and not _consumables().is_empty()
+	var can_item := not guarding and not battle.is_status_paused() \
+		and leader.can_pay(Battle.ITEM_BLOCKS) and not _consumables().is_empty()
 	_menu.set_enabled(1, can_item)
-	_menu.set_detail(1, "%d ATB" % int(Battle.ITEM_BLOCKS) if can_item else ("no items" if _consumables().is_empty() else "need ATB"))
+	var item_why := "%d ATB" % int(Battle.ITEM_BLOCKS)
+	if guarding:
+		item_why = "GUARD"
+	elif battle.is_status_paused():
+		item_why = "PAUSE"
+	elif _consumables().is_empty():
+		item_why = "no items"
+	elif not leader.can_pay(Battle.ITEM_BLOCKS):
+		item_why = "need ATB"
+	_menu.set_detail(1, item_why)
 	if _guard_mode:
 		var why_not := battle.guard_block_reason(leader)
 		_menu.set_enabled(2, why_not == "")
@@ -839,14 +1053,17 @@ func _fill_fight(keep_index: bool) -> void:
 	var offset := _fight_page * FIGHT_SLOTS
 	var entries: Array = []
 	var is_stunned := leader.is_stunned()
+	var guarding := leader.is_guarding()
 	for n in range(offset, mini(offset + FIGHT_SLOTS, _fight_skills.size())):
 		var sk := _fight_skills[n]
-		var waits := not battle.can_start_now(leader)  # Goes to the slot; paid when it starts (D-161).
+		var waits := not battle.can_start_windup_now(leader, sk) and not guarding  # D-1159: attacks start in the pause; status waits
 		var has_mp := leader.mp >= sk.mp_cost
-		var affordable := not is_stunned and has_mp and (waits or leader.can_pay(sk.cost))
+		var affordable := not is_stunned and not guarding and has_mp and (waits or leader.can_pay(sk.cost))
 		var price := "FREE" if leader.burst > 0 else "%d ATB" % sk.cost
 		if is_stunned:
 			price = "STUNNED (%.1fs)" % leader.stun_timer
+		elif guarding:
+			price = "GUARD"
 		elif not has_mp:
 			price = "NEED %d MP" % (sk.mp_cost - leader.mp)
 		elif waits:
@@ -865,9 +1082,14 @@ func _fill_fight(keep_index: bool) -> void:
 			if sk.kind == Skill.Kind.STATUS:
 				tail += " | status"
 			else:
-				var weak := sk.element in target.weaknesses
-				tail += " | ~%d%s" % [Battle.estimate_damage(leader, target, sk), " WEAK" if weak else ""]
-				if weak:
+				var affinity := target.affinity_for(sk.element)
+				var tag := ""
+				if affinity == Affinity.Type.WEAK:
+					tag = " WEAK"
+				elif affinity == Affinity.Type.RESIST:
+					tag = " RESIST"
+				tail += " | ~%d%s" % [Battle.estimate_damage(leader, target, sk), tag]
+				if affinity == Affinity.Type.WEAK:
 					accent = Color("ffd45a")
 		entries.append({
 			"text": "%d %s%s" % [n - offset + 1, "★ " if n == best else "", sk.display_name],
@@ -922,7 +1144,7 @@ func _use_move(skill: Skill, target: Combatant) -> bool:
 			target = leader
 	elif target == null or not target.is_alive():
 		return false
-	if leader.is_stunned() or (battle.can_start_now(leader) and not leader.can_pay(skill.cost)) or leader.mp < skill.mp_cost:
+	if leader.is_stunned() or leader.is_guarding() or (battle.can_start_windup_now(leader, skill) and not leader.can_pay(skill.cost)) or leader.mp < skill.mp_cost:
 		return false
 	_last_skill = skill.display_name
 	_last_target = target.name
@@ -944,11 +1166,17 @@ func _show_items() -> void:
 	_item_list = _consumables()
 	var entries: Array = []
 	var is_stunned := leader.is_stunned()
+	var guarding := leader.is_guarding()
+	var paused := battle.is_status_paused()
 	for item in _item_list:
 		var price := "x%d" % leader.item_count(item.id)
 		if is_stunned:
 			price += " · ATORDOADO"
-		entries.append({"text": item.display_name, "detail": price, "enabled": not is_stunned and leader.can_pay(Battle.ITEM_BLOCKS)})
+		elif guarding:
+			price += " · GUARD"
+		elif paused:
+			price += " · PAUSE"
+		entries.append({"text": item.display_name, "detail": price, "enabled": not is_stunned and not guarding and not paused and leader.can_pay(Battle.ITEM_BLOCKS)})
 	if entries.is_empty():
 		entries.append({"text": "(vazio)", "enabled": false})
 	_menu.set_entries(entries)
@@ -1116,8 +1344,12 @@ func _target_brief(t: Combatant) -> String:
 		bits.append("STUN")
 	if t.queued_skill != null:
 		bits.append("QUEUE")
-	var weak := t.weakness_text()
-	if weak != "":
+	var has_weak := false
+	for entry in t.affinity_entries():
+		if int(entry["type"]) == Affinity.Type.WEAK:
+			has_weak = true
+			break
+	if has_weak:
 		bits.append("WEAK")
 	return " · ".join(bits)
 
@@ -1148,6 +1380,9 @@ func _on_chosen(i: int) -> void:
 				_leave_fight_camera()
 				_show_main()
 		S.ITEMS:
+			if leader.is_guarding() or battle.is_status_paused():  # D-1146
+				_menu.note = "ITEMS BLOCKED NOW"
+				return
 			var item := _item_list[i]
 			_pick_target(battle.party,
 				func(t: Combatant) -> void:

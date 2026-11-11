@@ -85,7 +85,7 @@ static func update(inc: Incoming, delta := 0.0) -> void:
 static func _catch_up(inc: Incoming, delta: float) -> void:
 	if inc.motion != "melee" or inc.dodged or inc.auto_dodged or inc.interrupted or inc.ghost or inc.impacted:
 		return
-	var goal := inc.target.pos - inc.dir * BattleSpace.STAND_GAP
+	var goal := inc.target.pos - inc.dir * inc.stand_gap
 	var gap := inc.stand.distance_to(goal)
 	if not inc.catching and gap <= CATCHUP_MIN:
 		return
@@ -131,7 +131,7 @@ static func _track(inc: Incoming) -> void:
 	var tpos := inc.target.pos
 	if inc.phase == Phase.TRAVEL:
 		inc.dir = BattleSpace.flat_dir(inc.from, tpos)
-	inc.stand = tpos - inc.dir * BattleSpace.STAND_GAP
+	inc.stand = tpos - inc.dir * inc.stand_gap
 
 
 ## The attacker was hit on its way (or while it hopped back): it is knocked back by `push`

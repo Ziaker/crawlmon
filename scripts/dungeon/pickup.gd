@@ -7,6 +7,7 @@ extends Node2D
 ## ao inventário e registrar no GameState), então este nó só avisa.
 
 signal collected(pickup)
+signal blocked(pickup)  ## QoL: the player is on it, but the inventory is full.
 
 const ITEM_ID := "potion"
 const PICKUP_RADIUS := 24.0
@@ -16,6 +17,7 @@ var _player: Node2D
 var _icon: Texture2D
 var _time := 0.0
 var _taken := false
+var _blocked_near := false  ## Already warned while standing on it with a full bag.
 
 
 func setup(p_id: String, player: Node2D) -> void:
@@ -39,10 +41,15 @@ func _process(delta: float) -> void:
 		# R35-Q3: a full non-held inventory blocks the pickup; the item stays on
 		# the floor and can be collected after the player frees a slot.
 		if GameState.is_inventory_full():
+			if not _blocked_near:  # One toast per approach, not every frame.
+				_blocked_near = true
+				blocked.emit(self)
 			return
 		_taken = true
 		collected.emit(self)
 		queue_free()
+	else:
+		_blocked_near = false
 
 
 func _draw() -> void:

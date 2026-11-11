@@ -189,6 +189,7 @@ func _hide_old_badges() -> void:
 func _build_cards() -> void:
 	_layer = CanvasLayer.new()
 	_layer.layer = 19
+	_layer.add_to_group("overworld_hud")
 	add_child(_layer)
 	for data in CARD_DATA:
 		var card := ExplorationCard.new()

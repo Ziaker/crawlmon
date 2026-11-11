@@ -78,6 +78,30 @@ func _update_animation(input_vec: Vector2, delta: float) -> void:
 		_sprite.texture = load(path)
 
 
+## Debug/test tool: changes the species this body draws, rebuilding the 2D
+## sprite when the previous species had none. The 3D view is handled by
+## exploration.gd, which removes/recreates the DungeonModel3DView child.
+func debug_set_species(new_species: String) -> void:
+	species_id = new_species
+	_last_dir = "down"
+	_anim_timer = 0.0
+	_anim_frame = 1
+	var path := "res://personagens/overworld/down/%s.png" % species_id
+	if not ResourceLoader.exists(path):
+		if _sprite != null:
+			_sprite.visible = false
+		queue_redraw()
+		return
+	if _sprite == null:
+		_sprite = Sprite2D.new()
+		_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_sprite.scale = Vector2(1.2, 1.2)
+		add_child(_sprite)
+	_sprite.visible = true
+	_sprite.texture = load(path)
+	queue_redraw()
+
+
 func _draw() -> void:
 	if _sprite == null:
 		draw_circle(Vector2.ZERO, 14.0, Color(0.3, 0.8, 0.4))

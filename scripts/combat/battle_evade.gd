@@ -50,12 +50,19 @@ func find_evadable(actor: Combatant) -> Incoming:
 	if not actor.is_alive() or actor.blocks() < cost(actor) or not _can_act(actor):
 		return null
 	# Only during the action (the run or the flight), never during the call (D-028).
+	var fallback: Incoming = null
 	for inc in b.active_attacks():
 		if inc.target != actor or inc.dodged or inc.evade_tried or inc.interrupted or inc.is_friendly:
 			continue
-		if inc.in_strike_window():  # the prompt shows during the whole strike; the press only counts in the last 0.25 s (D-283)
+		if not inc.can_dodge_now():  # D-1006: from the wind-up to the contact
+			continue
+		# D-1168: if more than one attack is dodgeable, the one whose Dread is lit wins.
+		# Without this, a wind-up earlier in the list could eat the press and cause a false WHIFF.
+		if inc.can_evade_now():
 			return inc
-	return null
+		if fallback == null:
+			fallback = inc
+	return fallback
 
 
 ## D-164: a PERFECT Evade (last PERFECT_WINDOW seconds of the Evade window) makes the next attack
@@ -67,10 +74,18 @@ func try_evade(actor: Combatant, inc: Incoming) -> bool:
 	var price := cost(actor)
 	if actor.blocks() < price:
 		return false
+	if not inc.can_dodge_now():
+		return false  # D-1006: the button works from the wind-up to the contact
 	if not inc.can_evade_now():
-		return false  # During the call (the wind-up) there is no Evade at all (D-028).
+		# D-1014: mistimed. The Evade is spent and the attack still lands: it did NOT dodge.
+		# Return false: callers/tests must not treat this as a successful Evade (D-282/D-283).
+		actor.spend(price)
+		inc.evade_tried = true
+		b.log_message.emit("%s tenta desviar de %s fora de hora e erra o timing!" % [actor.name, inc.attacker.name])
+		b.evade_mistimed.emit(actor, inc)
+		return false
 	var run := own_run(actor)
-	var is_perfect := inc.travel_left() <= Battle.PERFECT_WINDOW and inc.attacker.is_alive()
+	var is_perfect := inc.attacker.is_alive()  # D-283/D-987: an Evade inside the window is always perfect
 	actor.spend(price)
 	inc.evade_tried = true
 	inc.dodged = true
@@ -107,7 +122,7 @@ func try_evade(actor: Combatant, inc: Incoming) -> bool:
 func _cancel_run_home(run: Incoming) -> void:
 	var a := run.attacker
 	b._landing.erase(run)
-	run.interrupted = true
+	run.interrupted = true  # D-1160: the Evade is a miss, not an interruption (D-104/D-106).
 	run.impacted = true
 	a.has_rest = false
 	a.pos = a.stand_pos()
@@ -137,7 +152,7 @@ func _teleport_into_run(run: Incoming, opponent: Combatant) -> void:
 func _interrupt(inc: Incoming) -> void:
 	b._landing.erase(inc)
 	inc.attacker.set_rest(inc.attacker.pos)  # It stops right where it is.
-	inc.interrupted = true
+	inc.interrupted = true  # D-1160: legacy mechanical stop, not interruption feedback.
 	inc.plan = [[Phase.STAGGER, 9999.0]]
 	inc.plan_i = 0
 	inc.phase = Phase.STAGGER
