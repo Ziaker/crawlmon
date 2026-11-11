@@ -18,6 +18,7 @@ plan_profile = &"melee"
 hit_stop_duration = 0.11
 bw_pulse = true
 vfx_key = &"brick_break"
+tags = Array[StringName]([&"guard_break"])
 effect_line_text = "180% ATK physical damage | BREAKS Guard | 3 ATB"
 short_effect_text = "180% | breaks Guard"
 description_text = "Breaks the target's Guard and refunds 1 ATB to the attacker."
