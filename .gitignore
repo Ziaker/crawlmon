@@ -15,3 +15,7 @@ scratch/
 test_captures/
 sugimori/
 sugimori_sem_modelo/
+
+# Python bytecode
+__pycache__/
+*.pyc
