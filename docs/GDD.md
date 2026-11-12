@@ -2,6 +2,7 @@
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
 > **Revisão:** 1.59 — regras do Guard e barreira reservada registradas em adendo rastreável (§12.34, 2026-11-05); histórico preservado.  
+> **Escopo (D-1181, 2026-11-11):** o jogo é **completamente 3D** (overworld 3D em terceira pessoa + combate 3D); o 2D é só o mini-mapa. Features do overworld 3D na **§7.30**. Trechos antigos sobre "mapa 2D" ficam como histórico (ver §7.30).  
 > **Repositório:** [Ziaker/crawlmon](https://github.com/Ziaker/crawlmon).  
 > **Referência histórica de inspeção de código na revisão 1.29:** branch `main`, commit `1171b5f3c427edc34c486c82d42569f41fd0ea62`.  
 > **Implementação:** este documento registra requisitos; não implica que as mecânicas estejam implementadas.
@@ -230,6 +231,8 @@ Este GDD descreve o **Crawlmon**, um dungeon crawler inspirado na exploração d
 **PENDENTE:** sprites 2D, geração procedural, seeds e passagens; **alcance e condições de detecção principalmente por proximidade** (R38-Q1), perseguição e colisões de inimigos com qualquer integrante ativo; estados de expedições, catálogo de espécies iniciais/dungeons/biomas, recrutamento, **limite numérico e gerenciamento de uma reserva de capacidade limitada** (R38-Q3), hub, evolução, XP e treinamento; **inventário de 10 itens não segurados por Pokémon ativo (até 30 com três), redistribuição/empilhamento e acesso aos itens que permanecem com o Pokémon ao ir para a reserva** (R38-Q4), itens segurados, recuperação do protagonista, **catálogo de arenas 3D visualmente correspondentes ao ambiente do encontro** (R38-Q2) e efeitos de arena não aprovados, transições, formação do grupo de aliados, missões secundárias, desbloqueios principalmente por chefes, fuga comum, **seleção e acesso a até oito Moves utilizáveis com quatro principais para hotkeys** (R38-Q5), sem PP ou custos novos, lojas e recompensas, chefes, cura e interface, dificuldade adaptativa nas revisitas. Manter missões secundárias opcionais para enfrentar o chefe, persistência de eventos dentro da mesma expedição e posse de recrutados após retirada voluntária. “Recursos” genéricos seguem indefinidos; a pergunta R33-Q5 foi rejeitada.
 
 ### Fluxo de experiência (somente encadeamento conceitual)
+
+> **D-1181:** onde o fluxo abaixo diz "dungeon 2D em movimentação cardinal contínua", leia-se **exploração 3D em terceira pessoa** (§7.30). O encadeamento (explorar → encontrar → combater com ATB → retornar/derrota → chefe) não muda.
 
 Explorar uma dungeon 2D em movimentação cardinal contínua → encontrar adversário → combater em 3D com ATB → retornar à exploração quando permitido ou encerrar em derrota definitiva → alcançar último andar e derrotar chefe para concluir a dungeon. Fuga e demais consequências pendentes.
 
@@ -830,7 +833,66 @@ Sem decisão adicional, não fixar:
 
 **Preservação:** D-001 a D-204, rejeição R33-Q5, inventário R35-Q3, custos ATB/Burst/MP aprovados e ausência de PP seguem válidos. Nenhum código ou outro arquivo é alterado por esta revisão documental.
 
+### 7.30. Overworld 3D — o jogo é completamente 3D (D-1181)
+
+**APROVADO (D-1181):** o antigo laboratório da Murky Forest (`scenes/debug/murky_forest_3d_lab.tscn`) **é o jogo principal**; o Crawlmon **não é mais um jogo 2D com combate 3D, é completamente 3D**. O 2D sobrevive **apenas como mini-mapa** (D-1027/D-1064). Esta seção reúne as features do overworld 3D decididas até 2026-11-11, cada uma com o ID de origem; valores marcados como *teste* vêm de protótipo e podem ser recalibrados pelo criador. **IMPLEMENTADO** aqui significa "implementado no lab segundo o arquivo da decisão", **não verificado por execução nesta revisão**.
+
+**Substituição no meio de exibição:** onde as §1, §7.14–§7.29 e as rodadas §10 falam de "mapa 2D", "aliados em 2D", "jogador desenhado em 2D" ou "fog 2D", o **meio** passa a ser o 3D (D-1022/D-1181); as **regras de jogo** dessas rodadas (encontros por contato, patrulha, perseguição, recrutamento, itens, derrota, expedição) continuam valendo e **não foram reescritas**. O texto antigo fica como histórico.
+
+#### 7.30.1. Câmera e controles
+
+- **Terceira pessoa estilo SMT III** atrás do personagem (D-1023); colisão da câmera contra paredes; **oclusão com fade** nas paredes entre a câmera e o personagem (D-1082).
+- **Teclas (D-1107, D-1130, D-1137, D-1179):** **setas** (e W/S) movem o personagem **relativos à câmera real** (a frente é a da câmera, não um yaw antigo); o personagem **vira para a direção do movimento**; **A/D giram só a câmera** (2,6 rad/s); Q/E e botão direito também orbitam; **sem auto-follow de yaw** (D-1123/D-1126 rejeitados por D-1128/D-1130).
+- **Velocidade:** 4,8 m/s (D-1137, teste). O mouse **não** é capturado (D-1023).
+- **Z ataca sempre** (D-1137, D-1127): com inimigo em até 4,5 m, ataca o mais próximo; sem inimigo, avança 2,0 m e não inicia batalha. **E** interage (falar com NPC, usar saída; prompt `[E] TALK`).
+- **Câmera na batalha:** nunca obstrui a visão, só amplia o POV (D-1060); FOV de combate 72° (D-1048).
+
+#### 7.30.2. Escala, visual e mundo
+
+- **Escala:** 1 unidade = 1 m; célula do kit 3 m; corredor de 6 m; parede 4,2 m; copa 5,5 m (D-1028, teste). Pokémon comuns ~1,2 m (D-1013); DQT proporcional ao perfil, **nenhum personagem acima de 2,5 m** (D-1033, D-1043); Slime a 0,35× no overworld (D-1071).
+- **Visual:** reconstrução 3D low-poly baseada nas tiles do *Pokémon Mystery Dungeon* + **filtro toon em tudo no overworld** (D-1028). O toon nativo **não aparece** no renderer `gl_compatibility` e o shader customizado foi revertido (D-1076); toon visível depende de decisão nova.
+- **Bioma inicial: Murky Forest** (D-1028). Paliçada de raízes em **6 texturas** (base + 5 variações), uma por parede, em ordem sorteada (D-1116), escurecidas, **40% textura + 60% cor da parede**, tile de 5 m, **crossfade de 2 m nos cantos** (D-1117, D-1118, D-1122).
+- **Iluminação:** legível, sem luz azul, menos clara e menos contrastada (D-1082, D-1083). **Folhagem e verticalidade:** vinhas, galhos e variação de copa (D-1082).
+- **Mapa atual do lab:** corredor + sala inicial; **cômodo leste** com Gible patrulhando (D-1133); **três salas ao sul** (Cyclops + amuleto; super poção; Orc) ligadas por portas de 2 m (D-1151). **Pendente:** geração procedural em 3D (D-326 continua valendo, não implementada em 3D).
+
+#### 7.30.3. Personagens, NPCs, aliados e inimigos
+
+- **Grupo em triângulo** com o jogador na ponta; aliados seguem com idle/walk (D-1023; **não** é a regra final de D-309/D-314). Sombra de contato e sombra direcional nos personagens (D-1023).
+- **NPCs:** 5 Pokémon Stage-1 (Bulbasaur, Charmander, Squirtle, Pikachu, Eevee) e 5 DQT básicos, parados em idle e **olhando para o jogador ao se aproximar** (D-1063). Falas dos NPCs em **português**; UI em inglês (D-1085, exceção a D-413).
+- **Inimigos visíveis:** nenhum inimigo some por distância (só o que está atrás do jogador a menos de 1,2 m da câmera) (D-1125). **Slime Medroso** foge do grupo (D-1086, protótipo; fórmula de D-315 pendente); inimigos em patrulha/perseguição (Gible, Cyclops, Orc).
+- **Aliados coletam itens** (D-1157): "!" acima da cabeça, correm e coletam, `FOLLOW → ALERT → RUN → COLLECT`, detecção 6 m, leash 8 m. **Reações de aliados por Nature** durante o diálogo, só sabor (D-1089).
+
+#### 7.30.4. Indicadores no mundo
+
+- **Anel no chão:** NPC branco; aliado azul; inimigo amarelo (alerta/procura), vermelho (perseguição), azul (fugindo/quer conversar), âmbar (patrulha) (D-1086, D-1091).
+- **Ícones de estado em malha 3D**, sem contorno preto, 1,0 m: `!` alerta, estouro (perseguição), suor (fuga), `?` (procura), `?` NPC com fala (amarelo se tiver missão), balão (já conversou), reticências enquanto fala (D-1086, D-1090, D-1098, D-1099).
+- **Placas de nome:** *Flat Card* — paralelogramo creme só com o nome, torto (22,6°), rotacionado −3,5°, 3,97×1,12 m (D-1096, D-1097). Aliados **sem placa branca** de nome (D-1111).
+
+#### 7.30.5. HUD e UI de exploração
+
+- **Mini-mapa** 112×112 px, render top-down do andar 3D, **bolinhas flat**: azul (jogador e aliados, aliados menores), branco (NPCs), vermelho (inimigos); sem título (D-1027, D-1037, D-1064, D-1072).
+- **Cards de HP/MP** no estilo dos cartões de batalha (330×104, skew 8, retratos Sugimori com zoom no rosto, ícones de elemento) que **aparecem após 5 s parado ou com Tab** (D-1072, D-1074, D-1075, D-1105, D-1110). A tela de **Status esconde todo o HUD do overworld** e o restaura depois (D-1165).
+- **Diálogo:** prompt `[Z]/[E] TALK`; card **Paper/RPG** com abertura animada; câmera **dois-shot em três-quartos pela esquerda** (50°, 3,9 m, FOV 45°), com movimento e câmera travados; **faixas laterais** das reações dos aliados, uma por `[Z]` (D-1085, D-1087, D-1088, D-1090, D-1092, D-1093, D-1095).
+
+#### 7.30.6. Itens no mapa
+
+- **Bolha de Relíquia** (vidro 0,7 m, ícone real, etiqueta de papel com nome/tipo, anel, facho e sparkles) (D-1158); **coleta automática a 1,25 m** para `GameState.inventory` (D-1151). **Notificação Paper Tag** com o ícone, nome, tipo e `+1` (D-1156); card azul acima do aliado quando é ele que coleta (D-1157).
+
+#### 7.30.7. Do overworld para a batalha
+
+- **Ataque no mapa:** wind-up 0,15 s, avanço de até 2,0 m / 0,18 s, animação `attack` a 1,0× com **endlag** até o fim do clipe; impacto de 0,5 s; o inimigo avança ao entrar em perseguição (telegraph 0,4 s, cooldown 4 s) (D-1100, D-1112, D-1114, D-1115, D-1120, D-1135, D-1141). Ataque que **erra não inicia batalha**.
+- **Três transições** (D-1100, D-1172): contato **branco** (`CONTATO!`), jogador primeiro **azul** (`OPORTUNIDADE!`), inimigo primeiro **vermelho** (`EMBOSCADA!`); empate = branco. Efeito de **shatter de 36 cacos** + cut-in em paralelogramo, começando depois dos 0,5 s do Tackle.
+- **Vantagem de encontro (D-1101):** quem ataca primeiro **e acerta** dá **+1 ATB** a todo o seu lado e **−1** ao outro (base 3 → 4 e 2); branco não altera.
+- **Dust** no avanço e na caminhada com a receita do combate (D-1173) e speedlines no avanço (D-1119, D-1127).
+- **Derrota/retorno:** no lab, derrota volta ao lab com a party revivida (D-1106); o caminho completo de derrota/expedição do GDD segue as rodadas anteriores.
+
+#### 7.30.8. Pendências do 3D como jogo principal
+
+**PENDENTE:** trocar `run/main_scene` (ainda é a cena 2D); destino do código 2D; geração procedural em 3D; biomas além da Murky Forest; câmera e escala finais; fórmula de ameaça Medroso e toque (D-310/D-315); HUD real lendo `GameState.party` (os cards usam valores demo); salvar/retorno entre andares; plataformas (desktop/mobile/web, D-1022). Ver as ambiguidades de D-1181.
+
 ## 8. Estado real do repositório (inspeção de código, não de execução)
+
+> **Nota (D-1181, 2026-11-11):** a tabela abaixo descreve a revisão histórica 1.29 (exploração 2D). O jogo principal passou a ser o overworld 3D (§7.30); `project.godot` ainda aponta para a cena 2D até a troca de cena principal.
 
 Referência: `main` em `1171b5f3c427edc34c486c82d42569f41fd0ea62`. Projeto **Godot 4.7**, configurado em `project.godot`, com cena inicial 2D.
 
