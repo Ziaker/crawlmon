@@ -850,24 +850,22 @@ func _trigger_victory_flow() -> void:
 				"transitions": []
 			})
 
-	# 4. Verifica se algum membro da equipe subiu de nivel (D-433)
-	var any_leveled_up := false
-	for s in party_summaries:
-		if s.get("levels_gained", 0) > 0:
-			any_leveled_up = true
-			break
+	# 4. Painel de vitoria simples em toda vitoria (D-400, D-1184)
+	get_tree().paused = true
+	var panel = VictoryPanelScript.new()
+	ui.add_child(panel)
+	panel.open(total_xp, party_summaries)
+	await panel.victory_confirmed
 
-	if any_leveled_up:
-		# Exibe o LevelUpHUD unificado (D-401, D-418, D-420, D-433)
-		get_tree().paused = true
-		var level_up_scene: PackedScene = load("res://scenes/ui/level_up_hud.tscn")
-		var hud = level_up_scene.instantiate() as LevelUpHUD
-		ui.add_child(hud)
-		hud.open(party_summaries, total_xp)
-		await hud.completed
-		get_tree().paused = false
+	# 5. Modal antigo de pontos se o lider tiver pontos para distribuir (D-401, D-1184)
+	if leader != null and leader.distributable_points > 0:
+		var modal = LevelUpModalScript.new()
+		ui.add_child(modal)
+		modal.open(leader)
+		await modal.modal_closed
+	get_tree().paused = false
 
-	# 5. Restaura escala de tempo e finaliza combate (se ninguem subiu de nivel, retorna direto para masmorra por D-433)
+	# 6. Restaura escala de tempo e finaliza combate
 	Engine.time_scale = 1.0
 	GameState.end_battle(true)
 
