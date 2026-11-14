@@ -17,8 +17,8 @@ func _init() -> void:
 
 func _run() -> void:
 	print("== OVERWORLD DUST MATCH (D-1173) ==")
-	_expect(is_equal_approx(WALK_DUST.CADENCE, 0.091667),
-		"walk rate is 40% lower than the combat 0.055 s")
+	_expect(is_equal_approx(WALK_DUST.CADENCE, 0.218253),
+		"walk rate is another 40% lower (0.218 s, D-1188)")
 	await _walk_dust()
 	await _dash_dust()
 	print("OVERWORLD_DUST_MATCH_" + ("PASS" if _failures == 0 else "FAIL")
@@ -40,10 +40,13 @@ func _walk_dust() -> void:
 		return
 	_expect(dust.has_method("set_alpha_multiplier"), "FootDust is the combat-recipe ticker")
 	_expect(dust.has_method("get_alpha_multiplier"), "FootDust exposes its peak alpha")
-	player.global_position = Vector3(8.0, 0.25, -6.0)
+	player.global_position = Vector3(6.0, 0.25, 0.0)
+	var gible: Node3D = lab.get("_second_enemy")
+	if gible != null:
+		gible.global_position = Vector3(32.0, 0.0, 32.0)
 	lab.set("_cam_yaw", PI * 0.5)
 	_send_key(KEY_W, true)
-	for i in 24:
+	for i in 72:  # D-1188: slower walk cadence (0.218 s) needs more frames to show the same bursts
 		await physics_frame
 	_expect(dust.emitting, "walking turns the FootDust on")
 	_expect(dust.get_child_count() >= 7, "walking spawns smoke + gravel bursts")
@@ -71,9 +74,14 @@ func _walk_dust() -> void:
 			"walk smoke is 50% of the combat size (0.275-0.575)")
 		var curve := smoke.scale_amount_curve
 		_expect(curve != null, "walk smoke uses the combat burst scale curve")
+		_expect(smoke.initial_velocity_max <= 1.5 and smoke.emission_sphere_radius < 0.2
+			and smoke.spread <= 75.0,
+			"normal walking smoke spreads less (speed/radius/cone)")
 	if gravel != null:
 		_expect(gravel.lifetime > 0.21 and gravel.lifetime < 0.23, "walk gravel life matches combat (0.22)")
 		_expect(gravel.scale_amount_max < 0.15, "walk gravel size matches combat (0.06-0.14)")
+		_expect(gravel.initial_velocity_max < 2.0 and gravel.spread < 20.0,
+			"normal walking gravel spreads less")
 	_expect(sides.has("+") and sides.has("-"), "walk dust alternates the feet (+/- offset)")
 	dust.set_alpha_multiplier(0.22)
 	_expect(is_equal_approx(dust.get_alpha_multiplier(), 0.22),
@@ -133,11 +141,16 @@ func _dash_dust() -> void:
 	dust.tick(0.02)
 	await process_frame
 	var walking_puffs := 0
+	var continuation: CPUParticles3D = null
 	for child in dust.get_children():
 		var p := child as CPUParticles3D
 		if p != null and p.amount == 4 and p.scale_amount_min < 0.3:
 			walking_puffs += 1
+			continuation = p
 	_expect(walking_puffs >= 1, "first half of the dash keeps the walking puff at 50% size")
+	if continuation != null:
+		_expect(continuation.initial_velocity_max > 2.0 and continuation.spread > 100.0,
+			"dash continuation keeps the original spread (only normal walking is tighter)")
 	dust.tick(0.06)
 	await process_frame
 	var walking_after := 0

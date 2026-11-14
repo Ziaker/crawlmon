@@ -16,10 +16,14 @@ const COLORS := {
 	Element.Type.VENTO: Color(0.7, 1.0, 0.8),
 	Element.Type.LUZ: Color(1.0, 1.0, 0.7),
 	Element.Type.TREVAS: Color(0.4, 0.15, 0.55),
+	Element.Type.MYSTIC: Color("65b5b3"),  # D-1187: status Moves Mystic (Kaja/Kunda/Heal) also reach play_hit; same tone as status_screen
 }
 const FxLaneScript = preload("res://scripts/vfx/combat/fx_lane.gd")
 const FxDrainSpearScript = preload("res://scripts/vfx/combat/fx_drain_spear.gd")
 const FxJavelinThrowScript = preload("res://scripts/vfx/combat/fx_javelin_throw.gd")
+const FxDigScript = preload("res://scripts/vfx/combat/fx_dig.gd")
+const FxMabufulaScript = preload("res://scripts/vfx/combat/fx_mabufula.gd")
+const FxKnockScript = preload("res://scripts/vfx/combat/fx_knock.gd")
 const FxBubbleShotScript = preload("res://scripts/vfx/combat/fx_bubble_shot.gd")
 const FxBubbleShieldScript = preload("res://scripts/vfx/combat/fx_bubble_shield.gd")
 const WarCryVfxScript = preload("res://scripts/vfx/combat/war_cry_vfx.gd")
@@ -75,7 +79,10 @@ var fx_impacts: FxImpacts
 var fx_guard: FxGuard
 var fx_armor: FxArmor  ## D-1026
 var fx_drain_spear: RefCounted
-var fx_javelin: RefCounted  ## D-1162: Javelin Throw's authored 3D effect, drawn from the attack's own phases
+var fx_javelin: RefCounted  ## D-1162: Javelin Throw's authored 3D effect, drawn from the attack's own phases
+var fx_knock: RefCounted  ## D-1205: generic impact reaction (knock-up, soft push, FOV) driven by the Move's data
+var fx_dig: RefCounted  ## D-1196: Dig (option A of the unified dust HTML): body choreography + dust from the attack's phases
+var fx_mabufula: RefCounted
 var fx_bubble_shot: RefCounted  ## D-1170: Bubble Shot's authored 3D effect, drawn from the attack's own phases
 var fx_bubble: RefCounted  ## D-323/D-324: Bubble Shield wind-up, domes and hits
 var fx_projectiles: FxProjectiles
@@ -95,6 +102,9 @@ func _init() -> void:
 	fx_armor = FxArmor.new(self)
 	fx_drain_spear = FxDrainSpearScript.new(self)
 	fx_javelin = FxJavelinThrowScript.new(self)
+	fx_dig = FxDigScript.new(self)
+	fx_mabufula = FxMabufulaScript.new(self)
+	fx_knock = FxKnockScript.new(self)
 	fx_bubble_shot = FxBubbleShotScript.new(self)
 	fx_bubble = FxBubbleShieldScript.new(self)
 	fx_projectiles = FxProjectiles.new(self)
@@ -335,6 +345,8 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 		return
 	var color: Color = COLORS[element]
 	var move_id := normalize_move_id(String(info.get("skill_name", "")))
+	if move_id == "mabufula":
+		fx_mabufula.on_hit(attacker, target, info)
 	if _move_has_tag_or(move_id, &"badge_steal", ["drain_spear"]):
 		color = Color("62d8e7")  # the Move's cyan magical energy, not the white physical tint
 	var a_pos: Vector3 = (_models[attacker] as Node3D).position if _models.has(attacker) else rest_pos(attacker)
@@ -389,7 +401,7 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 		if _move_has_tag_or(move_id, &"impact_on_miss", ["onda_choque"]):
 			# D-170: Shock Wave keeps its impact even when it misses (visual only).
 			_impact(element, to, color, false, _flat_dir(a_pos, t_pos), move_id)
-		_dodge_later(target, "ESQUIVOU! +1 ATB", 0.0, 0.11)
+		_dodge_later(target, "ESQUIVOU! +1 ATB", 0.0, 0.11, _flat_dir(a_pos, t_pos))
 		return
 	var weak: bool = info["weak"]
 	var crit: bool = info["crit"]
@@ -408,11 +420,15 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 	elif cam != null:
 		# D-157: Hit shake on normal attacks with lower intensity than K.O.
 		var shake_mult := clampf(power, 0.85, 1.35) * (1.15 if (weak or crit) else 1.0)
-		cam.hit_shake(strike_dir, heavy, shake_mult)
-		if heavy and (attacker == leader or target == leader):
-			cam.speed_lines()
+		var hit_data := MoveCatalog.get_move(StringName(move_id))
+		if hit_data == null or not hit_data.camera_still_on_hit:  # D-1205: a Move may keep the camera still on its hit
+			cam.hit_shake(strike_dir, heavy, shake_mult)
+			if heavy and (attacker == leader or target == leader):
+				cam.speed_lines()
 
 	last_hit_info = info  # D-236: a move-authored impact may read whether the hit interrupted an action
+	if fx_knock != null:
+		fx_knock.on_hit(attacker, target, MoveCatalog.get_move(StringName(move_id)), info)  # D-1205: the Move's data drives knock-up, soft push and FOV
 	# move_drain_spear: its Motion effect already draws the cyan spray/reverse steal at this contact.
 	# D-1162: Javelin Throw owns its 3D cross/flash/rings; the generic elemental burst is skipped.
 	var impact_fx: Array[Node3D] = []
@@ -560,6 +576,9 @@ func _process(delta: float) -> void:
 	fx_evade_flash.update(delta)  # D-986: Dread-like tell in the Evade window
 	fx_stun.update(delta)  # D-979: dizzy body + spinning stars while stunned (after the idle pose is set)
 	fx_bubble.process(delta)  # D-323/D-324: domes, paper wind-up and shield hits
+	fx_knock.process(delta)  # D-1205: after fx_dig, so a Move's soft push is added on top of its choreography
+	fx_dig.process(delta)  # D-1196: last word on the pose of Dig's body and of its target (after the idle pose and fx_motion)
+	fx_mabufula.process(delta)
 
 
 func _is_idle(c: Combatant) -> bool:
@@ -570,6 +589,11 @@ func _is_idle(c: Combatant) -> bool:
 		return false
 	var tw: Tween = _tweens.get(c)
 	return tw == null or not tw.is_valid()
+
+
+## D-1205: where the camera should consider `c` to be while a Move's choreography/knock reaction draws it displaced.
+func camera_anchor(c: Combatant, current: Vector3) -> Vector3:
+	return fx_knock.anchor(c, fx_dig.anchor(c, current))
 
 
 func _cam_pos() -> Vector3:
@@ -702,6 +726,8 @@ func telegraph(inc) -> void:
 	fx_drain_spear.start(inc)
 	fx_bubble_shot.start(inc)  # D-1170: the bubble inflates with the wind-up
 	fx_javelin.start(inc)  # D-1162: the javelin's pieces are born with the wind-up
+	fx_dig.start(inc)  # D-1196: Dig's hop is its wind-up
+	fx_mabufula.start(inc)
 	_freeze_new_windup_if_paused(inc.attacker)  # D-1159: a wind-up started during the pause stays stopped.
 
 
@@ -713,6 +739,8 @@ func on_attack_cancelled(inc) -> void:
 	fx_telegraph.on_attack_cancelled(inc)
 	fx_drain_spear.cancel(inc)
 	fx_javelin.cancel(inc)
+	fx_dig.cancel(inc)
+	fx_mabufula.cancel(inc)
 	fx_bubble_shot.cancel(inc)
 
 
@@ -787,6 +815,7 @@ func finish(player_won: bool) -> void:
 				fx_motion._unfreeze(ap)
 	_status_freeze_batches.clear()
 	fx_motion.finish(player_won)
+	fx_mabufula.clear_all()
 	if fx_drain_spear != null:
 		fx_drain_spear.clear_all()
 	if fx_javelin != null:
@@ -825,8 +854,8 @@ func knock(target: Combatant, from_pos: Vector3, mult := 1.0, push_len := -1.0) 
 	fx_motion.knock(target, from_pos, mult, push_len)
 
 
-func float_text(pos: Vector3, text: String, color: Color, size := 48) -> void:
-	fx_text.float_text(pos, text, color, size)
+func float_text(pos: Vector3, text: String, color: Color, size := 48) -> Label3D:
+	return fx_text.float_text(pos, text, color, size)
 
 
 func _shock(ground: Vector3, color: Color, size: float, duration := 0.55) -> void:
@@ -890,8 +919,8 @@ func _has_projectile(element: Element.Type) -> bool:
 	return fx_projectiles._has_projectile(element)
 
 
-func _dodge_later(target: Combatant, text: String, delay: float, hold_time: float) -> void:
-	await fx_dodge._dodge_later(target, text, delay, hold_time)
+func _dodge_later(target: Combatant, text: String, delay: float, hold_time: float, axis := Vector3.ZERO) -> void:
+	await fx_dodge._dodge_later(target, text, delay, hold_time, axis)
 
 
 func settle(target: Combatant) -> void:
@@ -904,6 +933,7 @@ func miss_text(pos: Vector3) -> void:
 
 ## The modules point back at this node; cut the cycle so everything can be freed.
 func _exit_tree() -> void:
+	fx_mabufula.fx = null
 	for mod in [fx_telegraph, fx_motion, fx_attack_plan, fx_dodge, fx_impacts, fx_armor, fx_drain_spear, fx_javelin, fx_bubble_shot, fx_bubble, fx_projectiles, fx_text]:
 		mod.fx = null
 

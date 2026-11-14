@@ -5,6 +5,7 @@ extends MeshInstance3D
 ## Each segment is two crossed quads, so it reads from any camera angle. Purely visual.
 
 var energy := 1.6  ## Vertex colours are multiplied by this (additive HDR look).
+var fade := 1.0  ## D-1187: multiplies every alpha (the charge dissipates when the move is interrupted).
 var _im := ImmediateMesh.new()
 var _segs: Array = []  ## [a, b, width_a, width_b, color_a, color_b]
 var _tris: Array = []  ## [a, b, c, color]
@@ -194,7 +195,7 @@ func flush() -> void:
 	_im.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
 	for tr in _tris:
 		var tc := tr[3] as Color
-		var c2 := Color(tc.r * energy, tc.g * energy, tc.b * energy, tc.a)
+		var c2 := Color(tc.r * energy, tc.g * energy, tc.b * energy, tc.a * fade)
 		_vertex(tr[0] as Vector3, c2)
 		_vertex(tr[1] as Vector3, c2)
 		_vertex(tr[2] as Vector3, c2)
@@ -213,8 +214,8 @@ func _emit(a: Vector3, b: Vector3, wa: float, wb: float, ca: Color, cb: Color) -
 		n1 = d.cross(Vector3.RIGHT)
 	n1 = n1.normalized()
 	var n2 := d.cross(n1).normalized()
-	var col_a := Color(ca.r * energy, ca.g * energy, ca.b * energy, ca.a)
-	var col_b := Color(cb.r * energy, cb.g * energy, cb.b * energy, cb.a)
+	var col_a := Color(ca.r * energy, ca.g * energy, ca.b * energy, ca.a * fade)
+	var col_b := Color(cb.r * energy, cb.g * energy, cb.b * energy, cb.a * fade)
 	for n in [n1, n2]:
 		var off: Vector3 = n
 		var v0 := a - off * wa * 0.5

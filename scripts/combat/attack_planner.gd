@@ -26,15 +26,18 @@ func plan(inc: Incoming) -> float:
 	var t_home := t.rest_pos()
 	inc.dir = BattleSpace.flat_dir(a_home, t_home)
 	# The contact distance comes from the Move's sheet (D-1079), not from its name.
-	inc.stand_gap = move.stand_gap if move != null and move.stand_gap > 0.0 else BattleSpace.STAND_GAP
+	var is_dig := move != null and move.plan_profile == &"dig"  # D-1196: Dig timeline of the HTML; melee that emerges on top of the target.
+	inc.stand_gap = move.stand_gap if move != null and (move.stand_gap > 0.0 or (is_dig and move.stand_gap >= 0.0)) else BattleSpace.STAND_GAP
 	# Travel times start from the step-0 geometry and then lose 0.10 s per step.
 	var a0 := a.home
 	var t0 := t.home
 	if move != null and move.plan_profile == &"cast_strike_travel":
 		var cast_hit := 0.15 if inc.instant else clip_hit(a, "attack_special", BattleSpace.CAST_AT)
 		inc.motion = "cast"
-		inc.fly = Battle.travel_seconds(move.plan_fly, a, t)
-		inc.plan = [[Phase.STRIKE, cast_hit], [Phase.TRAVEL, inc.fly], [Phase.RETURN, move.plan_return]]
+		var travel_base := move.plan_fly if move.plan_fly >= 0.0 else base_fly(a0, t0)
+		inc.fly = Battle.travel_seconds(travel_base, a, t)
+		var cast_return := move.plan_return if move.plan_return >= 0.0 else maxf(BattleSpace.CAST_AT + 0.42 - cast_hit - inc.fly, 0.05)
+		inc.plan = [[Phase.STRIKE, cast_hit], [Phase.TRAVEL, inc.fly], [Phase.RETURN, cast_return]]
 		inc.impact_phase = Phase.TRAVEL
 	elif move != null and move.plan_profile == &"teleport":
 		var attack_dir := BattleSpace.flat_dir(a_home, t_home)
@@ -47,7 +50,7 @@ func plan(inc: Incoming) -> float:
 		inc.fly = 0.05
 		inc.plan = [[Phase.TRAVEL, 0.05], [Phase.STRIKE, blink_hit], [Phase.RETURN, 0.35]]
 		inc.impact_phase = Phase.STRIKE
-	elif inc.kind == Skill.Kind.MELEE and a.engaged_with == t and inc.stand_gap <= BattleSpace.STAND_GAP + 0.01:
+	elif inc.kind == Skill.Kind.MELEE and a.engaged_with == t and inc.stand_gap <= BattleSpace.STAND_GAP + 0.01 and not is_dig:
 		# Already standing next to it: no travel, no return.
 		var hit0 := clip_hit(a, "attack", BattleSpace.HIT_AT)
 		hit0 = _strike_override(inc, hit0)  # D-241
@@ -72,12 +75,14 @@ func plan(inc: Incoming) -> float:
 		inc.impact_phase = Phase.STRIKE
 	elif inc.kind == Skill.Kind.MELEE:
 		var stand := t_home - inc.dir * inc.stand_gap
-		var run_t := Battle.travel_seconds(base_run_for(a0, t0, inc.stand_gap), a, t)
+		var agi_f := Battle.agi_travel_factor(a)  # D-1194: AGI shortens the sheet's time first, then steps (D-018), then the floor
+		var run_t := Battle.travel_seconds(base_run_for(a0, t0, inc.stand_gap) * agi_f, a, t)
 		if move != null and move.run_fixed >= 0.0:
 			run_t = move.run_fixed  # D-1014: a fixed short step, whatever the speed
 		elif move != null and move.run_base >= 0.0:
-			run_t = Battle.travel_seconds(move.run_base, a, t)
-		run_t += a.travel_extra  # D-341: slow character, only the run to the target
+			run_t = Battle.travel_seconds(move.run_base * agi_f, a, t)
+		if not is_dig:  # D-1196: the Dig timeline is the HTML's, whatever the character
+			run_t += a.travel_extra  # D-341: slow character, only the run to the target
 		var hop_dist := stand.distance_to(a_home)
 		inc.motion = "melee"
 		inc.stand = stand
@@ -87,13 +92,18 @@ func plan(inc: Incoming) -> float:
 		if move != null:
 			inc.hit += move.hit_offset
 		inc.hit = _strike_override(inc, inc.hit)  # D-241
-		if move != null and move.strike_time > 0.0 and move.strike_time <= 0.20:
+		if is_dig:
+			inc.hit = 0.0  # D-1196: the eruption and the damage are the same instant (HTML 1.38 s).
+		if is_dig or (move != null and move.strike_time > 0.0 and move.strike_time <= 0.20):
 			inc.antic = 0.0  # the jab lands straight on arrival
 		inc.hold = move.hold if move != null and move.hold >= 0.0 else BattleSpace.RETURN_HOLD_DEFAULT  # D-281
 		inc.hop_t = clampf(hop_dist / 70.0, 0.22, 0.4)
+		if move != null and move.hop_time >= 0.0:
+			inc.hop_t = move.hop_time  # D-1196
 		inc.hop_h = clampf(hop_dist * 0.12, 1.2, 3.0)
 		inc.from = a.pos
-		inc.plan = [[Phase.TRAVEL, 0.12 + run_t], [Phase.STRIKE, inc.antic + inc.hit], [Phase.RETURN, inc.hold + inc.hop_t]]
+		var return_t: float = move.plan_return if is_dig and move.plan_return >= 0.0 else inc.hold + inc.hop_t
+		inc.plan = [[Phase.TRAVEL, 0.12 + run_t], [Phase.STRIKE, inc.antic + inc.hit], [Phase.RETURN, return_t]]
 		inc.impact_phase = Phase.STRIKE
 	else:
 		var hit := 0.15 if inc.instant else clip_hit(a, "attack_special", BattleSpace.CAST_AT)
@@ -104,7 +114,7 @@ func plan(inc: Incoming) -> float:
 			inc.plan = [[Phase.STRIKE, hit], [Phase.TRAVEL, inc.fly], [Phase.RETURN, move.plan_return]]
 			inc.impact_phase = Phase.TRAVEL
 		elif move != null and move.plan_profile == &"cast_travel_strike":
-			inc.fly = move.plan_fly
+			inc.fly = move.plan_fly * (Battle.agi_travel_factor(a) if inc.kind == Skill.Kind.CAST else 1.0)  # D-1194: mid-range (CAST) only; projectiles ignore AGI
 			inc.plan = [[Phase.TRAVEL, inc.fly], [Phase.STRIKE, hit], [Phase.RETURN, move.plan_return]]
 			inc.impact_phase = Phase.STRIKE
 		elif inc.kind == Skill.Kind.PROJECTILE:
@@ -206,7 +216,7 @@ static func base_fly(a0: Vector3, t0: Vector3) -> float:
 ## Seconds a move of `kind` would take to reach `t` from `a` (for the Fight menu); 0 = none.
 static func preview_travel(a: Combatant, t: Combatant, kind: int) -> float:
 	if kind == Skill.Kind.MELEE:
-		return 0.12 + Battle.travel_seconds(base_run(a.home, t.home), a, t) + a.travel_extra  # D-341
+		return 0.12 + Battle.travel_seconds(base_run(a.home, t.home) * Battle.agi_travel_factor(a), a, t) + a.travel_extra  # D-341, D-1194
 	if kind == Skill.Kind.PROJECTILE:
 		return Battle.travel_seconds(base_fly(a.home, t.home), a, t)
 	return 0.0

@@ -20,7 +20,7 @@ description_text = "A direct, penetrating spear thrust."
 mechanics_text = "Direct linear thrust with extended melee reach, delivering solid single-target piercing damage."
 visual_text = "Piercing white thrust line with directional speed streaks and metallic tip glint."
 motion_text = "Attacker lunges forward half-distance, extending the spear to full reach, then steps back."
-windup_text = "1.00s wind-up. Linear weapon alignment."
+windup_text = "1.20s wind-up. Linear weapon alignment."
 tactical_text = "Direct linear thrust with extended melee reach. Single Target."
 visual_motion_text = "Forward half-lunge thrust with metallic glint."
 phase_visuals = {
@@ -29,5 +29,5 @@ phase_visuals = {
 "return": "Salto/corrida de recuo de volta à posição de origem e retomada de idle.",
 "strike": "Prelúdio de golpe e arco de swing/arma com aviso Dread na janela de Evade (D-986/D-992).",
 "travel": "Corrida pelo eixo atacante->alvo com trilha no chão (D-1013): Attacker lunges forward half-distance, extending the spear to full reach, then steps back.",
-"windup": "Preparo em posição base com loop contínuo de carga (D-163): 1.00s wind-up. Linear weapon alignment."
+"windup": "Preparo em posição base com loop contínuo de carga (D-163): 1.20s wind-up. Linear weapon alignment."
 }

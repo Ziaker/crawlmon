@@ -22,6 +22,8 @@ const DrainSpearMove = preload("res://scripts/data/drain_spear_move.gd")
 ##   --real-mp (não completa MP: expõe recusa real; o padrão da sala continua completando)
 ##   (--dqt/--dqt-mirror não são lidos aqui: o BattleScene os lê de OS.get_cmdline_user_args())
 ##   --pause-at=release|travel|strike|impact --pause-delay= --shot=arquivo.png
+##   --hud=status|victory [--hud-member=N] --shot=arquivo.png (HUD de tela cheia com o grupo da sala, captura e sai)
+##   --picker=<move_id> [--mirror] --shot=arquivo.png (D-1200: Fight do líder + menu S.TARGET do Move, imprime os alvos oferecidos)
 ##   --hide=linhas,particulas,shaders,sprites,malhas --record=SEGUNDOS --step=SEGUNDOS --out=pasta
 ##   --log=arquivo.txt --quit
 
@@ -150,6 +152,7 @@ var _scn_name := ""
 var _scn_atk: Array = []
 var _scn_acts: Array = []
 var _scn_pos: Dictionary = {}
+var _scn_atb: Dictionary = {}  ## papel -> blocos de ATB no início do cenário (D-1204)
 var _need_enemies := 1  ## 3 = os 2 inimigos extras entram junto
 var _catalog: Dictionary = {}  ## todo Move conhecido por nome: qualquer unidade pode usar qualquer Move (D-235)
 var _killed := false  ## alguém morreu de propósito: o próximo disparo recarrega a batalha
@@ -161,6 +164,7 @@ var _baseline_fx_ids: Dictionary = {}
 var _audit_done := false
 var _last_leaks: Array[String] = []
 var _telemetry: Dictionary = {}
+var _dread_flash_live_max := 0  ## D-1203: maior FxEvadeFlash._live.size() visto na rodada
 var _ficha_label: Label
 var _analysis_overlay: Control
 var _scale_overlay_on := false
@@ -189,6 +193,7 @@ var _analysis: VfxRoomAnalysis
 
 func _ready() -> void:
 	_parse_args()
+	_apply_card_style()
 	_analysis = VfxRoomAnalysis.new(self)
 	add_child(_analysis)
 	_seed_full_catalog()
@@ -196,6 +201,9 @@ func _ready() -> void:
 	_build_view()
 	_build_panel()
 	_build_analysis_overlay()
+	if has_meta("dual_args"):
+		_panel.visible = false
+		_layout_view()
 	await _load_battle(_args.has("mirror"))
 	if _args.has("mirror"):
 		_mirror_btn.set_pressed_no_signal(true)
@@ -204,11 +212,139 @@ func _ready() -> void:
 	await _run_cli()
 
 
+## --hud=status|victory [--hud-member=N] --shot=arquivo.png: abre a HUD de tela cheia com o grupo da sala
+## (Abra, Pancham, ... + o que `--units=` pedir), tira a captura em 1280x720 e sai. Sem clicar, sem batalha.
+func _run_hud_shot(kind: String) -> void:
+	var party: Array[Combatant] = []
+	for u in _units:
+		party.append(u)
+	var layer := CanvasLayer.new()
+	layer.layer = 100
+	add_child(layer)
+	var bg := ColorRect.new()
+	bg.color = Color(0.03, 0.06, 0.1)
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	layer.add_child(bg)
+	match kind:
+		"status":
+			var ss := StatusScreen.new()
+			layer.add_child(ss)
+			ss.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			var hm := String(_args.get("hud-member", "0"))
+			var hi := int(hm) if hm.is_valid_int() else 0
+			if not hm.is_valid_int():  # --hud-member=NOME
+				for pi in party.size():
+					if party[pi].name.to_lower() == hm.to_lower():
+						hi = pi
+			ss.open(party, hi)
+		"victory":
+			var sums: Array[Dictionary] = PostCombatFlow.grant_xp(party, int(_args.get("hud-xp", "40")))
+			var pc := PostCombatScreen.new()
+			layer.add_child(pc)
+			pc.open(40, sums, PostCombatFlow.build_steps(sums))
+			for i in 240:
+				await get_tree().process_frame
+		_:
+			push_warning("--hud desconhecido: %s (status|victory)" % kind)
+	for i in 10:
+		await get_tree().process_frame
+	if _shot_path != "":
+		var path := ProjectSettings.globalize_path(_shot_path) if _shot_path.begins_with("res://") else _shot_path
+		get_viewport().get_texture().get_image().save_png(path)
+		print("[vfx_room] hud shot: ", path)
+	if _quit_flag or _shot_path != "":
+		_quit()
+
+
+## D-1200/D-1204 --picker=<move_id> [--mirror] [--shot=arquivo.png]: o líder da sala passa a ter o Move,
+## os aliados ficam feridos, o Fight abre e o menu S.TARGET do Move é aberto como o jogador o vê
+## (aliado único: só aliados vivos; alvo duplo: primário). Imprime `[vfx_room] picker ...` com os alvos
+## oferecidos e salva a captura (precisa de janela: sem --headless). Sem clicar, em poucos segundos.
+func _run_picker_shot(move_id: String) -> void:
+	var leader: Combatant = _battle.party[0]
+	var sk := Skill.from_id(StringName(move_id))
+	if sk == null:
+		print("[vfx_room] picker result=fail reason=move_desconhecido move=%s" % move_id)
+		_quit(1)
+		return
+	var has_it := false
+	for s in leader.skills:
+		if s.display_name == sk.display_name:
+			has_it = true
+	if not has_it:
+		leader.skills.append(sk)
+	leader.max_mp = maxi(leader.max_mp, 30)
+	leader.mp = leader.max_mp
+	leader.atb = Combatant.BLOCKS
+	if _immortal != null:
+		_immortal.button_pressed = false  # the room's 'immortal' would refill the wounds below
+	for c in _battle.party:
+		if c != leader:
+			c.hp = maxi(1, int(c.max_hp * 0.4))  # allies hurt, so a heal target is meaningful
+	await get_tree().process_frame
+	_bs._show_fight()
+	_bs._build_fight_skills()
+	var mine: Skill = null
+	for s in _bs._fight_skills:
+		if s.display_name == sk.display_name:
+			mine = s
+	if mine == null:
+		print("[vfx_room] picker result=fail reason=move_fora_da_lista_do_fight move=%s" % move_id)
+		_quit(1)
+		return
+	_bs._begin_target_pick(mine)
+	for i in 30:
+		await get_tree().process_frame
+	var names: Array[String] = []
+	var all_allies := true
+	for t in _bs._targets:
+		names.append("%s(%d/%d)" % [t.name, t.hp, t.max_hp])
+		if not _battle.same_team(t, leader):
+			all_allies = false
+	print("[vfx_room] picker result=%s move=%s leader=%s view=%s state=%s targets=%s all_allies=%s" % [
+		"ok" if _bs.state == _bs.S.TARGET else "fail", mine.display_name, leader.name,
+		"mirror" if _mirror else "normal", "TARGET" if _bs.state == _bs.S.TARGET else "OUTRO",
+		", ".join(names), all_allies])
+	if _shot_path != "":
+		var path := ProjectSettings.globalize_path(_shot_path) if _shot_path.begins_with("res://") else _shot_path
+		get_window().get_viewport().get_texture().get_image().save_png(path)
+		print("[vfx_room] picker shot: ", path)
+	_quit()
+
+
+## Sai do jogo; no modo dois povs avisa quem criou a sala (que sai quando as duas terminarem).
+func _quit(code: int = 0) -> void:
+	if has_meta("dual_done"):
+		set_process(false)  # esta sala terminou: não repete o resumo enquanto a outra termina
+		set_physics_process(false)
+		(get_meta("dual_done") as Callable).call(code)
+		return
+	get_tree().quit(code)
+
+
+## D-1204 (dois povs): a sala pode ser criada por vfx_room_dual com os argumentos em meta, sem usar a linha de comando.
 func _parse_args() -> void:
+	if has_meta("dual_args"):
+		_args = (get_meta("dual_args") as Dictionary).duplicate()
+		return
+	# The flags work with or without the "--" separator: the engine-level list is read first, the user list (after "--") overrides it.
+	for a in OS.get_cmdline_args():
+		if a.begins_with("--") and a.contains("="):
+			var kv0 := a.substr(2).split("=", true, 1)
+			_args[kv0[0]] = kv0[1]
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--"):
 			var kv := a.substr(2).split("=", true, 1)
 			_args[kv[0]] = kv[1] if kv.size() > 1 else "true"
+
+
+const CARD_STYLES := ["", "thrown_slab", "trapdoor_slam"]  ## Knock-up card effect (debug)
+
+
+## --card-style=<name>: sets BattleHud.card_style_override at startup; anything else = none.
+func _apply_card_style() -> void:
+	var v := String(_args.get("card-style", ""))
+	BattleHud.card_style_override = StringName(v) if v in CARD_STYLES else &""
 
 
 ## A cena do combate numa área própria: o painel fica ao lado dela, nunca por cima.
@@ -220,6 +356,7 @@ func _build_view() -> void:
 	add_child(_svc)
 	_sv = SubViewport.new()
 	_sv.handle_input_locally = false
+	_sv.own_world_3d = has_meta("dual_args")  # dois povs: cada sala tem o seu mundo 3D
 	_svc.add_child(_sv)
 
 
@@ -469,6 +606,10 @@ func _run_cli() -> void:
 			(_layer_checks[name] as CheckButton).button_pressed = false
 	if _args.has("shot"):
 		_shot_path = String(_args["shot"])
+	if _args.has("no-panel"):  # D-1204: a IA opera o debug por flags/cenários, sem o painel aberto (captura em tela cheia)
+		_panel_user_hidden = true
+		_panel.visible = false
+		_layout_view()
 	if _args.has("record"):
 		_rec_request = float(_args["record"])
 		_rec_step = float(_args.get("step", 0.05))
@@ -489,6 +630,12 @@ func _run_cli() -> void:
 		_windup_ovr.value = float(_args["windup"])
 	if _args.has("hp"):
 		_hp_slider.value = clampf(float(_args["hp"]), 1.0, 100.0)  # life of every unit when the shot fires (VFX demos)
+	if _args.has("hud"):
+		await _run_hud_shot(String(_args["hud"]))
+		return
+	if _args.has("picker"):
+		await _run_picker_shot(String(_args["picker"]))
+		return
 	if _args.has("test-d235"):
 		await _run_test_d235()
 		return
@@ -504,7 +651,7 @@ func _run_cli() -> void:
 			# D-1035: fail fast instead of leaving --record waiting for a timeout.
 			_preflight_fail("Cenário não encontrado: %s" % scn_id)
 			_quit_flag = true
-			get_tree().quit()
+			_quit()
 			return
 		await get_tree().process_frame
 		await _run_scenario(scn_id)
@@ -515,6 +662,7 @@ func _run_cli() -> void:
 		for i in _move.item_count:
 			if _move.get_item_text(i).to_lower().replace(" ", "") == want:
 				_move.select(i)
+				_sync_move_page()
 				found = true
 				break
 		await get_tree().process_frame
@@ -540,7 +688,7 @@ func _run_cli() -> void:
 				reason,
 			])
 			_quit_flag = true
-			get_tree().quit()
+			_quit()
 			return
 		_fire()
 
@@ -578,11 +726,11 @@ func _preflight_fail(reason: String) -> void:
 	_status.text = reason
 	print("[vfx_room] ", reason)
 	if _quit_flag and not _args.has("preflight"):
-		get_tree().quit(1)
+		_quit(1)
 	if _args.has("preflight"):
 		print("[vfx_room] preflight result=fail attacker=? attacker_side=? target=? target_side=? move=%s reason=%s" % [
 			String(_args.get("move", "")), reason])
-		get_tree().quit()
+		_quit()
 
 
 # --- Entrada -------------------------------------------------------------------------
@@ -593,7 +741,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		return
 	var key := (event as InputEventKey).keycode
 	if key >= KEY_1 and key <= KEY_9:
-		var idx := key - KEY_1
+		var idx := _move_page * MOVE_PAGE + (key - KEY_1)
 		if idx < _move.item_count:
 			_move.select(idx)
 			_clear_scenario()
@@ -621,6 +769,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		KEY_F2:
 			_panel_user_hidden = not _panel_user_hidden
 			_panel.visible = not _panel_user_hidden
+		KEY_F11:
+			var i := CARD_STYLES.find(String(BattleHud.card_style_override))
+			BattleHud.card_style_override = StringName(CARD_STYLES[(i + 1) % CARD_STYLES.size()])
+			print("card_style_override=" + str(BattleHud.card_style_override))
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -656,8 +808,34 @@ func _apply_clean() -> void:
 				gi.visible = false
 
 
+var _cam_last_pos := Vector3.INF
+var _cam_last_fov := 0.0
+var _cam_travel := 0.0  ## D-1205/D-1204: metres the real camera moved during the run (SUMMARY_JSON camera_travel_m)
+var _cam_fov_travel := 0.0
+var _cam_bins: Array = []  ## metres moved per 0.5 s of the run
+
+
+func _sample_camera() -> void:
+	if _bs == null or _bs.director == null or _bs.director.camera == null:
+		return
+	var cam: Camera3D = _bs.director.camera
+	if _cam_last_pos != Vector3.INF:
+		var step_d := cam.global_position.distance_to(_cam_last_pos)
+		_cam_travel += step_d
+		if OS.get_cmdline_user_args().has("--cam-trace") and step_d > 0.02:
+			print("[cam] clock=%.2f step=%.3f mode=%d fov=%.1f" % [_clock, step_d, int(_bs.director.mode), cam.fov])
+		var bin := int(_clock / 0.5)
+		while _cam_bins.size() <= bin:
+			_cam_bins.append(0.0)
+		_cam_bins[bin] = float(_cam_bins[bin]) + step_d
+		_cam_fov_travel += absf(cam.fov - _cam_last_fov)
+	_cam_last_pos = cam.global_position
+	_cam_last_fov = cam.fov
+
+
 func _process(delta: float) -> void:
 	_clock += delta
+	_sample_camera()
 	_apply_clean()
 	_enforce_time()
 	if _immortal != null and _immortal.button_pressed and _hp_slider.value >= 100.0:
@@ -674,6 +852,7 @@ func _process(delta: float) -> void:
 	_layout_view()
 	_sweep_layers()
 	_tick_vfx_analysis(delta)
+	_dread_flash_live_max = maxi(_dread_flash_live_max, _dread_live_count())  # D-1203
 	if _fired and not _paused:
 		_tick_from_fire += 1
 		if _step_ticks_limit > 0 and _tick_from_fire >= _step_ticks_limit:
@@ -682,7 +861,7 @@ func _process(delta: float) -> void:
 			print("[vfx_room] Pausado em step-ticks=%d (t=%.3f)" % [_tick_from_fire, _clock - _fire_clock])
 			_emit_summary_json()
 			if _quit_flag:
-				get_tree().quit()
+				_quit()
 			return
 	if _pause_due >= 0.0 and _clock >= _pause_due and not _paused:
 		_pause_due = -1.0
@@ -699,7 +878,7 @@ func _process(delta: float) -> void:
 		await _take_shot()
 		_emit_summary_json()
 		if _quit_flag and (_shot_path == "" or _shot_taken):
-			get_tree().quit()
+			_quit()
 	_tick_record()
 	_run_schedule()
 	_track_room_queue()
@@ -714,7 +893,7 @@ func _process(delta: float) -> void:
 			_fire()
 		elif _quit_flag and _idle_for >= LOOP_GAP and _rec.is_empty() and _rec_request <= 0.0 and (_shot_path == "" or _shot_taken):
 			_emit_summary_json()
-			get_tree().quit()
+			_quit()
 	else:
 		_idle_for = 0.0
 
@@ -803,7 +982,7 @@ func _connect_events() -> void:
 		if _quit_flag:
 			await get_tree().create_timer(1.2).timeout
 			_emit_summary_json()
-			get_tree().quit())
+			_quit())
 	_bs.fx.child_entered_tree.connect(func(n: Node) -> void:
 		if not String(n.name).begins_with("@"):
 			_note("VFX nasce: %s" % n.name)
@@ -930,7 +1109,7 @@ func _finish_record() -> void:
 	_save_log()
 	_status.text = "Gravação pronta: %d quadros + sheet.png em %s" % [count, dir]
 	if _quit_flag:
-		get_tree().quit()
+		_quit()
 
 
 func _take_shot() -> void:
@@ -947,7 +1126,7 @@ func _take_shot() -> void:
 		_compare_images(path, String(_args["diff-with"]))
 	if _quit_flag:
 		_emit_summary_json()
-		get_tree().quit()
+		_quit()
 
 
 # --- Camadas ligáveis --------------------------------------------------------------------
@@ -1181,7 +1360,24 @@ func _build_panel() -> void:
 	_attacker = _option(box, "Atacante")
 	_attacker.item_selected.connect(func(_i: int) -> void: _fill_moves())
 	_target = _option(box, "Alvo  (Q/E troca)")
-	_section(box, "MOVES  (1..9)")
+	_section(box, "MOVES  (1..9 = página; número fixo, igual para todo atacante)")
+	var pager := HBoxContainer.new()
+	var prev_b := Button.new()
+	prev_b.text = "◀"
+	prev_b.pressed.connect(func() -> void: _move_page_step(-1))
+	pager.add_child(prev_b)
+	var next_b := Button.new()
+	next_b.text = "▶"
+	next_b.pressed.connect(func() -> void: _move_page_step(1))
+	pager.add_child(next_b)
+	_move_page_label = Label.new()
+	pager.add_child(_move_page_label)
+	var search := LineEdit.new()
+	search.placeholder_text = "buscar Move + Enter"
+	search.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	search.text_submitted.connect(func(t: String) -> void: _move_search(t))
+	pager.add_child(search)
+	box.add_child(pager)
 	_move_grid = GridContainer.new()
 	_move_grid.columns = 3
 	_move_grid.add_theme_constant_override("h_separation", 4)
@@ -1240,7 +1436,7 @@ func _build_panel() -> void:
 	box.add_child(_delay1_label)
 	_delay1 = HSlider.new()
 	_delay1.min_value = 0.0
-	_delay1.max_value = 4.0
+	_delay1.max_value = 20.0  # D-1204: cenários de expiração de status precisam de atrasos longos
 	_delay1.step = 0.05
 	_delay1.value_changed.connect(func(v: float) -> void: _delay1_label.text = "Os ataques saem %.2f s depois do disparo" % v)
 	box.add_child(_delay1)
@@ -1436,7 +1632,7 @@ func _build_panel() -> void:
 	box.add_child(_pause_delay_label)
 	_pause_delay = HSlider.new()
 	_pause_delay.min_value = 0.0
-	_pause_delay.max_value = 0.6
+	_pause_delay.max_value = 4.0  # D-1204: the whole Knock-up (1.3 s + landing) must be reachable
 	_pause_delay.step = 0.02
 	_pause_delay.value = 0.12
 	_pause_delay.value_changed.connect(func(v: float) -> void: _pause_delay_label.text = "Atraso depois do evento: %.2fs" % v)
@@ -1595,25 +1791,79 @@ func _fill_units() -> void:
 	_sync_pos_sliders()
 
 
+## D-1204 (lista fixa): a lista de Moves é o catálogo inteiro numa ordem que nunca muda, igual para
+## qualquer atacante (D-235). O número de um Move é permanente; trocar de atacante não mexe na lista
+## nem na seleção. Moves de um atacante que não estão no catálogo entram no fim, uma vez só.
+const MOVE_PAGE := 9
+var _move_order: Array[String] = []
+var _move_page := 0
+var _move_page_label: Label
+
+
+func _move_order_build(c: Combatant) -> void:
+	if _move_order.is_empty():
+		_move_order.append("Tackle")
+		for sk in Skill.all_catalog_skills():
+			if not _move_order.has(sk.display_name):
+				_move_order.append(sk.display_name)
+	for s in c.skills:
+		if not _move_order.has(s.display_name):
+			_move_order.append(s.display_name)
+
+
 func _fill_moves() -> void:
+	var c := _units[_attacker.selected]
+	var prev := _move.get_item_text(_move.selected) if _move.item_count > 0 and _move.selected >= 0 else ""
+	_move_order_build(c)
+	if prev == "" and not c.skills.is_empty():
+		prev = c.skills[0].display_name
 	_move.clear()
+	for n in _move_order:
+		_move.add_item(n)
+	_move.select(maxi(_move_order.find(prev), 0))
+	_sync_move_page()
+	_fill_moves2()
+
+
+## Leva a página da grade até o Move selecionado e a redesenha.
+func _sync_move_page() -> void:
+	_move_page = maxi(_move.selected, 0) / MOVE_PAGE
+	_rebuild_move_grid()
+
+
+func _rebuild_move_grid() -> void:
 	for ch in _move_grid.get_children():
 		ch.queue_free()
-	var c := _units[_attacker.selected]
-	for i in c.skills.size():
-		var s := c.skills[i]
-		_move.add_item(s.display_name)
+	var pages := maxi(ceili(float(_move_order.size()) / MOVE_PAGE), 1)
+	_move_page = clampi(_move_page, 0, pages - 1)
+	if _move_page_label != null:
+		_move_page_label.text = "pág %d/%d  (%d Moves)" % [_move_page + 1, pages, _move_order.size()]
+	for i in range(_move_page * MOVE_PAGE, mini((_move_page + 1) * MOVE_PAGE, _move_order.size())):
 		var b := Button.new()
-		b.text = "%d  %s" % [i + 1, s.display_name]
+		b.text = "%d  %s" % [i + 1, _move_order[i]]
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(func() -> void:
 			_move.select(i)
 			_clear_scenario()
 			_fire())
 		_move_grid.add_child(b)
-	if _move.item_count > 0:
-		_move.select(0)
-	_fill_moves2()
+
+
+func _move_page_step(step: int) -> void:
+	_move_page += step
+	_rebuild_move_grid()
+
+
+## Busca por nome: seleciona o primeiro Move cujo nome contém o texto e vai até a página dele.
+func _move_search(text: String) -> void:
+	var want := text.to_lower().replace(" ", "")
+	if want == "":
+		return
+	for i in _move_order.size():
+		if _move_order[i].to_lower().replace(" ", "").contains(want):
+			_move.select(i)
+			_sync_move_page()
+			return
 
 
 func _fill_moves2() -> void:
@@ -1750,6 +2000,11 @@ func _fire() -> void:
 		u.blind_timer = 0.0
 		u.clear_burn()  # D-238
 		u.engaged_with = null
+	if _scn_on:  # D-1204: ATB exato por papel, igual à ação "atb"
+		for r in _scn_atb:
+			var u_atb := _role(String(r))
+			if u_atb != null:
+				u_atb.atb = clampf(float(_scn_atb[r]), 0.0, Combatant.BLOCKS)
 	_restore_weakness()
 	# Debug room only (D-978 review): --stun=always|never forces a chance-based status through the LUK difference.
 	if String(_args.get("stun", "")) == "always":
@@ -1931,6 +2186,7 @@ func _do_act(what: String, u: Combatant, args: Array, t: float) -> void:
 		"status":
 			_apply_status(u, String(args[0]))
 			_note("STATUS %s: %s" % [String(args[0]), u.name])
+			_snap_cards.call_deferred()
 		"attackr":
 			var skill := _shaped(_find_skill(u, String(args[0])))
 			var tgt := _role(String(args[1]))
@@ -1946,6 +2202,9 @@ func _do_act(what: String, u: Combatant, args: Array, t: float) -> void:
 				" (na vaga)" if u.queued_skill != null else " (iniciou agora)"])
 		"evade":
 			_polls.append({"u": u, "until": t + 4.5})  # D-1014: a janela válida chega depois do wind-up
+		"atb":
+			u.atb = clampf(float(args[0]), 0.0, 5.0)  # D-1204: ATB exato (em blocos) para testar o custo do Evade
+			_note("ATB %s = %.2f" % [u.name, u.atb])
 		"evade_once":
 			var inc := _battle.find_evadable(u)
 			var inside := inc != null and inc.can_evade_now()
@@ -1992,6 +2251,7 @@ func _clear_scenario() -> void:
 	_scn_atk = []
 	_scn_acts = []
 	_scn_pos = {}
+	_scn_atb = {}
 	_need_enemies = 1
 	_scn_name = ""
 
@@ -2135,8 +2395,14 @@ func _run_scenario(id: String) -> void:
 	_mark_scenario(id)
 	_need_enemies = int(spec.get("enemies", 1))
 	_scn_pos = spec.get("pos", {})
+	_scn_atb = spec.get("atb", {})
 	_scn_atk = spec.get("atk", [])
-	_scn_acts = spec.get("acts", [])
+	_scn_acts = (spec.get("acts", []) as Array).duplicate()
+	# D-1204: --status=E1:stun4+burn+blind;A1:b:atk:2+shield aplica qualquer combinação em t=0 de qualquer cenário.
+	for part in String(_args.get("status", "")).split(";", false):
+		var role_kind := part.split(":", true, 1)
+		if role_kind.size() == 2:
+			_scn_acts.append([0.0, "status", role_kind[0], role_kind[1]])
 	_dist.value = float(spec.get("dist", TEAM_DISTANCE))
 	_hp_slider.value = float(spec.get("hp", 100))
 	_windup_ovr.value = float(spec.get("windup", 0.0))
@@ -2225,8 +2491,44 @@ func _status_effect(kind: String) -> void:
 	_status.text = "%s: %s" % [u.name, kind]
 
 
+## D-1204: guarda, por personagem, o cartão com mais efeitos já visto (os temporizados expiram antes do resumo).
+func _role_key(cu: Combatant) -> String:
+	var side := _battle.party if cu.is_player else _battle.enemies
+	return "%s%d" % ["A" if cu.is_player else "E", side.find(cu) + 1]
+
+
+func _snap_cards() -> void:
+	var peak: Dictionary = _telemetry.get("status_cards_peak", {})
+	for cu in _units:
+		var line := BattleHudDraw.status_line(cu)
+		if line.count("|") >= String(peak.get(_role_key(cu), "")).count("|") and line != "No active effects":
+			peak[_role_key(cu)] = line
+	_telemetry["status_cards_peak"] = peak
+
+
 func _apply_status(u: Combatant, kind: String) -> void:
+	if kind.contains("+"):  # D-1204: combinação, ex.: "stun4+burn+blind+b:atk:2+shield"
+		for k in kind.split("+", false):
+			_apply_status(u, k)
+		return
+	if kind.begins_with("b:"):  # buff/debuff: b:atk:2, b:def:-1, b:spd:3
+		var bp := kind.split(":")
+		u.buff_stat(bp[1], int(bp[2]))
+		return
 	match kind:
+		"guard":
+			_battle.use_guard(u)
+		"taunt":  # D-1204: provocado pelo primeiro vivo do outro time
+			var foes: Array = _battle.enemies if u.is_player else _battle.party
+			for f in foes:
+				if f.is_alive():
+					u.taunted_by = f
+					break
+		"invuln":
+			u.is_invulnerable = true
+		"knockup":
+			u.stun_kind = "knockup"
+			u.stun_timer = maxf(u.stun_timer, 4.0)
 		"burn":
 			u.apply_burn()
 		"stun":
@@ -2252,6 +2554,8 @@ func _apply_status(u: Combatant, kind: String) -> void:
 			u.clear_burn()
 			u.end_shield("clear")
 			u.clear_magic_immunity()
+			u.taunted_by = null
+			u.is_invulnerable = false
 
 
 ## Agenda uma ação para t segundos depois do próximo disparo (aba Ações).
@@ -2535,6 +2839,7 @@ func _init_fire_telemetry(a: Combatant, t: Combatant, skill: Skill) -> void:
 		for ch in _bs.fx.get_children():
 			_baseline_fx_ids[ch.get_instance_id()] = true
 	_last_leaks.clear()
+	_dread_flash_live_max = 0
 	_envelope_samples.clear()
 	_prev_node_alphas.clear()
 	_envelope_pops.clear()
@@ -2611,6 +2916,16 @@ func _record_hit_telemetry(_att: Combatant, tgt: Combatant, info: Dictionary) ->
 		_log_scale_metrics()
 
 
+## D-1203: Dreads vivos, lidos da instância de BattleFx da sala (`_live` é por instância).
+func _dread_live_count() -> int:
+	if _bs == null or not is_instance_valid(_bs.fx):
+		return 0
+	var flash = _bs.fx.fx_evade_flash
+	if flash == null:
+		return 0
+	return flash._live.size()
+
+
 func _emit_summary_json() -> void:
 	if not _args.has("summary-json"):
 		return
@@ -2623,10 +2938,19 @@ func _emit_summary_json() -> void:
 		_telemetry["stun_timer_after"] = snappedf(tgt.stun_timer, 0.01)
 		if not tgt.is_alive():
 			_telemetry["ko_triggered"] = true
+	var cards := {}  # D-1204: texto do cartão (status_line) de cada personagem, para testar combinações
+	for cu in _units:
+		cards[_role_key(cu)] = BattleHudDraw.status_line(cu)
+	_telemetry["status_cards"] = cards
 	_telemetry["vfx_leaks"] = _last_leaks
 	_telemetry["leaks_detected"] = _last_leaks.size()
 	_telemetry["envelope_pops"] = _envelope_pops
+	_telemetry["camera_travel_m"] = snappedf(_cam_travel, 0.001)
+	_telemetry["camera_travel_bins"] = _cam_bins.map(func(v): return snappedf(float(v), 0.01))
+	_telemetry["camera_fov_travel"] = snappedf(_cam_fov_travel, 0.001)
 	_telemetry["bone_peak_speed"] = snappedf(_bone_peak_speed, 0.01)
+	_telemetry["dread_flash_live_max"] = _dread_flash_live_max
+	_telemetry["dread_flash_live_count"] = _dread_live_count()
 	if _bs != null and is_instance_valid(_bs.fx):
 		_telemetry["whiff_visual"] = _bs.fx.fx_dodge.last_whiff_info()
 	print("[vfx_room] SUMMARY_JSON: ", JSON.stringify(_telemetry))

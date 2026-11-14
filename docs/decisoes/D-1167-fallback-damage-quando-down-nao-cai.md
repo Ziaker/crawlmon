@@ -1,3 +1,11 @@
+<!-- DEBUG-OBRIGATORIO-D1204 -->
+> **DEBUG = OBRIGAÇÃO EXTREMA (D-1204).** O debug existe para testar QUALQUER milésimo do jogo: combate, Moves, VFX, overworld, UI, itens, IA, save, áudio.
+> **NENHUM teste pode levar mais de 1 minuto** do pedido ao resultado; mire em menos de 10 s (`--scenario=<id> --stdout-trace --quit`).
+> Sem caminho pronto no debug? **CRIE o cenário/controle** antes de testar. Nunca peça ao criador para clicar, ajustar slider ou montar nada.
+> Teste SEMPRE no debug (`vfx_room`, `BattleDebug`), com dados (`--summary-json`, `--strict-asserts`), nas duas vistas (D-235); não improvise com o jogo real.
+> Passou de 1 minuto = o debug está incompleto: melhore a ferramenta primeiro. Ver `docs/decisoes/D-1204-*.md` e `docs/TELEMETRIA.md`.
+<!-- /DEBUG-OBRIGATORIO-D1204 -->
+
 # D-1167 — Fallback do dodge errado: usar `damage` quando o `down` não derruba
 
 - **Data:** 2026-11-11.
@@ -48,4 +56,4 @@ Implementado e testado headless (2026-11-11):
 
 - `scripts/vfx/combat/fx_dodge.gd`: escolhe `down` quando ele cai; senão `damage`; senão queda assistida sem clipe. Mantém `WHIFF`, poeira e a volta ao idle.
 - `tests/battle/test_d1163_mistimed_visual.gd`: **9/9 PASS** (agora verifica `damage` como fallback).
-- Suíte: **27/27 PASS**.
+- Suíte: **28/28 PASS**.

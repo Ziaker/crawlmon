@@ -24,12 +24,12 @@ tags = Array[StringName]([&"impact_on_miss"])
 vfx_key = &"abra"
 effect_line_text = "130% MAG electric damage | Ranged | 2 ATB"
 short_effect_text = "130% electric"
-description_text = "Undodgeable electrical discharge arcing directly into the opponent across the floor."
-mechanics_text = "Undodgeable electrical discharge that arcs directly into the opponent, bypassing standard manual and passive evasion."
+description_text = "Electrical discharge arcing directly into the opponent across the floor."
+mechanics_text = "Electrical discharge that arcs directly into the opponent."
 visual_text = "Golden electrical arcs branching across the field with crackling corona discharges wrapping the opponent's silhouette."
 motion_text = "Stationary release. Electrical arcs branch instantly through the air directly to the target."
-windup_text = "1.20s wind-up. Electrical aura charges around the body before discharge."
-tactical_text = "Undodgeable electrical discharge bypassing standard evasion. Single Target."
+windup_text = "1.50s wind-up. Electrical aura charges around the body before discharge."
+tactical_text = "Electrical discharge arcing into the opponent. Single Target."
 visual_motion_text = "Stationary discharge of golden electrical arcs wrapping the opponent."
 phase_visuals = {
 "impact": "Explosão/impacto no ponto de contato a 1,2 m de altura (D-1013 / D-308 Fase 4): Golden electrical arcs branching across the field with crackling corona discharges wrapping the opponent's silhouette.",
@@ -37,5 +37,5 @@ phase_visuals = {
 "return": "Dissipação completa de partículas/malhas (zero restos) e retorno do lançador ao idle.",
 "strike": "Janela final de aproximação (últimos 0,25 s) antes do contato.",
 "travel": "Voo do projétil/feixe ao longo do eixo atacante->alvo mantendo leitura de tela (D-308 Fase 3): Stationary release. Electrical arcs branch instantly through the air directly to the target.",
-"windup": "Carga elemental contínua à frente do lançador (D-308 Fase 1): 1.20s wind-up. Electrical aura charges around the body before discharge."
+"windup": "Carga elemental contínua à frente do lançador (D-308 Fase 1): 1.50s wind-up. Electrical aura charges around the body before discharge."
 }

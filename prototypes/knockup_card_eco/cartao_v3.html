@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<!-- DEBUG-OBRIGATORIO-D1204 -->
+<!-- DEBUG = OBRIGACAO EXTREMA (D-1204). Static visual prototype: it does not read or write game state. -->
+<!-- Decisions applied: D-1205 (1.3 s parabola, apex 0.65 s, no hover, landing shake + dust), D-235 (no character/side logic), D-413 (English labels). -->
+<!-- Creator's words: no spin; the card is lifted and thrown up on ONE side only; more gravity on one side than the other to return to normal. -->
+<!-- /DEBUG-OBRIGATORIO-D1204 -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Crawlmon - Knock-up card, one-side lift</title>
+<style>
+:root{--paper:#f4eee1;--ink:#10263a;--lime:#d6fa66;--coral:#ff746c;--gold:#f0c57e;--blue:#63d9ec;--red:#d32f2f}
+*{box-sizing:border-box}
+body{margin:0;padding:24px 28px 40px;background:#05090c;color:#e9e5d8;font:13px/1.5 "Segoe UI",Arial,sans-serif}
+h1{margin:0 0 6px;font:800 30px/1 Impact,"Arial Black",sans-serif;text-transform:uppercase;color:#f2eedf}
+.lede{max-width:900px;color:#a9b8b2;margin:0 0 18px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.opt{border:1px solid #243a30;background:#0a120f;padding:12px;display:flex;flex-direction:column;gap:8px}
+.tag{align-self:flex-start;padding:2px 7px;border:1px solid #456356;color:var(--lime);font:800 10px Consolas,monospace;letter-spacing:.14em}
+.opt h2{margin:0;font:800 18px/1 Impact,"Arial Black",sans-serif;text-transform:uppercase;color:#f2eedf}
+.opt p{margin:0;color:#a9b8b2;font-size:12px;min-height:54px}
+.vars{font:11px Consolas,monospace;color:#7f968b;min-height:34px}
+.stage{position:relative;height:360px;overflow:hidden;border:1px solid #1d2f27;background:linear-gradient(180deg,#071016,#08130f 62%,#050b09)}
+.floor{position:absolute;left:6%;right:6%;bottom:40px;height:2px;background:#2c473b}
+.shadow{position:absolute;left:50%;bottom:34px;width:200px;height:12px;margin-left:-100px;border-radius:50%;background:rgba(0,0,0,.55)}
+.card{position:absolute;left:50%;bottom:150px;width:202px;height:82px;margin-left:-101px;background:var(--paper);color:var(--ink);padding:9px 12px;box-shadow:0 4px 0 #0007;will-change:transform}
+.card .row{display:flex;justify-content:space-between;align-items:baseline}
+.card .nm{font:800 20px/1 Impact,"Arial Black",sans-serif}
+.card .lv{font:700 10px Consolas,monospace;opacity:.7}
+.bar{height:7px;margin-top:6px;background:#10263a22}
+.bar i{display:block;height:100%}
+.seal{position:absolute;left:12px;bottom:7px;padding:2px 7px;background:var(--red);color:#fff;font:800 11px Impact,"Arial Black",sans-serif;letter-spacing:.04em}
+.body{position:absolute;left:50%;bottom:42px;width:36px;height:70px;margin-left:-18px;border-radius:18px 18px 8px 8px;background:#64b5d9;will-change:transform}
+.fx{position:absolute;pointer-events:none}
+.ring{border:3px solid var(--gold);border-radius:50%;opacity:0}
+button{margin-top:2px;padding:6px 12px;border:1px solid #456356;background:#0d1712;color:var(--lime);font:700 11px Consolas,monospace;letter-spacing:.1em;cursor:pointer}
+</style>
+</head>
+<body>
+<h1>Knock-up card: one-side lift</h1>
+<p class="lede">No spinning. Each card edge flies on its own parabola (same 1.3 s, apex 0.65 s), so the block is raised and thrown on one side while the other side has a different height and a different fall gravity. The tilt comes from the height difference of the two edges. All numbers are variables at the top of the script.</p>
+<div class="grid" id="grid"></div>
+<script>
+/* ============================ EDITABLE VARIABLES ============================ */
+const CFG = {
+  characterName: "MON",   // the name is a variable: nothing depends on a character (D-235)
+  statusLabel: "KNOCK-UP",
+  airTime: 1.3,           // seconds in the air = status duration (D-1205)
+  cardW: 202,             // px, used to turn the edge height difference into a tilt
+  loopPause: 0.9,         // seconds between loops
+  landShakePx: 5,
+  // one entry per concept. Side "lift" = the edge that is thrown up.
+  // hL/hR: apex height of the left/right edge (px). gL/gR: fall gravity of each edge (px/s^2): bigger = drops faster.
+  concepts: [
+    { tag:"CONCEPT 1", title:"Crowbar", desc:"The left edge stays hinged on the floor while the right edge is levered high and floats down slowly; the block settles flat with a hinge-side dust puff.",
+      hL:0,   hR:140, gL:0,    gR:260, drift:0,  hinge:true,  body:1.0 },
+    { tag:"CONCEPT 2", title:"Catapult", desc:"The right edge is flung high with light gravity and lingers; the left edge pops up only a little with heavy gravity and snaps back first. The block also slides toward the light side and returns.",
+      hL:34,  hR:150, gL:900,  gR:240, drift:26, hinge:false, body:1.0 },
+    { tag:"CONCEPT 3", title:"Trapdoor slam", desc:"The right edge goes up with heavy gravity: a long, tense rise and then a fast slam. The left edge is barely lifted and hangs light. The slam fires a floor shockwave.",
+      hL:46,  hR:130, gL:200,  gR:1500, drift:0,  hinge:false, body:1.0, slam:true }
+  ]
+};
+/* ========================================================================== */
+
+/* One edge: apex height h, fall gravity g, total air time T. Same law as the in-game Knock-up:
+   fall = sqrt(2h/g), rise = T - fall, launch speed v = 2h/rise. Returns height at time t. */
+function edgeHeight(t, h, g, T){
+  if(h<=0||g<=0||t<=0||t>=T) return 0;
+  const fall=Math.sqrt(2*h/g), rise=Math.max(T-fall,0.05);
+  if(t<rise){const k=t/rise; return h*(1-(1-k)*(1-k));}   // smooth rise with a peak at `rise`
+  const f=(t-rise)/fall; return h*(1-f*f);                   // quadratic fall, reaches 0 exactly at T
+}
+
+const grid=document.getElementById("grid");
+CFG.concepts.forEach((c,i)=>{
+  const d=document.createElement("div");d.className="opt";
+  d.innerHTML=`<span class="tag">${c.tag}</span><h2>${c.title}</h2><p>${c.desc}</p>
+  <div class="vars">hL ${c.hL} / hR ${c.hR}px | gL ${c.gL} / gR ${c.gR} | drift ${c.drift}px</div>
+  <div class="stage"><div class="floor"></div><div class="shadow"></div><div class="body"></div>
+  <div class="card"><div class="row"><span class="nm">${CFG.characterName}</span><span class="lv">LV. 1</span></div>
+  <div class="bar"><i style="width:78%;background:#ff746c"></i></div><div class="bar"><i style="width:55%;background:#63d9ec"></i></div>
+  <span class="seal">${CFG.statusLabel} ${CFG.airTime}s</span></div></div>
+  <button>REPEAT</button>`;
+  grid.appendChild(d);
+  const st=d.querySelector(".stage"),card=d.querySelector(".card"),body=d.querySelector(".body"),shadow=d.querySelector(".shadow");
+  let t0=performance.now(),landed=false,fxs=[];
+  d.querySelector("button").onclick=()=>{t0=performance.now();landed=false;};
+  function puff(x,big){ // dust ring at the floor
+    const r=document.createElement("div");r.className="fx ring";
+    r.style.cssText=`left:${x}px;bottom:34px;width:20px;height:10px;margin-left:-10px;`;
+    st.appendChild(r);fxs.push({el:r,t:performance.now(),big});
+  }
+  function frame(now){
+    let t=(now-t0)/1000;
+    const T=CFG.airTime;
+    if(t>T+CFG.loopPause){t0=now;t=0;landed=false;}
+    const tt=Math.min(t,T);
+    const yL=edgeHeight(tt,c.hL,c.gL||1,T), yR=edgeHeight(tt,c.hR,c.gR,T);
+    const yc=(yL+yR)/2;
+    const s=Math.max(-1,Math.min(1,(yR-yL)/CFG.cardW)), th=Math.asin(s);   // tilt, never a full turn
+    let x=c.drift*Math.sin(Math.PI*Math.min(tt/T,1));
+    if(c.hinge) x-= (CFG.cardW/2)*(1-Math.cos(th));                          // left corner stays pinned
+    let shake=0;
+    if(t>=T&&t<T+0.18){shake=CFG.landShakePx*Math.sin((t-T)*60)*(1-(t-T)/0.18);}
+    card.style.transform=`translate(${x+shake}px,${-yc}px) rotate(${-th}rad)`;
+    body.style.transform=`translateY(${-(c.body*Math.max(yL,yR)*0.75)}px)`;
+    shadow.style.transform=`scaleX(${1-Math.min(yc,160)/400})`;shadow.style.opacity=1-Math.min(yc,160)/260;
+    if(t>=T&&!landed){landed=true;
+      const w=st.clientWidth/2;
+      if(c.hinge)puff(w-CFG.cardW/2,0);else puff(w,0);
+      if(c.slam){puff(w+CFG.cardW/2,1);puff(w-CFG.cardW/2,1);}
+      else puff(w+CFG.cardW/2,0);
+    }
+    fxs=fxs.filter(f=>{
+      const k=(now-f.t)/450; if(k>=1){f.el.remove();return false;}
+      const sc=1+k*(f.big?9:5);f.el.style.transform=`scale(${sc})`;f.el.style.opacity=(1-k)*.9;return true;});
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+});
+</script>
+</body>
+</html>

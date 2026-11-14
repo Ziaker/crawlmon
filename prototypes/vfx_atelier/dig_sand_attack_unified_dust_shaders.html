@@ -1,0 +1,3154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brawlmon / Crawlmon 3D ATB — Babylon.js VFX Atelier (MEDIA, MABUFULA, DIG & SAND ATTACK)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;0,800;1,700&family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --lime: #d8ff00;
+      --cyan: #2de2e6;
+      --coral: #ff4d4d;
+      --violet: #9c88ff;
+      --emerald: #00ff9d;
+      --cryo: #6be8ff;
+      --bg-abyss: #051622;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #051622;
+      font-family: 'Inter', sans-serif;
+      color: #ffffff;
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      outline: none;
+    }
+
+    /* HUD V9 - NOCTURNE SLANT GEOMETRY */
+    .nocturne-skew {
+      transform: skewX(-11deg);
+    }
+    .nocturne-unskew {
+      transform: skewX(11deg);
+    }
+
+    .font-display {
+      font-family: 'Chakra Petch', 'Inter', sans-serif;
+    }
+    .font-mono-tech {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Abra Player Card (Light Plate) */
+    .hud-card-player {
+      background: linear-gradient(135deg, #eef4f8 0%, #dce6ee 100%);
+      border-left: 7px solid #2de2e6;
+      box-shadow: 0 14px 32px rgba(0, 8, 16, 0.65), -4px 0 16px rgba(45, 226, 230, 0.35);
+      color: #131d28;
+    }
+
+    /* Pancham Ally Card (Dark Slate Plate) */
+    .hud-card-ally {
+      background: linear-gradient(135deg, rgba(20, 29, 42, 0.95) 0%, rgba(13, 20, 30, 0.96) 100%);
+      border-left: 6px solid #9c88ff;
+      box-shadow: 0 14px 32px rgba(0, 8, 16, 0.7), -4px 0 16px rgba(156, 136, 255, 0.3);
+      color: #f1f5f9;
+    }
+
+    /* Floating Enemy Plate (Gible) */
+    .hud-card-enemy {
+      background: linear-gradient(180deg, rgba(13, 22, 32, 0.94) 0%, rgba(8, 15, 23, 0.96) 100%);
+      border-top: 2px solid rgba(255, 77, 77, 0.65);
+      border-bottom: 1px solid rgba(45, 226, 230, 0.25);
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.75);
+      pointer-events: none;
+    }
+
+    /* Camera Director Buttons */
+    .cam-btn {
+      background: rgba(11, 25, 37, 0.85);
+      border: 1px solid rgba(45, 226, 230, 0.2);
+      color: #c5d6e6;
+      transition: all 0.16s ease;
+      cursor: pointer;
+    }
+    .cam-btn:hover {
+      background: rgba(20, 42, 60, 0.95);
+      border-color: rgba(216, 255, 0, 0.55);
+      color: #ffffff;
+    }
+    .cam-btn.active {
+      background: #d8ff00;
+      border-color: #d8ff00;
+      color: #0b1620;
+      box-shadow: 0 0 20px rgba(216, 255, 0, 0.45);
+    }
+
+    /* Skill Command Buttons */
+    .skill-btn {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+    }
+    .skill-btn:hover:not(:disabled) {
+      transform: skewX(-11deg) translateY(-3px) scale(1.02);
+    }
+    .skill-btn:active:not(:disabled) {
+      transform: skewX(-11deg) translateY(0px) scale(0.98);
+    }
+    .skill-btn:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    /* Variant Pill Buttons */
+    .variant-mode-btn {
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+    .variant-mode-btn.active {
+      background: #2de2e6;
+      color: #04141c;
+      font-weight: 900;
+      box-shadow: 0 0 14px rgba(45, 226, 230, 0.65);
+    }
+
+    /* Floating Damage / Heal / Status Popups */
+    @keyframes floatPopup {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, 10px) skewX(-10deg) scale(0.65);
+      }
+      16% {
+        opacity: 1;
+        transform: translate(-50%, -14px) skewX(-10deg) scale(1.1);
+      }
+      30% {
+        transform: translate(-50%, -20px) skewX(-10deg) scale(1.0);
+      }
+      84% {
+        opacity: 1;
+        transform: translate(-50%, -44px) skewX(-10deg) scale(1.0);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -64px) skewX(-10deg) scale(0.9);
+      }
+    }
+    .combat-popup {
+      position: absolute;
+      pointer-events: none;
+      z-index: 45;
+      animation: floatPopup 1.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Reticle Diamond Spin/Pulse */
+    @keyframes diamondPulse {
+      0%, 100% { transform: rotate(45deg) scale(1); box-shadow: 0 0 10px rgba(255, 87, 51, 0.85); }
+      50% { transform: rotate(45deg) scale(1.18); box-shadow: 0 0 18px rgba(255, 120, 70, 1); }
+    }
+    .enemy-reticle-diamond {
+      width: 13px;
+      height: 13px;
+      border: 2.5px solid #ff5733;
+      background: rgba(255, 87, 51, 0.18);
+      animation: diamondPulse 1.8s infinite ease-in-out;
+    }
+
+    /* Screen Overlays */
+    #screen-flash {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 25;
+      opacity: 0;
+      mix-blend-mode: screen;
+      transition: opacity 0.09s ease-out;
+    }
+
+    #elemental-vignette {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 20;
+      opacity: 0;
+      transition: opacity 0.35s ease-out;
+    }
+
+    .hp-fill-smooth {
+      transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .hp-ghost-fill {
+      transition: width 0.95s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    #skill-cast-banner {
+      position: fixed;
+      top: 102px;
+      left: 24px;
+      z-index: 40;
+      pointer-events: none;
+    }
+
+    #fixture-controls {
+      position: fixed;
+      top: 58px;
+      left: 16px;
+      z-index: 50;
+      display: flex;
+      gap: 7px;
+      align-items: center;
+      flex-wrap: wrap;
+      font: 11px 'JetBrains Mono', monospace;
+      background: rgba(7, 21, 33, 0.92);
+      border: 1px solid rgba(45, 226, 230, 0.3);
+      padding: 5px 10px;
+      border-radius: 4px;
+    }
+    #fixture-controls select, #fixture-controls button {
+      background: #102633;
+      color: #dcebf4;
+      border: 1px solid #385061;
+      padding: 4px 7px;
+      border-radius: 3px;
+      font-size: 11px;
+    }
+    #fixture-controls button:hover:not(:disabled) {
+      border-color: #d8ff00;
+      color: #ffffff;
+    }
+    #fixture-controls :disabled {
+      opacity: 0.5;
+    }
+
+    #boot-error {
+      position: fixed;
+      inset: 30%;
+      z-index: 100;
+      background: #26151b;
+      border: 2px solid #ff4d4d;
+      padding: 24px;
+      display: none;
+      color: white;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <!-- 3D Babylon.js WebGL Viewport -->
+  <div id="canvas-container">
+    <canvas id="renderCanvas"></canvas>
+  </div>
+
+  <!-- FLOATING COMBAT POPUPS LAYER -->
+  <div id="popups-container" class="fixed inset-0 pointer-events-none z-40 overflow-hidden"></div>
+
+  <!-- Skill Cast Announcement Banner -->
+  <div id="skill-cast-banner" class="hidden nocturne-skew"></div>
+
+  <!-- Top Telemetry & Camera Director Header (With Opposite Side & Oblique Views!) -->
+  <div class="fixed top-2.5 inset-x-4 z-30 flex items-start justify-between pointer-events-none">
+    <!-- Left Telemetry Readout -->
+    <div class="nocturne-skew bg-[#071521]/90 border-l-4 border-[#eab308] border-t border-r border-b border-yellow-500/30 px-3.5 py-1.5 shadow-lg pointer-events-auto">
+      <div class="nocturne-unskew flex items-center gap-3">
+        <div>
+          <div class="text-[9px] font-mono-tech text-yellow-300/80 uppercase tracking-widest">CRAWLMON • BABYLON.JS VOLUMETRIC DUST ATELIER</div>
+          <div id="particle-count-readout" class="text-[11px] font-mono-tech font-bold text-[#d8ff00]">DIG & SAND ATTACK • SHADERS UNIFICADOS</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Camera Director (Includes NORMAL, ESPELHADA/OPOSTO, OBLÍQUA, TÁTICA, IMPACTO) -->
+    <div class="flex flex-col items-end gap-1 pointer-events-auto">
+      <div class="flex items-center gap-3 text-[9px] font-mono-tech tracking-widest uppercase px-1">
+        <span class="text-slate-300 font-bold">DIREÇÃO DE CÂMERA 3D</span>
+        <span id="cam-status-label" class="text-[#d8ff00] font-extrabold">01 NORMAL (JOGADOR)</span>
+      </div>
+      <div class="flex flex-wrap items-center justify-end gap-1.5 nocturne-skew">
+        <button data-cam="cinema" class="cam-btn active px-3 py-1.5 text-center min-w-[70px]">
+          <div class="nocturne-unskew">
+            <div class="font-display font-black text-xs leading-none">01</div>
+            <div class="text-[8px] font-bold tracking-wider uppercase mt-0.5">NORMAL</div>
+          </div>
+        </button>
+        <button data-cam="oposto" class="cam-btn px-3 py-1.5 text-center min-w-[82px] border-rose-400/40">
+          <div class="nocturne-unskew">
+            <div class="font-display font-black text-xs leading-none text-rose-300">02</div>
+            <div class="text-[8px] font-bold tracking-wider uppercase mt-0.5">ESPELHADA (OPOSTO)</div>
+          </div>
+        </button>
+        <button data-cam="obliqua" class="cam-btn px-3 py-1.5 text-center min-w-[72px]">
+          <div class="nocturne-unskew">
+            <div class="font-display font-black text-xs leading-none">03</div>
+            <div class="text-[8px] font-bold tracking-wider uppercase mt-0.5">OBLÍQUA</div>
+          </div>
+        </button>
+        <button data-cam="tatica" class="cam-btn px-3 py-1.5 text-center min-w-[68px]">
+          <div class="nocturne-unskew">
+            <div class="font-display font-black text-xs leading-none">04</div>
+            <div class="text-[8px] font-bold tracking-wider uppercase mt-0.5">TÁTICA</div>
+          </div>
+        </button>
+        <button data-cam="impacto" class="cam-btn px-3 py-1.5 text-center min-w-[70px]">
+          <div class="nocturne-unskew">
+            <div class="font-display font-black text-xs leading-none">05</div>
+            <div class="text-[8px] font-bold tracking-wider uppercase mt-0.5">IMPACTO</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fixture & Shader Opacity Controls Bar -->
+  <div id="fixture-controls">
+    <label>Atacante <select id="actor-select"></select></label>
+    <label>Alvo <select id="target-select"></select></label>
+    <button id="btn-mirror" title="Inverte os lados Atacante <-> Alvo e testa perspectiva oposta">⇄ Trocar lados</button>
+    <label>Escala Alvo
+      <select id="target-size">
+        <option value="1">1.0×</option>
+        <option value="0.65">0.65×</option>
+        <option value="1.55">1.55×</option>
+      </select>
+    </label>
+    <label class="flex items-center gap-1 text-emerald-300">
+      Opacidade Shader
+      <input id="slider-opacity" type="range" min="0.20" max="1.00" step="0.02" value="0.85" class="w-16 accent-[#00ff9d] cursor-pointer" />
+      <span id="label-opacity" class="text-white font-bold w-8">85%</span>
+    </label>
+    <label class="flex items-center gap-1 text-cyan-300">
+      Alpha Feather
+      <input id="slider-feather" type="range" min="0.04" max="0.40" step="0.02" value="0.22" class="w-16 accent-[#2de2e6] cursor-pointer" />
+      <span id="label-feather" class="text-white font-bold w-8">0.22</span>
+    </label>
+    <button id="btn-pause">Ⅱ Pausar</button>
+  </div>
+
+  <!-- 3D Projected Floating Enemy HUDs (Gible Main [0], Alpha [-2], Beta [+2]) -->
+  <div id="enemy-hud-0" class="fixed z-20 -translate-x-1/2 -translate-y-full pointer-events-none flex flex-col items-center">
+    <div class="hud-card-enemy nocturne-skew px-3.5 py-1.5 min-w-[168px]">
+      <div class="nocturne-unskew">
+        <div class="flex items-center justify-between gap-2 mb-1">
+          <span class="font-display font-black text-xs tracking-wider text-[#ff5733]" data-name>GIBLE</span>
+          <div class="flex items-center gap-1">
+            <span id="enemy-0-freeze-pill" class="hidden px-1.5 py-0.5 bg-cyan-500/30 border border-cyan-300 text-[8px] font-mono-tech font-bold text-cyan-100">❄️ FREEZE</span>
+            <span id="enemy-0-acc-pill" class="hidden px-1.5 py-0.5 bg-yellow-500/30 border border-yellow-300 text-[8px] font-mono-tech font-bold text-yellow-100">👁️ ACC ↓</span>
+            <span class="px-1 bg-slate-800 text-[8px] font-mono-tech text-slate-400 border border-slate-700">ALVO</span>
+          </div>
+        </div>
+        <div class="w-full h-2 bg-slate-950/90 relative overflow-hidden border border-slate-700/80">
+          <div id="enemy-0-hp-ghost" class="hp-ghost-fill absolute inset-y-0 left-0 bg-amber-300/80 w-full"></div>
+          <div id="enemy-0-hp-bar" class="hp-fill-smooth relative h-full bg-gradient-to-r from-[#ff4d4d] to-[#ff7676] w-full"></div>
+        </div>
+        <div class="flex items-center justify-between mt-1">
+          <span id="enemy-0-hp-text" class="font-mono-tech font-bold text-[10px] text-slate-200">HP 60 / 60</span>
+          <span class="px-1 bg-slate-800 text-[8px] font-mono-tech text-cyan-300 border border-slate-700">3D</span>
+        </div>
+      </div>
+    </div>
+    <div class="enemy-reticle-diamond mt-2"></div>
+  </div>
+
+  <!-- Extra Enemy Clone Alpha (Slot -2) -->
+  <div id="enemy-hud-1" style="display:none;" class="fixed z-20 -translate-x-1/2 -translate-y-full pointer-events-none flex-col items-center">
+    <div class="hud-card-enemy nocturne-skew px-3 py-1 min-w-[144px]">
+      <div class="nocturne-unskew">
+        <div class="flex items-center justify-between gap-1 mb-0.5">
+          <span class="font-display font-black text-[11px] tracking-wider text-rose-400" data-name>GIBLE α [-2]</span>
+          <div class="flex items-center gap-1">
+            <span id="enemy-1-freeze-pill" class="hidden px-1 bg-cyan-500/30 border border-cyan-300 text-[8px] font-mono-tech font-bold text-cyan-100">❄️</span>
+            <span id="enemy-1-acc-pill" class="hidden px-1 bg-yellow-500/30 border border-yellow-300 text-[8px] font-mono-tech font-bold text-yellow-100">ACC↓</span>
+          </div>
+        </div>
+        <div class="w-full h-1.5 bg-slate-950 relative overflow-hidden border border-slate-700">
+          <div id="enemy-1-hp-bar" class="hp-fill-smooth h-full bg-[#ff4d4d] w-full"></div>
+        </div>
+        <div id="enemy-1-hp-text" class="font-mono-tech font-bold text-[9px] text-slate-300 mt-0.5">HP 34 / 34</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Extra Enemy Clone Beta (Slot +2) -->
+  <div id="enemy-hud-2" style="display:none;" class="fixed z-20 -translate-x-1/2 -translate-y-full pointer-events-none flex-col items-center">
+    <div class="hud-card-enemy nocturne-skew px-3 py-1 min-w-[144px]">
+      <div class="nocturne-unskew">
+        <div class="flex items-center justify-between gap-1 mb-0.5">
+          <span class="font-display font-black text-[11px] tracking-wider text-rose-400" data-name>GIBLE β [+2]</span>
+          <div class="flex items-center gap-1">
+            <span id="enemy-2-freeze-pill" class="hidden px-1 bg-cyan-500/30 border border-cyan-300 text-[8px] font-mono-tech font-bold text-cyan-100">❄️</span>
+            <span id="enemy-2-acc-pill" class="hidden px-1 bg-yellow-500/30 border border-yellow-300 text-[8px] font-mono-tech font-bold text-yellow-100">ACC↓</span>
+          </div>
+        </div>
+        <div class="w-full h-1.5 bg-slate-950 relative overflow-hidden border border-slate-700">
+          <div id="enemy-2-hp-bar" class="hp-fill-smooth h-full bg-[#ff4d4d] w-full"></div>
+        </div>
+        <div id="enemy-2-hp-text" class="font-mono-tech font-bold text-[9px] text-slate-300 mt-0.5">HP 34 / 34</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Left Player HUD V9 Card: ABRA -->
+  <div class="fixed bottom-28 left-4 z-30 pointer-events-none hidden sm:block">
+    <div class="hud-card-player nocturne-skew px-4 py-2.5 w-[270px]">
+      <div class="nocturne-unskew flex items-center gap-3">
+        <div class="w-11 h-11 bg-[#1b2838] border-2 border-[#2de2e6] flex items-center justify-center font-display font-black text-lg text-[#ffd32a] shadow-inner shrink-0">
+          AB
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-baseline justify-between">
+            <span class="font-display font-black text-base tracking-wide text-slate-900" id="abra-name">ABRA</span>
+            <span class="text-[8px] font-mono-tech font-bold uppercase tracking-wider text-slate-500">JOGADOR</span>
+          </div>
+          <div class="flex items-center gap-2 mt-1">
+            <div class="flex-1 h-2 bg-slate-300 relative overflow-hidden">
+              <div id="abra-hp-heal-preview" class="hp-fill-smooth absolute inset-y-0 left-0 bg-[#00ff9d] w-full"></div>
+              <div id="abra-hp-bar" class="hp-fill-smooth relative h-full bg-[#ff5252] w-full"></div>
+            </div>
+            <span id="abra-hp-text" class="font-mono-tech font-extrabold text-[10px] text-slate-800 shrink-0">HP 32/32</span>
+          </div>
+          <div class="flex items-center justify-between mt-1.5">
+            <span class="text-[8px] font-mono-tech font-extrabold text-slate-600">ATB</span>
+            <div class="flex gap-1 flex-1 mx-2">
+              <div class="h-1.5 flex-1 bg-[#2898b8]"></div>
+              <div class="h-1.5 flex-1 bg-[#2898b8]"></div>
+              <div class="h-1.5 flex-1 bg-[#2898b8]"></div>
+              <div class="h-1.5 flex-1 bg-[#2898b8]"></div>
+              <div class="h-1.5 flex-1 bg-slate-400"></div>
+            </div>
+            <span class="px-1 bg-slate-800 text-white text-[8px] font-mono-tech font-bold">B</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Ally HUD V9 Card: PANCHAM -->
+  <div class="fixed bottom-28 right-4 z-30 pointer-events-none hidden sm:block">
+    <div class="hud-card-ally nocturne-skew px-4 py-2.5 w-[250px]">
+      <div class="nocturne-unskew flex items-center gap-3">
+        <div class="w-10 h-10 bg-slate-800 border-2 border-[#9c88ff] flex items-center justify-center font-display font-black text-base text-white shrink-0">
+          PA
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-baseline justify-between">
+            <span class="font-display font-black text-sm tracking-wide text-white" id="pancham-name">PANCHAM</span>
+            <span class="text-[8px] font-mono-tech font-bold uppercase tracking-wider text-slate-400">ALIADO • IA</span>
+          </div>
+          <div class="flex items-center gap-2 mt-1">
+            <div class="flex-1 h-2 bg-slate-800 relative overflow-hidden">
+              <div id="pancham-hp-heal-preview" class="hp-fill-smooth absolute inset-y-0 left-0 bg-[#00ff9d] w-full"></div>
+              <div id="pancham-hp-bar" class="hp-fill-smooth relative h-full bg-[#9c88ff] w-full"></div>
+            </div>
+            <span id="pancham-hp-text" class="font-mono-tech font-extrabold text-[10px] text-slate-200 shrink-0">HP 45/45</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen FX Overlays -->
+  <div id="screen-flash"></div>
+  <div id="elemental-vignette"></div>
+  <div id="boot-error"></div>
+
+  <!-- ===================================================================== -->
+  <!-- COMMAND DECK & BABYLON.JS SHADER ATELIER BAR (MOVES 01–04 + VARIANTS) -->
+  <!-- ===================================================================== -->
+  <div class="fixed bottom-2.5 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-1.5 pointer-events-auto w-[99vw] max-w-[1380px]">
+    <!-- DYNAMIC VARIANT SELECTOR BAR -->
+    <div id="variant-bar-container" class="flex flex-wrap items-center justify-center gap-1.5 bg-[#071520]/95 border border-amber-500/50 px-3.5 py-1.5 nocturne-skew shadow-[0_0_24px_rgba(245,158,11,0.25)]">
+      <div id="variant-bar-inner" class="nocturne-unskew flex flex-wrap items-center gap-2 text-[10px] font-mono-tech"></div>
+    </div>
+
+    <!-- Primary Moves Grid (Focused on DIG & SAND ATTACK) -->
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 gap-2.5 w-full max-w-[680px] px-2">
+      <!-- MOVE 3: DIG -->
+      <button id="btn-cast-dig" class="skill-btn nocturne-skew bg-gradient-to-r from-[#2b1908]/95 to-[#42260c]/95 border-l-4 border-[#f59e0b] border-t border-r border-b border-[#f59e0b]/60 px-3.5 py-2 shadow-[0_0_18px_rgba(245,158,11,0.25)] group">
+        <div class="nocturne-unskew flex items-center gap-2.5">
+          <div class="w-6 h-6 rounded bg-[#f59e0b] text-slate-950 flex items-center justify-center font-display font-black text-xs">3</div>
+          <div class="text-left min-w-0">
+            <div class="font-display font-extrabold text-sm text-[#f59e0b] leading-tight truncate">DIG (ESCAVAÇÃO & ERUPÇÃO)</div>
+            <div class="text-[9px] text-amber-200 font-mono-tech truncate">Poeira Volumétrica FBM • Opacidade Beer-Lambert</div>
+          </div>
+        </div>
+      </button>
+
+      <!-- MOVE 4: SAND ATTACK -->
+      <button id="btn-cast-sand" class="skill-btn nocturne-skew bg-gradient-to-r from-[#282109]/95 to-[#3d320d]/95 border-l-4 border-[#eab308] border-t border-r border-b border-[#eab308]/80 px-3.5 py-2 shadow-[0_0_22px_rgba(234,179,8,0.40)] ring-2 ring-white/80 group">
+        <div class="nocturne-unskew flex items-center gap-2.5">
+          <div class="w-6 h-6 rounded bg-[#eab308] text-slate-950 flex items-center justify-center font-display font-black text-xs">4</div>
+          <div class="text-left min-w-0">
+            <div class="font-display font-extrabold text-sm text-[#eab308] leading-tight truncate">SAND ATTACK (JATO DE POEIRA & ACC ↓)</div>
+            <div class="text-[9px] text-yellow-200 font-mono-tech truncate">Mesmos Shaders de Poeira & Dissipação do DIG</div>
+          </div>
+        </div>
+      </button>
+    </div>
+
+    <!-- Secondary Studio Controls Row -->
+    <div class="flex flex-wrap items-center justify-center gap-1.5 bg-[#081622]/90 border border-slate-700/70 px-3 py-1 nocturne-skew backdrop-blur-md text-[10px] font-bold">
+      <div class="nocturne-unskew flex flex-wrap items-center gap-2">
+        <button id="btn-sim-damage" class="px-2 py-0.5 bg-rose-500/20 hover:bg-rose-500/35 text-rose-300 border border-rose-500/40 transition-colors cursor-pointer">
+          ⚡ Simular Dano Aliados
+        </button>
+
+        <button id="btn-toggle-clones" class="px-2 py-0.5 bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-400/35 transition-colors cursor-pointer">
+          👥 Alvos Extras (-2 / +2): <span id="clones-state-text" class="text-white">OFF</span>
+        </button>
+
+        <div class="flex items-center bg-slate-900/90 border border-slate-700 px-1.5 py-0.5 gap-1">
+          <span class="text-slate-400 mr-1">SPEED:</span>
+          <button data-speed="0.25" class="speed-btn px-1.5 py-0.5 text-slate-400 hover:text-white cursor-pointer">0.25x</button>
+          <button data-speed="0.5" class="speed-btn px-1.5 py-0.5 text-slate-400 hover:text-white cursor-pointer">0.5x</button>
+          <button data-speed="1.0" class="speed-btn px-1.5 py-0.5 bg-[#d8ff00] text-slate-950 font-extrabold cursor-pointer">1.0x</button>
+        </div>
+
+        <button id="btn-auto-loop" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 transition-colors cursor-pointer">
+          🔁 Loop Move Atual: <span id="loop-state-text" class="text-slate-400">OFF</span>
+        </button>
+
+        <button id="btn-toggle-sfx" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[#d8ff00] border border-slate-600 transition-colors cursor-pointer">
+          🔊 SFX: <span id="sfx-state-text">ON</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- BABYLON.JS + GLSL SHADER ENGINE (MOVES 01–04: MEDIA, MABUFULA, DIG, SAND) -->
+  <!-- ===================================================================== -->
+  <script>
+    window.addEventListener('error', (e) => {
+      const box = document.getElementById('boot-error');
+      if (box) {
+        box.style.display = 'block';
+        box.textContent = 'Erro ao iniciar: ' + e.message;
+      }
+    });
+
+    (() => {
+      // =====================================================================
+      // 1. WEB AUDIO SYNTHESIZER (DIG & SAND ATTACK)
+      // =====================================================================
+      class WebAudioSFX {
+        constructor() {
+          this.ctx = null;
+          this.enabled = true;
+        }
+        init() {
+          if (!this.ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) this.ctx = new AudioCtx();
+          }
+          if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+        }
+        playDigBurrow() {
+          if (!this.enabled) return;
+          this.init();
+          if (!this.ctx) return;
+          const now = this.ctx.currentTime;
+          for (let i = 0; i < 5; i++) {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            const t0 = now + i * 0.068;
+            osc.frequency.setValueAtTime(195 - i * 22, t0);
+            osc.frequency.exponentialRampToValueAtTime(46, t0 + 0.14);
+            gain.gain.setValueAtTime(0.085, t0);
+            gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.15);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(t0);
+            osc.stop(t0 + 0.16);
+          }
+        }
+        playDigTremor(step = 1) {
+          if (!this.enabled || !this.ctx) return;
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(88 + step * 6, now);
+          osc.frequency.exponentialRampToValueAtTime(34, now + 0.22);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.25);
+        }
+        playDigEruption() {
+          if (!this.enabled || !this.ctx) return;
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(145, now);
+          osc.frequency.exponentialRampToValueAtTime(24, now + 0.65);
+          gain.gain.setValueAtTime(0.26, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.68);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.70);
+        }
+        playSandJet() {
+          if (!this.enabled) return;
+          this.init();
+          if (!this.ctx) return;
+          const now = this.ctx.currentTime;
+          const len = Math.floor(this.ctx.sampleRate * 1.35);
+          const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+          const data = buf.getChannelData(0);
+          for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+          const src = this.ctx.createBufferSource();
+          src.buffer = buf;
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(850, now);
+          filter.frequency.exponentialRampToValueAtTime(2400, now + 0.32);
+          filter.frequency.exponentialRampToValueAtTime(1050, now + 1.25);
+          filter.Q.value = 2.4;
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.linearRampToValueAtTime(0.15, now + 0.12);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 1.30);
+          src.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.ctx.destination);
+          src.start(now);
+          src.stop(now + 1.35);
+        }
+        playDebuffDown() {
+          if (!this.enabled || !this.ctx) return;
+          const now = this.ctx.currentTime;
+          [620, 520, 410, 310].forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            const t0 = now + idx * 0.075;
+            osc.frequency.setValueAtTime(freq, t0);
+            osc.frequency.exponentialRampToValueAtTime(freq * 0.82, t0 + 0.14);
+            gain.gain.setValueAtTime(0.05, t0);
+            gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(t0);
+            osc.stop(t0 + 0.17);
+          });
+        }
+      }
+      const sfx = new WebAudioSFX();
+
+      // =====================================================================
+      // 2. UNIFIED PHYSICAL DUST & EARTH GLSL SHADERS (SHARED BY DIG & SAND ATTACK)
+      // =====================================================================
+      const GLSL_SIMPLEX_NOISE = `
+        vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec4 permute(vec4 x) { return mod289(((x * 34.0) + 10.0) * x); }
+        vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+        float snoise(vec3 v) {
+          const vec2 C = vec2(1.0 / 6.0, 1.0 / 3.0);
+          const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+          vec3 i  = floor(v + dot(v, C.yyy));
+          vec3 x0 = v - i + dot(i, C.xxx);
+          vec3 g = step(x0.yzx, x0.xyz);
+          vec3 l = 1.0 - g;
+          vec3 i1 = min(g.xyz, l.zxy);
+          vec3 i2 = max(g.xyz, l.zxy);
+          vec3 x1 = x0 - i1 + C.xxx;
+          vec3 x2 = x0 - i2 + C.yyy;
+          vec3 x3 = x0 - D.yyy;
+          i = mod289(i);
+          vec4 p = permute(permute(permute(
+                     i.z + vec4(0.0, i1.z, i2.z, 1.0))
+                   + i.y + vec4(0.0, i1.y, i2.y, 1.0))
+                   + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+          float n_ = 0.142857142857;
+          vec3 ns = n_ * D.wyz - D.xzx;
+          vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+          vec4 x_ = floor(j * ns.z);
+          vec4 y_ = floor(j - 7.0 * x_);
+          vec4 x = x_ * ns.x + ns.yyyy;
+          vec4 y = y_ * ns.x + ns.yyyy;
+          vec4 h = 1.0 - abs(x) - abs(y);
+          vec4 b0 = vec4(x.xy, y.xy);
+          vec4 b1 = vec4(x.zw, y.zw);
+          vec4 s0 = floor(b0) * 2.0 + 1.0;
+          vec4 s1 = floor(b1) * 2.0 + 1.0;
+          vec4 sh = -step(h, vec4(0.0));
+          vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
+          vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
+          vec3 p0 = vec3(a0.xy, h.x);
+          vec3 p1 = vec3(a0.zw, h.y);
+          vec3 p2 = vec3(a1.xy, h.z);
+          vec3 p3 = vec3(a1.zw, h.w);
+          vec4 norm = taylorInvSqrt(vec4(dot(p0, p0), dot(p1, p1), dot(p2, p2), dot(p3, p3)));
+          p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+          vec4 m = max(0.5 - vec4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3)), 0.0);
+          m = m * m;
+          return 105.0 * dot(m * m, vec4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3)));
+        }
+      `;
+
+      // SHADER 1: 64x38 Sculpted Polar Split-Crown Dust Shell (Used by both DIG & SAND ATTACK)
+      BABYLON.Effect.ShadersStore['crownShellVertexShader'] = `
+        precision highp float;
+        attribute vec3 position;
+        attribute vec3 normal;
+        attribute vec2 uv;
+        uniform mat4 world;
+        uniform mat4 worldViewProjection;
+        uniform float uLobes;
+        uniform float uOpenProgress;
+        varying vec2 vUv;
+        varying vec3 vNormalW;
+        varying vec3 vPositionW;
+        void main() {
+          vUv = uv;
+          float u = uv.x;
+          float angle = uv.y * 6.2831853;
+          float wave = cos(angle * uLobes) * 0.5 + 0.5;
+          vec3 pos = position;
+          float flare = smoothstep(0.10, 0.95, u) * uOpenProgress;
+          pos += normal * (wave * 0.22 * flare);
+          vec4 worldPos = world * vec4(pos, 1.0);
+          vPositionW = worldPos.xyz;
+          vNormalW = normalize((world * vec4(normal, 0.0)).xyz);
+          gl_Position = worldViewProjection * vec4(pos, 1.0);
+        }
+      `;
+      BABYLON.Effect.ShadersStore['crownShellFragmentShader'] = `
+        precision highp float;
+        varying vec2 vUv;
+        varying vec3 vNormalW;
+        varying vec3 vPositionW;
+        uniform vec3 uCameraPos;
+        uniform vec3 uCore;
+        uniform vec3 uPrimary;
+        uniform vec3 uSecondary;
+        uniform float uLobes;
+        uniform float uGapOpenness;
+        uniform float uOpenProgress;
+        uniform float uDissolve;
+        uniform float uMasterAlpha;
+        uniform float uBaseOpacity;
+        uniform float uEdgeFeather;
+        void main() {
+          float u = vUv.x;
+          float angle = vUv.y * 6.2831853;
+          float lobeWave = cos(angle * uLobes) * 0.5 + 0.5;
+          float tipReach = mix(0.28, 0.98, pow(lobeWave, 0.72)) * (1.0 - uDissolve * 0.82);
+          float valleyFloor = 0.14 + (1.0 - uGapOpenness) * 0.34;
+          float cutoffU = mix(valleyFloor, tipReach, lobeWave);
+          float edgeMargin = cutoffU - u;
+          if (edgeMargin < 0.0 || u < uDissolve * 0.32) discard;
+          vec3 viewDir = normalize(uCameraPos - vPositionW);
+          float ndotv = abs(dot(normalize(vNormalW), viewDir));
+          float fresnel = 1.0 - ndotv;
+          float isCutoutLip = 1.0 - smoothstep(0.0, 0.095, edgeMargin);
+          vec3 col = mix(uSecondary, uPrimary, smoothstep(0.15, 0.65, lobeWave));
+          col = mix(col, uCore, isCutoutLip * 0.92 + smoothstep(0.68, 0.95, fresnel) * 0.65);
+          float edgeAlpha = smoothstep(0.0, max(0.02, uEdgeFeather), edgeMargin);
+          float bodyAlpha = mix(uBaseOpacity * 0.44, uBaseOpacity, clamp(pow(fresnel, 1.1) + isCutoutLip * 0.85, 0.0, 1.0));
+          float groundContactFade = smoothstep(0.0, 0.22, vPositionW.y + 0.04);
+          float finalAlpha = clamp(bodyAlpha * edgeAlpha * groundContactFade * uMasterAlpha, 0.0, 1.0);
+          if (finalAlpha < 0.01) discard;
+          gl_FragColor = vec4(col, finalAlpha);
+        }
+      `;
+
+      // SHADER 2: Torn-Earth Physical Crater Decal
+      BABYLON.Effect.ShadersStore['digCraterVertexShader'] = `
+        precision highp float;
+        attribute vec3 position;
+        attribute vec2 uv;
+        uniform mat4 worldViewProjection;
+        varying vec2 vUv;
+        void main() {
+          vUv = uv * 2.0 - 1.0;
+          gl_Position = worldViewProjection * vec4(position, 1.0);
+        }
+      `;
+      BABYLON.Effect.ShadersStore['digCraterFragmentShader'] = `
+        precision highp float;
+        varying vec2 vUv;
+        uniform float uTime;
+        uniform float uProgress;
+        uniform float uBaseOpacity;
+        uniform float uEdgeFeather;
+        uniform vec3 uColorSoilLight;
+        uniform vec3 uColorSoilMid;
+        uniform vec3 uColorAbyss;
+        ${GLSL_SIMPLEX_NOISE}
+        void main() {
+          float r = length(vUv);
+          if (r > 1.0) discard;
+          float angle = atan(vUv.y, vUv.x);
+          float n1 = snoise(vec3(vUv * 5.0, 1.2));
+          float n2 = snoise(vec3(vUv * 12.0, 3.4));
+          float holeEdge = 0.44 + n1 * 0.09;
+          float abyssHole = 1.0 - smoothstep(holeEdge - 0.08, holeEdge + 0.05, r);
+          float rimBand = smoothstep(holeEdge - 0.06, holeEdge + 0.08, r) * (1.0 - smoothstep(0.65, 0.98, r + n1 * 0.1));
+          float crackWave = abs(sin(angle * 7.0 + r * 6.0 + n1 * 2.4));
+          float darkCrack = (1.0 - smoothstep(0.0, 0.14, crackWave)) * (1.0 - smoothstep(0.35, 0.92, r));
+          vec3 soilCol = mix(uColorSoilMid, uColorSoilLight, clamp(n2 * 0.5 + 0.5, 0.0, 1.0));
+          soilCol = mix(soilCol, uColorAbyss, darkCrack * 0.85);
+          vec3 col = mix(soilCol, uColorAbyss, abyssHole);
+          float outerFeather = 1.0 - smoothstep(0.95 - uEdgeFeather, 1.0, r);
+          float fadeOut = 1.0 - smoothstep(0.68, 1.0, uProgress);
+          float finalAlpha = clamp((abyssHole * 0.96 + rimBand * 0.88 + darkCrack * 0.65) * outerFeather * fadeOut * uBaseOpacity, 0.0, 1.0);
+          if (finalAlpha < 0.01) discard;
+          gl_FragColor = vec4(col, finalAlpha);
+        }
+      `;
+
+      // SHADER 3: Volumetric 3D Billowing Dust Cloud (Beer-Lambert Translucency + FBM Concave Erosion + Ground Fade)
+      BABYLON.Effect.ShadersStore['digDustCloudVertexShader'] = `
+        precision highp float;
+        attribute vec3 position;
+        attribute vec3 normal;
+        attribute vec2 uv;
+        uniform mat4 world;
+        uniform mat4 worldViewProjection;
+        uniform float uTime;
+        uniform float uProgress;
+        uniform float uSeed;
+        varying vec2 vUv;
+        varying vec3 vNormalW;
+        varying vec3 vPosW;
+        varying float vBillow;
+        ${GLSL_SIMPLEX_NOISE}
+        void main() {
+          vUv = uv;
+          float n = snoise(vec3(position * 1.9 + vec3(0.0, -uTime * 1.8, uSeed * 4.3)));
+          float n2 = snoise(vec3(position * 3.8 + vec3(uSeed * 2.1, uTime * 2.4, 0.0))) * 0.45;
+          float displacement = (n + n2) * (0.26 + uProgress * 0.22);
+          vBillow = n * 0.5 + 0.5;
+          vec3 displacedPos = position + normal * displacement;
+          vec4 wp = world * vec4(displacedPos, 1.0);
+          vPosW = wp.xyz;
+          vNormalW = normalize((world * vec4(normal, 0.0)).xyz);
+          gl_Position = worldViewProjection * vec4(displacedPos, 1.0);
+        }
+      `;
+      BABYLON.Effect.ShadersStore['digDustCloudFragmentShader'] = `
+        precision highp float;
+        varying vec2 vUv;
+        varying vec3 vNormalW;
+        varying vec3 vPosW;
+        varying float vBillow;
+        uniform float uTime;
+        uniform float uProgress;
+        uniform float uBaseOpacity;
+        uniform float uEdgeFeather;
+        uniform float uSeed;
+        uniform vec3 uCameraPos;
+        uniform vec3 uColorLit;
+        uniform vec3 uColorMid;
+        uniform vec3 uColorShadow;
+        ${GLSL_SIMPLEX_NOISE}
+        void main() {
+          vec3 nW = normalize(vNormalW);
+          vec3 viewDir = normalize(uCameraPos - vPosW);
+          float ndotv = abs(dot(nW, viewDir));
+          vec3 lightDir = normalize(vec3(-0.35, 0.85, 0.4));
+          float ndotl = dot(nW, lightDir) * 0.5 + 0.5;
+          float shadeVal = clamp(ndotl * 0.72 + vBillow * 0.36, 0.0, 1.0);
+          vec3 col = uColorShadow;
+          col = mix(col, uColorMid, smoothstep(0.28, 0.48, shadeVal));
+          col = mix(col, uColorLit, smoothstep(0.62, 0.82, shadeVal));
+          float fbm1 = snoise(vec3(vPosW * 2.2 + vec3(uSeed, -uTime * 1.4, uSeed))) * 0.5 + 0.5;
+          float fbm2 = snoise(vec3(vPosW * 4.6 - vec3(uTime * 2.1, uSeed, 0.0))) * 0.5 + 0.5;
+          float densityMap = clamp(fbm1 * 0.65 + fbm2 * 0.35, 0.0, 1.0);
+          float rimSoftness = pow(ndotv, mix(0.65, 1.55, clamp(uEdgeFeather * 2.5, 0.0, 1.0)));
+          float concaveErosion = uProgress * 1.15 - (densityMap * 0.68 + ndotv * 0.48);
+          if (concaveErosion > 0.0) discard;
+          float erosionFeather = smoothstep(0.0, max(0.06, uEdgeFeather * 1.35), -concaveErosion);
+          float beerLambertAlpha = mix(0.22, 0.76, densityMap * rimSoftness);
+          float groundContactFade = smoothstep(0.0, 0.26, vPosW.y + 0.05);
+          float fadeIn = smoothstep(0.0, 0.10, uProgress);
+          float fadeOut = 1.0 - smoothstep(0.45, 1.0, uProgress);
+          float finalAlpha = clamp(beerLambertAlpha * erosionFeather * groundContactFade * fadeIn * fadeOut * uBaseOpacity, 0.0, 1.0);
+          if (finalAlpha < 0.01) discard;
+          gl_FragColor = vec4(col, finalAlpha);
+        }
+      `;
+
+      // SHADER 4: Translucent Atmospheric Dust Curtain Veil (Shared by DIG & SAND ATTACK)
+      BABYLON.Effect.ShadersStore['digDustVeilVertexShader'] = `
+        precision highp float;
+        attribute vec3 position;
+        attribute vec3 normal;
+        attribute vec2 uv;
+        uniform mat4 world;
+        uniform mat4 worldViewProjection;
+        varying vec2 vUv;
+        varying vec3 vNormalW;
+        varying vec3 vPosW;
+        void main() {
+          vUv = uv;
+          vec4 wp = world * vec4(position, 1.0);
+          vPosW = wp.xyz;
+          vNormalW = normalize((world * vec4(normal, 0.0)).xyz);
+          gl_Position = worldViewProjection * vec4(position, 1.0);
+        }
+      `;
+      BABYLON.Effect.ShadersStore['digDustVeilFragmentShader'] = `
+        precision highp float;
+        varying vec2 vUv;
+        varying vec3 vNormalW;
+        varying vec3 vPosW;
+        uniform float uTime;
+        uniform float uProgress;
+        uniform float uBaseOpacity;
+        uniform float uEdgeFeather;
+        uniform vec3 uCameraPos;
+        uniform vec3 uColorLight;
+        uniform vec3 uColorDark;
+        ${GLSL_SIMPLEX_NOISE}
+        void main() {
+          vec3 viewDir = normalize(uCameraPos - vPosW);
+          float ndotv = abs(dot(normalize(vNormalW), viewDir));
+          float angle = vUv.x * 6.2831853;
+          float n1 = snoise(vec3(cos(angle) * 2.2, vUv.y * 3.5 - uTime * 2.2, sin(angle) * 2.2)) * 0.5 + 0.5;
+          float n2 = snoise(vec3(cos(angle) * 5.0, vUv.y * 7.0 - uTime * 3.6, sin(angle) * 5.0)) * 0.5 + 0.5;
+          float plumeMask = smoothstep(0.22, 0.78, n1 * 0.65 + n2 * 0.35);
+          float bottomSoft = smoothstep(0.0, max(0.08, uEdgeFeather), vUv.y);
+          float topSoft = pow(max(0.0, 1.0 - vUv.y), 1.45);
+          float verticalProfile = bottomSoft * topSoft;
+          float silhouetteSoft = smoothstep(0.0, 0.45, ndotv);
+          float timeEnv = smoothstep(0.0, 0.12, uProgress) * (1.0 - smoothstep(0.32, 1.0, uProgress));
+          vec3 col = mix(uColorDark, uColorLight, clamp(vUv.y * 0.65 + n1 * 0.35, 0.0, 1.0));
+          float finalAlpha = clamp(plumeMask * verticalProfile * silhouetteSoft * timeEnv * uBaseOpacity * 0.54, 0.0, 1.0);
+          if (finalAlpha < 0.01) discard;
+          gl_FragColor = vec4(col, finalAlpha);
+        }
+      `;
+
+      // =====================================================================
+      // 3. PROCEDURAL 3D GEOMETRY BUILDERS (LOTUS CROWN & DIRECTIONAL CONE)
+      // =====================================================================
+      function createLotusCrownShellMesh(name, radialSegs = 64, tubularSegs = 38) {
+        const positions = [];
+        const indices = [];
+        const uvs = [];
+        for (let i = 0; i <= tubularSegs; i++) {
+          const u = i / tubularSegs;
+          const y = Math.pow(u, 0.85) * 1.75;
+          const r = 0.55 + Math.pow(u, 0.78) * 1.45 + Math.sin(u * Math.PI) * 0.18;
+          for (let j = 0; j <= radialSegs; j++) {
+            const v = j / radialSegs;
+            const phi = v * Math.PI * 2;
+            positions.push(r * Math.cos(phi), y, r * Math.sin(phi));
+            uvs.push(u, v);
+          }
+        }
+        const stride = radialSegs + 1;
+        for (let i = 0; i < tubularSegs; i++) {
+          for (let j = 0; j < radialSegs; j++) {
+            const a = i * stride + j;
+            const b = (i + 1) * stride + j;
+            const c = (i + 1) * stride + (j + 1);
+            const d = i * stride + (j + 1);
+            indices.push(a, b, d, b, c, d);
+          }
+        }
+        const normals = [];
+        BABYLON.VertexData.ComputeNormals(positions, indices, normals);
+        const vd = new BABYLON.VertexData();
+        vd.positions = positions;
+        vd.indices = indices;
+        vd.normals = normals;
+        vd.uvs = uvs;
+        const mesh = new BABYLON.Mesh(name, scene);
+        vd.applyToMesh(mesh);
+        return mesh;
+      }
+
+      function createDirectionalCryoConeMesh(name, radialSegs = 64, tubularSegs = 38) {
+        const positions = [];
+        const indices = [];
+        const uvs = [];
+        const length = 2.45;
+        for (let i = 0; i <= tubularSegs; i++) {
+          const u = i / tubularSegs;
+          const z = (0.18 - u) * length;
+          const r = 0.16 + Math.pow(u, 0.68) * 1.55 + Math.sin(u * Math.PI) * 0.22;
+          for (let j = 0; j <= radialSegs; j++) {
+            const v = j / radialSegs;
+            const phi = v * Math.PI * 2;
+            positions.push(r * Math.cos(phi), r * Math.sin(phi), z);
+            uvs.push(u, v);
+          }
+        }
+        const stride = radialSegs + 1;
+        for (let i = 0; i < tubularSegs; i++) {
+          for (let j = 0; j < radialSegs; j++) {
+            const a = i * stride + j;
+            const b = (i + 1) * stride + j;
+            const c = (i + 1) * stride + (j + 1);
+            const d = i * stride + (j + 1);
+            indices.push(a, b, d, b, c, d);
+          }
+        }
+        const normals = [];
+        BABYLON.VertexData.ComputeNormals(positions, indices, normals);
+        const vd = new BABYLON.VertexData();
+        vd.positions = positions;
+        vd.indices = indices;
+        vd.normals = normals;
+        vd.uvs = uvs;
+        const mesh = new BABYLON.Mesh(name, scene);
+        vd.applyToMesh(mesh);
+        return mesh;
+      }
+
+      // =====================================================================
+      // 4. BABYLON.JS ENGINE, SCENE, CAMERA, GLOW LAYER & ARENA ENVIRONMENT
+      // =====================================================================
+      const canvas = document.getElementById('renderCanvas');
+      const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+      const scene = new BABYLON.Scene(engine);
+      scene.clearColor = new BABYLON.Color4(0.024, 0.102, 0.157, 1.0);
+      scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
+      scene.fogColor = new BABYLON.Color3(0.024, 0.102, 0.157);
+      scene.fogDensity = 0.0185;
+
+      const camera = new BABYLON.FreeCamera('mainCam', new BABYLON.Vector3(0, 5.5, 13.5), scene);
+      camera.minZ = 0.1;
+      camera.maxZ = 200;
+      camera.fov = (43 * Math.PI) / 180;
+
+      const glowLayer = new BABYLON.GlowLayer('vfxGlow', scene, {
+        mainTextureSamples: 4,
+        blurKernelSize: 36
+      });
+      glowLayer.intensity = 0.62;
+
+      const hemiLight = new BABYLON.HemisphericLight('hemiLight', new BABYLON.Vector3(0, 1, 0), scene);
+      hemiLight.diffuse = BABYLON.Color3.FromHexString('#6ca4c4');
+      hemiLight.groundColor = BABYLON.Color3.FromHexString('#091926');
+      hemiLight.intensity = 0.92;
+
+      const dirLight = new BABYLON.DirectionalLight('dirLight', new BABYLON.Vector3(0.45, -1.0, -0.55).normalize(), scene);
+      dirLight.position = new BABYLON.Vector3(-12, 24, 15);
+      dirLight.diffuse = BABYLON.Color3.FromHexString('#d6f2ff');
+      dirLight.intensity = 1.45;
+
+      const vfxPointLight = new BABYLON.PointLight('vfxPointLight', new BABYLON.Vector3(0, 4, 0), scene);
+      vfxPointLight.diffuse = BABYLON.Color3.FromHexString('#00ff9d');
+      vfxPointLight.intensity = 0;
+      vfxPointLight.range = 28;
+
+      function createGridFloorTexture() {
+        const dt = new BABYLON.DynamicTexture('gridTex', { width: 1024, height: 1024 }, scene, false);
+        const ctx = dt.getContext();
+        const cells = 8;
+        const step = 1024 / cells;
+        for (let r = 0; r < cells; r++) {
+          for (let c = 0; c < cells; c++) {
+            ctx.fillStyle = (r + c) % 2 === 0 ? '#0d2232' : '#122c3f';
+            ctx.fillRect(c * step, r * step, step, step);
+            ctx.fillStyle = 'rgba(45, 226, 230, 0.24)';
+            ctx.beginPath();
+            ctx.arc((c + 0.5) * step, (r + 0.5) * step, 3.0, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        ctx.strokeStyle = '#2de2e6';
+        ctx.lineWidth = 10;
+        ctx.strokeRect(0, 0, 1024, 1024);
+        ctx.strokeStyle = 'rgba(45, 226, 230, 0.28)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(512, 0); ctx.lineTo(512, 1024);
+        ctx.moveTo(0, 512); ctx.lineTo(1024, 512);
+        ctx.stroke();
+        dt.update();
+        dt.wrapU = BABYLON.Texture.WRAP_ADDRESSMODE;
+        dt.wrapV = BABYLON.Texture.WRAP_ADDRESSMODE;
+        dt.uScale = 12;
+        dt.vScale = 12;
+        return dt;
+      }
+
+      const ground = BABYLON.MeshBuilder.CreateGround('arenaGround', { width: 72, height: 72 }, scene);
+      const groundMat = new BABYLON.StandardMaterial('groundMat', scene);
+      groundMat.diffuseTexture = createGridFloorTexture();
+      groundMat.specularColor = new BABYLON.Color3(0.08, 0.14, 0.18);
+      ground.material = groundMat;
+
+      const monolithMat = new BABYLON.StandardMaterial('monolithMat', scene);
+      monolithMat.diffuseColor = BABYLON.Color3.FromHexString('#0b1e2d');
+      monolithMat.specularColor = new BABYLON.Color3(0.05, 0.08, 0.12);
+
+      const orbLightMat = new BABYLON.StandardMaterial('orbLightMat', scene);
+      orbLightMat.emissiveColor = BABYLON.Color3.FromHexString('#fff3d1');
+      orbLightMat.disableLighting = true;
+
+      [
+        [-18, -8, 12], [-12, -16, 10], [-7, -21, 9], [-2, -23, 8.5],
+        [4, -24, 8], [10, -22, 9.5], [15, -18, 11], [20, -14, 10.5],
+        [24, -9, 7], [-22, 2, 13], [18, 16, 11], [-16, 17, 10]
+      ].forEach(([x, z, h], idx) => {
+        const w = 1.65 + (idx % 3) * 0.35;
+        const pillar = BABYLON.MeshBuilder.CreateBox(`bgPillar-${idx}`, { width: w, height: h, depth: w }, scene);
+        pillar.position.set(x, h / 2, z);
+        pillar.material = monolithMat;
+        const orb = BABYLON.MeshBuilder.CreateSphere(`bgOrb-${idx}`, { diameter: 0.36, segments: 8 }, scene);
+        orb.position.set(x, h + 1.1, z);
+        orb.material = orbLightMat;
+      });
+
+      // =====================================================================
+      // 5. 3D ARTICULATED MONSTER RIGS (ABRA, PANCHAM, GIBLE + CLONES)
+      // =====================================================================
+      const ALLY_SLOTS = {
+        '-1': new BABYLON.Vector3(-2.35, 0, 3.85),
+        '+1': new BABYLON.Vector3(3.15, 0, 3.35)
+      };
+      const ENEMY_SLOTS = {
+        '-2': new BABYLON.Vector3(-4.2, 0, -6.2),
+        '0':  new BABYLON.Vector3(1.85, 0, -6.8),
+        '+2': new BABYLON.Vector3(7.4, 0, -6.2)
+      };
+
+      function buildAbraRig(name) {
+        const root = new BABYLON.TransformNode(`${name}-root`, scene);
+        const bodyGroup = new BABYLON.TransformNode(`${name}-body`, scene);
+        bodyGroup.parent = root;
+
+        const yellowMat = new BABYLON.StandardMaterial(`${name}-yellow`, scene);
+        yellowMat.diffuseColor = BABYLON.Color3.FromHexString('#d4be2a');
+        const armorMat = new BABYLON.StandardMaterial(`${name}-armor`, scene);
+        armorMat.diffuseColor = BABYLON.Color3.FromHexString('#524b3b');
+
+        const torso = BABYLON.MeshBuilder.CreateCylinder(`${name}-torso`, { diameterTop: 0.76, diameterBottom: 0.92, height: 0.95, tessellation: 12 }, scene);
+        torso.position.y = 1.05;
+        torso.material = yellowMat;
+        torso.parent = bodyGroup;
+
+        [-1, 1].forEach((side) => {
+          const shoulder = BABYLON.MeshBuilder.CreateSphere(`${name}-sh-${side}`, { diameter: 0.72, segments: 10 }, scene);
+          shoulder.scaling.set(1.15, 0.65, 1.05);
+          shoulder.position.set(side * 0.42, 1.38, 0.05);
+          shoulder.rotation.z = -side * 0.35;
+          shoulder.material = armorMat;
+          shoulder.parent = bodyGroup;
+        });
+
+        const head = BABYLON.MeshBuilder.CreateCylinder(`${name}-head`, { diameterTop: 0, diameterBottom: 1.04, height: 0.75, tessellation: 6 }, scene);
+        head.rotation.x = Math.PI / 2 - 0.2;
+        head.position.set(0, 1.82, 0.1);
+        head.material = yellowMat;
+        head.parent = bodyGroup;
+
+        [-1, 1].forEach((side) => {
+          const ear = BABYLON.MeshBuilder.CreateCylinder(`${name}-ear-${side}`, { diameterTop: 0, diameterBottom: 0.4, height: 0.55, tessellation: 4 }, scene);
+          ear.position.set(side * 0.32, 2.22, -0.05);
+          ear.rotation.set(0.2, 0, -side * 0.38);
+          ear.material = yellowMat;
+          ear.parent = bodyGroup;
+        });
+
+        return {
+          root, bodyGroup, materials: [yellowMat, armorMat],
+          height: 2.35, radius: 0.58,
+          castAnimTimer: 0, shudderTimer: 0, healTint: 0, frozenTint: 0, sandTint: 0,
+          knockupY: 0, knockupVelY: 0, customOverride: false
+        };
+      }
+
+      function buildPanchamRig(name) {
+        const root = new BABYLON.TransformNode(`${name}-root`, scene);
+        const bodyGroup = new BABYLON.TransformNode(`${name}-body`, scene);
+        bodyGroup.parent = root;
+
+        const creamMat = new BABYLON.StandardMaterial(`${name}-cream`, scene);
+        creamMat.diffuseColor = BABYLON.Color3.FromHexString('#e4ecf2');
+        const darkMat = new BABYLON.StandardMaterial(`${name}-dark`, scene);
+        darkMat.diffuseColor = BABYLON.Color3.FromHexString('#222832');
+        const leafMat = new BABYLON.StandardMaterial(`${name}-leaf`, scene);
+        leafMat.diffuseColor = BABYLON.Color3.FromHexString('#4cd137');
+
+        const torso = BABYLON.MeshBuilder.CreateSphere(`${name}-torso`, { diameter: 0.88, segments: 12 }, scene);
+        torso.scaling.set(1.0, 1.12, 0.92);
+        torso.position.y = 0.62;
+        torso.material = darkMat;
+        torso.parent = bodyGroup;
+
+        const head = BABYLON.MeshBuilder.CreateSphere(`${name}-head`, { diameter: 0.96, segments: 14 }, scene);
+        head.position.set(0, 1.28, 0.04);
+        head.material = creamMat;
+        head.parent = bodyGroup;
+
+        [-1, 1].forEach((side) => {
+          const ear = BABYLON.MeshBuilder.CreateSphere(`${name}-ear-${side}`, { diameter: 0.36, segments: 10 }, scene);
+          ear.position.set(side * 0.36, 1.66, 0);
+          ear.material = darkMat;
+          ear.parent = bodyGroup;
+        });
+
+        const leaf = BABYLON.MeshBuilder.CreateCylinder(`${name}-leaf`, { diameterTop: 0, diameterBottom: 0.16, height: 0.42, tessellation: 4 }, scene);
+        leaf.position.set(0.42, 1.22, 0.25);
+        leaf.rotation.set(-0.3, 0, -1.2);
+        leaf.material = leafMat;
+        leaf.parent = bodyGroup;
+
+        return {
+          root, bodyGroup, materials: [creamMat, darkMat, leafMat],
+          height: 1.88, radius: 0.50,
+          castAnimTimer: 0, shudderTimer: 0, healTint: 0, frozenTint: 0, sandTint: 0,
+          knockupY: 0, knockupVelY: 0, customOverride: false
+        };
+      }
+
+      function buildGibleRig(name) {
+        const root = new BABYLON.TransformNode(`${name}-root`, scene);
+        const bodyGroup = new BABYLON.TransformNode(`${name}-body`, scene);
+        bodyGroup.parent = root;
+
+        const blueMat = new BABYLON.StandardMaterial(`${name}-blue`, scene);
+        blueMat.diffuseColor = BABYLON.Color3.FromHexString('#345270');
+        const redMat = new BABYLON.StandardMaterial(`${name}-red`, scene);
+        redMat.diffuseColor = BABYLON.Color3.FromHexString('#c93c3c');
+        const eyeMat = new BABYLON.StandardMaterial(`${name}-eye`, scene);
+        eyeMat.emissiveColor = BABYLON.Color3.FromHexString('#ffd32a');
+        eyeMat.disableLighting = true;
+
+        const body = BABYLON.MeshBuilder.CreateSphere(`${name}-torso`, { diameter: 1.36, segments: 14 }, scene);
+        body.scaling.set(1.05, 1.12, 0.98);
+        body.position.y = 0.86;
+        body.material = blueMat;
+        body.parent = bodyGroup;
+
+        const belly = BABYLON.MeshBuilder.CreateSphere(`${name}-belly`, { diameter: 1.04, segments: 12 }, scene);
+        belly.scaling.set(0.85, 0.95, 0.6);
+        belly.position.set(0, 0.76, 0.36);
+        belly.material = redMat;
+        belly.parent = bodyGroup;
+
+        const fin = BABYLON.MeshBuilder.CreateCylinder(`${name}-fin`, { diameterTop: 0, diameterBottom: 0.56, height: 0.68, tessellation: 4 }, scene);
+        fin.position.set(0, 1.65, -0.08);
+        fin.rotation.x = -0.25;
+        fin.material = blueMat;
+        fin.parent = bodyGroup;
+
+        [-1, 1].forEach((side) => {
+          const horn = BABYLON.MeshBuilder.CreateCylinder(`${name}-horn-${side}`, { diameterTop: 0.28, diameterBottom: 0.36, height: 0.52, tessellation: 8 }, scene);
+          horn.position.set(side * 0.56, 1.25, 0.05);
+          horn.rotation.z = (Math.PI / 2 - 0.35) * -side;
+          horn.material = blueMat;
+          horn.parent = bodyGroup;
+
+          const eye = BABYLON.MeshBuilder.CreateSphere(`${name}-eye-${side}`, { diameter: 0.14, segments: 8 }, scene);
+          eye.position.set(side * 0.26, 1.06, 0.6);
+          eye.material = eyeMat;
+          eye.parent = bodyGroup;
+        });
+
+        return {
+          root, bodyGroup, materials: [blueMat, redMat],
+          height: 2.02, radius: 0.68,
+          castAnimTimer: 0, shudderTimer: 0, healTint: 0, frozenTint: 0, sandTint: 0,
+          knockupY: 0, knockupVelY: 0, customOverride: false
+        };
+      }
+
+      const abraRig = buildAbraRig('abra');
+      abraRig.root.position.copyFrom(ALLY_SLOTS['-1']);
+      abraRig.root.lookAt(ENEMY_SLOTS['0']);
+
+      const panchamRig = buildPanchamRig('pancham');
+      panchamRig.root.position.copyFrom(ALLY_SLOTS['+1']);
+      panchamRig.root.lookAt(ENEMY_SLOTS['0']);
+
+      const gibleRig = buildGibleRig('gibleMain');
+      gibleRig.root.position.copyFrom(ENEMY_SLOTS['0']);
+      gibleRig.root.lookAt(ALLY_SLOTS['-1']);
+
+      const gibleAlphaRig = buildGibleRig('gibleAlpha');
+      gibleAlphaRig.root.position.copyFrom(ENEMY_SLOTS['-2']);
+      gibleAlphaRig.root.lookAt(ALLY_SLOTS['-1']);
+      gibleAlphaRig.root.setEnabled(false);
+
+      const gibleBetaRig = buildGibleRig('gibleBeta');
+      gibleBetaRig.root.position.copyFrom(ENEMY_SLOTS['+2']);
+      gibleBetaRig.root.lookAt(ALLY_SLOTS['+1']);
+      gibleBetaRig.root.setEnabled(false);
+
+      const actors = [
+        { id: 0, name: 'Abra',    team: 0, model: abraRig,       maxHp: 32, hp: 14, home: ALLY_SLOTS['-1'].clone(),  active: true },
+        { id: 1, name: 'Pancham', team: 0, model: panchamRig,    maxHp: 45, hp: 23, home: ALLY_SLOTS['+1'].clone(),  active: true },
+        { id: 2, name: 'Gible',   team: 1, model: gibleRig,      maxHp: 60, hp: 60, home: ENEMY_SLOTS['0'].clone(),  active: true },
+        { id: 3, name: 'Gible α', team: 1, model: gibleAlphaRig, maxHp: 34, hp: 34, home: ENEMY_SLOTS['-2'].clone(), active: false },
+        { id: 4, name: 'Gible β', team: 1, model: gibleBetaRig,  maxHp: 34, hp: 34, home: ENEMY_SLOTS['+2'].clone(), active: false }
+      ];
+
+      // =====================================================================
+      // 6. STATE & 5-VIEW CAMERA DIRECTOR (NORMAL, ESPELHADA/OPOSTO, OBLÍQUA...)
+      // =====================================================================
+      const state = {
+        selected: 0,
+        target: 2,
+        activeMove: 3,
+        digVariant: 'tectonic',
+        sandVariant: 'sirocco',
+        shaderOpacity: 0.85,
+        shaderFeather: 0.22,
+        speed: 1.0,
+        paused: false,
+        clones: false,
+        autoLoop: false,
+        autoTimer: 0,
+        cameraPreset: 'cinema',
+        isCasting: false,
+        clockTime: 0
+      };
+
+      function setCameraPreset(preset = 'cinema') {
+        state.cameraPreset = preset;
+        document.querySelectorAll('.cam-btn').forEach((btn) => {
+          btn.classList.toggle('active', btn.dataset.cam === preset);
+        });
+        const statusLabels = {
+          cinema:  '01 NORMAL (PERSPECTIVA ATACANTE -> ALVO)',
+          oposto:  '02 ESPELHADA / LADO OPOSTO (PROVA D-235)',
+          obliqua: '03 OBLÍQUA 40° (LEITURA DE SILHUETA 3D)',
+          tatica:  '04 TÁTICA ELEVADA (PANORÂMICA)',
+          impacto: '05 CLOSE DE IMPACTO'
+        };
+        document.getElementById('cam-status-label').textContent = statusLabels[preset] || statusLabels.cinema;
+        applyCameraTransform();
+      }
+
+      function applyCameraTransform() {
+        const attacker = actors[state.selected];
+        const target = actors[state.target];
+        const center = new BABYLON.Vector3(0, 1.35, -1.2);
+        let backDir = attacker.home.subtract(target.home);
+        backDir.y = 0;
+        if (backDir.lengthSquared() < 0.001) backDir = new BABYLON.Vector3(0, 0, 1);
+        backDir.normalize();
+        const rightDir = BABYLON.Vector3.Cross(new BABYLON.Vector3(0, 1, 0), backDir).normalize();
+        const preset = state.cameraPreset;
+        let camPos;
+        let lookTarget = center.clone();
+        if (preset === 'cinema') {
+          camPos = center.add(backDir.scale(13.8)).add(rightDir.scale(-2.2)).add(new BABYLON.Vector3(0, 4.3, 0));
+          camera.fov = (42 * Math.PI) / 180;
+        } else if (preset === 'oposto') {
+          camPos = center.add(backDir.scale(-13.8)).add(rightDir.scale(2.2)).add(new BABYLON.Vector3(0, 4.3, 0));
+          camera.fov = (42 * Math.PI) / 180;
+        } else if (preset === 'obliqua') {
+          camPos = center.add(backDir.scale(8.8)).add(rightDir.scale(11.2)).add(new BABYLON.Vector3(0, 4.8, 0));
+          camera.fov = (42 * Math.PI) / 180;
+        } else if (preset === 'tatica') {
+          camPos = center.add(backDir.scale(10.5)).add(rightDir.scale(-1.5)).add(new BABYLON.Vector3(0, 14.5, 0));
+          camera.fov = (46 * Math.PI) / 180;
+        } else if (preset === 'impacto') {
+          lookTarget = BABYLON.Vector3.Lerp(attacker.home, target.home, 0.58).add(new BABYLON.Vector3(0, 1.3, 0));
+          camPos = lookTarget.add(backDir.scale(6.8)).add(rightDir.scale(4.6)).add(new BABYLON.Vector3(0, 2.2, 0));
+          camera.fov = (38 * Math.PI) / 180;
+        }
+        camera.position.copyFrom(camPos);
+        camera.setTarget(lookTarget);
+      }
+
+      // =====================================================================
+      // 7. ANIMATION LIFECYCLE MANAGER, INSTANT CANCEL & UI HELPERS
+      // =====================================================================
+      const activeAnimations = [];
+      const scheduledTimers = [];
+      const activeParticleSystems = [];
+
+      function disposeNodeHierarchy(node) {
+        if (!node) return;
+        try {
+          if (node.getChildMeshes) {
+            node.getChildMeshes(false).forEach((m) => {
+              if (m.material && m.material.name && !m.material.name.startsWith('abra') && !m.material.name.startsWith('pancham') && !m.material.name.startsWith('gible')) {
+                m.material.dispose(false, false);
+              }
+            });
+          }
+          if (node.material && node.material.name && !node.material.name.startsWith('abra') && !node.material.name.startsWith('pancham') && !node.material.name.startsWith('gible')) {
+            node.material.dispose(false, false);
+          }
+          node.dispose();
+        } catch (err) {
+          // Ignore already disposed nodes
+        }
+      }
+
+      function registerParticleSystem(ps) {
+        activeParticleSystems.push(ps);
+        return ps;
+      }
+
+      // Immediately cancels any in-flight move and restores all actors to clean state
+      function cancelCurrentCastAndResetArena() {
+        scheduledTimers.length = 0;
+
+        for (let i = activeAnimations.length - 1; i >= 0; i--) {
+          disposeNodeHierarchy(activeAnimations[i].node);
+        }
+        activeAnimations.length = 0;
+
+        for (let i = activeParticleSystems.length - 1; i >= 0; i--) {
+          try {
+            activeParticleSystems[i].stop();
+            activeParticleSystems[i].dispose();
+          } catch (e) {}
+        }
+        activeParticleSystems.length = 0;
+
+        // Restore all actors to their home pose and visibility
+        actors.forEach((a) => {
+          const m = a.model;
+          m.customOverride = false;
+          m.castAnimTimer = 0;
+          m.shudderTimer = 0;
+          m.healTint = 0;
+          m.frozenTint = 0;
+          m.sandTint = 0;
+          m.knockupY = 0;
+          m.knockupVelY = 0;
+          m.root.position.copyFrom(a.home);
+          m.root.setEnabled(a.active);
+          m.bodyGroup.position.set(0, 0, 0);
+          m.bodyGroup.rotation.set(0, 0, 0);
+          const lookTarget = a.team === 0 ? actors[2].home : actors[0].home;
+          m.root.lookAt(lookTarget);
+        });
+
+        ['enemy-0-freeze-pill', 'enemy-1-freeze-pill', 'enemy-2-freeze-pill',
+         'enemy-0-acc-pill', 'enemy-1-acc-pill', 'enemy-2-acc-pill'].forEach((id) => {
+          const el = ut(id);
+          if (el) el.classList.add('hidden');
+        });
+
+        setElementalVignette('', 0);
+        const flash = ut('screen-flash');
+        if (flash) flash.style.opacity = '0';
+        const popups = ut('popups-container');
+        if (popups) popups.innerHTML = '';
+
+        vfxPointLight.intensity = 0;
+        state.isCasting = false;
+      }
+
+      function spawnAnimatedNode(node, duration, onUpdate, delay = 0) {
+        node.setEnabled(delay <= 0);
+        activeAnimations.push({
+          node,
+          duration,
+          onUpdate,
+          delay,
+          age: 0
+        });
+        return node;
+      }
+
+      function scheduleAfter(ms, callback) {
+        scheduledTimers.push({
+          triggerTime: state.clockTime + ms / 1000,
+          callback
+        });
+      }
+
+      const ut = (id) => document.getElementById(id);
+
+      function showCastBanner(title, subtitle, accentColor) {
+        const banner = ut('skill-cast-banner');
+        banner.className = 'block nocturne-skew';
+        banner.innerHTML = `
+          <div class="bg-[#071420]/95 border-l-4 px-5 py-2 shadow-2xl flex items-center gap-3" style="border-color: ${accentColor}; box-shadow: 0 8px 30px ${accentColor}33;">
+            <div class="nocturne-unskew">
+              <div class="text-[9px] font-mono-tech uppercase tracking-widest" style="color: ${accentColor}">${subtitle}</div>
+              <div class="font-display font-black text-xl tracking-wider text-white uppercase">${title}</div>
+            </div>
+          </div>
+        `;
+        scheduleAfter(2500, () => { banner.className = 'hidden'; });
+      }
+
+      function setElementalVignette(colorCss, strength = 1) {
+        const el = ut('elemental-vignette');
+        if (strength <= 0) {
+          el.style.opacity = '0';
+          return;
+        }
+        el.style.background = `radial-gradient(circle at 50% 50%, transparent 45%, ${colorCss} 100%)`;
+        el.style.opacity = String(strength * 0.42);
+      }
+
+      function triggerScreenFlash(colorHex, alpha = 0.32, durationMs = 140) {
+        const flash = ut('screen-flash');
+        flash.style.backgroundColor = colorHex;
+        flash.style.opacity = String(alpha * 0.35);
+        scheduleAfter(durationMs, () => { flash.style.opacity = '0'; });
+      }
+
+      function projectToScreen(worldPos) {
+        const vp = camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight());
+        const projected = BABYLON.Vector3.Project(
+          worldPos,
+          BABYLON.Matrix.Identity(),
+          scene.getTransformMatrix(),
+          vp
+        );
+        return {
+          x: (projected.x / engine.getRenderWidth()) * window.innerWidth,
+          y: (projected.y / engine.getRenderHeight()) * window.innerHeight,
+          z: projected.z
+        };
+      }
+
+      function spawnCombatPopup(worldPos, mainText, subText, styleKey = 'heal') {
+        const container = ut('popups-container');
+        const div = document.createElement('div');
+        div.className = 'combat-popup';
+        const proj = projectToScreen(worldPos.add(new BABYLON.Vector3(0, 2.25, 0)));
+        div.style.left = `${proj.x}px`;
+        div.style.top = `${proj.y}px`;
+        const themes = {
+          heal:  { bg: '#06291f', border: '#00ff9d', sub: '#d8ff00', main: '#00ff9d' },
+          ice:   { bg: '#091e32', border: '#2de2e6', sub: '#d8ff00', main: '#6be8ff' },
+          earth: { bg: '#2b1806', border: '#f59e0b', sub: '#fde047', main: '#fbbf24' },
+          sand:  { bg: '#261f06', border: '#eab308', sub: '#fef08a', main: '#facc15' }
+        };
+        const t = themes[styleKey] || themes.heal;
+        div.innerHTML = `
+          <div class="px-3.5 py-1 border-l-4 shadow-2xl" style="background:${t.bg}f2; border-color:${t.border}; box-shadow: 0 0 22px ${t.border}66;">
+            <div class="text-[9.5px] font-mono-tech font-extrabold tracking-widest uppercase" style="color:${t.sub}">${subText}</div>
+            <div class="font-display font-black text-2xl leading-none" style="color:${t.main}">${mainText}</div>
+          </div>
+        `;
+        container.appendChild(div);
+        scheduleAfter(1680, () => div.remove());
+      }
+
+      // =====================================================================
+      // 8. SHARED DUST, VEIL, CROWN & BOULDER SHADER FACTORIES (DIG & SAND ATTACK)
+      // =====================================================================
+      const PALETTE_EARTH_DIG = {
+        lit: '#e6d2b5',
+        mid: '#b39268',
+        shadow: '#634b30',
+        veilLight: '#e3cfa8',
+        veilDark: '#7d613e'
+      };
+
+      const PALETTE_SILICA_SAND = {
+        lit: '#fef08a',
+        mid: '#dfb14b',
+        shadow: '#784c1e',
+        veilLight: '#fde68a',
+        veilDark: '#926224'
+      };
+
+      function createCrownShellMaterial(name) {
+        const mat = new BABYLON.ShaderMaterial(name, scene,
+          { vertex: 'crownShell', fragment: 'crownShell' },
+          {
+            attributes: ['position', 'normal', 'uv'],
+            uniforms: [
+              'world', 'worldViewProjection', 'uCameraPos',
+              'uCore', 'uPrimary', 'uSecondary',
+              'uLobes', 'uGapOpenness', 'uOpenProgress', 'uDissolve',
+              'uMasterAlpha', 'uBaseOpacity', 'uEdgeFeather'
+            ],
+            needAlphaBlending: true
+          }
+        );
+        mat.backFaceCulling = false;
+        mat.separateCullingPass = true;
+        mat.alphaMode = BABYLON.Engine.ALPHA_COMBINE;
+        mat.setColor3('uCore', BABYLON.Color3.FromHexString('#f5e6d3'));
+        mat.setColor3('uPrimary', BABYLON.Color3.FromHexString('#c29b68'));
+        mat.setColor3('uSecondary', BABYLON.Color3.FromHexString('#5c4024'));
+        mat.setFloat('uLobes', 7.0);
+        mat.setFloat('uGapOpenness', 0.44);
+        mat.setFloat('uBaseOpacity', state.shaderOpacity);
+        mat.setFloat('uEdgeFeather', state.shaderFeather);
+        return mat;
+      }
+
+      function createDigCraterMaterial(name) {
+        const mat = new BABYLON.ShaderMaterial(name, scene,
+          { vertex: 'digCrater', fragment: 'digCrater' },
+          {
+            attributes: ['position', 'uv'],
+            uniforms: ['worldViewProjection', 'uTime', 'uProgress', 'uBaseOpacity', 'uEdgeFeather', 'uColorSoilLight', 'uColorSoilMid', 'uColorAbyss'],
+            needAlphaBlending: true
+          }
+        );
+        mat.backFaceCulling = false;
+        mat.alphaMode = BABYLON.Engine.ALPHA_COMBINE;
+        mat.setColor3('uColorSoilLight', BABYLON.Color3.FromHexString('#a37c4c'));
+        mat.setColor3('uColorSoilMid', BABYLON.Color3.FromHexString('#5c3e23'));
+        mat.setColor3('uColorAbyss', BABYLON.Color3.FromHexString('#120b06'));
+        mat.setFloat('uBaseOpacity', state.shaderOpacity);
+        mat.setFloat('uEdgeFeather', state.shaderFeather);
+        return mat;
+      }
+
+      function createDustCloudShaderMaterial(name, seedVal = 1.0, palette = PALETTE_EARTH_DIG) {
+        const mat = new BABYLON.ShaderMaterial(name, scene,
+          { vertex: 'digDustCloud', fragment: 'digDustCloud' },
+          {
+            attributes: ['position', 'normal', 'uv'],
+            uniforms: [
+              'world', 'worldViewProjection', 'uTime', 'uProgress',
+              'uBaseOpacity', 'uEdgeFeather', 'uSeed', 'uCameraPos',
+              'uColorLit', 'uColorMid', 'uColorShadow'
+            ],
+            needAlphaBlending: true
+          }
+        );
+        mat.backFaceCulling = false;
+        mat.separateCullingPass = true;
+        mat.alphaMode = BABYLON.Engine.ALPHA_COMBINE;
+        mat.setColor3('uColorLit', BABYLON.Color3.FromHexString(palette.lit));
+        mat.setColor3('uColorMid', BABYLON.Color3.FromHexString(palette.mid));
+        mat.setColor3('uColorShadow', BABYLON.Color3.FromHexString(palette.shadow));
+        mat.setFloat('uSeed', seedVal);
+        mat.setFloat('uBaseOpacity', state.shaderOpacity);
+        mat.setFloat('uEdgeFeather', state.shaderFeather);
+        return mat;
+      }
+
+      function createDustVeilShaderMaterial(name, palette = PALETTE_EARTH_DIG) {
+        const mat = new BABYLON.ShaderMaterial(name, scene,
+          { vertex: 'digDustVeil', fragment: 'digDustVeil' },
+          {
+            attributes: ['position', 'normal', 'uv'],
+            uniforms: [
+              'world', 'worldViewProjection', 'uTime', 'uProgress',
+              'uBaseOpacity', 'uEdgeFeather', 'uCameraPos',
+              'uColorLight', 'uColorDark'
+            ],
+            needAlphaBlending: true
+          }
+        );
+        mat.backFaceCulling = false;
+        mat.separateCullingPass = true;
+        mat.alphaMode = BABYLON.Engine.ALPHA_COMBINE;
+        mat.setColor3('uColorLight', BABYLON.Color3.FromHexString(palette.veilLight));
+        mat.setColor3('uColorDark', BABYLON.Color3.FromHexString(palette.veilDark));
+        mat.setFloat('uBaseOpacity', state.shaderOpacity);
+        mat.setFloat('uEdgeFeather', state.shaderFeather);
+        return mat;
+      }
+
+      function createChunkyRockMesh(name, baseSize = 0.35, seed = 1) {
+        const mesh = BABYLON.MeshBuilder.CreatePolyhedron(name, {
+          type: seed % 3 === 0 ? 2 : (seed % 2 === 0 ? 1 : 0),
+          size: baseSize
+        }, scene);
+        mesh.convertToFlatShadedMesh();
+        glowLayer.addExcludedMesh(mesh);
+        return mesh;
+      }
+
+      let sharedDustParticleTex = null;
+      let sharedDirtClodTex = null;
+
+      function getDustParticleTexture() {
+        if (sharedDustParticleTex) return sharedDustParticleTex;
+        const tex = new BABYLON.DynamicTexture('dustPuffTex', { width: 128, height: 128 }, scene, true);
+        const ctx = tex.getContext();
+        const grad = ctx.createRadialGradient(64, 64, 8, 64, 64, 60);
+        grad.addColorStop(0.0, 'rgba(235, 214, 182, 0.95)');
+        grad.addColorStop(0.45, 'rgba(186, 154, 112, 0.65)');
+        grad.addColorStop(0.80, 'rgba(122, 94, 62, 0.22)');
+        grad.addColorStop(1.0, 'rgba(80, 58, 36, 0.0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(64, 64, 60, 0, Math.PI * 2);
+        ctx.fill();
+        tex.update();
+        sharedDustParticleTex = tex;
+        return tex;
+      }
+
+      function getDirtClodTexture() {
+        if (sharedDirtClodTex) return sharedDirtClodTex;
+        const tex = new BABYLON.DynamicTexture('dirtClodTex', { width: 64, height: 64 }, scene, true);
+        const ctx = tex.getContext();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(14, 12);
+        ctx.lineTo(48, 8);
+        ctx.lineTo(58, 32);
+        ctx.lineTo(44, 56);
+        ctx.lineTo(18, 54);
+        ctx.lineTo(6, 32);
+        ctx.closePath();
+        ctx.fill();
+        tex.update();
+        sharedDirtClodTex = tex;
+        return tex;
+      }
+
+      // Spawns 3-Layer Multi-Opacity Babylon.js Dust & Silt Particle Emitters
+      function spawnBabylonDirtAndDustParticles(pos, intensityScale = 1.0, durationSec = 0.85) {
+        const emitterPos = pos.add(new BABYLON.Vector3(0, 0.15, 0));
+        const op = state.shaderOpacity;
+
+        const dustPS = registerParticleSystem(new BABYLON.ParticleSystem('digDustPS', Math.floor(150 * intensityScale), scene));
+        dustPS.particleTexture = getDustParticleTexture();
+        dustPS.emitter = emitterPos;
+        dustPS.minEmitBox = new BABYLON.Vector3(-0.75 * intensityScale, 0, -0.75 * intensityScale);
+        dustPS.maxEmitBox = new BABYLON.Vector3(0.75 * intensityScale, 0.25, 0.75 * intensityScale);
+
+        dustPS.addColorGradient(0.00, new BABYLON.Color4(0.92, 0.83, 0.68, 0.0));
+        dustPS.addColorGradient(0.10, new BABYLON.Color4(0.90, 0.80, 0.64, 0.68 * op));
+        dustPS.addColorGradient(0.38, new BABYLON.Color4(0.76, 0.62, 0.45, 0.46 * op));
+        dustPS.addColorGradient(0.72, new BABYLON.Color4(0.54, 0.42, 0.28, 0.18 * op));
+        dustPS.addColorGradient(1.00, new BABYLON.Color4(0.36, 0.27, 0.18, 0.0));
+
+        dustPS.addSizeGradient(0.00, 0.42 * intensityScale);
+        dustPS.addSizeGradient(0.30, 1.05 * intensityScale);
+        dustPS.addSizeGradient(0.70, 1.75 * intensityScale);
+        dustPS.addSizeGradient(1.00, 2.35 * intensityScale);
+
+        dustPS.minLifeTime = 0.55;
+        dustPS.maxLifeTime = 1.25;
+        dustPS.emitRate = 280 * intensityScale;
+        dustPS.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
+        dustPS.gravity = new BABYLON.Vector3(0, 0.55, 0);
+        dustPS.direction1 = new BABYLON.Vector3(-2.8 * intensityScale, 1.4 * intensityScale, -2.8 * intensityScale);
+        dustPS.direction2 = new BABYLON.Vector3(2.8 * intensityScale, 3.8 * intensityScale, 2.8 * intensityScale);
+        dustPS.minAngularSpeed = -1.8;
+        dustPS.maxAngularSpeed = 1.8;
+        dustPS.minEmitPower = 0.85;
+        dustPS.maxEmitPower = 2.15;
+        dustPS.start();
+
+        const hazePS = registerParticleSystem(new BABYLON.ParticleSystem('digGroundHazePS', Math.floor(95 * intensityScale), scene));
+        hazePS.particleTexture = getDustParticleTexture();
+        hazePS.emitter = pos.add(new BABYLON.Vector3(0, 0.08, 0));
+        hazePS.minEmitBox = new BABYLON.Vector3(-1.05 * intensityScale, 0, -1.05 * intensityScale);
+        hazePS.maxEmitBox = new BABYLON.Vector3(1.05 * intensityScale, 0.15, 1.05 * intensityScale);
+
+        hazePS.addColorGradient(0.00, new BABYLON.Color4(0.86, 0.76, 0.60, 0.0));
+        hazePS.addColorGradient(0.16, new BABYLON.Color4(0.84, 0.73, 0.56, 0.34 * op));
+        hazePS.addColorGradient(0.50, new BABYLON.Color4(0.68, 0.55, 0.40, 0.22 * op));
+        hazePS.addColorGradient(0.82, new BABYLON.Color4(0.48, 0.38, 0.26, 0.08 * op));
+        hazePS.addColorGradient(1.00, new BABYLON.Color4(0.35, 0.27, 0.18, 0.0));
+
+        hazePS.addSizeGradient(0.00, 0.85 * intensityScale);
+        hazePS.addSizeGradient(0.50, 1.85 * intensityScale);
+        hazePS.addSizeGradient(1.00, 2.75 * intensityScale);
+
+        hazePS.minLifeTime = 0.75;
+        hazePS.maxLifeTime = 1.48;
+        hazePS.emitRate = 180 * intensityScale;
+        hazePS.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
+        hazePS.gravity = new BABYLON.Vector3(0, 0.12, 0);
+        hazePS.direction1 = new BABYLON.Vector3(-3.4 * intensityScale, 0.2, -3.4 * intensityScale);
+        hazePS.direction2 = new BABYLON.Vector3(3.4 * intensityScale, 0.9, 3.4 * intensityScale);
+        hazePS.minAngularSpeed = -0.9;
+        hazePS.maxAngularSpeed = 0.9;
+        hazePS.minEmitPower = 0.6;
+        hazePS.maxEmitPower = 1.5;
+        hazePS.start();
+
+        const siltPS = registerParticleSystem(new BABYLON.ParticleSystem('digClodPS', Math.floor(32 * intensityScale), scene));
+        siltPS.particleTexture = getDirtClodTexture();
+        siltPS.emitter = emitterPos;
+        siltPS.minEmitBox = new BABYLON.Vector3(-0.4 * intensityScale, 0, -0.4 * intensityScale);
+        siltPS.maxEmitBox = new BABYLON.Vector3(0.4 * intensityScale, 0.2, 0.4 * intensityScale);
+
+        siltPS.addColorGradient(0.00, new BABYLON.Color4(0.68, 0.52, 0.34, 0.0));
+        siltPS.addColorGradient(0.12, new BABYLON.Color4(0.65, 0.48, 0.30, 0.58 * op));
+        siltPS.addColorGradient(0.60, new BABYLON.Color4(0.45, 0.32, 0.19, 0.24 * op));
+        siltPS.addColorGradient(1.00, new BABYLON.Color4(0.28, 0.19, 0.11, 0.0));
+
+        siltPS.minSize = 0.06 * intensityScale;
+        siltPS.maxSize = 0.13 * intensityScale;
+        siltPS.minLifeTime = 0.42;
+        siltPS.maxLifeTime = 0.82;
+        siltPS.emitRate = 90 * intensityScale;
+        siltPS.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
+        siltPS.gravity = new BABYLON.Vector3(0, -14.5, 0);
+        siltPS.direction1 = new BABYLON.Vector3(-2.6 * intensityScale, 3.2 * intensityScale, -2.6 * intensityScale);
+        siltPS.direction2 = new BABYLON.Vector3(2.6 * intensityScale, 6.2 * intensityScale, 2.6 * intensityScale);
+        siltPS.minAngularSpeed = -6;
+        siltPS.maxAngularSpeed = 6;
+        siltPS.start();
+
+        scheduleAfter(240, () => {
+          dustPS.stop();
+          hazePS.stop();
+          siltPS.stop();
+        });
+        scheduleAfter((durationSec + 1.35) * 1000, () => {
+          dustPS.dispose();
+          hazePS.dispose();
+          siltPS.dispose();
+        });
+      }
+
+      // Spawns a Translucent Atmospheric Dust Curtain Veil + Ground Dust Shockwave Ring (Supports DIG & SAND Palettes)
+      function spawnTranslucentDustVeilAndShockRing(originPos, radius = 1.25, height = 2.2, durationSec = 1.15, delaySec = 0, palette = PALETTE_EARTH_DIG) {
+        const root = new BABYLON.TransformNode('dustVeilRoot', scene);
+        root.position.copyFrom(originPos);
+
+        const veilOuter = BABYLON.MeshBuilder.CreateCylinder('dustVeilOuter', {
+          diameterTop: radius * 2.5,
+          diameterBottom: radius * 1.4,
+          height: height,
+          tessellation: 32,
+          cap: BABYLON.Mesh.NO_CAP
+        }, scene);
+        glowLayer.addExcludedMesh(veilOuter);
+        veilOuter.position.y = height * 0.48;
+        veilOuter.parent = root;
+        const matOuter = createDustVeilShaderMaterial('dustVeilOuterMat', palette);
+        veilOuter.material = matOuter;
+
+        const veilInner = BABYLON.MeshBuilder.CreateCylinder('dustVeilInner', {
+          diameterTop: radius * 1.6,
+          diameterBottom: radius * 1.9,
+          height: height * 0.78,
+          tessellation: 28,
+          cap: BABYLON.Mesh.NO_CAP
+        }, scene);
+        glowLayer.addExcludedMesh(veilInner);
+        veilInner.position.y = height * 0.38;
+        veilInner.parent = root;
+        const matInner = createDustVeilShaderMaterial('dustVeilInnerMat', palette);
+        veilInner.material = matInner;
+
+        const shockTorus = BABYLON.MeshBuilder.CreateTorus('dustShockTorus', {
+          diameter: radius * 1.5,
+          thickness: 0.24,
+          tessellation: 36
+        }, scene);
+        glowLayer.addExcludedMesh(shockTorus);
+        shockTorus.position.y = 0.12;
+        shockTorus.scaling.set(1.0, 0.35, 1.0);
+        shockTorus.parent = root;
+        const matRing = createDustCloudShaderMaterial('dustShockRingMat', 4.2, palette);
+        shockTorus.material = matRing;
+
+        spawnAnimatedNode(root, durationSec, (progress, node, dt) => {
+          [matOuter, matInner].forEach((m, idx) => {
+            m.setFloat('uTime', state.clockTime + idx * 3.1);
+            m.setFloat('uProgress', progress);
+            m.setVector3('uCameraPos', camera.position);
+            m.setFloat('uBaseOpacity', state.shaderOpacity * (idx === 0 ? 0.9 : 0.7));
+            m.setFloat('uEdgeFeather', state.shaderFeather);
+          });
+
+          matRing.setFloat('uTime', state.clockTime);
+          matRing.setFloat('uProgress', Math.min(1.0, progress * 1.15));
+          matRing.setVector3('uCameraPos', camera.position);
+          matRing.setFloat('uBaseOpacity', state.shaderOpacity * 0.55);
+          matRing.setFloat('uEdgeFeather', state.shaderFeather);
+
+          const radialExpand = 0.65 + Math.pow(progress, 0.65) * 1.35;
+          veilOuter.scaling.set(radialExpand, 0.8 + progress * 0.4, radialExpand);
+          veilOuter.rotation.y += dt * 1.8;
+
+          veilInner.scaling.set(radialExpand * 0.9, 0.85 + progress * 0.3, radialExpand * 0.9);
+          veilInner.rotation.y -= dt * 2.4;
+
+          const ringExpand = 0.6 + Math.pow(progress, 0.58) * 2.1;
+          shockTorus.scaling.set(ringExpand, 0.32 * (1.0 - progress * 0.6), ringExpand);
+        }, delaySec);
+      }
+
+      // Spawns 3D Volumetric Billowing Dust Cloud Puffs (with Simplex Vertex Displacement & Beer-Lambert Opacity)
+      function spawn3DVolumetricDustCloudRing(originPos, puffCount = 8, ringRadius = 0.9, puffScale = 1.0, durationSec = 1.15, delaySec = 0, palette = PALETTE_EARTH_DIG) {
+        const root = new BABYLON.TransformNode('volumetricDustRingRoot', scene);
+        root.position.copyFrom(originPos);
+
+        const puffs = [];
+        for (let i = 0; i < puffCount; i++) {
+          const seed = (i + 1) * 1.37;
+          const puffMesh = BABYLON.MeshBuilder.CreateSphere(`dustPuff3D-${i}`, {
+            diameter: (0.85 + (i % 3) * 0.25) * puffScale,
+            segments: 12
+          }, scene);
+          glowLayer.addExcludedMesh(puffMesh);
+          puffMesh.parent = root;
+
+          const mat = createDustCloudShaderMaterial(`dustCloudMat-${i}`, seed, palette);
+          puffMesh.material = mat;
+
+          const ang = (i / puffCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.25;
+          puffs.push({
+            mesh: puffMesh,
+            mat,
+            angle: ang,
+            startR: ringRadius * (0.45 + (i % 2) * 0.25),
+            expandSpeed: (1.35 + (i % 3) * 0.45) * puffScale,
+            riseSpeed: (0.75 + (i % 2) * 0.45) * puffScale,
+            rotSpeed: (i % 2 === 0 ? 1 : -1) * (1.2 + (i % 3) * 0.5),
+            baseScale: (0.7 + (i % 3) * 0.22) * puffScale
+          });
+        }
+
+        spawnAnimatedNode(root, durationSec, (progress, node, dt) => {
+          puffs.forEach((p) => {
+            p.mat.setFloat('uTime', state.clockTime);
+            p.mat.setFloat('uProgress', progress);
+            p.mat.setVector3('uCameraPos', camera.position);
+            p.mat.setFloat('uBaseOpacity', state.shaderOpacity);
+            p.mat.setFloat('uEdgeFeather', state.shaderFeather);
+
+            const easeOut = 1.0 - Math.pow(1.0 - progress, 2.2);
+            const curR = p.startR + easeOut * p.expandSpeed;
+            const curY = 0.28 * puffScale + easeOut * p.riseSpeed;
+
+            p.mesh.position.set(
+              Math.cos(p.angle) * curR,
+              curY,
+              Math.sin(p.angle) * curR
+            );
+            p.mesh.rotation.z += dt * p.rotSpeed;
+            p.mesh.rotation.y += dt * (p.rotSpeed * 0.6);
+
+            const grow = progress < 0.22
+              ? 0.35 + 0.85 * (progress / 0.22)
+              : 1.20 + (progress - 0.22) * 0.55;
+            p.mesh.scaling.set(p.baseScale * grow * 1.15, p.baseScale * grow * 0.85, p.baseScale * grow * 1.15);
+          });
+        }, delaySec);
+
+        if (delaySec <= 0) {
+          spawnBabylonDirtAndDustParticles(originPos, puffScale, durationSec);
+        } else {
+          scheduleAfter(delaySec * 1000, () => {
+            spawnBabylonDirtAndDustParticles(originPos, puffScale, durationSec);
+          });
+        }
+      }
+
+      // Spawns Physical Flat-Shaded 3D Boulders & Stones with Gravity, Floor Bounce & Alpha Fade
+      function spawn3DBoulderBarrage(originPos, count = 16, speedRange = [4.5, 11.5], sizeRange = [0.22, 0.52], durationSec = 1.25, delaySec = 0) {
+        const root = new BABYLON.TransformNode('boulderBarrageRoot', scene);
+
+        const rockColors = ['#5c4028', '#785638', '#4a3520', '#69594a'];
+        const rockMaterials = rockColors.map((hex, idx) => {
+          const m = new BABYLON.StandardMaterial(`physRockMat-${idx}`, scene);
+          m.diffuseColor = BABYLON.Color3.FromHexString(hex);
+          m.specularColor = new BABYLON.Color3(0.06, 0.05, 0.04);
+          return m;
+        });
+
+        const boulders = [];
+        for (let i = 0; i < count; i++) {
+          const sz = sizeRange[0] + Math.random() * (sizeRange[1] - sizeRange[0]);
+          const rock = createChunkyRockMesh(`boulder3D-${i}`, sz, i);
+          rock.parent = root;
+          const bMat = rockMaterials[i % rockMaterials.length].clone(`boulderAlphaMat-${i}`);
+          rock.material = bMat;
+
+          const sx = 0.75 + Math.random() * 0.65;
+          const sy = 0.65 + Math.random() * 0.65;
+          const szAxis = 0.75 + Math.random() * 0.65;
+          rock.scaling.set(sx, sy, szAxis);
+
+          const theta = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.45;
+          const hSpeed = speedRange[0] + Math.random() * (speedRange[1] - speedRange[0]);
+          const vy = 5.2 + Math.random() * 7.2;
+
+          boulders.push({
+            mesh: rock,
+            mat: bMat,
+            baseScale: new BABYLON.Vector3(sx, sy, szAxis),
+            radius: sz * 0.7,
+            pos: originPos.clone().add(new BABYLON.Vector3((Math.random() - 0.5) * 0.7, 0.22 + Math.random() * 0.35, (Math.random() - 0.5) * 0.7)),
+            vel: new BABYLON.Vector3(Math.cos(theta) * hSpeed * 0.58, vy, Math.sin(theta) * hSpeed * 0.58),
+            rotVel: new BABYLON.Vector3((Math.random() - 0.5) * 14, (Math.random() - 0.5) * 14, (Math.random() - 0.5) * 14),
+            bounced: false
+          });
+        }
+
+        spawnAnimatedNode(root, durationSec, (progress, node, dt) => {
+          boulders.forEach((b) => {
+            b.vel.y -= 22.0 * dt;
+            b.pos.addInPlace(b.vel.scale(dt));
+
+            if (b.pos.y < b.radius && b.vel.y < 0) {
+              b.pos.y = b.radius;
+              b.vel.y *= -0.44;
+              b.vel.x *= 0.68;
+              b.vel.z *= 0.68;
+              b.bounced = true;
+            }
+
+            b.mesh.position.copyFrom(b.pos);
+            b.mesh.rotation.addInPlace(b.rotVel.scale(dt));
+
+            const shrink = progress > 0.72 ? Math.max(0.01, 1.0 - (progress - 0.72) / 0.28) : 1.0;
+            const alphaFade = progress > 0.58 ? Math.max(0.0, 1.0 - (progress - 0.58) / 0.42) : 1.0;
+            b.mat.alpha = alphaFade * state.shaderOpacity;
+            b.mesh.scaling.copyFrom(b.baseScale).scaleInPlace(shrink);
+          });
+        }, delaySec);
+      }
+
+      // Spawns Physical Torn-Earth Crater with Subtle Rim Pebbles
+      function spawnPhysicalCraterDecal(pos, radius = 2.0, durationSec = 1.9) {
+        const root = new BABYLON.TransformNode('digCraterRoot', scene);
+        root.position.copyFrom(pos);
+
+        const groundDisc = BABYLON.MeshBuilder.CreateGround('digCraterDisc', {
+          width: radius * 2.1,
+          height: radius * 2.1
+        }, scene);
+        glowLayer.addExcludedMesh(groundDisc);
+        groundDisc.position.y = 0.03;
+        groundDisc.parent = root;
+        const cMat = createDigCraterMaterial('digCraterMat');
+        groundDisc.material = cMat;
+
+        const dirtMat = new BABYLON.StandardMaterial('craterRimDirtMat', scene);
+        dirtMat.diffuseColor = BABYLON.Color3.FromHexString('#5c4028');
+        dirtMat.specularColor = new BABYLON.Color3(0.04, 0.03, 0.02);
+
+        const rimRocks = [];
+        const rockCount = 6;
+        for (let i = 0; i < rockCount; i++) {
+          const ang = (i / rockCount) * Math.PI * 2 + (i % 2) * 0.2;
+          const sz = 0.11 + (i % 2) * 0.04;
+          const rock = createChunkyRockMesh(`craterRimRock-${i}`, sz, i);
+          rock.material = dirtMat;
+          const dist = radius * (0.48 + (i % 2) * 0.08);
+          rock.position.set(Math.cos(ang) * dist, sz * 0.35, Math.sin(ang) * dist);
+          rock.scaling.set(1.2, 0.65, 1.0);
+          rock.rotation.set(i * 0.4, ang, (i % 2 - 0.5) * 0.4);
+          rock.parent = root;
+          rimRocks.push(rock);
+        }
+
+        spawnAnimatedNode(root, durationSec, (progress) => {
+          cMat.setFloat('uTime', state.clockTime);
+          cMat.setFloat('uProgress', progress);
+          cMat.setFloat('uBaseOpacity', state.shaderOpacity);
+          cMat.setFloat('uEdgeFeather', state.shaderFeather);
+
+          const popIn = progress < 0.12 ? progress / 0.12 : 1.0;
+          const sinkOut = progress > 0.72 ? Math.max(0.01, 1.0 - (progress - 0.72) / 0.28) : 1.0;
+          dirtMat.alpha = sinkOut * state.shaderOpacity;
+          rimRocks.forEach((r) => {
+            r.scaling.y = 0.65 * popIn * sinkOut;
+          });
+        });
+      }
+
+      // =====================================================================
+      // 9. MOVE 03: DIG (BURROW, TREMOR TRAIL & VOLUMETRIC DUST ERUPTION)
+      // =====================================================================
+      function castDigMove() {
+        if (state.paused) return;
+        if (state.isCasting) cancelCurrentCastAndResetArena();
+        state.activeMove = 2;
+        renderVariantBar();
+        state.isCasting = true;
+        syncUI();
+
+        const digger = (state.selected === 0 && actors[1].active && actors[1].team === actors[0].team)
+          ? actors[1]
+          : actors[state.selected];
+        const target = actors[state.target];
+        const chosenVariant = state.digVariant;
+
+        if (target.hp <= 8) {
+          target.hp = target.maxHp;
+          syncUI();
+        }
+
+        const variantTitles = {
+          tectonic:     'OPÇÃO A • ANEL DE POEIRA VOLUMÉTRICA & 6 PEDRINHAS SUTIS',
+          geyser:       'OPÇÃO B • COLUNA DE GÉISER DE POEIRA (3 ANDARES) & FENDA',
+          drillbreaker: 'OPÇÃO C • LEQUE DIRECIONAL 64x38 & PLACAS DE TERRA ERGUIDAS'
+        };
+        showCastBanner('3 - DIG', variantTitles[chosenVariant], '#d97706');
+        sfx.playDigBurrow();
+
+        const startPos = digger.home.clone();
+        const endPos = target.home.clone();
+        const targetScale = target.model.root.scaling.x || 1.0;
+
+        digger.model.customOverride = true;
+
+        const burrowDriver = new BABYLON.TransformNode('digBurrowDriver', scene);
+        spawnAnimatedNode(burrowDriver, 0.52, (progress) => {
+          digger.model.root.position.copyFrom(startPos);
+          if (progress < 0.44) {
+            const p = progress / 0.44;
+            digger.model.bodyGroup.position.y = Math.sin(p * Math.PI) * 2.25;
+            digger.model.bodyGroup.rotation.y = progress * 28.0;
+            digger.model.bodyGroup.rotation.x = 0.48;
+          } else {
+            const p = (progress - 0.44) / 0.56;
+            digger.model.bodyGroup.position.y = 0.85 * (1 - p) - 2.5 * p;
+            digger.model.bodyGroup.rotation.y = progress * 38.0;
+          }
+        });
+
+        scheduleAfter(260, () => {
+          digger.model.root.setEnabled(false);
+          spawnPhysicalCraterDecal(startPos, 1.55, 1.85);
+          spawn3DVolumetricDustCloudRing(startPos, 8, 0.72, 0.88, 1.15, 0, PALETTE_EARTH_DIG);
+          spawnTranslucentDustVeilAndShockRing(startPos, 1.05, 1.85, 1.15, 0, PALETTE_EARTH_DIG);
+          spawn3DBoulderBarrage(startPos, 4, [2.8, 5.2], [0.11, 0.20], 0.85, 0);
+
+          const dustCrown = createLotusCrownShellMesh('digEntryDustCrown', 48, 28);
+          glowLayer.addExcludedMesh(dustCrown);
+          dustCrown.position.copyFrom(startPos);
+          dustCrown.position.y = 0.04;
+          const dMat = createCrownShellMaterial('digEntryDustCrownMat');
+          dMat.setColor3('uCore', BABYLON.Color3.FromHexString('#e6d2b5'));
+          dMat.setColor3('uPrimary', BABYLON.Color3.FromHexString('#b39268'));
+          dMat.setColor3('uSecondary', BABYLON.Color3.FromHexString('#634b30'));
+          dustCrown.material = dMat;
+
+          spawnAnimatedNode(dustCrown, 0.68, (p, node, dt) => {
+            const burst = Math.min(1, p / 0.35);
+            const erode = Math.max(0, (p - 0.28) / 0.72);
+            dMat.setVector3('uCameraPos', camera.position);
+            dMat.setFloat('uBaseOpacity', state.shaderOpacity * 0.82);
+            dMat.setFloat('uEdgeFeather', state.shaderFeather);
+            dMat.setFloat('uOpenProgress', burst);
+            dMat.setFloat('uDissolve', erode * 0.92);
+            dMat.setFloat('uMasterAlpha', 1.0 - Math.pow(erode, 1.3));
+            node.scaling.set(0.65 + burst * 0.75, 0.38 + burst * 0.45, 0.65 + burst * 0.75);
+            node.rotation.y += dt * 2.5;
+          });
+        });
+
+        const totalTremors = 6;
+        for (let step = 1; step <= totalTremors; step++) {
+          const triggerMs = 450 + step * 130;
+          scheduleAfter(triggerMs, () => {
+            sfx.playDigTremor(step);
+            const frac = step / (totalTremors + 1);
+            const tremorPos = BABYLON.Vector3.Lerp(startPos, endPos, frac);
+
+            if (chosenVariant === 'geyser') {
+              spawnTranslucentDustVeilAndShockRing(tremorPos, 0.55, 1.65, 0.62, 0, PALETTE_EARTH_DIG);
+              spawn3DVolumetricDustCloudRing(tremorPos, 4, 0.35, 0.52, 0.62, 0, PALETTE_EARTH_DIG);
+            } else if (chosenVariant === 'drillbreaker') {
+              const wedge = BABYLON.MeshBuilder.CreateBox(`ridgeWedge-${step}`, { width: 0.95, height: 0.45, depth: 0.65 }, scene);
+              wedge.convertToFlatShadedMesh();
+              glowLayer.addExcludedMesh(wedge);
+              wedge.position.copyFrom(tremorPos);
+              wedge.lookAt(endPos);
+              wedge.rotation.x = -0.45;
+              const wMat = new BABYLON.StandardMaterial(`wedgeMat-${step}`, scene);
+              wMat.diffuseColor = BABYLON.Color3.FromHexString('#6b4c2b');
+              wMat.specularColor = new BABYLON.Color3(0.03, 0.03, 0.02);
+              wedge.material = wMat;
+              spawnAnimatedNode(wedge, 0.55, (p, node) => {
+                const env = Math.sin(p * Math.PI);
+                node.position.y = env * 0.25;
+                wMat.alpha = env * state.shaderOpacity;
+              });
+              spawn3DVolumetricDustCloudRing(tremorPos, 4, 0.45, 0.55, 0.58, 0, PALETTE_EARTH_DIG);
+            } else {
+              const mound = BABYLON.MeshBuilder.CreateSphere(`soilMound-${step}`, {
+                diameterX: 1.15,
+                diameterY: 0.55,
+                diameterZ: 1.15,
+                segments: 8,
+                slice: 0.55
+              }, scene);
+              mound.convertToFlatShadedMesh();
+              glowLayer.addExcludedMesh(mound);
+              mound.position.copyFrom(tremorPos);
+              const mMat = new BABYLON.StandardMaterial(`moundMat-${step}`, scene);
+              mMat.diffuseColor = BABYLON.Color3.FromHexString('#6b4c2b');
+              mMat.specularColor = new BABYLON.Color3(0.04, 0.03, 0.02);
+              mound.material = mMat;
+
+              spawnAnimatedNode(mound, 0.52, (p, node) => {
+                const env = Math.sin(p * Math.PI);
+                node.scaling.set(0.85 + p * 0.35, Math.max(0.02, env), 0.85 + p * 0.35);
+                mMat.alpha = env * state.shaderOpacity;
+              });
+              spawn3DVolumetricDustCloudRing(tremorPos, 5, 0.42, 0.58, 0.68, 0, PALETTE_EARTH_DIG);
+            }
+          });
+        }
+
+        scheduleAfter(1380, () => {
+          sfx.playDigEruption();
+          triggerScreenFlash('#d4b483', 0.22, 130);
+          setElementalVignette('rgba(161, 98, 7, 0.26)', 1);
+
+          vfxPointLight.diffuse = BABYLON.Color3.FromHexString('#e6ccb2');
+          vfxPointLight.position.copyFrom(endPos).addInPlace(new BABYLON.Vector3(0, 3.5, 1.5));
+          vfxPointLight.intensity = 2.6;
+
+          spawnPhysicalCraterDecal(endPos, 1.95 * targetScale, 1.55);
+
+          if (chosenVariant === 'tectonic') {
+            spawn3DVolumetricDustCloudRing(endPos, 10, 0.92 * targetScale, 1.0 * targetScale, 1.35, 0, PALETTE_EARTH_DIG);
+            spawnTranslucentDustVeilAndShockRing(endPos, 1.25 * targetScale, 2.15 * targetScale, 1.35, 0, PALETTE_EARTH_DIG);
+            spawn3DBoulderBarrage(endPos, 6, [3.5, 6.8], [0.14 * targetScale, 0.24 * targetScale], 1.15, 0);
+
+            const dustWave = createLotusCrownShellMesh('digEruptDustWaveA', 64, 34);
+            glowLayer.addExcludedMesh(dustWave);
+            dustWave.position.copyFrom(endPos);
+            dustWave.position.y = 0.05;
+            const wMat = createCrownShellMaterial('digEruptDustWaveMatA');
+            wMat.setColor3('uCore', BABYLON.Color3.FromHexString('#f0dfc8'));
+            wMat.setColor3('uPrimary', BABYLON.Color3.FromHexString('#c2a278'));
+            wMat.setColor3('uSecondary', BABYLON.Color3.FromHexString('#6e5233'));
+            dustWave.material = wMat;
+
+            spawnAnimatedNode(dustWave, 0.88, (p, node, dt) => {
+              const burst = Math.min(1, p / 0.32);
+              const erode = Math.max(0, (p - 0.25) / 0.75);
+              wMat.setVector3('uCameraPos', camera.position);
+              wMat.setFloat('uBaseOpacity', state.shaderOpacity * 0.85);
+              wMat.setFloat('uEdgeFeather', state.shaderFeather);
+              wMat.setFloat('uOpenProgress', burst);
+              wMat.setFloat('uDissolve', erode * 0.92);
+              wMat.setFloat('uMasterAlpha', 1.0 - Math.pow(erode, 1.35));
+              node.scaling.set((0.75 + burst * 0.95) * targetScale, (0.42 + burst * 0.55) * targetScale, (0.75 + burst * 0.95) * targetScale);
+              node.rotation.y -= dt * 2.2;
+            });
+          } else if (chosenVariant === 'geyser') {
+            spawnTranslucentDustVeilAndShockRing(endPos, 0.95 * targetScale, 4.6 * targetScale, 1.45, 0, PALETTE_EARTH_DIG);
+            spawnTranslucentDustVeilAndShockRing(endPos.add(new BABYLON.Vector3(0, 0.9, 0)), 1.35 * targetScale, 3.2 * targetScale, 1.30, 0.06, PALETTE_EARTH_DIG);
+            spawn3DVolumetricDustCloudRing(endPos, 8, 0.65 * targetScale, 0.95 * targetScale, 1.25, 0, PALETTE_EARTH_DIG);
+            spawn3DVolumetricDustCloudRing(endPos.add(new BABYLON.Vector3(0, 1.35, 0)), 7, 0.85 * targetScale, 0.88 * targetScale, 1.20, 0.08, PALETTE_EARTH_DIG);
+            spawn3DVolumetricDustCloudRing(endPos.add(new BABYLON.Vector3(0, 2.55, 0)), 6, 1.05 * targetScale, 0.78 * targetScale, 1.15, 0.15, PALETTE_EARTH_DIG);
+            spawn3DBoulderBarrage(endPos, 5, [2.2, 4.5], [0.12 * targetScale, 0.22 * targetScale], 1.15, 0);
+          } else {
+            const slabsRoot = new BABYLON.TransformNode('digSlabsRoot', scene);
+            slabsRoot.position.copyFrom(endPos);
+            const slabMat = new BABYLON.StandardMaterial('digSlabMat', scene);
+            slabMat.diffuseColor = BABYLON.Color3.FromHexString('#6b4c2b');
+            slabMat.specularColor = new BABYLON.Color3(0.05, 0.04, 0.03);
+
+            const slabs = [];
+            for (let k = 0; k < 5; k++) {
+              const ang = (k / 5) * Math.PI * 2;
+              const pivot = new BABYLON.TransformNode(`slabPivot-${k}`, scene);
+              pivot.parent = slabsRoot;
+              pivot.position.set(Math.cos(ang) * 0.85 * targetScale, 0, Math.sin(ang) * 0.85 * targetScale);
+              pivot.rotation.y = -ang + Math.PI / 2;
+
+              const slab = BABYLON.MeshBuilder.CreateBox(`slabMesh-${k}`, {
+                width: 0.95 * targetScale,
+                height: 0.22 * targetScale,
+                depth: 1.15 * targetScale
+              }, scene);
+              slab.convertToFlatShadedMesh();
+              glowLayer.addExcludedMesh(slab);
+              slab.position.z = -0.45 * targetScale;
+              slab.material = slabMat;
+              slab.parent = pivot;
+              slabs.push(pivot);
+            }
+
+            spawnAnimatedNode(slabsRoot, 1.15, (p) => {
+              const tilt = p < 0.22 ? (p / 0.22) * 0.95 : 0.95 * (1.0 - (p - 0.22) / 0.78);
+              slabMat.alpha = (1.0 - Math.pow(p, 1.6)) * state.shaderOpacity;
+              slabs.forEach((piv) => { piv.rotation.x = -tilt; });
+            });
+
+            const fanHolder = new BABYLON.TransformNode('digFanHolder', scene);
+            fanHolder.position.copyFrom(endPos).addInPlace(new BABYLON.Vector3(0, 0.2, 0));
+            fanHolder.lookAt(endPos.add(endPos.subtract(startPos).normalize().add(new BABYLON.Vector3(0, 1.2, 0))));
+            const fanCone = createDirectionalCryoConeMesh('digFanCone', 64, 38);
+            glowLayer.addExcludedMesh(fanCone);
+            fanCone.parent = fanHolder;
+            const fMat = createCrownShellMaterial('digFanMat');
+            fMat.setColor3('uCore', BABYLON.Color3.FromHexString('#f5e6d3'));
+            fMat.setColor3('uPrimary', BABYLON.Color3.FromHexString('#c29b68'));
+            fMat.setColor3('uSecondary', BABYLON.Color3.FromHexString('#5c4024'));
+            fanCone.material = fMat;
+
+            spawnAnimatedNode(fanHolder, 0.85, (p) => {
+              const burst = Math.min(1, p / 0.30);
+              const erode = Math.max(0, (p - 0.25) / 0.75);
+              fMat.setVector3('uCameraPos', camera.position);
+              fMat.setFloat('uBaseOpacity', state.shaderOpacity * 0.88);
+              fMat.setFloat('uEdgeFeather', state.shaderFeather);
+              fMat.setFloat('uOpenProgress', burst);
+              fMat.setFloat('uDissolve', erode * 0.92);
+              fMat.setFloat('uMasterAlpha', 1.0 - Math.pow(erode, 1.3));
+              fanCone.scaling.setAll((0.85 + burst * 0.95) * targetScale);
+            });
+
+            spawn3DVolumetricDustCloudRing(endPos, 8, 1.05 * targetScale, 0.95 * targetScale, 1.25, 0, PALETTE_EARTH_DIG);
+            spawn3DBoulderBarrage(endPos, 7, [4.0, 7.8], [0.15 * targetScale, 0.26 * targetScale], 1.15, 0);
+          }
+
+          digger.model.root.setEnabled(true);
+          const emergeDriver = new BABYLON.TransformNode('digEmergeDriver', scene);
+          spawnAnimatedNode(emergeDriver, 0.95, (progress) => {
+            if (progress < 0.4) {
+              const p = progress / 0.4;
+              digger.model.root.position.copyFrom(endPos).addInPlace(new BABYLON.Vector3(0, 0, 0.95));
+              digger.model.bodyGroup.position.y = Math.sin(p * Math.PI * 0.5) * 2.65;
+              digger.model.bodyGroup.rotation.y = p * 18.0;
+            } else {
+              const p = (progress - 0.4) / 0.6;
+              digger.model.root.position.copyFrom(BABYLON.Vector3.Lerp(endPos, startPos, p));
+              digger.model.bodyGroup.position.y = Math.sin((1.0 - p) * Math.PI) * 2.45;
+              digger.model.bodyGroup.rotation.x = -p * Math.PI * 2.0;
+              digger.model.bodyGroup.rotation.y = 0;
+            }
+          });
+
+          target.hp = Math.max(0, target.hp - 28);
+          target.model.shudderTimer = 0.68;
+          target.model.knockupVelY = 8.8;
+          spawnCombatPopup(endPos, '-28 HP', 'SUPER EFETIVO • IMPACTO FÍSICO DE TERRA', 'earth');
+          syncUI();
+        });
+
+        scheduleAfter(2480, () => {
+          digger.model.root.position.copyFrom(startPos);
+          digger.model.bodyGroup.position.set(0, 0, 0);
+          digger.model.bodyGroup.rotation.set(0, 0, 0);
+          digger.model.root.lookAt(target.home);
+          digger.model.customOverride = false;
+          setElementalVignette('', 0);
+          vfxPointLight.intensity = 0;
+          state.isCasting = false;
+          syncUI();
+        });
+      }
+
+      // =====================================================================
+      // 10. MOVE 04: SAND ATTACK — UNIFIED WITH DIG'S DUST SHADERS & OPACITY
+      // =====================================================================
+      function create3DBlindXMarkMesh(name, size = 0.28) {
+        const b1 = BABYLON.MeshBuilder.CreateBox(`${name}-a`, { width: size * 0.24, height: size * 1.15, depth: size * 0.14 }, scene);
+        b1.rotation.z = Math.PI / 4;
+        const b2 = BABYLON.MeshBuilder.CreateBox(`${name}-b`, { width: size * 0.24, height: size * 1.15, depth: size * 0.14 }, scene);
+        b2.rotation.z = -Math.PI / 4;
+        return BABYLON.Mesh.MergeMeshes([b1, b2], true, true, undefined, false, false);
+      }
+
+      function create3DDownChevronMesh(name, size = 0.30) {
+        const left = BABYLON.MeshBuilder.CreateBox(`${name}-l`, { width: size * 0.22, height: size * 0.78, depth: size * 0.14 }, scene);
+        left.position.set(-size * 0.20, 0, 0);
+        left.rotation.z = 0.62;
+        const right = BABYLON.MeshBuilder.CreateBox(`${name}-r`, { width: size * 0.22, height: size * 0.78, depth: size * 0.14 }, scene);
+        right.position.set(size * 0.20, 0, 0);
+        right.rotation.z = -0.62;
+        return BABYLON.Mesh.MergeMeshes([left, right], true, true, undefined, false, false);
+      }
+
+      // Directional 3-Layer Babylon.js Dust & Silica Particle Stream (Same 5-Stage Opacity Curves as DIG)
+      function spawnSilicaJetParticleStream(startPos, endPos, durationSec = 0.95) {
+        const dir = endPos.subtract(startPos);
+        const dist = dir.length();
+        const dirNorm = dir.normalize();
+        const op = state.shaderOpacity;
+
+        const emitterNode = new BABYLON.TransformNode('sandJetEmitterNode', scene);
+        emitterNode.position.copyFrom(startPos);
+
+        // 1. Dense Billowing Golden-Sand Plume (5-Stage Opacity: 0 -> 66% -> 44% -> 18% -> 0%)
+        const cloudPS = registerParticleSystem(new BABYLON.ParticleSystem('sandJetCloudPS', 190, scene));
+        cloudPS.particleTexture = getDustParticleTexture();
+        cloudPS.emitter = emitterNode;
+        cloudPS.minEmitBox = new BABYLON.Vector3(-0.28, -0.15, -0.28);
+        cloudPS.maxEmitBox = new BABYLON.Vector3(0.28, 0.25, 0.28);
+
+        cloudPS.addColorGradient(0.00, new BABYLON.Color4(0.98, 0.92, 0.72, 0.0));
+        cloudPS.addColorGradient(0.10, new BABYLON.Color4(0.95, 0.84, 0.56, 0.66 * op));
+        cloudPS.addColorGradient(0.40, new BABYLON.Color4(0.84, 0.68, 0.42, 0.44 * op));
+        cloudPS.addColorGradient(0.75, new BABYLON.Color4(0.62, 0.48, 0.28, 0.18 * op));
+        cloudPS.addColorGradient(1.00, new BABYLON.Color4(0.42, 0.30, 0.18, 0.0));
+
+        cloudPS.addSizeGradient(0.00, 0.38);
+        cloudPS.addSizeGradient(0.35, 1.05);
+        cloudPS.addSizeGradient(0.75, 1.85);
+        cloudPS.addSizeGradient(1.00, 2.45);
+
+        cloudPS.minLifeTime = 0.48;
+        cloudPS.maxLifeTime = 0.92;
+        cloudPS.emitRate = 280;
+        cloudPS.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
+        cloudPS.gravity = new BABYLON.Vector3(0, 0.35, 0);
+
+        const spread = 1.65;
+        cloudPS.direction1 = dirNorm.scale(dist * 1.25).add(new BABYLON.Vector3(-spread, -0.35, -spread));
+        cloudPS.direction2 = dirNorm.scale(dist * 1.75).add(new BABYLON.Vector3(spread, 1.25, spread));
+        cloudPS.minAngularSpeed = -2.2;
+        cloudPS.maxAngularSpeed = 2.2;
+        cloudPS.minEmitPower = 0.95;
+        cloudPS.maxEmitPower = 1.45;
+        cloudPS.start();
+
+        // 2. Lingering Ground-Skimming Sand Haze (Ultra-Soft 0 -> 34% -> 20% -> 0% Alpha)
+        const hazePS = registerParticleSystem(new BABYLON.ParticleSystem('sandGroundHazePS', 110, scene));
+        hazePS.particleTexture = getDustParticleTexture();
+        hazePS.emitter = startPos.clone();
+        hazePS.minEmitBox = new BABYLON.Vector3(-0.6, -0.1, -0.6);
+        hazePS.maxEmitBox = new BABYLON.Vector3(0.6, 0.2, 0.6);
+
+        hazePS.addColorGradient(0.00, new BABYLON.Color4(0.92, 0.82, 0.62, 0.0));
+        hazePS.addColorGradient(0.18, new BABYLON.Color4(0.88, 0.76, 0.54, 0.34 * op));
+        hazePS.addColorGradient(0.55, new BABYLON.Color4(0.72, 0.58, 0.38, 0.20 * op));
+        hazePS.addColorGradient(1.00, new BABYLON.Color4(0.45, 0.34, 0.20, 0.0));
+
+        hazePS.addSizeGradient(0.00, 0.75);
+        hazePS.addSizeGradient(0.50, 1.75);
+        hazePS.addSizeGradient(1.00, 2.65);
+
+        hazePS.minLifeTime = 0.65;
+        hazePS.maxLifeTime = 1.30;
+        hazePS.emitRate = 180;
+        hazePS.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
+        hazePS.gravity = new BABYLON.Vector3(0, 0.15, 0);
+        hazePS.direction1 = dirNorm.scale(dist * 0.85).add(new BABYLON.Vector3(-2.2, 0.1, -2.2));
+        hazePS.direction2 = dirNorm.scale(dist * 1.35).add(new BABYLON.Vector3(2.2, 0.85, 2.2));
+        hazePS.start();
+
+        // 3. Airborne Silica Clods & Grains (0 -> 62% -> 24% -> 0% Alpha)
+        const clodPS = registerParticleSystem(new BABYLON.ParticleSystem('sandClodPS', 65, scene));
+        clodPS.particleTexture = getDirtClodTexture();
+        clodPS.emitter = emitterNode;
+        clodPS.minEmitBox = new BABYLON.Vector3(-0.2, -0.1, -0.2);
+        clodPS.maxEmitBox = new BABYLON.Vector3(0.2, 0.2, 0.2);
+
+        clodPS.addColorGradient(0.00, new BABYLON.Color4(0.98, 0.88, 0.52, 0.0));
+        clodPS.addColorGradient(0.12, new BABYLON.Color4(0.92, 0.75, 0.38, 0.62 * op));
+        clodPS.addColorGradient(0.60, new BABYLON.Color4(0.68, 0.50, 0.24, 0.24 * op));
+        clodPS.addColorGradient(1.00, new BABYLON.Color4(0.42, 0.28, 0.12, 0.0));
+
+        clodPS.minSize = 0.06;
+        clodPS.maxSize = 0.13;
+        clodPS.minLifeTime = 0.38;
+        clodPS.maxLifeTime = 0.72;
+        clodPS.emitRate = 140;
+        clodPS.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
+        clodPS.gravity = new BABYLON.Vector3(0, -9.5, 0);
+        clodPS.direction1 = dirNorm.scale(dist * 1.45).add(new BABYLON.Vector3(-1.4, 0.5, -1.4));
+        clodPS.direction2 = dirNorm.scale(dist * 2.05).add(new BABYLON.Vector3(1.4, 2.2, 1.4));
+        clodPS.minAngularSpeed = -7.0;
+        clodPS.maxAngularSpeed = 7.0;
+        clodPS.start();
+
+        scheduleAfter(340, () => {
+          cloudPS.stop();
+          hazePS.stop();
+          clodPS.stop();
+        });
+        scheduleAfter((durationSec + 1.25) * 1000, () => {
+          cloudPS.dispose();
+          hazePS.dispose();
+          clodPS.dispose();
+          emitterNode.dispose();
+        });
+      }
+
+      // Spawns Travelling Volumetric Dust Puffs & 64x38 Dust Fans using DIG's Exact Shaders
+      function spawnSandAttackDustTrajectory(startPos, endPos, variant = 'sirocco') {
+        const root = new BABYLON.TransformNode('sandTrajectoryRoot', scene);
+
+        // 1. Directional 64x38 Kickoff Dust Cone at Attacker (using crownShellShader with FBM/Fresnel fade)
+        const kickHolder = new BABYLON.TransformNode('sandKickConeHolder', scene);
+        kickHolder.position.copyFrom(startPos);
+        kickHolder.lookAt(endPos);
+        kickHolder.parent = root;
+
+        const kickCone = createDirectionalCryoConeMesh('sandKickCone64x38', 64, 38);
+        glowLayer.addExcludedMesh(kickCone);
+        kickCone.parent = kickHolder;
+
+        const kickMat = createCrownShellMaterial('sandKickCrownMat');
+        kickMat.setColor3('uCore', BABYLON.Color3.FromHexString('#fef08a'));
+        kickMat.setColor3('uPrimary', BABYLON.Color3.FromHexString('#dfb14b'));
+        kickMat.setColor3('uSecondary', BABYLON.Color3.FromHexString('#784c1e'));
+        kickMat.setFloat('uLobes', 7.0);
+        kickMat.setFloat('uGapOpenness', 0.45);
+        kickCone.material = kickMat;
+
+        spawnAnimatedNode(kickHolder, 0.68, (p, node, dt) => {
+          const burst = Math.min(1, p / 0.32);
+          const erode = Math.max(0, (p - 0.25) / 0.75);
+          kickMat.setVector3('uCameraPos', camera.position);
+          kickMat.setFloat('uBaseOpacity', state.shaderOpacity * 0.86);
+          kickMat.setFloat('uEdgeFeather', state.shaderFeather);
+          kickMat.setFloat('uOpenProgress', burst);
+          kickMat.setFloat('uDissolve', erode * 0.92);
+          kickMat.setFloat('uMasterAlpha', 1.0 - Math.pow(erode, 1.35));
+          kickCone.position.z = burst * 0.75;
+          kickCone.scaling.set(0.65 + burst * 0.75, 0.55 + burst * 0.65, 0.75 + burst * 0.95);
+          kickCone.rotation.z += dt * 3.2;
+        });
+
+        // 2. Variant-Specific Volumetric Dust Stream Across the Arena (Using DIG's Shaders!)
+        const stations = 5;
+        for (let step = 1; step <= stations; step++) {
+          const frac = step / (stations + 1);
+          const delaySec = step * 0.065;
+          const stationPos = BABYLON.Vector3.Lerp(startPos, endPos, frac);
+          const groundStationPos = new BABYLON.Vector3(stationPos.x, 0.05, stationPos.z);
+
+          if (variant === 'sirocco') {
+            // OPTION A: Billowing 3D Volumetric Dust Cloud Clusters (digDustCloudShader) expanding along the jet path
+            spawn3DVolumetricDustCloudRing(
+              stationPos.add(new BABYLON.Vector3(0, -0.25, 0)),
+              5,
+              0.32 + frac * 0.45,
+              0.55 + frac * 0.38,
+              0.78,
+              delaySec,
+              PALETTE_SILICA_SAND
+            );
+          } else if (variant === 'mirage') {
+            // OPTION B: Sweeping Ground-Skimming 64x38 Dust Wave Fans + Volumetric Dust Puffs
+            const waveHolder = new BABYLON.TransformNode(`sandWaveFan-${step}`, scene);
+            waveHolder.position.copyFrom(groundStationPos);
+            waveHolder.lookAt(new BABYLON.Vector3(endPos.x, 0.25, endPos.z));
+
+            const waveMesh = createLotusCrownShellMesh(`sandWaveMesh-${step}`, 48, 24);
+            glowLayer.addExcludedMesh(waveMesh);
+            waveMesh.rotation.x = Math.PI * 0.35;
+            waveMesh.parent = waveHolder;
+
+            const wMat = createCrownShellMaterial(`sandWaveMat-${step}`);
+            wMat.setColor3('uCore', BABYLON.Color3.FromHexString('#fef08a'));
+            wMat.setColor3('uPrimary', BABYLON.Color3.FromHexString('#dfb14b'));
+            wMat.setColor3('uSecondary', BABYLON.Color3.FromHexString('#784c1e'));
+            waveMesh.material = wMat;
+
+            spawnAnimatedNode(waveHolder, 0.65, (p) => {
+              const burst = Math.min(1, p / 0.32);
+              const erode = Math.max(0, (p - 0.28) / 0.72);
+              wMat.setVector3('uCameraPos', camera.position);
+              wMat.setFloat('uBaseOpacity', state.shaderOpacity * 0.82);
+              wMat.setFloat('uEdgeFeather', state.shaderFeather);
+              wMat.setFloat('uOpenProgress', burst);
+              wMat.setFloat('uDissolve', erode * 0.92);
+              wMat.setFloat('uMasterAlpha', 1.0 - Math.pow(erode, 1.35));
+              const sc = (0.55 + frac * 0.55) * (0.65 + burst * 0.65);
+              waveMesh.scaling.set(sc * 1.25, sc * 0.65, sc);
+            }, delaySec);
+
+            spawn3DVolumetricDustCloudRing(groundStationPos, 4, 0.38 + frac * 0.35, 0.52 + frac * 0.25, 0.72, delaySec, PALETTE_SILICA_SAND);
+          } else {
+            // OPTION C: Travelling Translucent Dust Veil Columns (digDustVeilShader) + Dust Shock Rings
+            spawnTranslucentDustVeilAndShockRing(
+              groundStationPos,
+              0.48 + frac * 0.42,
+              1.35 + frac * 0.85,
+              0.75,
+              delaySec,
+              PALETTE_SILICA_SAND
+            );
+            spawn3DVolumetricDustCloudRing(groundStationPos, 4, 0.35 + frac * 0.35, 0.48 + frac * 0.28, 0.68, delaySec, PALETTE_SILICA_SAND);
+          }
+        }
+      }
+
+      // Spawns Target Blinding Dust Cloud & Veil Status using DIG's Volumetric Shaders & Opacity Dissipation
+      function spawnTargetBlindingSandstormStatus(targetActor, variant = 'sirocco') {
+        const pos = targetActor.home.clone();
+        const tScale = targetActor.model.root.scaling.x || 1.0;
+        const headHeight = targetActor.model.height * 0.68 * tScale;
+
+        const root = new BABYLON.TransformNode('sandStatusRoot', scene);
+        root.position.copyFrom(pos);
+
+        if (variant === 'sirocco') {
+          // OPTION A: Double Counter-Rotating Translucent Dust Veils (digDustVeilShader) + 2 Tiers of 3D Volumetric Dust Puffs
+          spawnTranslucentDustVeilAndShockRing(pos, 1.28 * tScale, 2.85 * tScale, 1.55, 0, PALETTE_SILICA_SAND);
+          spawn3DVolumetricDustCloudRing(pos, 8, 0.85 * tScale, 0.92 * tScale, 1.45, 0, PALETTE_SILICA_SAND);
+          spawn3DVolumetricDustCloudRing(pos.add(new BABYLON.Vector3(0, headHeight * 0.72, 0)), 7, 0.75 * tScale, 0.82 * tScale, 1.40, 0.06, PALETTE_SILICA_SAND);
+        } else if (variant === 'mirage') {
+          // OPTION B: Hemispherical Billowing Dust Cloud Dome (digDustCloudShader with Beer-Lambert & FBM Erosion) + Lotus Dust Crown
+          const dustDome = BABYLON.MeshBuilder.CreateSphere('sandDustCloudDome', {
+            diameter: 3.25 * tScale,
+            segments: 16,
+            slice: 0.68,
+            sideOrientation: BABYLON.Mesh.DOUBLESIDE
+          }, scene);
+          glowLayer.addExcludedMesh(dustDome);
+          dustDome.position.y = 0.05;
+          dustDome.parent = root;
+
+          const domeMat = createDustCloudShaderMaterial('sandDomeCloudMat', 2.7, PALETTE_SILICA_SAND);
+          dustDome.material = domeMat;
+
+          const baseLotus = createLotusCrownShellMesh('sandMirageBaseCrown', 64, 34);
+          glowLayer.addExcludedMesh(baseLotus);
+          baseLotus.position.y = 0.05;
+          baseLotus.parent = root;
+          const lMat = createCrownShellMaterial('sandMirageBaseCrownMat');
+          lMat.setColor3('uCore', BABYLON.Color3.FromHexString('#fef08a'));
+          lMat.setColor3('uPrimary', BABYLON.Color3.FromHexString('#dfb14b'));
+          lMat.setColor3('uSecondary', BABYLON.Color3.FromHexString('#784c1e'));
+          baseLotus.material = lMat;
+
+          spawn3DVolumetricDustCloudRing(pos, 9, 0.95 * tScale, 0.88 * tScale, 1.45, 0, PALETTE_SILICA_SAND);
+
+          spawnAnimatedNode(root, 1.55, (progress, node, dt) => {
+            domeMat.setFloat('uTime', state.clockTime);
+            domeMat.setFloat('uProgress', progress);
+            domeMat.setVector3('uCameraPos', camera.position);
+            domeMat.setFloat('uBaseOpacity', state.shaderOpacity * 0.88);
+            domeMat.setFloat('uEdgeFeather', state.shaderFeather);
+
+            const pop = progress < 0.2 ? (0.45 + 0.55 * (progress / 0.2)) : 1.0 + progress * 0.22;
+            dustDome.scaling.setAll(pop);
+            dustDome.rotation.y -= dt * 1.8;
+
+            const burst = Math.min(1, progress / 0.35);
+            const erode = Math.max(0, (progress - 0.28) / 0.72);
+            lMat.setVector3('uCameraPos', camera.position);
+            lMat.setFloat('uBaseOpacity', state.shaderOpacity * 0.85);
+            lMat.setFloat('uEdgeFeather', state.shaderFeather);
+            lMat.setFloat('uOpenProgress', burst);
+            lMat.setFloat('uDissolve', erode * 0.92);
+            lMat.setFloat('uMasterAlpha', 1.0 - Math.pow(erode, 1.35));
+            baseLotus.scaling.set((0.75 + burst * 0.95) * tScale, (0.45 + burst * 0.55) * tScale, (0.75 + burst * 0.95) * tScale);
+            baseLotus.rotation.y += dt * 2.4;
+          });
+        } else {
+          // OPTION C: 3-Tier Ascending Dust Geyser Veil (digDustVeilShader) + Orbiting Volumetric Dust Torus Rings
+          spawnTranslucentDustVeilAndShockRing(pos, 0.92 * tScale, 3.8 * tScale, 1.55, 0, PALETTE_SILICA_SAND);
+          spawnTranslucentDustVeilAndShockRing(pos.add(new BABYLON.Vector3(0, 0.75, 0)), 1.35 * tScale, 2.6 * tScale, 1.42, 0.07, PALETTE_SILICA_SAND);
+          spawn3DVolumetricDustCloudRing(pos.add(new BABYLON.Vector3(0, headHeight * 0.85, 0)), 8, 0.82 * tScale, 0.85 * tScale, 1.45, 0, PALETTE_SILICA_SAND);
+
+          const torusRings = [];
+          for (let gIdx = 0; gIdx < 2; gIdx++) {
+            const gTorus = BABYLON.MeshBuilder.CreateTorus(`sandDustTorus-${gIdx}`, {
+              diameter: (1.75 + gIdx * 0.45) * tScale,
+              thickness: 0.22 * tScale,
+              tessellation: 32
+            }, scene);
+            glowLayer.addExcludedMesh(gTorus);
+            gTorus.position.y = headHeight;
+            gTorus.scaling.set(1.0, 0.42, 1.0);
+            gTorus.parent = root;
+            const gMat = createDustCloudShaderMaterial(`sandGyroDustMat-${gIdx}`, 5.1 + gIdx * 2.3, PALETTE_SILICA_SAND);
+            gTorus.material = gMat;
+            torusRings.push({ gTorus, gMat });
+          }
+
+          spawnAnimatedNode(root, 1.55, (progress, node, dt) => {
+            torusRings.forEach((tr, idx) => {
+              tr.gMat.setFloat('uTime', state.clockTime + idx * 2.0);
+              tr.gMat.setFloat('uProgress', progress);
+              tr.gMat.setVector3('uCameraPos', camera.position);
+              tr.gMat.setFloat('uBaseOpacity', state.shaderOpacity * 0.78);
+              tr.gMat.setFloat('uEdgeFeather', state.shaderFeather);
+              const exp = 0.75 + progress * 0.55;
+              tr.gTorus.scaling.set(exp, 0.42, exp);
+              tr.gTorus.rotation.y += dt * (idx === 0 ? 3.5 : -4.2);
+              tr.gTorus.rotation.x = (idx === 0 ? 0.28 : -0.28) * Math.sin(state.clockTime * 3.0);
+            });
+          });
+        }
+
+        // Orbiting 3D Blindness X-Seals & Downward ACC ↓ Chevrons around Target's Head
+        const symbolsRoot = new BABYLON.TransformNode('sandDebuffSymbolsRoot', scene);
+        symbolsRoot.position.copyFrom(pos);
+
+        const xMat = new BABYLON.StandardMaterial('blindXMat', scene);
+        xMat.emissiveColor = BABYLON.Color3.FromHexString('#ff4d4d');
+        xMat.diffuseColor = BABYLON.Color3.FromHexString('#facc15');
+        xMat.disableLighting = true;
+
+        const chevMat = new BABYLON.StandardMaterial('accDownChevMat', scene);
+        chevMat.emissiveColor = BABYLON.Color3.FromHexString('#facc15');
+        chevMat.disableLighting = true;
+
+        const symbols = [];
+        const totalSymbols = 8;
+        for (let i = 0; i < totalSymbols; i++) {
+          const isX = i % 2 === 0;
+          const mesh = isX
+            ? create3DBlindXMarkMesh(`blindX-${i}`, 0.24 * tScale)
+            : create3DDownChevronMesh(`accChev-${i}`, 0.26 * tScale);
+          mesh.parent = symbolsRoot;
+          const m = (isX ? xMat : chevMat).clone(`symMat-${i}`);
+          mesh.material = m;
+
+          symbols.push({
+            mesh,
+            mat: m,
+            isX,
+            baseAngle: (i / totalSymbols) * Math.PI * 2,
+            orbitRadius: (1.05 + (i % 2) * 0.22) * tScale
+          });
+        }
+
+        spawnAnimatedNode(symbolsRoot, 1.55, (progress) => {
+          const fadeIn = Math.min(1.0, progress / 0.14);
+          const fadeOut = 1.0 - Math.pow(Math.max(0, (progress - 0.65) / 0.35), 1.5);
+          const env = fadeIn * fadeOut;
+
+          symbols.forEach((s, idx) => {
+            const curAng = s.baseAngle - progress * 4.8;
+            const yBob = s.isX
+              ? (headHeight + 0.20 + Math.sin(state.clockTime * 6.0 + idx) * 0.10)
+              : (headHeight + 0.50 - ((progress * 2.0 + idx * 0.2) % 1.0) * 0.80);
+
+            s.mesh.position.set(
+              Math.cos(curAng) * s.orbitRadius,
+              yBob,
+              Math.sin(curAng) * s.orbitRadius
+            );
+            s.mesh.rotation.y = -curAng + Math.PI / 2;
+            const popScale = Math.sin(Math.min(1, progress * 3.5) * Math.PI * 0.5);
+            s.mesh.scaling.setAll(Math.max(0.01, popScale));
+            s.mat.alpha = env * 0.88 * state.shaderOpacity;
+          });
+        });
+      }
+
+      function castSandAttackMove() {
+        if (state.paused) return;
+        if (state.isCasting) cancelCurrentCastAndResetArena();
+        state.activeMove = 3;
+        renderVariantBar();
+        state.isCasting = true;
+        syncUI();
+
+        const attacker = actors[state.selected];
+        const target = actors[state.target];
+        const chosenVariant = state.sandVariant;
+
+        const variantTitles = {
+          sirocco: 'OPÇÃO A • JATO DE NUVENS VOLUMÉTRICAS FBM & VÉU SIROCCO (ACC ↓)',
+          mirage:  'OPÇÃO B • ONDAS RASTEIRAS DE POEIRA 64x38 & DOMO FBM TRANSLÚCIDO',
+          whip:    'OPÇÃO C • CORTINAS DE POEIRA EM COLUNA & ANÉIS VOLUMÉTRICOS'
+        };
+        showCastBanner('4 - SAND ATTACK', variantTitles[chosenVariant], '#eab308');
+        sfx.playSandJet();
+        attacker.model.castAnimTimer = 1.95;
+
+        const startPos = attacker.home.clone();
+        const endPos = target.home.clone();
+        let forward = endPos.subtract(startPos);
+        forward.y = 0;
+        if (forward.lengthSquared() < 0.001) forward = new BABYLON.Vector3(0, 0, -1);
+        forward.normalize();
+
+        const jetOrigin = startPos
+          .add(new BABYLON.Vector3(0, attacker.model.height * 0.34, 0))
+          .add(forward.scale(attacker.model.radius * 0.85));
+
+        const targetEyeCenter = endPos.add(new BABYLON.Vector3(0, target.model.height * 0.65 * (target.model.root.scaling.y || 1), 0));
+
+        // 1. Ground Kickoff Sand Cloud & Translucent Veil at Attacker's Feet (0.00s)
+        spawn3DVolumetricDustCloudRing(startPos, 7, 0.76, 0.84, 0.95, 0, PALETTE_SILICA_SAND);
+        spawnTranslucentDustVeilAndShockRing(startPos, 0.95, 1.45, 0.95, 0, PALETTE_SILICA_SAND);
+
+        // 2. Volumetric Dust Trajectory + 3-Layer Multi-Opacity Particle Stream + Subtle Pebbles (0.06s)
+        scheduleAfter(60, () => {
+          spawnSandAttackDustTrajectory(jetOrigin, targetEyeCenter, chosenVariant);
+          spawnSilicaJetParticleStream(jetOrigin, targetEyeCenter, 0.92);
+          spawn3DBoulderBarrage(startPos, 4, [4.5, 8.8], [0.09, 0.16], 0.78, 0);
+        });
+
+        // 3. Blinding Dust Veil & Volumetric Cloud Status on Target (0.40s)
+        scheduleAfter(400, () => {
+          sfx.playDebuffDown();
+          setElementalVignette('rgba(234, 179, 8, 0.24)', 1);
+
+          vfxPointLight.diffuse = BABYLON.Color3.FromHexString('#f5d77f');
+          vfxPointLight.position.copyFrom(targetEyeCenter).addInPlace(new BABYLON.Vector3(0, 1.6, 1.0));
+          vfxPointLight.intensity = 2.4;
+
+          spawnTargetBlindingSandstormStatus(target, chosenVariant);
+
+          target.model.shudderTimer = 1.05;
+          target.model.sandTint = 1.0;
+
+          const accPillId = `enemy-${Math.max(0, target.id - 2)}-acc-pill`;
+          const pillEl = ut(accPillId) || ut('enemy-0-acc-pill');
+          if (pillEl) pillEl.classList.remove('hidden');
+
+          spawnCombatPopup(endPos, 'ACC ↓', 'CEGUEIRA POR POEIRA • PRECISÃO REDUZIDA', 'sand');
+          syncUI();
+        });
+
+        // 4. Cleanup & Restore (2150ms)
+        scheduleAfter(2150, () => {
+          setElementalVignette('', 0);
+          vfxPointLight.intensity = 0;
+          state.isCasting = false;
+          syncUI();
+        });
+      }
+
+      // =====================================================================
+      // 11. UI CONTROLS, DYNAMIC VARIANT BAR, MIRROR SWAP & EVENT LISTENERS
+      // =====================================================================
+      const MOVE_VARIANT_CONFIGS = {
+        2: {
+          title: '🪨 MOVE 03 (DIG) — POEIRA VOLUMÉTRICA FBM & OPACIDADE BEER-LAMBERT:',
+          colorClass: 'text-[#f59e0b]',
+          options: [
+            { id: 'tectonic',     label: 'OPÇÃO A: NUVEM DE POEIRA VOLUMÉTRICA + 6 PEDRINHAS SUTIS' },
+            { id: 'geyser',       label: 'OPÇÃO B: COLUNA DE GÉISER DE POEIRA (3 ANDARES) + FENDA' },
+            { id: 'drillbreaker', label: 'OPÇÃO C: LEQUE DIRECIONAL 64x38 + 5 PLACAS DE SOLO ERGUIDAS' }
+          ]
+        },
+        3: {
+          title: '🌪️ MOVE 04 (SAND ATTACK) — MESMOS SHADERS DE POEIRA & OPACIDADE DO DIG:',
+          colorClass: 'text-[#eab308]',
+          options: [
+            { id: 'sirocco', label: 'OPÇÃO A: JATO DE NUVENS VOLUMÉTRICAS FBM + VÉU SIROCCO (ACC ↓)' },
+            { id: 'mirage',  label: 'OPÇÃO B: ONDAS RASTEIRAS DE POEIRA 64x38 + DOMO DE POEIRA FBM' },
+            { id: 'whip',    label: 'OPÇÃO C: CORTINAS DE POEIRA EM COLUNA + ANÉIS VOLUMÉTRICOS' }
+          ]
+        }
+      };
+
+      function renderVariantBar() {
+        const cfg = MOVE_VARIANT_CONFIGS[state.activeMove] || MOVE_VARIANT_CONFIGS[3];
+        const currentVal = state.activeMove === 2 ? state.digVariant : state.sandVariant;
+        const inner = ut('variant-bar-inner');
+        inner.innerHTML = `
+          <span class="${cfg.colorClass} font-extrabold uppercase tracking-wider flex items-center gap-1">
+            ${cfg.title}
+          </span>
+          ${cfg.options.map((opt) => `
+            <button data-variant="${opt.id}" class="variant-mode-btn ${opt.id === currentVal ? 'active' : ''} px-2.5 py-0.5 bg-slate-900 text-slate-200 border border-amber-500/40">
+              ${opt.label}
+            </button>
+          `).join('')}
+        `;
+        inner.querySelectorAll('.variant-mode-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const chosen = btn.dataset.variant;
+            if (state.paused) {
+              state.paused = false;
+              ut('btn-pause').textContent = 'Ⅱ Pausar';
+            }
+            if (state.activeMove === 2) {
+              state.digVariant = chosen;
+              castDigMove();
+            } else {
+              state.sandVariant = chosen;
+              castSandAttackMove();
+            }
+          });
+        });
+
+        ut('btn-cast-dig').classList.toggle('ring-2', state.activeMove === 2);
+        ut('btn-cast-dig').classList.toggle('ring-white/80', state.activeMove === 2);
+        ut('btn-cast-sand').classList.toggle('ring-2', state.activeMove === 3);
+        ut('btn-cast-sand').classList.toggle('ring-white/80', state.activeMove === 3);
+      }
+
+      function syncActorDropdowns() {
+        const activeActors = actors.filter((a) => a.active);
+        ut('actor-select').replaceChildren(...activeActors.map((a) => {
+          const opt = document.createElement('option');
+          opt.value = a.id;
+          opt.textContent = a.name;
+          return opt;
+        }));
+        ut('actor-select').value = state.selected;
+
+        const targetCandidates = activeActors.filter((a) => a.id !== state.selected);
+        if (!targetCandidates.some((a) => a.id === state.target)) {
+          state.target = targetCandidates[0].id;
+        }
+        ut('target-select').replaceChildren(...targetCandidates.map((a) => {
+          const opt = document.createElement('option');
+          opt.value = a.id;
+          opt.textContent = a.name;
+          return opt;
+        }));
+        ut('target-select').value = state.target;
+      }
+
+      function syncUI() {
+        [0, 1, 2].forEach((slotIdx) => {
+          const enemyActor = actors[slotIdx + 2];
+          const hudEl = ut(`enemy-hud-${slotIdx}`);
+          if (!enemyActor || !enemyActor.active) {
+            hudEl.style.display = 'none';
+            return;
+          }
+          hudEl.style.display = 'flex';
+          hudEl.querySelector('[data-name]').textContent = enemyActor.name;
+          const pct = (enemyActor.hp / enemyActor.maxHp) * 100;
+          ut(`enemy-${slotIdx}-hp-bar`).style.width = `${pct}%`;
+          if (slotIdx === 0) ut('enemy-0-hp-ghost').style.width = `${pct}%`;
+          ut(`enemy-${slotIdx}-hp-text`).textContent = `HP ${enemyActor.hp} / ${enemyActor.maxHp}`;
+        });
+
+        const abra = actors[0];
+        const pancham = actors[1];
+        ut('abra-hp-bar').style.width = `${(abra.hp / abra.maxHp) * 100}%`;
+        ut('abra-hp-heal-preview').style.width = `${(abra.hp / abra.maxHp) * 100}%`;
+        ut('abra-hp-text').textContent = `HP ${abra.hp}/${abra.maxHp}`;
+
+        ut('pancham-hp-bar').style.width = `${(pancham.hp / pancham.maxHp) * 100}%`;
+        ut('pancham-hp-heal-preview').style.width = `${(pancham.hp / pancham.maxHp) * 100}%`;
+        ut('pancham-hp-text').textContent = `HP ${pancham.hp}/${pancham.maxHp}`;
+
+        ut('clones-state-text').textContent = state.clones ? 'ON' : 'OFF';
+
+        const moveNames = {
+          2: `3 - DIG (${state.digVariant.toUpperCase()})`,
+          3: `4 - SAND ATTACK (${state.sandVariant.toUpperCase()})`
+        };
+        const moveName = moveNames[state.activeMove] || moveNames[3];
+        ut('particle-count-readout').textContent = state.isCasting
+          ? `EXECUTANDO ${moveName} • ${activeAnimations.length} NÓS 3D`
+          : `${moveName} • PRONTO`;
+      }
+
+      function updateFloatingEnemyHUDs() {
+        [0, 1, 2].forEach((slotIdx) => {
+          const enemyActor = actors[slotIdx + 2];
+          if (!enemyActor || !enemyActor.active) return;
+          const hudEl = ut(`enemy-hud-${slotIdx}`);
+          const topWorld = enemyActor.home.add(new BABYLON.Vector3(0, enemyActor.model.height * (enemyActor.model.root.scaling.y || 1) + enemyActor.model.knockupY + 0.45, 0));
+          const screen = projectToScreen(topWorld);
+          hudEl.style.left = `${screen.x}px`;
+          hudEl.style.top = `${screen.y}px`;
+          hudEl.style.opacity = screen.z >= 0 && screen.z <= 1 ? '1' : '0';
+        });
+      }
+
+      // Bind Move 3 (DIG) & Move 4 (SAND ATTACK) Buttons
+      ut('btn-cast-dig').addEventListener('click', castDigMove);
+      ut('btn-cast-sand').addEventListener('click', castSandAttackMove);
+
+      // Bind Camera Director Buttons
+      document.querySelectorAll('.cam-btn').forEach((btn) => {
+        btn.addEventListener('click', () => setCameraPreset(btn.dataset.cam));
+      });
+
+      // Bind Fixture Controls
+      ut('actor-select').addEventListener('change', (e) => {
+        if (state.isCasting) cancelCurrentCastAndResetArena();
+        state.selected = Number(e.target.value);
+        syncActorDropdowns();
+        applyCameraTransform();
+        syncUI();
+      });
+
+      ut('target-select').addEventListener('change', (e) => {
+        if (state.isCasting) cancelCurrentCastAndResetArena();
+        state.target = Number(e.target.value);
+        applyCameraTransform();
+      });
+
+      ut('target-size').addEventListener('change', (e) => {
+        const sc = Number(e.target.value);
+        actors[state.target].model.root.scaling.setAll(sc);
+      });
+
+      ut('btn-mirror').addEventListener('click', () => {
+        if (state.isCasting) cancelCurrentCastAndResetArena();
+        const tmp = state.selected;
+        state.selected = state.target;
+        state.target = tmp;
+        syncActorDropdowns();
+        applyCameraTransform();
+        syncUI();
+      });
+
+      ut('slider-opacity').addEventListener('input', (e) => {
+        state.shaderOpacity = parseFloat(e.target.value);
+        ut('label-opacity').textContent = `${Math.round(state.shaderOpacity * 100)}%`;
+      });
+
+      ut('slider-feather').addEventListener('input', (e) => {
+        state.shaderFeather = parseFloat(e.target.value);
+        ut('label-feather').textContent = state.shaderFeather.toFixed(2);
+      });
+
+      ut('btn-pause').addEventListener('click', () => {
+        state.paused = !state.paused;
+        ut('btn-pause').textContent = state.paused ? '▶ Continuar' : 'Ⅱ Pausar';
+      });
+
+      ut('btn-sim-damage').addEventListener('click', () => {
+        actors.forEach((a) => {
+          if (a.team === 0) a.hp = Math.max(1, Math.floor(a.maxHp * 0.35));
+        });
+        syncUI();
+      });
+
+      ut('btn-toggle-clones').addEventListener('click', () => {
+        if (state.isCasting) cancelCurrentCastAndResetArena();
+        state.clones = !state.clones;
+        actors.slice(3).forEach((a) => {
+          a.active = state.clones;
+          a.model.root.setEnabled(state.clones);
+        });
+        syncActorDropdowns();
+        syncUI();
+      });
+
+      document.querySelectorAll('.speed-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.speed = Number(btn.dataset.speed);
+          document.querySelectorAll('.speed-btn').forEach((b) => {
+            b.className = b === btn
+              ? 'speed-btn px-1.5 py-0.5 bg-[#d8ff00] text-slate-950 font-extrabold cursor-pointer'
+              : 'speed-btn px-1.5 py-0.5 text-slate-400 hover:text-white cursor-pointer';
+          });
+        });
+      });
+
+      ut('btn-auto-loop').addEventListener('click', () => {
+        state.autoLoop = !state.autoLoop;
+        ut('loop-state-text').textContent = state.autoLoop ? 'ON' : 'OFF';
+        ut('loop-state-text').className = state.autoLoop ? 'text-[#d8ff00]' : 'text-slate-400';
+      });
+
+      ut('btn-toggle-sfx').addEventListener('click', () => {
+        sfx.enabled = !sfx.enabled;
+        ut('sfx-state-text').textContent = sfx.enabled ? 'ON' : 'MUTE';
+      });
+
+      window.addEventListener('keydown', (e) => {
+        if (e.repeat || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+        if (e.key === '3') castDigMove();
+        if (e.key === '4') castSandAttackMove();
+        if (e.key.toLowerCase() === 'c') {
+          const order = ['cinema', 'oposto', 'obliqua', 'tatica', 'impacto'];
+          const next = order[(order.indexOf(state.cameraPreset) + 1) % order.length];
+          setCameraPreset(next);
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        engine.resize();
+      });
+
+      // =====================================================================
+      // 12. MAIN BABYLON.JS RENDER & DETERMINISTIC ANIMATION LOOP
+      // =====================================================================
+      let lastFrameTime = performance.now();
+
+      engine.runRenderLoop(() => {
+        const now = performance.now();
+        const rawDt = Math.min(0.1, Math.max(0, (now - lastFrameTime) / 1000));
+        lastFrameTime = now;
+
+        if (!state.paused) {
+          const dt = rawDt * state.speed;
+          state.clockTime += dt;
+
+          for (let i = scheduledTimers.length - 1; i >= 0; i--) {
+            if (state.clockTime >= scheduledTimers[i].triggerTime) {
+              const fn = scheduledTimers[i].callback;
+              scheduledTimers.splice(i, 1);
+              fn();
+            }
+          }
+
+          for (let i = activeAnimations.length - 1; i >= 0; i--) {
+            const item = activeAnimations[i];
+            item.age += dt;
+            if (item.age < item.delay) continue;
+
+            item.node.setEnabled(true);
+            const localAge = item.age - item.delay;
+            const progress = Math.min(1.0, localAge / item.duration);
+            if (item.onUpdate) item.onUpdate(progress, item.node, dt);
+
+            if (localAge >= item.duration) {
+              disposeNodeHierarchy(item.node);
+              activeAnimations.splice(i, 1);
+            }
+          }
+
+          actors.forEach((a) => {
+            if (!a.active) return;
+            const m = a.model;
+            m.castAnimTimer = Math.max(0, m.castAnimTimer - dt);
+            m.shudderTimer = Math.max(0, m.shudderTimer - dt);
+            m.healTint = Math.max(0, m.healTint - dt * 1.2);
+            m.sandTint = Math.max(0, m.sandTint - dt * 0.75);
+
+            if (m.knockupY > 0 || m.knockupVelY !== 0) {
+              m.knockupY += m.knockupVelY * dt;
+              m.knockupVelY -= 22.0 * dt;
+              if (m.knockupY <= 0) {
+                m.knockupY = 0;
+                m.knockupVelY = 0;
+              }
+            }
+
+            if (!m.customOverride) {
+              const castLift = m.castAnimTimer > 0 ? Math.sin(state.clockTime * 7.0) * 0.12 : 0;
+              const shudderX = m.shudderTimer > 0 ? Math.sin(state.clockTime * 85.0) * 0.11 : 0;
+              m.bodyGroup.position.x = shudderX;
+              m.bodyGroup.position.y = m.knockupY + Math.sin(state.clockTime * 2.8 + a.id) * 0.045 + castLift;
+            }
+
+            m.materials.forEach((mat) => {
+              if (m.sandTint > 0) {
+                mat.emissiveColor = BABYLON.Color3.FromHexString('#eab308').scale(m.sandTint * 0.35);
+              } else {
+                mat.emissiveColor = new BABYLON.Color3(0, 0, 0);
+              }
+            });
+          });
+
+          if (state.autoLoop && !state.isCasting) {
+            state.autoTimer += dt;
+            if (state.autoTimer >= 0.9) {
+              state.autoTimer = 0;
+              if (state.activeMove === 2) castDigMove();
+              else castSandAttackMove();
+            }
+          }
+        }
+
+        scene.render();
+        updateFloatingEnemyHUDs();
+      });
+
+      renderVariantBar();
+      syncActorDropdowns();
+      setCameraPreset('cinema');
+      syncUI();
+      setTimeout(() => castSandAttackMove(), 350);
+    })();
+  </script>
+</body>
+</html>

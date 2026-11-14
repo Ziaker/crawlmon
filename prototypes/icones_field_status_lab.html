@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crawlmon — Ícones de tipo: Field e Status (D-1190)</title>
+<style>
+  :root {
+    --ink: #080e18; --navy: #0a1a27; --navy2: #0e2435; --navy3: #16344b;
+    --paper: #f4eee1; --lime: #d6fa66; --coral: #ff746c; --muted: #8ea9b5;
+    --physical: #ef4444; --magical: #00d8f6; --guard: #64748b; --dodge: #fcb900;
+    --field: #22c55e; --status: #fb923c;
+    --title: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+    --body: Arial, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: var(--paper); font-family: var(--body); background: linear-gradient(180deg, #143348, #0b1f2e) fixed; padding: 28px 22px 60px; }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  h1 { font-family: var(--title); font-weight: 400; font-size: 54px; line-height: 0.95; margin: 0; }
+  h1 span { color: var(--lime); }
+  h1 span::before { content: '/'; color: var(--coral); margin-right: 3px; }
+  .sub { color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; margin: 8px 0 24px; }
+  h2 { font-family: var(--title); font-weight: 400; font-size: 26px; margin: 34px 0 4px; letter-spacing: 0.01em; }
+  h2 small { font-family: var(--body); font-size: 10px; font-weight: 900; letter-spacing: 0.16em; color: var(--muted); margin-left: 10px; text-transform: uppercase; }
+  .note { color: #b9c8d4; font-size: 12px; line-height: 1.55; margin: 0 0 14px; max-width: 760px; }
+  .tag { display: inline-block; background: var(--coral); color: var(--ink); font-size: 9px; font-weight: 900; letter-spacing: 0.1em; padding: 2px 7px; margin-left: 6px; text-transform: uppercase; vertical-align: middle; }
+
+  /* badge no padrão do jogo: paralelogramo flat 20x20, glifo 15x15 */
+  .b { --s: 1; display: inline-grid; place-items: center; width: calc(20px * var(--s)); height: calc(20px * var(--s)); background: var(--c); color: var(--g, #fff);
+       clip-path: polygon(calc(3px * var(--s)) 0, 100% 0, calc(100% - 3px * var(--s)) 100%, 0 100%); flex: 0 0 auto; }
+  .b svg { width: calc(15px * var(--s)); height: calc(15px * var(--s)); display: block; fill: currentColor; }
+  .b.physical { --c: var(--physical); } .b.magical { --c: var(--magical); --g: var(--ink); }
+  .b.guard { --c: var(--guard); } .b.dodge { --c: var(--dodge); --g: var(--ink); }
+  .b.field { --c: var(--field); --g: var(--ink); } .b.status { --c: var(--status); --g: var(--ink); }
+  .b.white { --c: #fff; --g: var(--ink); }
+
+  .panel { background: var(--navy); box-shadow: 6px 6px 0 rgba(3, 10, 17, 0.55); padding: 16px 18px; }
+  .panel.paper { background: var(--paper); color: var(--ink); }
+  .grid { display: grid; gap: 22px; }
+  .g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .lbl { font-size: 9px; font-weight: 900; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .paper .lbl { color: rgba(8, 14, 24, 0.55); }
+  .name { font-family: var(--title); font-size: 21px; letter-spacing: 0.02em; margin-bottom: 2px; }
+  .desc { font-size: 11px; line-height: 1.5; color: #b9c8d4; margin: 4px 0 12px; min-height: 48px; }
+  .sizes { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+  .sizes figure { margin: 0; display: grid; gap: 5px; justify-items: center; font-size: 8px; font-weight: 900; letter-spacing: 0.1em; color: var(--muted); }
+  .big { width: 168px; height: 168px; display: grid; place-items: center; background: var(--c); color: var(--g, #fff);
+         clip-path: polygon(22px 0, 100% 0, calc(100% - 22px) 100%, 0 100%); }
+  .big svg { width: 118px; height: 118px; fill: currentColor; }
+
+  .strip { display: flex; align-items: center; gap: 7px; margin-top: 14px; padding: 7px 12px; background: var(--navy2); clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+  .strip .nm { font-family: var(--title); font-size: 17px; letter-spacing: 0.02em; flex: 1 1 auto; }
+  .chip { font-size: 10px; font-weight: 900; padding: 3px 9px; clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
+  .chip.atb { background: #0891b2; color: #fff; } .chip.mp { background: #2563eb; color: #fff; }
+  .paper .strip { background: rgba(8, 14, 24, 0.1); }
+
+  .swatches { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+  .swatches .lbl { margin: 0 4px 0 0; }
+  .ctx { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+  .ctx figure { margin: 0; display: grid; gap: 6px; justify-items: center; font-size: 9px; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .paper .ctx figure { color: rgba(8, 14, 24, 0.6); }
+  details { margin-top: 12px; font-size: 10px; color: var(--muted); }
+  details summary { cursor: pointer; letter-spacing: 0.12em; font-weight: 900; text-transform: uppercase; }
+  pre { margin: 8px 0 0; padding: 10px; background: #050b12; color: #cfe0ef; font-size: 10px; line-height: 1.5; white-space: pre-wrap; word-break: break-all; }
+  .build { color: #8ea9b5; font-size: 11px; line-height: 1.6; }
+  .build b { color: var(--paper); }
+  @media (max-width: 900px) { .g4, .g3 { grid-template-columns: 1fr 1fr; } h1 { font-size: 40px; } }
+  @media (max-width: 560px) { .g4, .g3 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <!-- existentes (assets/ui/icons/move_types) -->
+  <symbol id="t-physical" viewBox="0 0 24 24"><path d="M12 2l2.4 5.6L20 6l-3.2 5.2L22 14l-6.2 1.4L17 22l-5-4-5 4 1.2-6.6L2 14l5.2-2.8L4 6l5.6 1.6z"/></symbol>
+  <symbol id="t-magical" viewBox="0 0 24 24"><path d="M12 1.5L14.5 9.5L22.5 12L14.5 14.5L12 22.5L9.5 14.5L1.5 12L9.5 9.5L12 1.5Z"/><circle cx="19" cy="5" r="1.5"/><circle cx="5" cy="19" r="1.5"/></symbol>
+  <symbol id="t-guard" viewBox="0 0 24 24"><path d="M12 2L4 5v6.5C4 17.5 7.4 22.4 12 24c4.6-1.6 8-6.5 8-12.5V5l-8-3z"/></symbol>
+  <symbol id="t-dodge" viewBox="0 0 24 24"><path d="M4 12l7-7v4L7 12l4 3v4L4 12zm8 0l7-7v4l-4 3 4 3v4l-7-7z"/></symbol>
+  <!-- NOVOS -->
+  <symbol id="t-field" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M1.2 18.6a10.8 4.3 0 1 0 21.6 0a10.8 4.3 0 1 0-21.6 0ZM3.6 18.6a8.4 3.35 0 1 1 16.8 0a8.4 3.35 0 1 1-16.8 0Z"/><path d="M12 1.6L13.41 5.26 17.33 5.47 14.28 7.94 15.29 11.73 12 9.6 8.71 11.73 9.72 7.94 6.67 5.47 10.59 5.26Z"/></symbol>
+  <symbol id="t-status-a" viewBox="0 0 24 24"><path d="M10.4 2.8h3.2v4h4v3.2h-4v4h-3.2v-4h-4V6.8h4z"/><rect x="6.4" y="17.2" width="11.2" height="3.2"/></symbol>
+  <symbol id="t-status-b" viewBox="0 0 24 24"><circle cx="12" cy="9.4" r="3.3"/><path d="M6.4 20.6c0-3.7 2.5-6.2 5.6-6.2s5.6 2.5 5.6 6.2z"/><path d="M5 6.6A8 8 0 0 0 5 17.4M19 6.6A8 8 0 0 1 19 17.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></symbol>
+  <symbol id="t-status-c" viewBox="0 0 24 24"><path d="M5.6 2.2h12.8v2.4H5.6zM5.6 19.4h12.8v2.4H5.6z"/><path d="M7.2 4.6h9.6c0 3.9-2.6 5.3-3.7 7.4 1.1 2.1 3.7 3.5 3.7 7.4H7.2c0-3.9 2.6-5.3 3.7-7.4C9.8 9.9 7.2 8.5 7.2 4.6z"/></symbol>
+</svg>
+
+<div class="wrap">
+  <h1>ÍCONES DE <span>TIPO</span></h1>
+  <div class="sub">D-1190 · Field (verde) + Status A (±) escolhidos · SVGs criados em assets/ui/icons/move_types · nada foi ligado ao jogo</div>
+
+  <h2>Contexto <small>os 4 tipos de hoje, no tamanho real (badge 20 px, glifo 15 px)</small></h2>
+  <div class="grid g3" style="grid-template-columns: 1fr 1fr">
+    <div class="panel"><div class="lbl">Sobre o fundo escuro</div>
+      <div class="ctx">
+        <figure><span class="b physical"><svg><use href="#t-physical"/></svg></span>Physical</figure>
+        <figure><span class="b magical"><svg><use href="#t-magical"/></svg></span>Magical</figure>
+        <figure><span class="b guard"><svg><use href="#t-guard"/></svg></span>Guard</figure>
+        <figure><span class="b dodge"><svg><use href="#t-dodge"/></svg></span>Dodge</figure>
+        <figure><span class="b field"><svg><use href="#t-field"/></svg></span>Field <span class="tag" style="margin:0">novo</span></figure>
+      </div></div>
+    <div class="panel paper"><div class="lbl">Sobre o card creme</div>
+      <div class="ctx">
+        <figure><span class="b physical"><svg><use href="#t-physical"/></svg></span>Physical</figure>
+        <figure><span class="b magical"><svg><use href="#t-magical"/></svg></span>Magical</figure>
+        <figure><span class="b guard"><svg><use href="#t-guard"/></svg></span>Guard</figure>
+        <figure><span class="b dodge"><svg><use href="#t-dodge"/></svg></span>Dodge</figure>
+        <figure><span class="b field"><svg><use href="#t-field"/></svg></span>Field <span class="tag" style="margin:0">novo</span></figure>
+      </div></div>
+  </div>
+
+  <h2>FIELD <small>sua ideia, desenhada</small></h2>
+  <p class="note">Círculo deitado em perspectiva (elipse no chão) com uma estrela flutuando acima do centro. A estrela é de frente, sem perspectiva. Minimalista: o círculo é só o anel, com espessura em perspectiva correta (mais fina na vertical), e há um vão claro entre a estrela e o anel para ela parecer flutuar. <span class="tag">escolha minha</span> estrela de 5 pontas, para não repetir o Sparkle de 4 pontas do Magical.</p>
+  <div class="grid" style="grid-template-columns: 220px minmax(0, 1fr)">
+    <div class="big" style="--c: var(--field); --g: var(--ink)"><svg><use href="#t-field"/></svg></div>
+    <div class="panel">
+      <div class="lbl">Tamanhos: 64 · 32 · 20 · 15 px (o do jogo é 15)</div>
+      <div class="sizes">
+        <figure><span class="b field" style="--s:3.2"><svg><use href="#t-field"/></svg></span>64</figure>
+        <figure><span class="b field" style="--s:1.6"><svg><use href="#t-field"/></svg></span>32</figure>
+        <figure><span class="b field" style="--s:1"><svg><use href="#t-field"/></svg></span>20</figure>
+        <figure><span class="b field" style="--s:0.75"><svg><use href="#t-field"/></svg></span>15</figure>
+        <figure><svg width="64" height="64" fill="#fff" style="background:#050b12"><use href="#t-field"/></svg>só o glifo</figure>
+        <figure><svg width="64" height="64" fill="#080e18" style="background:#f4eee1"><use href="#t-field"/></svg>no creme</figure>
+      </div>
+      <div class="strip"><span class="b field"><svg><use href="#t-field"/></svg></span><span class="b white"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="#080e18" stroke-width="3"/></svg></span><span class="nm">NOME DO MOVE</span><span class="chip atb">2 ATB</span><span class="chip mp">3 MP</span></div>
+      <div class="swatches"><span class="lbl">Cor do badge (sugestão minha, falta você dizer):</span>
+        <span class="b field" style="--c:#a78bfa;--s:1.3"><svg><use href="#t-field"/></svg></span>
+        <span class="b field" style="--c:#22c55e;--s:1.3"><svg><use href="#t-field"/></svg></span>
+        <span class="b field" style="--c:#f472b6;--s:1.3"><svg><use href="#t-field"/></svg></span>
+        <span class="b field" style="--c:#fb923c;--s:1.3"><svg><use href="#t-field"/></svg></span>
+        <span class="b field" style="--c:#e2e8f0;--s:1.3"><svg><use href="#t-field"/></svg></span>
+        <span class="b field" style="--c:#fff;--s:1.3;--g:#080e18"><svg><use href="#t-field"/></svg></span>
+      </div>
+      <details><summary>SVG (24×24, branco, como os de assets/ui/icons/move_types)</summary>
+<pre>&lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#ffffff"&gt;
+&lt;path fill-rule="evenodd" d="M1.2 18.6a10.8 4.3 0 1 0 21.6 0a10.8 4.3 0 1 0-21.6 0ZM3.6 18.6a8.4 3.35 0 1 1 16.8 0a8.4 3.35 0 1 1-16.8 0Z"/&gt;
+&lt;path d="M12 1.6L13.41 5.26 17.33 5.47 14.28 7.94 15.29 11.73 12 9.6 8.71 11.73 9.72 7.94 6.67 5.47 10.59 5.26Z"/&gt;
+&lt;/svg&gt;</pre></details>
+    </div>
+  </div>
+
+  <h2>STATUS <small>3 interpretações</small></h2>
+  <p class="note">Hoje os Moves de status (Heal, Media, Sukunda, Taunt, Tarukaja, War Cry) não mostram ícone de tipo. As três opções são ideias diferentes sobre o que "status" significa: o <b>efeito em números</b>, o <b>efeito sobre uma unidade</b> e o <b>efeito no tempo</b>. Nenhuma usa setas, para não se misturar com as setas de alcance (melee ↑ e long ↓), nem estrela, para não se misturar com Physical, Magical e Field. <span class="tag">cor sugerida por mim</span></p>
+  <div class="grid g3">
+
+    <div class="panel">
+      <div class="name">A · MODIFICADOR (±) <span class="tag" style="background:var(--lime)">escolhido</span></div>
+      <div class="desc">Um + sobre um −: o que um buff e um debuff fazem com os atributos. Leitura imediata, silhueta simples; é o mais abstrato dos três.</div>
+      <div class="sizes">
+        <figure><span class="b status" style="--s:3.2"><svg><use href="#t-status-a"/></svg></span>64</figure>
+        <figure><span class="b status" style="--s:1.6"><svg><use href="#t-status-a"/></svg></span>32</figure>
+        <figure><span class="b status" style="--s:1"><svg><use href="#t-status-a"/></svg></span>20</figure>
+        <figure><span class="b status" style="--s:0.75"><svg><use href="#t-status-a"/></svg></span>15</figure>
+      </div>
+      <div class="strip"><span class="b status"><svg><use href="#t-status-a"/></svg></span><span class="nm">NOME DO MOVE</span><span class="chip atb">1 ATB</span><span class="chip mp">2 MP</span></div>
+      <details><summary>SVG</summary><pre>&lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#ffffff"&gt;
+&lt;path d="M10.4 2.8h3.2v4h4v3.2h-4v4h-3.2v-4h-4V6.8h4z"/&gt;&lt;rect x="6.4" y="17.2" width="11.2" height="3.2"/&gt;
+&lt;/svg&gt;</pre></details>
+    </div>
+
+    <div class="panel">
+      <div class="name">B · AURA NO ALVO</div>
+      <div class="desc">Uma silhueta de unidade com dois arcos de efeito nas laterais: algo aplicado sobre alguém. Cobre cura, buff, debuff e provocação; é o mais "personagem" e o mais detalhado.</div>
+      <div class="sizes">
+        <figure><span class="b status" style="--s:3.2"><svg><use href="#t-status-b"/></svg></span>64</figure>
+        <figure><span class="b status" style="--s:1.6"><svg><use href="#t-status-b"/></svg></span>32</figure>
+        <figure><span class="b status" style="--s:1"><svg><use href="#t-status-b"/></svg></span>20</figure>
+        <figure><span class="b status" style="--s:0.75"><svg><use href="#t-status-b"/></svg></span>15</figure>
+      </div>
+      <div class="strip"><span class="b status"><svg><use href="#t-status-b"/></svg></span><span class="nm">NOME DO MOVE</span><span class="chip atb">1 ATB</span><span class="chip mp">2 MP</span></div>
+      <details><summary>SVG</summary><pre>&lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#ffffff"&gt;
+&lt;circle cx="12" cy="9.4" r="3.3"/&gt;&lt;path d="M6.4 20.6c0-3.7 2.5-6.2 5.6-6.2s5.6 2.5 5.6 6.2z"/&gt;
+&lt;path d="M5 6.6A8 8 0 0 0 5 17.4M19 6.6A8 8 0 0 1 19 17.4" fill="none" stroke="#ffffff" stroke-width="1.9" stroke-linecap="round"/&gt;
+&lt;/svg&gt;</pre></details>
+    </div>
+
+    <div class="panel">
+      <div class="name">C · DURAÇÃO (AMPULHETA)</div>
+      <div class="desc">Uma ampulheta: o efeito dura um tempo. É o que os buffs e debuffs têm em comum no combate; cura instantânea é o caso que encaixa pior.</div>
+      <div class="sizes">
+        <figure><span class="b status" style="--s:3.2"><svg><use href="#t-status-c"/></svg></span>64</figure>
+        <figure><span class="b status" style="--s:1.6"><svg><use href="#t-status-c"/></svg></span>32</figure>
+        <figure><span class="b status" style="--s:1"><svg><use href="#t-status-c"/></svg></span>20</figure>
+        <figure><span class="b status" style="--s:0.75"><svg><use href="#t-status-c"/></svg></span>15</figure>
+      </div>
+      <div class="strip"><span class="b status"><svg><use href="#t-status-c"/></svg></span><span class="nm">NOME DO MOVE</span><span class="chip atb">1 ATB</span><span class="chip mp">2 MP</span></div>
+      <details><summary>SVG</summary><pre>&lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#ffffff"&gt;
+&lt;path d="M5.6 2.2h12.8v2.4H5.6zM5.6 19.4h12.8v2.4H5.6z"/&gt;
+&lt;path d="M7.2 4.6h9.6c0 3.9-2.6 5.3-3.7 7.4 1.1 2.1 3.7 3.5 3.7 7.4H7.2c0-3.9 2.6-5.3 3.7-7.4C9.8 9.9 7.2 8.5 7.2 4.6z"/&gt;
+&lt;/svg&gt;</pre></details>
+    </div>
+  </div>
+
+  <h2>Lado a lado <small>os 4 de hoje + Field + as 3 opções de Status, no tamanho do jogo</small></h2>
+  <div class="grid" style="grid-template-columns: 1fr 1fr">
+    <div class="panel"><div class="lbl">Fundo escuro · badge 20 px</div>
+      <div class="ctx">
+        <span class="b physical"><svg><use href="#t-physical"/></svg></span><span class="b magical"><svg><use href="#t-magical"/></svg></span><span class="b guard"><svg><use href="#t-guard"/></svg></span><span class="b dodge"><svg><use href="#t-dodge"/></svg></span><span class="b field"><svg><use href="#t-field"/></svg></span>
+        <span style="width:14px"></span>
+        <span class="b status"><svg><use href="#t-status-a"/></svg></span><span class="b status"><svg><use href="#t-status-b"/></svg></span><span class="b status"><svg><use href="#t-status-c"/></svg></span>
+      </div>
+      <div class="lbl" style="margin-top:14px">Escala 2×</div>
+      <div class="ctx">
+        <span class="b physical" style="--s:2"><svg><use href="#t-physical"/></svg></span><span class="b magical" style="--s:2"><svg><use href="#t-magical"/></svg></span><span class="b guard" style="--s:2"><svg><use href="#t-guard"/></svg></span><span class="b dodge" style="--s:2"><svg><use href="#t-dodge"/></svg></span><span class="b field" style="--s:2"><svg><use href="#t-field"/></svg></span>
+        <span style="width:14px"></span>
+        <span class="b status" style="--s:2"><svg><use href="#t-status-a"/></svg></span><span class="b status" style="--s:2"><svg><use href="#t-status-b"/></svg></span><span class="b status" style="--s:2"><svg><use href="#t-status-c"/></svg></span>
+      </div></div>
+    <div class="panel paper"><div class="lbl">Card creme · badge 20 px</div>
+      <div class="ctx">
+        <span class="b physical"><svg><use href="#t-physical"/></svg></span><span class="b magical"><svg><use href="#t-magical"/></svg></span><span class="b guard"><svg><use href="#t-guard"/></svg></span><span class="b dodge"><svg><use href="#t-dodge"/></svg></span><span class="b field"><svg><use href="#t-field"/></svg></span>
+        <span style="width:14px"></span>
+        <span class="b status"><svg><use href="#t-status-a"/></svg></span><span class="b status"><svg><use href="#t-status-b"/></svg></span><span class="b status"><svg><use href="#t-status-c"/></svg></span>
+      </div>
+      <div class="lbl" style="margin-top:14px">Escala 2×</div>
+      <div class="ctx">
+        <span class="b physical" style="--s:2"><svg><use href="#t-physical"/></svg></span><span class="b magical" style="--s:2"><svg><use href="#t-magical"/></svg></span><span class="b guard" style="--s:2"><svg><use href="#t-guard"/></svg></span><span class="b dodge" style="--s:2"><svg><use href="#t-dodge"/></svg></span><span class="b field" style="--s:2"><svg><use href="#t-field"/></svg></span>
+        <span style="width:14px"></span>
+        <span class="b status" style="--s:2"><svg><use href="#t-status-a"/></svg></span><span class="b status" style="--s:2"><svg><use href="#t-status-b"/></svg></span><span class="b status" style="--s:2"><svg><use href="#t-status-c"/></svg></span>
+      </div></div>
+  </div>
+
+  <h2>Fora do protótipo <small>o que ainda falta decidir</small></h2>
+  <p class="build">Cores dos badges de Field e de Status (as daqui são sugestões minhas) · quais Moves são do tipo Field · se os Moves de status passam a mostrar este ícone de tipo (hoje não mostram, D-395/D-1145). Os arquivos em <b>assets/ui/icons/move_types/</b> só são criados depois da sua escolha.</p>
+</div>
+</body>
+</html>

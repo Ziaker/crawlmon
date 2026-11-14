@@ -6,15 +6,16 @@
 script = ExtResource("1_nu15i")
 id = &"mabufula"
 display_name = "Mabufula"
-kind = 1
+kind = 2
 element = 2
 power = 1.35
 mp_cost = 5
 windup = 1.5
 is_aoe = true
+visual_push = 0
 stand_gap = 2.6
 hold = 0.2
-plan_profile = &"projectile"
+plan_profile = &"cast_strike_travel"
 vfx_key = &"generic"
 effect_line_text = "135% ATK ice damage | Hits ALL enemies | 2 ATB"
 short_effect_text = "135% ice | AoE"
@@ -22,7 +23,7 @@ description_text = "An ice wave that hits every enemy."
 mechanics_text = "Glacial ice storm that summons freezing blizzards beneath all opposing combatants at once."
 visual_text = "Jagged glacial spires erupting from the ground beneath each opponent amidst freezing blizzard winds."
 motion_text = "Stationary ground slam. Caster channels frost into the ground, erupting ice pillars at each enemy location."
-windup_text = "1.80s wind-up. Heavy glacial gathering channeling."
+windup_text = "1.50s wind-up. Heavy glacial gathering channeling."
 tactical_text = "Glacial ice storm summoning blizzards beneath all opponents. Full AoE."
 visual_motion_text = "Stationary ground slam erupting jagged glacial spires."
 phase_visuals = {
@@ -30,6 +31,6 @@ phase_visuals = {
 "release": "Transição contínua da carga para o disparo sem sumiço brusco (D-308 Fase 2): Stationary ground slam. Caster channels frost into the ground, erupting ice pillars at each enemy location.",
 "return": "Dissipação completa de partículas/malhas (zero restos) e retorno do lançador ao idle.",
 "strike": "Janela final de aproximação (últimos 0,25 s) antes do contato.",
-"travel": "Voo do projétil/feixe ao longo do eixo atacante->alvo mantendo leitura de tela (D-308 Fase 3): Stationary ground slam. Caster channels frost into the ground, erupting ice pillars at each enemy location.",
-"windup": "Carga elemental contínua à frente do lançador (D-308 Fase 1): 1.80s wind-up. Heavy glacial gathering channeling."
+"travel": "Onda de gelo em área: a nevasca avança e as geleiras emergem em sequência na região dos alvos.",
+"windup": "Carga elemental contínua à frente do lançador (D-308 Fase 1): 1.50s wind-up. Heavy glacial gathering channeling."
 }

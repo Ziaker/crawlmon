@@ -25,7 +25,7 @@ description_text = "Breaks the target's Guard and refunds 1 ATB to the attacker.
 mechanics_text = "Crushing downward hammer strike that instantly shatters enemy Guard stances and refunds 1 ATB block upon guard break."
 visual_text = "Golden-yellow energy aura around the striking limb, shattering into barrier-cracking crystalline fracture particles upon impact."
 motion_text = "Attacker leaps forward with downward hammer fist directly over the enemy's defensive posture."
-windup_text = "1.40s wind-up. Heavy overhead wind-up that telegraphs crushing momentum."
+windup_text = "1.50s wind-up. Heavy overhead wind-up that telegraphs crushing momentum."
 tactical_text = "Shatters Guard stances and refunds 1 ATB upon success. Single Target."
 visual_motion_text = "Leaping hammer fist with golden aura and crystalline fracture VFX."
 phase_visuals = {
@@ -34,5 +34,5 @@ phase_visuals = {
 "return": "Salto/corrida de recuo de volta à posição de origem e retomada de idle.",
 "strike": "Prelúdio de golpe e arco de swing/arma com aviso Dread na janela de Evade (D-986/D-992).",
 "travel": "Corrida pelo eixo atacante->alvo com trilha no chão (D-1013): Attacker leaps forward with downward hammer fist directly over the enemy's defensive posture.",
-"windup": "Preparo em posição base com loop contínuo de carga (D-163): 1.40s wind-up. Heavy overhead wind-up that telegraphs crushing momentum."
+"windup": "Preparo em posição base com loop contínuo de carga (D-163): 1.50s wind-up. Heavy overhead wind-up that telegraphs crushing momentum."
 }

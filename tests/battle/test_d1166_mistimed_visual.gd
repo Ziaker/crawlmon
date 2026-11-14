@@ -48,10 +48,20 @@ func _new_scene() -> Node3D:
 	return bs
 
 
-func _whiff_labels(fx: Node) -> int:
+func _whiff_labels(fx: BattleFx) -> int:
 	var n := 0
-	for child in fx.get_children():
-		if child is Label3D and String(child.text) == "WHIFF":
+	var roots: Dictionary = fx.fx_dodge._whiff_labels
+	for actor in roots.keys():
+		var root: Node3D = roots[actor]
+		if root == null or not is_instance_valid(root):
+			continue
+		var word := ""
+		var letters := 0
+		for child in root.get_children():
+			if child is Label3D:
+				word += String(child.text)
+				letters += 1
+		if letters == 5 and word == "WHIFF":
 			n += 1
 	return n
 

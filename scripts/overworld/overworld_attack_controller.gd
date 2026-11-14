@@ -44,7 +44,7 @@ const ENEMY_WINDUP_TIME := 0.15  ## D-1142: enemy pre-advance (telegraph stays 0
 const DASH_TIME := 0.18  ## Enemy dash cap (D-1120).
 const PLAYER_DASH_TIME := 0.10  ## Minimum player dash time; long lunges scale up.
 const IMPACT_HOLD := 0.5  ## Knockback 0.5 s, then transition.
-const PLAYER_ENDLAG_TIME := 0.38  ## Comic overhaul: player recovery.
+const PLAYER_ENDLAG_TIME := 0.0  ## D-1189: no lock after the advance (was 0.38 s).
 const PLAYER_HIT_ACTIVE_TIME := 0.30  ## Hitbox stays live after the dash.
 
 ## Prototype only (D-1100 explicitly leaves these to calibration).
@@ -62,6 +62,11 @@ const DEFAULT_BODY_RADIUS := 0.35
 ## dash, not a slow crawl. Below this speed the movement finishes at contact.
 const MIN_DASH_SPEED := 8.0
 const MIN_DASH_TIME := 0.06
+## D-1189: friction + subtle slide, same code for the player and every enemy.
+const SLIDE_DISTANCE := 0.3  ## metres covered in the braking tail of the advance
+const SLIDE_TIME := 0.25  ## seconds that tail adds to the advance
+const FRICTION_MIN_TRAVEL := 0.05  ## shorter advances keep the old constant speed
+const FRICTION_PEAK_SPEED := 24.0  ## m/s: longer advances get a softer (longer) tail instead of exceeding it
 
 enum Phase { NONE, TELEGRAPH, DASH, PRE_DASH, ENDLAG }
 
@@ -82,6 +87,7 @@ var _player_dir := Vector3.ZERO
 var _player_dash_left := 0.0
 var _player_dash_speed := 0.0
 var _player_dash_duration := 0.0
+var _player_fric: Dictionary = {}  ## D-1189: friction profile of the current advance
 var _player_endlag_left := 0.0
 var _player_attack_elapsed := 0.0
 var _player_attack_anim_length := 0.0
@@ -322,7 +328,7 @@ func get_player_dash_duration() -> float:
 
 ## Comic overhaul: total authored player attack (wind-up + dash + recovery).
 func get_player_attack_total_time() -> float:
-	var dash := _player_dash_duration if _player_dash_duration > 0.0 else PLAYER_DASH_TIME
+	var dash := _player_dash_duration if _player_dash_duration > 0.0 else PLAYER_DASH_TIME + SLIDE_TIME
 	return PLAYER_WINDUP_TIME + dash + PLAYER_ENDLAG_TIME
 
 
@@ -459,7 +465,8 @@ func _tick_player(delta: float) -> void:
 				_player_hit_frame = Engine.get_physics_frames()
 				_player_hit_target = _player_active_target
 				_player_active_left = 0.0
-		if _player_endlag_left <= 0.0:
+		# D-1189: no lock after the advance; only the short live-hitbox window of a near miss can hold it.
+		if _player_endlag_left <= 0.0 and _player_active_left <= 0.0:
 			_finish_player_attack()
 		return
 	if _player_phase != Phase.DASH:
@@ -472,7 +479,7 @@ func _tick_player(delta: float) -> void:
 		if _flat_distance(_player.global_position, _player_target.global_position) <= _contact_distance(_player, _player_target):
 			_begin_player_endlag(true)
 			return
-	_advance(_player, _player_dir, _player_dash_speed)
+	_advance(_player, _player_dir, _friction_speed(_player_fric, _player_dash_speed, delta))
 	_vfx_tick(_player, delta)
 	_player_dash_left -= delta
 	if _player_dash_left <= 0.0:
@@ -518,7 +525,8 @@ func _tick_enemy_dash(enemy: Node3D, entry: Dictionary, delta: float) -> void:
 	if _flat_distance(enemy.global_position, _player.global_position) <= _contact_distance(enemy, _player):
 		_begin_enemy_endlag(enemy, entry, true)
 		return
-	_advance(enemy, entry["dir"], float(entry["dash_speed"]))
+	var fric: Dictionary = entry.get("fric", {})
+	_advance(enemy, entry["dir"], _friction_speed(fric, float(entry["dash_speed"]), delta))
 	_vfx_tick(enemy, delta)
 	entry["dash_left"] = float(entry["dash_left"]) - delta
 	if float(entry["dash_left"]) <= 0.0:
@@ -565,14 +573,15 @@ func _start_player_dash() -> void:
 		maxf(0.0, _flat_distance(from, _player_target.global_position) - contact),
 		PLAYER_DASH_MAX)
 	var plan := _player_dash_plan(travel)
+	_player_fric = _friction_plan(travel, float(plan["time"]))
 	_player_dash_speed = float(plan["speed"])
-	_player_dash_left = float(plan["time"])
-	_player_dash_duration = float(plan["time"])
+	_player_dash_left = float(_player_fric["time"])
+	_player_dash_duration = float(_player_fric["time"])
 	_player_phase = Phase.DASH
 	_player.rotation.y = atan2(dir.x, dir.z)
 	var to := from + dir * travel
 	_vfx_begin(_player, _player_target, EncounterRules.Advantage.PLAYER_FIRST, from, to,
-		_player_dash_duration)
+		_player_dash_duration, float(_player_fric["slide"]))
 
 
 ## D-1136: attack with no enemy. Uses the real player facing and the same 2 m
@@ -600,13 +609,14 @@ func _start_free_dash() -> void:
 	var from := _player.global_position
 	var dir := _player_dir
 	var plan := _player_dash_plan(PLAYER_DASH_MAX)
+	_player_fric = _friction_plan(PLAYER_DASH_MAX, float(plan["time"]))
 	_player_dash_speed = float(plan["speed"])
-	_player_dash_left = float(plan["time"])
-	_player_dash_duration = float(plan["time"])
+	_player_dash_left = float(_player_fric["time"])
+	_player_dash_duration = float(_player_fric["time"])
 	_player_phase = Phase.DASH
 	var to := from + dir * PLAYER_DASH_MAX
 	_vfx_begin(_player, null, EncounterRules.Advantage.PLAYER_FIRST, from, to,
-		_player_dash_duration)
+		_player_dash_duration, float(_player_fric["slide"]))
 
 
 ## Comic overhaul: the player recovers for 0.38 s after the 0.10 s dash; the
@@ -703,16 +713,17 @@ func _start_enemy_dash(enemy: Node3D, entry: Dictionary) -> void:
 		maxf(0.0, _flat_distance(from, _player.global_position) - contact),
 		ENEMY_DASH_MAX)
 	var plan := _dash_plan(travel)
+	var fric := _friction_plan(travel, float(plan["time"]))
+	entry["fric"] = fric
 	entry["dash_speed"] = float(plan["speed"])
-	entry["dash_left"] = float(plan["time"])
-	entry["endlag_left"] = maxf(0.0, float(entry["attack_anim_length"]) -
-		(ENEMY_WINDUP_TIME + float(plan["time"])))
+	entry["dash_left"] = float(fric["time"])
+	entry["endlag_left"] = 0.0  # D-1189: no lock after the advance
 	entry["dash_start"] = from
 	entry["dash_end"] = from + dir * travel
 	entry["phase"] = Phase.DASH
 	enemy.rotation.y = atan2(dir.x, dir.z)
 	_vfx_begin(enemy, _player, EncounterRules.Advantage.ENEMY_FIRST, entry["dash_start"], entry["dash_end"],
-		float(plan["time"]))
+		float(fric["time"]), float(fric["slide"]))
 
 
 func _begin_enemy_endlag(enemy: Node3D, entry: Dictionary, test_hit: bool) -> void:
@@ -726,8 +737,7 @@ func _begin_enemy_endlag(enemy: Node3D, entry: Dictionary, test_hit: bool) -> vo
 	entry["dir"] = Vector3.ZERO
 	entry["dash_left"] = 0.0
 	entry["pre_dash"] = 0.0
-	entry["endlag_left"] = maxf(0.0, float(entry["attack_anim_length"]) -
-		float(entry["attack_elapsed"]))
+	entry["endlag_left"] = 0.0  # D-1189: no lock after the advance (was: until the clip ended)
 	_zero_horizontal_velocity(enemy)
 	_vfx_finish(enemy)
 	if hit:
@@ -1000,6 +1010,39 @@ func _dash_plan(travel: float, time_cap := DASH_TIME) -> Dictionary:
 	return {"speed": speed, "time": duration}
 
 
+## D-1189: friction profile of an advance. Position s(u) = travel * (1 - (1-u)^p), u = t / total:
+## it leaves fast and brakes smoothly, ending exactly at `travel` (the contact). The exponent makes
+## the last `slide` seconds cover `slide_dist` metres (~0.3 m in ~0.25 s). Short advances scale the
+## tail down (at most half the distance). Same for the player and every enemy (D-235).
+func _friction_plan(travel: float, base_time: float) -> Dictionary:
+	if travel < FRICTION_MIN_TRAVEL:
+		return {"time": base_time, "slide": 0.0, "travel": travel, "p": 1.0, "elapsed": 0.0, "off": true}
+	var slide_dist := minf(SLIDE_DISTANCE, travel * 0.5)
+	var slide := SLIDE_TIME * slide_dist / SLIDE_DISTANCE
+	var total := base_time + slide
+	var p := clampf(log(slide_dist / travel) / log(slide / total), 1.2, 6.0)
+	# The initial speed is travel * p / total. Cap it by lowering p (a longer, softer tail on long
+	# lunges), never by stretching the advance: a later hit would let the other side tie (D-1189).
+	p = clampf(minf(p, FRICTION_PEAK_SPEED * total / travel), 1.2, 6.0)
+	return {"time": total, "slide": slide, "travel": travel, "p": p, "elapsed": 0.0, "off": false}
+
+
+## Average speed over this physics frame (exact displacement of the profile), so the
+## braking has no integration error. Falls back to the constant speed without a profile.
+func _friction_speed(fric: Dictionary, fallback: float, delta: float) -> float:
+	if fric.is_empty() or bool(fric["off"]) or delta <= 0.0:
+		return fallback
+	var total := float(fric["time"])
+	var travel := float(fric["travel"])
+	var p := float(fric["p"])
+	var t0 := float(fric["elapsed"])
+	var t1 := minf(t0 + delta, total)
+	fric["elapsed"] = t1
+	var s0 := travel * (1.0 - pow(1.0 - t0 / total, p))
+	var s1 := travel * (1.0 - pow(1.0 - t1 / total, p))
+	return (s1 - s0) / delta
+
+
 func _zero_horizontal_velocity(actor: CharacterBody3D) -> void:
 	if actor == null or not is_instance_valid(actor):
 		return
@@ -1044,11 +1087,13 @@ func _find_enemy(enemy: Node3D) -> Dictionary:
 # advances run at the same time.
 
 func _vfx_begin(actor: Node3D, target: Node3D, advantage: int, from: Vector3, to: Vector3,
-		duration := 0.0) -> void:
+		duration := 0.0, slide := 0.0) -> void:
 	var fx := _vfx_for(actor)
 	if fx == null:
 		return
 	_vfx_call_on(fx, "setup", [actor, target])
+	# D-1189: the braking tail of the advance raises only a little dust.
+	_vfx_call_on(fx, "set_slide_time", [slide])
 	# D-1173: the dust needs the real advance duration to keep the walking puffs
 	# only through the first half of the dash.
 	if duration > 0.0:

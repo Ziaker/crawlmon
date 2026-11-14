@@ -24,7 +24,7 @@ description_text = "Forces one enemy to attack the user with its next offensive 
 mechanics_text = "Enraging shout that forces the target to focus their next attack exclusively on the user."
 visual_text = "Pulsing red target crosshair and anger exclamation marks flashing above the enraged opponent's head."
 motion_text = "Stationary provocation. Caster gestures and shouts in place."
-windup_text = "0.70s wind-up. Rapid taunting gesture."
+windup_text = "0.50s wind-up. Rapid taunting gesture."
 tactical_text = "Forces target to focus next attack exclusively on user. Single Target."
 visual_motion_text = "Stationary provocation gesturing with flashing anger crosshairs."
 phase_visuals = {
@@ -33,5 +33,5 @@ phase_visuals = {
 "return": "Dissolução suave da cerimônia sem sobras e retomada do relógio do combate.",
 "strike": "Ativação do selo/aura de status sobre os alvos.",
 "travel": "Manifestação direta no campo (sem deslocamento de corpo): Stationary provocation. Caster gestures and shouts in place.",
-"windup": "Canalização de status com motor pausado (D-031): 0.70s wind-up. Rapid taunting gesture."
+"windup": "Canalização de status com motor pausado (D-031): 0.50s wind-up. Rapid taunting gesture."
 }

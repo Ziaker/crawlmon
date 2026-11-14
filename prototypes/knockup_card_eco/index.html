@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<!-- DEBUG-OBRIGATORIO-D1204 -->
+<!-- DEBUG = OBRIGAÇÃO EXTREMA (D-1204). Teste sempre no debug, com dados, em menos de 1 minuto. -->
+<!-- Este arquivo é um protótipo visual estático: não altera o jogo, não lê nem grava estado. -->
+<!-- Decisões aplicáveis: D-1205, D-1061, D-235, D-308, D-1154, D-1204. -->
+<!-- /DEBUG-OBRIGATORIO-D1204 -->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Crawlmon — Knock-up: cartão + eco textual (3 opções)</title>
+<script>
+/* =========================================================================
+   CONFIGURAÇÃO EDITÁVEL (topo do arquivo)
+   Nada aqui vem de personagem, time ou lado (D-235): tudo é relativo ao
+   centro do palco. O nome exibido é só um rótulo genérico.
+   ========================================================================= */
+window.KNOCK = {
+  characterName: "MON",   /* rótulo genérico; troque aqui, não há nome fixo (D-235) */
+  echoText: "KNOCK-UP"    /* texto do eco; a duração do status é D-1205 */
+};
+</script>
+<style>
+/* =========================================================================
+   CONSTANTES DE TEMPO E ALTURA (topo do arquivo — edite só aqui)
+   D-1205: o personagem sobe e desce em parábola contínua por 1,3 s,
+   ápice em 0,65 s, e pousa em 1,3 s com impactinho (shake + anel de poeira).
+   O cartão usa a MESMA duração e a MESMA parábola do personagem.
+   ========================================================================= */
+:root {
+  --action: 1300ms;        /* tempo no ar = duração do status KNOCK-UP (D-1205) */
+  --pause: 900ms;          /* pausa curta entre um loop e outro */
+  --apex: 0.5;             /* fração do tempo no ápice: 0,65 s / 1,3 s (D-1205) */
+  --jump-height: 96px;     /* altura da parábola; o cartão e o personagem usam ESTE valor */
+  --spin-turns: 2;         /* giro ilustrativo do boneco (roda/cambalhota, D-1205) */
+  --land-shake: 5px;       /* tremor do palco no pouso (D-1205) */
+  --echo-scatter: 70px;    /* raio base de separação das letras do eco */
+  --echo-skew: -12deg;     /* inclinação da Opção 3 (estilo referência) */
+  --stage-h: 360px;        /* altura do palco do cartão */
+
+  /* Cores aprovadas do HUD (base: prototypes/status_feel_overhaul) */
+  --paper: #f4eee1;
+  --paper-bright: #fdfde8;
+  --ink: #10263a;
+  --lime: #d6fa66;
+  --coral: #ff746c;
+  --gold: #f0c57e;
+  --blue: #63d9ec;
+  --badge-red: #d32f2f;    /* exatamente o vermelho do badge STUN/KNOCK-UP (battle_hud.gd:1051) */
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  background:
+    radial-gradient(ellipse at 8% 0%, rgba(50, 104, 88, .28), transparent 42%),
+    radial-gradient(ellipse at 94% 100%, rgba(79, 52, 118, .24), transparent 46%),
+    #05090c;
+  color: #e9e5d8;
+  font-family: "Segoe UI", Arial, sans-serif;
+  padding: 26px 28px 46px;
+}
+button { font: inherit; }
+
+.wrap { max-width: 1380px; margin: 0 auto; }
+.page-head { margin: 0 0 18px; }
+.eyebrow {
+  margin: 0 0 6px;
+  color: #9fb8ae;
+  font: 700 10px/1.2 Consolas, "Courier New", monospace;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+}
+h1 {
+  margin: 0;
+  color: #f2eedf;
+  font: 800 clamp(26px, 2.8vw, 40px)/1.02 Impact, Haettenschweiler, "Arial Black", sans-serif;
+  letter-spacing: .01em;
+  text-transform: uppercase;
+}
+.lede {
+  margin: 8px 0 0;
+  max-width: 980px;
+  color: #a9b8b2;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.lede b { color: #d8e6dc; }
+.lede code {
+  padding: 1px 5px;
+  border: 1px solid #33493f;
+  background: #0b1410;
+  color: var(--lime);
+  font: 700 11px Consolas, monospace;
+}
+
+.section { margin: 26px 0 0; }
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 0 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #22332b;
+}
+.section-head h2 {
+  margin: 0;
+  color: var(--paper);
+  font: 800 24px/1 Impact, Haettenschweiler, "Arial Black", sans-serif;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+.section-head .section-sub {
+  margin: 0;
+  color: #8fa39a;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.option {
+  border: 1px solid #243a30;
+  background: #0a120f;
+  padding: 12px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.option-head { min-height: 46px; }
+.option-label {
+  display: inline-block;
+  padding: 2px 7px;
+  border: 1px solid #456356;
+  background: #0d1712;
+  color: var(--lime);
+  font: 800 10px/1 Consolas, monospace;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.option-desc {
+  margin: 6px 0 0;
+  color: #a9b8b2;
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+/* ---------------------------- palco do cartão ---------------------------- */
+.stage {
+  position: relative;
+  height: var(--stage-h);
+  overflow: hidden;
+  border: 1px solid #1d2f27;
+  background:
+    radial-gradient(ellipse at 50% 96%, rgba(56, 104, 96, .30), transparent 58%),
+    linear-gradient(180deg, #071016 0%, #08130f 62%, #050b09 100%);
+}
+.ground {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 34px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #2f5a4c 18%, #2f5a4c 82%, transparent);
+  z-index: 0;
+}
+.ground::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 120px;
+  height: 26px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(214, 250, 102, .10), transparent 70%);
+}
+
+/* Personagem: só uma âncora de posição (formas CSS), sem arte elaborada. */
+.anchor {
+  position: absolute;
+  left: 50%;
+  bottom: 36px;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+.char {
+  position: relative;
+  width: 46px;
+  height: 62px;
+  transform-origin: 50% 100%;
+  will-change: transform;
+}
+.char-head {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 20px;
+  height: 20px;
+  margin-left: -10px;
+  border-radius: 50%;
+  background: #9fc6d8;
+  box-shadow: inset -3px -3px 0 rgba(0, 0, 0, .28);
+}
+.char-body {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 38px;
+  height: 42px;
+  margin-left: -19px;
+  border-radius: 12px 12px 7px 7px;
+  background: #3f6b7f;
+  box-shadow: inset -5px -6px 0 rgba(0, 0, 0, .26);
+}
+.char-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 56px;
+  height: 12px;
+  margin-left: -28px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .5);
+  filter: blur(4px);
+}
+
+/* Cartão HUD simplificado (nome + barras + badge vermelho). */
+.hud-card {
+  position: absolute;
+  left: 50%;
+  bottom: 128px;
+  width: 192px;
+  padding: 8px 11px 8px;
+  transform: translate(-50%, 0);
+  background: var(--paper);
+  color: var(--ink);
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+  filter: drop-shadow(4px 5px 0 rgba(0, 0, 0, .45));
+  z-index: 3;
+  will-change: transform;
+}
+.card-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.card-name {
+  font: 800 19px/1 Impact, Haettenschweiler, "Arial Black", sans-serif;
+  letter-spacing: .03em;
+  white-space: nowrap;
+}
+.card-lv { color: #536f80; font: 800 9px/1 Arial, sans-serif; white-space: nowrap; }
+.bar { position: relative; height: 8px; margin-top: 6px; background: #d8ccb7; overflow: hidden; }
+.bar > i { display: block; height: 100%; }
+.bar.hp > i { background: var(--coral); }
+.bar.mp { height: 6px; margin-top: 4px; }
+.bar.mp > i { background: #5f88f5; }
+.card-badges { display: flex; gap: 5px; margin-top: 7px; }
+.status-knockup {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  background: var(--badge-red);
+  color: #fff;
+  font: 800 9px/1.1 Arial, sans-serif;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+
+/* Setas do cartão (as 3 opções usam o MESMO movimento do cartão). */
+.arrows { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.arrow {
+  position: absolute;
+  bottom: 150px;
+  width: 4px;
+  height: 26px;
+  background: var(--lime);
+  opacity: 0;
+  filter: drop-shadow(0 0 5px rgba(214, 250, 102, .55));
+  will-change: transform, opacity;
+}
+.arrow::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -9px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 11px solid var(--lime);
+}
+.arrows.a1 .arrow:nth-child(1) { left: calc(50% - 42px); }
+.arrows.a1 .arrow:nth-child(2) { left: 50%; }
+.arrows.a1 .arrow:nth-child(3) { left: calc(50% + 42px); }
+
+.arrows.a2 .arrow {
+  width: 3px;
+  height: 18px;
+  background: var(--coral);
+  filter: drop-shadow(0 0 5px rgba(255, 116, 108, .55));
+}
+.arrows.a2 .arrow::before { border-bottom-color: var(--coral); }
+.arrows.a2 .arrow:nth-child(1) { left: calc(50% - 54px); }
+.arrows.a2 .arrow:nth-child(2) { left: calc(50% - 27px); }
+.arrows.a2 .arrow:nth-child(3) { left: 50%; }
+.arrows.a2 .arrow:nth-child(4) { left: calc(50% + 27px); }
+.arrows.a2 .arrow:nth-child(5) { left: calc(50% + 54px); }
+
+.chevron {
+  position: absolute;
+  bottom: 160px;
+  width: 28px;
+  height: 15px;
+  background: var(--gold);
+  clip-path: polygon(50% 0, 100% 55%, 100% 100%, 50% 45%, 0 100%, 0 55%);
+  opacity: 0;
+  filter: drop-shadow(0 0 5px rgba(240, 197, 126, .5));
+  will-change: transform, opacity;
+}
+.arrows.a3 .chevron:nth-child(1) { left: calc(50% - 48px); }
+.arrows.a3 .chevron:nth-child(2) { left: calc(50% - 16px); }
+.arrows.a3 .chevron:nth-child(3) { left: calc(50% + 16px); }
+.arrows.a3 .chevron:nth-child(4) { left: calc(50% + 48px); }
+
+@keyframes stage-shake {
+  0%, 100% { translate: 0 0; }
+  20% { translate: calc(var(--land-shake) * -1) 0; }
+  45% { translate: var(--land-shake) calc(var(--land-shake) * .4); }
+  70% { translate: calc(var(--land-shake) * -.6) 0; }
+}
+.stage.shake { animation: stage-shake 300ms ease-out; }
+
+.dust-ring {
+  position: absolute;
+  left: 50%;
+  bottom: 26px;
+  width: 40px;
+  height: 16px;
+  margin-left: -20px;
+  border: 2px solid rgba(214, 250, 102, .55);
+  border-radius: 50%;
+  transform: translateY(0) scale(.4);
+  animation: dust-ring 480ms ease-out forwards;
+  pointer-events: none;
+  z-index: 4;
+}
+@keyframes dust-ring {
+  0% { opacity: .9; transform: scale(.4); }
+  100% { opacity: 0; transform: scale(2.6); }
+}
+
+/* ---------------------------- eco textual ---------------------------- */
+.echo-stage {
+  position: relative;
+  height: 320px;
+  overflow: hidden;
+  border: 1px solid #1d2f27;
+  background:
+    radial-gradient(ellipse at 50% 46%, rgba(52, 78, 70, .34), transparent 62%),
+    linear-gradient(180deg, #071016 0%, #08130f 66%, #050b09 100%);
+}
+.echo-ground {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: 30px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #2f5a4c 20%, #2f5a4c 80%, transparent);
+  z-index: 0;
+}
+.echo-stage .anchor { bottom: 30px; z-index: 4; }
+
+.echo-word {
+  position: absolute;
+  left: 50%;
+  bottom: 152px;
+  transform: translateX(-50%);
+  transform-origin: 50% 60%;
+  z-index: 5;
+  will-change: transform;
+}
+.echo-letters {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  white-space: nowrap;
+  font: 900 46px/1 Impact, Haettenschweiler, "Arial Black", sans-serif;
+  letter-spacing: .02em;
+}
+.letter {
+  display: inline-block;
+  opacity: 0;
+  will-change: transform, opacity;
+  transform-origin: 50% 100%;
+}
+
+/* Camadas do "hit" de quadrinho (base escondida; o .run aciona). */
+.echo-rays,
+.echo-halftone,
+.echo-burst,
+.echo-ring,
+.echo-flash {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  transform: translate(-50%, -50%) scale(.2);
+  opacity: 0;
+  pointer-events: none;
+}
+.echo-rays {
+  width: 430px;
+  height: 430px;
+  z-index: 1;
+  background:
+    radial-gradient(circle, #ffd400 0%, #ff9f1a 30%, transparent 60%),
+    repeating-conic-gradient(from 0deg, #ff9f1a 0deg 7deg, transparent 7deg 17deg);
+  -webkit-mask-image: radial-gradient(circle, #000 18%, transparent 66%);
+  mask-image: radial-gradient(circle, #000 18%, transparent 66%);
+  display: none;
+}
+.echo-halftone {
+  width: 300px;
+  height: 300px;
+  z-index: 2;
+  background-image: radial-gradient(rgba(0, 0, 0, .55) 1.6px, transparent 1.9px);
+  background-size: 9px 9px;
+  -webkit-mask-image: radial-gradient(circle, #000 36%, transparent 70%);
+  mask-image: radial-gradient(circle, #000 36%, transparent 70%);
+  display: none;
+}
+.echo-burst {
+  width: 320px;
+  height: 320px;
+  z-index: 3;
+  clip-path: polygon(
+    50% 0%, 58% 18%, 76% 8%, 70% 27%, 92% 22%, 79% 39%, 100% 50%,
+    79% 61%, 92% 78%, 70% 73%, 76% 92%, 58% 82%, 50% 100%, 42% 82%,
+    24% 92%, 30% 73%, 8% 78%, 21% 61%, 0% 50%, 21% 39%, 8% 22%,
+    30% 27%, 24% 8%, 42% 18%
+  );
+}
+.echo-ring {
+  width: 130px;
+  height: 130px;
+  border: 7px solid #fff;
+  border-radius: 50%;
+  z-index: 3;
+  display: none;
+}
+.echo-flash {
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  transform: none;
+  background: #fff;
+  z-index: 6;
+  display: none;
+}
+
+/* Estilo por opção */
+/* Opção 1 — D-1061: saturado, chapado, SEM bordas. */
+.echo-opt[data-echo-option="1"] .letter { color: #ffe600; }
+.echo-opt[data-echo-option="1"] .echo-burst { background: #ff5a5f; }
+
+/* Opção 2 — D-1061: saturado, chapado, SEM bordas; letras giram mais. */
+.echo-opt[data-echo-option="2"] .letter:nth-child(3n + 1) { color: #ff2d95; }
+.echo-opt[data-echo-option="2"] .letter:nth-child(3n + 2) { color: #00e5ff; }
+.echo-opt[data-echo-option="2"] .letter:nth-child(3n) { color: #ffe600; }
+.echo-opt[data-echo-option="2"] .echo-burst { display: none; }
+.echo-opt[data-echo-option="2"] .echo-ring { display: block; }
+.echo-opt[data-echo-option="2"] .echo-flash { display: block; }
+
+/* Opção 3 — estilo da referência: contorno preto, raios, meio-tom, estrela branca. */
+.echo-opt[data-echo-option="3"] .letter {
+  color: #ffd400;
+  -webkit-text-stroke: 6px #000;
+  paint-order: stroke fill;
+  text-shadow: 5px 6px 0 #000;
+}
+.echo-opt[data-echo-option="3"] .echo-letters {
+  transform: skewX(var(--echo-skew)) rotate(-4deg);
+  transform-origin: 50% 100%;
+}
+.echo-opt[data-echo-option="3"] .echo-burst { background: #fff; }
+.echo-opt[data-echo-option="3"] .echo-rays { display: block; }
+.echo-opt[data-echo-option="3"] .echo-halftone { display: block; }
+
+/* Timeline do eco — MESMA duração de 1,3 s (D-1205). */
+@keyframes letter-fly {
+  0%   { opacity: 0; transform: translate(var(--from-x), var(--from-y)) scale(.25) rotate(0deg); }
+  9%   { opacity: 1; }
+  28%  { opacity: 1; transform: translate(var(--sx), var(--sy)) scale(1.14) rotate(var(--rot)); }
+  54%  { opacity: 1; transform: translate(var(--sx), var(--sy)) scale(1.06) rotate(var(--rot)); }
+  64%  { opacity: 1; transform: translate(0, 0) scale(1.36) rotate(0deg); }
+  72%  { transform: translate(0, 0) scale(.90) rotate(0deg); }
+  80%  { transform: translate(0, 0) scale(1.07) rotate(0deg); }
+  90%  { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+  100% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 0; }
+}
+@keyframes word-hit {
+  0%, 58% { transform: translateX(-50%) scale(1) rotate(0deg); }
+  63%     { transform: translateX(-50%) scale(1.09) rotate(-1.5deg); }
+  67%     { transform: translateX(-50%) translateY(3px) scale(1.04) rotate(1.5deg); }
+  72%     { transform: translateX(-50%) translateY(-2px) scale(1.02) rotate(-1deg); }
+  78%, 100% { transform: translateX(-50%) scale(1) rotate(0deg); }
+}
+@keyframes burst-pop {
+  0%, 55% { opacity: 0; transform: translate(-50%, -50%) scale(.15) rotate(0deg); }
+  62%     { opacity: 1; transform: translate(-50%, -50%) scale(1.12) rotate(3deg); }
+  70%     { opacity: .95; transform: translate(-50%, -50%) scale(1.26) rotate(5deg); }
+  84%     { opacity: .45; transform: translate(-50%, -50%) scale(1.06) rotate(2deg); }
+  100%    { opacity: 0; transform: translate(-50%, -50%) scale(.94) rotate(0deg); }
+}
+@keyframes rays-pop {
+  0%, 52% { opacity: 0; transform: translate(-50%, -50%) scale(.35) rotate(0deg); }
+  62%     { opacity: .9; transform: translate(-50%, -50%) scale(1.02) rotate(6deg); }
+  74%     { opacity: .75; transform: translate(-50%, -50%) scale(1.16) rotate(12deg); }
+  100%    { opacity: 0; transform: translate(-50%, -50%) scale(1.32) rotate(20deg); }
+}
+@keyframes halftone-pop {
+  0%, 56% { opacity: 0; }
+  64%     { opacity: .55; }
+  80%     { opacity: .3; }
+  100%    { opacity: 0; }
+}
+@keyframes ring-pop {
+  0%, 54% { opacity: 0; transform: translate(-50%, -50%) scale(.15); }
+  61%     { opacity: 1; }
+  100%    { opacity: 0; transform: translate(-50%, -50%) scale(2.0); }
+}
+@keyframes flash-pop {
+  0%, 56% { opacity: 0; }
+  60%     { opacity: .85; }
+  68%     { opacity: .35; }
+  78%, 100% { opacity: 0; }
+}
+
+.echo-stage.run .letter {
+  animation: letter-fly var(--action) cubic-bezier(.3, .75, .35, 1) both;
+}
+.echo-stage.run .echo-word {
+  animation: word-hit var(--action) ease-out both;
+}
+.echo-stage.run .echo-burst {
+  animation: burst-pop var(--action) ease-out both;
+}
+.echo-stage.run .echo-rays {
+  animation: rays-pop var(--action) ease-out both;
+}
+.echo-stage.run .echo-halftone {
+  animation: halftone-pop var(--action) ease-out both;
+}
+.echo-stage.run .echo-ring {
+  animation: ring-pop var(--action) ease-out both;
+}
+.echo-stage.run .echo-flash {
+  animation: flash-pop var(--action) ease-out both;
+}
+
+/* ---------------------------- controles ---------------------------- */
+.repeat {
+  align-self: flex-start;
+  border: 1px solid #456356;
+  background: #0d1712;
+  color: #cfe8d4;
+  padding: 8px 14px;
+  font: 800 10px/1 Consolas, monospace;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 #000;
+  transition: background 120ms ease, transform 90ms ease, box-shadow 90ms ease;
+}
+.repeat:hover { background: #17251b; }
+.repeat:active { transform: translate(1px, 1px); box-shadow: 2px 2px 0 #000; }
+
+/* Aviso de contradição (D-1061 x referência) */
+.conflict {
+  margin: 0 0 12px;
+  padding: 11px 14px;
+  border: 1px solid #7a4a1c;
+  border-left: 4px solid var(--gold);
+  background: #180f07;
+  color: #e6d3b3;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.conflict b { color: #ffd400; }
+.conflict .conflict-tag {
+  display: inline-block;
+  margin-right: 7px;
+  padding: 1px 6px;
+  background: #7a4a1c;
+  color: #ffe9c7;
+  font: 800 9px/1.3 Consolas, monospace;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+
+.page-foot {
+  margin: 24px 0 0;
+  color: #6f887b;
+  font: 700 10px/1.5 Consolas, monospace;
+  letter-spacing: .03em;
+}
+
+@media (max-width: 1080px) {
+  .options { grid-template-columns: 1fr; }
+  .option-head { min-height: 0; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page-head">
+    <p class="eyebrow">Crawlmon // Protótipo visual // D-1205 · D-1061 · D-235</p>
+    <h1>Knock-up — cartão &amp; eco textual</h1>
+    <p class="lede">
+      Um único arquivo, sem rede. Os três cartões e o boneco sobem pela <b>mesma parábola</b> de
+      <code>1,3 s</code> (ápice em <code>0,65 s</code>) e pousam com impactinho (D-1205). O eco também
+      dura <code>1,3 s</code>. Cada opção roda sozinha em loop e tem <b>Repetir</b>.
+      Nada depende de personagem, time ou lado: o boneco é só uma âncora central e o nome vem de
+      <code>window.KNOCK.characterName</code> (D-235).
+    </p>
+  </header>
+
+  <section class="section" id="cartao">
+    <div class="section-head">
+      <h2>Cartão</h2>
+      <p class="section-sub">O cartão (nome, barras e badge vermelho “KNOCK-UP 1,3s”) pula junto com o personagem, com setas para cima. As três opções usam a mesma parábola; mudam só as setas e o secundário.</p>
+    </div>
+    <div class="options">
+
+      <article class="option" data-card-option="1">
+        <div class="option-head">
+          <span class="option-label">Opção 1</span>
+          <p class="option-desc">Parábola idêntica à do personagem + 3 setas longas subindo sem parar.</p>
+        </div>
+        <div class="stage">
+          <div class="ground"></div>
+          <div class="arrows a1"><span class="arrow"></span><span class="arrow"></span><span class="arrow"></span></div>
+          <div class="hud-card" data-card>
+            <div class="card-top"><span class="card-name" data-char-name>MON</span><span class="card-lv">LV. 1</span></div>
+            <div class="bar hp"><i style="width:72%"></i></div>
+            <div class="bar mp"><i style="width:55%"></i></div>
+            <div class="card-badges"><span class="status-knockup" data-knockup-badge>KNOCK-UP 1.3s</span></div>
+          </div>
+          <div class="anchor">
+            <div class="char" data-char><span class="char-head"></span><span class="char-body"></span></div>
+            <div class="char-shadow"></div>
+          </div>
+        </div>
+        <button class="repeat" type="button" data-repeat>Repetir</button>
+      </article>
+
+      <article class="option" data-card-option="2">
+        <div class="option-head">
+          <span class="option-label">Opção 2</span>
+          <p class="option-desc">Parábola idêntica + 5 setas curtas em duas rajadas (decolagem e ápice); cartão inclina de leve.</p>
+        </div>
+        <div class="stage">
+          <div class="ground"></div>
+          <div class="arrows a2"><span class="arrow"></span><span class="arrow"></span><span class="arrow"></span><span class="arrow"></span><span class="arrow"></span></div>
+          <div class="hud-card" data-card>
+            <div class="card-top"><span class="card-name" data-char-name>MON</span><span class="card-lv">LV. 1</span></div>
+            <div class="bar hp"><i style="width:72%"></i></div>
+            <div class="bar mp"><i style="width:55%"></i></div>
+            <div class="card-badges"><span class="status-knockup" data-knockup-badge>KNOCK-UP 1.3s</span></div>
+          </div>
+          <div class="anchor">
+            <div class="char" data-char><span class="char-head"></span><span class="char-body"></span></div>
+            <div class="char-shadow"></div>
+          </div>
+        </div>
+        <button class="repeat" type="button" data-repeat>Repetir</button>
+      </article>
+
+      <article class="option" data-card-option="3">
+        <div class="option-head">
+          <span class="option-label">Opção 3</span>
+          <p class="option-desc">Parábola idêntica + chevrons em escada + squash do cartão no pouso.</p>
+        </div>
+        <div class="stage">
+          <div class="ground"></div>
+          <div class="arrows a3"><span class="chevron"></span><span class="chevron"></span><span class="chevron"></span><span class="chevron"></span></div>
+          <div class="hud-card" data-card>
+            <div class="card-top"><span class="card-name" data-char-name>MON</span><span class="card-lv">LV. 1</span></div>
+            <div class="bar hp"><i style="width:72%"></i></div>
+            <div class="bar mp"><i style="width:55%"></i></div>
+            <div class="card-badges"><span class="status-knockup" data-knockup-badge>KNOCK-UP 1.3s</span></div>
+          </div>
+          <div class="anchor">
+            <div class="char" data-char><span class="char-head"></span><span class="char-body"></span></div>
+            <div class="char-shadow"></div>
+          </div>
+        </div>
+        <button class="repeat" type="button" data-repeat>Repetir</button>
+      </article>
+
+    </div>
+  </section>
+
+  <section class="section" id="eco">
+    <div class="section-head">
+      <h2>Eco textual</h2>
+      <p class="section-sub">“KNOCK-UP” sai do personagem com as letras separadas e depois se junta com hit de quadrinho. As três opções duram 1,3 s.</p>
+    </div>
+
+    <div class="conflict" role="note">
+      <span class="conflict-tag">Conflito exposto — não resolvido</span>
+      <b>D-1061</b> exige eco textual “bem saturado, sem bordas, flat”. A imagem de referência (BANG!) tem
+      contorno preto grosso, raios e meio-tom. As <b>Opções 1 e 2</b> seguem a D-1061 (sem borda);
+      a <b>Opção 3</b> segue a referência (com contorno). O criador escolhe qual vale.
+    </div>
+
+    <div class="options">
+
+      <article class="option echo-opt" data-echo-option="1">
+        <div class="option-head">
+          <span class="option-label">Opção 1</span>
+          <p class="option-desc">Sem borda (D-1061): letras separam e voltam com estrela chapada.</p>
+        </div>
+        <div class="echo-stage">
+          <div class="echo-ground"></div>
+          <div class="echo-rays"></div>
+          <div class="echo-halftone"></div>
+          <div class="echo-burst"></div>
+          <div class="echo-ring"></div>
+          <div class="echo-word"><div class="echo-letters" data-echo-letters></div></div>
+          <div class="echo-flash"></div>
+          <div class="anchor">
+            <div class="char"><span class="char-head"></span><span class="char-body"></span></div>
+            <div class="char-shadow"></div>
+          </div>
+        </div>
+        <button class="repeat" type="button" data-repeat>Repetir</button>
+      </article>
+
+      <article class="option echo-opt" data-echo-option="2">
+        <div class="option-head">
+          <span class="option-label">Opção 2</span>
+          <p class="option-desc">Sem borda (D-1061): letras giram mais e fecham com flash + anel de choque chapados.</p>
+        </div>
+        <div class="echo-stage">
+          <div class="echo-ground"></div>
+          <div class="echo-rays"></div>
+          <div class="echo-halftone"></div>
+          <div class="echo-burst"></div>
+          <div class="echo-ring"></div>
+          <div class="echo-word"><div class="echo-letters" data-echo-letters></div></div>
+          <div class="echo-flash"></div>
+          <div class="anchor">
+            <div class="char"><span class="char-head"></span><span class="char-body"></span></div>
+            <div class="char-shadow"></div>
+          </div>
+        </div>
+        <button class="repeat" type="button" data-repeat>Repetir</button>
+      </article>
+
+      <article class="option echo-opt" data-echo-option="3">
+        <div class="option-head">
+          <span class="option-label">Opção 3</span>
+          <p class="option-desc">Com contorno (referência): letras amarelas inclinadas, contorno preto, estrela branca, raios e meio-tom.</p>
+        </div>
+        <div class="echo-stage">
+          <div class="echo-ground"></div>
+          <div class="echo-rays"></div>
+          <div class="echo-halftone"></div>
+          <div class="echo-burst"></div>
+          <div class="echo-ring"></div>
+          <div class="echo-word"><div class="echo-letters" data-echo-letters></div></div>
+          <div class="echo-flash"></div>
+          <div class="anchor">
+            <div class="char"><span class="char-head"></span><span class="char-body"></span></div>
+            <div class="char-shadow"></div>
+          </div>
+        </div>
+        <button class="repeat" type="button" data-repeat>Repetir</button>
+      </article>
+
+    </div>
+  </section>
+
+  <p class="page-foot">
+    Protótipo visual — D-1205 / D-1061 / D-235. 1,3 s por ciclo + pausa. Sem áudio, sem rede, sem alterar o jogo.
+    O cartão e o boneco compartilham a mesma altura de parábola (<code>--jump-height</code>).
+  </p>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  /* ---------------------------------------------------------------------
+     CFG lê as constantes do topo (CSS) e das variáveis globais.
+     Editar apenas no <style> :root e no window.KNOCK do <head>.
+     --------------------------------------------------------------------- */
+  const rootStyle = getComputedStyle(document.documentElement);
+  const cssNum = (name, fallback) => {
+    const v = parseFloat(rootStyle.getPropertyValue(name));
+    return Number.isFinite(v) ? v : fallback;
+  };
+
+  const CFG = {
+    action: cssNum("--action", 1300),
+    pause: cssNum("--pause", 900),
+    apex: cssNum("--apex", 0.5),
+    jump: cssNum("--jump-height", 96),
+    spin: cssNum("--spin-turns", 2),
+    scatter: cssNum("--echo-scatter", 70)
+  };
+
+  const CHARACTER_NAME = (window.KNOCK && window.KNOCK.characterName) || "MON";
+  const ECHO_TEXT = (window.KNOCK && window.KNOCK.echoText) || "KNOCK-UP";
+
+  document.querySelectorAll("[data-char-name]").forEach((el) => {
+    el.textContent = CHARACTER_NAME;
+  });
+
+  const durationLabel = (CFG.action / 1000).toFixed(1).replace(".", ",");
+  const badgeText = "KNOCK-UP " + durationLabel + "s";
+  document.querySelectorAll("[data-knockup-badge]").forEach((el) => {
+    el.textContent = badgeText;
+  });
+
+  /* ---------------------------------------------------------------------
+     Parábola contínua (D-1205): sobe até o ápice e cai até o fim.
+     Apex em CFG.apex (0,5 = 0,65 s de 1,3 s). h = altura.
+     O cartão e o personagem chamam a MESMA função com o MESMO h.
+     --------------------------------------------------------------------- */
+  function parabola(p, h, apex) {
+    if (p <= 0 || p >= 1) return 0;
+    if (p < apex) {
+      const q = p / apex;
+      return h * (1 - (1 - q) * (1 - q));
+    }
+    const q = (p - apex) / (1 - apex);
+    return h * (1 - q * q);
+  }
+
+  /* ---------------------------------------------------------------------
+     CARTÃO — cada opção roda sozinha em loop (ação + pausa).
+     --------------------------------------------------------------------- */
+  const cardOptions = [];
+
+  function initCardOption(root) {
+    const o = {
+      root,
+      stage: root.querySelector(".stage"),
+      card: root.querySelector("[data-card]"),
+      char: root.querySelector("[data-char]"),
+      arrows: Array.from(root.querySelectorAll(".arrow, .chevron")),
+      kind: Number(root.dataset.cardOption),
+      start: 0,
+      lastActive: false
+    };
+    o.start = performance.now() + 90 * o.kind;
+    root.querySelector("[data-repeat]").addEventListener("click", () => {
+      o.start = performance.now() + 20;
+      o.lastActive = false;
+    });
+    cardOptions.push(o);
+  }
+
+  function updateArrows(o, p, active) {
+    const H = CFG.jump;
+
+    if (!active) {
+      o.arrows.forEach((a) => { a.style.opacity = "0"; });
+      return;
+    }
+
+    if (o.kind === 1) {
+      /* 3 setas longas subindo continuamente. */
+      o.arrows.forEach((a, i) => {
+        const ph = (p * 1.5 + i / o.arrows.length) % 1;
+        a.style.transform = "translateY(" + (-ph * H * 0.95) + "px)";
+        a.style.opacity = (Math.sin(ph * Math.PI) * Math.sin(p * Math.PI) * 0.95).toFixed(3);
+      });
+    } else if (o.kind === 2) {
+      /* 5 setas curtas em duas rajadas: decolagem e ápice. */
+      const b1 = (p - 0.03) / 0.22;
+      const b2 = (p - 0.46) / 0.22;
+      const burst = (b1 >= 0 && b1 <= 1) ? b1 : ((b2 >= 0 && b2 <= 1) ? b2 : -1);
+      o.arrows.forEach((a, i) => {
+        if (burst < 0) { a.style.opacity = "0"; return; }
+        const local = Math.max(0, Math.min(1, burst * 1.5 - i * 0.07));
+        a.style.transform = "translateY(" + (-local * H * 1.15) + "px) scaleY(" + (1 - local * 0.5) + ")";
+        a.style.opacity = ((1 - local) * 0.95).toFixed(3);
+      });
+    } else {
+      /* 4 chevrons em escada (ripple). */
+      o.arrows.forEach((a, i) => {
+        const q = p * 2.4 - i * 0.2;
+        const local = Math.max(0, Math.min(1, q));
+        const on = q > 0 && q < 1.35;
+        a.style.transform = "translateY(" + (-local * H * 0.8) + "px)";
+        a.style.opacity = on ? (Math.sin(local * Math.PI) * 0.9).toFixed(3) : "0";
+      });
+    }
+  }
+
+  function triggerLanding(o) {
+    const ring = document.createElement("div");
+    ring.className = "dust-ring";
+    o.stage.appendChild(ring);
+    setTimeout(() => ring.remove(), 520);
+
+    o.stage.classList.remove("shake");
+    void o.stage.offsetWidth;
+    o.stage.classList.add("shake");
+    setTimeout(() => o.stage.classList.remove("shake"), 320);
+  }
+
+  function frame(now) {
+    const cycle = CFG.action + CFG.pause;
+
+    for (const o of cardOptions) {
+      const elapsed = now - o.start;
+      if (elapsed < 0) continue;
+
+      const t = elapsed % cycle;
+      const active = t < CFG.action;
+      const p = active ? t / CFG.action : 1;
+      const y = active ? parabola(p, CFG.jump, CFG.apex) : 0;
+
+      /* Cartão: mesma parábola. Secundário muda por opção (não muda o Y). */
+      let cardTransform = "translate(-50%, " + (-y) + "px)";
+      if (o.kind === 2 && active) {
+        cardTransform += " rotate(" + ((p - 0.5) * 1.2) + "deg)";
+      }
+      if (o.kind === 3) {
+        const takeoff = active ? Math.max(0, 1 - p / 0.07) : 0;
+        const landing = active ? Math.max(0, 1 - (1 - p) / 0.07) : 0;
+        const sq = takeoff * 0.10 + landing * 0.10;
+        if (sq > 0) cardTransform += " scale(" + (1 + sq * 0.6) + ", " + (1 - sq) + ")";
+      }
+      o.card.style.transform = cardTransform;
+
+      /* Personagem: mesma parábola + giro de roda (ilustrativo, D-1205). */
+      const spin = active ? p * CFG.spin * 360 : 0;
+      o.char.style.transform = "translateY(" + (-y) + "px) rotate(" + spin + "deg)";
+
+      updateArrows(o, p, active);
+
+      if (o.lastActive && !active) triggerLanding(o);
+      o.lastActive = active;
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------------------------------------------------------------------
+     ECO — as letras saem separadas e se juntam com hit.
+     Duração de cada ciclo: CFG.action; depois CFG.pause.
+     --------------------------------------------------------------------- */
+  const echoOptions = [];
+
+  function buildLetters(root, optIndex) {
+    const host = root.querySelector("[data-echo-letters]");
+    host.innerHTML = "";
+    const chars = Array.from(ECHO_TEXT);
+    const n = chars.length;
+
+    chars.forEach((ch, i) => {
+      const span = document.createElement("span");
+      span.className = "letter";
+      span.textContent = ch === " " ? "\u00a0" : ch;
+
+      const angle = (i / n) * Math.PI * 2 + optIndex * 0.8;
+      const dist = CFG.scatter * (0.82 + ((i * 19) % 40) / 100);
+      const spinRange = optIndex === 2 ? 78 : 30;
+
+      span.style.setProperty("--sx", (Math.cos(angle) * dist).toFixed(1) + "px");
+      span.style.setProperty("--sy", (Math.sin(angle) * dist * 0.6 - 6).toFixed(1) + "px");
+      span.style.setProperty("--rot", (((i * 53) % 100) - 50) / 100 * spinRange * 2 + "deg");
+      span.style.setProperty("--from-x", (-(i - (n - 1) / 2) * 22).toFixed(1) + "px");
+      span.style.setProperty("--from-y", (64 + (i % 3) * 10) + "px");
+
+      host.appendChild(span);
+    });
+  }
+
+  function initEchoOption(root) {
+    const optIndex = Number(root.dataset.echoOption);
+    buildLetters(root, optIndex);
+
+    const o = {
+      root,
+      stage: root.querySelector(".echo-stage"),
+      timer: null
+    };
+
+    root.querySelector("[data-repeat]").addEventListener("click", () => {
+      runEcho(o);
+    });
+
+    echoOptions.push(o);
+    o.timer = setTimeout(() => runEcho(o), 140 * optIndex);
+  }
+
+  function runEcho(o) {
+    clearTimeout(o.timer);
+    o.stage.classList.remove("run");
+    void o.stage.offsetWidth;
+    o.stage.classList.add("run");
+
+    o.timer = setTimeout(() => {
+      o.stage.classList.remove("run");
+      o.timer = setTimeout(() => runEcho(o), CFG.pause);
+    }, CFG.action);
+  }
+
+  /* --------------------------------------------------------------------- */
+  document.querySelectorAll("[data-card-option]").forEach(initCardOption);
+  document.querySelectorAll("[data-echo-option]").forEach(initEchoOption);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

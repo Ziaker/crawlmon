@@ -53,7 +53,7 @@ func damage_number(pos: Vector3, value: int, crit: bool, weak: bool) -> void:
 	rise.chain().tween_callback(l.queue_free)
 
 
-func float_text(pos: Vector3, text: String, color: Color, size := 48) -> void:
+func float_text(pos: Vector3, text: String, color: Color, size := 48) -> Label3D:
 	var l := Label3D.new()
 	l.text = text
 	l.modulate = color
@@ -68,3 +68,4 @@ func float_text(pos: Vector3, text: String, color: Color, size := 48) -> void:
 	tw.tween_property(l, "position:y", pos.y + 1.5, 1.0)
 	tw.tween_property(l, "modulate:a", 0.0, 0.5).set_delay(0.6)
 	tw.chain().tween_callback(l.queue_free)
+	return l

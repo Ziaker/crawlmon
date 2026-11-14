@@ -145,6 +145,8 @@ func _inc(inc, extra := {}) -> Dictionary:
 		"interrupted": inc.interrupted, "interruption_feedback": inc.interruption_feedback,
 		"ghost": inc.ghost, "impacted": inc.impacted,
 	}
+	if inc.target2 != null:
+		d["target2"] = inc.target2.name  # D-1200: secondary target of a DUAL Move
 	d.merge(extra)
 	return d
 
@@ -152,7 +154,10 @@ func _inc(inc, extra := {}) -> Dictionary:
 func _queued_of(c: Combatant) -> Dictionary:
 	if c == null or c.queued_skill == null:
 		return {}
-	return {"skill": c.queued_skill.display_name, "target": c.queued_target.name if c.queued_target != null else ""}
+	var d := {"skill": c.queued_skill.display_name, "target": c.queued_target.name if c.queued_target != null else ""}
+	if c.queued_target2 != null:
+		d["target2"] = c.queued_target2.name  # D-1200
+	return d
 
 
 func _current_attack_label(c: Combatant) -> String:
@@ -255,6 +260,7 @@ func _process(delta: float) -> void:
 			"winding": battle.is_winding_up(c), "attacking": battle.is_attacking(c), "held": battle.is_held(c),
 			"q": c.queued_skill.display_name if c.queued_skill != null else "",
 			"qt": c.queued_target.name if c.queued_target != null else "",
+			"qt2": c.queued_target2.name if c.queued_target2 != null else "",  # D-1200
 			"sp": battle._status_pause.label if battle._status_pause != null else "",
 			"sp_by": battle._status_pause.attacker.name if battle._status_pause != null else "",
 		}
@@ -276,7 +282,8 @@ func _track_queue() -> void:
 	for c in party + enemies:
 		var q := c.queued_skill.display_name if c.queued_skill != null else ""
 		var qt := c.queued_target.name if c.queued_target != null else ""
-		var key := (q + ">" + qt) if q != "" else ""
+		var qt2 := c.queued_target2.name if c.queued_target2 != null else ""
+		var key := (q + ">" + qt + ("+" + qt2 if qt2 != "" else "")) if q != "" else ""
 		now[c] = key
 		var prev: String = _prev_queue.get(c, "")
 		if key == prev or (key == "" and prev == ""):
@@ -286,7 +293,7 @@ func _track_queue() -> void:
 		var started := key == "" and prev_skill != "" and current == prev_skill
 		var lost := prev_skill != "" and key == "" and not started
 		_event("queue", {
-			"actor": c.name, "skill": q, "target": qt, "previous": prev_skill if started else "",
+			"actor": c.name, "skill": q, "target": qt, "target2": qt2, "previous": prev_skill if started else "",
 			"started": started, "lost": prev_skill if lost else "", "current": current,
 			"status_pause": battle.is_status_paused(),
 			"status_move": battle._status_pause.label if battle._status_pause != null else "",

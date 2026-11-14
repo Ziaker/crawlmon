@@ -22,7 +22,7 @@ description_text = "Hurls a low-flying rock that skims along the ground."
 mechanics_text = "Ground-skimming projectile that hurls heavy rocks low along the floor, striking low-profile defenses."
 visual_text = "Rough brown rock tumbling forward kicking up dust trails and gravel sparks along the arena ground."
 motion_text = "Stationary pitch. Caster hurls the rock low across the floor surface."
-windup_text = "1.15s wind-up. Ground scoop and pitch motion."
+windup_text = "1.00s wind-up. Ground scoop and pitch motion."
 tactical_text = "Ground-skimming rock projectile striking low-profile defenses. Single Target."
 visual_motion_text = "Stationary low pitch tumbling a rough rock across arena ground."
 phase_visuals = {
@@ -31,5 +31,5 @@ phase_visuals = {
 "return": "Dissipação completa de partículas/malhas (zero restos) e retorno do lançador ao idle.",
 "strike": "Janela final de aproximação (últimos 0,25 s) antes do contato.",
 "travel": "Voo do projétil/feixe ao longo do eixo atacante->alvo mantendo leitura de tela (D-308 Fase 3): Stationary pitch. Caster hurls the rock low across the floor surface.",
-"windup": "Carga elemental contínua à frente do lançador (D-308 Fase 1): 1.15s wind-up. Ground scoop and pitch motion."
+"windup": "Carga elemental contínua à frente do lançador (D-308 Fase 1): 1.00s wind-up. Ground scoop and pitch motion."
 }

@@ -1,3 +1,11 @@
+<!-- DEBUG-OBRIGATORIO-D1204 -->
+> **DEBUG = OBRIGAÇÃO EXTREMA (D-1204).** O debug existe para testar QUALQUER milésimo do jogo: combate, Moves, VFX, overworld, UI, itens, IA, save, áudio.
+> **NENHUM teste pode levar mais de 1 minuto** do pedido ao resultado; mire em menos de 10 s (`--scenario=<id> --stdout-trace --quit`).
+> Sem caminho pronto no debug? **CRIE o cenário/controle** antes de testar. Nunca peça ao criador para clicar, ajustar slider ou montar nada.
+> Teste SEMPRE no debug (`vfx_room`, `BattleDebug`), com dados (`--summary-json`, `--strict-asserts`), nas duas vistas (D-235); não improvise com o jogo real.
+> Passou de 1 minuto = o debug está incompleto: melhore a ferramenta primeiro. Ver `docs/decisoes/D-1204-*.md` e `docs/TELEMETRIA.md`.
+<!-- /DEBUG-OBRIGATORIO-D1204 -->
+
 # D-1173 — Dust do overworld igual ao dust de entrada e de corrida do combate
 
 - **Data:** 2026-11-11
@@ -49,6 +57,17 @@ Regras adicionais:
 14. A dust existente do dash **não muda**: takeoff (flipbook + 8 puffs + 7 pedregulhos) e esteira continuam com alpha 0,22.
 15. A duração real do dash vem do controlador (`_player_dash_duration` / `plan["time"]` do inimigo) e é passada ao VFX/dust por `set_dash_duration`.
 
+## Terceiro ajuste do criador (2026-11-11)
+
+> faca o dust se espalhar menos na caminhada normal e tambem reduza a geracao 30% mais
+
+Regras adicionais:
+
+16. **Caminhada normal mais 30% espaçada:** a cadência passa de **0,091667 s** para **0,130952 s** (30% menos gerações/s que a atual; ~58% menos que a cadência original do combate, 0,055 s).
+17. **Caminhada normal mais fechada:** a fumaça se espalha menos — velocidade 0,5-3,0 → **0,2-1,2**; raio de emissão 0,4 → **0,15**; cone 180° → **70°**; offset dos pés ±0,22 → **±0,12**. Os pedregulhos caem de 1,2-3,2/30° para **0,6-1,6/15°**.
+18. **Só na caminhada normal:** o start e a continuação do dash mantêm o espalhamento atual (offset ±0,22, velocidade 0,5-3,0, raio 0,4, cone 180°) e os tamanhos já definidos. Nenhum tamanho de fumaça muda.
+19. Nada de tempo, dano, alcance, ATK, câmera ou transição muda (D-235).
+
 ## Ambiguidades resolvidas pelo criador (2026-11-11)
 
 - Opacidade do dash: **manter 0,22** (D-1100 preservada).
@@ -58,13 +77,13 @@ Regras adicionais:
 
 ## Implementação
 
-- `scripts/overworld/vfx/overworld_walk_dust.gd` (novo): ticker `CPUParticles3D` invisível que reproduz a esteira do combate nos pés do ator; mantém a API `emitting` usada pelo lab e expõe `set_alpha_multiplier`. A fumaça da caminhada usa **0,275-0,575 m** (50% do combate) e cadência **0,091667 s** (40% menos); o helper estático `spawn_effect` permite reutilizar o mesmo puff no dash com o **tamanho cheio 0,55-1,15 m** e no start com **0,66-1,38 m**.
-- `scripts/overworld/vfx/overworld_dash_dust.gd`: reescrito para o takeoff + esteira do combate com alpha 0,22; no `begin` adiciona **uma vez** o puff de caminhada nos dois pés, em opacidade cheia e tamanho **0,66-1,38 m**; na **primeira metade da duração real do dash**, continua gerando o puff de caminhada em **0,275-0,575 m** e opacidade cheia, na cadência 0,0917 s.
+- `scripts/overworld/vfx/overworld_walk_dust.gd` (novo): ticker `CPUParticles3D` invisível que reproduz a esteira do combate nos pés do ator; mantém a API `emitting` usada pelo lab e expõe `set_alpha_multiplier`. A caminhada normal usa **0,275-0,575 m** (50%), cadência **0,130952 s** (30% menos que 0,0917) e espalhamento fechado: velocidade **0,2-1,2**, raio **0,15**, cone **70°**, pés **±0,12** e pedregulhos **0,6-1,6/15°**. O helper estático `spawn_effect` mantém o espalhamento original para o dash (start em **0,66-1,38 m** e continuação em **0,275-0,575 m**, cadência 0,0917).
+- `scripts/overworld/vfx/overworld_dash_dust.gd`: reescrito para o takeoff + esteira do combate com alpha 0,22; no `begin` adiciona **uma vez** o puff de caminhada nos dois pés, em opacidade cheia e tamanho **0,66-1,38 m**; na **primeira metade da duração real do dash**, continua gerando o puff de caminhada em **0,275-0,575 m** e opacidade cheia, na cadência 0,0917 e com o espalhamento original.
 - `scripts/debug/third_person_3d_lab.gd`: `_add_footstep_dust` passa a criar o novo dust.
 - `scripts/overworld/vfx/overworld_dash_vfx.gd`: passa a direção real ao dash dust, recebe `set_dash_duration` e reduz o alpha da caminhada pelo novo método.
 - `scripts/overworld/overworld_attack_controller.gd`: `_vfx_begin` leva a duração real do avanço (`_player_dash_duration` e `plan["time"]` do inimigo) ao VFX/dust.
-- `tests/overworld/test_dust_match.gd`: **31/31** provas headless (textura de fumaça do combate, 4 puffs, 3 pedregulhos, pés alternados, alpha 0,22 no dash e 0,75 na caminhada; aliado e inimigo usam a mesma receita; caminhada a 50% e cadência 0,0917; start do dash 20% maior; continuação só na primeira metade).
-- Capturas: `test_captures/d1173_walk_dust.png`, `d1173_dash_dust_normal_*` e `d1173_dash_dust_mirror_*` (harness isolado) e `d1173_dash_real_*` (lab real). Vídeo da revisão: `test_captures/d1173_dust_v3.mp4` (caminhada normal/espelhada, dash normal/espelhado).
+- `tests/overworld/test_dust_match.gd`: **34/34** provas headless (textura de fumaça do combate, 4 puffs, 3 pedregulhos, pés alternados, alpha 0,22 no dash e 0,75 na caminhada; aliado e inimigo usam a mesma receita; caminhada a 50%, cadência 0,131 e espalhamento fechado; start do dash 20% maior; continuação só na primeira metade e com o espalhamento original).
+- Capturas: `test_captures/d1173_walk_dust.png`, `d1173_dash_dust_normal_*` e `d1173_dash_dust_mirror_*` (harness isolado) e `d1173_dash_real_*` (lab real). Vídeo da revisão: `test_captures/d1173_dust_v4.mp4` (caminhada normal/espelhada, dash normal/espelhado).
 
 ## Relação com D-1100 item 12
 

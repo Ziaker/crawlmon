@@ -26,7 +26,7 @@ description_text = "A protective bubble on every ally. The untyped reserve absor
 mechanics_text = "Deploys an untyped protective bubble around all allies that absorbs incoming damage before HP. Reapplying refreshes duration and full shield pool."
 visual_text = "Iridescent translucent spheres with hexagonal water-surface refraction envelop each party member with a gentle pulse."
 motion_text = "Stationary team cast. Caster summons expanding water rings that form protective domes over all friendly units."
-windup_text = "1.20s wind-up. Harmonious fluid channeling across the party."
+windup_text = "0.50s wind-up. Harmonious fluid channeling across the party."
 tactical_text = "Untyped shield on all allies absorbing damage before HP for 8s. Team AoE."
 visual_motion_text = "Stationary team cast summoning iridescent refractive water domes."
 phase_visuals = {
@@ -35,5 +35,5 @@ phase_visuals = {
 "return": "Dissolução suave da cerimônia sem sobras e retomada do relógio do combate.",
 "strike": "Ativação do selo/aura de status sobre os alvos.",
 "travel": "Manifestação direta no campo (sem deslocamento de corpo): Stationary team cast. Caster summons expanding water rings that form protective domes over all friendly units.",
-"windup": "Canalização de status com motor pausado (D-031): 1.20s wind-up. Harmonious fluid channeling across the party."
+"windup": "Canalização de status com motor pausado (D-031): 0.50s wind-up. Harmonious fluid channeling across the party."
 }

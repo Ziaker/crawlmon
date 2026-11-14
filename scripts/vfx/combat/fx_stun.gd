@@ -32,7 +32,7 @@ func update(delta: float) -> void:
 		var m: Node3D = fx._models[c]
 		if m == null or not is_instance_valid(m):
 			continue
-		var on: bool = (c as Combatant).is_stunned() and (c as Combatant).is_alive() and m.visible
+		var on: bool = (c as Combatant).is_stunned() and (c as Combatant).stun_kind != "knockup" and (c as Combatant).is_alive() and m.visible  # D-1205: no dizzy stars while airborne
 		var st: Dictionary = _state.get(c, {})
 		if on and st.is_empty():
 			st = _begin(m)

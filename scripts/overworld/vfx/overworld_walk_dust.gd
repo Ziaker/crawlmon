@@ -3,11 +3,12 @@ extends CPUParticles3D
 ## D-1173: the combat run-trail dust (`fx_motion._dust_trail`) reused at the
 ## overworld actor's feet.
 ##
-## Exact recipe per step (0.0917 s = 40% fewer steps/s than the combat 0.055 s,
-## alternating feet by +/-0.22 m):
+## Exact recipe per step (0.130952 s = another 30% fewer steps/s than the
+## previous 0.0917 s; total ~58% fewer than the combat 0.055 s), alternating
+## feet by +/-0.12 m for normal walking:
 ##   - 4 smoke puffs: `0.82, 0.78, 0.72`, size 0.275-0.575 m (50% of the
 ##     combat 0.55-1.15 m, creator's 2026-11-11 adjustment), rise 0.25,
-##     damping 1.5, end scale 1.8, peak alpha 0.75;
+##     damping 1.5, end scale 1.8, peak alpha 0.75, tight spread;
 ##   - 3 gravel specks: additive, size 0.06-0.14 m, end scale 0, peak alpha 0.9.
 ##
 ## The node itself is an invisible ticker so the lab keeps the same `emitting`
@@ -16,11 +17,12 @@ extends CPUParticles3D
 ## the world while the actor keeps walking (the combat dust does the same by
 ## living on the static BattleFx host).
 
-const CADENCE := 0.091667  ## 40% fewer generations/s than the combat 0.055.
+const CADENCE := 0.218253  ## D-1188: another 40% fewer generations/s than the previous 0.130952 (0.130952 / 0.6).
 const SMOKE_COLOR := Color(0.82, 0.78, 0.72)
 const SMOKE_PEAK_ALPHA := 0.75
 const GRAVEL_PEAK_ALPHA := 0.9
 const SIDE_OFFSET := 0.22
+const WALK_SIDE_OFFSET := 0.12  ## D-1173: normal walking spreads less.
 ## D-1173: the walking trail is 50% smaller than the combat size; the dash
 ## start puff keeps the current full size (creator's 2026-11-11 retification)
 ## and is 20% larger than that (next creator adjustment).
@@ -86,25 +88,34 @@ func get_alpha_multiplier() -> float:
 
 func _emit_step(base: Vector3) -> void:
 	_step += 1
-	var side := -SIDE_OFFSET if (_step % 2 == 0) else SIDE_OFFSET
+	# Normal walking is tighter: narrower foot offset and a tight puff.
+	var side := -WALK_SIDE_OFFSET if (_step % 2 == 0) else WALK_SIDE_OFFSET
 	var side_vec := Vector3(-_dir.z, 0.0, _dir.x)
 	var foot := base + side_vec * side
-	spawn_effect(self, foot, _dir, _alpha_scale, SMOKE_SIZE_WALK)
+	spawn_effect(self, foot, _dir, _alpha_scale, SMOKE_SIZE_WALK, true)
 
 
 ## The walking puff recipe (4 smoke + 3 gravel). `smoke_size` lets the dash
 ## reuse the same look at its current full size, while the walking trail uses
-## the 50% size (creator's 2026-11-11 retification).
+## the 50% size (creator's 2026-11-11 retification). `tight` is the normal
+## walking spread (2026-11-11): less velocity, emission radius and cone; the
+## dash start/continuation keep the original spread.
 static func spawn_effect(host: Node, foot: Vector3, dir: Vector3,
-		alpha_scale: float, smoke_size: Vector2) -> void:
+		alpha_scale: float, smoke_size: Vector2, tight := false) -> void:
 	var smoke_alpha := clampf(SMOKE_PEAK_ALPHA * alpha_scale, 0.0, 1.0)
 	var gravel_alpha := clampf(GRAVEL_PEAK_ALPHA * alpha_scale, 0.0, 1.0)
+	var smoke_speed := Vector2(0.2, 1.2) if tight else Vector2(0.5, 3.0)
+	var smoke_radius := 0.15 if tight else 0.4
+	var smoke_spread := 70.0 if tight else 180.0
+	var gravel_speed := Vector2(0.6, 1.6) if tight else Vector2(1.2, 3.2)
+	var gravel_spread := 15.0 if tight else 30.0
 	# `fx_motion._smoke(..., amount 4, ...)` -> no flipbook (only amount >= 5
 	# gets one), so the run trail is exactly these two bursts.
 	var smoke := VfxLib.burst(host, foot, {
 		"tex": VfxLib.smoke_tex(), "additive": false, "amount": 4, "life": 0.38,
-		"speed": Vector2(0.5, 3.0), "gravity": Vector3(0.0, 0.25, 0.0),
-		"size": smoke_size, "end_scale": 1.8, "damping": 1.5, "radius": 0.4,
+		"speed": smoke_speed, "spread": smoke_spread,
+		"gravity": Vector3(0.0, 0.25, 0.0),
+		"size": smoke_size, "end_scale": 1.8, "damping": 1.5, "radius": smoke_radius,
 		"ramp": VfxLib.ramp([
 			Color(SMOKE_COLOR, 0.0),
 			Color(SMOKE_COLOR, smoke_alpha),
@@ -113,8 +124,8 @@ static func spawn_effect(host: Node, foot: Vector3, dir: Vector3,
 	})
 	_world(smoke, foot)
 	var gravel := VfxLib.burst(host, foot, {
-		"amount": 3, "life": 0.22, "speed": Vector2(1.2, 3.2),
-		"dir": -dir + Vector3.UP * 0.3, "spread": 30.0,
+		"amount": 3, "life": 0.22, "speed": gravel_speed,
+		"dir": -dir + Vector3.UP * 0.3, "spread": gravel_spread,
 		"size": Vector2(0.06, 0.14), "end_scale": 0.0,
 		"ramp": VfxLib.ramp([
 			Color(0.88, 0.84, 0.76, gravel_alpha),

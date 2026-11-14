@@ -1,3 +1,11 @@
+<!-- DEBUG-OBRIGATORIO-D1204 -->
+> **DEBUG = OBRIGAÇÃO EXTREMA (D-1204).** O debug existe para testar QUALQUER milésimo do jogo: combate, Moves, VFX, overworld, UI, itens, IA, save, áudio.
+> **NENHUM teste pode levar mais de 1 minuto** do pedido ao resultado; mire em menos de 10 s (`--scenario=<id> --stdout-trace --quit`).
+> Sem caminho pronto no debug? **CRIE o cenário/controle** antes de testar. Nunca peça ao criador para clicar, ajustar slider ou montar nada.
+> Teste SEMPRE no debug (`vfx_room`, `BattleDebug`), com dados (`--summary-json`, `--strict-asserts`), nas duas vistas (D-235); não improvise com o jogo real.
+> Passou de 1 minuto = o debug está incompleto: melhore a ferramenta primeiro. Ver `docs/decisoes/D-1204-*.md` e `docs/TELEMETRIA.md`.
+<!-- /DEBUG-OBRIGATORIO-D1204 -->
+
 # D-1166 — Dodge errado: queda visível + WHIFF + poeira
 
 - **Data:** 2026-11-11.
@@ -52,6 +60,6 @@ Implementado e testado headless (2026-11-11):
 - `scripts/vfx/combat/fx_dodge.gd`: `mistimed` toca `down`, detecta se o clipe derruba o corpo (`_down_clip_falls`), aplica a queda assistida, chama `_whiff_text` e `_whiff_dust`.
 - Nenhuma regra de `battle.gd` foi alterada; o ATB e o acerto continuam iguais.
 - Teste: `tests/battle/test_d1163_mistimed_visual.gd` — **9/9 PASS**.
-- Suíte `python tests/battle/run_agent_combat_tests.py`: **27/27 PASS**.
+- Suíte `python tests/battle/run_agent_combat_tests.py`: **28/28 PASS**.
 - Verificação visual: capturas em 1280×720 mostram o Abra deitado, o texto `WHIFF` e a poeira; depois ele volta ao idle.
 - **Não verificado:** vídeo nas duas vistas (normal/espelhada), modelos DQT em vídeo, vários personagens errando juntos e desempenho.

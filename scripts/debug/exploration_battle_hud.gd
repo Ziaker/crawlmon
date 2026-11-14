@@ -200,8 +200,8 @@ func _build_cards() -> void:
 		card.max_mp = int(data["max_mp"])
 		card.hero = bool(data["hero"])
 		card.font = _font
-		card.portrait = _load_portrait(str(data["portrait"]))
-		card.portrait_region = FACE_REGIONS.get(str(data["portrait"]), Rect2(0.0, 0.0, 1.0, 1.0))
+		card.portrait = preload("res://scripts/ui/portrait_icon.gd").get_icon(str(data["portrait"]))
+		card.portrait_region = Rect2(0.0, 0.0, 1.0, 1.0)
 		var elements: Array = data.get("elements", [])
 		card.element_icons = _load_element_icons(elements)
 		card.element_colors = _element_colors(elements, card.hero)

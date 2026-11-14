@@ -249,7 +249,9 @@ func _drive_travel_move(inc, data: Dictionary, model: Node3D, phase_time: float)
 				var hand := model.position + (data["dir"] as Vector3) * 0.55 + Vector3.UP * 1.0
 				VfxLib.flash_star(fx, hand, Color("00f59b"), 1.8, 0.28)
 				VfxLib.burst(fx, hand, {"amount": 18, "life": 0.30, "speed": Vector2(0.3, 2.4), "radius": 0.45, "size": Vector2(0.16, 0.34), "ramp": VfxLib.ramp([Color.WHITE, Color("00f59b"), Color("63d9ec", 0.0)])})
-		"investida_subterranea", "investida_escavadora":
+		"investida_escavadora":
+			pass  # D-1196: Dig's body and dust belong to FxDig
+		"investida_subterranea":
 			if k <= 0.20:
 				var depth_k := clampf(k / 0.20, 0.0, 1.0)
 				model.position.y -= 1.8 * depth_k
@@ -281,7 +283,9 @@ func _drive_travel_move(inc, data: Dictionary, model: Node3D, phase_time: float)
 
 func _drive_strike_move(_inc, _data: Dictionary, _model: Node3D, _phase_time: float) -> void:
 	match String(_data.get("move_id", "")):
-		"investida_subterranea", "investida_escavadora":
+		"investida_escavadora":
+			_model.visible = true  # D-1196: the pose is FxDig's
+		"investida_subterranea":
 			_model.visible = true
 			var hit_dur: float = maxf(float(_data.get("hit", 0.35)), 0.05)
 			var k := clampf(_phase_time / hit_dur, 0.0, 1.0)
@@ -351,8 +355,9 @@ func on_phase(inc, phase: int) -> void:
 				if move_id in ["investida_subterranea", "investida_escavadora"]:
 					m.visible = true
 					m.position.y = 0.0
-					VfxLib.flipbook(fx, m.position + Vector3.UP * 0.45, "smoke", Color("5c4033"), 2.2, 0.55, 0.0, 1.8, false)
-					fx._shock(m.position, Color("f0c57e"), 2.6, 0.4)
+					if move_id == "investida_subterranea":  # D-1196: Dig's eruption is drawn by FxDig
+						VfxLib.flipbook(fx, m.position + Vector3.UP * 0.45, "smoke", Color("5c4033"), 2.2, 0.55, 0.0, 1.8, false)
+						fx._shock(m.position, Color("f0c57e"), 2.6, 0.4)
 				else:
 					m.position.y = 0.0
 					_spawn_arrival_skid(d.get("stand", m.position), d.get("dir", Vector3.FORWARD))
@@ -411,8 +416,9 @@ func on_phase(inc, phase: int) -> void:
 				m.rotation.y = fx._home_yaw[a]
 				m.scale = fx._base_scale.get(a, d["base_scale"])
 				fx._displaced[a] = false
-				fx._shock(fx._home[a], Color(0.8, 0.95, 1.0), 2.2, 0.25)
-				fx._smoke((fx._home[a] as Vector3) + Vector3(0, 0.2, 0), Color(0.75, 0.85, 0.9), 6, Vector2(0.9, 1.5), 0.45, 0.3)
+				if d.get("move_id", "") != "investida_escavadora":  # D-1196: the HTML has no landing puff after Dig's flip
+					fx._shock(fx._home[a], Color(0.8, 0.95, 1.0), 2.2, 0.25)
+					fx._smoke((fx._home[a] as Vector3) + Vector3(0, 0.2, 0), Color(0.75, 0.85, 0.9), 6, Vector2(0.9, 1.5), 0.45, 0.3)
 			else:
 				m.position.y = 0.0
 			_reset_idle(a)
@@ -443,6 +449,7 @@ func on_attack_interrupted(inc) -> void:
 	if inc.data.get("move_id", "") == "quebra_telha":
 		fx.fx_impacts.clear_brick_barrier(inc.target)
 	fx.fx_projectiles.finish(inc)
+	AbraMoveVfx.dissipate_held(a)  # D-1187: a charge waiting for the shot would stay orphaned on screen
 	if inc.motion == "cast":
 		inc.data = {"kind": "hit_interrupted", "base_scale": fx._base_scale.get(a, m.scale)}
 	else:

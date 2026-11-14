@@ -1,4 +1,12 @@
-﻿# Auditoria — Javelin Throw VFX, porte literal do HTML Card C (D-1171)
+﻿<!-- DEBUG-OBRIGATORIO-D1204 -->
+> **DEBUG = OBRIGAÇÃO EXTREMA (D-1204).** O debug existe para testar QUALQUER milésimo do jogo: combate, Moves, VFX, overworld, UI, itens, IA, save, áudio.
+> **NENHUM teste pode levar mais de 1 minuto** do pedido ao resultado; mire em menos de 10 s (`--scenario=<id> --stdout-trace --quit`).
+> Sem caminho pronto no debug? **CRIE o cenário/controle** antes de testar. Nunca peça ao criador para clicar, ajustar slider ou montar nada.
+> Teste SEMPRE no debug (`vfx_room`, `BattleDebug`), com dados (`--summary-json`, `--strict-asserts`), nas duas vistas (D-235); não improvise com o jogo real.
+> Passou de 1 minuto = o debug está incompleto: melhore a ferramenta primeiro. Ver `docs/decisoes/D-1204-*.md` e `docs/TELEMETRIA.md`.
+<!-- /DEBUG-OBRIGATORIO-D1204 -->
+
+# Auditoria — Javelin Throw VFX, porte literal do HTML Card C (D-1171)
 
 > **Atualização D-1175 (2026-11-11):** o VFX oficial agora usa **haste de 2,30 m** (total **2,695 m**) e, no combate, sobe a javelin no wind-up em **0,08 m fixo + até 0,12 m automático** (folga contra o corpo). As folhas A/B abaixo foram geradas antes dessa mudança e continuam válidas para o restante do efeito; comprimento e subida atuais são a nova regra.
 >

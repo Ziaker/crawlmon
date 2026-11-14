@@ -110,6 +110,15 @@ func clear_telegraph(inc, keep_abra := false) -> void:
 
 ## A wind-up that will not play out: its looping charge pose must not stay on (D-163).
 func on_attack_cancelled(inc) -> void:
+	# D-1187: the charge of an Abra Move that will not play out dissipates (0.45 s) instead of being cut.
+	if _telegraphs.has(inc):
+		var rest: Array = []
+		for n in _telegraphs[inc]:
+			if is_instance_valid(n) and n is AbraMoveVfx and (n as AbraMoveVfx).stage == AbraMoveVfx.Stage.WINDUP:
+				(n as AbraMoveVfx).dissipate()
+			else:
+				rest.append(n)
+		_telegraphs[inc] = rest
 	clear_telegraph(inc)
 	var ap := fx._anim_player(inc.attacker)
 	if ap != null and ap.current_animation == "charge":

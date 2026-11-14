@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<!-- DEBUG-OBRIGATORIO-D1204 -->
+<!-- DEBUG = OBRIGACAO EXTREMA (D-1204). Static visual prototype: it does not read or write game state. -->
+<!-- Decisions applied: D-1205, D-037, D-003, D-1185, D-418, D-413, D-131, D-1096, D-1192, D-235, D-334, D-1017, D-332. -->
+<!-- D-1205: the card follows the same 1.3 s parabola of the body (apex at 0.65 s), the whole block moves and
+     rotates with an ease-out that reaches zero at the ground (lands upright), and the landing closes with a
+     small shake and a dust ring. -->
+<!-- /DEBUG-OBRIGATORIO-D1204 -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Crawlmon - Knock-up status card: 3 concepts</title>
+
+<script>
+/* =========================================================================
+   EDITABLE CONFIG (top of the script)
+   Every timing, height and colour lives here. Nothing depends on a character,
+   a team or a side (D-235): the name is a variable, the stage is centred.
+   ========================================================================= */
+window.KNOCK_CARD_V2 = {
+  characterName: "MON",        /* rename here; there is no fixed character in the logic (D-235) */
+  statusLabel: "KNOCK-UP",     /* seal text (English, D-413 / D-131) */
+  statusSeconds: 1.3,          /* value shown on the seal = air time (D-1205) */
+
+  actionMs: 1300,              /* air time: rise + fall, no hover at the apex (D-1205) */
+  pauseMs: 900,                /* short pause between loops */
+  apex: 0.5,                   /* apex fraction: 0.65 s of 1.3 s (D-1205) */
+  jumpHeightPx: 104,           /* same height for the card and the body */
+  landShakePx: 5,              /* stage shake on landing (D-1205) */
+  charSpins: 2,                /* body wheel spin, illustrative (D-1205) */
+  slabBottomPx: 152,           /* rest height of the block above the stage floor */
+  ribbonBasePx: 44,            /* where the concept 1 ribbon starts, above the floor */
+
+  colors: {
+    paper: "#f4eee1",
+    ink: "#10263a",
+    lime: "#d6fa66",
+    coral: "#ff746c",
+    gold: "#f0c57e",
+    blue: "#63d9ec",
+    violet: "#bd9afd",
+    badgeRed: "#d32f2f",
+    ghost: "#d6fa66"
+  },
+
+  /* Concept-specific motion */
+  concept1: { spins: 1, ghostStep: 0.055, ribbonLean: 0.08 },
+  concept2: { spins: 1, tiltDeg: 12, shardSpread: 1 },
+  concept3: { spins: 1, pitchDeg: 16, sliceShearPx: 8, jelly: 0.22 }
+};
+</script>
+<style>
+/* =========================================================================
+   COLOURS AND TIMINGS (defaults; the config above writes these at runtime)
+   ========================================================================= */
+:root {
+  --action: 1300ms;
+  --pause: 900ms;
+  --apex: 0.5;
+  --jump-height: 104px;
+  --slab-w: 202px;
+  --slab-h: 82px;
+  --slab-bottom: 152px;
+  --ribbon-base: 44px;
+  --land-shake: 5px;
+
+  --paper: #f4eee1;
+  --ink: #10263a;
+  --lime: #d6fa66;
+  --coral: #ff746c;
+  --gold: #f0c57e;
+  --blue: #63d9ec;
+  --violet: #bd9afd;
+  --badge-red: #d32f2f;
+  --ghost: #d6fa66;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  background:
+    radial-gradient(ellipse at 8% 0%, rgba(50, 104, 88, .28), transparent 42%),
+    radial-gradient(ellipse at 94% 100%, rgba(79, 52, 118, .24), transparent 46%),
+    #05090c;
+  color: #e9e5d8;
+  font-family: "Segoe UI", Arial, sans-serif;
+  padding: 26px 28px 46px;
+}
+button { font: inherit; }
+
+.wrap { max-width: 1380px; margin: 0 auto; }
+.page-head { margin: 0 0 18px; }
+.eyebrow {
+  margin: 0 0 6px;
+  color: #9fb8ae;
+  font: 700 10px/1.2 Consolas, "Courier New", monospace;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+}
+h1 {
+  margin: 0;
+  color: #f2eedf;
+  font: 800 clamp(26px, 2.8vw, 40px)/1.02 Impact, Haettenschweiler, "Arial Black", sans-serif;
+  letter-spacing: .01em;
+  text-transform: uppercase;
+}
+.lede {
+  margin: 8px 0 0;
+  max-width: 1000px;
+  color: #a9b8b2;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.lede b { color: #d8e6dc; }
+.lede code {
+  padding: 1px 5px;
+  border: 1px solid #33493f;
+  background: #0b1410;
+  color: var(--lime);
+  font: 700 11px Consolas, monospace;
+}
+
+.section { margin: 26px 0 0; }
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 0 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #22332b;
+}
+.section-head h2 {
+  margin: 0;
+  color: var(--paper);
+  font: 800 24px/1 Impact, Haettenschweiler, "Arial Black", sans-serif;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+.section-head .section-sub {
+  margin: 0;
+  color: #8fa39a;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.option {
+  border: 1px solid #243a30;
+  background: #0a120f;
+  padding: 12px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.option-head { min-height: 100px; }
+.option-label {
+  display: inline-block;
+  padding: 2px 7px;
+  border: 1px solid #456356;
+  background: #0d1712;
+  color: var(--lime);
+  font: 800 10px/1 Consolas, monospace;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.option-title {
+  margin: 7px 0 0;
+  color: #f2eedf;
+  font: 800 17px/1 Impact, Haettenschweiler, "Arial Black", sans-serif;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+.option-desc {
+  margin: 5px 0 0;
+  color: #a9b8b2;
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+/* ------------------------------- stage ------------------------------- */
+.stage {
+  position: relative;
+  height: 404px;
+  overflow: hidden;
+  perspective: 900px;
+  border: 1px solid #1d2f27;
+  background:
+    radial-gradient(ellipse at 50% 96%, rgba(56, 104, 96, .30), transparent 58%),
+    linear-gradient(180deg, #071016 0%, #08130f 62%, #050b09 100%);
+}
+.ground {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 32px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #2f5a4c 18%, #2f5a4c 82%, transparent);
+  z-index: 0;
+}
+.ground::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 150px;
+  height: 26px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(214, 250, 102, .10), transparent 70%);
+}
+/* Body: a plain anchor for the shared parabola (no character logic, D-235). */
+.anchor {
+  position: absolute;
+  left: 50%;
+  bottom: 34px;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+.char {
+  position: relative;
+  width: 46px;
+  height: 62px;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+.char-head {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 20px;
+  height: 20px;
+  margin-left: -10px;
+  border-radius: 50%;
+  background: #9fc6d8;
+  box-shadow: inset -3px -3px 0 rgba(0, 0, 0, .28);
+}
+.char-body {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 38px;
+  height: 42px;
+  margin-left: -19px;
+  border-radius: 12px 12px 7px 7px;
+  background: #3f6b7f;
+  box-shadow: inset -5px -6px 0 rgba(0, 0, 0, .26);
+}
+.char-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  width: 58px;
+  height: 12px;
+  margin-left: -29px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .5);
+  filter: blur(4px);
+}
+/* ----------------------------- the slab ----------------------------- */
+/* Fixed size in world terms (D-334). One flat parallelogram block; the WHOLE
+   block moves and rotates, text never tilts alone (D-1096, D-1192, D-416). */
+.slab {
+  position: absolute;
+  left: 50%;
+  bottom: var(--slab-bottom);
+  width: var(--slab-w);
+  transform: translate(-50%, 0);
+  transform-origin: 50% 55%;
+  transform-style: preserve-3d;
+  z-index: 4;
+  will-change: transform;
+}
+.card-face {
+  position: relative;
+  height: var(--slab-h);
+  padding: 9px 13px 8px;
+  background: var(--paper);
+  color: var(--ink);
+  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+  filter: drop-shadow(4px 6px 0 rgba(0, 0, 0, .42));
+}
+.card-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.card-name {
+  font: 800 19px/1 Impact, Haettenschweiler, "Arial Black", sans-serif;
+  letter-spacing: .03em;
+  white-space: nowrap;
+}
+.card-lv { color: #536f80; font: 800 9px/1 Arial, sans-serif; white-space: nowrap; }
+.bar { position: relative; height: 8px; margin-top: 6px; background: #d8ccb7; overflow: hidden; }
+.bar > i { display: block; height: 100%; }
+.bar.hp > i { background: var(--coral); }
+.bar.mp { height: 6px; margin-top: 4px; }
+.bar.mp > i { background: #5f88f5; }
+.card-badges { display: flex; gap: 5px; margin-top: 7px; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  background: var(--badge-red);
+  color: #fff;
+  font: 800 9px/1.1 Arial, sans-serif;
+  letter-spacing: .02em;
+  white-space: nowrap;
+  will-change: transform;
+}
+/* Cloned faces: the shards and slices carry the same card content so they
+   stay aligned with the block. */
+.clone-face { position: absolute; inset: 0; }
+
+/* --------------------- concept 1: thrown slab --------------------- */
+.ribbon {
+  position: absolute;
+  left: 50%;
+  bottom: calc(32px + var(--ribbon-base));
+  width: 30px;
+  height: 0;
+  margin-left: -15px;
+  transform-origin: 50% 100%;
+  opacity: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    rgba(214, 250, 102, 0) 0%,
+    var(--lime) 22%,
+    var(--gold) 50%,
+    var(--lime) 78%,
+    rgba(214, 250, 102, 0) 100%);
+  -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, #000 24%, #000 100%);
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, #000 24%, #000 100%);
+}
+.ribbon > i {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  margin-left: -2px;
+  background: var(--gold);
+  opacity: .75;
+}
+.ghost {
+  position: absolute;
+  left: 50%;
+  bottom: var(--slab-bottom);
+  width: var(--slab-w);
+  height: var(--slab-h);
+  margin-left: calc(var(--slab-w) / -2);
+  background: var(--ghost);
+  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+  transform-origin: 50% 55%;
+  opacity: 0;
+  z-index: 1;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+/* -------------------- concept 2: shatter seal -------------------- */
+.shards,
+.slices {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  filter: drop-shadow(4px 6px 0 rgba(0, 0, 0, .42));
+  pointer-events: none;
+}
+.shard,
+.slice {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+.slice-1 { clip-path: inset(0 0 64% 0); }
+.slice-2 { clip-path: inset(32% 0 32% 0); }
+.slice-3 { clip-path: inset(64% 0 0 0); }
+.crack {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  background: var(--ink);
+  opacity: 0;
+  clip-path: polygon(
+    0 44%, 12% 37%, 26% 46%, 40% 33%, 55% 45%, 70% 34%, 84% 44%, 100% 36%,
+    100% 41%, 84% 49%, 70% 39%, 55% 50%, 40% 38%, 26% 51%, 12% 42%, 0 49%
+  );
+}
+
+/* ---------------- concept 3: jelly slice (deforming) ---------------- */
+.force-band {
+  position: absolute;
+  inset: -6px;
+  z-index: 6;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(90deg, var(--lime) 0%, var(--gold) 55%, var(--lime) 100%);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 14px 100%);
+  mix-blend-mode: multiply;
+}
+
+/* In concepts 2 and 3 the source face only measures the block; the shards or
+   slices draw the visible card, so hide the original to avoid double ink. */
+.option[data-concept="2"] .slab > .card-face,
+.option[data-concept="3"] .slab > .card-face { opacity: 0; }
+/* ---------------------------- landing ---------------------------- */
+@keyframes stage-shake {
+  0%, 100% { translate: 0 0; }
+  20% { translate: calc(var(--land-shake) * -1) 0; }
+  45% { translate: var(--land-shake) calc(var(--land-shake) * .4); }
+  70% { translate: calc(var(--land-shake) * -.6) 0; }
+}
+.stage.shake { animation: stage-shake 300ms ease-out; }
+
+.dust-ring {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  width: 44px;
+  height: 16px;
+  margin-left: -22px;
+  border: 2px solid rgba(214, 250, 102, .6);
+  border-radius: 50%;
+  transform: translateY(0) scale(.4);
+  animation: dust-ring 500ms ease-out forwards;
+  pointer-events: none;
+  z-index: 7;
+}
+@keyframes dust-ring {
+  0% { opacity: .9; transform: scale(.4); }
+  100% { opacity: 0; transform: scale(2.8); }
+}
+
+/* ---------------------------- controls ---------------------------- */
+.repeat {
+  align-self: flex-start;
+  border: 1px solid #456356;
+  background: #0d1712;
+  color: #cfe8d4;
+  padding: 8px 14px;
+  font: 800 10px/1 Consolas, monospace;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 #000;
+  transition: background 120ms ease, transform 90ms ease, box-shadow 90ms ease;
+}
+.repeat:hover { background: #17251b; }
+.repeat:active { transform: translate(1px, 1px); box-shadow: 2px 2px 0 #000; }
+
+.page-foot {
+  margin: 24px 0 0;
+  color: #6f887b;
+  font: 700 10px/1.5 Consolas, monospace;
+  letter-spacing: .03em;
+}
+
+@media (max-width: 1080px) {
+  .options { grid-template-columns: 1fr; }
+  .option-head { min-height: 0; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page-head">
+    <p class="eyebrow">Crawlmon // Visual prototype // D-1205 &middot; D-235 &middot; D-334</p>
+    <h1>Knock-up status card - 3 concepts</h1>
+    <p class="lede">
+      Three different ideas, not three colours. In all of them the card and the body share the
+      <b>same parabola</b> of <code>1.3 s</code> (apex at <code>0.65 s</code>, no hover), the card itself
+      <b>moves and rotates</b> during the flight and settles upright, and the landing closes with a small
+      shake and a dust ring (D-1205). No white screens, no strobe (D-418). Each option loops and has a
+      <b>Repeat</b> button.
+    </p>
+  </header>
+  <section class="section">
+    <div class="section-head">
+      <h2>Card concepts</h2>
+      <p class="section-sub">Same card (name, HP/MP bars, red seal), same flight, same landing. Only the idea behind the motion changes.</p>
+    </div>
+
+    <div class="options">
+
+      <article class="option" data-concept="1">
+        <div class="option-head">
+          <span class="option-label">Concept 1</span>
+          <h3 class="option-title">Thrown slab</h3>
+          <p class="option-desc">The block is launched flat and rips a banded motion ribbon behind it; three afterimage silhouettes mark where it just was. One full bullet spin, landing upright.</p>
+        </div>
+        <div class="stage" data-stage>
+          <div class="ground"></div>
+          <div class="ribbon" data-ribbon><i></i></div>
+          <span class="ghost" data-ghost></span>
+          <span class="ghost" data-ghost></span>
+          <span class="ghost" data-ghost></span>
+          <div class="anchor">
+            <div class="char" data-char><span class="char-head"></span><span class="char-body"></span></div>
+            <div class="char-shadow"></div>
+          </div>
+          <div class="slab" data-slab>
+            <div class="card-face">
+              <div class="card-top"><span class="card-name" data-name>MON</span><span class="card-lv">LV. 1</span></div>
+              <div class="bar hp"><i style="width:72%"></i></div>
+              <div class="bar mp"><i style="width:55%"></i></div>
+              <div class="card-badges"><span class="badge" data-badge>KNOCK-UP 1.3s</span></div>
+            </div>
+          </div>
+        </div>
+        <button class="repeat" type="button" data-repeat>Repeat</button>
+      </article>
+      <article class="option" data-concept="2">
+        <div class="option-head">
+          <span class="option-label">Concept 2</span>
+          <h3 class="option-title">Shatter seal</h3>
+          <p class="option-desc">The red seal cracks the card open: three shards drift apart while airborne, the crack line stays lit, and the block seals shut on impact with the ground.</p>
+        </div>
+        <div class="stage" data-stage>
+          <div class="ground"></div>
+          <div class="anchor">
+            <div class="char" data-char><span class="char-head"></span><span class="char-body"></span></div>
+            <div class="char-shadow"></div>
+          </div>
+          <div class="slab" data-slab>
+            <div class="card-face">
+              <div class="card-top"><span class="card-name" data-name>MON</span><span class="card-lv">LV. 1</span></div>
+              <div class="bar hp"><i style="width:72%"></i></div>
+              <div class="bar mp"><i style="width:55%"></i></div>
+              <div class="card-badges"><span class="badge" data-badge>KNOCK-UP 1.3s</span></div>
+            </div>
+            <div class="shards" data-shards></div>
+            <div class="crack" data-crack></div>
+          </div>
+        </div>
+        <button class="repeat" type="button" data-repeat>Repeat</button>
+      </article>
+      <article class="option" data-concept="3">
+        <div class="option-head">
+          <span class="option-label">Concept 3</span>
+          <h3 class="option-title">Jelly slice</h3>
+          <p class="option-desc">The card deforms like a sheet: it stretches along the flight, its horizontal slices shear at peak speed, a lime band wipes up the face, and it snaps flat on landing.</p>
+        </div>
+        <div class="stage" data-stage>
+          <div class="ground"></div>
+          <div class="anchor">
+            <div class="char" data-char><span class="char-head"></span><span class="char-body"></span></div>
+            <div class="char-shadow"></div>
+          </div>
+          <div class="slab" data-slab>
+            <div class="card-face">
+              <div class="card-top"><span class="card-name" data-name>MON</span><span class="card-lv">LV. 1</span></div>
+              <div class="bar hp"><i style="width:72%"></i></div>
+              <div class="bar mp"><i style="width:55%"></i></div>
+              <div class="card-badges"><span class="badge" data-badge>KNOCK-UP 1.3s</span></div>
+            </div>
+            <div class="force-band" data-force></div>
+            <div class="slices" data-slices></div>
+          </div>
+        </div>
+        <button class="repeat" type="button" data-repeat>Repeat</button>
+      </article>
+
+    </div>
+  </section>
+
+  <p class="page-foot">
+    Prototype only - D-1205 / D-235 / D-334 / D-1096 / D-1192 / D-418. 1.3 s of flight + a short pause, no audio,
+    no network, no game files touched. Spin turns, ribbon length, shard spread and jelly amount are variables at the
+    top of the script.
+  </p>
+</div>
+<script>
+(() => {
+  "use strict";
+
+  const CFG = window.KNOCK_CARD_V2;
+
+  /* ---------------------------------------------------------------
+     Push the config into CSS variables (timings and colours).
+     --------------------------------------------------------------- */
+  const root = document.documentElement;
+  root.style.setProperty("--action", CFG.actionMs + "ms");
+  root.style.setProperty("--pause", CFG.pauseMs + "ms");
+  root.style.setProperty("--apex", String(CFG.apex));
+  root.style.setProperty("--jump-height", CFG.jumpHeightPx + "px");
+  root.style.setProperty("--land-shake", CFG.landShakePx + "px");
+  root.style.setProperty("--slab-bottom", CFG.slabBottomPx + "px");
+  root.style.setProperty("--ribbon-base", CFG.ribbonBasePx + "px");
+  root.style.setProperty("--paper", CFG.colors.paper);
+  root.style.setProperty("--ink", CFG.colors.ink);
+  root.style.setProperty("--lime", CFG.colors.lime);
+  root.style.setProperty("--coral", CFG.colors.coral);
+  root.style.setProperty("--gold", CFG.colors.gold);
+  root.style.setProperty("--blue", CFG.colors.blue);
+  root.style.setProperty("--violet", CFG.colors.violet);
+  root.style.setProperty("--badge-red", CFG.colors.badgeRed);
+  root.style.setProperty("--ghost", CFG.colors.ghost);
+
+  /* ---------------------------------------------------------------
+     Continuous parabola (D-1205): rises to the apex, falls to the
+     end, no hover. Card and body call it with the same height.
+     --------------------------------------------------------------- */
+  function parabola(p) {
+    const h = CFG.jumpHeightPx;
+    if (p <= 0 || p >= 1) return 0;
+    if (p < CFG.apex) {
+      const q = p / CFG.apex;
+      return h * (1 - (1 - q) * (1 - q));
+    }
+    const q = (p - CFG.apex) / (1 - CFG.apex);
+    return h * (1 - q * q);
+  }
+
+  /* Rotation eases out: fast at take-off, speed reaches zero on the
+     ground, so the block lands upright (D-1205). */
+  const easeOut = (k) => 1 - Math.pow(1 - k, 3);
+
+  /* Speed of the flight, 0..1 (analytic), used by the deforming concept.
+     Peak at take-off, zero at the apex turn and zero at the ground. */
+  function speed(p) {
+    if (p <= 0 || p >= 1) return 0;
+    const h = CFG.jumpHeightPx;
+    const max = (2 * h) / CFG.apex;
+    let v;
+    if (p < CFG.apex) {
+      v = (2 * h * (1 - p / CFG.apex)) / CFG.apex;
+    } else {
+      const q = (p - CFG.apex) / (1 - CFG.apex);
+      v = (2 * h * q) / (1 - CFG.apex);
+    }
+    return Math.min(1, v / max);
+  }
+  /* ---------------------------------------------------------------
+     Layer builders. The shards (concept 2) and slices (concept 3)
+     carry a clone of the card face so they stay aligned.
+     --------------------------------------------------------------- */
+  const SHARD_CUTS = [
+    "polygon(0 0, 100% 0, 100% 32%, 0 44%)",
+    "polygon(0 44%, 100% 32%, 100% 70%, 0 82%)",
+    "polygon(0 82%, 100% 70%, 100% 100%, 0 100%)"
+  ];
+
+  function buildLayers(optionEl) {
+    const slab = optionEl.querySelector("[data-slab]");
+    const face = slab.querySelector(".card-face");
+    if (!face) return;
+    const concept = Number(optionEl.dataset.concept);
+
+    if (concept === 2) {
+      const host = slab.querySelector("[data-shards]");
+      SHARD_CUTS.forEach((cut) => {
+        const shard = document.createElement("div");
+        shard.className = "shard";
+        shard.style.clipPath = cut;
+        const copy = face.cloneNode(true);
+        copy.classList.add("clone-face");
+        shard.appendChild(copy);
+        host.appendChild(shard);
+      });
+    }
+
+    if (concept === 3) {
+      const host = slab.querySelector("[data-slices]");
+      [1, 2, 3].forEach((n) => {
+        const slice = document.createElement("div");
+        slice.className = "slice slice-" + n;
+        const copy = face.cloneNode(true);
+        copy.classList.add("clone-face");
+        slice.appendChild(copy);
+        host.appendChild(slice);
+      });
+    }
+  }
+
+  function applyText() {
+    document.querySelectorAll("[data-name]").forEach((el) => {
+      el.textContent = CFG.characterName;
+    });
+    const label = CFG.statusLabel + " " + CFG.statusSeconds.toFixed(1) + "s";
+    document.querySelectorAll("[data-badge]").forEach((el) => {
+      el.textContent = label;
+    });
+  }
+  /* ---------------------------------------------------------------
+     Per-concept effects.
+     --------------------------------------------------------------- */
+  function motion1(o, p, active, y) {
+    const e = easeOut(p);
+
+    const reach = Math.max(0, y - 10);
+    o.ribbon.style.height = reach.toFixed(2) + "px";
+    o.ribbon.style.opacity = (active ? 0.72 * Math.min(1, reach / (CFG.jumpHeightPx * 0.45)) : 0).toFixed(3);
+    o.ribbon.style.transform =
+      "rotate(" + (-360 * e * CFG.concept1.ribbonLean).toFixed(2) + "deg)";
+
+    o.ghosts.forEach((g, i) => {
+      if (!active) { g.style.opacity = "0"; return; }
+      const gp = Math.max(0, p - CFG.concept1.ghostStep * (i + 1));
+      const gy = parabola(gp);
+      g.style.transform =
+        "translateY(" + (-gy).toFixed(2) + "px) rotate(" +
+        (360 * CFG.concept1.spins * easeOut(gp)).toFixed(2) + "deg)";
+      g.style.opacity = gy > 4 ? (0.26 - i * 0.07).toFixed(3) : "0";
+    });
+  }
+
+  function motion2(o, p, active) {
+    let crack = 0;
+    if (active) {
+      if (p < 0.08) crack = 0;
+      else if (p < 0.30) crack = (p - 0.08) / 0.22;
+      else if (p < 0.62) crack = 1;
+      else if (p < 0.90) crack = 1 - (p - 0.62) / 0.28;
+      else crack = 0;
+    }
+    if (crack < 0) crack = 0;
+    if (crack > 1) crack = 1;
+
+    o.crack.style.opacity = (crack * 0.9).toFixed(3);
+
+    const spread = crack * CFG.concept2.shardSpread;
+    const offs = [[-4, -8, -3], [6, -1, 1.6], [-3, 7, 2.4]];
+    o.shards.forEach((s, i) => {
+      s.style.transform =
+        "translate(" + (offs[i][0] * spread).toFixed(2) + "px, " +
+        (offs[i][1] * spread).toFixed(2) + "px) rotate(" +
+        (offs[i][2] * spread).toFixed(2) + "deg)";
+    });
+
+    const seal = active ? 1 + 0.22 * Math.sin(Math.PI * Math.min(1, p / 0.22)) : 1;
+    o.badges.forEach((b) => {
+      b.style.transform = "scale(" + seal.toFixed(3) + ")";
+    });
+  }
+  function motion3(o, p, active) {
+    const v = active ? speed(p) : 0;
+
+    o.slices.forEach((s, i) => {
+      const dir = [-1, 1.2, -1.6][i];
+      s.style.transform =
+        "translateX(" + (dir * v * CFG.concept3.sliceShearPx).toFixed(2) + "px)";
+    });
+
+    let band = 0;
+    let bandY = 120;
+    if (active && p > 0.02 && p < 0.22) {
+      const b = (p - 0.02) / 0.2;
+      band = Math.sin(Math.PI * b) * 0.8;
+      bandY = 120 - b * 190;
+    }
+    o.force.style.opacity = band.toFixed(3);
+    o.force.style.transform = "translateY(" + bandY.toFixed(1) + "%)";
+  }
+
+  /* ---------------------------------------------------------------
+     Landing closure: small shake + dust ring (D-1205).
+     --------------------------------------------------------------- */
+  function landing(o) {
+    const ring = document.createElement("div");
+    ring.className = "dust-ring";
+    o.stage.appendChild(ring);
+    setTimeout(() => ring.remove(), 560);
+
+    o.stage.classList.remove("shake");
+    void o.stage.offsetWidth;
+    o.stage.classList.add("shake");
+    clearTimeout(o.shakeTimer);
+    o.shakeTimer = setTimeout(() => o.stage.classList.remove("shake"), 340);
+  }
+  /* ---------------------------------------------------------------
+     Options and loop: air time + short pause, forever.
+     --------------------------------------------------------------- */
+  const options = [];
+
+  function initOption(optionEl) {
+    const o = {
+      root: optionEl,
+      stage: optionEl.querySelector("[data-stage]"),
+      slab: optionEl.querySelector("[data-slab]"),
+      ribbon: optionEl.querySelector("[data-ribbon]"),
+      ghosts: Array.from(optionEl.querySelectorAll("[data-ghost]")),
+      shards: Array.from(optionEl.querySelectorAll(".shard")),
+      slices: Array.from(optionEl.querySelectorAll(".slice")),
+      crack: optionEl.querySelector("[data-crack]"),
+      force: optionEl.querySelector("[data-force]"),
+      badges: Array.from(optionEl.querySelectorAll("[data-slab] [data-badge]")),
+      char: optionEl.querySelector("[data-char]"),
+      concept: Number(optionEl.dataset.concept),
+      start: performance.now() + 220 * options.length + 120,
+      wasActive: false,
+      shakeTimer: 0
+    };
+
+    optionEl.querySelector("[data-repeat]").addEventListener("click", () => {
+      o.start = performance.now() + 30;
+      o.wasActive = false;
+    });
+
+    options.push(o);
+  }
+
+  function slabTransform(o, p, y, e) {
+    const base = "translate(-50%, " + (-y).toFixed(2) + "px)";
+
+    if (o.concept === 1) {
+      return base + " rotateZ(" + (360 * CFG.concept1.spins * e).toFixed(2) + "deg)";
+    }
+    if (o.concept === 2) {
+      const tilt = CFG.concept2.tiltDeg * Math.sin(Math.PI * p);
+      return base + " rotateZ(" + (360 * CFG.concept2.spins * e + tilt).toFixed(2) + "deg)";
+    }
+
+    const v = p < 1 ? speed(p) : 0;
+    const sx = 1 - CFG.concept3.jelly * 0.5 * v;
+    const sy = 1 + CFG.concept3.jelly * v;
+    return base +
+      " rotateZ(" + (360 * CFG.concept3.spins * e).toFixed(2) + "deg)" +
+      " rotateX(" + (CFG.concept3.pitchDeg * Math.sin(Math.PI * p)).toFixed(2) + "deg)" +
+      " scale(" + sx.toFixed(3) + ", " + sy.toFixed(3) + ")";
+  }
+  function frame(now) {
+    const cycle = CFG.actionMs + CFG.pauseMs;
+
+    for (const o of options) {
+      const elapsed = now - o.start;
+      if (elapsed < 0) continue;
+
+      const t = elapsed % cycle;
+      const active = t < CFG.actionMs;
+      const p = active ? t / CFG.actionMs : 1;
+      const y = active ? parabola(p) : 0;
+      const e = easeOut(p);
+
+      o.slab.style.transform = slabTransform(o, p, y, e);
+      o.char.style.transform =
+        "translateY(" + (-y).toFixed(2) + "px) rotate(" +
+        (360 * CFG.charSpins * e).toFixed(2) + "deg)";
+
+      if (o.concept === 1) motion1(o, p, active, y);
+      else if (o.concept === 2) motion2(o, p, active);
+      else motion3(o, p, active);
+
+      if (o.wasActive && !active) landing(o);
+      o.wasActive = active;
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  /* --------------------------------------------------------------- */
+  const optionRoots = Array.from(document.querySelectorAll("[data-concept]"));
+  optionRoots.forEach(buildLayers);
+  applyText();
+  optionRoots.forEach(initOption);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

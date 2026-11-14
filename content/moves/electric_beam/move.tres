@@ -8,6 +8,7 @@ id = &"electric_beam"
 display_name = "Electric Beam"
 kind = 1
 element = 3
+damage_type = 1
 mp_cost = 6
 windup = 0.5
 stand_gap = 2.6
@@ -18,8 +19,8 @@ vfx_key = &"electric"
 ai_profile = {
 "armor_worthy": true
 }
-effect_line_text = "Electric damage x1.0 ATK | projectile | 2 ATB"
-short_effect_text = "x1.0 Electric"
+effect_line_text = "100% MAG electric damage | Projectile | 2 ATB"
+short_effect_text = "100% electric"
 description_text = "A electric projectile move. Deals x1.0 ATK damage."
 mechanics_text = "Fires one continuous electric beam at a single target and deals magical damage on contact. On a successful hit, it has a 20% chance, +1% per point of LUK above the target's, to STUN the target for 4 seconds: its ATB stops and it cannot act."
 visual_text = "A golden shock sphere charges in front of the caster and keeps growing while the strike is held; on release it swells and settles as a triple spinning crown splits backward and a burst of rays flashes, then a saturated gold zig-zag bolt with a bright head races to the target, leaving loose sparks and small discharges in the air, until on contact crowns of lightning burst out of the target's body and open outward and upward in every direction, flashing a ground ring, an electric ring and a white-gold star before they fade."

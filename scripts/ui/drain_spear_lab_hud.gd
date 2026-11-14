@@ -226,10 +226,7 @@ func _draw_badge(pos: Vector2, key: String, alpha: float) -> void:
 
 func _portrait(id: String) -> Texture2D:
 	var name := id.replace("dqt_", "")
-	var path := "res://personagens/portraits/%s.png" % name
-	if ResourceLoader.exists(path):
-		return load(path)
-	return null
+	return preload("res://scripts/ui/portrait_icon.gd").get_icon(name)
 
 
 func _slant_points(r: Rect2, skew: float) -> PackedVector2Array:

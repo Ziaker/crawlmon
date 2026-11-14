@@ -2272,21 +2272,11 @@ func _circular_portrait(tex: Texture2D, region: Rect2) -> Texture2D:
 func _portrait_for_speaker(speaker: String) -> Texture2D:
 	var key := speaker.to_lower()
 	# D-1095: ícone fechado do Bulbasaur, já mascarado e com o fundo do medalhão.
-	var baked := "res://assets/ui/portraits/%s.png" % key
-	if ResourceLoader.exists(baked):
-		return load(baked) as Texture2D
-	var sugimori := "res://sugimori/por_nome/%s.png" % key
-	if ResourceLoader.exists(sugimori):
-		var tex := load(sugimori) as Texture2D
-		if tex == null:
-			return null
-		if PORTRAIT_FACE_REGIONS.has(key):
-			return _circular_portrait(tex, PORTRAIT_FACE_REGIONS[key])
-		return tex
-	var portrait := "res://personagens/portraits/%s.png" % key
-	if ResourceLoader.exists(portrait):
-		return load(portrait) as Texture2D
-	return null
+	# Ícone único das HUDs (recorte Sugimori + fundo ciano-verde): scripts/ui/portrait_icon.gd.
+	var icon: Texture2D = preload("res://scripts/ui/portrait_icon.gd").get_icon(key)
+	if icon == null:
+		return null
+	return _circular_portrait(icon, Rect2(0.0, 0.0, 1.0, 1.0))
 
 
 func _update_enemy_ring_color() -> void:

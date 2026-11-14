@@ -30,7 +30,8 @@ const PAL := {
 const CONF_BLOCKS := 6  ## cubes of Confusion (wind-up and shot); fewer, larger
 const SHOCK_OPACITY := 0.7  ## Shock Wave overall opacity
 const SHOCK_SPEED := 1.35  ## Shock Wave after the wind-up plays 35% faster (visual only; the game timeline is untouched)
-const PSY_RELEASE := 0.75  ## seconds the Psybeam charge pose takes to expand and fade out after the shot
+const DISSIPATE := 0.45  ## D-1187: seconds an interrupted charge takes to fade out
+const PSY_RELEASE := 0.75 ## seconds the Psybeam charge pose takes to expand and fade out after the shot
 const PSY_BEAM_FADE := 1.1  ## seconds the Psybeam laser takes to dissipate after it lands
 const PSY_AHEAD := 1.45  ## Psybeam crystal, lenses and beam start this much further in front of the caster
 const GROUND := 0.22  ## Prototype y = -0.22 is the floor.
@@ -107,6 +108,9 @@ var _last_blocks: Array[Vector3] = []
 var _last_tess := Vector3.ZERO
 var _w_mul := 1.0
 var _op := 1.0  ## overall opacity of the move (Shock Wave: 70%, creator's order)
+var _op_base := 1.0
+var _diss_t := -1.0  ## D-1187: >= 0 while the charge dissipates after an interruption
+var _wp_frozen := -1.0  ## wind-up progress frozen at the moment the dissipation started
 var _bolts: Array[MeshInstance3D] = []  ## lightning-shader quads (Shock Wave)
 var _bolt_used := 0
 var _beams: Array[MeshInstance3D] = []  ## laser quads (Psybeam)
@@ -188,6 +192,26 @@ static func release_held(attacker: Object) -> void:
 		(n as AbraMoveVfx).queue_free()
 
 
+## D-1187: the move was interrupted while its charge waited for the shot. It dissipates instead of staying
+## on screen (the shot never leaves, so nothing else would free it).
+static func dissipate_held(attacker: Object) -> void:
+	var n := take_held(attacker)
+	if n != null:
+		n.dissipate()
+
+
+## D-1187: the charge fades out in DISSIPATE seconds, frozen as it was (no cut, no more growing).
+func dissipate() -> void:
+	if _diss_t >= 0.0 or stage != Stage.WINDUP:
+		return
+	_wp_frozen = _wp()
+	held = false
+	_diss_t = 0.0
+	for k in _held.keys():
+		if _held[k] == self:
+			_held.erase(k)
+
+
 static func take_held(attacker: Object) -> AbraMoveVfx:
 	var n: Variant = _held.get(attacker)
 	_held.erase(attacker)
@@ -216,7 +240,8 @@ func set_travel(p_from: Vector3, p_to: Vector3, progress: float, returning: bool
 
 func _ready() -> void:
 	_rng.randomize()
-	_op = SHOCK_OPACITY if move_id == "onda_choque" else 1.0
+	_op_base = SHOCK_OPACITY if move_id == "onda_choque" else 1.0
+	_op = _op_base
 	_solid = AbraCanvas.new(false)
 	_solid.name = "SolidCanvas"
 	_solid.energy = 1.0
@@ -243,6 +268,16 @@ func _process(delta: float) -> void:
 	if held and t - _hold_at > 6.0:
 		queue_free()  # the shot never came (safety)
 		return
+	if _diss_t >= 0.0:
+		_diss_t += delta
+		var f := 1.0 - clampf(_diss_t / DISSIPATE, 0.0, 1.0)
+		if f <= 0.0:
+			queue_free()
+			return
+		f = f * f * (3.0 - 2.0 * f)  # smoothstep: no hard start, no hard end
+		_op = _op_base * f
+		_canvas.fade = f
+		_solid.fade = f
 	_canvas.clear()
 	_solid.clear()
 	_sprite_used = 0
@@ -336,6 +371,8 @@ func _body_at(p: Vector3) -> Dictionary:
 
 
 func _wp() -> float:
+	if _wp_frozen >= 0.0:
+		return _wp_frozen
 	return 1.0 if (held or _keep_windup) else clampf(t / life, 0.0, 1.0)
 
 
@@ -1001,14 +1038,15 @@ func _confusion_travel() -> void:
 	var blocks_now: Array[Vector3] = []
 	for k in CONF_BLOCKS:
 		var layer := k % 3
-		var lag := float(k) * 0.05
-		var head := clampf(ext_p * 1.3 - lag, 0.0, 1.0)
+		# D-1187: staggered departure, but every cube reaches the target exactly when the hit lands (ext_p = 1).
+		var depart := float(k) * 0.04
+		var head := clampf((ext_p - depart) / (1.0 - depart), 0.0, 1.0)
 		var sz := (0.24 + float(layer) * 0.11) * 1.35 * 1.4
 		var p0: Vector3 = starts[k] if k < starts.size() else Vector3(0, 1.6, 0)
 		var side := (float(k) - float(CONF_BLOCKS - 1) * 0.5) * 1.3
 		var p1 := Vector3(side, maxf(4.1, _ttop + 1.8) + float(k % 4) * 0.9, -_D * 0.5)
 		var p2 := enemy_c + Vector3(cos(float(k) * 1.05) * _tr * 0.6, sin(float(k) * 2.1) * _tr * 0.35, sin(float(k) * 1.05) * _tr * 0.6)
-		var cur := _bezier(p0, p1, p2, _ease_io(head))
+		var cur := _bezier(p0, p1, p2, head * head)  # D-1187: speeds up until it hits (no braking on arrival)
 		if head >= 1.0:
 			continue
 		blocks_now.append(cur)
@@ -1022,11 +1060,12 @@ func _confusion_travel() -> void:
 				var ta := clampf(head - float(s) * 0.03, 0.0, 1.0)
 				var tb := clampf(head - float(s + 1) * 0.03, 0.0, 1.0)
 				if ta > tb:
-					_ribbon(_bezier(p0, p1, p2, _ease_io(ta)), _bezier(p0, p1, p2, _ease_io(tb)), 0.34 * (1.0 - float(s) / 5.0), "ruby" if k % 3 == 0 else ("magenta" if k % 2 == 1 else "violet"), 0.9 * (1.0 - float(s) / 5.0))
+					_ribbon(_bezier(p0, p1, p2, ta * ta), _bezier(p0, p1, p2, tb * tb), 0.34 * (1.0 - float(s) / 5.0), "ruby" if k % 3 == 0 else ("magenta" if k % 2 == 1 else "violet"), 0.9 * (1.0 - float(s) / 5.0))
 	# Tesseract rides ahead of the cubes and shrinks into the target.
-	var te := _ease_io(clampf(ext_p * 1.1, 0.0, 1.0))
+	var te := clampf(ext_p, 0.0, 1.0)
+	te *= te  # D-1187: reaches the target at the hit at full speed, not before
 	var tess_pos := _last_tess.lerp(enemy_c, te)
-	_tess(tess_pos, lerpf(0.95, 0.5, te), t, (1.0 - maxf(0.0, ext_p - 0.8) / 0.2) * 0.92, "ruby", "violet")
+	_tess(tess_pos, lerpf(0.95, 0.5, te), t, 0.92, "ruby", "violet")
 	for g in mini(8, blocks_now.size() / 2):
 		_gluon(blocks_now[g * 2], blocks_now[(g * 2 + 1) % blocks_now.size()], t, float(g), "ruby" if g % 2 == 1 else "magenta", Color("ffd1fb"), 0.8)
 
@@ -1037,7 +1076,11 @@ func _confusion_impact() -> void:
 	var fade := 1.0 if ep < 0.74 else (1.0 - ep) / 0.26
 	if ep >= 1.0:
 		return
-	_ring(Vector3(0, -0.19, 0), maxf(2.15, _tr * 1.4) * sin(ep * PI * 0.88), "ink", 0.95 * fade, 28, 0.42)
+	# D-1187: the burst is strong from the first frame of contact (the envelopes used to climb from zero
+	# and peaked ~0.55 s after the hit): fast attack, same shape and total length afterwards.
+	var attack := _ease_out(clampf(ep / 0.1, 0.0, 1.0))
+	var ring_k := _ease_out(clampf(ep / 0.4, 0.0, 1.0)) * (1.0 - 0.37 * smoothstep(0.57, 1.0, ep))
+	_ring(Vector3(0, -0.19, 0), maxf(2.15, _tr * 1.4) * ring_k, "ink", 0.95 * fade, 28, 0.42)
 	_tess(Vector3(0, _tcy - 0.1 + out * 0.55, 0), 1.25 * fade, t * 1.4, fade * 0.92, "ruby", "magenta")
 	_ribbon(Vector3(0, -0.2, 0), Vector3(0, 4.8 * out, 0), 0.42 * fade, "ruby", 0.78 * fade, Color("ffd1fb"))
 	var blocks: Array[Vector3] = []
@@ -1061,7 +1104,7 @@ func _confusion_impact() -> void:
 			var key := "ruby" if r % 3 == 0 else ("magenta" if r % 2 == 0 else "violet")
 			_gimbal(Vector3(0, -0.17 + float(r % 2) * re * 1.45, 0), _tr * 0.9 + re * 3.8, Vector3((0.2 if r % 2 == 1 else -0.2) * (1.0 - rp), t * 2.5, 0.0), key, (1.0 - rp) * 0.96, 28, 0.09, Color("ffd1fb"))
 	# 2D pass
-	var e_sin := sin(ep * PI)
+	var e_sin := attack * cos(ep * PI * 0.5)
 	var ground_p := Vector3(0, 0.1, 0)
 	var enemy_p := Vector3(0, _tcy, 0)
 	_blob(ground_p, 130.0 * e_sin, Color(1.0, 0.09, 0.27, 0.85), Color("b666ff", 0.45), e_sin * 0.78)

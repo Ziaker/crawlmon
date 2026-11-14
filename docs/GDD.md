@@ -1,3 +1,11 @@
+<!-- DEBUG-OBRIGATORIO-D1204 -->
+> **DEBUG = OBRIGAÇÃO EXTREMA (D-1204).** O debug existe para testar QUALQUER milésimo do jogo: combate, Moves, VFX, overworld, UI, itens, IA, save, áudio.
+> **NENHUM teste pode levar mais de 1 minuto** do pedido ao resultado; mire em menos de 10 s (`--scenario=<id> --stdout-trace --quit`).
+> Sem caminho pronto no debug? **CRIE o cenário/controle** antes de testar. Nunca peça ao criador para clicar, ajustar slider ou montar nada.
+> Teste SEMPRE no debug (`vfx_room`, `BattleDebug`), com dados (`--summary-json`, `--strict-asserts`), nas duas vistas (D-235); não improvise com o jogo real.
+> Passou de 1 minuto = o debug está incompleto: melhore a ferramenta primeiro. Ver `docs/decisoes/D-1204-*.md` e `docs/TELEMETRIA.md`.
+<!-- /DEBUG-OBRIGATORIO-D1204 -->
+
 # CRAWLMON — Game Design Document (GDD)
 
 > **Estado:** documento vivo de design, com decisões aprovadas e pendências explícitas.  
@@ -842,7 +850,7 @@ Sem decisão adicional, não fixar:
 #### 7.30.1. Câmera e controles
 
 - **Terceira pessoa estilo SMT III** atrás do personagem (D-1023); colisão da câmera contra paredes; **oclusão com fade** nas paredes entre a câmera e o personagem (D-1082).
-- **Teclas (D-1107, D-1130, D-1137, D-1179):** **setas** (e W/S) movem o personagem **relativos à câmera real** (a frente é a da câmera, não um yaw antigo); o personagem **vira para a direção do movimento**; **A/D giram só a câmera** (2,6 rad/s); Q/E e botão direito também orbitam; **sem auto-follow de yaw** (D-1123/D-1126 rejeitados por D-1128/D-1130).
+- **Teclas (D-1107, D-1130, D-1137, D-1186):** **setas** (e W/S) movem o personagem **relativos à câmera real** (a frente é a da câmera, não um yaw antigo); o personagem **vira para a direção do movimento**; **A/D giram só a câmera** (2,6 rad/s); Q/E e botão direito também orbitam; **sem auto-follow de yaw** (D-1123/D-1126 rejeitados por D-1128/D-1130).
 - **Velocidade:** 4,8 m/s (D-1137, teste). O mouse **não** é capturado (D-1023).
 - **Z ataca sempre** (D-1137, D-1127): com inimigo em até 4,5 m, ataca o mais próximo; sem inimigo, avança 2,0 m e não inicia batalha. **E** interage (falar com NPC, usar saída; prompt `[E] TALK`).
 - **Câmera na batalha:** nunca obstrui a visão, só amplia o POV (D-1060); FOV de combate 72° (D-1048).

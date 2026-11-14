@@ -71,7 +71,7 @@ func _decide(c: Combatant) -> void:
 		_plans[c] = plan
 	if plan.is_empty():
 		return
-	var ko := _affordable_knock_out(c, plan["target"])
+	var ko := _affordable_knock_out(c, plan["target"]) if not b.same_team(c, plan["target"]) else null
 	if ko != null:
 		_perform(c, ko, plan["target"])
 		return
@@ -88,9 +88,14 @@ func _new_plan(c: Combatant) -> Dictionary:
 		return {}
 	var options: Array[Dictionary] = []
 	for skill in _moves_of(c):
-		var value := score_move(c, skill, target)
+		if skill.target_mode == MoveData.TargetMode.DUAL:
+			continue  # D-1200: the dual-target structure exists, but its effects (and so its AI value) are undefined.
+		var aim := target
+		if skill.target_mode == MoveData.TargetMode.SINGLE_ALLY:
+			aim = pick_ally_target(c, skill)
+		var value := score_move(c, skill, aim)
 		if value > 0.0:
-			options.append({"skill": skill, "target": target, "value": value * (REPEAT_MULT if _last_used.get(c, "") == skill.display_name else 1.0)})
+			options.append({"skill": skill, "target": aim, "value": value * (REPEAT_MULT if _last_used.get(c, "") == skill.display_name else 1.0)})
 	var potion := _first_consumable(c)
 	if potion != null and c.can_pay(Battle.ITEM_BLOCKS) and c.blocks() - Battle.ITEM_BLOCKS >= _reserve(c):
 		var value := score_potion(c, potion)
@@ -101,7 +106,7 @@ func _new_plan(c: Combatant) -> Dictionary:
 
 func _still_worth_it(c: Combatant, plan: Dictionary) -> bool:
 	var target: Combatant = plan["target"]
-	if not target.is_alive() or (c.engaged_with != null and c.engaged_with != target):
+	if not target.is_alive() or (c.engaged_with != null and c.engaged_with != target and not b.same_team(c, target)):
 		return false
 	return plan.has("item") or score_move(c, plan["skill"], target) > 0.0
 
@@ -123,7 +128,8 @@ func _moves_of(c: Combatant) -> Array[Skill]:
 
 func _perform(c: Combatant, skill: Skill, target: Combatant) -> void:
 	_plans.erase(c)
-	if b.use_skill(c, skill, c if skill.is_friendly else target):
+	var aim := target if (not skill.is_friendly or skill.target_mode == MoveData.TargetMode.SINGLE_ALLY) else c  # D-1200
+	if b.use_skill(c, skill, aim):
 		_last_used[c] = skill.display_name
 
 
@@ -131,8 +137,37 @@ func _perform(c: Combatant, skill: Skill, target: Combatant) -> void:
 func _pick_target(c: Combatant) -> Combatant:
 	if c.engaged_with != null and c.engaged_with.is_alive():
 		return c.engaged_with
-	var foes := (b.enemies if c.is_player else b.party).filter(func(f: Combatant) -> bool: return f.is_alive())
+	var foes := b.opponents_of(c).filter(func(f: Combatant) -> bool: return f.is_alive())
 	return foes.pick_random() if not foes.is_empty() else null
+
+
+## D-1200: the ally a single-ally Move is aimed at, by the Move's focus. "hp": the lowest HP share among
+## allies missing at least MIN_MISSING_TO_HEAL. "str": the highest STR among allies that can still take the
+## ATK buff. Ties and no candidate = the caster itself (the creator's "si mesmo se ambíguo").
+func pick_ally_target(c: Combatant, skill: Skill) -> Combatant:
+	var behavior := MoveBehaviorRegistry.for_skill(skill)
+	var focus := behavior.ai_ally_focus()
+	var best: Combatant = c
+	var best_key := -INF
+	for ally in b.team_of(c):
+		if not ally.is_alive():
+			continue
+		var key := -INF
+		if focus == &"hp":
+			var missing := 1.0 - float(ally.hp) / float(maxi(ally.max_hp, 1))
+			if missing >= MIN_MISSING_TO_HEAL:
+				key = missing
+		elif focus == &"str":
+			if ally.can_buff("atk", 1):
+				key = float(ally.str)
+		if key == -INF:
+			continue
+		if key > best_key:
+			best_key = key
+			best = ally
+		elif is_equal_approx(key, best_key) and ally == c:
+			best = c  # Ambiguous: it prefers itself.
+	return best
 
 
 ## Sorted by nothing: a weighted draw among the moves close enough to the best.

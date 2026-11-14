@@ -26,7 +26,7 @@ description_text = "A direct dark-type bite."
 mechanics_text = "Vicious dark-element clamp that bites into the target at point-blank range, destabilizing morale."
 visual_text = "Jagged purple shadow fangs materialize and snap shut around the opponent with dark mist dissipation."
 motion_text = "Attacker dashes forward into point-blank range, clamps down, and leaps back into formation."
-windup_text = "1.00s wind-up. Aggressive crouching recoil before leap."
+windup_text = "1.20s wind-up. Aggressive crouching recoil before leap."
 tactical_text = "Vicious dark clamp destabilizing enemy morale. Single Target."
 visual_motion_text = "Point-blank sprint clamping jagged purple shadow fangs."
 phase_visuals = {
@@ -35,5 +35,5 @@ phase_visuals = {
 "return": "Salto/corrida de recuo de volta à posição de origem e retomada de idle.",
 "strike": "Prelúdio de golpe e arco de swing/arma com aviso Dread na janela de Evade (D-986/D-992).",
 "travel": "Corrida pelo eixo atacante->alvo com trilha no chão (D-1013): Attacker dashes forward into point-blank range, clamps down, and leaps back into formation.",
-"windup": "Preparo em posição base com loop contínuo de carga (D-163): 1.00s wind-up. Aggressive crouching recoil before leap."
+"windup": "Preparo em posição base com loop contínuo de carga (D-163): 1.20s wind-up. Aggressive crouching recoil before leap."
 }

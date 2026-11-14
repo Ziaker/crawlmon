@@ -19,3 +19,5 @@ sugimori_sem_modelo/
 # Python bytecode
 __pycache__/
 *.pyc
+
+tests/battle/.cache_runner.json

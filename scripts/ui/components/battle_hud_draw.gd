@@ -190,7 +190,7 @@ static func status_line(c: Combatant, include_buffs := true) -> String:
 	if c.is_guarding():
 		parts.append("GUARD %.1fs" % c.guard_timer)
 	if c.is_stunned():
-		parts.append("STUN %.1fs" % c.stun_timer)
+		parts.append("%s %.1fs" % [c.stun_name(), c.stun_timer])
 	if c.is_burning():
 		parts.append("BURN %.1fs" % burn_left(c))
 	if c.is_blind():

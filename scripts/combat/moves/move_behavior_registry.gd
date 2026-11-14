@@ -20,6 +20,7 @@ const BEHAVIORS := {
 	&"tarukaja": MoveBehaviorsScript.Tarukaja,
 	&"rakunda": MoveBehaviorsScript.Rakunda,
 	&"sukunda": MoveBehaviorsScript.Sukunda,
+	&"sukukaja": MoveBehaviorsScript.Sukukaja,
 	&"armored_bulk": MoveBehaviorsScript.ArmoredBulk,
 	&"war_cry": MoveBehaviorsScript.WarCry,
 	&"provocacao": MoveBehaviorsScript.Taunt,

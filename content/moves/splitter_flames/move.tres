@@ -20,7 +20,7 @@ description_text = "Flames that split into fans across the field."
 mechanics_text = "Multi-tongued fire burst that weaves outward before converging on the target location."
 visual_text = "Three interlocking flame tongues that weave through the air before converging on impact."
 motion_text = "Stationary cast. Fire tongues spiral forward in weaving arcs."
-windup_text = "1.30s wind-up. Triple flame condensation."
+windup_text = "0.70s wind-up. Triple flame condensation."
 tactical_text = "Multi-tongued fire burst that weaves outward to engulf target. Single Target."
 visual_motion_text = "Stationary cast launching three interlocking weaving flame tongues."
 phase_visuals = {
@@ -29,5 +29,5 @@ phase_visuals = {
 "return": "Dissipação completa de partículas/malhas (zero restos) e retorno do lançador ao idle.",
 "strike": "Janela final de aproximação (últimos 0,25 s) antes do contato.",
 "travel": "Voo do projétil/feixe ao longo do eixo atacante->alvo mantendo leitura de tela (D-308 Fase 3): Stationary cast. Fire tongues spiral forward in weaving arcs.",
-"windup": "Carga elemental contínua à frente do lançador (D-308 Fase 1): 1.30s wind-up. Triple flame condensation."
+"windup": "Carga elemental contínua à frente do lançador (D-308 Fase 1): 0.70s wind-up. Triple flame condensation."
 }

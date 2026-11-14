@@ -1,0 +1,25 @@
+# Decisões da área: processo (23)
+
+- D-001-gdd-ignorado-no-combate
+- D-002-documentar-toda-decisao-e-ler-sempre
+- D-003-so-fazer-o-pedido
+- D-019-linha-do-tempo-unica
+- D-020-preservar-e-nao-reintroduzir
+- D-022-regras-git-e-envio
+- D-023-ordem-de-trabalho-fases
+- D-024-revisao-mudancas-fase-2
+- D-025-reverter-fase-2
+- D-040-r39-q10-fase2-arquitetura
+- D-061-registro-continuo-das-decisoes
+- D-097-r46-q1-implementacao-por-sistemas-testados
+- D-102-r47-q3-continuar-somente-documentacao
+- D-1030-motion-composer-auxiliar-sem-obrigatoriedade
+- D-1036-d-1020-corrigir-estado-de-git-e-afirmacoes
+- D-1040-d-019-renovada
+- D-1042-suite-debug-e-cenarios-de-teste-para-agentes
+- D-1079-arquitetura-de-conteudo-move-personagem
+- D-116-delegacao-recomendacoes-ia
+- D-235-moves-e-vfx-independentes-de-personagem-e-lado
+- D-308-videos-fases-e-qualidade-dos-efeitos-de-elemento
+- D-320-publicacao-de-docs-autorizada
+- D-1204-debug-obrigacao-extrema-teste-em-menos-de-1-minuto

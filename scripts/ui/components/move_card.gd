@@ -113,6 +113,7 @@ func setup(skill: Skill, caster: Combatant = null, slot_index: int = 1) -> void:
 		var type_tex_path = "res://assets/ui/icons/move_types/%s.svg" % type_name
 		if ResourceLoader.exists(type_tex_path):
 			type_icon.texture = load(type_tex_path)
+		type_icon.modulate = Color("080e18") if type_name == "status" else Color.WHITE
 		var tb_style = StyleBoxFlat.new()
 		tb_style.bg_color = _get_type_bg(type_name)
 		tb_style.set_corner_radius_all(2)
@@ -150,6 +151,8 @@ func _get_type_bg(type_name: String) -> Color:
 		"magical": return Color("#00d8f6")
 		"guard": return Color("#64748b")
 		"dodge": return Color("#fcb900")
+		"status": return Color("#ffffff")  # D-1190: white
+		"field": return Color("#22c55e")  # D-1190: green
 	return Color("#ef4444")
 
 

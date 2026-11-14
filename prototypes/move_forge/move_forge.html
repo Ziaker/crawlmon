@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crawlmon — Move Forge</title>
+<!-- D-1206: protótipo separado da matriz. Dados do jogo: python tools/build_move_forge_data.py -->
+<style>
+@font-face { font-family: 'Kanit Black'; src: url('../../assets/fonts/kanit/Kanit-BlackItalic.ttf') format('truetype'); font-weight: 900; font-style: italic; }
+:root { --ink:#10263a; --ink2:#0a1a27; --panel:#0e2435; --cream:#f4eee1; --paper:#fdfde8; --muted:#8ea9b5; --line:rgba(244,238,225,.14); --lime:#d7fd6a; --coral:#ff624f; --gold:#f7cb78; --cyan:#38bdf8; --dark:#0a1a27;
+  --fd:'Kanit Black','Arial Black',Impact,sans-serif; --fb:'Segoe UI',system-ui,sans-serif; --fm:'Cascadia Code',Consolas,monospace; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--ink); color:var(--cream); font:12px/1.45 var(--fb); min-height:100vh;
+  background-image: linear-gradient(180deg, rgba(8,20,32,.0), rgba(8,20,32,.75)), repeating-linear-gradient(90deg, rgba(56,189,248,.035) 0 1px, transparent 1px 114px); }
+.bar { height:4px; background:linear-gradient(90deg, var(--lime) 0 25%, var(--coral) 25% 42%, transparent 42%); }
+header { display:flex; align-items:flex-end; gap:18px; padding:14px 22px 8px; flex-wrap:wrap; }
+h1 { font:italic 900 34px/1 var(--fd); margin:0; letter-spacing:.01em; }
+h1 i { color:var(--coral); font-style:normal; margin:0 4px; } h1 b { color:var(--lime); }
+.sub { color:var(--muted); font-weight:700; letter-spacing:.12em; font-size:10px; text-transform:uppercase; }
+.sp { flex:1; }
+button, select, input { font:inherit; }
+.btn { border:0; background:var(--paper); color:#0a1a27; font-weight:900; letter-spacing:.06em; text-transform:uppercase; font-size:10px; padding:7px 14px; cursor:pointer; clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%); }
+.btn:hover { background:var(--lime); } .btn.c { background:var(--coral); color:#fff; } .btn.g { background:transparent; color:var(--cream); box-shadow:inset 0 0 0 1px var(--line); clip-path:none; }
+select, input[type=text], input[type=number], textarea { background:#0a1a27; color:var(--cream); border:1px solid var(--line); padding:5px 7px; outline:none; min-width:0; }
+select:focus, input:focus, textarea:focus { border-color:var(--lime); }
+main { display:grid; grid-template-columns:230px minmax(0,1fr) 348px; gap:14px; padding:6px 22px 22px; align-items:start; }
+.pane { background:rgba(10,26,39,.82); border:1px solid var(--line); padding:12px; position:sticky; top:8px; max-height:calc(100vh - 16px); overflow:auto; scrollbar-width:thin; }
+@media (max-width:1100px) { .pane { position:static; max-height:none; } }
+.pt { font:italic 900 15px/1 var(--fd); color:var(--lime); margin:0 0 8px; display:flex; justify-content:space-between; align-items:baseline; }
+.pt small { font:700 9px var(--fb); color:var(--muted); letter-spacing:.1em; }
+.cat { font-weight:900; font-size:9px; letter-spacing:.14em; color:var(--muted); margin:10px 0 5px; text-transform:uppercase; display:flex; gap:6px; align-items:center; }
+.cat::after { content:''; flex:1; height:1px; background:var(--line); }
+.blk { display:flex; align-items:center; gap:7px; padding:5px 9px 5px 7px; margin:0 0 4px; cursor:grab; font-weight:800; font-size:11px; color:#0a1a27; background:var(--paper); clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%); user-select:none; }
+.blk:hover { filter:brightness(1.08); transform:translateX(2px); }
+.blk .dot { width:9px; height:9px; transform:skewX(-14deg); flex:none; }
+.blk.effect .dot { background:#22c55e; } .blk.trigger .dot { background:#f59e0b; } .blk.vfx .dot { background:var(--cyan); }
+.blk.gap { background:transparent; color:var(--muted); box-shadow:inset 0 0 0 1px var(--line); clip-path:none; border-left:3px dashed var(--coral); }
+.blk.part::after { content:'parcial'; margin-left:auto; font-size:8px; color:#b45309; letter-spacing:.08em; text-transform:uppercase; }
+/* cabeçalho do move */
+.head { background:var(--paper); color:#0a1a27; padding:12px 18px 12px 22px; clip-path:polygon(14px 0,100% 0,calc(100% - 14px) 100%,0 100%); display:grid; grid-template-columns:repeat(auto-fit,minmax(104px,1fr)); gap:8px 12px; position:relative; }
+.head::before { content:''; position:absolute; left:0; top:0; bottom:0; width:10px; background:var(--el,#cbd5e1); }
+.head label { display:grid; gap:2px; font-weight:900; font-size:8px; letter-spacing:.12em; text-transform:uppercase; color:#52606b; }
+.head input, .head select { background:#fff; color:#0a1a27; border:1px solid #c9c6b4; font-weight:800; padding:4px 6px; width:100%; }
+.head { display:block; padding:14px 22px 12px 26px; }
+.hrow { display:flex; gap:14px 22px; flex-wrap:wrap; align-items:flex-end; margin:0 0 10px; }
+.hrow:last-child { margin:0; }
+.grp { display:grid; gap:4px; } .grp > span { font-weight:900; font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:#52606b; }
+.pick { display:flex; gap:3px; flex-wrap:wrap; }
+.bdg { width:34px; height:28px; border:0; padding:0; cursor:pointer; display:grid; place-items:center; clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%); background:var(--c,#334155); opacity:.3; transition:opacity .12s, transform .12s; }
+.bdg img { width:17px; height:17px; display:block; } .bdg.dk img { filter:brightness(0); }
+.bdg:hover { opacity:.75; transform:translateY(-2px); } .bdg.on { opacity:1; transform:translateY(-2px) scale(1.12); box-shadow:0 0 0 2px #0a1a27; }
+.pips { display:flex; gap:3px; } .pip { width:22px; height:14px; border:0; padding:0; cursor:pointer; background:#c9c6b4; transform:skewX(-14deg); } .pip.on { background:#0e7490; }
+.who { display:flex; gap:5px; align-items:center; flex-wrap:wrap; }
+.face { width:38px; height:38px; border:2px solid #0a1a27; padding:0; cursor:pointer; opacity:.32; background:linear-gradient(180deg,#77c7d7 0%,#8fcfc7 28%,#afd7b7 48%,#dfe7bf 72%,#e7f7b7 100%); background-size:cover; overflow:hidden; position:relative; transition:opacity .12s, transform .12s; }
+.face i { position:absolute; inset:0; background-repeat:no-repeat; } .face.on { opacity:1; transform:translateY(-2px); box-shadow:0 3px 0 var(--lime); } .face:hover { opacity:.8; }
+.face.sm { width:28px; height:28px; }
+.gen { border:0; cursor:pointer; font-weight:900; font-size:10px; letter-spacing:.08em; padding:0 12px; height:38px; background:#c9c6b4; color:#0a1a27; clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%); } .gen.on { background:#0a1a27; color:var(--lime); }
+.gcard .bdg { opacity:1; cursor:default; width:28px; height:24px; transform:none; } .gcard .bdg img { width:14px; height:14px; }
+.head .nm { grid-column:span 2; } .head .nm input { font:italic 900 20px/1.1 var(--fd); border:0; border-bottom:2px solid #0a1a27; background:transparent; }
+/* linha do tempo */
+.tl { display:flex; height:22px; margin:12px 0 4px; font-weight:900; font-size:9px; letter-spacing:.08em; text-transform:uppercase; }
+.tl div { display:flex; align-items:center; justify-content:center; color:#0a1a27; clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%); margin-right:-3px; min-width:54px; white-space:nowrap; overflow:hidden; }
+.lane { border:1px dashed var(--line); margin:8px 0 0; padding:8px 10px 6px; min-height:52px; position:relative; transition:background .12s; }
+.lane.over, .node.trigger.over > .kids { background:rgba(215,253,106,.12); border-color:var(--lime); }
+.lane.sel { border-style:solid; border-color:var(--cyan); }
+.lane h3 { margin:0 0 6px; font:italic 900 13px/1 var(--fd); display:flex; gap:8px; align-items:baseline; cursor:pointer; }
+.lane h3 small { font:700 9px var(--fb); color:var(--muted); letter-spacing:.08em; }
+.lane textarea { width:100%; margin-top:4px; font-size:11px; resize:vertical; min-height:26px; color:var(--muted); }
+.empty { color:var(--muted); font-style:italic; font-size:11px; }
+.node { display:inline-flex; vertical-align:top; align-items:center; gap:6px; margin:0 6px 6px 0; padding:4px 9px; font-weight:800; font-size:11px; cursor:pointer; background:var(--paper); color:#0a1a27; border-left:5px solid #22c55e; }
+.node.vfx { border-left-color:var(--cyan); } .node.sel { outline:2px solid var(--lime); outline-offset:2px; }
+.node.gap { background:#2a1620; color:#ffd6cf; border-left:5px dashed var(--coral); } .node.part { border-left-style:double; }
+.node .x { opacity:.45; font-weight:900; margin-left:2px; } .node .x:hover { opacity:1; color:var(--coral); }
+.node.trigger { display:inline-block; background:rgba(245,158,11,.14); color:var(--gold); border:1px solid rgba(245,158,11,.5); border-left:5px solid #f59e0b; padding:4px 6px 0 8px; }
+.node.trigger > .lbl { display:flex; gap:6px; align-items:center; margin-bottom:5px; }
+.node.trigger > .kids { min-height:26px; min-width:120px; border:1px dashed rgba(245,158,11,.35); padding:5px 5px 0; margin-bottom:6px; }
+/* inspetor */
+.f { display:grid; grid-template-columns:104px 1fr; gap:5px 8px; align-items:center; margin:0 0 5px; }
+.f span { color:var(--muted); font-weight:700; font-size:10px; } .f input, .f select { width:100%; }
+.tag { display:inline-block; padding:2px 7px; font-weight:900; font-size:9px; letter-spacing:.08em; text-transform:uppercase; transform:skewX(-10deg); margin:0 4px 4px 0; }
+.tag.ok { background:#22c55e; color:#052e13; } .tag.part { background:#f59e0b; color:#3b2300; } .tag.gap { background:var(--coral); color:#fff; }
+.tabs { display:flex; gap:4px; margin:0 0 10px; flex-wrap:wrap; }
+.tabs button { border:0; background:transparent; color:var(--muted); font-weight:900; font-size:10px; letter-spacing:.1em; text-transform:uppercase; padding:5px 9px; cursor:pointer; box-shadow:inset 0 -2px 0 var(--line); }
+.tabs button.on { color:#0a1a27; background:var(--lime); box-shadow:none; }
+.stat { display:grid; grid-template-columns:74px 1fr 30px; gap:6px; align-items:center; margin:0 0 3px; font-size:10px; color:var(--muted); font-weight:700; }
+.stat output { color:var(--cream); text-align:right; font-family:var(--fm); }
+input[type=range] { accent-color:var(--lime); width:100%; }
+.big { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:8px 0; }
+.big div { background:#0a1a27; padding:7px 8px; border-left:3px solid var(--lime); } .big b { display:block; font:italic 900 20px/1 var(--fd); } .big span { font-size:9px; color:var(--muted); font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+canvas { width:100%; display:block; background:#081724; }
+.proc { display:grid; grid-template-columns:1fr 44px; gap:4px 8px; font-size:10px; margin-top:6px; } .proc i { display:block; height:3px; background:var(--lime); margin-top:2px; }
+pre { background:#081724; border:1px solid var(--line); padding:9px; margin:0; max-height:340px; overflow:auto; font:10.5px/1.5 var(--fm); white-space:pre-wrap; color:#d6e3ea; }
+.sim { display:grid; gap:4px; margin-top:8px; font-size:10px; } .sim div { display:flex; justify-content:space-between; gap:8px; } .sim b { color:var(--lime); }
+.toast { position:fixed; left:50%; bottom:22px; transform:translateX(-50%) skewX(-8deg); background:var(--lime); color:#0a1a27; font-weight:900; padding:8px 18px; letter-spacing:.06em; opacity:0; pointer-events:none; transition:opacity .2s; }
+.toast.on { opacity:1; }
+@media (max-width:1100px) { main { grid-template-columns:1fr; } }
+.stage { margin:12px 0 0; background:#081724; border:1px solid var(--line); position:relative; }
+.stage canvas { background:transparent; }
+.stc { display:flex; gap:8px; align-items:center; padding:6px 8px; border-top:1px solid var(--line); font-size:10px; color:var(--muted); font-weight:800; letter-spacing:.06em; }
+.stc input[type=range] { flex:1; } .stc b { color:var(--lime); font-family:var(--fm); }
+.stc label { display:flex; gap:4px; align-items:center; cursor:pointer; text-transform:uppercase; }
+.ic { border:0; background:transparent; color:var(--cream); box-shadow:inset 0 0 0 1px var(--line); width:30px; height:28px; cursor:pointer; font-size:14px; }
+.ic:hover { background:var(--lime); color:#0a1a27; } .ic:disabled { opacity:.3; pointer-events:none; }
+.gcard { background:#cfd8e6; color:#0a1a27; padding:12px 16px 14px 18px; clip-path:polygon(12px 0,100% 0,calc(100% - 12px) 100%,0 100%); position:relative; margin:4px 0 12px; }
+.gcard h4 { font:italic 900 24px/1 var(--fd); margin:0 0 6px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.gcard .chips { display:flex; gap:5px; margin:0 0 8px; flex-wrap:wrap; }
+.gcard .chip { font-weight:900; font-size:10px; padding:2px 8px; color:#fff; transform:skewX(-10deg); letter-spacing:.04em; }
+.gcard p { margin:0 0 3px; font-weight:800; font-size:11.5px; line-height:1.4; } .gcard p.m { font-weight:700; color:#33414f; font-size:10.5px; }
+.gcard .elx { width:20px; height:20px; transform:skewX(-10deg); display:inline-block; }
+.slot { display:flex; gap:8px; align-items:center; background:#0a1a27; border-left:4px solid var(--el,#cbd5e1); padding:6px 9px; margin:0 0 10px; font-weight:900; }
+.slot span { font-weight:700; color:var(--muted); margin-left:auto; font-size:10px; }
+.verdict { padding:7px 9px; margin:0 0 8px; font-weight:800; font-size:11px; border-left:4px solid var(--lime); background:#0a1a27; }
+.verdict.hi { border-color:var(--coral); } .verdict.lo { border-color:var(--cyan); } .verdict small { display:block; color:var(--muted); font-weight:600; }
+.ov { position:fixed; inset:0; z-index:50; background:rgba(4,12,20,.88); display:flex; align-items:flex-start; justify-content:center; padding:24px; overflow:auto; }
+.ov[hidden] { display:none; }
+.ovb { background:#0a1a27; border:1px solid var(--line); width:min(1180px,100%); padding:16px 18px 20px; position:relative; }
+.ovb h2 { margin:0 0 4px; font:italic 900 22px/1 var(--fd); color:var(--lime); }
+.ovb .x2 { position:absolute; right:12px; top:10px; }
+.rmxbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:10px 0 12px; }
+.rmxbar input[type=text] { width:200px; }
+.rgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(176px,1fr)); gap:9px; }
+.rc { background:#0d2233; border:1px solid var(--line); padding:0; cursor:pointer; text-align:left; color:var(--cream); font:inherit; display:flex; flex-direction:column; }
+.rc:hover { border-color:var(--lime); transform:translateY(-2px); }
+.rc .th { position:relative; aspect-ratio:16/9; background:#081724 no-repeat; border-bottom:1px solid var(--line); }
+.rc .th img { position:absolute; left:5px; top:5px; width:20px; height:20px; padding:3px; background:var(--c); box-sizing:border-box; transform:skewX(-8deg); }
+.rc .th img.cat2 { left:29px; background:#17324a; }
+.rc .nm2 { font:italic 900 14px/1.15 var(--fd); padding:6px 8px 0; }
+.rc .mt { font:800 9px var(--fb); letter-spacing:.08em; color:var(--lime); padding:2px 8px; text-transform:uppercase; }
+.rc .tx { font:600 10px/1.35 var(--fb); color:var(--muted); padding:0 8px 8px; }
+.pw { height:9px; background:#0a1a27; box-shadow:inset 0 0 0 1px var(--line); margin-top:4px; transform:skewX(-14deg); overflow:hidden; }
+.pw i { display:block; height:100%; background:var(--lime); transition:width .15s; } .pw i.hi { background:#f7cb78; } .pw i.over { background:var(--coral); }
+.warn { color:var(--coral); font:800 10px var(--fb); letter-spacing:.04em; align-self:center; }
+.grp em { font-style:normal; color:var(--muted); font-weight:600; letter-spacing:0; text-transform:none; }
+.sent { font:700 13px/2.1 var(--fb); align-items:center; gap:5px; }
+.head .sent select, .head .sent input { font-weight:800; padding:2px 6px; width:auto; }
+.head .sent { color:#0a1a27; }
+.head .sent input[type=number] { width:62px; }
+.sent .ib { display:inline-flex; align-items:center; gap:4px; }
+.sent .ib img { width:18px; height:18px; padding:2px; box-sizing:border-box; background:var(--c); }
+.opt { display:flex; gap:6px; align-items:center; font:700 10px var(--fb); color:var(--muted); margin:0 0 6px; cursor:pointer; }
+.mapw { overflow:auto; border:1px solid var(--line); background:#081724; margin-top:10px; max-height:calc(100vh - 150px); }
+.mapw text { font:700 11px var(--fb); fill:#0a1a27; pointer-events:none; }
+.mapw .mn { cursor:pointer; } .mapw .mn:hover rect { stroke:var(--lime); stroke-width:2; }
+.mapw .pb { font:900 10px var(--fb); fill:var(--cream); }
+.vp { position:relative; width:100%; aspect-ratio:16/9; background:#081724 no-repeat; border:1px solid var(--line); image-rendering:auto; }
+.vp .cap { position:absolute; left:0; bottom:0; right:0; padding:4px 8px; background:linear-gradient(0deg,rgba(6,18,28,.9),transparent); font:italic 900 15px/1.2 var(--fd); display:flex; justify-content:space-between; align-items:flex-end; }
+.vp .cap small { font:800 9px var(--fb); color:var(--lime); letter-spacing:.08em; text-transform:uppercase; }
+.vgrid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px; margin-top:8px; }
+.vt { position:relative; aspect-ratio:16/9; background:#081724 no-repeat; border:1px solid var(--line); cursor:pointer; padding:0; overflow:hidden; }
+.vt:hover, .vt.on { border-color:var(--lime); } .vt.on { box-shadow:0 0 0 1px var(--lime); }
+.vt span { position:absolute; left:0; right:0; bottom:0; font:800 8.5px var(--fb); color:var(--cream); background:rgba(6,18,28,.78); padding:1px 4px; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.vt i { position:absolute; top:2px; right:2px; width:9px; height:9px; transform:skewX(-12deg); }
+.fam { display:flex; gap:4px; flex-wrap:wrap; margin:8px 0 0; }
+.fam button { border:0; cursor:pointer; font:800 9px var(--fb); letter-spacing:.06em; text-transform:uppercase; padding:3px 8px; background:#0a1a27; color:var(--muted); box-shadow:inset 0 0 0 1px var(--line); }
+.fam button.on { background:var(--lime); color:#0a1a27; box-shadow:none; }
+kbd { font:700 9px var(--fm); background:#0a1a27; border:1px solid var(--line); padding:1px 4px; }
+</style>
+</head>
+<body>
+<div class="bar"></div>
+<header>
+  <div><h1>MOVE <i>/</i><b>FORGE</b></h1><div class="sub">Monte um Move por blocos · exporte a ficha para implementar</div></div>
+  <div class="sp"></div>
+  <select id="preset" title="Carregar um Move do jogo como ponto de partida"></select>
+  <button class="ic" id="btnUndo" title="Desfazer (Ctrl+Z)">↶</button><button class="ic" id="btnRedo" title="Refazer (Ctrl+Y)">↷</button>
+  <button class="btn" id="btnRemix" title="Começar a partir de um Move do jogo, com o visual real">★ Começar de um Move</button>
+  <button class="btn g" id="btnMap" title="Mapa de ramos: condições e chances deste Move">🗺 Mapa de ramos</button>
+  <button class="btn g" id="btnDice" title="Sorteia uma ideia de Move com blocos que já existem no jogo">🎲 Sortear ideia</button>
+  <button class="btn g" id="btnShelf" title="Guarda este Move na estante (fica neste navegador)">Guardar na estante</button>
+  <button class="btn g" id="btnNew">Novo</button>
+  <button class="btn c" id="btnPlay">▶ Encenar</button>
+</header>
+<main>
+  <section class="pane" id="palette"><div class="pt">Blocos <small>ARRASTE OU CLIQUE</small></div></section>
+  <section>
+    <div class="head" id="head"></div>
+    <div class="tl" id="tl"></div>
+    <div class="stage"><canvas id="st" width="1120" height="300"></canvas>
+      <div class="stc"><button class="ic" id="stPlay" title="Tocar / pausar (Espaço)">▶</button><button class="ic" id="stRoll" title="Nova rolagem dos gatilhos">⟳</button><input type="range" id="stT" min="0" max="1000" value="0" aria-label="Tempo"><b id="stClock">0.00s</b><label><input type="checkbox" id="stLoop" checked>repetir</label><span id="stInfo"></span></div>
+    </div>
+    <div id="lanes"></div>
+  </section>
+  <section class="pane">
+    <div class="tabs" id="tabs"></div>
+    <div id="tab"></div>
+  </section>
+</main>
+<div class="ov" id="ov" hidden><div class="ovb" id="ovb"></div></div>
+<div class="toast" id="toast"></div>
+<script src="move_forge_data.js" onerror="window.MOVE_FORGE_DATA=null"></script>
+<script src="vfx_previews.js" onerror="window.MOVE_FORGE_VFX=null"></script>
+<script src="cost_model.js" onerror="window.MOVE_FORGE_COST=null"></script>
+<script>
+'use strict';
+const D = window.MOVE_FORGE_DATA || { moves: [], vfx: { families: [], flipbooks: [], shaders: [], meshes: [], motion_behaviors: [] }, elements: [] };
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const EL = { 0: ['Físico', '#cbd5e1'], 1: ['Fogo', '#f97316'], 2: ['Água/Gelo', '#0284c7'], 3: ['Raio', '#fde047'], 4: ['Psíquico', '#ec4899'], 5: ['Veneno', '#84cc16'], 6: ['Som', '#06b6d4'], 7: ['Terra', '#b45309'], 8: ['Vento', '#4ff7ba'], 9: ['Luz', '#fef08a'], 10: ['Trevas', '#6b21a8'], 11: ['Místico', '#65b5b3'] };
+const ICON = '../../assets/ui/icons/';
+const EL_ICON = { 0: 'neutral', 1: 'fire', 2: 'water_ice', 3: 'electric', 4: 'psychic', 5: 'nature', 6: 'sound', 7: 'earth', 8: 'wind', 9: 'light', 10: 'dark', 11: 'mystic' };
+const CAT = { physical: ['Físico', '#e2e8f0'], magical: ['Mágico', '#a78bfa'], status: ['Status', '#fb923c'], field: ['Field', '#22c55e'], guard: ['Guard', '#38bdf8'], dodge: ['Dodge', '#f7cb78'] };
+const RNG = { melee: 'Corpo a corpo', mid: 'Médio', long: 'Longo', area: 'Área' };
+const lum = h => { const n = parseInt(h.slice(1), 16); return (.299 * (n >> 16) + .587 * (n >> 8 & 255) + .114 * (n & 255)) / 255; };
+const badge = (dir, key, color, attrs, title) => `<button type="button" class="bdg ${lum(color) > .6 ? 'dk' : ''} ${attrs.on ? 'on' : ''}" style="--c:${color}" ${attrs.data || ''} title="${title}"><img src="${ICON}${dir}/${key}.svg" alt="${title}"></button>`;
+// Personagens do jogo (content/characters). Rosto: mesmo recorte das HUDs (portrait_icon.gd); DQT usa o ícone pronto.
+const CHARS = { abra: ['Abra', '../../sugimori/por_nome/abra.png', 851, 300, 140, 320], pancham: ['Pancham', '../../sugimori/por_nome/pancham.png', 1261, 300, 80, 680], gible: ['Gible', '../../sugimori/por_nome/gible.png', 762, 30, 135, 490], slime: ['Slime', '../../personagens/portraits/slime.png', 256, 0, 0, 256], orc: ['Orc', '../../personagens/portraits/orc.png', 256, 0, 0, 256], cyclops: ['Cyclops', '../../personagens/portraits/cyclops.png', 256, 0, 0, 256] };
+const IMG = {}; Object.entries(CHARS).forEach(([k, c]) => { const im = new Image(); im.onload = () => { try { stageDraw(); } catch (e) {} }; im.src = c[1]; IMG[k] = im; });
+const face = (k, px, attrs) => { const c = CHARS[k], sc = px / c[5]; return `<button type="button" class="face ${px < 34 ? 'sm' : ''} ${attrs.on ? 'on' : ''}" ${attrs.data} title="${c[0]}"><i style="background-image:url('${c[1]}');background-size:${c[2] * sc}px;background-position:${-c[3] * sc}px ${-c[4] * sc}px"></i></button>`; };
+function normalize(m) {
+  if (!m.cat) m.cat = +m.kind === 3 ? 'status' : +m.damage_type ? 'magical' : 'physical';
+  if (!m.range) m.range = +m.kind === 0 ? 'melee' : +m.target === 3 ? 'area' : +m.kind === 3 ? 'mid' : 'long';
+  if (!m.users) m.users = [];
+  return m;
+}
+function derive() { M.kind = ['status', 'field', 'guard', 'dodge'].includes(M.cat) ? 3 : M.range === 'melee' ? 0 : M.range === 'area' ? 2 : 1; M.damage_type = M.cat === 'magical' ? 1 : 0; if (M.range === 'area' && +M.target === 0) M.target = 3; if (M.range !== 'area' && +M.target === 3) M.target = 0; }
+(D.elements || []).forEach(e => { if (!EL[e.id]) EL[e.id] = [e.key, '#94a3b8']; });
+const KIND = ['Corpo a corpo', 'Projétil', 'Conjuração', 'Status'];
+const TARGET = ['Automático (inimigo)', 'Um aliado', 'Duplo (1 ou 2 alvos)', 'Todos os inimigos', 'Time aliado', 'Si mesmo'];
+const STATUS = { stun: 'Stun', burn: 'Burn', blind: 'Blind', knockup: 'Knock-up', taunt: 'Taunt', armor: 'Armor', guard: 'Guard', shield: 'Escudo', soaked: 'Soaked (reservado)' };
+const WHO = { target: 'alvo', user: 'usuário', team: 'time', enemies: 'todos os inimigos' };
+const num = (k, label, def, step) => ({ k, label, type: 'number', def, step: step || 1 });
+const sel = (k, label, opts, def) => ({ k, label, type: 'select', opts, def });
+const txt = (k, label, def) => ({ k, label, type: 'text', def: def || '' });
+const vfxList = (k, label, arr) => ({ k, label, type: 'select', opts: Object.fromEntries((arr.length ? arr : ['(rode tools/build_move_forge_data.py)']).map(v => [v, v])), def: arr[0] || '' });
+// engine: ok = existe hoje · part = existe só em casos fixos · gap = precisa ser criado no motor
+const B = {
+  damage: { cat: 'effect', label: 'Dano', engine: 'ok', p: [num('base', 'Base fixa', 0), sel('stat', 'Escala com', { STR: 'STR (físico)', MAG: 'MAG (mágico)', none: 'nada' }, 'STR'), num('mult', 'Multiplicador', 1, .05), num('frac', 'Fração por alvo', 1, .05), sel('def', 'Defesa', { normal: 'normal', bypass: 'ignora DEF', flat: 'fixo: base+MAG−SPI' }, 'normal')], s: p => `Dano ${p.base ? p.base + ' + ' : ''}${p.stat === 'none' ? '' : p.stat + ' × ' + p.mult}${p.frac != 1 ? ' (×' + p.frac + ' por alvo)' : ''}${p.def !== 'normal' ? ' · ' + p.def : ''}` },
+  heal: { cat: 'effect', label: 'Cura', engine: 'ok', p: [num('base', 'Base', 10), sel('stat', 'Escala com', { MAG: 'MAG', none: 'nada' }, 'MAG'), sel('who', 'Quem', { ally: 'um aliado', team: 'time', user: 'usuário' }, 'ally')], s: p => `Cura ${p.base}${p.stat === 'none' ? '' : ' + ' + p.stat} · ${p.who === 'ally' ? 'um aliado' : WHO[p.who]}` },
+  stage: { cat: 'effect', label: 'Buff / debuff de estágio', engine: 'ok', p: [sel('stat', 'Atributo', { atk: 'ATK', def: 'DEF', speed: 'SPD' }, 'atk'), num('delta', 'Estágios (±)', 1), sel('who', 'Quem', WHO, 'target')], s: p => `${p.stat.toUpperCase()} ${p.delta > 0 ? '+' : ''}${p.delta} · ${WHO[p.who]}` },
+  status: { cat: 'effect', label: 'Aplicar status', engine: 'ok', p: [sel('status', 'Status', STATUS, 'burn'), num('dur', 'Duração (s)', 4, .1), sel('who', 'Quem', WHO, 'target')], s: p => `${STATUS[p.status]} ${p.dur}s · ${WHO[p.who]}` },
+  shield: { cat: 'effect', label: 'Escudo', engine: 'ok', p: [num('base', 'Base', 25), sel('stat', 'Escala com', { MAG: 'MAG', none: 'nada' }, 'MAG'), num('dur', 'Duração (s)', 8), sel('who', 'Quem', WHO, 'team')], s: p => `Escudo ${p.base}${p.stat === 'none' ? '' : ' + ' + p.stat} · ${p.dur}s · ${WHO[p.who]}` },
+  resource: { cat: 'effect', label: 'ATB / Burst / MP', engine: 'ok', p: [sel('res', 'Recurso', { atb: 'ATB', burst: 'Burst', mp: 'MP' }, 'atb'), num('delta', 'Quanto (±)', 1), sel('who', 'Quem', WHO, 'user')], s: p => `${p.res.toUpperCase()} ${p.delta > 0 ? '+' : ''}${p.delta} · ${WHO[p.who]}` },
+  interrupt: { cat: 'effect', label: 'Interromper wind-up', engine: 'ok', p: [sel('who', 'Quem', { target: 'alvo', enemies: 'todos em wind-up' }, 'target')], s: p => `Interrompe ${p.who === 'target' ? 'o alvo' : 'todos em wind-up'}` },
+  guardbreak: { cat: 'effect', label: 'Quebrar Guard', engine: 'ok', p: [], s: () => 'Quebra Guard' },
+  steal: { cat: 'effect', label: 'Roubar buffs e escudo', engine: 'ok', p: [], s: () => 'Rouba buffs, escudo e imunidade' },
+  push: { cat: 'effect', label: 'Empurrão / lançamento', engine: 'ok', p: [num('push', 'Empurrão (m)', 1, .1), num('height', 'Altura (m)', 0, .1), num('air', 'Tempo no ar (s)', 0, .1)], s: p => p.height > 0 ? `Lança ${p.height} m por ${p.air}s` : `Empurra ${p.push} m` },
+  bounce: { cat: 'effect', label: 'Ricochete em cadeia', engine: 'part', p: [txt('chain', 'Multiplicadores', '0.75, 0.5')], s: p => `Ricochete ×${p.chain}` },
+  retarget: { cat: 'effect', label: 'Perseguir outro alvo', engine: 'gap', p: [txt('rule', 'Regra', 'se o alvo morre, a bola persegue o outro vivo')], s: p => `Redireciona: ${p.rule}` },
+  multihit: { cat: 'effect', label: 'Multi-golpe', engine: 'gap', p: [num('hits', 'Golpes', 2), num('gap', 'Intervalo (s)', .2, .05)], s: p => `${p.hits} golpes a cada ${p.gap}s` },
+  lifesteal: { cat: 'effect', label: 'Vampirismo', engine: 'gap', p: [num('pct', '% do dano', 50)], s: p => `Cura ${p.pct}% do dano causado` },
+  selfdmg: { cat: 'effect', label: 'Autodano', engine: 'gap', p: [num('pct', '% da vida máx.', 10)], s: p => `Usuário perde ${p.pct}% da vida` },
+  reflect: { cat: 'effect', label: 'Refletir / contra-atacar', engine: 'gap', p: [num('pct', '% refletido', 50), num('dur', 'Janela (s)', 2, .1)], s: p => `Reflete ${p.pct}% por ${p.dur}s` },
+  cooldown: { cat: 'effect', label: 'Recarga (cooldown)', engine: 'gap', p: [num('dur', 'Segundos', 6)], s: p => `Recarga de ${p.dur}s` },
+  chance: { cat: 'trigger', label: 'Com chance %', engine: 'ok', p: [num('base', 'Chance base %', 20), sel('luck', 'Soma SORTE', { yes: 'sim (+1 por ponto)', no: 'não' }, 'yes')], s: p => `${p.base}%${p.luck === 'yes' ? ' + SORTE' : ''}` },
+  weak: { cat: 'trigger', label: 'Se acertar fraqueza', engine: 'ok', p: [], s: () => 'Se WEAK' },
+  crit: { cat: 'trigger', label: 'Se for crítico', engine: 'ok', p: [], s: () => 'Se crítico' },
+  interrupted: { cat: 'trigger', label: 'Se interrompeu o alvo', engine: 'ok', p: [], s: () => 'Se interrompeu' },
+  noarmor: { cat: 'trigger', label: 'Se o alvo não tem Armor', engine: 'ok', p: [], s: () => 'Se sem Armor' },
+  hp: { cat: 'trigger', label: 'Se vida abaixo / acima de %', engine: 'part', p: [sel('who', 'De quem', { target: 'alvo', user: 'usuário' }, 'target'), sel('op', 'Comparação', { lt: 'abaixo de', gt: 'acima de' }, 'lt'), num('pct', '% de vida', 50)], s: p => `Se vida do ${WHO[p.who]} ${p.op === 'lt' ? '<' : '>'} ${p.pct}%` },
+  has: { cat: 'trigger', label: 'Se o alvo tem status', engine: 'gap', p: [sel('status', 'Status', STATUS, 'burn'), sel('who', 'De quem', { target: 'alvo', user: 'usuário' }, 'target')], s: p => `Se ${WHO[p.who]} tem ${STATUS[p.status]}` },
+  mode: { cat: 'trigger', label: 'Se alvo simples / duplo', engine: 'part', p: [sel('mode', 'Modo', { single: 'um alvo', dual: 'dois alvos' }, 'single')], s: p => p.mode === 'single' ? 'Com um alvo' : 'Com dois alvos' },
+  kill: { cat: 'trigger', label: 'Se o golpe derrotar', engine: 'gap', p: [], s: () => 'Se derrotar o alvo' },
+  first: { cat: 'trigger', label: 'Só no primeiro uso', engine: 'gap', p: [], s: () => 'Primeiro uso na batalha' },
+  family: { cat: 'vfx', label: 'Família de VFX do jogo', engine: 'ok', p: [vfxList('name', 'Família', D.vfx.families)], s: p => `VFX: família ${p.name}` },
+  flipbook: { cat: 'vfx', label: 'Flipbook', engine: 'ok', p: [vfxList('name', 'Flipbook', D.vfx.flipbooks), num('scale', 'Escala', 1, .1)], s: p => `Flipbook ${p.name}` },
+  shader: { cat: 'vfx', label: 'Shader', engine: 'ok', p: [vfxList('name', 'Shader', D.vfx.shaders)], s: p => `Shader ${p.name}` },
+  mesh: { cat: 'vfx', label: 'Malha', engine: 'ok', p: [vfxList('name', 'Malha', D.vfx.meshes)], s: p => `Malha ${p.name}` },
+  motion: { cat: 'vfx', label: 'Movimento (Motion Composer)', engine: 'ok', p: [vfxList('name', 'Comportamento', D.vfx.motion_behaviors)], s: p => `Movimento ${p.name}` },
+  juice: { cat: 'vfx', label: 'Câmera / peso do golpe', engine: 'ok', p: [num('hitstop', 'Hit-stop (s)', .08, .01), num('shake', 'Tremor', 1, .1), num('fov', 'Zoom de impacto', 0, .5)], s: p => `Hit-stop ${p.hitstop}s · tremor ${p.shake}` },
+  note: { cat: 'vfx', label: 'Descrição livre', engine: 'ok', p: [txt('text', 'Texto', '')], s: p => p.text || 'Descrição livre' }
+};
+const PHASES = [['windup', 'Wind-up', '#f7cb78'], ['release', 'Release', '#d7fd6a'], ['travel', 'Trajeto', '#38bdf8'], ['impact', 'Impacto', '#ff624f'], ['after', 'Depois', '#cbd5e1']];
+let uid = 1;
+const N = (key, params, kids) => ({ uid: uid++, key, params: Object.assign(Object.fromEntries(B[key].p.map(f => [f.k, f.def])), params || {}), kids: kids || [] });
+// Efeitos dos Moves atuais, transcritos das regras em código (move_behaviors.gd, D-236).
+const FX = {
+  karate_chop: [N('damage'), N('chance', { base: 30, luck: 'no' }, [N('stage', { stat: 'speed', delta: -1 })])], golpe_carate: 'karate_chop',
+  mordida: [N('damage'), N('chance', { base: 30, luck: 'no' }, [N('status', { status: 'stun', dur: 2 }), N('interrupted', {}, [N('resource', { res: 'atb', delta: 1 })])])],
+  boulder_smash: [N('damage'), N('noarmor', {}, [N('chance', { base: 20 }, [N('stage', { stat: 'def', delta: -1 })])])],
+  electric_beam: [N('damage', { stat: 'MAG' }), N('noarmor', {}, [N('chance', { base: 20 }, [N('status', { status: 'stun', dur: 4 })])])],
+  fire_bullet: [N('damage'), N('interrupted', {}, [N('noarmor', {}, [N('status', { status: 'burn', dur: 4 })])])],
+  quebra_telha: [N('damage'), N('guardbreak'), N('resource', { res: 'atb', delta: 1 })],
+  drain_spear: [N('damage', { base: 5, stat: 'MAG', def: 'flat' }), N('steal')],
+  tidal_surge: [N('damage'), N('bounce')], tiro_areia: [N('status', { status: 'blind', dur: 4 })],
+  media: [N('heal', { who: 'team' })], heal: [N('heal', { who: 'ally' })], bubble_shield: [N('shield')],
+  armored_bulk: [N('status', { status: 'armor', dur: 8, who: 'user' })],
+  tarukaja: [N('stage', { stat: 'atk', delta: 1, who: 'team' })], sukukaja: [N('stage', { stat: 'speed', delta: 1, who: 'team' })],
+  rakunda: [N('stage', { stat: 'def', delta: -1 })], sukunda: [N('stage', { stat: 'speed', delta: -1 })],
+  provocacao: [N('status', { status: 'taunt', dur: 0 })], war_cry: [N('interrupt', { who: 'enemies' }), N('interrupted', {}, [N('resource', { res: 'burst', delta: 1 })])],
+  investida_escavadora: [N('damage'), N('push', { push: 2.5, height: 3, air: 1.3 })],
+  javelin_throw: [N('damage'), N('note', { text: 'Crítico sobe até +20 pontos conforme a vida do alvo cai' })]
+};
+function blank() { return { id: 'novo_move', name: 'Novo Move', kind: 1, element: 0, damage_type: 0, power: 1, atb: 2, mp: 0, windup: 1.5, target: 0, phases: { windup: [], release: [], travel: [], impact: [N('damage')], after: [] }, notes: {} }; }
+function splitter() {
+  return { id: 'splitter_flames', name: 'Splitter Flames', kind: 1, element: 1, damage_type: 1, power: 1, atb: 2, mp: 20, windup: .7, target: 2,
+    phases: { windup: [N('note', { text: 'Uma esfera de fogo em cada mão' }), N('family', { name: 'element' })], release: [N('note', { text: 'Dois vórtices parados por 0,30 s' })], travel: [N('note', { text: 'Arcos curvos, um pela esquerda e um pela direita' }), N('retarget')],
+      impact: [N('mode', { mode: 'single' }, [N('damage', { base: 20, stat: 'MAG' }), N('chance', { base: 20 }, [N('status', { status: 'burn', dur: 4 })]), N('note', { text: 'Pilar de fogo' })]), N('mode', { mode: 'dual' }, [N('damage', { base: 20, stat: 'MAG', frac: .5 }), N('chance', { base: 10 }, [N('status', { status: 'burn', dur: 4 })]), N('note', { text: 'Explosões individuais' })])], after: [N('note', { text: 'Cinzas' })] }, notes: {} };
+}
+function fromGame(g) {
+  let fx = FX[g.id]; if (typeof fx === 'string') fx = FX[fx];
+  const dmg = g.kind === 3 ? [] : [N('damage', { stat: g.damage_type === 1 ? 'MAG' : 'STR', mult: g.power })];
+  const m = { id: g.id, name: g.name || g.id, kind: g.kind, element: g.element, damage_type: g.damage_type, power: g.power, atb: g.atb_cost, mp: g.mp_cost, windup: g.windup < 0 ? 1.5 : g.windup, target: g.target_mode === 1 ? 1 : g.target_mode === 2 ? 2 : g.is_aoe ? 3 : g.is_friendly ? 4 : 0,
+    phases: { windup: [], release: [], travel: [], impact: fx ? JSON.parse(JSON.stringify(fx)) : dmg, after: [] }, notes: {} };
+  if (fx) reuid(m.phases.impact);
+  if (fx && fx[0] && fx[0].key === 'damage' && !fx[0].params.base && fx[0].params.def === 'normal') { m.phases.impact[0].params.mult = g.power; m.phases.impact[0].params.stat = g.damage_type === 1 ? 'MAG' : 'STR'; }
+  if (g.kind !== 3 && g.extra) { if (!m.phases.impact.some(n => n.key === 'push') && (g.extra.knockup_height > 0 || g.extra.knockup_air_time > 0 || g.extra.target_push > 0)) m.phases.impact.push(N('push', { push: g.extra.target_push || 0, height: g.extra.knockup_height || 0, air: g.extra.knockup_air_time || 0 })); if (!m.phases.impact.some(n => n.key === 'juice') && g.extra.hit_stop_duration > 0) m.phases.impact.push(N('juice', { hitstop: g.extra.hit_stop_duration })); }
+  if (g.vfx_family) m.phases.windup.push(N('family', { name: g.vfx_family }));
+  const ex = g.extra || {}; m.timing = { strike: ex.strike_time > 0 ? ex.strike_time : 0, hitstop: ex.hit_stop_duration > 0 ? ex.hit_stop_duration : 0 };
+  const pv = g.phase_visuals || {}; ['windup', 'release', 'travel', 'impact'].forEach(k => { if (pv[k]) m.notes[k] = pv[k]; });
+  return m;
+}
+function reuid(list) { list.forEach(n => { n.uid = uid++; reuid(n.kids || []); }); }
+function sanitize(list) { return (list || []).filter(n => { if (B[n.key] === undefined) return false; n.kids = sanitize(n.kids); return true; }); }
+let M, selNode = null, selLane = 'impact', tab = 'bloco';
+const sim = { tgt: 'orc', str: 10, mag: 10, luk: 5, tluk: 5, wis: 5, hpT: 100, hpU: 100, aff: 1, intr: 50 };
+const KEY = 'crawlmon-move-forge-v1';
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(M)); } catch (e) {} };
+function find(list, id, parent) { for (const n of list) { if (n.uid === id) return { n, list, parent }; const r = find(n.kids, id, n); if (r) return r; } return null; }
+function findAny(id) { for (const [k] of PHASES) { const r = find(M.phases[k], id); if (r) return r; } return null; }
+function walk(fn, list, depth) { (list || PHASES.flatMap(([k]) => M.phases[k])).forEach(n => { fn(n, depth || 0); walk(fn, n.kids, (depth || 0) + 1); }); }
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 1600); }
+// ---------- paleta
+let ONLY_OK = true;
+function renderPalette() {
+  const groups = [['effect', 'Efeitos', 'ok'], ['trigger', 'Gatilhos e condições', null], ['vfx', 'Visual que já existe', null]].concat(ONLY_OK ? [] : [['effect', 'Ainda não existe no motor', 'gap']]);
+  let h = '<div class="pt">Blocos <small>ARRASTE OU CLIQUE</small></div>' + `<label class="opt"><input type="checkbox" id="onlyOk" ${ONLY_OK ? 'checked' : ''}>Só o que o motor já faz (${Object.values(B).filter(b => b.engine === 'gap').length} blocos escondidos)</label>`;
+  groups.forEach(([cat, title, mode]) => {
+    h += `<div class="cat">${title}</div>`;
+    Object.entries(B).filter(([, b]) => b.cat === cat && !(ONLY_OK && b.engine === 'gap') && (mode === 'gap' ? b.engine === 'gap' : mode === 'ok' ? b.engine !== 'gap' : true)).forEach(([k, b]) => {
+      h += `<div class="blk ${b.cat} ${b.engine === 'gap' ? 'gap' : b.engine === 'part' ? 'part' : ''}" draggable="true" data-new="${k}" title="${b.engine === 'gap' ? 'Não existe no motor: entra no briefing como trabalho de implementação' : b.engine === 'part' ? 'Existe hoje só em casos fixos' : 'Existe no jogo'}"><span class="dot"></span>${b.label}</div>`;
+    });
+  });
+  $('palette').innerHTML = h;
+}
+// ---------- orçamento de poder: pontos por bloco (pesos meus, heurísticos) e limite = o Move mais forte do jogo com o mesmo ATB
+const PR = { chance: p => Math.min(1, (+p.base || 0) / 100), weak: () => .5, crit: () => .15, interrupted: () => .5, noarmor: () => .7, hp: () => .4, has: () => .5, mode: () => .7, kill: () => .3, first: () => .5 };
+const SW = { stun: 2, burn: 1.2, blind: 1, knockup: 1.5, taunt: 2, armor: 1.5, guard: 1, shield: 1, soaked: .5 }, GRP = { target: 1, user: 1, team: 1.5, enemies: 1.6, ally: 1 };
+function ptsOne(n) {
+  const p = n.params, g = GRP[p.who] || 1;
+  switch (n.key) {
+    case 'damage': return 10 * p.mult * (p.frac || 1) + p.base * .5 + (p.def === 'bypass' ? 2 : 0);
+    case 'heal': return p.base / 4 * (p.who === 'team' ? 1.5 : 1);
+    case 'stage': return Math.abs(p.delta) * 4 * g;
+    case 'status': return p.dur * .8 * (SW[p.status] || 1) * g;
+    case 'shield': return p.base / 5 * g + p.dur / 4;
+    case 'resource': return Math.abs(p.delta) * 4 * g;
+    case 'interrupt': return p.who === 'enemies' ? 6 : 3;
+    case 'guardbreak': return 3; case 'steal': return 4; case 'bounce': return 4; case 'retarget': return 3;
+    case 'push': return p.push * 1 + p.height * 1.5;
+    case 'multihit': return (p.hits - 1) * 8; case 'lifesteal': return p.pct / 10; case 'reflect': return p.pct / 10;
+    case 'selfdmg': return -p.pct / 10; case 'cooldown': return -p.dur / 2;
+    default: return 0;
+  }
+}
+function ptsNode(n) { const v = ptsOne(n); return B[n.key].cat === 'trigger' ? (PR[n.key] ? PR[n.key](n.params) : 1) * n.kids.reduce((a, k) => a + ptsNode(k), 0) : v + n.kids.reduce((a, k) => a + ptsNode(k), 0); }
+function movePts(m) { let t = 0; PHASES.forEach(([k]) => (m.phases[k] || []).forEach(n => { t += ptsNode(n); })); t *= +m.target === 3 ? 1.5 : +m.target === 2 ? 1.3 : 1; return Math.max(0, t + Math.max(0, 1.5 - (+m.windup || 0)) * 2); }
+let TIER = null;
+function tierLimit(a) {
+  if (!TIER) { TIER = {}; D.moves.forEach(g => { const m = fromGame(g), v = movePts(m); TIER[g.atb_cost] = Math.max(TIER[g.atb_cost] || 0, v); }); for (let i = 1; i <= 5; i++) TIER[i] = Math.max(TIER[i] || 0, TIER[i - 1] || 0); }
+  return TIER[a] || 10 * a;
+}
+function budgetHtml() {
+  const used = movePts(M), lim = tierLimit(M.atb), pct = used / lim * 100, over = used > lim + .001, g = gaps().filter(x => x.b.engine === 'gap').length;
+  return `<div class="hrow"><div class="grp" style="flex:1;min-width:260px"><span>Orçamento de poder · ${used.toFixed(1)} / ${lim.toFixed(1)} <em>(limite = o Move mais forte do jogo com ${M.atb} ATB)</em></span><div class="pw"><i style="width:${Math.min(100, pct)}%" class="${over ? 'over' : pct > 85 ? 'hi' : ''}"></i></div></div>${over ? '<b class="warn">Estourou: tire poder ou suba o ATB</b>' : ''}${g ? `<b class="warn">${g} bloco(s) que o motor ainda não tem</b>` : ''}${budgetMp()}</div>`;
+}
+function simMoves() {
+  const dmg = !!firstNode('damage'), used = movePts(M);
+  return D.moves.filter(g => (g.kind !== 3) === dmg).map(g => ({ g, d: Math.abs(movePts(fromGame(g)) - used) + Math.abs(g.atb_cost - M.atb) * 3 })).sort((a, b) => a.d - b.d).slice(0, 3).map(x => x.g);
+}
+function budgetMp() {
+  const sm = simMoves(); if (!sm.length) return '';
+  const mps = sm.map(g => g.mp_cost).sort((a, b) => a - b), med = mps[1];
+  return `<span class="empty" style="align-self:center;font-size:10px" title="O MP do jogo não segue o poder (R² 0,20), mas segue o tipo: buffs/debuffs custam 7–10, ataques 3–6. Por isso a sugestão vem dos 3 Moves mais parecidos em poder, ATB e tipo.">MP dos parecidos: ${sm.map(g => esc(g.name || g.id) + ' ' + g.mp_cost).join(' · ')}</span><button class="btn g" data-mpuse="${med}" style="padding:4px 10px">Usar ${med} MP</button>`;
+}
+// ---------- frase editável
+function sentHtml() {
+  const o = (obj, v) => Object.entries(obj).map(([k, l]) => `<option value="${k}" ${String(v) === String(k) ? 'selected' : ''}>${esc(Array.isArray(l) ? l[0] : l)}</option>`).join('');
+  const d = firstNode('damage'), trig = Object.entries(B).filter(([, b]) => b.cat === 'trigger' && (!ONLY_OK || b.engine !== 'gap'));
+  return `<div class="hrow sent">Golpe de <span class="ib"><img src="${ICON}elements/${EL_ICON[M.element] || 'neutral'}.svg" style="--c:${(EL[M.element] || EL[0])[1]}"><select data-s="element">${o(EL, M.element)}</select></span>
+    <select data-s="cat">${o(Object.fromEntries(Object.entries(CAT).map(([k, v]) => [k, v[0]])), M.cat)}</select> de alcance <select data-s="range">${o(RNG, M.range)}</select> em <select data-h="target">${o(TARGET, M.target)}</select>
+    ${d ? `que causa <input type="number" data-s="mult" step="0.05" min="0" value="${d.params.mult}">× <select data-s="stat">${o({ STR: 'STR', MAG: 'MAG', none: 'nada' }, d.params.stat)}</select> de dano` : ''}
+    · <select data-s="addtrig"><option value="">+ condição…</option>${trig.map(([k, b]) => `<option value="${k}">${b.label}</option>`).join('')}</select></div>`;
+}
+// ---------- remix: começar de um Move do jogo
+const RM = { q: '', el: -1 };
+function openOv(h) { $('ovb').innerHTML = h; $('ov').hidden = false; }
+function closeOv() { $('ov').hidden = true; }
+function remixGrid() {
+  const q = RM.q.trim().toLowerCase(), list = D.moves.filter(g => (RM.el < 0 || +g.element === RM.el) && (!q || (g.name || g.id).toLowerCase().includes(q)));
+  $('rgrid').innerHTML = list.map(g => `<button type="button" class="rc" data-rmx="${esc(g.id)}" style="--c:${(EL[g.element] || EL[0])[1]}"><div class="th" data-th="${esc(g.id)}"><img src="${ICON}elements/${EL_ICON[g.element] || 'neutral'}.svg" alt=""><img class="cat2" src="${ICON}move_types/${g.kind === 3 ? 'status' : +g.damage_type ? 'magical' : 'physical'}.svg" alt=""></div><div class="nm2">${esc(g.name || g.id)}</div><div class="mt">${g.atb_cost} ATB · ${g.mp_cost} MP${FX[g.id] ? ' · ◆ efeitos completos' : ''}</div><div class="tx">${esc(((g.texts || {}).short_effect) || '')}</div></button>`).join('') || '<p class="empty">Nenhum Move com esse filtro.</p>';
+  document.querySelectorAll('[data-th]').forEach(el => { const id = el.dataset.th, v = V[id]; if (v) { clipStyle(id, Math.floor(v.frames * .62), el); } });
+}
+function openRemix() {
+  openOv(`<h2>Começar de um Move</h2><div class="sub" style="color:var(--muted);font-size:11px">Escolha um Move do jogo e mude o que quiser. Todo Move vale para qualquer personagem (D-235).</div>
+    <button class="btn g x2" id="ovClose">Fechar ✕</button>
+    <div class="rmxbar"><input type="text" id="rmxQ" placeholder="Buscar pelo nome…" value="${esc(RM.q)}"><button class="btn g" id="rmxBlank">Em branco</button>
+      <div class="pick"><button type="button" class="bdg" data-rmxel="-1" style="--c:#cbd5e1;width:auto;padding:0 8px;font:800 10px var(--fb);color:#0a1a27">todos</button>${Object.keys(EL_ICON).map(k => badge('elements', EL_ICON[k], EL[k][1], { on: RM.el === +k, data: `data-rmxel="${k}"` }, EL[k][0])).join('')}</div></div>
+    <div class="rgrid" id="rgrid"></div>`);
+  remixGrid();
+}
+// ---------- mapa de ramos: só para as condições (a linha do tempo continua sendo as fases)
+const probOf = n => { const p = n.params; if (n.key === 'chance') return Math.max(0, Math.min(100, (+p.base || 0) + (p.luck === 'yes' ? (sim.luk - sim.tluk) : 0))).toFixed(0) + '%'; if (n.key === 'crit') return '~' + Math.min(100, 10 + 2 * (sim.luk - sim.tluk)) + '%'; if (n.key === 'weak') return 'se fraco'; if (n.key === 'hp') return 'por vida'; return 'se'; };
+function mapNode(n) { const b = B[n.key], trig = b.cat === 'trigger'; return { t: b.s(n.params), c: trig ? '#f59e0b' : b.cat === 'vfx' ? '#38bdf8' : b.engine === 'gap' ? '#fb7185' : '#22c55e', uid: n.uid, trig, p: trig ? probOf(n) : '', kids: n.kids.map(mapNode) }; }
+function openMap() {
+  const root = { t: M.name, c: '#d7fd6a', kids: PHASES.filter(([k]) => M.phases[k].length).map(([k, l, col]) => ({ t: l, c: col, ph: true, kids: M.phases[k].map(mapNode) })) };
+  const W = 250, H = 38, G = 14; let y = 0, maxd = 0; const items = [];
+  (function lay(n, d) { maxd = Math.max(maxd, d); if (!n.kids.length) { n.y = y++ * (H + G); } else { n.kids.forEach(k => lay(k, d + 1)); n.y = (n.kids[0].y + n.kids[n.kids.length - 1].y) / 2; } n.x = d * (W + 46); items.push(n); })(root, 0);
+  const svgW = (maxd + 1) * (W + 46) + 10, svgH = Math.max(y, 1) * (H + G) + 10; let e = '', nd = '';
+  items.forEach(n => { n.kids.forEach(k => { e += `<path d="M${n.x + W} ${n.y + H / 2} C${n.x + W + 30} ${n.y + H / 2},${k.x - 30} ${k.y + H / 2},${k.x} ${k.y + H / 2}" fill="none" stroke="${k.trig ? '#f59e0b' : '#3b5a73'}" stroke-width="${k.trig ? 2.2 : 1.4}"/>`; if (k.trig) e += `<text class="pb" x="${k.x - 6}" y="${k.y + H / 2 - 5}" text-anchor="end">${esc(k.p)}</text>`; });
+    const lab = (n.trig ? '◆ ' : '') + n.t; nd += `<g class="mn" ${n.uid ? `data-mapuid="${n.uid}"` : ''}><rect x="${n.x}" y="${n.y}" width="${W}" height="${H}" fill="${n.c}" ${n.trig ? `transform="skewX(0)"` : ''}/><text x="${n.x + 8}" y="${n.y + H / 2 + 4}">${esc(lab.length > 40 ? lab.slice(0, 39) + '…' : lab)}</text></g>`; });
+  openOv(`<h2>Mapa de ramos</h2><div class="sub" style="color:var(--muted);font-size:11px">Cada ◆ é uma condição; o número na linha é a chance (com a sorte do painel Números). Clique num bloco para editá-lo.</div><button class="btn g x2" id="ovClose">Fechar ✕</button><div class="mapw"><svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}">${e}${nd}</svg></div>`);
+}
+// ---------- cabeçalho + fases
+function renderHead() {
+  const o = (obj, v) => Object.entries(obj).map(([k, l]) => `<option value="${k}" ${String(v) === String(k) ? 'selected' : ''}>${esc(Array.isArray(l) ? l[0] : l)}</option>`).join('');
+  const generic = !M.users.length;
+  $('head').style.setProperty('--el', (EL[M.element] || EL[0])[1]);
+  $('head').innerHTML = `<div class="hrow"><label class="nm" style="flex:1;min-width:220px">Nome<input data-h="name" value="${esc(M.name)}"></label>
+      <div class="grp"><span>ATB · ${M.atb}</span><div class="pips">${[1, 2, 3, 4, 5].map(i => `<button type="button" class="pip ${i <= M.atb ? 'on' : ''}" data-atb="${i}" title="${i} ATB"></button>`).join('')}</div></div>
+      <label>MP<input type="number" data-h="mp" min="0" value="${M.mp}" style="width:64px"></label><label>Wind-up (s)<input type="number" data-h="windup" step="0.05" min="0" value="${M.windup}" style="width:72px"></label>
+      <label>Alvo<select data-h="target">${o(TARGET, M.target)}</select></label><label>ID<input data-h="id" value="${esc(M.id)}" style="width:130px"></label></div>
+    <div class="hrow"><div class="grp"><span>Elemento · ${(EL[M.element] || EL[0])[0]}</span><div class="pick">${Object.keys(EL_ICON).map(k => badge('elements', EL_ICON[k], EL[k][1], { on: +M.element === +k, data: `data-el="${k}"` }, EL[k][0])).join('')}</div></div>
+      <div class="grp"><span>Categoria · ${CAT[M.cat][0]}</span><div class="pick">${Object.keys(CAT).map(k => badge('move_types', k, CAT[k][1], { on: M.cat === k, data: `data-cat="${k}"` }, CAT[k][0])).join('')}</div></div>
+      <div class="grp"><span>Alcance · ${RNG[M.range]}</span><div class="pick">${Object.keys(RNG).map(k => badge('range', k, '#f4eee1', { on: M.range === k, data: `data-rng="${k}"` }, RNG[k])).join('')}</div></div></div>
+    <div class="hrow"><div class="grp"><span>Quem usa · ${generic ? 'genérico: qualquer personagem pode ter' : 'único de ' + M.users.map(u => CHARS[u][0]).join(', ')}</span><div class="who"><button type="button" class="gen ${generic ? 'on' : ''}" data-gen="1">GENÉRICO</button>${Object.keys(CHARS).map(k => face(k, 38, { on: M.users.includes(k), data: `data-user="${k}"` })).join('')}</div></div>
+      <div class="grp"><span>Alvo de teste no palco</span><div class="who">${Object.keys(CHARS).map(k => face(k, 28, { on: sim.tgt === k, data: `data-tgt="${k}"` })).join('')}</div></div></div>`;
+  $('head').insertAdjacentHTML('beforeend', sentHtml() + budgetHtml());
+  const t = times(); const total = t.reduce((a, b) => a + b[1], 0) || 1;
+  $('tl').title = '~ = estimativa: o Move não traz esse tempo';
+  $('tl').innerHTML = t.map(([k, s, est]) => { const p = PHASES.find(x => x[0] === k); return `<div style="flex:${Math.max(s / total, .08)};background:${p[2]}">${p[1]} ${est ? '~' : ''}${s.toFixed(2)}s</div>`; }).join('');
+}
+// Terceiro valor = true quando é estimativa (o Move não traz o tempo real). Reais: wind-up, strike_time (trajeto/golpe) e hit_stop_duration (impacto).
+const times = () => { const T = M.timing || {}; return [['windup', +M.windup || 0, false], ['release', M.kind === 0 ? .15 : .3, true], ['travel', T.strike > 0 ? T.strike : M.kind === 0 ? .35 : M.kind === 3 ? 0 : .5, !(T.strike > 0)], ['impact', T.hitstop > 0 ? T.hitstop : .25, !(T.hitstop > 0)]]; };
+function nodeHtml(n) {
+  const b = B[n.key], cls = `${b.cat} ${b.engine === 'gap' ? 'gap' : b.engine === 'part' ? 'part' : ''} ${selNode === n.uid ? 'sel' : ''}`;
+  if (b.cat === 'trigger') return `<div class="node ${cls}" data-uid="${n.uid}" draggable="true"><div class="lbl">◆ ${esc(b.s(n.params))}<span class="x" data-del="${n.uid}">✕</span></div><div class="kids" data-drop="${n.uid}">${n.kids.map(nodeHtml).join('') || '<span class="empty">solte o efeito aqui</span>'}</div></div>`;
+  return `<span class="node ${cls}" data-uid="${n.uid}" draggable="true">${esc(b.s(n.params))}<span class="x" data-del="${n.uid}">✕</span></span>`;
+}
+function renderLanes() {
+  $('lanes').innerHTML = PHASES.map(([k, label]) => `<div class="lane ${selLane === k ? 'sel' : ''}" data-lane="${k}"><h3 data-pick="${k}">${label}<small>${k === 'impact' ? 'EFEITOS DE COMBATE ENTRAM AQUI' : k === 'after' ? 'RESTO, RETORNO, CINZAS' : 'VISUAL E MOVIMENTO'}</small></h3>
+    <div>${M.phases[k].map(nodeHtml).join('') || '<span class="empty">vazio — solte um bloco</span>'}</div>
+    <textarea data-note="${k}" placeholder="Texto de ficha desta fase (phase_visuals)">${esc(M.notes[k] || '')}</textarea></div>`).join('');
+}
+// ---------- simulação (Monte Carlo com as fórmulas do jogo: crítico 10% + dif. de SORTE, ×2; fraqueza ×1,5; resistência ×0,5; WIS 10/(10+WIS))
+function roll(runs) {
+  const out = { dmg: [], procs: {}, heal: 0, list: [], crit: false };
+  const cc = Math.min(1, Math.max(0, (10 + sim.luk - sim.tluk) / 100));
+  for (let i = 0; i < runs; i++) {
+    const ctx = { crit: Math.random() < cc, weak: sim.aff > 1, intr: Math.random() * 100 < sim.intr, dual: false, d: 0 };
+    const ev = list => list.forEach(n => {
+      const p = n.params;
+      switch (n.key) {
+        case 'chance': if (Math.random() * 100 < p.base + (p.luck === 'yes' ? sim.luk - sim.tluk : 0)) ev(n.kids); break;
+        case 'weak': if (ctx.weak) ev(n.kids); break; case 'crit': if (ctx.crit) ev(n.kids); break;
+        case 'interrupted': if (ctx.intr) ev(n.kids); break; case 'noarmor': ev(n.kids); break;
+        case 'hp': { const v = p.who === 'target' ? sim.hpT : sim.hpU; if (p.op === 'lt' ? v < p.pct : v > p.pct) ev(n.kids); break; }
+        case 'mode': if ((p.mode === 'dual') === (sim.dual === true)) ev(n.kids); break;
+        case 'has': case 'kill': case 'first': break;
+        case 'damage': { const st = p.stat === 'MAG' ? sim.mag : p.stat === 'STR' ? sim.str : 0;
+          let d = p.def === 'flat' ? p.base + sim.mag - sim.wis : (p.base + st * p.mult) * sim.aff * (ctx.crit ? 2 : 1);
+          if (p.stat === 'MAG' && p.def === 'normal') d *= 10 / (10 + sim.wis); ctx.d += Math.max(0, Math.round(d * p.frac)); break; }
+        case 'heal': { const hv = p.base + (p.stat === 'MAG' ? sim.mag : 0); out.heal += hv; out.list.push({ key: 'heal', v: hv, p }); break; }
+        default: if (B[n.key].cat === 'effect') { out.procs[n.uid] = (out.procs[n.uid] || 0) + 1; out.list.push({ key: n.key, p, t: B[n.key].s(p) }); } else if (n.key === 'juice') out.list.push({ key: 'juice', p });
+      }
+    });
+    PHASES.forEach(([k]) => ev(M.phases[k])); out.dmg.push(ctx.d); out.crit = ctx.crit;
+  }
+  return out;
+}
+function renderSim() {
+  const R = 4000, r = roll(R), d = r.dmg.slice().sort((a, b) => a - b), mean = d.reduce((a, b) => a + b, 0) / R;
+  const per = mean / Math.max(1, M.atb);
+  const cat = D.moves.filter(g => g.kind !== 3 && g.power > 0).map(g => g.power / Math.max(1, g.atb_cost)); const avg = cat.length ? cat.reduce((a, b) => a + b, 0) / cat.length : 0;
+  const ref = avg * (+M.damage_type ? sim.mag : sim.str) * sim.aff; const ratio = ref ? per / ref : 0;
+  let cmpHtml = '', cmpMean = null; const cg = D.moves.find(g => g.id === renderSim.cmp);
+  if (cg) { const keep = M; M = fromGame(cg); const o = roll(2000); M = keep; cmpMean = o.dmg.reduce((a, b) => a + b, 0) / 2000; cmpHtml = `<div class="sim" style="margin:0 0 6px"><div><span>${esc(cg.name)} · ${cg.atb_cost} ATB</span><b>${cmpMean.toFixed(1)} médio · ${(cmpMean / Math.max(1, cg.atb_cost)).toFixed(1)}/ATB</b></div></div>`; }
+  let h = Object.entries({ str: 'STR', mag: 'MAG', luk: 'SORTE', tluk: 'SORTE alvo', wis: 'WIS alvo', hpT: 'Vida alvo %', hpU: 'Vida usuário %', intr: 'Interrompe %' }).map(([k, l]) => `<div class="stat"><span>${l}</span><input type="range" data-sim="${k}" min="${k[0] === 'h' || k === 'intr' ? 0 : 1}" max="${k[0] === 'h' || k === 'intr' ? 100 : 40}" value="${sim[k]}"><output>${sim[k]}</output></div>`).join('');
+  h += `<div class="stat"><span>Afinidade</span><select data-sim="aff"><option value="1">neutra</option><option value="1.5" ${sim.aff == 1.5 ? 'selected' : ''}>fraqueza ×1,5</option><option value="0.5" ${sim.aff == .5 ? 'selected' : ''}>resistência ×0,5</option></select><output></output></div>
+    <div class="stat"><span>Alvos</span><select data-sim="dual"><option value="">um</option><option value="1" ${sim.dual ? 'selected' : ''}>dois</option></select><output></output></div>
+    <div class="big"><div><b>${mean.toFixed(1)}</b><span>dano médio</span></div><div><b>${d[0]}–${d[R - 1]}</b><span>mín – máx</span></div><div style="border-color:${ratio > 1.3 ? 'var(--coral)' : ratio < .7 ? 'var(--cyan)' : 'var(--lime)'}"><b>${per.toFixed(1)}</b><span>por ATB${ref ? ' · ' + Math.round(ratio * 100) + '% do catálogo' : ''}</span></div></div>
+    <div class="verdict ${ratio > 1.35 ? 'hi' : ratio && ratio < .65 ? 'lo' : ''}">${!ref ? 'Sem catálogo para comparar.' : ratio > 1.35 ? 'Forte para o custo: ' + Math.round(ratio * 100) + '% do dano por ATB médio do jogo.' : ratio < .65 ? 'Fraco para o custo: ' + Math.round(ratio * 100) + '% do dano por ATB médio do jogo.' : 'Dentro da faixa do catálogo (' + Math.round(ratio * 100) + '%).'}<small>Conta só o dano. Status, buffs e controle não entram nesta régua.</small></div>
+    <div class="stat"><span>Comparar com</span><select data-cmp="1"><option value="">nenhum</option>${D.moves.filter(g => g.kind !== 3).map(g => `<option value="${esc(g.id)}" ${renderSim.cmp === g.id ? 'selected' : ''}>${esc(g.name || g.id)}</option>`).join('')}</select><output></output></div>${cmpHtml}
+    <canvas id="hist" width="560" height="110"></canvas><div class="proc">`;
+  walk(n => { if (r.procs[n.uid] != null || (B[n.key].cat === 'effect' && !['damage', 'heal'].includes(n.key))) { const pc = (r.procs[n.uid] || 0) / R * 100; h += `<div>${esc(B[n.key].s(n.params))}<i style="width:${pc}%"></i></div><b>${pc.toFixed(0)}%</b>`; } });
+  h += `</div><div class="sim" id="twins"></div>`;
+  $('tab').innerHTML = h;
+  const c = $('hist').getContext('2d'), bins = 28, lo = d[0], hi = Math.max(d[R - 1], lo + 1), hist = new Array(bins).fill(0);
+  d.forEach(v => hist[Math.min(bins - 1, Math.floor((v - lo) / (hi - lo) * bins))]++); const mx = Math.max(...hist);
+  hist.forEach((v, i) => { c.fillStyle = i / bins > .8 ? '#ff624f' : '#d7fd6a'; const bh = v / mx * 96; c.fillRect(8 + i * 19.4, 104 - bh, 15, bh); });
+  if (cmpMean != null) { const cx = 8 + Math.max(0, Math.min(1, (cmpMean - lo) / (hi - lo))) * 543; c.fillStyle = '#38bdf8'; c.fillRect(cx, 0, 2, 110); c.font = '800 10px Segoe UI'; c.fillText(cg.name, Math.min(cx + 5, 470), 11); }
+  // "gêmeos": Moves do jogo mais parecidos (custo, tipo, elemento, potência)
+  const tw = D.moves.map(g => ({ g, s: 100 - Math.abs(g.atb_cost - M.atb) * 14 - Math.abs(g.mp_cost - M.mp) * 2 - (g.kind !== +M.kind ? 22 : 0) - (g.element !== +M.element ? 14 : 0) - (g.damage_type !== +M.damage_type ? 8 : 0) })).filter(x => x.g.id !== M.id).sort((a, b) => b.s - a.s).slice(0, 3);
+  $('twins').innerHTML = tw.length ? '<div style="color:var(--muted);font-weight:900;letter-spacing:.1em">MOVES MAIS PARECIDOS NO JOGO</div>' + tw.map(x => `<div><span>${esc(x.g.name || x.g.id)} · ATB ${x.g.atb_cost} · MP ${x.g.mp_cost} · ×${x.g.power}</span><b>${Math.max(0, Math.round(x.s))}%</b></div>`).join('') : '';
+}
+// ---------- inspetor
+function renderBlock() {
+  const r = selNode && findAny(selNode);
+  if (!r) { $('tab').innerHTML = '<p class="empty">Clique num bloco do Move para editar os parâmetros. Arraste da paleta para uma fase; gatilhos (losango) recebem efeitos dentro deles.</p><p class="empty"><kbd>Espaço</kbd> toca o palco · <kbd>Del</kbd> apaga o bloco · <kbd>Ctrl+D</kbd> duplica · <kbd>Ctrl+Z</kbd> desfaz</p>' + gapsHtml(); return; }
+  const n = r.n, b = B[n.key];
+  let h = `<div class="pt" style="color:var(--cream)">${esc(b.label)}</div><span class="tag ${b.engine}">${b.engine === 'ok' ? 'existe no jogo' : b.engine === 'part' ? 'existe em casos fixos' : 'falta no motor'}</span><div style="height:8px"></div>`;
+  b.p.forEach(f => {
+    const v = n.params[f.k];
+    h += `<div class="f"><span>${f.label}</span>` + (f.type === 'select' ? `<select data-p="${f.k}">${Object.entries(f.opts).map(([k, l]) => `<option value="${esc(k)}" ${String(v) === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>` : f.type === 'number' ? `<input type="number" step="${f.step}" data-p="${f.k}" value="${v}">` : `<input type="text" data-p="${f.k}" value="${esc(v)}">`) + '</div>';
+  });
+  if (!b.p.length) h += '<p class="empty">Sem parâmetros.</p>';
+  if (n.key === 'family') { VP.fam = Object.values(V).some(v => v.family === n.params.name) ? n.params.name : ''; h += '<div class="cat">Como essa família aparece no jogo</div>' + vfxHtml(true); }
+  $('tab').innerHTML = h + gapsHtml(); if (n.key === 'family') vfxPaint();
+}
+function gaps() { const g = []; walk(n => { const b = B[n.key]; if (b.engine !== 'ok') g.push({ n, b }); }); return g; }
+function gapsHtml() { const g = gaps(); return g.length ? `<div class="cat">O que este Move exige do motor</div>` + g.map(x => `<div style="margin:0 0 4px"><span class="tag ${x.b.engine}">${x.b.engine === 'gap' ? 'criar' : 'generalizar'}</span>${esc(x.b.s(x.n.params))}</div>`).join('') : '<div class="cat">Motor</div><span class="tag ok">tudo já existe no jogo</span>'; }
+// ---------- exportação
+const clean = list => list.map(n => ({ block: n.key, engine: B[n.key].engine, params: n.params, text: B[n.key].s(n.params), ...(n.kids.length ? { then: clean(n.kids) } : {}) }));
+function exportJson() {
+  return { schema: 'crawlmon.move_forge/1', move_data: { id: M.id, display_name: M.name, kind: +M.kind, element: +M.element, damage_type: +M.damage_type, power: +M.power, atb_cost: +M.atb, mp_cost: +M.mp, windup: +M.windup, is_aoe: +M.target === 3, is_friendly: [1, 4, 5].includes(+M.target), target_mode: +M.target === 1 ? 1 : +M.target === 2 ? 2 : 0 },
+    category: M.cat, range: M.range, vfx_reference: M.vfx_ref ? { move_id: M.vfx_ref, family: (V[M.vfx_ref] || {}).family || '' } : null, users: M.users.length ? M.users : 'generic', texts: { effect_line_text: sentence(), mechanics_text: mechLine() }, target: TARGET[M.target], phases: Object.fromEntries(PHASES.map(([k]) => [k, clean(M.phases[k])])), phase_visuals: Object.fromEntries(PHASES.filter(([k]) => M.notes[k]).map(([k]) => [k, M.notes[k]])),
+    engine_gaps: gaps().map(x => ({ block: x.n.key, need: x.b.engine === 'gap' ? 'criar no motor' : 'generalizar regra fixa', text: x.b.s(x.n.params) })) };
+}
+function tree(list, d) { return list.map(n => `${'  '.repeat(d)}- ${B[n.key].cat === 'trigger' ? '**' + B[n.key].s(n.params) + '** →' : B[n.key].s(n.params)}${B[n.key].engine !== 'ok' ? ' _(' + (B[n.key].engine === 'gap' ? 'falta no motor' : 'hoje só em caso fixo') + ')_' : ''}\n${tree(n.kids, d + 1)}`).join(''); }
+function exportBrief() {
+  const g = gaps(), j = exportJson().move_data;
+  return `# Move: ${M.name} (\`${M.id}\`)\n\nFicha gerada no Move Forge (D-1206). Vale para qualquer personagem, time e lado (D-235).\n\n## Ficha\n- Tipo: ${KIND[M.kind]} · Elemento: ${(EL[M.element] || [])[0]} · Dano: ${+M.damage_type ? 'Mágico (MAG)' : 'Físico (STR)'}\n- Custo: ${M.atb} ATB, ${M.mp} MP · Wind-up: ${M.windup}s · Alvo: ${TARGET[M.target]}\n- Categoria: ${CAT[M.cat][0]} · Alcance: ${RNG[M.range]}\n- Quem usa: ${M.users.length ? 'único de ' + M.users.map(u => CHARS[u][0]).join(', ') + ' (só define quem aprende; o Move continua funcionando com qualquer personagem, D-235)' : 'genérico (qualquer personagem)'}${M.vfx_ref && V[M.vfx_ref] ? '\n- Visual de referência: igual ao de ' + V[M.vfx_ref].name + ' (`' + M.vfx_ref + '`, família ' + V[M.vfx_ref].family + ')' : ''}\n\n## Fases\n${PHASES.map(([k, l]) => `### ${l}\n${M.notes[k] ? '> ' + M.notes[k] + '\n' : ''}${tree(M.phases[k], 0) || '- (vazio)\n'}`).join('\n')}\n## O que precisa ser implementado\n${g.length ? g.map(x => `- [ ] ${x.b.engine === 'gap' ? 'CRIAR no motor' : 'GENERALIZAR'}: ${x.b.s(x.n.params)}`).join('\n') : '- Nada novo no motor: só dados e o comportamento do Move.'}\n- [ ] \`content/moves/${M.id}/move.tres\` com os campos abaixo, e entrada em \`content/catalogs/move_catalog.tres\`\n- [ ] \`content/moves/${M.id}/behavior.gd\` (hooks on_hit / on_contact / on_status) para os gatilhos\n- [ ] Cenário na sala de debug, lado normal e espelhado (comando abaixo)\n\n## MoveData\n\`\`\`\n${Object.entries(j).map(([k, v]) => `${k} = ${JSON.stringify(v)}`).join('\n')}\n\`\`\`\n\n## Teste\n\`\`\`\n${exportCmd()}\n\`\`\`\n`;
+}
+const exportCmd = () => `Godot_v4.7.2-stable_win64_console.exe --path . scenes/debug/vfx_room.tscn -- --move="${M.name}" --stdout-trace --summary-json --strict-asserts --quit\nGodot_v4.7.2-stable_win64_console.exe --path . scenes/debug/vfx_room.tscn -- --move="${M.name}" --mirror --stdout-trace --summary-json --strict-asserts --quit`;
+function renderExport() {
+  const kind = renderExport.k || 'brief', body = kind === 'json' ? JSON.stringify(exportJson(), null, 1) : kind === 'cmd' ? exportCmd() : exportBrief();
+  $('tab').innerHTML = `<div class="tabs">${[['brief', 'Briefing'], ['json', 'JSON'], ['cmd', 'Debug']].map(([k, l]) => `<button data-ex="${k}" class="${k === kind ? 'on' : ''}">${l}</button>`).join('')}</div><pre id="exp">${esc(body)}</pre><div style="display:flex;gap:6px;margin-top:8px"><button class="btn" id="copy">Copiar</button><button class="btn g" id="down">Baixar</button></div>`;
+}
+// ---------- ficha: como o Move apareceria no jogo (texto em inglês, como a UI do jogo)
+const EN_WHO = { target: 'the target', user: 'the user', team: 'all allies', enemies: 'all enemies', ally: 'one ally' };
+function phrase(n) {
+  const p = n.params, k = n.key, S = v => String(v).toUpperCase();
+  switch (k) {
+    case 'damage': return p.def === 'flat' ? `Deals fixed damage (${p.base} + MAG − SPI)` : `Deals ${p.stat === 'MAG' ? 'magical' : 'physical'} damage (${p.base ? p.base + ' + ' : ''}${p.stat === 'none' ? '' : p.stat + ' ×' + p.mult})${p.frac != 1 ? ' at ×' + p.frac + ' per target' : ''}${p.def === 'bypass' ? ', ignoring DEF' : ''}`;
+    case 'heal': return `Restores ${p.base}${p.stat === 'MAG' ? ' + MAG' : ''} HP to ${EN_WHO[p.who]}`;
+    case 'stage': return `${p.delta > 0 ? 'Raises' : 'Lowers'} ${S(p.stat === 'speed' ? 'SPD' : p.stat)} of ${EN_WHO[p.who]} by ${Math.abs(p.delta)}`;
+    case 'status': return `Inflicts ${S(p.status)}${p.dur ? ' for ' + p.dur + 's' : ''} on ${EN_WHO[p.who]}`;
+    case 'shield': return `Shields ${EN_WHO[p.who]} for ${p.base}${p.stat === 'MAG' ? ' + MAG' : ''} (${p.dur}s)`;
+    case 'resource': return `${p.delta > 0 ? 'Grants' : 'Drains'} ${Math.abs(p.delta)} ${S(p.res)} ${p.delta > 0 ? 'to' : 'from'} ${EN_WHO[p.who]}`;
+    case 'interrupt': return p.who === 'target' ? 'Interrupts the target' : 'Interrupts every enemy in wind-up';
+    case 'guardbreak': return 'Breaks Guard'; case 'steal': return 'Steals buffs, shield and immunity';
+    case 'push': return p.height > 0 ? `Launches the target (${p.height} m, ${p.air}s)` : `Pushes the target back ${p.push} m`;
+    case 'bounce': return `Bounces to the nearest enemy (×${p.chain})`; case 'retarget': return 'Chases another living target if its own falls';
+    case 'multihit': return `Hits ${p.hits} times`; case 'lifesteal': return `Heals the user for ${p.pct}% of the damage`;
+    case 'selfdmg': return `Costs the user ${p.pct}% of max HP`; case 'reflect': return `Reflects ${p.pct}% of damage for ${p.dur}s`; case 'cooldown': return `${p.dur}s cooldown`;
+    case 'chance': return `${p.base}%${p.luck === 'yes' ? ' + LUCK' : ''} chance: `; case 'weak': return 'On WEAK: '; case 'crit': return 'On critical: ';
+    case 'interrupted': return 'If it interrupts: '; case 'noarmor': return 'Unless the target has ARMOR: ';
+    case 'hp': return `If ${p.who === 'user' ? "the user's" : "the target's"} HP is ${p.op === 'lt' ? 'below' : 'above'} ${p.pct}%: `;
+    case 'has': return `If ${EN_WHO[p.who]} has ${S(p.status)}: `; case 'mode': return p.mode === 'single' ? 'Single target: ' : 'Two targets: ';
+    case 'kill': return 'On K.O.: '; case 'first': return 'First use in battle: ';
+  } return '';
+}
+const lower = t => t.charAt(0).toLowerCase() + t.slice(1);
+function say(list, inner) { return list.filter(n => B[n.key].cat !== 'vfx').map(n => B[n.key].cat === 'trigger' ? phrase(n) + (lower(say(n.kids, true)) || '…') : phrase(n)).filter(Boolean).map((t, i) => inner && i ? lower(t) : t).join(inner ? ', ' : '. '); }
+const sentence = () => { const t = PHASES.map(([k]) => say(M.phases[k])).filter(Boolean).join('. '); return t ? t + '.' : 'No combat effect yet.'; };
+const mechLine = () => `Wind-up: ${(+M.windup).toFixed(2)}s (interruptible) · ${KIND[M.kind]} · ${TARGET[M.target]}`;
+function renderCard() {
+  const el = EL[M.element] || EL[0], dmgN = []; walk(n => { if (n.key === 'damage') dmgN.push(n); });
+  const pw = dmgN.length ? '×' + String(dmgN[0].params.mult).replace('.', ',') : '—';
+  $('tab').innerHTML = `<div class="cat" style="margin-top:0">Cartão de detalhe</div><div class="gcard"><h4>${esc(M.name).toUpperCase()}${badge('elements', EL_ICON[M.element] || 'neutral', el[1], { on: true }, el[0])}${badge('move_types', M.cat, CAT[M.cat][1], { on: true }, CAT[M.cat][0])}${badge('range', M.range, '#f4eee1', { on: true }, RNG[M.range])}</h4>
+    <div class="chips"><span class="chip" style="background:#0e7490">${M.atb} ATB</span><span class="chip" style="background:#2563eb">${M.mp} MP</span><span class="chip" style="background:#f59e0b;color:#0a1a27">POWER ${pw}</span></div>
+    <p>${esc(sentence())}</p><p class="m">${esc(mechLine())}</p></div>
+    <div class="cat">Slot na lista de skills</div><div class="slot" style="--el:${el[1]}">${esc(M.name).toUpperCase()}<span>${M.mp ? M.mp + 'MP' : ''} · ${'▰'.repeat(Math.max(0, +M.atb))}</span></div>
+    <div class="cat">Quem usa</div><div class="who" style="margin:0 0 10px">${M.users.length ? M.users.map(u => face(u, 38, { on: true, data: '' })).join('') : '<span class="tag ok">genérico</span><span class="empty">qualquer personagem pode equipar</span>'}</div>
+    <p class="empty">Texto gerado dos blocos, em inglês como a UI do jogo. Vai no export como <b>effect_line_text</b> e <b>mechanics_text</b>; edite à vontade depois.</p>` + gapsHtml();
+}
+// ---------- palco fixo: as duas vistas (normal e espelhada, D-235) com barra de tempo
+const ST = { t: 0, playing: false, roll: null, last: 0 };
+const firstNode = key => { let f = null; walk(n => { if (!f && n.key === key) f = n; }); return f; };
+function stageRoll() { const r = roll(1); ST.roll = { dmg: r.dmg[0], crit: r.crit, list: r.list, seed: Math.random() * 1e5 | 0 }; }
+function stageSpan() { const t = times(), w = t[0][1], rel = w + t[1][1], tr = rel + t[2][1], j = firstNode('juice'); return { w, rel, tr, hs: j ? Math.min(.4, +j.params.hitstop || 0) : (M.timing && M.timing.hitstop) || 0, shake: j ? +j.params.shake : 1, end: tr + 1.7 }; }
+const rnd = (seed, i) => { const x = Math.sin(seed * 12.9898 + i * 78.233) * 43758.5453; return x - Math.floor(x); };
+function drawView(c, x0, W, H, mir, s, sp) {
+  const col = (EL[M.element] || EL[0])[1], R = ST.roll, near = { x: x0 + W * .23, y: H * .74, k: 1 }, far = { x: x0 + W * .78, y: H * .40, k: .62 };
+  const A = mir ? far : near, T0 = mir ? near : far, kind = +M.kind, nT = +M.target === 3 ? 3 : sim.dual ? 2 : 1;
+  const Ts = []; for (let i = 0; i < nT; i++) { const o = i - (nT - 1) / 2; Ts.push({ x: T0.x + o * 66 * T0.k * (mir ? 1 : -.25) + (mir ? 0 : o * 20), y: T0.y + o * 54 * T0.k, k: T0.k }); }
+  const hit = s >= sp.tr, u = hit ? Math.max(0, s - sp.tr - sp.hs) : -1, frozen = hit && s < sp.tr + sp.hs;
+  c.save(); c.beginPath(); c.rect(x0, 0, W, H); c.clip();
+  if (hit && !frozen) { const a = sp.shake * 7 * Math.exp(-u * 7); c.translate((rnd(R.seed, Math.floor(s * 60)) - .5) * a, (rnd(R.seed + 9, Math.floor(s * 60)) - .5) * a); }
+  const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#0b2233'); g.addColorStop(1, '#06121c'); c.fillStyle = g; c.fillRect(x0, 0, W, H);
+  c.strokeStyle = 'rgba(56,189,248,.16)'; c.lineWidth = 1; const hz = H * .2;
+  for (let i = -8; i <= 8; i++) { c.beginPath(); c.moveTo(x0 + W / 2 + i * 14, hz); c.lineTo(x0 + W / 2 + i * 110, H); c.stroke(); }
+  for (let i = 0; i < 7; i++) { const y = hz + (H - hz) * Math.pow(i / 6, 1.8); c.beginPath(); c.moveTo(x0, y); c.lineTo(x0 + W, y); c.stroke(); }
+  c.fillStyle = 'rgba(244,238,225,.5)'; c.font = '900 10px Segoe UI'; c.fillText(mir ? 'VISTA ESPELHADA · atacante longe' : 'VISTA NORMAL · atacante perto', x0 + 12, 18);
+  const portrait = (k, x, y, r) => { const im = IMG[k], cc = CHARS[k]; if (!im || !im.complete || !im.naturalWidth) return false; c.save(); c.beginPath(); c.arc(x, y, r, 0, 7); c.clip(); const gg = c.createLinearGradient(0, y - r, 0, y + r); gg.addColorStop(0, '#77c7d7'); gg.addColorStop(.5, '#afd7b7'); gg.addColorStop(1, '#e7f7b7'); c.fillStyle = gg; c.fillRect(x - r, y - r, r * 2, r * 2); c.drawImage(im, cc[3], cc[4], cc[5], cc[5], x - r, y - r, r * 2, r * 2); c.restore(); return true; };
+  const userK = M.users[0], tgtK = sim.tgt;
+  const body = (p, r, fill, dy, who) => { if (who) r *= 1.25; c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(p.x, p.y + r * .9, r * 1.05, r * .32, 0, 0, 7); c.fill();
+    if (who && portrait(who, p.x, p.y - (dy || 0), r)) { c.lineWidth = 3; c.strokeStyle = fill; c.beginPath(); c.arc(p.x, p.y - (dy || 0), r, 0, 7); c.stroke(); if (fill === '#fff') { c.globalAlpha = .6; c.fillStyle = '#fff'; c.beginPath(); c.arc(p.x, p.y - (dy || 0), r, 0, 7); c.fill(); c.globalAlpha = 1; } return; }
+    c.fillStyle = fill; c.beginPath(); c.arc(p.x, p.y - (dy || 0), r, 0, 7); c.fill(); };
+  const bodyOld = (p, r, fill, dy) => { c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(p.x, p.y + r * .9, r * 1.05, r * .32, 0, 0, 7); c.fill(); c.fillStyle = fill; c.beginPath(); c.arc(p.x, p.y - (dy || 0), r, 0, 7); c.fill(); };
+  // atacante
+  let ax = A.x, ay = A.y; const rA = 22 * A.k;
+  if (kind === 0) { const stop = { x: Ts[0].x - (Ts[0].x - A.x) * .13, y: Ts[0].y - (Ts[0].y - A.y) * .13 };
+    const go = s < sp.rel ? 0 : s < sp.tr ? Math.pow((s - sp.rel) / Math.max(.01, sp.tr - sp.rel), 2) : u < .18 ? 1 : Math.max(0, 1 - (u - .18) / .35); ax = A.x + (stop.x - A.x) * go; ay = A.y + (stop.y - A.y) * go; }
+  if (s < sp.w) { const f = s / Math.max(.01, sp.w); c.strokeStyle = col; c.lineWidth = 3 * A.k; c.beginPath(); c.arc(ax, ay, rA + 12 * A.k, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * f); c.stroke();
+    for (let i = 0; i < 10; i++) { const an = i * .628 + s * 2, rr = (rA + 46 * A.k) * (1 - ((f * 2 + i / 10) % 1)) + rA; c.globalAlpha = .7; c.fillStyle = col; c.beginPath(); c.arc(ax + Math.cos(an) * rr, ay + Math.sin(an) * rr * .7, 2.4 * A.k, 0, 7); c.fill(); } c.globalAlpha = 1; }
+  if (s >= sp.w && s < sp.rel) { const f = (s - sp.w) / Math.max(.01, sp.rel - sp.w); c.globalAlpha = 1 - f; c.fillStyle = '#fff'; c.beginPath(); c.arc(ax, ay, rA + 30 * f * A.k, 0, 7); c.fill(); c.globalAlpha = 1; }
+  body({ x: ax, y: ay }, rA, '#f4eee1', 0, userK);
+  // projéteis / onda
+  if (kind !== 0 && s >= sp.rel && s < sp.tr) { const k = (s - sp.rel) / Math.max(.01, sp.tr - sp.rel);
+    if (kind === 3 || [1, 4, 5].includes(+M.target)) { c.strokeStyle = col; c.lineWidth = 3; c.globalAlpha = 1 - k; c.beginPath(); c.ellipse(A.x, A.y, 30 + k * 150 * A.k, (30 + k * 150 * A.k) * .4, 0, 0, 7); c.stroke(); c.globalAlpha = 1; }
+    else { const mh = firstNode('multihit'), balls = nT > 1 ? Ts.map((t, i) => ({ t, side: i % 2 ? -1 : 1, d: 0 })) : +M.target === 2 ? [{ t: Ts[0], side: 1, d: 0 }, { t: Ts[0], side: -1, d: 0 }] : Array.from({ length: mh ? Math.min(6, +mh.params.hits) : 1 }, (_, i) => ({ t: Ts[0], side: 0, d: i * .12 }));
+      balls.forEach(b => { for (let tr = 0; tr < 6; tr++) { const kk = Math.max(0, Math.min(1, k - b.d - tr * .035)); if (k < b.d) continue; const bx = A.x + (b.t.x - A.x) * kk, by = A.y + (b.t.y - A.y) * kk - Math.sin(kk * Math.PI) * (26 + 60 * Math.abs(b.side)) * (b.side || 1), sc = A.k + (b.t.k - A.k) * kk; c.globalAlpha = 1 - tr * .16; c.fillStyle = tr ? col : '#fff'; c.beginPath(); c.arc(bx, by, (tr ? 9 - tr : 6) * sc, 0, 7); c.fill(); } c.globalAlpha = 1; }); } }
+  // alvos
+  const push = R.list.find(e => e.key === 'push'), friendly = [1, 4, 5].includes(+M.target);
+  Ts.forEach((t, i) => { const rT = 22 * t.k; let tx = t.x, dy = 0;
+    if (hit && push && !friendly) { const dir = Math.sign(t.x - A.x) || 1; tx += dir * Math.min(1, u / .25) * (+push.p.push || 0) * 14 * t.k; if (+push.p.height > 0) dy = Math.sin(Math.PI * Math.min(1, u / Math.max(.2, +push.p.air))) * push.p.height * 20 * t.k; }
+    body({ x: tx, y: t.y }, rT, friendly ? '#7dd3fc' : (hit && u < .1 ? '#fff' : '#ff624f'), dy, friendly ? null : tgtK);
+    if (!hit) return;
+    const up = Math.min(1, u / .7), cy = t.y - dy;
+    c.globalAlpha = Math.max(0, 1 - up); c.strokeStyle = friendly ? '#86efac' : col; c.lineWidth = 4 * t.k; c.beginPath(); c.arc(tx, cy, rT + up * 54 * t.k, 0, 7); c.stroke();
+    for (let q = 0; q < 12; q++) { const an = rnd(R.seed, q + i * 20) * 6.283, sp2 = 40 + rnd(R.seed, q + 50) * 90; c.fillStyle = q % 3 ? col : '#fff'; c.fillRect(tx + Math.cos(an) * sp2 * up * t.k, cy + Math.sin(an) * sp2 * up * t.k * .8, 3, 3); }
+    c.globalAlpha = 1;
+    const rise = 30 + Math.min(1, u / .5) * 26, sz = (R.crit ? 34 : 26) * Math.max(.75, t.k);
+    if (R.dmg && !friendly) { c.font = `italic 900 ${sz}px 'Kanit Black', Impact`; c.lineWidth = 4; c.strokeStyle = '#06121c'; c.fillStyle = R.crit ? '#f7cb78' : '#f4eee1'; c.strokeText(R.dmg, tx - sz * .4, cy - rise); c.fillText(R.dmg, tx - sz * .4, cy - rise);
+      if (sim.aff > 1) { c.font = "italic 900 13px 'Kanit Black', Impact"; c.fillStyle = '#ff624f'; c.fillText('WEAK!', tx - 20, cy - rise - sz * .8); } else if (R.crit) { c.font = "italic 900 13px 'Kanit Black', Impact"; c.fillStyle = '#f7cb78'; c.fillText('CRITICAL', tx - 28, cy - rise - sz * .8); } }
+    R.list.filter(e => !['juice', 'push', 'heal'].includes(e.key) && (!e.p.who || e.p.who === 'target' || e.p.who === 'enemies')).slice(0, 4).forEach((e, q) => { const a = Math.max(0, Math.min(1, (u - .15 - q * .12) / .2)); if (!a) return; c.globalAlpha = a; c.font = '900 10px Segoe UI'; const w = c.measureText(e.t).width + 12; c.fillStyle = '#f59e0b'; c.fillRect(tx - w / 2, cy + rT + 8 + q * 17, w, 14); c.fillStyle = '#0a1a27'; c.fillText(e.t, tx - w / 2 + 6, cy + rT + 19 + q * 17); c.globalAlpha = 1; });
+  });
+  if (hit) { const selfFx = R.list.filter(e => e.key === 'heal' || (e.p && ['user', 'team'].includes(e.p.who) && e.t)); selfFx.slice(0, 3).forEach((e, q) => { const a = Math.max(0, Math.min(1, (u - .1 - q * .12) / .2)); c.globalAlpha = a; c.font = "italic 900 16px 'Kanit Black', Impact"; c.fillStyle = e.key === 'heal' ? '#86efac' : '#d7fd6a'; c.fillText(e.key === 'heal' ? '+' + e.v : e.t, A.x - 24, A.y - rA - 12 - q * 18 - Math.min(1, u) * 10); c.globalAlpha = 1; }); }
+  c.restore();
+}
+function stageDraw() {
+  const cv = $('st'); if (!cv) return; if (!ST.roll) stageRoll();
+  const c = cv.getContext('2d'), sp = stageSpan(), W = cv.width, H = cv.height;
+  ST.t = Math.max(0, Math.min(sp.end, ST.t));
+  drawView(c, 0, W / 2 - 1, H, false, ST.t, sp); drawView(c, W / 2 + 1, W / 2 - 1, H, true, ST.t, sp);
+  c.fillStyle = '#10263a'; c.fillRect(W / 2 - 1, 0, 2, H);
+  const ph = ST.t < sp.w ? 'WIND-UP' : ST.t < sp.rel ? 'RELEASE' : ST.t < sp.tr ? 'TRAJETO' : ST.t < sp.tr + sp.hs ? 'HIT-STOP' : 'IMPACTO';
+  $('stT').value = Math.round(ST.t / sp.end * 1000); $('stClock').textContent = ST.t.toFixed(2) + 's'; $('stPlay').textContent = ST.playing ? '❚❚' : '▶';
+  $('stInfo').textContent = `${ph} · rolagem: ${ST.roll.dmg} de dano${ST.roll.crit ? ' (crítico)' : ''}${ST.roll.list.filter(e => e.t).length ? ' · ' + ST.roll.list.filter(e => e.t).map(e => e.t).join(', ') : ''}`;
+}
+function stageTick(now) {
+  if (!ST.playing) return; const dt = Math.min(.05, (now - ST.last) / 1000); ST.last = now; ST.t += dt;
+  const end = stageSpan().end; if (ST.t >= end) { if ($('stLoop').checked) { ST.t = 0; stageRoll(); } else { ST.t = end; ST.playing = false; } }
+  stageDraw(); if (ST.playing) requestAnimationFrame(stageTick);
+}
+function stagePlay(restart) { if (restart) { ST.t = 0; stageRoll(); ST.playing = true; } else ST.playing = !ST.playing; if (ST.playing && ST.t >= stageSpan().end) ST.t = 0; ST.last = performance.now(); stageDraw(); if (ST.playing) requestAnimationFrame(stageTick); }
+// ---------- reprodutor de VFX: clipes reais gravados na sala de debug (tools/build_move_forge_vfx.py)
+const V = window.MOVE_FORGE_VFX || {};
+const VP = { id: null, fam: '', f: 0, hover: null, hf: 0 };
+function clipStyle(id, f, el) { const v = V[id]; if (!v || !el) return; const w = el.clientWidth || 100, sc = w / v.w; el.style.backgroundImage = `url('vfx/${id}.jpg')`; el.style.backgroundSize = `${v.cols * v.w * sc}px auto`; el.style.backgroundPosition = `${-(f % v.cols) * v.w * sc}px ${-Math.floor(f / v.cols) * v.h * sc}px`; }
+function vfxIds() { return Object.keys(V).filter(id => !VP.fam || V[id].family === VP.fam); }
+function vfxHtml(compact) {
+  const ids = vfxIds(); if (!Object.keys(V).length) return '<p class="empty">Sem clipes ainda. Na raiz do projeto rode <kbd>python tools/build_move_forge_vfx.py</kbd>: ele grava o VFX real de cada Move na sala de debug.</p>';
+  if (!VP.id || !V[VP.id] || (VP.fam && V[VP.id].family !== VP.fam)) VP.id = ids.includes(M.vfx_ref) ? M.vfx_ref : ids[0];
+  const fams = [...new Set(Object.values(V).map(v => v.family).filter(Boolean))].sort(), v = V[VP.id];
+  return `<div class="vp" id="vp"><div class="cap"><span>${esc(v.name)}</span><small>família ${esc(v.family || '—')} · ${v.seconds}s</small></div></div>
+    <div style="display:flex;gap:6px;margin-top:8px;align-items:center"><button class="btn" id="vfxUse">Usar este visual</button><span class="empty" style="font-size:10px">${M.vfx_ref === VP.id ? '✔ é o visual deste Move' : M.vfx_ref && V[M.vfx_ref] ? 'atual: ' + esc(V[M.vfx_ref].name) : 'nenhum escolhido'}</span></div>
+    <div class="fam"><button data-fam="" class="${VP.fam ? '' : 'on'}">todos</button>${fams.map(f => `<button data-fam="${esc(f)}" class="${VP.fam === f ? 'on' : ''}">${esc(f)}</button>`).join('')}</div>
+    <div class="vgrid">${ids.map(id => `<button class="vt ${id === VP.id ? 'on' : ''}" data-vfx="${esc(id)}" title="${esc(V[id].name)} · família ${esc(V[id].family)}"><i style="background:${(EL[V[id].element] || EL[0])[1]}"></i><span>${esc(V[id].name)}</span></button>`).join('')}</div>
+    ${compact ? '' : '<p class="empty">Clipes gravados do jogo, na sala de debug. Passe o mouse para tocar; clique para ver grande. "Usar este visual" grava a referência no Move (vai no export como <b>vfx_reference</b>).</p>'}`;
+}
+function vfxPaint() { clipStyle(VP.id, VP.f, $('vp')); document.querySelectorAll('.vt').forEach(b => { const id = b.dataset.vfx, v = V[id]; clipStyle(id, id === VP.hover ? VP.hf : Math.floor(v.frames * .62), b); }); }
+function renderVfx() { $('tab').innerHTML = vfxHtml(false); vfxPaint(); }
+setInterval(() => { if (!$('vp')) return; const v = V[VP.id]; if (v) { VP.f = (VP.f + 1) % v.frames; clipStyle(VP.id, VP.f, $('vp')); } if (VP.hover && V[VP.hover]) { VP.hf = (VP.hf + 1) % V[VP.hover].frames; clipStyle(VP.hover, VP.hf, document.querySelector(`.vt[data-vfx="${VP.hover}"]`)); } }, 100);
+document.addEventListener('mouseover', e => { const b = e.target.closest('.vt'); const id = b ? b.dataset.vfx : null; if (id !== VP.hover) { const old = VP.hover; VP.hover = id; VP.hf = 0; if (old && V[old]) clipStyle(old, Math.floor(V[old].frames * .62), document.querySelector(`.vt[data-vfx="${old}"]`)); } });
+// ---------- histórico (desfazer/refazer), estante e sorteio
+const H = { list: [], i: -1, lock: false };
+function snap() { if (H.lock) return; const j = JSON.stringify(M); if (H.list[H.i] === j) return; H.list = H.list.slice(0, H.i + 1); H.list.push(j); if (H.list.length > 80) H.list.shift(); H.i = H.list.length - 1; histBtns(); }
+function histBtns() { $('btnUndo').disabled = H.i <= 0; $('btnRedo').disabled = H.i >= H.list.length - 1; }
+function travel(d) { const k = H.i + d; if (k < 0 || k >= H.list.length) return; H.i = k; H.lock = true; M = JSON.parse(H.list[k]); selNode = null; ST.roll = null; render(); H.lock = false; histBtns(); }
+const LIB = 'crawlmon-move-forge-shelf-v1';
+const shelf = () => { try { return JSON.parse(localStorage.getItem(LIB)) || {}; } catch (e) { return {}; } };
+function fillPreset() { const sh = shelf(), ids = Object.keys(sh);
+  $('preset').innerHTML = '<option value="">Carregar Move…</option><option value="__splitter">★ Splitter Flames (ficha D-236)</option>' + (ids.length ? '<optgroup label="Minha estante">' + ids.map(i => `<option value="shelf:${esc(i)}">${esc(sh[i].name)}</option>`).join('') + '</optgroup>' : '') + '<optgroup label="Moves do jogo">' + D.moves.map(g => `<option value="${esc(g.id)}">${esc(g.name || g.id)}${FX[g.id] ? ' ◆' : ''}</option>`).join('') + '</optgroup>'; }
+function dice() {
+  const pick = a => a[Math.random() * a.length | 0], el = pick([1, 2, 3, 4, 5, 7, 9, 10]), kind = pick([0, 1, 1, 2]), mag = kind !== 0 && Math.random() < .8, atb = pick([1, 2, 2, 3]);
+  const head = { 1: ['Ember', 'Cinder', 'Blaze'], 2: ['Frost', 'Tide', 'Brine'], 3: ['Volt', 'Spark', 'Storm'], 4: ['Mind', 'Dream', 'Psi'], 5: ['Venom', 'Blight', 'Toxic'], 7: ['Stone', 'Quake', 'Dust'], 9: ['Halo', 'Dawn', 'Radiant'], 10: ['Shade', 'Dusk', 'Night'] }[el];
+  const name = pick(head) + ' ' + pick(kind === 0 ? ['Fang', 'Lunge', 'Crash', 'Cleave'] : ['Lance', 'Burst', 'Orb', 'Wave']);
+  const trig = pick([() => N('chance', { base: pick([10, 20, 30]) }), () => N('weak'), () => N('crit'), () => N('interrupted'), () => N('hp', { who: pick(['target', 'user']), op: 'lt', pct: pick([25, 50]) })])();
+  trig.kids = [pick([() => N('status', { status: pick(['burn', 'stun', 'blind']), dur: pick([2, 4]) }), () => N('stage', { stat: pick(['atk', 'def', 'speed']), delta: -1 }), () => N('resource', { res: 'atb', delta: 1 }), () => N('shield', { who: 'user', base: 10 }), () => N('heal', { who: 'user', base: 5 })])()];
+  $('preset').value = ''; ST.roll = null;
+  load({ id: name.toLowerCase().replace(/ /g, '_'), name, kind, element: el, damage_type: +mag, power: 1, atb, mp: pick([2, 3, 4, 6]), windup: pick([.7, 1, 1.5]), target: 0, phases: { windup: [], release: [], travel: [], impact: [N('damage', { stat: mag ? 'MAG' : 'STR', mult: [.6, 1, 1.4][atb - 1] }), trig], after: [] }, notes: {} });
+  stagePlay(true); toast('Ideia sorteada: é só uma sugestão');
+}
+// ---------- render geral
+const TABS = { bloco: ['Bloco', renderBlock], vfx: ['VFX', renderVfx], ficha: ['Ficha', renderCard], sim: ['Números', renderSim], exp: ['Exportar', renderExport] };
+function render(keepTab) {
+  renderHead(); renderLanes();
+  $('tabs').innerHTML = Object.entries(TABS).map(([k, v]) => `<button data-tab="${k}" class="${k === tab ? 'on' : ''}">${v[0]}</button>`).join('');
+  if (!TABS[tab]) tab = 'bloco';
+  if (!keepTab) TABS[tab][1](); save(); snap(); stageDraw();
+}
+function load(m) { M = normalize(m); selNode = null; Object.keys(M.phases).forEach(k => { M.phases[k] = sanitize(M.phases[k]); }); render(); }
+// ---------- eventos
+let drag = null;
+document.addEventListener('dragstart', e => { const nw = e.target.closest('[data-new]'), nd = e.target.closest('[data-uid]'); drag = nw ? { key: nw.dataset.new } : nd ? { uid: +nd.dataset.uid } : null; if (drag) { e.dataTransfer.setData('text/plain', 'x'); e.stopPropagation(); } });
+const dropTarget = e => e.target.closest('[data-drop]') || e.target.closest('[data-lane]');
+document.addEventListener('dragover', e => { const t = dropTarget(e); if (t && drag) { e.preventDefault(); document.querySelectorAll('.over').forEach(x => x.classList.remove('over')); (t.dataset.drop ? t.parentElement : t).classList.add('over'); } });
+document.addEventListener('drop', e => {
+  const t = dropTarget(e); if (!t || !drag) return; e.preventDefault();
+  let node; if (drag.key) node = N(drag.key); else { const r = findAny(drag.uid); if (!r) return; if (t.dataset.drop && (+t.dataset.drop === drag.uid || find(r.n.kids, +t.dataset.drop))) return; r.list.splice(r.list.indexOf(r.n), 1); node = r.n; }
+  const dest = t.dataset.drop ? findAny(+t.dataset.drop).n.kids : M.phases[t.dataset.lane]; dest.push(node);
+  selNode = node.uid; tab = 'bloco'; drag = null; render();
+});
+document.addEventListener('click', e => {
+  const q = s => e.target.closest(s); let x;
+  if ((x = q('[data-mpuse]'))) { M.mp = +x.dataset.mpuse; render(); toast('MP ' + M.mp + ' (mediana dos 3 parecidos)'); }
+  else if (q('#btnRemix')) openRemix();
+  else if (q('#btnMap')) openMap();
+  else if (q('#ovClose') || e.target.id === 'ov') closeOv();
+  else if (q('#rmxBlank')) { closeOv(); ST.roll = null; load(blank()); $('preset').value = ''; }
+  else if ((x = q('[data-rmx]'))) { const g = D.moves.find(m => m.id === x.dataset.rmx); closeOv(); if (g) { ST.roll = null; load(fromGame(g)); $('preset').value = g.id; stagePlay(true); toast('Remix de ' + (g.name || g.id)); } }
+  else if ((x = q('[data-rmxel]'))) { RM.el = +x.dataset.rmxel; openRemix(); $('rmxQ').focus(); }
+  else if ((x = q('[data-mapuid]'))) { selNode = +x.dataset.mapuid; tab = 'bloco'; closeOv(); render(); }
+  else if ((x = q('[data-vfx]'))) { VP.id = x.dataset.vfx; VP.f = 0; TABS[tab][1](); }
+  else if ((x = q('[data-fam]'))) { VP.fam = x.dataset.fam; VP.id = null; TABS[tab][1](); }
+  else if (q('#vfxUse')) { const v = V[VP.id]; M.vfx_ref = VP.id; const fam = firstNode('family'); if (fam) fam.params.name = v.family; else if (v.family) M.phases.windup.push(N('family', { name: v.family })); render(); toast('Visual de ' + v.name + ' aplicado'); }
+  else if ((x = q('[data-el]'))) { M.element = +x.dataset.el; render(); }
+  else if ((x = q('[data-cat]'))) { M.cat = x.dataset.cat; derive(); render(); }
+  else if ((x = q('[data-rng]'))) { M.range = x.dataset.rng; derive(); render(); }
+  else if ((x = q('[data-atb]'))) { M.atb = +x.dataset.atb === +M.atb ? M.atb - 1 : +x.dataset.atb; render(); }
+  else if (q('[data-gen]')) { M.users = []; render(); }
+  else if ((x = q('[data-user]'))) { const u = x.dataset.user; M.users = M.users.includes(u) ? M.users.filter(v => v !== u) : M.users.concat(u); render(); }
+  else if ((x = q('[data-tgt]'))) { sim.tgt = x.dataset.tgt; render(); }
+  else if ((x = q('[data-del]'))) { const r = findAny(+x.dataset.del); if (r) r.list.splice(r.list.indexOf(r.n), 1); selNode = null; render(); }
+  else if ((x = q('[data-new]'))) { const sn = selNode && findAny(selNode), node = N(x.dataset.new); (sn && B[sn.n.key].cat === 'trigger' && B[node.key].cat !== 'vfx' ? sn.n.kids : M.phases[B[node.key].cat === 'vfx' && selLane === 'impact' ? 'impact' : selLane]).push(node); selNode = node.uid; tab = 'bloco'; render(); }
+  else if ((x = q('[data-uid]'))) { selNode = +x.dataset.uid; tab = 'bloco'; render(); }
+  else if ((x = q('[data-pick]'))) { selLane = x.dataset.pick; render(); }
+  else if ((x = q('[data-tab]'))) { tab = x.dataset.tab; render(); }
+  else if ((x = q('[data-ex]'))) { renderExport.k = x.dataset.ex; renderExport(); }
+  else if (q('#copy')) { navigator.clipboard.writeText($('exp').textContent).then(() => toast('Copiado')); }
+  else if (q('#down')) { const k = renderExport.k || 'brief', a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([$('exp').textContent], { type: 'text/plain' })); a.download = M.id + (k === 'json' ? '.move.json' : k === 'cmd' ? '.debug.txt' : '.briefing.md'); a.click(); }
+  else if (q('#btnNew')) { ST.roll = null; load(blank()); $('preset').value = ''; }
+  else if (q('#btnPlay')) stagePlay(true);
+  else if (q('#stPlay')) stagePlay(false);
+  else if (q('#stRoll')) { stageRoll(); stageDraw(); }
+  else if (q('#btnUndo')) travel(-1); else if (q('#btnRedo')) travel(1);
+  else if (q('#btnDice')) dice();
+  else if (q('#btnShelf')) { const sh = shelf(); sh[M.id] = JSON.parse(JSON.stringify(M)); localStorage.setItem(LIB, JSON.stringify(sh)); fillPreset(); toast('Guardado na estante: ' + M.name); }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.dataset.h) { M[t.dataset.h] = t.type === 'number' || t.tagName === 'SELECT' ? +t.value : t.value; if (t.dataset.h === 'name' || t.dataset.h === 'id') { save(); return; } renderHead(); const f = $('head').querySelector(`[data-h="${t.dataset.h}"]`); if (f && t.tagName !== 'SELECT') { f.focus(); } if (tab !== 'bloco') TABS[tab][1](); save(); }
+  else if (t.dataset.p) { const r = findAny(selNode); if (!r) return; r.n.params[t.dataset.p] = t.type === 'number' ? +t.value : t.value; renderLanes(); save(); stageDraw(); }
+  else if (t.dataset.note) { M.notes[t.dataset.note] = t.value; save(); }
+  else if (t.dataset.cmp) { renderSim.cmp = t.value; renderSim(); }
+  else if (t.id === 'stT') { ST.playing = false; ST.t = t.value / 1000 * stageSpan().end; stageDraw(); }
+  else if (t.dataset.sim) { sim[t.dataset.sim] = t.dataset.sim === 'dual' ? !!t.value : +t.value; renderSim(); const f = document.querySelector(`[data-sim="${t.dataset.sim}"]`); if (f && f.type === 'range') f.focus(); }
+});
+document.addEventListener('input', e => { if (e.target.id === 'rmxQ') { RM.q = e.target.value; remixGrid(); } });
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.id === 'onlyOk') { ONLY_OK = t.checked; renderPalette(); render(); return; }
+  const k = t.dataset.s; if (!k) return;
+  if (k === 'element') M.element = +t.value;
+  else if (k === 'cat') { M.cat = t.value; derive(); }
+  else if (k === 'range') { M.range = t.value; derive(); }
+  else if (k === 'mult' || k === 'stat') { const d = firstNode('damage'); if (d) d.params[k] = k === 'mult' ? +t.value : t.value; }
+  else if (k === 'addtrig' && t.value) { const node = N(t.value); M.phases.impact.push(node); selNode = node.uid; selLane = 'impact'; tab = 'bloco'; }
+  render();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('ov').hidden) closeOv(); });
+$('preset').addEventListener('change', e => { const v = e.target.value; ST.roll = null; if (v === '__splitter') load(splitter()); else if (v.startsWith('shelf:')) { const m = shelf()[v.slice(6)]; if (m) { reuidAll(m); load(m); } } else { const g = D.moves.find(m => m.id === v); if (g) load(fromGame(g)); } if (v) stagePlay(true); });
+function reuidAll(m) { Object.values(m.phases).forEach(reuid); }
+document.addEventListener('keydown', e => {
+  const typing = /INPUT|TEXTAREA|SELECT/.test(e.target.tagName);
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); travel(e.shiftKey ? 1 : -1); }
+  else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); travel(1); }
+  else if (typing) return;
+  else if (e.key === ' ') { e.preventDefault(); stagePlay(false); }
+  else if ((e.key === 'Delete' || e.key === 'Backspace') && selNode) { const r = findAny(selNode); if (r) { r.list.splice(r.list.indexOf(r.n), 1); selNode = null; render(); } }
+  else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd' && selNode) { e.preventDefault(); const r = findAny(selNode); if (r) { const cp = JSON.parse(JSON.stringify(r.n)); reuid([cp]); r.list.splice(r.list.indexOf(r.n) + 1, 0, cp); selNode = cp.uid; render(); } }
+});
+// ---------- início
+fillPreset();
+renderPalette();
+try { M = JSON.parse(localStorage.getItem(KEY)); if (M) walk(n => { uid = Math.max(uid, n.uid + 1); }); } catch (e) { M = null; }
+const hadSaved = !!(M && M.phases);
+load(M && M.phases ? M : splitter());
+histBtns(); stagePlay(true);
+if (!hadSaved && D.moves.length) openRemix();
+if (!window.MOVE_FORGE_DATA) toast('Sem dados do jogo: rode python tools/build_move_forge_data.py');
+</script>
+</body>
+</html>

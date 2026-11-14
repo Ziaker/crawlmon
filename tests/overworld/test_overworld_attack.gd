@@ -36,10 +36,44 @@ func _run() -> void:
 	await _test_lab_wiring()
 	await _test_lab_enemy_chase()
 	await _test_lab_return()
+	_test_friction_profile()
 	await process_frame
 	await process_frame
 	print("OVERWORLD_ATTACK_TEST_" + ("PASS" if _failures == 0 else "FAIL"))
 	quit(1 if _failures > 0 else 0)
+
+
+## D-1189: the advance leaves fast and brakes by friction; the last ~0.25 s cover ~0.3 m and the
+## total is exactly the planned travel. The same profile is used for the player and every enemy.
+func _test_friction_profile() -> void:
+	print("- friction profile (D-1189)")
+	var c = ControllerScript.new()
+	for travel in [2.0, 4.4, 1.0]:
+		var fric: Dictionary = c._friction_plan(travel, 0.18)
+		var total := float(fric["time"])
+		var dt := 1.0 / 60.0
+		var dist := 0.0
+		var tail := 0.0
+		var first_speed := -1.0
+		var last_speed := 0.0
+		var t := 0.0
+		while t < total - 0.0001:
+			var v: float = c._friction_speed(fric, 11.0, dt)
+			if first_speed < 0.0:
+				first_speed = v
+			last_speed = v
+			dist += v * dt
+			if t >= total - float(fric["slide"]) - 0.0001:
+				tail += v * dt
+			t += dt
+		_expect(absf(dist - travel) < 0.02, "travel %.1f m: total %.3f m" % [travel, dist])
+		_expect(first_speed > last_speed * 3.0, "travel %.1f m: leaves fast and brakes (%.1f -> %.2f m/s)" % [travel, first_speed, last_speed])
+		var want := minf(0.3, travel * 0.5)
+		# Long lunges get a softer tail because of the peak cap (D-1189): never shorter than wanted.
+		_expect(tail >= want - 0.05 and tail <= want + 1.0, "travel %.1f m: braking tail covers %.2f m (want %.2f+)" % [travel, tail, want])
+		_expect(first_speed <= 24.5, "travel %.1f m: peak speed %.1f m/s stays under 24" % [travel, first_speed])
+		_expect(float(fric["slide"]) > 0.0 and float(fric["slide"]) <= 0.25001, "travel %.1f m: slide %.3f s" % [travel, float(fric["slide"])])
+	c.free()
 
 
 func _expect(ok: bool, msg: String) -> void:
@@ -62,8 +96,9 @@ func _test_player_hits() -> void:
 	var ok := await _wait_until(func() -> bool: return not (w["battles"] as Array).is_empty(), 180)
 	var elapsed_frames := Engine.get_physics_frames() - t0
 	_expect(ok, "battle requested after the hit")
-	_expect(elapsed_frames >= 40 and elapsed_frames <= 56,
-		"attack reaches the battle in ~0.74 s (0.14 + 0.10 + 0.5): %d frames" % elapsed_frames)
+	# D-1189: the friction/slide tail adds ~0.25 s to the advance (~1.0 s in total).
+	_expect(elapsed_frames >= 50 and elapsed_frames <= 76,
+		"attack reaches the battle in ~1.0 s (0.14 + 0.10 + 0.25 slide + 0.5): %d frames" % elapsed_frames)
 	var battles: Array = w["battles"]
 	if not battles.is_empty():
 		_expect(int(battles[0]) == Rules.Advantage.PLAYER_FIRST, "player-first advantage (blue)")
@@ -92,7 +127,7 @@ func _test_player_misses_and_cooldown() -> void:
 	var w := await _make_world(Vector3(0.0, 0.0, -2.4), true)
 	var c = w["controller"]
 	_expect(c.try_interact(), "E/Z is consumed even if the advance will miss")
-	await _frames(40)
+	await _frames(58)  # D-1189: 0.25 s longer advance
 	_expect((w["battles"] as Array).is_empty(), "miss does not start a battle")
 	_expect(c.get_player_cooldown() > 0.0, "miss starts the player cooldown")
 	_expect(not c.is_player_dashing(), "player is no longer dashing")
@@ -264,7 +299,7 @@ func _test_flee_and_enemy_cooldown() -> void:
 	var miss := await _make_world(Vector3(0.0, 0.0, -2.4), true)
 	var mc = miss["controller"]
 	mc.notify_enemy_state(miss["enemy"], "CHASE")
-	await _frames(60)
+	await _frames(90)  # D-1189: 0.25 s longer advance
 	_expect((miss["battles"] as Array).is_empty(), "enemy advance into the wall misses")
 	_expect(mc.get_enemy_cooldown(miss["enemy"]) > 3.0, "enemy miss starts the 4 s cooldown")
 	await _dispose(miss)

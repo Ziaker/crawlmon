@@ -1,3 +1,11 @@
+<!-- DEBUG-OBRIGATORIO-D1204 -->
+> **DEBUG = OBRIGAÇÃO EXTREMA (D-1204).** O debug existe para testar QUALQUER milésimo do jogo: combate, Moves, VFX, overworld, UI, itens, IA, save, áudio.
+> **NENHUM teste pode levar mais de 1 minuto** do pedido ao resultado; mire em menos de 10 s (`--scenario=<id> --stdout-trace --quit`).
+> Sem caminho pronto no debug? **CRIE o cenário/controle** antes de testar. Nunca peça ao criador para clicar, ajustar slider ou montar nada.
+> Teste SEMPRE no debug (`vfx_room`, `BattleDebug`), com dados (`--summary-json`, `--strict-asserts`), nas duas vistas (D-235); não improvise com o jogo real.
+> Passou de 1 minuto = o debug está incompleto: melhore a ferramenta primeiro. Ver `docs/decisoes/D-1204-*.md` e `docs/TELEMETRIA.md`.
+<!-- /DEBUG-OBRIGATORIO-D1204 -->
+
 # D-1169 — Indicador de escudo: opção B (anel) com número estilizado e diagonal
 
 - **Data:** 2026-11-11
@@ -72,4 +80,4 @@
 
 ## Estado
 
-Protótipo em `tests/vfx/shield_value_lab.gd` (flags `--b-only`, `--dqt-mirror`, `--combat`, `--portrait`, `--no-shield`), `tests/vfx/shield_portrait_overlay.gd` (solução do arco no retrato) e `shaders/proto/shield_ring.gdshader` (anel 3D do modo antigo). Vídeo antes: `test_captures/shield_hud_combat_30s.mp4`; vídeo depois: `test_captures/shield_hud_combat_30s_portrait.mp4`; revisão antes/depois: `test_captures/shield_hud_review.png`. Testes: UI 2/2 e combate 27/27. Implementação no HUD do jogo **pendente de aprovação**.
+Protótipo em `tests/vfx/shield_value_lab.gd` (flags `--b-only`, `--dqt-mirror`, `--combat`, `--portrait`, `--no-shield`), `tests/vfx/shield_portrait_overlay.gd` (solução do arco no retrato) e `shaders/proto/shield_ring.gdshader` (anel 3D do modo antigo). Vídeo antes: `test_captures/shield_hud_combat_30s.mp4`; vídeo depois: `test_captures/shield_hud_combat_30s_portrait.mp4`; revisão antes/depois: `test_captures/shield_hud_review.png`. Testes: UI 2/2 e combate 27/27. Commit local do protótipo: `6860efa3` (sem `push`). Implementação no HUD do jogo **pendente de aprovação**. Relatório da sessão: `OpenDocs/RELATORIO_HUD_ESCUDO_2026-11-12.md`.

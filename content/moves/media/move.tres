@@ -27,7 +27,7 @@ description_text = "A healing ritual for the whole team. Higher MAG heals more."
 mechanics_text = "Restorative prayer that heals missing HP for all living allies based on the caster's Wisdom (WIS)."
 visual_text = "Warm golden-green light rain descending gently over all allies, dissipating into rising healing motes."
 motion_text = "Stationary team heal. Caster kneels in prayer; healing light envelopes all friendly units at once."
-windup_text = "1.30s wind-up. Reverent prayer posture."
+windup_text = "0.50s wind-up. Reverent prayer posture."
 tactical_text = "Restores missing HP to all living allies based on Wisdom (WIS). Team AoE."
 visual_motion_text = "Stationary prayer showering all allies with warm golden-green light rain."
 phase_visuals = {
@@ -36,5 +36,5 @@ phase_visuals = {
 "return": "Dissolução suave da cerimônia sem sobras e retomada do relógio do combate.",
 "strike": "Ativação do selo/aura de status sobre os alvos.",
 "travel": "Manifestação direta no campo (sem deslocamento de corpo): Stationary team heal. Caster kneels in prayer; healing light envelopes all friendly units at once.",
-"windup": "Canalização de status com motor pausado (D-031): 1.30s wind-up. Reverent prayer posture."
+"windup": "Canalização de status com motor pausado (D-031): 0.50s wind-up. Reverent prayer posture."
 }

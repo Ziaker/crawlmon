@@ -1,3 +1,11 @@
+<!-- DEBUG-OBRIGATORIO-D1204 -->
+> **DEBUG = OBRIGAÇÃO EXTREMA (D-1204).** O debug existe para testar QUALQUER milésimo do jogo: combate, Moves, VFX, overworld, UI, itens, IA, save, áudio.
+> **NENHUM teste pode levar mais de 1 minuto** do pedido ao resultado; mire em menos de 10 s (`--scenario=<id> --stdout-trace --quit`).
+> Sem caminho pronto no debug? **CRIE o cenário/controle** antes de testar. Nunca peça ao criador para clicar, ajustar slider ou montar nada.
+> Teste SEMPRE no debug (`vfx_room`, `BattleDebug`), com dados (`--summary-json`, `--strict-asserts`), nas duas vistas (D-235); não improvise com o jogo real.
+> Passou de 1 minuto = o debug está incompleto: melhore a ferramenta primeiro. Ver `docs/decisoes/D-1204-*.md` e `docs/TELEMETRIA.md`.
+<!-- /DEBUG-OBRIGATORIO-D1204 -->
+
 # Assets 2D do Pokémon Mystery Dungeon (Explorers)
 
 > **Status:** primeira leva do hub e os 16 Dungeon Tiles do Sky importados. **Estado atual:** o visual ativo é o **Sky Temporal Tower de 30 tiles** (18 do núcleo + `ground_alt_1/2` + 8 peças reais de parede: strip V/H, island, tip N/S/W/E e cross + 2 centros Wall Alt. 1/2), alinhado à grade real da folha; o atlas 48 px é gerado com **Scale2x 2×** a partir da célula 24×24 (D-357); as tochas/luzes amarelas e a luz do jogador foram removidas e a névoa/ambiente segue `scripts/dungeon/biome_visuals.gd` com 16 paletas fortes e névoa de duas cores laterais + ruído próprio por bioma (D-358/D-359/D-360). As peças sintéticas do atlas de 42 foram descartadas porque misturavam componentes (pitch de 25 px: 1 px de linha ciano + 24×24 de arte). O sheet do Time/Darkness fica como referência em `docs/referencias/`. O piso orgânico usa as Ground Alt em 4%+4% (D-347); a seleção de parede é por assinatura de lado medida (D-354).

@@ -42,7 +42,10 @@ func _audit_vfx_leaks() -> void:
 					is_leaking = true
 					break
 		if is_leaking:
-			room._last_leaks.append(cname)
+			var kids: PackedStringArray = []
+			for k in ch.get_children():
+				kids.append("%s:%s" % [k.get_class(), String(k.name)])
+			room._last_leaks.append("%s[%s]{%s}" % [cname, ch.get_class(), ",".join(kids.slice(0, 4))])  # which node leaks (D-1196 debugging)
 	if room._audit_leaks_on or not room._last_leaks.is_empty():
 		print("[vfx_audit] leaks=%d nodes=%s" % [room._last_leaks.size(), JSON.stringify(room._last_leaks)])
 		room._note("AUDITORIA VFX: %d sobras (%s)" % [room._last_leaks.size(), ", ".join(room._last_leaks) if not room._last_leaks.is_empty() else "limpo"])

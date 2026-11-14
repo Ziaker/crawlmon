@@ -77,6 +77,8 @@ var _shake_trauma := 0.0
 var _shake_decay := 3.0
 var _shake_dir := Vector3.ZERO
 var _fov_kick := 0.0
+var fov_boost_target := 0.0  ## D-1205: degrees the FOV opens on top of the mode's (set by FxDig during the Knock-up)
+var _fov_boost := 0.0
 var _post_rect: ColorRect
 var _post_mat: ShaderMaterial
 var _post_tw: Tween
@@ -257,6 +259,7 @@ func _apply(delta := 0.0) -> void:
 			_shake_trauma = maxf(_shake_trauma - _shake_decay * delta, 0.0)
 		if _fov_kick > 0.0:
 			_fov_kick = move_toward(_fov_kick, 0.0, 16.0 * delta)
+		_fov_boost = lerpf(_fov_boost, fov_boost_target, 1.0 - exp(-3.5 * delta))  # smooth in and out
 
 	var shake_offset := Vector3.ZERO
 	if _shake_trauma > 0.0:
@@ -267,7 +270,7 @@ func _apply(delta := 0.0) -> void:
 
 	_safe_area_step(delta)
 	camera.position = _pos + _sa_dir() * _sa_dolly + shake_offset
-	camera.fov = _fov + _sa_fov  # D-1060: the FOV may only open; the hit/K.O. "push" (_fov_kick, narrower FOV) is no longer drawn
+	camera.fov = _fov + _sa_fov + _fov_boost  # D-1060: the FOV may only open; the hit/K.O. "push" (_fov_kick, narrower FOV) is no longer drawn
 	# Measure the framing from the mode's own aim (no Dutch tilt yet), then apply
 	# the final orientation once.
 	camera.look_at(_look + _sa_look)

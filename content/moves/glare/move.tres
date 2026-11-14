@@ -22,7 +22,7 @@ description_text = "Crossover glare. Its combat effect is not implemented yet."
 mechanics_text = "Hypnotic serpentine gaze that paralyzes the target's momentum."
 visual_text = "Twin yellow glowing serpentine eyes flashing in the dark, projecting paralyzing energy beams."
 motion_text = "Stationary stare. Zero physical travel."
-windup_text = "0.85s wind-up. Pupil contraction and locking stare."
+windup_text = "0.50s wind-up. Pupil contraction and locking stare."
 tactical_text = "Hypnotic serpentine gaze that paralyzes target momentum. Single Target."
 visual_motion_text = "Stationary stare with twin glowing yellow serpentine eye beams."
 phase_visuals = {
@@ -31,5 +31,5 @@ phase_visuals = {
 "return": "Dissolução suave da cerimônia sem sobras e retomada do relógio do combate.",
 "strike": "Ativação do selo/aura de status sobre os alvos.",
 "travel": "Manifestação direta no campo (sem deslocamento de corpo): Stationary stare. Zero physical travel.",
-"windup": "Canalização de status com motor pausado (D-031): 0.85s wind-up. Pupil contraction and locking stare."
+"windup": "Canalização de status com motor pausado (D-031): 0.50s wind-up. Pupil contraction and locking stare."
 }

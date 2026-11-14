@@ -258,6 +258,10 @@ func _draw_drawer() -> void:
 					type_col = Color("cbd5e1")
 				elif type_name == "dodge":
 					type_col = Color("fcb900")
+				elif type_name == "status":  # D-1190: white, chosen by the creator
+					type_col = Color("ffffff")
+				elif type_name == "field":  # D-1190: green
+					type_col = Color("22c55e")
 				var badge_col := type_col
 				if sk.data != null and sk.data.icon_color.a > 0.0:
 					badge_col = sk.data.icon_color
@@ -266,8 +270,9 @@ func _draw_drawer() -> void:
 					var move_ic: Texture2D = MoveIcons.for_move(sk.data.id)
 					if move_ic != null:
 						type_ic = move_ic
+				var type_fg := INK if type_name == "status" else Color.WHITE
 				if type_ic != null:
-					icons.append({"tex": type_ic, "bg": Color(badge_col, 0.7 * alpha), "fg": Color(Color.WHITE if not active else INK, alpha)})
+					icons.append({"tex": type_ic, "bg": Color(badge_col, 0.7 * alpha), "fg": Color(type_fg if not active else INK, alpha)})
 
 			# Icon 3: Range SVG (melee, mid, long, area; pure status has none)
 			var range_name := ""

@@ -24,7 +24,7 @@ description_text = "A lightning-fast punch with almost no wind-up."
 mechanics_text = "Supersonic physical jab with near-instant release, designed specifically to interrupt opposing charge phases."
 visual_text = "Supersonic shock cone and white air-pressure ripples forming an explosive point-blank fist shockwave."
 motion_text = "Instant forward burst step. Attacker covers short distance almost instantaneously."
-windup_text = "0.35s wind-up. Lightning fast execution; ideal for interrupting enemy wind-ups."
+windup_text = "0.20s wind-up. Lightning fast execution; ideal for interrupting enemy wind-ups."
 tactical_text = "Lightning jab designed to interrupt enemy wind-ups. Single Target."
 visual_motion_text = "Instant forward burst step with supersonic air-pressure shockwaves."
 phase_visuals = {
@@ -33,5 +33,5 @@ phase_visuals = {
 "return": "Salto/corrida de recuo de volta à posição de origem e retomada de idle.",
 "strike": "Prelúdio de golpe e arco de swing/arma com aviso Dread na janela de Evade (D-986/D-992).",
 "travel": "Corrida pelo eixo atacante->alvo com trilha no chão (D-1013): Instant forward burst step. Attacker covers short distance almost instantaneously.",
-"windup": "Preparo em posição base com loop contínuo de carga (D-163): 0.35s wind-up. Lightning fast execution; ideal for interrupting enemy wind-ups."
+"windup": "Preparo em posição base com loop contínuo de carga (D-163): 0.20s wind-up. Lightning fast execution; ideal for interrupting enemy wind-ups."
 }

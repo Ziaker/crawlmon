@@ -23,7 +23,7 @@ description_text = "A physical flurry that sweeps every enemy."
 mechanics_text = "Legendary physical flurry that strikes all enemies in rapid succession with leaping slashes."
 visual_text = "Blurring afterimages of white blade slashes and cherry blossom petal trails crisscrossing the field."
 motion_text = "Rapid multidirectional leap. Attacker jumps from target to target in a rapid zig-zag before returning."
-windup_text = "1.75s wind-up. Focused blade drawing posture."
+windup_text = "1.50s wind-up. Focused blade drawing posture."
 tactical_text = "Flurry of rapid leaping slashes striking all enemies. Full AoE."
 visual_motion_text = "Rapid multidirectional leap with blurring white blade afterimages."
 phase_visuals = {
@@ -32,5 +32,5 @@ phase_visuals = {
 "return": "Salto/corrida de recuo de volta à posição de origem e retomada de idle.",
 "strike": "Prelúdio de golpe e arco de swing/arma com aviso Dread na janela de Evade (D-986/D-992).",
 "travel": "Corrida pelo eixo atacante->alvo com trilha no chão (D-1013): Rapid multidirectional leap. Attacker jumps from target to target in a rapid zig-zag before returning.",
-"windup": "Preparo em posição base com loop contínuo de carga (D-163): 1.75s wind-up. Focused blade drawing posture."
+"windup": "Preparo em posição base com loop contínuo de carga (D-163): 1.50s wind-up. Focused blade drawing posture."
 }

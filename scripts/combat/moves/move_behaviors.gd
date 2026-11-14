@@ -78,7 +78,7 @@ class TidalSurge extends MoveBehavior:
 		b.bounce_index = idx
 		b.bounce_from_target = from_target
 		b.bounce_no_reward = true
-		b.auto_dodged = b.kind != Skill.Kind.STATUS and not b.dodged and not b.whiffed and (battle.debug_roll == 2 or (battle.debug_roll == 0 and randf() < Battle.AUTO_DODGE_CHANCE))
+		b.auto_dodged = b.kind != Skill.Kind.STATUS and not b.dodged and not b.whiffed and (battle.debug_roll == 2 or (battle.debug_roll == 0 and randf() < Battle.auto_dodge_chance(b.target)))
 		battle.add_landing(b)
 		battle.attack_resolved.emit(b)
 		battle.attack_phase.emit(b, b.phase)
@@ -279,6 +279,36 @@ class Sukunda extends MoveBehavior:
 
 	func ai_status_value(_c: Combatant, target: Combatant, _battle: Battle) -> float:
 		return _debuff_value(target, "speed", target.speed_buff, 24.0)
+
+
+class Sukukaja extends MoveBehavior:
+	func on_status(inc: Incoming, battle: Battle) -> bool:
+		var team: Array[Combatant] = battle.team_of(inc.attacker)
+		var any_increased := false
+		for ally in team:
+			if ally.is_alive():
+				var capped := not ally.can_buff("speed", 1)
+				if not capped:
+					ally.buff_stat("speed", 1)
+					any_increased = true
+				battle.hit_resolved.emit(inc.attacker, ally, inc.element, {
+					"status": true, "evaded": false, "dmg": 0, "weak": false,
+					"crit": false, "gain": 0, "whiffed": false, "power": 0.0,
+					"skill_name": inc.label, "buff": "spd", "capped": capped
+				})
+		if any_increased:
+			battle.log_message.emit("%s usa Sukukaja! A agilidade da equipe aumentou!" % inc.attacker.name)
+		else:
+			battle.log_message.emit("%s usa Sukukaja! A agilidade da equipe já está no patamar máximo (+5)!" % inc.attacker.name)
+		return true
+
+	func ai_status_value(c: Combatant, _target: Combatant, battle: Battle) -> float:
+		var team: Array[Combatant] = battle.team_of(c)
+		var total := 0.0
+		for ally in team:
+			if ally.is_alive() and ally.can_buff("speed", 1):
+				total += 24.0 * (1.0 - float(maxi(ally.speed_buff, 0)) / 5.0)
+		return total
 
 
 class ArmoredBulk extends MoveBehavior:

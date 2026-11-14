@@ -1,4 +1,12 @@
-﻿# D-1162 â€” Javelin Throw VFX 3D (OpÃ§Ã£o C): escopo, fonte e relÃ³gio
+﻿<!-- DEBUG-OBRIGATORIO-D1204 -->
+> **DEBUG = OBRIGAÇÃO EXTREMA (D-1204).** O debug existe para testar QUALQUER milésimo do jogo: combate, Moves, VFX, overworld, UI, itens, IA, save, áudio.
+> **NENHUM teste pode levar mais de 1 minuto** do pedido ao resultado; mire em menos de 10 s (`--scenario=<id> --stdout-trace --quit`).
+> Sem caminho pronto no debug? **CRIE o cenário/controle** antes de testar. Nunca peça ao criador para clicar, ajustar slider ou montar nada.
+> Teste SEMPRE no debug (`vfx_room`, `BattleDebug`), com dados (`--summary-json`, `--strict-asserts`), nas duas vistas (D-235); não improvise com o jogo real.
+> Passou de 1 minuto = o debug está incompleto: melhore a ferramenta primeiro. Ver `docs/decisoes/D-1204-*.md` e `docs/TELEMETRIA.md`.
+<!-- /DEBUG-OBRIGATORIO-D1204 -->
+
+# D-1162 â€” Javelin Throw VFX 3D (OpÃ§Ã£o C): escopo, fonte e relÃ³gio
 
 > **AtualizaÃ§Ã£o 2026-11-11 (D-1171):** o item 2 (nÃºmeros do prompt) foi **superado**: a fonte visual oficial passou a ser o **HTML Card C**. O item 1 (batalha + laboratÃ³rio) e o item 3 (fases reais) continuam.
 

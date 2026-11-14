@@ -7,6 +7,7 @@ enum Phase { WINDUP, TRAVEL, STRIKE, RETURN, DONE, STAGGER }
 
 var attacker: Combatant
 var target: Combatant
+var target2: Combatant = null  ## D-1200: secondary target of a DUAL Move (null otherwise).
 var power := 1.0
 var element := Element.Type.FISICO
 var kind := 0  ## Skill.Kind.MELEE
@@ -106,7 +107,9 @@ func can_evade_now() -> bool:
 	if not in_strike_window():
 		return false
 	var left := phase_len() - phase_time
-	return left > window_end() and left <= window_end() + Battle.PERFECT_WINDOW
+	# D-1180: keep a short late margin after the old window close. A press made while
+	# the Dread is still on screen must dodge, not WHIFF.
+	return left > maxf(window_end() - Battle.EVADE_LATE_GRACE, 0.0) and left <= window_end() + Battle.PERFECT_WINDOW
 
 
 ## D-1014: seconds before the contact at which the valid window closes: a melee strike closes it at the

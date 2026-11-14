@@ -41,11 +41,16 @@ var hide_shield_badges := false
 var _status: StatusPanel
 var _status_open := false
 var _reward_layer: RewardLayer
+var _card_trace := OS.get_cmdline_user_args().has("--card-trace")  ## debug: print the knocked tag's base position every frame
+var _dmg_layer: Control  ## creator: damage numbers are ALWAYS in front of everything (top-most layer)
 var _heal_layer: Control  ## D-347: the option 2 numbers above the HP cards/tags
 var _inc_tags: Dictionary = {}  ## Battle.Incoming -> AttackTag
 var _hint: EvadeHint
 var _burn_k: Dictionary = {}  ## D-239: Combatant -> 0..1, how much its card is burning (eases in and out)
 var _stun_k: Dictionary = {}  ## D-980: Combatant -> 0..1, how dizzy its card is (eases in and out)
+var _card_knock: Dictionary = {}  ## Combatant -> {"t0": float clock seconds, "air": float, "style": StringName}
+## Debug override (vfx_room F11 / --card-style=): non-empty replaces the Move's card_style.
+static var card_style_override: StringName = &""
 var _blind_k: Dictionary = {}  ## D-1121: Combatant -> 0..1, how blurry its portrait is (eases in and out)
 var _blind_snap: Dictionary = {}  ## D-1121: Combatant -> 0..1, focus-snap flash after BLIND ends
 var _blind_prev: Dictionary = {}  ## D-1121: previous blind_k, to detect the end
@@ -165,6 +170,12 @@ func setup(battle: Battle, party: Array[Combatant], enemies: Array[Combatant], c
 	_status.closed.connect(func() -> void:
 		_set_status_mode(false)
 		status_closed.emit())
+	_dmg_layer = DamageLayer.new()
+	_dmg_layer.hud = self
+	_dmg_layer.z_index = 4096
+	_dmg_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_dmg_layer)  # added last and with the maximum z_index: above cards, tags, menus, the status view and the Knock-up echo
+	_dmg_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_status.selected.connect(func(u: Combatant) -> void: status_unit_selected.emit(u))
 	director.mode_changed.connect(func(m: BattleCamera.Mode) -> void: _tabs.mode = m; _tabs.queue_redraw())
 	battle.log_message.connect(_on_log)
@@ -275,6 +286,7 @@ func remove_enemy(c: Combatant) -> void:
 		_tags.erase(c)
 	if _target == c:
 		_target = null
+	_card_knock.erase(c)
 
 
 ## Pause-screen with everyone's status; closing it emits status_closed.
@@ -365,6 +377,8 @@ func _process(_delta: float) -> void:
 			t.position += Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * 3.0 * t.pulse
 			t.pulse = maxf(t.pulse - _delta * 2.5, 0.0)
 	_sync_incoming()
+	if _dmg_layer != null:
+		_dmg_layer.queue_redraw()
 	_draw_engaged()
 	_sync_blind_ghosts()
 	_sync_blind_menu()
@@ -472,7 +486,7 @@ func _draw_banner() -> void:
 	draw_string(title, Vector2(x + 26, y + 58), String(_banner["skill"]).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, w - 40, 38, LIME)
 
 
-func _draw_pops() -> void:
+func _draw_pops(ci: CanvasItem) -> void:
 	var now := BattleHud.clock_ms()
 	var title := FanMenu.title_font()
 	var keep: Array = []
@@ -501,18 +515,18 @@ func _draw_pops() -> void:
 		var fill := Color("62d8e7") if magic else (Color("ffd84a") if crit else (Color("ff9a3a") if weak else Color("f6f3e6")))
 		var text := str(p["value"])
 		var origin: Vector2 = (at as Vector2) + Vector2(float(p["dx"]) + jitter, -4.0 - rise)
-		draw_set_transform(origin, -0.12, Vector2(sc, sc))
+		ci.draw_set_transform(origin, -0.12, Vector2(sc, sc))
 		var half := Vector2(-200.0, 0.0)
-		draw_string(title, half + Vector2(5, 6), text, HORIZONTAL_ALIGNMENT_CENTER, 400.0, size, Color(CORAL.r, CORAL.g, CORAL.b, alpha))
-		draw_string_outline(title, half, text, HORIZONTAL_ALIGNMENT_CENTER, 400.0, size, 14, Color(0.04, 0.07, 0.12, alpha))
-		draw_string(title, half, text, HORIZONTAL_ALIGNMENT_CENTER, 400.0, size, Color(fill, alpha))
+		ci.draw_string(title, half + Vector2(5, 6), text, HORIZONTAL_ALIGNMENT_CENTER, 400.0, size, Color(CORAL.r, CORAL.g, CORAL.b, alpha))
+		ci.draw_string_outline(title, half, text, HORIZONTAL_ALIGNMENT_CENTER, 400.0, size, 14, Color(0.04, 0.07, 0.12, alpha))
+		ci.draw_string(title, half, text, HORIZONTAL_ALIGNMENT_CENTER, 400.0, size, Color(fill, alpha))
 		if magic:
-			draw_string(title, half + Vector2(0, -size * 0.75), "MAGIC", HORIZONTAL_ALIGNMENT_CENTER, 400.0, 20, Color(0.38, 0.85, 0.91, alpha))
+			ci.draw_string(title, half + Vector2(0, -size * 0.75), "MAGIC", HORIZONTAL_ALIGNMENT_CENTER, 400.0, 20, Color(0.38, 0.85, 0.91, alpha))
 		elif crit:
-			draw_string(title, half + Vector2(0, -size * 0.75), "CRITICAL!", HORIZONTAL_ALIGNMENT_CENTER, 400.0, 22, Color(1.0, 0.95, 0.6, alpha))
+			ci.draw_string(title, half + Vector2(0, -size * 0.75), "CRITICAL!", HORIZONTAL_ALIGNMENT_CENTER, 400.0, 22, Color(1.0, 0.95, 0.6, alpha))
 		elif weak:
-			draw_string(title, half + Vector2(0, -size * 0.75), "WEAK!", HORIZONTAL_ALIGNMENT_CENTER, 400.0, 20, Color(1.0, 0.8, 0.5, alpha))
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			ci.draw_string(title, half + Vector2(0, -size * 0.75), "WEAK!", HORIZONTAL_ALIGNMENT_CENTER, 400.0, 20, Color(1.0, 0.8, 0.5, alpha))
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	_pops = keep
 
 
@@ -734,6 +748,146 @@ func stun_k(c: Combatant) -> float:
 	return float(_stun_k.get(c, 0.0))
 
 
+## Knock-up card effect (plumbing only): records when `c` was launched and for how long it stays in the air.
+## `style` is the Move's `card_style`; empty means the Move asks for no effect.
+func card_knock_start(c: Combatant, style: StringName, air: float) -> void:
+	if c == null:
+		return
+	var resolved: StringName = card_style_override if card_style_override != &"" else style
+	if resolved == &"":
+		return
+	_card_knock[c] = {"t0": BattleHud.clock_ms() / 1000.0, "air": air, "style": resolved}
+
+
+## Current state of the Knock-up card effect for `c`. No pose math here: the visual layer reads this.
+func card_knock_pose(c: Combatant) -> Dictionary:
+	if not _card_knock.has(c):
+		return {"active": false, "k": 0.0, "t": 0.0, "air": 0.0, "style": &""}
+	var e: Dictionary = _card_knock[c]
+	var air := float(e["air"])
+	var t := maxf(BattleHud.clock_ms() / 1000.0 - float(e["t0"]), 0.0)
+	if t >= air + CARD_LAND_T:
+		_card_knock.erase(c)
+		return {"active": false, "k": 1.0, "t": t, "air": air, "style": e["style"], "land_t": CARD_LAND_T}
+	return {"active": t < air, "k": clampf(t / maxf(air, 0.001), 0.0, 1.0), "t": t, "air": air, "style": e["style"], "land_t": maxf(t - air, 0.0)}
+
+
+# --- Knock-up card effect: pose per style (D-1205; prototypes cartao_v2 "Thrown Slab", cartao_v3 "Trapdoor slam") ---
+const CARD_LAND_T := 0.3  ## seconds the landing shake / dust ring keep playing after the flight
+const CARD_REF_W := 202.0  ## prototype card width; every height below is in prototype px and scales with the real card
+const CARD_APEX := 0.5  ## apex of the flight as a fraction of the air time (0.65 s of 1.3 s)
+const CARD_LIME := Color("d6fa66")
+const CARD_GOLD := Color("f0c57e")
+## thrown_slab: whole block on one parabola + one full turn (ease-out cubic) + 3 afterimages + ribbon.
+## trapdoor_slam: right edge up (h 130, heavy gravity 1500), left edge barely lifted (h 46, light gravity 200); no spin.
+const CARD_STYLES := {
+	&"thrown_slab": {"h": 104.0, "turns": 1.0, "ghosts": 3, "ghost_step": 0.055},
+	&"trapdoor_slam": {"hl": 46.0, "hr": 130.0, "gl": 200.0, "gr": 1500.0, "ring": true},
+}
+
+
+## Edge height (prototype px) at time t of an air time T: same law as MoveData.knockup_launch(): fall = sqrt(2h/g), rise = T - fall.
+static func card_edge_h(t: float, h: float, g: float, air: float) -> float:
+	if h <= 0.0 or g <= 0.0 or t <= 0.0 or t >= air:
+		return 0.0
+	var fall := sqrt(2.0 * h / g)
+	var rise := maxf(air - fall, 0.05)
+	if t < rise:
+		var k := t / rise
+		return h * (1.0 - (1.0 - k) * (1.0 - k))
+	var f := (t - rise) / fall
+	return h * (1.0 - f * f)
+
+
+## Block parabola with the apex at CARD_APEX of the air time (no hover).
+static func card_block_h(k: float, h: float) -> float:
+	if k <= 0.0 or k >= 1.0:
+		return 0.0
+	if k < CARD_APEX:
+		var q := k / CARD_APEX
+		return h * (1.0 - (1.0 - q) * (1.0 - q))
+	var q2 := (k - CARD_APEX) / (1.0 - CARD_APEX)
+	return h * (1.0 - q2 * q2)
+
+
+## Called at the start of a card's _draw(): draws the ribbon / afterimages (behind the card), sets the transform for everything the
+## card draws next and RETURNS it (IDENTITY with no active pose): later code that resets the transform (the slanted badges) must
+## compose with the returned value, otherwise the card falls apart.
+static func card_pose_begin(ci: CanvasItem, pose: Dictionary, sz: Vector2) -> Transform2D:
+	if pose.is_empty() or not pose.has("style"):
+		return Transform2D.IDENTITY
+	var style: StringName = pose["style"]
+	if not CARD_STYLES.has(style) or (not bool(pose.get("active", false)) and float(pose.get("land_t", 0.0)) <= 0.0):
+		return Transform2D.IDENTITY
+	var cfg: Dictionary = CARD_STYLES[style]
+	var sc := sz.x / CARD_REF_W
+	var air := float(pose["air"])
+	var t := minf(float(pose["t"]), air)
+	var k := clampf(float(pose["k"]), 0.0, 1.0)
+	var land_t := float(pose.get("land_t", 0.0))
+	var center := sz * 0.5
+	var off := Vector2.ZERO
+	var rot := 0.0
+	var y := 0.0
+	if style == &"thrown_slab":
+		y = card_block_h(k, float(cfg["h"])) * sc
+		rot = TAU * float(cfg["turns"]) * (1.0 - pow(1.0 - k, 3.0)) if k < 1.0 else 0.0
+		off = Vector2(0.0, -y)
+		if y > 4.0:  # the ribbon: a banded streak from where the card stood up to the card, then the afterimages
+			var reach := maxf(y - 10.0 * sc, 0.0)
+			var rib := Rect2(Vector2(center.x - 16.0 * sc, sz.y - reach), Vector2(32.0 * sc, reach))
+			var fade := clampf(reach / (float(cfg["h"]) * sc * 0.45), 0.0, 1.0)
+			ci.draw_set_transform_matrix(Transform2D.IDENTITY)
+			ci.draw_rect(rib, Color(CARD_LIME, 0.32 * fade))
+			for b in 4:
+				ci.draw_rect(Rect2(rib.position + Vector2(0.0, rib.size.y * (0.15 + 0.22 * float(b))), Vector2(rib.size.x, 2.0 * sc)), Color(CARD_LIME, 0.5 * fade))
+		for gi in int(cfg["ghosts"]):
+			var gk := maxf(k - float(cfg["ghost_step"]) * float(gi + 1), 0.0)
+			var gy := card_block_h(gk, float(cfg["h"])) * sc
+			if gy > 4.0 and k < 1.0:
+				var gxf := Transform2D(0.0, Vector2(0.0, -gy) + center) * Transform2D(TAU * float(cfg["turns"]) * (1.0 - pow(1.0 - gk, 3.0)), Vector2.ZERO) * Transform2D(0.0, -center)
+				ci.draw_set_transform_matrix(gxf)
+				ci.draw_rect(Rect2(Vector2.ZERO, sz), Color(CARD_LIME, 0.26 - 0.07 * float(gi)))
+	else:  # trapdoor_slam
+		var yl := card_edge_h(t, float(cfg["hl"]), float(cfg["gl"]), air)
+		var yr := card_edge_h(t, float(cfg["hr"]), float(cfg["gr"]), air)
+		y = (yl + yr) * 0.5 * sc
+		rot = -asin(clampf((yr - yl) / CARD_REF_W, -1.0, 1.0))  # right edge up = counter-clockwise
+		off = Vector2(0.0, -y)
+	# landing: a short shake of the card
+	if land_t > 0.0 and land_t < 0.18:
+		off.x += 5.0 * sc * sin(land_t * 60.0) * (1.0 - land_t / 0.18)
+	var xf := Transform2D(0.0, off + center) * Transform2D(rot, Vector2.ZERO) * Transform2D(0.0, -center)
+	# landing: dust ring(s) on the floor line under the card, drawn flat (before the card transform)
+	if land_t > 0.0:
+		var rk := clampf(land_t / CARD_LAND_T, 0.0, 1.0)
+		var ys := Transform2D(Vector2(1.0, 0.0), Vector2(0.0, 0.35), Vector2.ZERO)
+		var spots: Array[Vector2] = [Vector2(center.x, sz.y)]
+		var grow := 5.0
+		if bool(cfg.get("ring", false)):
+			spots = [Vector2(sz.x * 0.04, sz.y), Vector2(sz.x * 0.96, sz.y)]
+			grow = 9.0
+		for sp in spots:
+			ci.draw_set_transform_matrix(Transform2D(0.0, sp) * ys)
+			ci.draw_arc(Vector2.ZERO, (6.0 + 10.0 * grow * rk) * sc, 0.0, TAU, 32, Color(CARD_GOLD, 0.9 * (1.0 - rk)), 3.0 * sc)
+	ci.draw_set_transform_matrix(xf)
+	return xf
+
+
+## Screen point (HUD pixels) at the top-centre of `c`'s card or enemy tag, or null when it has none (labs). Used by the Knock-up echo.
+func card_anchor_screen(c: Combatant) -> Variant:
+	var node: Control = null
+	for card in _cards:
+		if card.combatant == c:
+			node = card
+			break
+	if node == null:
+		node = _tags.get(c)
+	if node == null or not is_instance_valid(node):
+		return null
+	return node.get_global_transform() * Vector2(node.size.x * 0.5, 0.0)
+
+
 ## D-1121: how much the “Olhar turvo” (blurred, double-vision portrait) is showing.
 func blind_k(c: Combatant) -> float:
 	return float(_blind_k.get(c, 0.0))
@@ -825,11 +979,18 @@ func _layout_tags() -> void:
 		if model != null and model.has_meta("head_y"):
 			head = model.get_meta("head_y") + 0.4
 		var p: Variant = _screen_pos(e, head)
+		if model != null and model.has_meta("tag_home") and not _camera.is_position_behind(model.get_meta("tag_home") + Vector3(0, head, 0)):
+			var home_px: Vector2 = _camera.unproject_position(model.get_meta("tag_home") + Vector3(0, head, 0))  # the tag stays at the resting spot
+			# no snap at the start of a Knock-up: blend from where the body projects to the resting spot over 0.12 s
+			var blend := clampf(float(tag.card_pose.get("t", 1.0)) / 0.12, 0.0, 1.0) if tag.card_pose.get("active", false) and p != null else 1.0
+			p = (p as Vector2).lerp(home_px, blend) if p != null else home_px
 		tag.visible = p != null and e.is_alive()
 		if p != null:
 			tag.position = (p as Vector2) - Vector2(tag.size.x * 0.5, tag.size.y + TAG_LIFT)  # D-981: a bit higher
 			tag.active = e == _target
 			tag.queue_redraw()
+			if _card_trace and tag.card_pose.get("active", false):  # --card-trace: per-frame base position of a knocked tag (smoothness check)
+				print("[card-trace] t=%.3f tag=%s base=(%.1f,%.1f) k=%.3f" % [BattleHud.clock_ms() / 1000.0, e.name, tag.position.x, tag.position.y, float(tag.card_pose.get("k", 0.0))])
 			if tag.visible:
 				shown.append(tag)
 	_separate_tags(shown)
@@ -873,12 +1034,19 @@ func _draw() -> void:
 			draw_rect(Rect2(bar.position, Vector2(bar.size.x * float(m["k"]), bar.size.y)), LIME.lerp(CORAL, 1.0 - float(m["k"])))
 			draw_rect(bar, Color(1, 1, 1, 0.5), false, 1.0)
 	_draw_banner()
-	_draw_pops()
 	if not _status_open:  # The Status pause view has its own footer.
 		draw_rect(Rect2(0, 720 - FOOTER_H, 1280, FOOTER_H), Color(0.03, 0.07, 0.11, 0.95))
 		draw_line(Vector2(0, 720 - FOOTER_H), Vector2(1280, 720 - FOOTER_H), Color("2a3d47"), 1.0)
 		var hint := "ARROWS MOVE   |   Z CONFIRM   |   X BACK   |   SPACE EVADE   |   1-9 MOVES   |   Q/E PAGE   |   R REPEAT   |   C SETTINGS"
 		draw_string(font, Vector2(MARGIN, 720 - 13), hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color("b5c3c2"))
+
+## Top-most layer that only draws the damage numbers (BattleHud._draw_pops), so nothing is ever drawn over them.
+class DamageLayer extends Control:
+	var hud: BattleHud
+
+	func _draw() -> void:
+		if hud != null:
+			hud._draw_pops(self)
 
 
 # --- Unit card -----------------------------------------------------------------
@@ -895,6 +1063,8 @@ class UnitCard extends Control:
 				scale = Vector2.ONE
 	var order := 0
 	var is_ghost := false  ## D-1134: translucent whole-card copy; skips the portrait overlay
+	var pose_xf := Transform2D.IDENTITY  ## Knock-up card pose transform; every transform reset in _draw must compose with it
+	var card_pose: Dictionary = {}  ## Knock-up card effect state, filled by _apply_card_knock()
 	var _portrait: Texture2D
 
 	# Animation states for ATB and Burst
@@ -932,11 +1102,19 @@ class UnitCard extends Control:
 			_prev_burst = combatant.shown_burst()
 			for i in 5:
 				_block_is_full[i] = combatant.shown_atb() >= float(i + 1)
-			var path := "res://personagens/portraits/%s.png" % combatant.name.to_lower()
-			if ResourceLoader.exists(path):
-				_portrait = load(path)
+			_portrait = preload("res://scripts/ui/portrait_icon.gd").get_icon(combatant.name)
+
+	# TODO visual layer: Claude
+	func _apply_card_knock() -> void:
+		if hud == null or combatant == null:
+			card_pose = {}
+			return
+		card_pose = hud.card_knock_pose(combatant)
+		if hud._card_trace and card_pose.get("active", false):  # --card-trace
+			print("[card-trace] t=%.3f tag=%s base=(%.1f,%.1f) k=%.3f" % [BattleHud.clock_ms() / 1000.0, combatant.name, position.x, position.y, float(card_pose.get("k", 0.0))])
 
 	func _process(delta: float) -> void:
+		_apply_card_knock()
 		if combatant == null:
 			return
 		var cur_atb := combatant.shown_atb()
@@ -983,6 +1161,7 @@ class UnitCard extends Control:
 		queue_redraw()
 
 	func _draw() -> void:
+		pose_xf = BattleHud.card_pose_begin(self, card_pose, size)  # Knock-up card effect (D-1205)
 		var c := combatant
 		var font := FanMenu.body_font()
 		var accent := AQUA if hero else Color("b6a3fe")
@@ -1050,7 +1229,7 @@ class UnitCard extends Control:
 		if c.queued_skill != null:  # QoL: the move is waiting for ATB (D-161).
 			badges.append({"text": "QUEUE: %s" % c.queued_skill.display_name.to_upper(), "bg": Color("7a5a00"), "fg": Color("ffe38a")})
 		if c.is_stunned():
-			badges.append({"text": "STUN %.1fs" % c.stun_timer, "bg": Color("d32f2f"), "fg": Color.WHITE})
+			badges.append({"text": "%s %.1fs" % [c.stun_name(), c.stun_timer], "bg": Color("d32f2f"), "fg": Color.WHITE})
 		if c.is_burning():  # D-239
 			badges.append({"text": "BURN %.1fs" % BattleHud.burn_left(c), "bg": Color("b5470b"), "fg": Color("fff3d6")})
 		if c.is_blind():
@@ -1082,8 +1261,9 @@ class UnitCard extends Control:
 			var txt: String = b["text"]
 			var icon_w := 10.5 if b.has("icon") else 0.0
 			var tw := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 9).x + 9.2 + icon_w
-			if bx + tw > size.x - 10:
-				break
+			if bx + tw > size.x - 10 and bx > 8.0:  # D-1204: wraps to a row above instead of dropping the badge
+				bx = 8.0
+				by -= 14.65
 			var br := Rect2(bx, by, tw, 12.65)
 			var badge_bg: Color = b["bg"]
 			var badge_fg: Color = b["fg"]
@@ -1174,11 +1354,11 @@ class UnitCard extends Control:
 			BattleHud.slant_outline(self, slot, bskew, Color.WHITE.lerp(GOLD, 0.4), 1.5)
 			# Burst text
 			var b_txt := "B" if sb < 2 else "B%d" % sb
-			draw_set_transform_matrix(BattleHud.slant_xform(slot, bskew))  # the letters lean like the slot
+			draw_set_transform_matrix(pose_xf * BattleHud.slant_xform(slot, bskew))  # the letters lean like the slot
 			for d in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:
 				draw_string(font, slot.position + Vector2(0, 17.0) + d, b_txt, HORIZONTAL_ALIGNMENT_CENTER, slot.size.x, 15, Color(1.0, 0.45, 0.05, 0.9))
 			draw_string(font, slot.position + Vector2(0, 17.0), b_txt, HORIZONTAL_ALIGNMENT_CENTER, slot.size.x, 15, Color(1.0, 1.0, 0.9))
-			draw_set_transform_matrix(Transform2D.IDENTITY)
+			draw_set_transform_matrix(pose_xf)
 			# Sudden burst gain flash
 			if _burst_gain_flash > 0.0:
 				var g_col := Color(1, 1, 1, _burst_gain_flash * 0.85)
@@ -1187,9 +1367,9 @@ class UnitCard extends Control:
 			# Empty burst slot
 			BattleHud.slant(self, slot, bskew, Color("151a24"))
 			BattleHud.slant_outline(self, slot, bskew, Color("344254"), 1.0)
-			draw_set_transform_matrix(BattleHud.slant_xform(slot, bskew))
+			draw_set_transform_matrix(pose_xf * BattleHud.slant_xform(slot, bskew))
 			draw_string(font, slot.position + Vector2(0, 16.0), "B", HORIZONTAL_ALIGNMENT_CENTER, slot.size.x, 13, Color("4a576b"))
-			draw_set_transform_matrix(Transform2D.IDENTITY)
+			draw_set_transform_matrix(pose_xf)
 			if c.burst > 0:  # Credited, token still flying: the slot is reserved.
 				BattleHud.slant_outline(self, slot, bskew, Color(1.0, 0.6, 0.15, 0.4 + 0.4 * (0.5 + 0.5 * sin(now * 0.012))), 1.5)
 
@@ -1219,6 +1399,8 @@ class EnemyTag extends Control:
 	var hud: BattleHud
 	var active := false
 	var pulse := 0.0  ## Set when a reward lands: a small nudge of the tag.
+	var pose_xf := Transform2D.IDENTITY  ## Knock-up card pose transform; every transform reset in _draw must compose with it
+	var card_pose: Dictionary = {}  ## Knock-up card effect state, filled by _apply_card_knock()
 	var _portrait: Texture2D
 	var _portrait_tried := false
 	const W := 136.0
@@ -1243,7 +1425,15 @@ class EnemyTag extends Control:
 	func burst_slot_global() -> Vector2:
 		return position + _burst_slot_rect().get_center() * scale
 
+	# TODO visual layer: Claude
+	func _apply_card_knock() -> void:
+		if hud == null or combatant == null:
+			card_pose = {}
+			return
+		card_pose = hud.card_knock_pose(combatant)
+
 	func _process(_d: float) -> void:
+		_apply_card_knock()
 		if combatant == null or hud == null:
 			return
 		# D-981: the tag gets dizzy too while its enemy is stunned (slow sway).
@@ -1251,6 +1441,7 @@ class EnemyTag extends Control:
 		rotation = deg_to_rad(2.2) * sin(BattleHud.clock_ms() / 1000.0 * TAU * BattleHud.STUN_SWAY_HZ) * hud.stun_k(combatant)
 
 	func _draw() -> void:
+		pose_xf = BattleHud.card_pose_begin(self, card_pose, size)  # Knock-up card effect (D-1205)
 		var c := combatant
 		var font := FanMenu.body_font()
 		var now := BattleHud.clock_ms()
@@ -1266,7 +1457,7 @@ class EnemyTag extends Control:
 		var neg: Array[Dictionary] = []
 		var pos: Array[Dictionary] = []
 		if c.is_stunned():
-			neg.append({"text": "STUN %.1fs" % c.stun_timer, "bg": Color("d32f2f"), "fg": Color.WHITE})
+			neg.append({"text": "%s %.1fs" % [c.stun_name(), c.stun_timer], "bg": Color("d32f2f"), "fg": Color.WHITE})
 		if c.is_burning():
 			neg.append({"text": "BURN %.1fs" % BattleHud.burn_left(c), "bg": Color("b5470b"), "fg": Color("fff3d6")})
 		if c.is_blind():
@@ -1291,37 +1482,51 @@ class EnemyTag extends Control:
 			pos.append({"text": "IMM %.1fs" % c.magic_immune_timer, "bg": Color("5b3f99"), "fg": Color("e2d6ff")})
 		if c.queued_skill != null:
 			pos.append({"text": "QUEUE %s" % c.queued_skill.display_name.to_upper(), "bg": Color("7a5a00"), "fg": Color("ffe38a")})
+		# D-1204: nothing is dropped or overlapped. A badge that does not fit wraps to another row above (14 px per row);
+		# the positive group goes to the row above the negative group when the two would collide on the same row.
+		var row_h := 14.0
+		var pos_total := 0.0
+		for b in pos:
+			pos_total += font.get_string_size(String(b["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x + 7.0 + (8.5 if b.has("icon") else 0.0) + 3.0
 		var lx := 0.0
+		var lrow := 0
 		for b in neg:
 			var txt: String = b["text"]
 			var tw := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x + 7.0
+			if lx > 0.0 and lx + tw > size.x:
+				lrow += 1
+				lx = 0.0
+			var ry := -float(lrow) * row_h
 			var badge_bg: Color = b["bg"]
 			var badge_fg: Color = b["fg"]
 			if bool(b.get("blind", false)):  # D-1134: black badge, white text, neutral pulse
 				var p := BattleHud.blind_badge_pulse(c, BattleHud.clock_ms())
-				BattleHud.slant(self, Rect2(lx - 1.6 - p * 1.2, -15.6 - p * 1.2, tw + 3.2 + p * 2.4, 13.2 + p * 2.4), 2.0,
+				BattleHud.slant(self, Rect2(lx - 1.6 - p * 1.2, ry - 15.6 - p * 1.2, tw + 3.2 + p * 2.4, 13.2 + p * 2.4), 2.0,
 					Color(0.84, 0.88, 0.93, 0.18 + 0.24 * p))
-			BattleHud.slant(self, Rect2(lx, -14, tw, 11), 2.0, badge_bg)
-			draw_string(font, Vector2(lx + 3.0, -5.0), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, badge_fg)
+			BattleHud.slant(self, Rect2(lx, ry - 14, tw, 11), 2.0, badge_bg)
+			draw_string(font, Vector2(lx + 3.0, ry - 5.0), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, badge_fg)
 			lx += tw + 3.0
+		var prow := lrow if (neg.is_empty() or lx + pos_total <= size.x) else lrow + 1
 		var rx := size.x
 		for b in pos:
 			var txt: String = b["text"]
 			var icon_w := 8.5 if b.has("icon") else 0.0
 			var tw := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x + 7.0 + icon_w
+			if rx < size.x and rx - tw < 0.0:
+				prow += 1
+				rx = size.x
+			var py := -float(prow) * row_h
 			rx -= tw
-			BattleHud.slant(self, Rect2(rx, -14, tw, 11), 2.0, b["bg"])
+			BattleHud.slant(self, Rect2(rx, py - 14, tw, 11), 2.0, b["bg"])
 			if b.has("icon"):
-				ArmorIcons.draw(self, Rect2(rx + 2.6, -12.6, 8.0, 8.0), b["fg"], b["bg"])
-			draw_string(font, Vector2(rx + 3.0 + icon_w, -5.0), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, b["fg"])
+				ArmorIcons.draw(self, Rect2(rx + 2.6, py - 12.6, 8.0, 8.0), b["fg"], b["bg"])
+			draw_string(font, Vector2(rx + 3.0 + icon_w, py - 5.0), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, b["fg"])
 			rx -= 3.0
 
 		# Portrait.
 		if not _portrait_tried:
 			_portrait_tried = true
-			var path := "res://personagens/portraits/%s.png" % c.name.to_lower()
-			if ResourceLoader.exists(path):
-				_portrait = load(path)
+			_portrait = preload("res://scripts/ui/portrait_icon.gd").get_icon(c.name)
 		BattleHud.slant(self, PR, 4.0, Color("54456c").lerp(Color("4a1a06"), bk))
 		if _portrait != null:
 			BattleHud.slant_texture(self, PR.grow(-1.5), 3.5, _portrait)
@@ -1376,15 +1581,15 @@ class EnemyTag extends Control:
 		if sb > 0:
 			BattleHud.draw_flames(self, slot, now, 0.6)
 			BattleHud.slant(self, slot, bskew, GOLD.lerp(Color.WHITE, 0.15 + 0.15 * sin(now * 0.01)))
-			draw_set_transform_matrix(BattleHud.slant_xform(slot, bskew))
+			draw_set_transform_matrix(pose_xf * BattleHud.slant_xform(slot, bskew))
 			draw_string(font, slot.position + Vector2(0, 8), "B" if sb < 2 else "B%d" % sb, HORIZONTAL_ALIGNMENT_CENTER, slot.size.x, 8, Color(0.2, 0.1, 0.0))
-			draw_set_transform_matrix(Transform2D.IDENTITY)
+			draw_set_transform_matrix(pose_xf)
 		else:
 			BattleHud.slant(self, slot, bskew, Color(0.08, 0.1, 0.14, 0.8))
 			BattleHud.slant_outline(self, slot, bskew, Color("344254"), 1.0)
-			draw_set_transform_matrix(BattleHud.slant_xform(slot, bskew))
+			draw_set_transform_matrix(pose_xf * BattleHud.slant_xform(slot, bskew))
 			draw_string(font, slot.position + Vector2(0, 8), "B", HORIZONTAL_ALIGNMENT_CENTER, slot.size.x, 8, Color("4a576b"))
-			draw_set_transform_matrix(Transform2D.IDENTITY)
+			draw_set_transform_matrix(pose_xf)
 			if c.burst > 0:
 				BattleHud.slant_outline(self, slot, bskew, Color(1.0, 0.6, 0.15, 0.4 + 0.4 * (0.5 + 0.5 * sin(now * 0.012))), 1.5)
 		# Extra ATB blocks.
@@ -1601,9 +1806,7 @@ class AttackTag extends Control:
 		# Target: mini portrait + name.
 		if not _portrait_tried:
 			_portrait_tried = true
-			var pp := "res://personagens/portraits/%s.png" % String(inc.target.name).to_lower()
-			if ResourceLoader.exists(pp):
-				_portrait = load(pp)
+			_portrait = preload("res://scripts/ui/portrait_icon.gd").get_icon(String(inc.target.name))
 		var tr := Rect2(10, 19, 9, 9)
 		if _portrait != null:
 			BattleHud.slant_texture(self, tr, 1.5, _portrait)

@@ -75,6 +75,7 @@ var _finishing := false
 var _finish_elapsed := 0.0
 ## D-1173: planned advance duration (controller); 0.10 s is the default.
 var _dash_duration := 0.10
+var _slide_time := 0.0  ## D-1189
 
 var _speedlines: SpeedlinesScript
 var _trail: GroundTrailScript
@@ -110,6 +111,11 @@ func set_dash_duration(seconds: float) -> void:
 	_dash_duration = maxf(seconds, 0.0)
 
 
+## D-1189: length of the braking tail at the end of the advance (little dust).
+func set_slide_time(seconds: float) -> void:
+	_slide_time = maxf(seconds, 0.0)
+
+
 ## advantage: EncounterRules.Advantage (0 normal, 1 jogador primeiro,
 ## 2 inimigo primeiro). Qualquer outro valor cai no branco.
 func begin_dash(p_advantage: int) -> void:
@@ -138,6 +144,7 @@ func begin_dash(p_advantage: int) -> void:
 	_trail.begin(_color, clampf(_body_radius * 0.7, 0.10, 0.34))
 	if is_instance_valid(_dust):
 		_dust.set_dash_duration(_dash_duration)
+		_dust.set_slide_time(_slide_time)
 
 	var ground := _query_ground()
 	_ground_valid = bool(ground["valid"])

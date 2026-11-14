@@ -16,6 +16,8 @@ func _init(p_fx: BattleFx) -> void:
 func spawn(inc) -> void:
 	var move_id := String(inc.data.get("move_id", BattleFx.normalize_move_id(inc.label)))
 	var family := MoveVfxRegistry.travel_family(StringName(move_id))
+	if move_id == "mabufula":
+		return
 	if move_id == "javelin_throw" or family == &"javelin_throw":
 		# D-1162: the authored javelin is the projectile itself (drawn by FxJavelinThrow);
 		# do not spawn the generic orb/ball on top of it.

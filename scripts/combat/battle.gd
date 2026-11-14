@@ -84,8 +84,13 @@ const EVADE_STILL := 3.0  ## Evade while standing still (not running in its own 
 const EVADE_ON_RUN := 2.0  ## Evade during the run of its own melee attack — D-006.
 const PRELUDE_GAP := 0.25  ## D-988: the Evade window closes this long before the contact (the attacker's rise)
 const PERFECT_WINDOW := 0.25  ## D-283: the Evade only works in the last seconds before the hit, inside the strike, and is always perfect (D-027, D-030).
+const EVADE_LATE_GRACE := 0.15  ## D-1180: a late press while the Dread is still lit is valid, down to 0.10 s before contact.
 const COUNTER_WINDUP := 0.3  ## D-284: wind-up of the counter-attack after a perfect Evade, whatever the move (a status move stays instant).
-const AUTO_DODGE_CHANCE := 0.10  ## Automatic evade chance per hit, for every target.
+const AUTO_DODGE_BASE := 0.10  ## D-1193 (teste, fase 1): base automatic evade chance per hit.
+const AUTO_DODGE_PER_AGI := 0.003  ## D-1193: +0.3 pp per AGI point (AGI 50 = 25%).
+const AGI_EFFECT_CAP := 50.0  ## D-1193/D-1194: AGI above this adds nothing to evade or travel.
+const AGI_STAGE_STEP := 0.03  ## D-1193/D-1194: +3 pp per speed stage (buff +, debuff -), evade and travel.
+const TRAVEL_AGI_MAX_REDUCTION := 0.20  ## D-1194: melee/CAST travel time reduction at AGI 50.
 var debug_roll := 0  ## Sala de VFX (debug): 0 = sorteio normal, 1 = acerto sem crítico, 2 = esquiva, 3 = acerto crítico.
 const STATUS_WINDUP := 0.5  ## Status moves prepare faster, with the engine paused (D-031).
 const STATUS_VFX_TAIL := 1.0  ## Seconds the engine stays paused after the status effect is applied.
@@ -162,9 +167,9 @@ func start(p_party: Array[Combatant], p_enemies: Array[Combatant]) -> void:
 ## The test spawns must not be removed while one is.
 func is_in_action(c: Combatant) -> bool:
 	for inc in incoming + _landing + _returning:
-		if inc.attacker == c or inc.target == c:
+		if inc.attacker == c or inc.target == c or inc.target2 == c:
 			return true
-	return _status_pause != null and (_status_pause.attacker == c or _status_pause.target == c)
+	return _status_pause != null and (_status_pause.attacker == c or _status_pause.target == c or _status_pause.target2 == c)
 
 
 ## Everyone not carried by an attack's motion stands at its rest spot.
@@ -228,15 +233,56 @@ func _process(delta: float) -> void:
 
 # --- Actions (same for the player, allies and enemies) -----------------------
 
-func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
+## D-1200/D-235: the team of `c` read from the battle lists, never from `is_player`.
+## A combatant outside both lists (isolated tests) falls back to its `is_player` flag.
+func team_of(c: Combatant) -> Array[Combatant]:
+	if enemies.has(c):
+		return enemies
+	if party.has(c):
+		return party
+	return party if c.is_player else enemies
+
+
+func opponents_of(c: Combatant) -> Array[Combatant]:
+	return party if team_of(c) == enemies else enemies
+
+
+func same_team(a: Combatant, b: Combatant) -> bool:
+	if a == null or b == null:
+		return false
+	var a_in := party.has(a) or enemies.has(a)
+	var b_in := party.has(b) or enemies.has(b)
+	if a_in and b_in:
+		return team_of(a) == team_of(b)
+	return a.is_player == b.is_player
+
+
+## D-1200: does `c` fit `side` (a MoveData.TargetSide) from the point of view of `actor`?
+func side_allows(actor: Combatant, c: Combatant, side: int) -> bool:
+	match side:
+		MoveData.TargetSide.ALLY:
+			return same_team(actor, c)
+		MoveData.TargetSide.ENEMY:
+			return not same_team(actor, c)
+	return true
+
+
+func use_skill(actor: Combatant, skill: Skill, target: Combatant, target2: Combatant = null) -> bool:
 	if not actor.is_alive() or actor.is_stunned() or actor.is_guarding() or is_winding_up(actor) or not actor.can_pay_skill(skill):
 		return false
 	if _status_pause != null and skill.kind == Skill.Kind.STATUS:
 		return false  # D-1159: attacks may start their wind-up during the pause; status moves wait.
 	if (skill.data != null and skill.data.has_tag(&"self_status")) or BattleSpace.move_id(skill.display_name) == ARMORED_BULK:
 		target = actor  # D-1026: SELF
+	elif skill.target_mode == MoveData.TargetMode.DUAL:
+		# D-1200: primary + secondary, both alive. Which half affects whom is not defined yet, so the
+		# structure accepts any living pair (same or opposing teams) and leaves the effect to the behavior.
+		if target == null or not target.is_alive() or target2 == null or not target2.is_alive():
+			return false
+		if not side_allows(actor, target, skill.primary_side) or not side_allows(actor, target2, skill.secondary_side):
+			return false  # each DUAL Move declares which side its picks may be (D-1200)
 	elif skill.is_friendly:
-		if target == null or not target.is_alive() or target.is_player != actor.is_player:
+		if target == null or not target.is_alive() or not same_team(target, actor):
 			target = actor
 	else:
 		if target == null or not target.is_alive():
@@ -247,6 +293,7 @@ func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
 	var inc := Incoming.new()
 	inc.attacker = actor
 	inc.target = target
+	inc.target2 = target2 if skill.target_mode == MoveData.TargetMode.DUAL else null
 	inc.power = skill.power
 	inc.element = skill.element
 	inc.kind = skill.kind
@@ -299,11 +346,11 @@ func use_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
 
 ## A player's move: it starts now if it can; otherwise it waits in the one slot, replacing
 ## whatever was there. Nothing is paid until it starts (D-161).
-func request_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
+func request_skill(actor: Combatant, skill: Skill, target: Combatant, target2: Combatant = null) -> bool:
 	if not running or not actor.is_alive() or actor.is_stunned() or actor.is_guarding() or actor.mp < skill.mp_cost:
 		return false
 	if can_start_windup_now(actor, skill):
-		var started := _start_move(actor, skill, target)
+		var started := _start_move(actor, skill, target, target2)
 		if started:
 			_clear_queued(actor)  # D-1146: the new choice replaces the old slot; it cannot run later too.
 		return started
@@ -311,6 +358,7 @@ func request_skill(actor: Combatant, skill: Skill, target: Combatant) -> bool:
 		return false
 	actor.queued_skill = skill
 	actor.queued_target = target
+	actor.queued_target2 = target2
 	log_message.emit("%s guarda %s para em seguida." % [actor.name, skill.display_name])
 	return true
 
@@ -333,12 +381,12 @@ func is_status_paused() -> bool:
 	return _status_pause != null
 
 
-func _start_move(actor: Combatant, skill: Skill, target: Combatant) -> bool:
+func _start_move(actor: Combatant, skill: Skill, target: Combatant, target2: Combatant = null) -> bool:
 	if actor.is_stunned() or actor.is_guarding() or not actor.can_pay_skill(skill):
 		return false
 	if not skill.is_friendly and (target == null or not target.is_alive()):
 		return false
-	return use_skill(actor, skill, target)
+	return use_skill(actor, skill, target, target2)
 
 
 ## A queued move starts as soon as nothing holds it; without ATB, a living target or the
@@ -349,16 +397,18 @@ func _run_queued() -> void:
 			continue
 		var skill := c.queued_skill
 		var target := c.queued_target
+		var target2 := c.queued_target2
 		_clear_queued(c)
 		if not c.is_alive():
 			continue
-		if not _start_move(c, skill, target):
+		if not _start_move(c, skill, target, target2):
 			log_message.emit("%s não pôde usar %s." % [c.name, skill.display_name])
 
 
 func _clear_queued(c: Combatant) -> void:
 	c.queued_skill = null
 	c.queued_target = null
+	c.queued_target2 = null
 
 
 func use_item(actor: Combatant, item: Item, target: Combatant) -> bool:
@@ -442,6 +492,17 @@ func _roll_ai_guard(inc: Incoming) -> void:
 
 
 # --- Position steps ----------------------------------------------------------
+
+## D-1193 (test, phase 1): automatic evade chance of `c` per hit: 10% + 0.3 pp per AGI (cap 50) + 3 pp per speed stage.
+static func auto_dodge_chance(c: Combatant) -> float:
+	return clampf(AUTO_DODGE_BASE + AUTO_DODGE_PER_AGI * minf(float(c.agi), AGI_EFFECT_CAP) + AGI_STAGE_STEP * float(c.speed_buff), 0.0, 1.0)
+
+
+## D-1194 (test, phase 1): factor applied to the sheet's travel time of a MELEE/CAST move, before the steps and the floor (D-133).
+static func agi_travel_factor(c: Combatant) -> float:
+	var reduction := TRAVEL_AGI_MAX_REDUCTION * minf(float(c.agi), AGI_EFFECT_CAP) / AGI_EFFECT_CAP + AGI_STAGE_STEP * float(c.speed_buff)
+	return 1.0 - clampf(reduction, -0.5, 0.5)
+
 
 ## Travel time of an attack: the base minus 0.10 s per step of attacker and target.
 static func travel_seconds(base: float, attacker: Combatant, target: Combatant) -> float:
@@ -613,7 +674,7 @@ func _resolve_incoming(delta: float, only: Incoming = null) -> void:
 		incoming.erase(inc)
 		if move_is_untargetable(inc):
 			inc.attacker.is_invulnerable = true
-		inc.auto_dodged = inc.kind != Skill.Kind.STATUS and not inc.dodged and not inc.whiffed and (debug_roll == 2 or (debug_roll == 0 and randf() < AUTO_DODGE_CHANCE))
+		inc.auto_dodged = inc.kind != Skill.Kind.STATUS and not inc.dodged and not inc.whiffed and (debug_roll == 2 or (debug_roll == 0 and randf() < auto_dodge_chance(inc.target)))
 		inc.resolved = true
 		_planner.plan(inc)
 		attack_resolved.emit(inc)  # BattleFx prepares the drawing of the planned attack.
@@ -794,7 +855,7 @@ func _roll_ai_dodge(inc: Incoming) -> void:
 	var t := inc.target
 	if inc.ghost or inc.is_friendly or inc.kind == Skill.Kind.STATUS or t == party[0] or t.react_policy != Combatant.React.EVADE:
 		return
-	if randf() < t.speed:
+	if randf() < auto_dodge_chance(t):  # D-1193: the same chance as the automatic evade (it was t.speed)
 		inc.ai_dodge_in = 0.0  # D-1014: it will try; the moment is picked once the valid window opens
 
 

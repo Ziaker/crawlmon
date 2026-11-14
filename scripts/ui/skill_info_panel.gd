@@ -130,7 +130,7 @@ func _status_line(c: Combatant) -> String:
 	if c.is_guarding():
 		parts.append("GUARD %.1fs" % c.guard_timer)
 	if c.is_stunned():
-		parts.append("STUN %.1fs" % c.stun_timer)
+		parts.append("%s %.1fs" % [c.stun_name(), c.stun_timer])
 	if c.is_burning():
 		var left := maxf(c.burn_clock + float(c.burn_ticks_left - 1) * Battle.BURN_INTERVAL, 0.0)
 		parts.append("BURN %.1fs" % left)
@@ -229,6 +229,12 @@ func _draw() -> void:
 		type_fg = Color("080e18")
 	elif type_name == "dodge":
 		type_col = Color("fcb900")
+		type_fg = Color("080e18")
+	elif type_name == "status":  # D-1190: white, chosen by the creator
+		type_col = Color("ffffff")
+		type_fg = Color("080e18")
+	elif type_name == "field":  # D-1190: green
+		type_col = Color("22c55e")
 		type_fg = Color("080e18")
 
 	if not type_name.is_empty():

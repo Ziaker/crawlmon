@@ -228,9 +228,12 @@ func _physics_process(delta: float) -> void:
 		if Input.is_key_pressed(KEY_S):
 			move.y -= 1.0
 		if move.length_squared() > 0.001:
-			# D-1107: movimento relativo à câmera; o personagem vira para a direção.
-			var cam_forward := Vector3(sin(_cam_yaw), 0.0, cos(_cam_yaw))
-			var cam_right := Vector3(-cos(_cam_yaw), 0.0, sin(_cam_yaw))
+			# D-1107/D-1130: movimento relativo à câmera; o personagem vira para a direção.
+			# D-1186: use the camera the player is actually seeing. A wall can push the
+			# camera to the side without changing `_cam_yaw`; reading the old yaw made the
+			# buttons disagree with the view and turned the character the wrong way.
+			var cam_forward := _camera_ground_forward()
+			var cam_right := cam_forward.cross(Vector3.UP).normalized()
 			dir = (cam_forward * move.y + cam_right * move.x).normalized()
 			var target_yaw := atan2(dir.x, dir.z)
 			player_yaw = lerp_angle(player_yaw, target_yaw, clampf(delta * TURN_RATE, 0.0, 1.0))
@@ -788,6 +791,19 @@ func _build_exit() -> void:
 
 
 # --- Camera and followers ----------------------------------------------------
+
+## D-1186: the ground forward of the camera the player actually sees. When a wall
+## pushes the camera sideways, `_cam_yaw` still points to the old orbit; using it for
+## movement made the buttons disagree with the view. Fall back to `_cam_yaw` only if
+## the camera has no usable horizontal basis (e.g. a near-vertical look).
+func _camera_ground_forward() -> Vector3:
+	if _camera != null and is_instance_valid(_camera):
+		var f := -_camera.global_transform.basis.z
+		f.y = 0.0
+		if f.length_squared() > 0.0004:
+			return f.normalized()
+	return Vector3(sin(_cam_yaw), 0.0, cos(_cam_yaw))
+
 
 func _update_camera(delta: float) -> void:
 	var distance := PARTY_CAM_DISTANCE if _party_visible else CAM_DISTANCE

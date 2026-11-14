@@ -1,3 +1,11 @@
+<!-- DEBUG-OBRIGATORIO-D1204 -->
+> **DEBUG = OBRIGAÇÃO EXTREMA (D-1204).** O debug existe para testar QUALQUER milésimo do jogo: combate, Moves, VFX, overworld, UI, itens, IA, save, áudio.
+> **NENHUM teste pode levar mais de 1 minuto** do pedido ao resultado; mire em menos de 10 s (`--scenario=<id> --stdout-trace --quit`).
+> Sem caminho pronto no debug? **CRIE o cenário/controle** antes de testar. Nunca peça ao criador para clicar, ajustar slider ou montar nada.
+> Teste SEMPRE no debug (`vfx_room`, `BattleDebug`), com dados (`--summary-json`, `--strict-asserts`), nas duas vistas (D-235); não improvise com o jogo real.
+> Passou de 1 minuto = o debug está incompleto: melhore a ferramenta primeiro. Ver `docs/decisoes/D-1204-*.md` e `docs/TELEMETRIA.md`.
+<!-- /DEBUG-OBRIGATORIO-D1204 -->
+
 # Regras obrigatórias para qualquer agente neste projeto
 
 **Leia isto e `docs/decisoes/` ANTES de qualquer tarefa. Sempre. Sem exceção. Mesmo que a tarefa pareça pequena ou não relacionada.**
@@ -12,8 +20,12 @@
 ## 2. Ambiguidade = perguntar
 
 - Se qualquer parte do pedido puder ser entendida de mais de um jeito (o que muda, onde, quando, em que caso), **pergunte antes de mexer em qualquer coisa**.
-- Não preencha lacunas com palpite, "padrão sensato" ou exemplo inventado. Não ofereça "meu padrão" para decidir por ele.
+- Não apresente palpite como se fosse fato nem exemplo inventado como se fosse dele. **Mas a IA pode e deve recomendar:** dê a sua recomendação de forma clara (rotulada "recomendação"), com o porquê e as alternativas, e o criador decide.
 - Não repita pergunta que o criador já respondeu: releia a conversa e `docs/decisoes/`.
+- **O criador decide** regras do jogo, valores de balanceamento, visual (cor, forma, movimento, tempo), nomes de Moves/personagens e escopo. Nesses pontos a IA **recomenda, mas não implementa** até ele dizer "sim" àquela escolha. Recomendar é bem-vindo; decidir sozinha, não.
+- **Detalhes técnicos podem ser decididos pela IA**, desde que não mudem regra nem o que o jogador vê: nome de variável, organização do código, ordem de funções, como testar, ferramentas de apoio. Nesses casos, escolha o mais simples e **diga o que escolheu**, para ele poder mudar.
+- **Perguntas em bloco são permitidas** se cada item for numerado e separado, com a recomendação da IA ao lado. O "sim" só vale para o item a que ele respondeu: o que ele não respondeu **continua em aberto** e não entra em código, briefing, protótipo nem documento como decidido.
+- Valor ou escolha de regra/visual que não veio das palavras dele fica "pendente" até ele aprovar. Na frase literal de uma decisão vão só as palavras dele, nunca um resumo meu.
 
 ## 3. Fazer só o que foi pedido
 
@@ -21,6 +33,7 @@
 - **Refatorar = comportamento idêntico.** "Auditoria", "proponha", "corrija" **não** autorizam mudar regra de jogo.
 - Sim a um plano grande **não** autoriza as escolhas de detalhe dentro dele: pergunte cada detalhe ambíguo.
 - Se um teste ou detector sinaliza algo, **pergunte** se o jogo ou o teste está errado; não altere o jogo para o teste passar.
+- **NUNCA mande outra IA (deepseek-code, subagente, outra sessão) fazer algo que o criador não pediu.** Delegar é só para o que ele pediu, e o briefing **não pode conter escolhas que ele não fez** (visual, cores, forma, movimento, valores, alvo, custo, escopo). Se faltar definição, **pergunte ao criador antes de delegar**. Ordem do criador "não mexe em nada" vale também para quem você delegou.
 
 ## 4. Novas decisões
 

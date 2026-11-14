@@ -24,7 +24,7 @@ description_text = "A slow, devastating earth impact in an area."
 mechanics_text = "Cataclysmic earth eruption that shatters the ground beneath the entire enemy team with seismic shockwaves."
 visual_text = "Giant stone monoliths and seismic cracks ripping across the ground with erupting volcanic boulders."
 motion_text = "Stationary seismic strike. Caster stomps the arena floor, sending shockwaves across all target positions."
-windup_text = "2.10s wind-up. Seismic ground pounding buildup."
+windup_text = "1.50s wind-up. Seismic ground pounding buildup."
 tactical_text = "Cataclysmic ground eruption shattering floor under all enemies. Full AoE."
 visual_motion_text = "Stationary seismic stomp tearing ground with volcanic monoliths."
 phase_visuals = {
@@ -33,5 +33,5 @@ phase_visuals = {
 "return": "Salto/corrida de recuo de volta à posição de origem e retomada de idle.",
 "strike": "Prelúdio de golpe e arco de swing/arma com aviso Dread na janela de Evade (D-986/D-992).",
 "travel": "Corrida pelo eixo atacante->alvo com trilha no chão (D-1013): Stationary seismic strike. Caster stomps the arena floor, sending shockwaves across all target positions.",
-"windup": "Preparo em posição base com loop contínuo de carga (D-163): 2.10s wind-up. Seismic ground pounding buildup."
+"windup": "Preparo em posição base com loop contínuo de carga (D-163): 1.50s wind-up. Seismic ground pounding buildup."
 }

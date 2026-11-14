@@ -98,6 +98,7 @@ var pending_burst := 0
 var counter_ready := false  ## True right after a perfect Evade: the next attack has no wind-up (D-164).
 var queued_skill: Skill = null  ## The one move chosen while it could not start yet; paid when it starts (D-161).
 var queued_target: Combatant = null
+var queued_target2: Combatant = null  ## D-1200: secondary target of a queued DUAL Move.
 ## Position steps (-2 behind .. +2 in front, 0 = middle). `pos_step` is the logic value;
 ## `step_from`/`step_t` animate the move on Battle's clock (BattleFx draws `visual_step()`).
 var pos_step := 0
@@ -130,6 +131,7 @@ var magic_immune_seconds := 0.0
 # Novos estados de combate (D-032)
 var is_invulnerable := false  ## Sumido em Teleport/Dig: imune a ataques direcionados.
 var stun_timer := 0.0         ## Atordoamento em segundos: ATB pausado, ações bloqueadas.
+var stun_kind := ""           ## D-1205: "" = STUN; "knockup" = Knock-up (stun com outro nome, o corpo está no ar).
 var blind_timer := 0.0        ## Cegueira em segundos: 35% de chance de errar ações ofensivas.
 var taunted_by: Combatant = null  ## Alvo único forçado pelo Taunt.
 var taunt_atk_bonus := false  ## Bônus de +1 estágio de ATK exclusivo para a ação provocada.
@@ -164,6 +166,11 @@ var speed: float:
 
 func is_stunned() -> bool:
 	return stun_timer > 0.0
+
+
+## D-1205: nome exibido do atordoamento atual.
+func stun_name() -> String:
+	return "KNOCK-UP" if stun_kind == "knockup" else "STUN"
 
 
 func is_blind() -> bool:
@@ -524,6 +531,8 @@ func is_alive() -> bool:
 func tick(delta: float) -> void:
 	if stun_timer > 0.0:
 		stun_timer = maxf(stun_timer - delta, 0.0)
+		if stun_timer <= 0.0:
+			stun_kind = ""
 	if blind_timer > 0.0:
 		blind_timer = maxf(blind_timer - delta, 0.0)
 	if is_alive() and in_battle:
@@ -676,12 +685,14 @@ func clear_pending() -> void:
 	clear_magic_immunity()
 	is_invulnerable = false
 	stun_timer = 0.0
+	stun_kind = ""
 	blind_timer = 0.0
 	clear_burn()
 	taunted_by = null
 	taunt_atk_bonus = false
 	queued_skill = null
 	queued_target = null
+	queued_target2 = null
 	clear_buffs()
 
 
@@ -745,11 +756,11 @@ func save_state() -> Dictionary:
 		"atk_buff": atk_buff, "def_buff": def_buff, "speed_buff": speed_buff,
 		"shield_hp": shield_hp, "shield_max": shield_max, "shield_timer": shield_timer, "shield_seconds": shield_seconds,
 		"magic_immune_timer": magic_immune_timer, "magic_immune_seconds": magic_immune_seconds,
-		"is_invulnerable": is_invulnerable, "stun_timer": stun_timer, "blind_timer": blind_timer,
+		"is_invulnerable": is_invulnerable, "stun_timer": stun_timer, "stun_kind": stun_kind, "blind_timer": blind_timer,
 		"guard_timer": guard_timer, "armor_timer": armor_timer,
 		"burn_ticks_left": burn_ticks_left, "burn_clock": burn_clock,
 		"taunt_atk_bonus": taunt_atk_bonus,
-		"queued_skill": queued_skill, "queued_target": queued_target,  # D-1146 / D-1042
+		"queued_skill": queued_skill, "queued_target": queued_target, "queued_target2": queued_target2,  # D-1146 / D-1042 / D-1200
 	}
 
 
@@ -785,6 +796,7 @@ func restore_state(s: Dictionary) -> void:
 	magic_immune_seconds = float(s.get("magic_immune_seconds", magic_immune_seconds))
 	is_invulnerable = bool(s.get("is_invulnerable", is_invulnerable))
 	stun_timer = float(s.get("stun_timer", stun_timer))
+	stun_kind = String(s.get("stun_kind", stun_kind))
 	blind_timer = float(s.get("blind_timer", blind_timer))
 	guard_timer = float(s.get("guard_timer", guard_timer))
 	armor_timer = float(s.get("armor_timer", armor_timer))
@@ -793,3 +805,4 @@ func restore_state(s: Dictionary) -> void:
 	taunt_atk_bonus = bool(s.get("taunt_atk_bonus", taunt_atk_bonus))
 	queued_skill = s.get("queued_skill", null)  # D-1146: snapshot keeps the one-slot queue
 	queued_target = s.get("queued_target", null)
+	queued_target2 = s.get("queued_target2", null)

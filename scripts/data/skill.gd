@@ -20,6 +20,9 @@ var aoe_on_contact := false  ## Single target projectile that explodes AoE upon 
 var mp_cost: int = 0  ## MP cost consumed when cast (D-413).
 var visual_push := -1  ## D-1073: -1 = by kind (projectile no; melee/CAST yes); 0 = never; 1 = always.
 var damage_type: int = MoveData.DamageType.PHYSICAL  ## D-1140: STR or MAG scaling, declared by the Move.
+var target_mode: int = MoveData.TargetMode.AUTO  ## D-1200: AUTO / SINGLE_ALLY / DUAL (copied from MoveData).
+var primary_side: int = MoveData.TargetSide.ANY  ## D-1200: DUAL only, from MoveData
+var secondary_side: int = MoveData.TargetSide.ANY
 var data: MoveData = null  ## D-1079: definição canônica no catálogo; null em Skills avulsos de teste.
 
 
@@ -29,15 +32,18 @@ func is_magical() -> bool:
 
 
 ## D-1145/D-395/D-396: UI type badge. The damage type decides Magical/Physical;
-## Guard and Dodge are special categories; pure status has no type icon.
+## Guard and Dodge are special categories. D-1190: status Moves show the "status" icon;
+## "field" exists for Moves tagged `field` (no Move has that tag yet).
 func type_icon_name() -> String:
 	var id := BattleSpace.move_id(display_name)
 	if id == "teleporte_rapido" or id == "evade":
 		return "dodge"
 	if id == "guard":
 		return "guard"
+	if data != null and data.tags.has(&"field"):
+		return "field"
 	if kind == Kind.STATUS:
-		return ""
+		return "status"
 	return "magical" if is_magical() else "physical"
 
 
@@ -74,6 +80,9 @@ static func from_data(move: MoveData) -> Skill:
 	skill.data = move
 	skill.visual_push = move.visual_push
 	skill.damage_type = move.damage_type
+	skill.target_mode = move.target_mode  # D-1200
+	skill.primary_side = move.primary_side
+	skill.secondary_side = move.secondary_side
 	return skill
 
 
@@ -161,6 +170,8 @@ static func status_forecast(skill: Skill, caster: Combatant) -> String:
 			return "-1 DEF to the target (min -5) | lasts the battle"
 		"sukunda":
 			return "-1 SPD to the target (min -5) | lasts the battle"
+		"sukukaja":
+			return "+1 SPD to each ally (max +5) | lasts the battle"
 		"taunt", "provocacao":
 			return "Forces the target to attack the user"
 		"sand_attack", "tiro_areia":
@@ -219,9 +230,10 @@ static func smt_skills() -> Array[Skill]:
 	return [
 		# 4 Status (1 Heal/Support, Buffs, Debuffs)
 		Skill.new("Media", 0.0, 2, Element.Type.LUZ, Kind.STATUS, false, true, true, 0.5),
-		Skill.new("Tarukaja", 0.0, 2, Element.Type.FOGO, Kind.STATUS, false, true, true, 0.5),
-		Skill.new("Rakunda", 0.0, 1, Element.Type.TREVAS, Kind.STATUS, false, false, false, 0.5),
-		Skill.new("Sukunda", 0.0, 1, Element.Type.VENTO, Kind.STATUS, false, false, false, 0.5),
+		Skill.new("Tarukaja", 0.0, 2, Element.Type.MYSTIC, Kind.STATUS, false, true, true, 0.5),
+		Skill.new("Rakunda", 0.0, 1, Element.Type.MYSTIC, Kind.STATUS, false, false, false, 0.5),
+		Skill.new("Sukunda", 0.0, 1, Element.Type.MYSTIC, Kind.STATUS, false, false, false, 0.5),
+		Skill.new("Sukukaja", 0.0, 2, Element.Type.MYSTIC, Kind.STATUS, false, true, true, 0.5, false, 10),
 		# 2 AoE Projectiles
 		Skill.new("Mabufula", 1.35, 2, Element.Type.AGUA_GELO, Kind.PROJECTILE, false, true, false, 1.5),
 		Skill.new("Megido", 1.6, 3, Element.Type.MYSTIC, Kind.PROJECTILE, false, true, false, 1.5),
@@ -407,7 +419,7 @@ static func legacy_catalog_skills() -> Array[Skill]:
 		Skill.new("Dig", 1.5, 2, Element.Type.TERRA, Kind.MELEE, true, false, false, 1.0),
 		Skill.new("Dragon Claw", 1.6, 3, Element.Type.FISICO, Kind.MELEE, false, false, false, 1.5),
 		Skill.new("Bubble Shot", 1.0, 2, Element.Type.AGUA_GELO, Kind.PROJECTILE, false, false, false, 0.7),  # D-1170
-		Skill.new("Heal", 0.0, 2, Element.Type.LUZ, Kind.STATUS, false, true, true, 0.5),
+		Skill.new("Heal", 0.0, 2, Element.Type.MYSTIC, Kind.STATUS, false, true, true, 0.5),
 		Skill.new("Spear Thrust", 1.3, 2, Element.Type.FISICO, Kind.MELEE, false, false, false, 1.2),
 		Skill.new("Javelin Throw", 1.2, 2, Element.Type.FISICO, Kind.PROJECTILE, false, false, false, 0.75),
 		Skill.new("War Cry", 0.0, 3, Element.Type.FISICO, Kind.STATUS, false, true, false, 0.3),

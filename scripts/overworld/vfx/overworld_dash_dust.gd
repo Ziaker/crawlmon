@@ -18,6 +18,9 @@ const SMOKE_COLOR := Color(0.82, 0.78, 0.72)
 const TAKEOFF_COLOR := Color(0.80, 0.76, 0.70)
 const SIDE_OFFSET := 0.22
 const WALK_DUST := preload("res://scripts/overworld/vfx/overworld_walk_dust.gd")
+## The dash continuation keeps the previous walking cadence (0.0917 s); the
+## 30%-sparser rate applies to normal walking only (2026-11-11).
+const WALK_CONTINUE_CADENCE := 0.091667
 
 var _active := false
 var _streaming := false
@@ -31,6 +34,7 @@ var _has_last := false
 ## D-1173: the walking puffs continue during the first half of the real dash.
 var _dash_duration := 0.10
 var _elapsed := 0.0
+var _slide_time := 0.0
 var _continue_t := 0.0
 var _walk_step := 0
 
@@ -44,6 +48,11 @@ func setup_emitters() -> void:
 ## The controller knows the planned advance duration; the VFX forwards it here.
 func set_dash_duration(seconds: float) -> void:
 	_dash_duration = maxf(seconds, 0.0)
+
+
+## D-1189: in the braking tail (the last `seconds` of the advance) the trail runs at 1/3 of the cadence.
+func set_slide_time(seconds: float) -> void:
+	_slide_time = maxf(seconds, 0.0)
 
 
 func begin(ground_point: Vector3, dir := Vector3.FORWARD) -> void:
@@ -84,8 +93,10 @@ func tick(delta: float) -> void:
 	_last_world = now
 	_has_last = true
 	_t += delta
-	while _t >= CADENCE:
-		_t -= CADENCE
+	var sliding := _slide_time > 0.0 and _elapsed >= _dash_duration - _slide_time
+	var cadence := CADENCE * (3.0 if sliding else 1.0)
+	while _t >= cadence:
+		_t -= cadence
 		_trail_step(Vector3(now.x, now.y + 0.08, now.z))
 	# D-1173: the walking puff keeps generating through the FIRST HALF of the
 	# real dash, at the walking size (50%). After that only the dash dust runs.
@@ -99,7 +110,7 @@ func tick(delta: float) -> void:
 			var side_vec := Vector3(-_dir.z, 0.0, _dir.x)
 			var foot := Vector3(now.x, now.y + 0.08, now.z) + side_vec * side
 			WALK_DUST.spawn_effect(self, foot, _dir, 1.0, WALK_DUST.SMOKE_SIZE_WALK)
-			_continue_t += WALK_DUST.CADENCE
+			_continue_t += WALK_CONTINUE_CADENCE
 
 
 ## Congela a simulação das partículas para diagnósticos (overdraw/restos).

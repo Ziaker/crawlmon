@@ -15,8 +15,8 @@ func _init() -> void:
 	ok(_icon(&"teleporte_rapido") == "dodge", "Teleport type icon is dodge (D-396)")
 	ok(_icon(&"megido") == "magical", "Megido type icon is magical")
 	ok(_icon(&"tackle") == "physical", "Tackle type icon is physical")
-	ok(_icon(&"media") == "", "Media has no type icon (pure status)")
-	ok(_icon(&"sukunda") == "", "Sukunda has no type icon (pure status)")
+	ok(_icon(&"media") == "status", "Media shows the status type icon (D-1190)")
+	ok(_icon(&"sukunda") == "status", "Sukunda shows the status type icon (D-1190)")
 	ok(_icon(&"golpe_carate") == "physical", "Karate Chop type icon is physical")
 
 	print("D1145_%s" % ("PASS" if _f == 0 else "FAIL"))

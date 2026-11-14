@@ -79,6 +79,7 @@ var _item_list: Array[Item] = []
 var _targets: Array[Combatant] = []
 var _on_target: Callable
 var _back: Callable
+var _pick_seq := 0  ## D-1200: counts opened pickers, so a second picker opened by a callback is not closed by the first.
 var _test_enemies: Array[Combatant] = []  ## Debug spawns (H): extra standing enemies for the camera test.
 
 
@@ -107,8 +108,18 @@ func _ready() -> void:
 	elif DqtTestParty.enabled or "--dqt" in OS.get_cmdline_user_args():
 		party = DqtTestParty.build(true, GameState.inventory)
 		enemies = EnemyFactory.roll_encounter()
+	elif has_meta("vfx_room"):
+		enemies = _debug_enemies()
 	else:
 		enemies = EnemyFactory.roll_encounter()
+	if has_meta("vfx_room"):  # D-1202 debug: --leader=<species_id> swaps the player's model (every model must fit the tells).
+		for ua in OS.get_cmdline_user_args():
+			if String(ua).begins_with("--leader="):
+				var lead := CharacterFactory.create(String(ua).substr(9), {"is_player": true})
+				lead.act_policy = Combatant.Act.SKILL
+				lead.react_policy = Combatant.React.EVADE
+				var one: Array[Combatant] = [lead]
+				party = one
 	for e in enemies:  # Same Tactics the allies have: cast skills and evade when able.
 		e.act_policy = Combatant.Act.SKILL
 		e.react_policy = Combatant.React.EVADE
@@ -232,6 +243,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			if leader.mp < skill.mp_cost:
 				get_viewport().set_input_as_handled()
 				return
+			if skill.target_mode != MoveData.TargetMode.AUTO:
+				_begin_target_pick(skill)  # D-1200: ally / dual-target Moves go through the picker, never the leader/default.
+				get_viewport().set_input_as_handled()
+				return
 			var target := _fight_target if state == S.FIGHT and _fight_target != null and _fight_target.is_alive() else _default_target()
 			if _use_move(skill, target):
 				_leave_fight_camera()
@@ -347,6 +362,26 @@ func _debug_mirror_party() -> Array[Combatant]:
 	return out
 
 
+## D-1204: o debug não sorteia inimigos. `--enemies=id,id` escolhe as espécies; sem a flag, o sorteio usa
+## semente fixa (`--seed=N`, padrão 1204): mesmo inimigo em toda rodada.
+func _debug_enemies() -> Array[Combatant]:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1204
+	var ids := ""
+	for ua in OS.get_cmdline_user_args():
+		var s := String(ua)
+		if s.begins_with("--seed="):
+			rng.seed = int(s.substr(7))
+		elif s.begins_with("--enemies="):
+			ids = s.substr(10)
+	if ids.is_empty():
+		return EnemyFactory.roll_encounter(rng)
+	var out: Array[Combatant] = []
+	for sp in ids.split(",", false):
+		out.append(EnemyFactory.create_enemy(sp.strip_edges(), rng))
+	return out
+
+
 func _debug_mirror_enemies() -> Array[Combatant]:
 	var saved: Array[Combatant] = GameState.party.duplicate()
 	GameState._build_party()
@@ -456,7 +491,7 @@ func _enemy_frame_points() -> Array[Vector3]:
 		if m == null or not c.is_alive():
 			continue
 		var head_y: float = m.get_meta("head_y") if m.has_meta("head_y") else 1.8
-		points.append(m.global_position + Vector3(0, head_y * 0.5 * m.scale.y, 0))
+		points.append(fx.camera_anchor(c, m.global_position) + Vector3(0, head_y * 0.5 * m.scale.y, 0))
 	return points
 
 
@@ -471,12 +506,13 @@ func _safe_area_units() -> Array:
 				continue
 			var head_y: float = m.get_meta("head_y") if m.has_meta("head_y") else 1.8
 			var enemy: bool = list == battle.enemies
+			var base: Vector3 = fx.camera_anchor(c, m.global_position)  # D-1205: the camera ignores a Move's hop, knock-up and push
 			# Body box: feet, head and the sides (half width ~ 0.45 x height, measured from the model height).
 			var r := maxf(0.45 * head_y, 0.5)
-			var top := m.global_position + Vector3(0, head_y + (0.4 if enemy else 0.0), 0)
-			var pts: Array[Vector3] = [m.global_position, top,
-					m.global_position + Vector3(-r, 0, 0), m.global_position + Vector3(r, 0, 0),
-					m.global_position + Vector3(-r, head_y * 0.6, 0), m.global_position + Vector3(r, head_y * 0.6, 0)]
+			var top := base + Vector3(0, head_y + (0.4 if enemy else 0.0), 0)
+			var pts: Array[Vector3] = [base, top,
+					base + Vector3(-r, 0, 0), base + Vector3(r, 0, 0),
+					base + Vector3(-r, head_y * 0.6, 0), base + Vector3(r, head_y * 0.6, 0)]
 			out.append({"pts": pts, "pad": BattleHud.tag_pad() if enemy else Vector4(0, 0, 0, 0),
 					"leader": c == battle.party[0], "c": c})
 	return out
@@ -827,42 +863,16 @@ func _trigger_victory_flow() -> void:
 			total_xp += CrawlmonAttributeMath.get_enemy_xp_drop(enemy.base_experience, enemy.level)
 
 	# 3. Concede XP apenas para membros sobreviventes (D-402)
-	var party_summaries: Array[Dictionary] = []
-	for member in battle.party:
-		if member == null:
-			continue
-		if member.is_alive():
-			var res: Dictionary = member.add_experience(total_xp)
-			res["combatant"] = member
-			res["is_alive"] = true
-			party_summaries.append(res)
-		else:
-			party_summaries.append({
-				"combatant": member,
-				"is_alive": false,
-				"old_level": member.level,
-				"new_level": member.level,
-				"levels_gained": 0,
-				"points_gained": 0,
-				"old_xp": member.xp,
-				"current_xp": member.xp,
-				"xp_required": CrawlmonAttributeMath.get_xp_for_level_transition(member.level),
-				"transitions": []
-			})
+	var party_summaries: Array[Dictionary] = PostCombatFlow.grant_xp(battle.party, total_xp)
 
-	# 4. Painel de vitoria simples em toda vitoria (D-400, D-1184)
+	# 4. Pós-combate novo (D-1192, protótipo D-1185): XP → LV → Move novo, em velocidade normal.
+	# Substitui VictoryPanel + LevelUpModal da D-1184 (os arquivos antigos ficam, sem uso aqui).
+	Engine.time_scale = 1.0
 	get_tree().paused = true
-	var panel = VictoryPanelScript.new()
-	ui.add_child(panel)
-	panel.open(total_xp, party_summaries)
-	await panel.victory_confirmed
-
-	# 5. Modal antigo de pontos se o lider tiver pontos para distribuir (D-401, D-1184)
-	if leader != null and leader.distributable_points > 0:
-		var modal = LevelUpModalScript.new()
-		ui.add_child(modal)
-		modal.open(leader)
-		await modal.modal_closed
+	var screen := PostCombatScreen.new()
+	ui.add_child(screen)
+	screen.open(total_xp, party_summaries, PostCombatFlow.build_steps(party_summaries))
+	await screen.finished
 	get_tree().paused = false
 
 	# 6. Restaura escala de tempo e finaliza combate
@@ -1059,7 +1069,7 @@ func _fill_fight(keep_index: bool) -> void:
 		var affordable := not is_stunned and not guarding and has_mp and (waits or leader.can_pay(sk.cost))
 		var price := "FREE" if leader.burst > 0 else "%d ATB" % sk.cost
 		if is_stunned:
-			price = "STUNNED (%.1fs)" % leader.stun_timer
+			price = "%s (%.1fs)" % ["KNOCKED UP" if leader.stun_kind == "knockup" else "STUNNED", leader.stun_timer]
 		elif guarding:
 			price = "GUARD"
 		elif not has_mp:
@@ -1136,9 +1146,14 @@ func _change_fight_page(step: int) -> void:
 
 
 ## Uses a move on a target right now (Fight menu, number keys and Repeat all end here).
-func _use_move(skill: Skill, target: Combatant) -> bool:
-	if skill.is_friendly:
-		if target == null or not target.is_alive() or target.is_player != leader.is_player:
+func _use_move(skill: Skill, target: Combatant, target2: Combatant = null) -> bool:
+	if skill.target_mode == MoveData.TargetMode.DUAL:
+		if target == null or not target.is_alive() or target2 == null or not target2.is_alive():
+			return false  # D-1200: both picks are required.
+		if not battle.side_allows(leader, target, skill.primary_side) or not battle.side_allows(leader, target2, skill.secondary_side):
+			return false
+	elif skill.is_friendly:
+		if target == null or not target.is_alive() or not battle.same_team(target, leader):
 			target = leader
 	elif target == null or not target.is_alive():
 		return false
@@ -1146,7 +1161,7 @@ func _use_move(skill: Skill, target: Combatant) -> bool:
 		return false
 	_last_skill = skill.display_name
 	_last_target = target.name
-	var ok := battle.request_skill(leader, skill, target)
+	var ok := battle.request_skill(leader, skill, target, target2)
 	if ok:
 		_end_decision_slowmo()  # Confirmed. The next slow-motion comes once it really starts.
 	return ok
@@ -1303,14 +1318,46 @@ func _on_menu_side(direction: int) -> void:
 	_fill_tactics(true)
 
 
+## D-1200: opens the S.TARGET picker(s) of a Move that needs an explicit ally (SINGLE_ALLY: living allies,
+## the leader included) or two picks (DUAL: primary, then secondary, from every living combatant: which side
+## each half belongs to is still the creator's to define). Cancel steps back one picker (then to the Fight list).
+func _begin_target_pick(skill: Skill) -> void:
+	if skill.target_mode == MoveData.TargetMode.SINGLE_ALLY:
+		_pick_target(battle.team_of(leader), func(t: Combatant) -> void: _commit_picked_move(skill, t, null), _show_fight)
+		return
+	var second_pick := func(first: Combatant) -> void:
+		_pick_target(_side_candidates(skill.secondary_side),
+			func(second: Combatant) -> void: _commit_picked_move(skill, first, second),
+			func() -> void: _begin_target_pick(skill))
+	_pick_target(_side_candidates(skill.primary_side), second_pick, _show_fight)
+
+
+## D-1200: the living combatants a DUAL pick may offer, by the side the Move declares for it.
+func _side_candidates(side: int) -> Array[Combatant]:
+	var out: Array[Combatant] = []
+	for c in battle.party + battle.enemies:
+		if c.is_alive() and battle.side_allows(leader, c, side):
+			out.append(c)
+	return out
+
+
+func _commit_picked_move(skill: Skill, target: Combatant, target2: Combatant) -> void:
+	if leader.mp < skill.mp_cost:
+		return
+	if _use_move(skill, target, target2):
+		_leave_fight_camera()
+
+
 func _pick_target(candidates: Array[Combatant], on_target: Callable, back: Callable) -> void:
+	_pick_seq += 1
 	if leader.engaged_with != null and leader.engaged_with.is_alive() and candidates == battle.enemies:
 		var only: Array[Combatant] = [leader.engaged_with]  # Engaged: it can only act on that opponent.
 		candidates = only
 	var alive := candidates.filter(func(c: Combatant) -> bool: return c.is_alive())
 	if alive.size() == 1 and alive[0] != leader and not alive[0].is_player:
+		var seq := _pick_seq
 		on_target.call(alive[0])  # Only one possible enemy: no need to pick.
-		if battle.running:
+		if battle.running and seq == _pick_seq:  # D-1200: a callback that opened the next picker keeps it.
 			_show_main()
 		return
 	_set_state(S.TARGET)
@@ -1373,6 +1420,9 @@ func _on_chosen(i: int) -> void:
 			var sk := _fight_skills[idx]
 			if leader.mp < sk.mp_cost:
 				return
+			if sk.target_mode != MoveData.TargetMode.AUTO:
+				_begin_target_pick(sk)  # D-1200
+				return
 			var tgt: Combatant = leader if sk.is_friendly else (_fight_target if _fight_target != null and _fight_target.is_alive() else _default_target())
 			if _use_move(sk, tgt):
 				_leave_fight_camera()
@@ -1390,8 +1440,9 @@ func _on_chosen(i: int) -> void:
 				_show_items)
 		S.TARGET:
 			_last_target = _targets[i].name
+			var seq := _pick_seq
 			_on_target.call(_targets[i])
-			if battle.running:
+			if battle.running and seq == _pick_seq:  # D-1200: a callback that opened the next picker keeps it.
 				_show_main()
 		S.TACTICS:
 			var row: Dictionary = _tactic_rows[i]

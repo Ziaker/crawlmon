@@ -24,7 +24,7 @@ description_text = "A crushing seismic blow slamming a massive boulder onto the 
 mechanics_text = "Crushing seismic strike that drops a massive slab of stone onto the target with staggering impact."
 visual_text = "Chunky rock fragments and brown dust clouds burst outward as a giant stone slab shatters on contact."
 motion_text = "Attacker hoists stone overhead, lunges forward 2 units, and slams it down with full body weight."
-windup_text = "1.60s wind-up. Slow overhead lifting motion with high telegraph read."
+windup_text = "1.50s wind-up. Slow overhead lifting motion with high telegraph read."
 tactical_text = "Crushing seismic strike with staggering impact. Single Target."
 visual_motion_text = "Forward overhead smash slamming a massive stone slab."
 phase_visuals = {
@@ -33,5 +33,5 @@ phase_visuals = {
 "return": "Salto/corrida de recuo de volta à posição de origem e retomada de idle.",
 "strike": "Prelúdio de golpe e arco de swing/arma com aviso Dread na janela de Evade (D-986/D-992).",
 "travel": "Corrida pelo eixo atacante->alvo com trilha no chão (D-1013): Attacker hoists stone overhead, lunges forward 2 units, and slams it down with full body weight.",
-"windup": "Preparo em posição base com loop contínuo de carga (D-163): 1.60s wind-up. Slow overhead lifting motion with high telegraph read."
+"windup": "Preparo em posição base com loop contínuo de carga (D-163): 1.50s wind-up. Slow overhead lifting motion with high telegraph read."
 }

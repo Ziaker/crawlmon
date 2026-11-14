@@ -181,10 +181,13 @@ static func impact(fx: BattleFx, move_id: String, pos: Vector3, big: bool, dir: 
 			return {"handled": true, "nodes": impacts._dragon_claw_impact(pos, dir, big)}
 		"furia_dragao":
 			return {"handled": true, "nodes": impacts._dragon_rage_impact(pos, big)}
-		"investida_subterranea", "investida_escavadora":
+		"investida_escavadora":
+			# D-1196: the dust eruption is drawn by FxDig; the contact itself uses the Tackle's hit FX (creator's request).
+			return {"handled": true, "nodes": impacts._tackle_impact(pos, dir, big)}
+		"investida_subterranea":
 			return {"handled": true, "nodes": impacts._dig_rush_impact(pos, big)}
 		"mabufula":
-			return {"handled": true, "nodes": impacts._mabufula_impact(pos, dir, big)}
+			return {"handled": true, "nodes": Array([], TYPE_OBJECT, &"Node3D", null)}
 		"megido":
 			return {"handled": true, "nodes": impacts._megido_impact(pos, dir, big)}
 		"hassou_tobi":

@@ -14,9 +14,15 @@ const FADE := 0.1  ## s: fades after the window closes
 const FIRE_END_GAP := 0.12  ## D-1039: the Fire Bullet's Dread is gone this long before the hit
 const FIRE_FADE := 0.02  ## D-1039: and its fade lasts this long inside that gap
 const FIRE_SIZE := 1.2  ## D-1052: the Fire Bullet's Dread is 1.2x the body-derived size
-## D-1078: a long-range Move only shows the Dread tell when it was explicitly asked for (Fire Bullet, D-1029).
-## For now the creator removed it from these two; Electric Beam keeps it and the other projectiles are untouched.
-const NO_DREAD_MOVES := ["Tidal Surge", "Bubble Shot"]
+## D-1202: every projectile Move (Skill.Kind.PROJECTILE) shows its tell ON THE PLAYER, up and to the side of the attacker,
+## in the same window; Fire Bullet (D-1029) and Javelin Throw (D-1176) keep their own tip anchors. This replaces the
+## D-1078 "no Dread" list (Tidal Surge, Bubble Shot).
+const PLAYER_SCALE := 0.8  ## D-1202: the player-side tell is 20% smaller than the body-derived size
+const PLAYER_ABOVE := 0.1  ## D-1202: its center sits this many tell radii above the top of the body (a bit above the ears)
+const PLAYER_GAP := 0.25  ## D-1202: gap between the body's side and the ring center, in tell radii
+const PLAYER_REACH_MIN := 0.12  ## D-1202: lateral reach limits, in body heights (adapts to wide and narrow bodies)
+const PLAYER_REACH_MAX := 0.32
+const PLAYER_RAD_MAX := 1.0  ## D-1202: very big bodies do not get a bigger tell than this (m)
 const JAVELIN_MOVE := "javelin_throw"
 const RING_COL := Color(1.0, 0.86, 0.3)
 const CORE_COL := Color(1.0, 1.0, 0.9)
@@ -36,6 +42,14 @@ func update(delta: float) -> void:
 		return
 	var seen := {}
 	var leader: Combatant = fx.battle.party[0] if not fx.battle.party.is_empty() else null
+	# D-1203: no Dread unless the leader has the ATB the Evade costs; live ones go out at once.
+	if not leader_can_afford_dodge(fx.battle, leader):
+		for inc0 in _live.keys():
+			var node0 := (_live[inc0] as Dictionary)["node"] as MeshInstance3D
+			if is_instance_valid(node0):
+				node0.queue_free()
+		_live.clear()
+		return
 	for inc in fx.battle.active_attacks():
 		if inc.attacker == null or inc.attacker.is_player:
 			continue
@@ -44,8 +58,6 @@ func update(delta: float) -> void:
 			continue
 		if inc.skill != null and DrainSpearMove.reach(inc.skill) > 0.0:
 			continue  # D-1016 (Drain Spear): that mid-range move has no Dread tell (melee only). D-1029: Fire Bullet is the exception.
-		if _no_dread(inc):
-			continue  # D-1078
 		var on: bool = inc.can_evade_now()
 		if on and not _live.has(inc):
 			# D-1029: an instant Fire Bullet may not know its launch point on the first flight frame;
@@ -88,12 +100,19 @@ func update(delta: float) -> void:
 		_draw(node, inc, float(st["t"]), a)
 
 
-static func _no_dread(inc) -> bool:
-	var id := BattleSpace.move_id(String(inc.label))
-	for n in NO_DREAD_MOVES:
-		if id == BattleSpace.move_id(n):
-			return true
-	return false
+## D-1202: a projectile Move whose tell sits on the player (not Fire Bullet / Javelin, which ride their own tip).
+static func on_player(inc) -> bool:
+	if inc == null or inc.kind != Skill.Kind.PROJECTILE:
+		return false
+	return not (inc.move_id in FireMoveVfx.IDS) and not _is_javelin(inc)
+
+
+## D-1203: the tell only shows while the leader can pay the Evade (real cost from the Battle, never a fixed 3).
+## No leader or no battle: keep the old behavior (shown).
+static func leader_can_afford_dodge(battle, leader) -> bool:
+	if battle == null or leader == null:
+		return true
+	return leader.blocks() >= battle.evade_cost(leader)
 
 
 ## D-1168: the Dread belongs to the player's leader; an attack aimed only at an ally
@@ -129,6 +148,8 @@ func _make() -> MeshInstance3D:
 ## D-1029: Fire Bullet is the only exception: its tell rides the tip of its own projectile, at the
 ## projectile's speed, instead of the caster's hand or body.
 func _anchor(inc) -> Array:
+	if on_player(inc):
+		return _player_anchor(inc)
 	var an := _body_anchor(inc)
 	var jt: Variant = _javelin_tip(inc)
 	if jt != null:
@@ -182,6 +203,50 @@ func _javelin_tip(inc) -> Variant:
 	if n == null or not n.has_method("javelin_tip"):
 		return null
 	return n.call("javelin_tip")
+
+
+## D-1202: above the leader's head, shifted to the side of the screen where the attack comes from.
+## Everything is read from the real bodies and the camera, never from a name, species or side (D-235).
+func _player_anchor(inc) -> Array:
+	var leader: Combatant = fx.battle.party[0] if not fx.battle.party.is_empty() else inc.target
+	var m: Node3D = fx._models.get(leader)
+	if m == null or not is_instance_valid(m):
+		return [Vector3.ZERO, 0.8]
+	var box := _body_box(m)
+	if box.size == Vector3.ZERO:
+		return [m.global_position + Vector3.UP * 2.0, 0.8]
+	var rad := minf(clampf(box.size.y * 0.45, 0.45, 1.3) * PLAYER_SCALE, PLAYER_RAD_MAX)
+	var cb := Basis.IDENTITY
+	if fx.cam != null and fx.cam.camera != null:
+		cb = fx.cam.camera.global_transform.basis.orthonormalized()
+	var right := cb.x
+	var am: Node3D = fx._models.get(inc.attacker)
+	var toward := Vector3.ZERO
+	if am != null and is_instance_valid(am):
+		toward = am.global_position - m.global_position
+	var side := 1.0 if toward.dot(right) >= 0.0 else -1.0
+	var side_dir := right * side
+	# How far the body really reaches toward that side of the screen (from its origin), within limits.
+	var reach := 0.0
+	for i in 8:
+		var corner := box.get_endpoint(i)
+		reach = maxf(reach, (corner - m.global_position).dot(side_dir))
+	reach = clampf(reach, box.size.y * PLAYER_REACH_MIN, box.size.y * PLAYER_REACH_MAX)
+	var p := Vector3(m.global_position.x, box.end.y + rad * PLAYER_ABOVE, m.global_position.z) + side_dir * (reach + rad * PLAYER_GAP)
+	return [p, rad]
+
+
+func _body_box(m: Node3D) -> AABB:
+	var box := AABB()
+	var first := true
+	for n in m.find_children("*", "MeshInstance3D", true, false):
+		var mi := n as MeshInstance3D
+		if mi.mesh == null or String(mi.name) in ["BurstRing", "ReadyRing"] or String(mi.name).begins_with("Stun"):
+			continue
+		var b := mi.global_transform * mi.get_aabb()
+		box = b if first else box.merge(b)
+		first = false
+	return box
 
 
 func _body_anchor(inc) -> Array:

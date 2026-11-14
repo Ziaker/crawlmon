@@ -1,3 +1,11 @@
+<!-- DEBUG-OBRIGATORIO-D1204 -->
+> **DEBUG = OBRIGAÇÃO EXTREMA (D-1204).** O debug existe para testar QUALQUER milésimo do jogo: combate, Moves, VFX, overworld, UI, itens, IA, save, áudio.
+> **NENHUM teste pode levar mais de 1 minuto** do pedido ao resultado; mire em menos de 10 s (`--scenario=<id> --stdout-trace --quit`).
+> Sem caminho pronto no debug? **CRIE o cenário/controle** antes de testar. Nunca peça ao criador para clicar, ajustar slider ou montar nada.
+> Teste SEMPRE no debug (`vfx_room`, `BattleDebug`), com dados (`--summary-json`, `--strict-asserts`), nas duas vistas (D-235); não improvise com o jogo real.
+> Passou de 1 minuto = o debug está incompleto: melhore a ferramenta primeiro. Ver `docs/decisoes/D-1204-*.md` e `docs/TELEMETRIA.md`.
+<!-- /DEBUG-OBRIGATORIO-D1204 -->
+
 # D-330 — Importar os Dungeon Tiles do Sky e trocar o atlas procedural
 
 > **Estado atual (2026-11-06):** o atlas ativo é o **Sky Temporal Tower de 30 tiles** (18 do núcleo + `ground_alt_1/2` + 8 peças reais de parede: strip V/H, island, tip N/S/W/E e cross + 2 centros Wall Alt. 1/2 para variação de interior, D-355), alinhado à grade real da folha. A seleção é por assinatura de lado medida (D-354), não por palpite de posição. A causa dos resultados ruins era o recorte: a folha usa **pitch de 25 px** (1 px de linha ciano + 24×24 de arte), e o importador antigo usava pitch 24 com origem (14, 160), deslocando 1 px por coluna. O sheet do Time/Darkness (21 tiles) fica só como referência. A geração procedural continua.

@@ -7,10 +7,10 @@ script = ExtResource("1_hyome")
 id = &"sukunda"
 display_name = "Sukunda"
 kind = 3
-element = 8
+element = 11
 power = 0.0
 atb_cost = 1
-mp_cost = 2
+mp_cost = 7
 windup = 0.5
 stand_gap = 2.6
 hold = 0.2
@@ -23,7 +23,7 @@ description_text = "A speed debuff. Stacks up to -5 and lasts for the rest of th
 mechanics_text = "Temporal slowing hex that reduces the target's Speed (-1 SPD stage), slowing their ATB gauge accumulation."
 visual_text = "Swirling yellow-green gravitational clock gears that shatter and coat the target in slowing spectral sludge."
 motion_text = "Stationary hex cast. Manifests directly around the target's feet."
-windup_text = "0.90s wind-up. Clockwork temporal invocation."
+windup_text = "0.50s wind-up. Clockwork temporal invocation."
 tactical_text = "Reduces target Speed (-1 SPD stage), slowing ATB accumulation. Single Target."
 visual_motion_text = "Stationary hex manifesting swirling yellow-green clockwork gears at target's feet."
 phase_visuals = {
@@ -32,5 +32,5 @@ phase_visuals = {
 "return": "Dissolução suave da cerimônia sem sobras e retomada do relógio do combate.",
 "strike": "Ativação do selo/aura de status sobre os alvos.",
 "travel": "Manifestação direta no campo (sem deslocamento de corpo): Stationary hex cast. Manifests directly around the target's feet.",
-"windup": "Canalização de status com motor pausado (D-031): 0.90s wind-up. Clockwork temporal invocation."
+"windup": "Canalização de status com motor pausado (D-031): 0.50s wind-up. Clockwork temporal invocation."
 }

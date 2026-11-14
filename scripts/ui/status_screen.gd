@@ -16,6 +16,11 @@ const BLUE := Color("63d9ec")
 const VIOLET := Color("bd9afd")
 const GOLD := Color("f0c57e")
 const ART_DIR := "res://sugimori/por_nome/"
+const DQT_ART := {
+	"slime": "res://sugimori/dqt_web/fandom/DQVIII_Slime.png",
+	"orc": "res://sugimori/dqt_web/fandom/DQVIII_Orc.png",
+	"cyclops": "res://sugimori/dqt_web/fandom/DQVIII_Cyclops.png",
+}
 const FACE_DIR := "res://personagens/portraits/"
 const NatureData = preload("res://scripts/data/nature_data.gd")
 const CrawlmonAttributeMath = preload("res://scripts/combat/crawlmon_attribute_math.gd")
@@ -271,13 +276,14 @@ func _art(c: Combatant) -> Texture2D:
 	var key := c.name.to_lower()
 	if not _art_cache.has(key):
 		var path := ART_DIR + key + ".png"
-		_art_cache[key] = load(path) if ResourceLoader.exists(path) else null
+		if not ResourceLoader.exists(path):
+			path = DQT_ART.get(key, "")  # sem arte Sugimori: arte DQT (mesmas da matriz, D-1183)
+		_art_cache[key] = load(path) if path != "" and ResourceLoader.exists(path) else null
 	return _art_cache[key]
 
 
 func _face(c: Combatant) -> Texture2D:
-	var path := FACE_DIR + c.name.to_lower() + ".png"
-	return load(path) if ResourceLoader.exists(path) else null
+	return preload("res://scripts/ui/portrait_icon.gd").get_icon(c.name)
 
 
 # --- Drawing helpers --------------------------------------------------------------
@@ -347,6 +353,13 @@ func _get_element_icon(elem: Element.Type) -> Texture2D:
 		var path := "res://assets/ui/icons/elements/%s.svg" % name_key
 		_icon_cache["elem_" + name_key] = load(path) if ResourceLoader.exists(path) else null
 	return _icon_cache["elem_" + name_key]
+
+## D-1188: the POWER chip takes the colour of the stat the Move scales with.
+## Magical (MAG) = lilac #b5a5fe (the MAG colour of the D-1185 prototype); physical and status keep amber.
+func _power_chip_color(skill: Skill) -> Color:
+	if skill.kind != Skill.Kind.STATUS and skill.is_magical():
+		return Color("b5a5fe")
+	return Color("f59e0b")
 
 func _get_type_icon(type_name: String) -> Texture2D:
 	if not _icon_cache.has("type_" + type_name):
@@ -432,10 +445,12 @@ func _draw() -> void:
 	draw_rect(Rect2(size.x * 0.25, 0, size.x * 0.17, 3), CORAL)
 
 	# Header: TEAM / STATS (D-413)
-	_text(title, Vector2(29, 56), "TEAM", 40, PAPER)
 	var w := title.get_string_size("TEAM", HORIZONTAL_ALIGNMENT_LEFT, -1, 40).x
-	_text(title, Vector2(29 + w + 6, 56), "/", 44, CORAL)
-	_text(title, Vector2(29 + w + 24, 56), "STATS", 40, LIME)
+	var sw := title.get_string_size("STATS", HORIZONTAL_ALIGNMENT_LEFT, -1, 40).x
+	var hx := size.x - 29.0 - (w + 24.0 + sw)  # título no canto superior direito
+	_text(title, Vector2(hx, 56), "TEAM", 40, PAPER)
+	_text(title, Vector2(hx + w + 6, 56), "/", 44, CORAL)
+	_text(title, Vector2(hx + w + 24, 56), "STATS", 40, LIME)
 
 	_draw_roster()
 	_draw_inventory()
@@ -468,12 +483,12 @@ func _draw_spires() -> void:
 func _draw_roster() -> void:
 	var body := FanMenu.body_font()
 	var title := FanMenu.title_font()
-	_text(body, Vector2(29, 100), "TEAM // %d MEMBERS" % _party.size(), 11, LIME)
-	draw_rect(Rect2(29, 105, 276, 2), Color(LIME, 0.35))
+	_text(body, Vector2(29, 32), "TEAM // %d MEMBERS" % _party.size(), 11, LIME)
+	draw_rect(Rect2(29, 37, 276, 2), Color(LIME, 0.35))
 	for i in _party.size():
 		var u := _party[i]
 		var on := i == _member
-		var r := Rect2(29 + (6.0 if on else 0.0), 116 + i * 74.0, 276, 66)
+		var r := Rect2(29 + (6.0 if on else 0.0), 48 + i * 74.0, 276, 66)
 		_slant(Rect2(r.position + Vector2(4, 5), r.size), 8.0, Color(0.016, 0.05, 0.086, 0.65))
 		_slant(r, 8.0, Color("fdfde8") if on else PAPER)
 		if on:
@@ -558,8 +573,9 @@ func _place_face(i: int, tex: Texture2D, rect: Rect2) -> void:
 		var tr := TextureRect.new()
 		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		tr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		tr.stretch_mode = TextureRect.STRETCH_SCALE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.clip_contents = true
 		add_child(tr)
 		_faces.append(tr)
 	var face_rect := _faces[i]
@@ -1159,8 +1175,14 @@ func _draw_moves(c: Combatant) -> void:
 	elif type_name == "dodge":
 		type_col = Color("fcb900")
 		type_fg = Color("080e18")
+	elif type_name == "status":  # D-1190: white, chosen by the creator
+		type_col = Color("ffffff")
+		type_fg = Color("080e18")
+	elif type_name == "field":  # D-1190: green
+		type_col = Color("22c55e")
+		type_fg = Color("080e18")
 
-	if active_m.kind != Skill.Kind.STATUS:
+	if not type_name.is_empty():  # D-1190: status Moves now have a type icon
 		var type_ic := _get_type_icon(type_name)
 		if type_ic != null:
 			_draw_para_flat(Vector2(bx, badge_y), Vector2(badge_w, badge_h), 3.0, type_col)
@@ -1208,8 +1230,8 @@ func _draw_moves(c: Combatant) -> void:
 	_draw_para_flat(Vector2(mp_x, chip_y), Vector2(mp_w, chip_h), skew_badge, Color("2563eb"))
 	_text(body, Vector2(mp_x + 6.0 + skew_badge * 0.4, chip_text_y), mp_str, 10, Color.WHITE)
 
-	# POWER parallelogram (Amber #f59e0b)
-	_draw_para_flat(Vector2(pow_x, chip_y), Vector2(pow_w, chip_h), skew_badge, Color("f59e0b"))
+	# POWER parallelogram: colour of the stat it scales with (D-1188): MAG lilac, physical amber #f59e0b
+	_draw_para_flat(Vector2(pow_x, chip_y), Vector2(pow_w, chip_h), skew_badge, _power_chip_color(active_m))
 	_text(body, Vector2(pow_x + 6.0 + skew_badge * 0.4, chip_text_y), pow_str, 10, Color("080e18"))
 
 	# Subtle horizontal divider
@@ -1312,8 +1334,14 @@ func _draw_detail(c: Combatant) -> void:
 	elif type_name == "dodge":
 		type_col = Color("fcb900")
 		type_fg = Color("080e18")
+	elif type_name == "status":  # D-1190: white, chosen by the creator
+		type_col = Color("ffffff")
+		type_fg = Color("080e18")
+	elif type_name == "field":  # D-1190: green
+		type_col = Color("22c55e")
+		type_fg = Color("080e18")
 
-	if m.kind != Skill.Kind.STATUS:
+	if not type_name.is_empty():  # D-1190: status Moves now have a type icon
 		var type_ic := _get_type_icon(type_name)
 		if type_ic != null:
 			_draw_para_flat(Vector2(bx, badge_y), Vector2(badge_sz, badge_sz), 3.0, type_col)
@@ -1359,7 +1387,7 @@ func _draw_detail(c: Combatant) -> void:
 	_draw_para_flat(Vector2(mp_x, chip_y), Vector2(mp_w, chip_h), skew_badge, Color("2563eb"))
 	_text(body, Vector2(mp_x + 8.0 + skew_badge * 0.4, chip_text_y), mp_str, 11, Color.WHITE)
 
-	_draw_para_flat(Vector2(pow_x, chip_y), Vector2(pow_w, chip_h), skew_badge, Color("f59e0b"))
+	_draw_para_flat(Vector2(pow_x, chip_y), Vector2(pow_w, chip_h), skew_badge, _power_chip_color(m))  # D-1188
 	_text(body, Vector2(pow_x + 8.0 + skew_badge * 0.4, chip_text_y), pow_str, 11, Color("080e18"))
 
 	# Divider below header
@@ -1367,51 +1395,51 @@ func _draw_detail(c: Combatant) -> void:
 
 	# --- 5 Structured Content Sections (D-420) ---
 	var content_w := r.size.x - 56.0
-	var cy := hy + 68.0
-
-	# 1. MECHANICS & EFFECT (O que faz)
-	_text(body, Vector2(hx, cy), "[ 01 // MECHANICS & COMBAT EFFECT ]", 10, elem_col)
-	cy += 16.0
-	var mech_txt := m.mechanics_description()
-	draw_multiline_string(body, Vector2(hx, cy), mech_txt, HORIZONTAL_ALIGNMENT_LEFT, content_w, 11, -1, PAPER)
-	cy += 36.0
-
-	# 2. VISUALS & VFX (Visual)
-	_text(body, Vector2(hx, cy), "[ 02 // VISUALS & 3D AESTHETICS ]", 10, GOLD)
-	cy += 16.0
-	var vis_txt := m.visual_description()
-	draw_multiline_string(body, Vector2(hx, cy), vis_txt, HORIZONTAL_ALIGNMENT_LEFT, content_w, 11, -1, Color("ffeaa7"))
-	cy += 36.0
-
-	# 3. MOTION & DISPLACEMENT (Deslocamento)
-	_text(body, Vector2(hx, cy), "[ 03 // MOTION & SPATIAL DISPLACEMENT ]", 10, Color("38bdf8"))
-	cy += 16.0
-	var mot_txt := m.motion_description()
-	draw_multiline_string(body, Vector2(hx, cy), mot_txt, HORIZONTAL_ALIGNMENT_LEFT, content_w, 11, -1, Color("bae6fd"))
-	cy += 36.0
-
-	# 4. WIND-UP & TELEGRAPH (Wind-up)
-	_text(body, Vector2(hx, cy), "[ 04 // WIND-UP & TELEGRAPH BEHAVIOR ]", 10, Color("f87171"))
-	cy += 16.0
-	var wind_txt := m.windup_description()
-	draw_multiline_string(body, Vector2(hx, cy), wind_txt, HORIZONTAL_ALIGNMENT_LEFT, content_w, 11, -1, Color("fecaca"))
-	cy += 36.0
-
-	# 5. TACTICAL SYNERGY & SCALING (Escala e Tática)
-	_text(body, Vector2(hx, cy), "[ 05 // TACTICAL SYNERGY & ATTRIBUTE SCALING ]", 10, Color("a78bfa"))
-	cy += 16.0
 	var scale_attr_d := "MAG" if m.is_magical() else "STR"
 	var attr_val_d := c.mag if m.is_magical() else c.attack
 	var base_dmg := DamageMath.base_damage(attr_val_d, m.power, false)
 	var syn_txt := "Scales with %s (%d pts, +%.1f%% dmg) · Base Damage: %d HP · Exploits target elemental weaknesses for 1.5× damage · MP Recovery cycle: +%d MP / 8.0s." % [
 		scale_attr_d, attr_val_d, float(attr_val_d) * 5.0, base_dmg, c.mp_regen_amount()
 	]
-	draw_multiline_string(body, Vector2(hx, cy), syn_txt, HORIZONTAL_ALIGNMENT_LEFT, content_w, 11, -1, Color("ddd6fe"))
+	var sections := [
+		["[ 01 // MECHANICS & COMBAT EFFECT ]", elem_col, m.mechanics_description(), PAPER],
+		["[ 02 // VISUALS & 3D AESTHETICS ]", GOLD, m.visual_description(), Color("ffeaa7")],
+		["[ 03 // MOTION & SPATIAL DISPLACEMENT ]", Color("38bdf8"), m.motion_description(), Color("bae6fd")],
+		["[ 04 // WIND-UP & TELEGRAPH BEHAVIOR ]", Color("f87171"), m.windup_description(), Color("fecaca")],
+		["[ 05 // TACTICAL SYNERGY & ATTRIBUTE SCALING ]", Color("a78bfa"), syn_txt, Color("ddd6fe")],
+	]
+	# Each section is stacked by the real height of its wrapped text (long texts used to overlap
+	# the next title, because every section had a fixed 36 px). If the five do not fit above the
+	# CLOSE button, the text shrinks one point at a time, down to 9.
+	var top := hy + 68.0
+	var bottom := r.end.y - 38.0 - 10.0
+	var fs := 11
+	while fs > 9 and _sections_height(body, sections, content_w, fs) > bottom - top:
+		fs -= 1
+	var cy := top
+	for sec in sections:
+		_text(body, Vector2(hx, cy), String(sec[0]), 10, sec[1])
+		cy += 16.0
+		draw_multiline_string(body, Vector2(hx, cy), String(sec[2]), HORIZONTAL_ALIGNMENT_LEFT, content_w, fs, -1, sec[3])
+		cy += _wrapped_height(body, String(sec[2]), content_w, fs) - body.get_ascent(fs) + 16.0
 
 	# Footer: Close Prompt (Parallelogram Flat Button)
 	var btn_y := r.end.y - 38.0
 	_draw_para_flat(Vector2(hx, btn_y), Vector2(130.0, 26.0), 4.0, LIME)
 	_text(title, Vector2(hx + 18.0, btn_y + 19.0), "CLOSE (Z / X)", 15, Color("080e18"))
+
+
+## Height of a wrapped paragraph as draw_multiline_string lays it out.
+func _wrapped_height(font: Font, text: String, width: float, size: int) -> float:
+	return font.get_multiline_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, width, size).y
+
+
+## Total height of the Z sheet sections (title + wrapped text + gap), for the shrink-to-fit.
+func _sections_height(font: Font, sections: Array, width: float, size: int) -> float:
+	var h := 0.0
+	for sec in sections:
+		h += 16.0 + _wrapped_height(font, String(sec[2]), width, size) - font.get_ascent(size) + 16.0
+	return h
 
 
 func _format_nature_mods(mods: Dictionary) -> String:
