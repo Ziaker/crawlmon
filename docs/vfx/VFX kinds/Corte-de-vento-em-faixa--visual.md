@@ -65,4 +65,4 @@ Cone que viaja com a areia, anel de nuvens e véu viajando do atacante ao alvo, 
 
 ## Quadros de referência
 
-Capturas reais (locais, ~1 GB, não versionadas no Git) em `docs/vfx/sand_attack_ref/`: `slash8` (varredura e dissipação), `spin1` (giro do personagem), `nodelay1` (release sem atraso), `wide1` (faixa larga, volta e meia).
+Capturas reais que serviram de prova (pasta `docs/vfx/sand_attack_ref/`, ~1 GB, removida na limpeza final; refaça com `--record` conforme o arquivo de código): `slash8` (varredura e dissipação), `spin1` (giro do personagem), `nodelay1` (release sem atraso), `wide1` (faixa larga, volta e meia).

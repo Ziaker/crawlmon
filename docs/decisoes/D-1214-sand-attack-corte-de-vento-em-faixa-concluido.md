@@ -66,7 +66,7 @@ O efeito visual termina cerca de 0,5 s **antes** do acerto, porque o release ago
 
 ## Verificado
 
-- Compila e roda na sala de debug (`--scenario=sand_attack`, vista normal), sem erro de script. Quadros reais de cada etapa em `docs/vfx/sand_attack_ref/` (capturas locais, ~1 GB, **não versionadas no Git**) (`slash8`, `spin1`, `nodelay1`, `wide1`).
+- Compila e roda na sala de debug (`--scenario=sand_attack`, vista normal), sem erro de script. Quadros reais de cada etapa em `docs/vfx/sand_attack_ref/` (capturas locais de ~1 GB, removidas na limpeza final; para refazer use os comandos de `docs/vfx/VFX kinds/Corte-de-vento-em-faixa--codigo.md`) (`slash8`, `spin1`, `nodelay1`, `wide1`).
 - Trace de fases: STRIKE em 0,81 s, TRAVEL em 1,61 s, release visível a partir de ~0,95 s.
 
 ## NÃO verificado
