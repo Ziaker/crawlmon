@@ -697,42 +697,6 @@ func spawn_bite_windup(pos: Vector3, dir: Vector3, duration: float) -> Node3D:
 	return root
 
 
-func _sand_attack_impact(pos: Vector3, dir: Vector3) -> Array[Node3D]:
-	var root := Node3D.new()
-	root.name = "SandVortexImpact"
-	root.position = Vector3(pos.x, 0.05, pos.z)
-	fx.add_child(root)
-	for i in 3:
-		var torus := TorusMesh.new()
-		torus.inner_radius = 0.72 + i * 0.25
-		torus.outer_radius = 0.82 + i * 0.25
-		var ring := MeshInstance3D.new()
-		ring.name = "EarthWindRing%d" % i
-		ring.mesh = torus
-		ring.position.y = 0.35 + i * 0.62
-		ring.rotation.x = deg_to_rad(8.0 + i * 11.0)
-		ring.material_override = _tackle_material(Color("d98a3c", 0.72), 1.8)
-		root.add_child(ring)
-		var tw := ring.create_tween().set_parallel(true)
-		tw.tween_property(ring, "rotation:y", TAU * (1.0 if i % 2 == 0 else -1.0), 0.52)
-		tw.tween_property(ring, "scale", Vector3.ONE * 1.8, 0.52).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
-	for i in 3:
-		VfxLib.flipbook(fx, pos + Vector3(dir.x * i * 0.18, 0.35 + i * 0.58, dir.z * i * 0.18), "smoke", Color("f0c57e"), 2.5 + i * 0.45, 0.62, i * 38.0, 1.3, false)
-	_smoke(pos, Color("d98a3c"), 22, Vector2(0.7, 1.8), 0.64, 2.0)
-
-	# Blinding sand burst around target face
-	var face_pos := pos + Vector3(0, 0.65, 0)
-	var sand_ring := _tackle_torus("SandBlindRing", face_pos, Color("f0c57e", 0.85), 2.2, 0.45, 1.25, 0.48, Vector3.UP)
-	sand_ring.reparent(root)  # (the helper already parented it to the FX node)
-	VfxLib.burst(fx, face_pos, {"amount": 20, "life": 0.45, "speed": Vector2(1.5, 3.5), "size": Vector2(0.12, 0.30), "ramp": VfxLib.ramp([Color("f0c57e"), Color("d98a3c"), Color("d98a3c", 0.0)])})
-
-	var cleanup := root.create_tween()
-	cleanup.tween_interval(0.58)
-	cleanup.tween_callback(root.queue_free)
-	var nodes: Array[Node3D] = [root]
-	return nodes
-
-
 func _dragon_claw_impact(pos: Vector3, dir: Vector3, big: bool) -> Array[Node3D]:
 	var root := Node3D.new()
 	root.name = "DragonClawImpact"

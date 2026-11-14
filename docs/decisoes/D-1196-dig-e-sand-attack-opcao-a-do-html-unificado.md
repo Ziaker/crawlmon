@@ -3,7 +3,7 @@
 - **Data:** 2026-11-12.
 - **Área:** VFX de Move / combate.
 - **Relacionadas:** D-235, D-308, D-335, D-337, D-1030, D-1154, D-032.
-- **Status:** registrado; implementação a seguir, com auditoria do código do DeepSeek.
+- **Status:** Sand Attack A concluído (ver D-1214 e a seção "estado final" no fim); Dig A conforme as seções abaixo.
 
 ## O que o criador disse (literal)
 
@@ -73,3 +73,19 @@ Respostas às perguntas:
 > "faça com que o dig tenha o hitFX do tackle"
 
 - O contato do Dig usa o hit FX do Tackle (`_tackle_impact`, via `move_vfx_registry.gd`), além da erupção de poeira do HTML.
+
+## Sand Attack A: estado (2026-11-14)
+
+- **Implementado, aguardando a revisão visual do criador (referência visual pedida por ele; correções virão depois).** Mecânica, dano, cegueira e tempos do Move não foram mexidos.
+- Visual: `scripts/vfx/combat/fx_sand_attack.gd` (kickoff nos pés do atacante em t=0; em +0,06 s do início do trajeto o cone 64x38, as 5 estações de nuvens, o jato de partículas e 4 pedras; o véu e as nuvens no alvo só quando a cegueira realmente acerta) sobre a biblioteca `scripts/vfx/combat/dust/` (`directional_kick_cone`, `sand_jet_stations`, `DustParticles.spawn_sand_jet`). O jato espiral e o impacto antigos do Sand Attack foram removidos (o HTML não os tem). Tamanho em metros fixos do HTML, `tScale` = 1.
+- Escolhas técnicas da IA (o criador pode mudar): o gatilho do kickoff é a entrada do TRAVEL; altura/raio do atacante vêm da caixa medida do modelo (raio = 0,45 × altura); `tScale` fixo em 1.
+- Não entram (como decidido): flash, vinheta, luz pontual, tremor, knock-up, tinta de areia, pílula ACC, popups.
+- Verificado: compila; suíte `run_agent_combat_tests.py` 49/49; `--audit-leaks --audit-delay=3` com `leaks=0` nas vistas normal e espelhada (`--scenario=sand_attack --mirror`). Quadros em `docs/vfx/sand_attack_ref/`. Novo controle de debug: `--audit-delay=SEC` (a auditoria padrão roda 0,35 s após o Move e acusa o véu de 1,55 s ainda vivo).
+- NÃO verificado: igualdade visual quadro a quadro com o HTML; sentido do giro do cone (Babylon é left-handed); `--bg`, `--scale-overlay`, `--proof-sheet`; outros atacantes e tamanhos de alvo; `tests/vfx/test_*` (expectativas atualizadas, não rodados); som.
+
+## Sand Attack A: estado final (2026-11-14)
+
+- **Concluído a pedido do criador** ("trate esse move como concluido"). O Sand Attack A do HTML está no jogo, **mais** os acréscimos que o criador pediu depois, registrados em `D-1214-sand-attack-corte-de-vento-em-faixa-concluido.md` (corte de vento em faixa no release, giro do atacante, rastro no chão, anel/véu/poeira viajando com a areia, release sem o atraso pós wind-up). A tentativa D-1212 (rastro estilo LoL) foi revertida; o rastro atual é o do D-1214.
+- Catálogo técnico e visual do corte: `docs/vfx/VFX kinds/`.
+- Mecânica, dano, cegueira, esquiva e momento do acerto: **não alterados**.
+- NÃO verificado: vista espelhada e outros atacantes com os acréscimos; `--audit-leaks` depois do fim das vidas do corte; suíte de combate e `tests/vfx/test_*` depois destas mudanças; "escala fixa em metros × por tela" (~37 m) continua pendente do criador; igualdade quadro a quadro com o HTML.

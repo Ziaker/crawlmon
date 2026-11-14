@@ -24,6 +24,9 @@ const MOUND_COLOR := Color("#6b4c2b")
 const RIDGE_SHADER := preload("res://shaders/dust_burrow_ridge.gdshader")
 const RIDGE_WIDTH := 4.4  ## metros (escolha da IA por delegação do criador)
 const RIDGE_HEIGHT := 1.8
+## Sand Attack "sirocco" jet stations (spawnSandAttackDustTrajectory block 2, HTML 2519-2541, D-1196).
+const STATION_COUNT := 5  ## HTML 2520: stations = 5.
+const STATION_DELAY := 0.065  ## HTML 2523: delaySec = step * 0.065.
 
 ## Generic animated driver: the Godot equivalent of spawnAnimatedNode (HTML 1471) and the
 ## lifecycle loop (HTML 3083-3096).
@@ -68,10 +71,12 @@ static func cloud_ring(
 	puff_scale: float,
 	duration: float,
 	delay: float,
-	palette: Dictionary
+	palette: Dictionary,
+	emit_dust: bool = true  ## false: quem chama solta a poeira (ex.: acompanhando o jato do Sand Attack)
 ) -> Node3D:
 	var driver := _make_driver(parent, origin, duration, delay, func() -> void:
-		PARTICLES.spawn_dig_dust(parent, origin, puff_scale, duration)
+		if emit_dust:
+			PARTICLES.spawn_dig_dust(parent, origin, puff_scale, duration)
 	)
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
@@ -325,6 +330,80 @@ static func soil_mound(parent: Node3D, pos: Vector3, delay: float) -> Node3D:
 		color.a = env * MATERIALS.BASE_OPACITY # HTML 2205.
 		mat.albedo_color = color
 	return driver
+
+
+## "1. Directional 64x38 Kickoff Dust Cone" (spawnSandAttackDustTrajectory, HTML 2487-2517): the
+## 64 x 38 directional cone (createDirectionalCryoConeMesh, HTML 998-1034) planted at `start` and pointed
+## at `end`, wearing the crownShell material in the silica colors (HTML 2497-2502) for 0.68 s. The HTML
+## orients it with kickHolder.lookAt(endPos), which in Babylon (left-handed) puts local +Z on the target,
+## so the driver basis is built with +Z along the attacker->target axis instead of Godot's look_at (-Z).
+static func directional_kick_cone(parent: Node3D, start: Vector3, end: Vector3, delay: float = 0.0) -> Node3D:
+	var driver := _make_driver(parent, start, 0.68, delay) # HTML 2505: duration 0.68.
+	driver.basis = _aim_basis(end - start) # HTML 2490: kickHolder.lookAt(endPos).
+	var cone := MeshInstance3D.new()
+	cone.name = "SandKickCone64x38"
+	cone.mesh = MESHES.directional_cone(64, 38) # HTML 2493: 64 x 38, no caps.
+	cone.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var mat: ShaderMaterial = MATERIALS.crown_shell(
+		Color("#fef08a"), Color("#dfb14b"), Color("#784c1e"), 7.0, 0.45 # HTML 2498-2502.
+	)
+	cone.material_override = mat
+	driver.add_child(cone)
+
+	driver.on_update = func(progress: float, _node: Driver, dt: float) -> void:
+		var burst: float = minf(1.0, progress / 0.32) # HTML 2506.
+		var erode: float = maxf(0.0, (progress - 0.25) / 0.75) # HTML 2507.
+		mat.set_shader_parameter("u_base_opacity", MATERIALS.BASE_OPACITY * 0.86) # HTML 2509.
+		mat.set_shader_parameter("u_edge_feather", MATERIALS.EDGE_FEATHER) # HTML 2510.
+		mat.set_shader_parameter("u_open_progress", burst) # HTML 2511.
+		mat.set_shader_parameter("u_dissolve", erode * 0.92) # HTML 2512.
+		mat.set_shader_parameter("u_master_alpha", 1.0 - pow(erode, 1.35)) # HTML 2513.
+		cone.position.z = burst * 0.75 # HTML 2514 (assigned, not accumulated).
+		cone.scale = Vector3(0.65 + burst * 0.75, 0.55 + burst * 0.65, 0.75 + burst * 0.95) # HTML 2515.
+		cone.rotation.z += dt * 3.2 # HTML 2516.
+	return driver
+
+
+## "2. Variant-Specific Volumetric Dust Stream" for variant 'sirocco' (HTML 2519-2541): 5 stations
+## between `start` and `end`. For step 1..5, frac = step / 6, delay = step * 0.065 and, 0.25 m below
+## lerp(start, end, frac), a cloud_ring of 5 puffs with radius 0.32 + frac * 0.45 and puff scale
+## 0.55 + frac * 0.38 over 0.78 s in PALETTE_SILICA_SAND (HTML 2529-2537). The stations sit under the
+## returned root, which frees itself when the last one is done, so no empty node is left behind.
+static func sand_jet_stations(parent: Node3D, start: Vector3, end: Vector3) -> Node3D:
+	var root := Node3D.new()
+	root.name = "SandJetStations"
+	parent.add_child(root)
+	for step in range(1, STATION_COUNT + 1):
+		var frac: float = float(step) / float(STATION_COUNT + 1) # HTML 2522.
+		var origin: Vector3 = start.lerp(end, frac) + Vector3(0.0, -0.25, 0.0) # HTML 2524 and 2530.
+		cloud_ring(
+			root,
+			origin,
+			5, # HTML 2531.
+			0.32 + frac * 0.45, # HTML 2532.
+			0.55 + frac * 0.38, # HTML 2533.
+			0.78, # HTML 2534.
+			float(step) * STATION_DELAY, # HTML 2523.
+			MATERIALS.PALETTE_SILICA_SAND # HTML 2536.
+		)
+	# The cloud_ring drivers free themselves and their puffs; this one only drops the empty root.
+	var total: float = float(STATION_COUNT) * STATION_DELAY + 0.78
+	var cleanup := _make_driver(root, Vector3.ZERO, total, 0.0)
+	cleanup.on_update = func(progress: float, _node: Driver, _dt: float) -> void:
+		if progress >= 1.0:
+			root.queue_free()
+	return root
+
+
+## Basis whose local +Z axis is `direction` (Babylon's lookAt), with +Y as close to world up as possible.
+## A degenerate direction leaves the identity basis.
+static func _aim_basis(direction: Vector3) -> Basis:
+	if direction.length_squared() < 1e-12:
+		return Basis()
+	var z_axis := direction.normalized()
+	var up := Vector3.UP if absf(z_axis.dot(Vector3.UP)) < 0.999 else Vector3.RIGHT
+	var x_axis := up.cross(z_axis).normalized()
+	return Basis(x_axis, z_axis.cross(x_axis), z_axis)
 
 
 ## Creates the driver, sets its local space and parents it. `origin` is in the parent's space.

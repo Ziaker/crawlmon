@@ -886,7 +886,7 @@ func _process(delta: float) -> void:
 		return
 	if _busy() == false:  # (wind-up também conta como ação em curso)
 		_idle_for += delta / maxf(Engine.time_scale, 0.01)
-		if not _audit_done and _idle_for >= 0.35:
+		if not _audit_done and _idle_for >= float(_args.get("audit-delay", 0.35)):  # --audit-delay=SEC: audita depois que efeitos longos (véu do Sand Attack, 1,55 s) terminam
 			_audit_done = true
 			_audit_vfx_leaks()
 		if _loop.button_pressed and _idle_for >= LOOP_GAP and _rec.is_empty():

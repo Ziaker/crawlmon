@@ -153,7 +153,7 @@ func _spawn_move(_inc, _move_id: String, _from: Vector3, _to: Vector3, _color: C
 		"tidal_surge": return _empty_root("LibTidalSurgeTravel")  # D-1021
 		"flame_stream": return _empty_root("ElementFlameStreamTravel")
 		"splitter_flames": return _empty_root("ElementSplitterFlamesTravel")
-		"tiro_areia": return _make_sand_spiral_jet(_from, _to)
+		"tiro_areia": return _empty_root("SandAttackTravel")  # D-1196: FxSandAttack draws the sand; no spiral jet.
 		"furia_dragao": return _make_dragon_rage_comet(_from, _to)
 		"provocacao": pass
 		_: return null
@@ -209,14 +209,6 @@ func _drive_move(_inc, _move_id: String, _projectile: Dictionary, _node: Node3D,
 		return true
 	if _move_id == "teleporte_rapido":
 		return _drive_rapid_teleport(_inc, _projectile, _node)
-	if _move_id == "tiro_areia":
-		if _inc.phase == Battle.Phase.TRAVEL:
-			var p: float = _inc.progress()
-			var pos := (_projectile["from"] as Vector3).lerp(_to, p)
-			pos.y += sin(p * PI) * 0.25
-			_node.look_at_from_position(pos, _to)
-			_node.rotate_object_local(Vector3.FORWARD, 0.22)
-		return true
 	if _move_id == "furia_dragao":
 		if _inc.phase == Battle.Phase.TRAVEL:
 			var p: float = _inc.progress()
@@ -309,30 +301,6 @@ func _empty_root(root_name: String) -> Node3D:
 	var root := Node3D.new()
 	root.name = root_name
 	fx.add_child(root)
-	return root
-
-
-func _make_sand_spiral_jet(from: Vector3, to: Vector3) -> Node3D:
-	var root := Node3D.new()
-	root.name = "SandSpiralJet"
-	root.position = from
-	fx.add_child(root)
-	root.look_at(to, Vector3.UP)
-	for i in 24:
-		var t := float(i) / 23.0
-		var angle := t * TAU * 3.5
-		var radius := lerpf(0.08, 0.72, t)
-		var grain := MeshInstance3D.new()
-		grain.name = "SandGrain%d" % i
-		var sphere := SphereMesh.new()
-		sphere.radius = lerpf(0.08, 0.18, t)
-		sphere.height = sphere.radius * 2.0
-		grain.mesh = sphere
-		grain.position = Vector3(cos(angle) * radius, sin(angle) * radius, t * 3.0)
-		grain.material_override = fx.fx_impacts._tackle_material(Color("f0c57e") if i % 2 == 0 else Color("d98a3c"), 1.8)
-		grain.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		root.add_child(grain)
-	VfxLib.trail(root, {"tex": VfxLib.smoke_tex(), "amount": 48, "life": 0.34, "speed": Vector2(1.2, 4.5), "size": Vector2(0.18, 0.55), "radius": 0.32, "ramp": VfxLib.ramp([Color("f0c57e"), Color("d98a3c"), Color("d98a3c", 0.0)])})
 	return root
 
 

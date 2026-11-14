@@ -176,7 +176,8 @@ static func impact(fx: BattleFx, move_id: String, pos: Vector3, big: bool, dir: 
 		"mordida":
 			return {"handled": true, "nodes": impacts._bite_impact(pos, dir)}
 		"tiro_areia":
-			return {"handled": true, "nodes": impacts._sand_attack_impact(pos, dir)}
+			# D-1196: FxSandAttack draws the sand; the impact returns no nodes (same shape as Mabufula).
+			return {"handled": true, "nodes": Array([], TYPE_OBJECT, &"Node3D", null)}
 		"garra_dragao":
 			return {"handled": true, "nodes": impacts._dragon_claw_impact(pos, dir, big)}
 		"furia_dragao":

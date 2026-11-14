@@ -23,6 +23,8 @@ const MATERIALS := preload("res://scripts/vfx/combat/dust/dust_materials.gd")
 const SCALED_UPDATE_PER_SECOND := 0.6  ## updateSpeed 0.01 (Babylon default) * 60 frames; line 1730.
 const STOP_AFTER_SEC := 0.240  ## scheduleAfter(240) that stops all three emitters; lines 1813-1817.
 const FREE_AFTER_EXTRA_SEC := 1.35  ## dispose at durationSec + 1.35; lines 1818-1822.
+const SAND_JET_STOP_AFTER_SEC := 0.340  ## scheduleAfter(340) that stops the sand jet emitters; HTML 2470-2474.
+const SAND_JET_FREE_AFTER_EXTRA_SEC := 1.25  ## dispose at durationSec + 1.25; HTML 2475-2480.
 const DUST_EMITTER_Y := 0.15  ## emitterPos = pos + (0, 0.15, 0); line 1727.
 const HAZE_EMITTER_Y := 0.08  ## haze emitter = pos + (0, 0.08, 0); line 1762.
 
@@ -92,6 +94,7 @@ static var _quad: QuadMesh
 var _systems: Array[DustSystem] = []
 var _rng := RandomNumberGenerator.new()
 var _elapsed := 0.0
+var _stop_after := STOP_AFTER_SEC
 var _free_after := 0.0
 
 
@@ -125,7 +128,7 @@ func _process(delta: float) -> void:
 	if _elapsed >= _free_after:
 		_stop_and_free()
 		return
-	var emitting := _elapsed < STOP_AFTER_SEC
+	var emitting := _elapsed < _stop_after
 	_elapsed += delta
 	var step := SCALED_UPDATE_PER_SECOND * delta
 	var camera_basis := _camera_basis()
@@ -405,6 +408,136 @@ static func _make_clod(pos: Vector3, k: float) -> DustSystem:
 	system.power_max = 1.0
 	system.billboard = false  # manual billboard so the HTML spin survives; see _draw.
 	return system
+
+
+## Dense billowing golden-sand plume, the HTML's 'sandJetCloudPS' (189/2388-2418): unlike the Dig plume
+## its direction is the real start->end axis scaled by `dist`, so the jet travels to the target and the
+## result is the same from any attacker, team or side (D-235).
+static func _make_sand_cloud(start: Vector3, aim: Vector3, dist: float) -> DustSystem:
+	var op := MATERIALS.BASE_OPACITY  # HTML 2382: state.shaderOpacity.
+	var system := DustSystem.new()
+	system.node_name = "SandJetCloudPS"  # HTML 2388.
+	system.intensity = 1.0
+	system.capacity = 190  # HTML 2388.
+	system.texture = dust_texture()  # HTML 2389.
+	system.emitter_position = start  # HTML 2385: emitterNode at startPos.
+	system.box_min = Vector3(-0.28, -0.15, -0.28)  # HTML 2391.
+	system.box_max = Vector3(0.28, 0.25, 0.28)  # HTML 2392.
+	system.color_stops = PackedFloat32Array([0.0, 0.10, 0.40, 0.75, 1.0])  # HTML 2394-2398.
+	system.colors = PackedColorArray([
+		Color(0.98, 0.92, 0.72, 0.0),
+		Color(0.95, 0.84, 0.56, 0.66 * op),
+		Color(0.84, 0.68, 0.42, 0.44 * op),
+		Color(0.62, 0.48, 0.28, 0.18 * op),
+		Color(0.42, 0.30, 0.18, 0.0),
+	])
+	system.size_stops = PackedFloat32Array([0.0, 0.35, 0.75, 1.0])  # HTML 2400-2403.
+	system.sizes = PackedFloat32Array([0.38, 1.05, 1.85, 2.45])
+	system.life_min = 0.48  # HTML 2405.
+	system.life_max = 0.92  # HTML 2406.
+	system.emit_rate = 280.0  # HTML 2407.
+	system.gravity = Vector3(0.0, 0.35, 0.0)  # HTML 2409.
+	system.dir_min = aim * dist * 1.25 + Vector3(-1.65, -0.35, -1.65)  # HTML 2411-2412.
+	system.dir_max = aim * dist * 1.75 + Vector3(1.65, 1.25, 1.65)  # HTML 2411 and 2413.
+	system.angular_min = -2.2  # HTML 2414.
+	system.angular_max = 2.2  # HTML 2415.
+	system.power_min = 0.95  # HTML 2416.
+	system.power_max = 1.45  # HTML 2417.
+	system.billboard = true
+	return system
+
+
+## Lingering ground-skimming sand haze, the HTML's 'sandGroundHazePS' (110/2421-2443). Its emitter is
+## the plain startPos (HTML 2423), not a TransformNode.
+static func _make_sand_haze(start: Vector3, aim: Vector3, dist: float) -> DustSystem:
+	var op := MATERIALS.BASE_OPACITY  # HTML 2382.
+	var system := DustSystem.new()
+	system.node_name = "SandGroundHazePS"  # HTML 2421.
+	system.intensity = 1.0
+	system.capacity = 110  # HTML 2421.
+	system.texture = dust_texture()  # HTML 2422.
+	system.emitter_position = start  # HTML 2423.
+	system.box_min = Vector3(-0.6, -0.1, -0.6)  # HTML 2424.
+	system.box_max = Vector3(0.6, 0.2, 0.6)  # HTML 2425.
+	system.color_stops = PackedFloat32Array([0.0, 0.18, 0.55, 1.0])  # HTML 2427-2430.
+	system.colors = PackedColorArray([
+		Color(0.92, 0.82, 0.62, 0.0),
+		Color(0.88, 0.76, 0.54, 0.34 * op),
+		Color(0.72, 0.58, 0.38, 0.20 * op),
+		Color(0.45, 0.34, 0.20, 0.0),
+	])
+	system.size_stops = PackedFloat32Array([0.0, 0.50, 1.0])  # HTML 2432-2434.
+	system.sizes = PackedFloat32Array([0.75, 1.75, 2.65])
+	system.life_min = 0.65  # HTML 2436.
+	system.life_max = 1.30  # HTML 2437.
+	system.emit_rate = 180.0  # HTML 2438.
+	system.gravity = Vector3(0.0, 0.15, 0.0)  # HTML 2440.
+	system.dir_min = aim * dist * 0.85 + Vector3(-2.2, 0.1, -2.2)  # HTML 2441.
+	system.dir_max = aim * dist * 1.35 + Vector3(2.2, 0.85, 2.2)  # HTML 2442.
+	system.angular_min = 0.0  # The HTML never sets angular speed here: Babylon's default is 0.
+	system.angular_max = 0.0
+	system.power_min = 1.0  # Neither emitPower is set in the HTML: Babylon's default is 1.
+	system.power_max = 1.0
+	system.billboard = true
+	return system
+
+
+## Airborne silica clods and grains, the HTML's 'sandClodPS' (65/2446-2468). Like the Dig clods it
+## billboards by hand so the HTML spin (HTML 2466-2467) survives; gravity is -9.5, not -14.5.
+static func _make_sand_clod(start: Vector3, aim: Vector3, dist: float) -> DustSystem:
+	var op := MATERIALS.BASE_OPACITY  # HTML 2382.
+	var system := DustSystem.new()
+	system.node_name = "SandClodPS"  # HTML 2446.
+	system.intensity = 1.0
+	system.capacity = 65  # HTML 2446.
+	system.texture = clod_texture()  # HTML 2447.
+	system.emitter_position = start  # HTML 2448.
+	system.box_min = Vector3(-0.2, -0.1, -0.2)  # HTML 2449.
+	system.box_max = Vector3(0.2, 0.2, 0.2)  # HTML 2450.
+	system.color_stops = PackedFloat32Array([0.0, 0.12, 0.60, 1.0])  # HTML 2452-2455.
+	system.colors = PackedColorArray([
+		Color(0.98, 0.88, 0.52, 0.0),
+		Color(0.92, 0.75, 0.38, 0.62 * op),
+		Color(0.68, 0.50, 0.24, 0.24 * op),
+		Color(0.42, 0.28, 0.12, 0.0),
+	])
+	system.fixed_size_min = 0.06  # HTML 2457.
+	system.fixed_size_max = 0.13  # HTML 2458.
+	system.life_min = 0.38  # HTML 2459.
+	system.life_max = 0.72  # HTML 2460.
+	system.emit_rate = 140.0  # HTML 2461.
+	system.gravity = Vector3(0.0, -9.5, 0.0)  # HTML 2463.
+	system.dir_min = aim * dist * 1.45 + Vector3(-1.4, 0.5, -1.4)  # HTML 2464.
+	system.dir_max = aim * dist * 2.05 + Vector3(1.4, 2.2, 1.4)  # HTML 2465.
+	system.angular_min = -7.0  # HTML 2466.
+	system.angular_max = 7.0  # HTML 2467.
+	system.power_min = 1.0  # emitPower is not set in the HTML: Babylon's default is 1.
+	system.power_max = 1.0
+	system.billboard = false  # Manual billboard so the HTML spin survives; see _draw.
+	return system
+
+## Sand Attack jet stream (spawnSilicaJetParticleStream, HTML 2378-2481): the same three pools as the Dig
+## dust, re-pointed down the real start->end axis with the HTML's own counts (190 / 110 / 65), colors,
+## sizes, lifetimes and emit rates. Stops at 0.340 s (HTML 2470) and frees itself at duration_sec + 1.25
+## (HTML 2475), so nothing is left behind. `start` and `end` are in `parent`'s space.
+static func spawn_sand_jet(parent: Node3D, start: Vector3, end: Vector3, duration: float = 0.92) -> void:
+	if parent == null:
+		return
+	var offset := end - start
+	var dist := offset.length()
+	var aim := offset.normalized() if dist > 0.0001 else Vector3.ZERO
+	var sim := DustParticles.new()
+	sim.name = "SandJetParticleStream"
+	sim._stop_after = SAND_JET_STOP_AFTER_SEC
+	sim._free_after = duration + SAND_JET_FREE_AFTER_EXTRA_SEC
+	sim._add_system(_make_sand_cloud(start, aim, dist))
+	sim._add_system(_make_sand_haze(start, aim, dist))
+	sim._add_system(_make_sand_clod(start, aim, dist))
+	# World-space particles: the HTML emitter is a world position and the stream must not inherit the
+	# parent's transform or scale (D-334).
+	sim.top_level = true
+	parent.add_child(sim)
+	sim.global_position = Vector3.ZERO
 
 
 # --- textures, generated in code (no files) -----------------------------------------------------

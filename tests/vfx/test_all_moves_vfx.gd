@@ -90,7 +90,7 @@ func _test_classic_moves_vfx(battle_fx: BattleFx) -> void:
 	_clean(bite)
 
 	var sand := battle_fx.fx_impacts._impact(Element.Type.TERRA, pos, Color("f0c57e"), false, dir, "tiro_areia")
-	_expect(_has_named(sand, "SandVortexImpact"), "Tiro de Areia deve ter SandVortexImpact")
+	_expect(sand.is_empty(), "Tiro de Areia nao deve desenhar impacto (D-1196: o FxSandAttack desenha a areia)")
 	_clean(sand)
 
 	var claw := battle_fx.fx_impacts._impact(Element.Type.FISICO, pos, Color("00f59b"), true, dir, "garra_dragao")
