@@ -50,8 +50,19 @@ signal mp_regenerated(actor: Combatant, amount: int)  ## D-1062: a unit recovere
 signal armor_changed(actor: Combatant, state: String)  ## D-1026: "started", "extended", "hit", "expired" or "battle_end".
 signal reward_spawned(reward)
 signal reward_landed(reward)
+## D-1229 (Phase 5): the Employ attempt changed stage ("picking", "cancelled", "refused", "started",
+## "ended"); `data` is the telemetry row documented in docs/TELEMETRIA.md.
+signal employ_changed(stage: String, data: Dictionary)
+## D-1232/D-1244 (Phase 8): a Summon swap was refused ("refused") or done ("done"); `data` is the
+## telemetry row documented in docs/TELEMETRIA.md.
+signal summon_changed(stage: String, data: Dictionary)
+var _arrivals: Array[Dictionary] = []  ## D-1254: Summons whose pentagram is still forming: {entering, leaving, slot, left}.
 
 const Phase = Incoming.Phase
+
+## Opt-in benchmark mode (--fast-combat): the same rules, every pacing constant shortened.
+## Off by default, so the shipped game is unchanged.
+static var fast_combat_test := false
 
 
 const REWARD_FLOAT := 0.6  ## Seconds a reward token floats over where it was earned.
@@ -60,12 +71,25 @@ const REWARD_IMPACT := 0.46  ## Seconds of impact effect at the slot.
 const SKILL_BLOCKS := 2.0
 const ITEM_BLOCKS := 1.0
 const GUARD_BLOCKS := 1.0  ## D-272: Guard costs 1 ATB; Burst does not pay it.
+## D-1242: how long the BOOST lasts (the target of an Employ that failed receives it).
+const BOOST_SECONDS := 10.0
+const EMPLOY_BLOCKS := 5.0  ## D-1229: Employ costs 5 ATB and 0 MP; Burst does not pay it.
+## D-1254 timeline of a Summon (creator's numbers): the beam that takes the leaver out of the floor, 1 s of gap, the
+## 4 s pentagram, then the beam falls; the entrant is in `party` (and can act) the moment it touches the floor.
+## Summon costs no ATB and cannot be cancelled.
+const SUMMON_EXIT_SECONDS := 0.95
+const SUMMON_GAP_SECONDS := 1.0
+const SUMMON_PENTAGRAM_SECONDS := 4.0
+const SUMMON_FALL_SECONDS := 0.95
+const SUMMON_ARRIVAL_SECONDS := SUMMON_EXIT_SECONDS + SUMMON_GAP_SECONDS + SUMMON_PENTAGRAM_SECONDS + SUMMON_FALL_SECONDS
 const GUARD_SECONDS := 2.0  ## D-272: no cancelling; ends by time, contact or Brick Break.
 const GUARD_REDUCTION := DamageMath.GUARD_REDUCTION  ## D-1153: single source in DamageMath; D-272 provisional until VIT/SPI exist.
 const AI_GUARD_CHANCE := 0.25  ## D-272/D-116: chance an AI target guards when an attack is declared on it.
 
 
 func _init() -> void:
+	if OS.get_cmdline_user_args().has("--fast-combat"):
+		fast_combat_test = true
 	_reward_queue = BattleRewards.new(self)
 	_badges = BattleBadges.new(self)
 
@@ -75,11 +99,48 @@ static func min_skill_cost(c: Combatant) -> float:
 		return SKILL_BLOCKS
 	if c.burst > 0:
 		return 0.0
-	var min_cost := Skill.basic().cost
-	for s in c.skills:
+	var moves := Skill.combatant_moves(c)
+	if moves.is_empty():
+		return SKILL_BLOCKS
+	var min_cost := moves[0].cost
+	for s in moves:
 		if s.cost < min_cost:
 			min_cost = s.cost
 	return float(min_cost)
+
+
+static func evade_still_cost() -> float:
+	return 2.0 if fast_combat_test else EVADE_STILL
+
+
+static func evade_on_run_cost() -> float:
+	return EVADE_ON_RUN
+
+
+static func base_windup() -> float:
+	return WINDUP
+
+
+static func status_windup() -> float:
+	return STATUS_WINDUP
+
+
+static func status_vfx_tail() -> float:
+	return STATUS_VFX_TAIL
+
+
+static func start_atb_blocks() -> float:
+	return START_ATB
+
+
+## Fast-combat benchmark only: attacking or stepping drops the Guard (the default rules
+## keep it uncancellable, D-272). Emits through the owner, which forwards to Battle.guard_ended.
+static func _cancel_guard_if_fast(actor: Combatant) -> void:
+	if not fast_combat_test or not actor.is_guarding():
+		return
+	actor.end_guard("cancelled")
+
+
 const EVADE_STILL := 3.0  ## Evade while standing still (not running in its own attack) — D-006.
 const EVADE_ON_RUN := 2.0  ## Evade during the run of its own melee attack — D-006.
 const PRELUDE_GAP := 0.25  ## D-988: the Evade window closes this long before the contact (the attacker's rise)
@@ -115,6 +176,7 @@ const AI_HEAL_BELOW := 0.5  ## AI combatants drink a potion at or below this HP 
 
 var party: Array[Combatant] = []
 var enemies: Array[Combatant] = []
+var protagonist: Combatant = null  ## D-1244: party[0] at start(); pays the Summon and owns the menu while it is on the field.
 var incoming: Array[Incoming] = []
 var running := false
 var _reward_queue: BattleRewards
@@ -129,7 +191,18 @@ var _war_cry_active: Array[Incoming] = []  ## D-1127: War Cries run outside the 
 var _status_tail := -1.0
 var _status_total := 0.0  ## D-1026: when > 0 the move fixes the TOTAL length of the pause (no default tail).
 var _status_elapsed := 0.0
+## D-1229/D-1233: where a failed Employ is remembered and a recruit is registered. The battle scene
+## sets the player's roster before start(); a battle without one (isolated tests) gets a private one.
+var roster: ExpeditionRoster = null
+## D-1229 "Sim, só teste": recruiting the LAST living enemy exists only as an isolated test (victory, XP and loot
+## of that case are not decided), so the real game refuses it ("last_enemy"). Only the debug room turns this on.
+var employ_allow_last := false
+## D-1240 (Phase 6): debug only. >= 0 replaces the random roll (0..100) of resolve_employ(); -1 = real roll.
+var employ_roll_override := -1.0
+var _employ: Dictionary = {}  ## D-1229: the Employ attempt in progress ({} = none). While it exists the whole battle holds still.
+var _employ_left_no_enemy := false  ## D-1229: a recruit left the field with no living enemy; victory for this case is not decided, so none is declared.
 var _freeze_left := 0.0  ## Hit-stop: the whole battle clock holds still for this many seconds.
+var battle_time := 0.0  ## D-1234: battle clock in seconds; it is the `t` of the roster participation events.
 var _evade := BattleEvade.new(self)
 var _ai := BattleAI.new(self)
 var _planner := AttackPlanner.new(self)
@@ -140,8 +213,9 @@ var _hop_back := 0.3  ## Placeholder; BattleFx decides how long a return takes.
 func start(p_party: Array[Combatant], p_enemies: Array[Combatant]) -> void:
 	party = p_party
 	enemies = p_enemies
+	protagonist = party[0] if not party.is_empty() else null  # D-1244: the leader is the first active member.
 	for c in party + enemies:
-		c.atb = START_ATB
+		c.atb = start_atb_blocks()
 		c.burst = 0
 		c.clear_pending()
 		c.engaged_with = null
@@ -159,6 +233,11 @@ func start(p_party: Array[Combatant], p_enemies: Array[Combatant]) -> void:
 	_returning.clear()
 	rewards.clear()
 	_badges.clear()
+	_employ = {}
+	_employ_left_no_enemy = false
+	if roster == null:
+		roster = ExpeditionRoster.new()
+	roster.begin_battle()  # D-1229: a failed Employ blocks new attempts until the next battle.
 	running = true
 	log_message.emit("Batalha iniciada!")
 
@@ -190,6 +269,9 @@ func freeze(seconds: float) -> void:
 
 
 func _process(delta: float) -> void:
+	battle_time += delta
+	if not _employ.is_empty():
+		return  # D-1229 ("congela tudo"): nothing advances while an Employ attempt is open.
 	if _freeze_left > 0.0:
 		_freeze_left -= delta
 		return
@@ -202,10 +284,12 @@ func _process(delta: float) -> void:
 		_step_status_pause(delta)
 		state_changed.emit()
 		return
+	_step_arrivals(delta)
 	for c in party + enemies:
 		c.tick_shield(delta)  # Drain Spear / Badge Steal: the shield badge has its own clock.
 		c.tick_magic_immunity(delta)
 		c.tick_armor(delta)  # D-1026: counts down also during a Guard; frozen by a status pause like every duration
+		c.tick_boost(delta)  # D-1242: same clock as the other durations (every pause stops it)
 		if not is_winding_up(c):  # ATB stays locked until the action finishes.
 			c.tick(delta)
 		_tick_burn(c, delta)  # D-238: burns on, also while it winds up
@@ -268,7 +352,9 @@ func side_allows(actor: Combatant, c: Combatant, side: int) -> bool:
 
 
 func use_skill(actor: Combatant, skill: Skill, target: Combatant, target2: Combatant = null) -> bool:
-	if not actor.is_alive() or actor.is_stunned() or actor.is_guarding() or is_winding_up(actor) or not actor.can_pay_skill(skill):
+	if is_employ_active():
+		return false  # D-1229: the whole battle is frozen.
+	if not actor.is_alive() or actor.is_stunned() or (actor.is_guarding() and not fast_combat_test) or is_winding_up(actor) or not actor.can_pay_skill(skill):
 		return false
 	if _status_pause != null and skill.kind == Skill.Kind.STATUS:
 		return false  # D-1159: attacks may start their wind-up during the pause; status moves wait.
@@ -289,8 +375,16 @@ func use_skill(actor: Combatant, skill: Skill, target: Combatant, target2: Comba
 			return false
 		if actor.engaged_with != null and target != actor.engaged_with:
 			return false  # Engaged: it only acts on the opponent it is standing next to.
+	_cancel_guard_if_fast(actor)
+	var by_burst := actor.burst > 0  # D-1239: remember what pay_skill() takes, for the Employ refund.
+	var mp_before := actor.mp
+	var timer_before := actor.mp_regen_timer
 	actor.pay_skill(skill)
 	var inc := Incoming.new()
+	inc.paid_burst = by_burst
+	inc.paid_blocks = 0.0 if by_burst else skill.cost
+	inc.paid_mp = mp_before - actor.mp
+	inc.paid_mp_timer = timer_before
 	inc.attacker = actor
 	inc.target = target
 	inc.target2 = target2 if skill.target_mode == MoveData.TargetMode.DUAL else null
@@ -319,7 +413,7 @@ func use_skill(actor: Combatant, skill: Skill, target: Combatant, target2: Comba
 		actor.taunt_atk_bonus = true
 
 	# Individual windup overrides (D-032 / D-034)
-	var w_override := skill.windup if skill.windup >= 0.0 else (STATUS_WINDUP if inc.kind == Skill.Kind.STATUS else WINDUP)
+	var w_override := skill.windup if skill.windup >= 0.0 else (status_windup() if inc.kind == Skill.Kind.STATUS else base_windup())
 	inc.total_windup = ((0.0 if inc.kind == Skill.Kind.STATUS else COUNTER_WINDUP) if inc.instant else w_override)  # D-284
 	inc.time_left = inc.total_windup
 
@@ -347,7 +441,9 @@ func use_skill(actor: Combatant, skill: Skill, target: Combatant, target2: Comba
 ## A player's move: it starts now if it can; otherwise it waits in the one slot, replacing
 ## whatever was there. Nothing is paid until it starts (D-161).
 func request_skill(actor: Combatant, skill: Skill, target: Combatant, target2: Combatant = null) -> bool:
-	if not running or not actor.is_alive() or actor.is_stunned() or actor.is_guarding() or actor.mp < skill.mp_cost:
+	if is_employ_active():
+		return false  # D-1229: the whole battle is frozen.
+	if not running or not actor.is_alive() or actor.is_stunned() or (actor.is_guarding() and not fast_combat_test) or actor.mp < skill.mp_cost:
 		return false
 	if can_start_windup_now(actor, skill):
 		var started := _start_move(actor, skill, target, target2)
@@ -365,13 +461,13 @@ func request_skill(actor: Combatant, skill: Skill, target: Combatant, target2: C
 
 ## False during a status pause (D-031) and until its own attack has ended, return included.
 func can_start_now(actor: Combatant) -> bool:
-	return _status_pause == null and not is_attacking(actor) and not actor.is_guarding()
+	return _status_pause == null and not is_attacking(actor) and not (actor.is_guarding() and not fast_combat_test)
 
 
 ## D-1159: an attack (non-status) may start its wind-up during a status pause and stay
 ## frozen; a status move still waits so pauses never stack.
 func can_start_windup_now(actor: Combatant, skill: Skill) -> bool:
-	if not actor.is_alive() or is_attacking(actor) or actor.is_guarding() or actor.is_stunned():
+	if not actor.is_alive() or is_attacking(actor) or (actor.is_guarding() and not fast_combat_test) or actor.is_stunned():
 		return false
 	return _status_pause == null or (skill != null and skill.kind != Skill.Kind.STATUS)
 
@@ -382,7 +478,7 @@ func is_status_paused() -> bool:
 
 
 func _start_move(actor: Combatant, skill: Skill, target: Combatant, target2: Combatant = null) -> bool:
-	if actor.is_stunned() or actor.is_guarding() or not actor.can_pay_skill(skill):
+	if actor.is_stunned() or (actor.is_guarding() and not fast_combat_test) or not actor.can_pay_skill(skill):
 		return false
 	if not skill.is_friendly and (target == null or not target.is_alive()):
 		return false
@@ -412,6 +508,8 @@ func _clear_queued(c: Combatant) -> void:
 
 
 func use_item(actor: Combatant, item: Item, target: Combatant) -> bool:
+	if is_employ_active():
+		return false  # D-1229: the whole battle is frozen.
 	if _status_pause != null:
 		return false  # D-1146: items may not skip the status pause (Evade/Guard are the exceptions).
 	if item.kind != Item.Kind.CONSUMABLE or actor.is_stunned() or actor.is_guarding() or not actor.can_pay(ITEM_BLOCKS):
@@ -456,6 +554,8 @@ func can_guard(actor: Combatant) -> bool:
 ## 1 ATB, 2 s, no cancelling: the actor can do nothing else and its ATB is paused until the
 ## Guard expires or is hit/broken.
 func use_guard(actor: Combatant) -> bool:
+	if is_employ_active():
+		return false  # D-1229: frozen, without Evade or Guard.
 	if not can_guard(actor):
 		return false
 	if not actor.guard_ended.is_connected(_on_guard_ended):
@@ -465,6 +565,7 @@ func use_guard(actor: Combatant) -> bool:
 	_clear_queued(actor)
 	log_message.emit("%s entra em Guard!" % actor.name)
 	guard_started.emit(actor)
+	actor.record_proficiency("VIT", 3)
 	return true
 
 
@@ -514,7 +615,7 @@ static func travel_seconds(base: float, attacker: Combatant, target: Combatant) 
 func can_step(c: Combatant, dir: int) -> bool:
 	if _status_pause != null:
 		return false  # D-1146: steps are blocked during the status pause.
-	if not running or not c.is_alive() or dir == 0 or c.is_stunned() or c.is_guarding():
+	if not running or not c.is_alive() or dir == 0 or c.is_stunned() or (c.is_guarding() and not fast_combat_test):
 		return false
 	var to := c.pos_step + dir
 	if to < -STEP_MAX or to > STEP_MAX or c.blocks() < STEP_COST:
@@ -534,7 +635,7 @@ func step_block_reason(c: Combatant) -> String:
 		return ""
 	if _status_pause != null:
 		return "pausa de status"  # D-1146
-	if c.is_guarding():
+	if c.is_guarding() and not fast_combat_test:
 		return "em Guard"
 	if c.engaged_with != null:
 		return "engajado"
@@ -552,8 +653,11 @@ func step_block_reason(c: Combatant) -> String:
 
 
 func step(c: Combatant, dir: int) -> bool:
+	if is_employ_active():
+		return false  # D-1229: the whole battle is frozen.
 	if not can_step(c, dir):
 		return false
+	_cancel_guard_if_fast(c)
 	c.spend(STEP_COST)
 	c.step_from = c.visual_step()
 	c.pos_step += dir
@@ -605,6 +709,8 @@ func find_evadable(actor: Combatant) -> Incoming:
 
 
 func try_evade(actor: Combatant, inc: Incoming) -> bool:
+	if is_employ_active():
+		return false  # D-1229: frozen, without Evade or Guard.
 	return _evade.try_evade(actor, inc)
 
 
@@ -828,7 +934,7 @@ func _step_status_pause(delta: float) -> void:
 		_step_attacks(delta, inc)
 	elif _status_tail < 0.0:
 		# Done (or cancelled): let its effect finish. A move with a fixed total pause keeps the engine paused up to that total.
-		_status_tail = maxf(_status_total - _status_elapsed, 0.01) if _status_total > 0.0 else STATUS_VFX_TAIL
+		_status_tail = maxf(_status_total - _status_elapsed, 0.01) if _status_total > 0.0 else status_vfx_tail()
 	else:
 		_status_tail -= delta
 		if _status_tail <= 0.0:
@@ -917,6 +1023,8 @@ func _strike(inc: Incoming) -> void:
 		_returning.append(inc)
 	if inc.ghost or inc.interrupted:
 		return
+	if inc.kind != Skill.Kind.STATUS and not inc.bounce_no_reward:
+		_record_strike_proficiency(inc)
 	if not inc.target.is_alive():
 		_retarget_aoe(inc)
 	if inc.dodged:
@@ -924,6 +1032,7 @@ func _strike(inc: Incoming) -> void:
 			inc.attacker.taunt_atk_bonus = false
 			inc.attacker.taunted_by = null
 		log_message.emit("%s esquivou de %s!" % [inc.target.name, inc.label])
+		inc.target.record_proficiency("AGI", 3)
 	elif inc.attacker.is_alive() and inc.kind == Skill.Kind.STATUS:
 		_execute_status_move(inc)
 	elif inc.target.is_alive() and (inc.attacker.is_alive() or inc.kind == Skill.Kind.PROJECTILE):
@@ -974,6 +1083,7 @@ func _retarget_aoe(inc: Incoming) -> void:
 
 func _execute_status_move(inc: Incoming) -> void:
 	_ensure_move_data(inc)
+	inc.attacker.record_proficiency("WIS", 3)
 	var behavior := MoveBehaviorRegistry.get_behavior(inc.move_id)
 	if behavior.on_status(inc, self):
 		return
@@ -985,6 +1095,16 @@ func _execute_status_move(inc: Incoming) -> void:
 			"crit": false, "gain": 0, "whiffed": false, "power": 0.0,
 			"skill_name": inc.label
 		})
+
+
+## D-1223: records the attacker's real action once per execution (never per AoE target or bounce).
+func _record_strike_proficiency(inc: Incoming) -> void:
+	var magical := false
+	if inc.move_data != null:
+		magical = inc.move_data.damage_type == MoveData.DamageType.MAGICAL
+	elif inc.skill != null:
+		magical = inc.skill.is_magical()
+	inc.attacker.record_proficiency("MAG" if magical else "STR", 3)
 
 
 ## Resolved attacks that FX still has to draw (landing or returning).
@@ -1064,6 +1184,7 @@ func _hit(attacker: Combatant, target: Combatant, power: float, element: Element
 		grant_atb(target, 1, target)
 		info["evaded"] = true
 		log_message.emit("%s esquiva de %s automaticamente! +1 bloco" % [target.name, label])
+		target.record_proficiency("AGI", 3)
 		hit_resolved.emit(attacker, target, element, info)
 		return info
 	# Move-authored step between a confirmed contact and the damage (Drain Spear's Badge Steal).
@@ -1137,6 +1258,8 @@ func _hit(attacker: Combatant, target: Combatant, power: float, element: Element
 		info["shield_hit"] = true
 	if dmg > 0:
 		target.take_damage(dmg, bool(opts.get("bypass_def", false)))
+		if not bool(opts.get("bounce", false)):
+			target.record_proficiency("VIT", 1)
 	if not target.is_alive():
 		_drop_returns_of(target)
 	var gain := 0 if bool(opts.get("no_gain", false)) else (2 if weak else 0) + (1 if crit else 0)
@@ -1149,6 +1272,8 @@ func _hit(attacker: Combatant, target: Combatant, power: float, element: Element
 		if gst != null:
 			gst.discovered_species[gst.species_key(target)] = true
 	info["crit"] = crit
+	if crit:
+		attacker.record_proficiency("LUK", 2)
 	info["gain"] = gain
 	var element_name := "mágico" if magic_flat >= 0 else Element.name_of(element)
 	log_message.emit("%s usa %s (%s) em %s (%d dano)%s%s" % [
@@ -1296,6 +1421,366 @@ func _interrupt_attacks_of(c: Combatant, hitter: Combatant, force: float) -> boo
 	return stopped
 
 
+# --- Employ (D-1229, Phase 5: the mechanical flow only) ----------------------
+
+func is_employ_active() -> bool:
+	return not _employ.is_empty()
+
+
+## "" when `actor` may start an Employ attempt now (on `target`, or on any living opponent when
+## null); otherwise why not. The codes are telemetry codes, not menu texts.
+func employ_refusal(actor: Combatant, target: Combatant = null) -> String:
+	if not running:
+		return "not_running"
+	if is_employ_active():
+		return "busy"
+	if actor == null or not actor.is_alive():
+		return "actor_down"
+	if roster == null or not roster.can_attempt_employ():
+		return "blocked"
+	if actor.blocks() < EMPLOY_BLOCKS:
+		return "need_atb"  # ATB blocks only: Burst never pays an Employ.
+	var foes := opponents_of(actor)
+	var living := 0
+	for f in foes:
+		if f.is_alive():
+			living += 1
+	if living == 0:
+		return "no_target"
+	if living == 1 and not employ_allow_last:
+		return "last_enemy"
+	if target == null:
+		return ""
+	if not foes.has(target) or not target.is_alive():
+		return "target_invalid"  # Provisional (creator): any living enemy may be the target.
+	return ""
+
+
+## The target picker opened ("picking") or closed without a confirmed target ("cancelled").
+## Nothing is paid by either.
+func note_employ_pick(actor: Combatant, stage: String) -> void:
+	employ_changed.emit(stage, _employ_row(stage, actor, null))
+
+
+## The target was confirmed: pays the 5 ATB for real (spend(), never pay(): Burst stays) and freezes
+## the whole battle until finish_employ(). False, with nothing paid, when it may not start.
+func begin_employ(actor: Combatant, target: Combatant) -> bool:
+	var why := employ_refusal(actor, target)
+	if why != "":
+		employ_changed.emit("refused", _employ_row("refused", actor, target, {"reason": why}))
+		return false
+	# D-1239 (revista): nothing is cancelled here. The attempt freezes the battle and, once it ends, everything
+	# resumes where it stopped; only a success cancels what involves the recruit (see finish_employ()).
+	var before := {"cost": EMPLOY_BLOCKS, "blocks_before": snappedf(actor.blocks(), 0.01), "burst_before": actor.burst}
+	actor.spend(EMPLOY_BLOCKS)
+	_employ = {"actor": actor, "target": target}
+	employ_changed.emit("started", _employ_row("started", actor, target, before))
+	state_changed.emit()
+	return true
+
+
+## D-1239 (revista, "ok siga com as mudanças ao invés de cancelamento"): the Employ freezes the battle and
+## it resumes as it was. Only when the attempt succeeds, what involves the recruit `who` (as attacker or as
+## target) is cancelled, wind-up or on its way, with its cost given back (ATB, MP and MP regen timer, or the
+## Burst when the Burst paid). Queued moves of `who`, or aimed at `who`, are dropped (nothing was paid, D-161).
+## A runner of someone else that was heading to `who` hops back like at the end of a battle; `who`'s own
+## runner just stops (it leaves the field). Moves that already landed are not touched. Everything else
+## keeps going. Returns the telemetry lists.
+func _employ_cancel_moves(who: Combatant) -> Dictionary:
+	var cancelled: Array = []
+	var queue_cleared: Array = []
+	for c in party + enemies:
+		if c.queued_skill != null and (c == who or c.queued_target == who or c.queued_target2 == who):
+			queue_cleared.append({"actor": c.name, "move": c.queued_skill.display_name})
+			_clear_queued(c)
+	for inc in incoming.duplicate():
+		if inc.ghost or not _involves(inc, who):
+			continue
+		incoming.erase(inc)
+		inc.interrupted = true  # D-1160: mechanical end, not an interruption on screen.
+		cancelled.append(_employ_refund(inc))
+		attack_cancelled.emit(inc)
+	for inc in _landing.duplicate():
+		if inc.ghost or inc.impacted or not _involves(inc, who):
+			continue
+		_landing.erase(inc)
+		cancelled.append(_employ_refund(inc))
+		inc.attacker.is_invulnerable = false
+		inc.interrupted = true
+		if inc.attacker != who and inc.attacker.is_alive() and AttackMotion.carries(inc):
+			AttackMotion.begin_plain_return(inc, inc.attacker.pos)
+			inc.impacted = true  # Nothing lands any more: only the way home is left.
+			inc.plan_i = 0
+			inc.phase = Phase.RETURN
+			inc.phase_time = 0.0
+			_returning.append(inc)
+			attack_phase.emit(inc, Phase.RETURN)
+		else:
+			attack_cancelled.emit(inc)
+	for inc in _returning.duplicate():
+		if inc.attacker == who:
+			_returning.erase(inc)  # The recruit leaves the field: its own way home is not played.
+			attack_cancelled.emit(inc)
+	if _status_pause != null and not incoming.has(_status_pause) and not _landing.has(_status_pause) and _status_pause.interrupted:
+		var paused := _status_pause  # Its status move was cancelled above: the status pause closes with it.
+		_status_pause = null
+		status_pause_ended.emit(paused)
+	return {"cancelled": cancelled, "queue_cleared": queue_cleared}
+
+
+func _involves(inc: Incoming, who: Combatant) -> bool:
+	return inc.attacker == who or inc.target == who or inc.target2 == who
+
+
+## Gives back what `inc` cost its attacker (the Burst when the Burst paid, else the ATB; and the MP).
+func _employ_refund(inc: Incoming) -> Dictionary:
+	var a := inc.attacker
+	if inc.paid_burst:
+		a.gain_burst(1)
+	elif inc.paid_blocks > 0.0:
+		a.add_atb(inc.paid_blocks)
+	if inc.paid_mp > 0:
+		a.mp = mini(a.mp + inc.paid_mp, a.max_mp)
+		a.mp_regen_timer = inc.paid_mp_timer  # D-1239: the timer the move reset goes back to what it was.
+	var row := {"actor": a.name, "move": inc.label, "phase": Phase.keys()[inc.phase],
+		"atb": inc.paid_blocks, "mp": inc.paid_mp, "mp_timer": inc.paid_mp_timer, "burst": 1 if inc.paid_burst else 0}
+	inc.paid_burst = false
+	inc.paid_blocks = 0.0
+	inc.paid_mp = 0
+	return row
+
+
+## D-1240: STR and MAG of `c` as the Employ chance reads them: effective attributes times the ATK stage
+## multiplier (no rounding, no cap).
+func _employ_pair(c: Combatant) -> Array:
+	var m := c.atk_stage_mult()
+	return [float(c.str) * m, float(c.mag) * m]
+
+
+## D-1230/D-1240: the deterministic Employ chance (no roll, no side effect) with every intermediate.
+## Participants: the living members of the actor's team. level_traveler: the level of the team leader (first
+## member). Respect: neutral 50 until a real source exists (D-1231). Rhythm bonus: 0 until the minigame exists.
+func employ_chance(actor: Combatant, target: Combatant) -> Dictionary:
+	var members: Array = []
+	var side := team_of(actor)
+	for c in side:
+		if c.is_alive():
+			members.append(_employ_pair(c))
+	var foe := _employ_pair(target)
+	var leader_level: int = side[0].level if not side.is_empty() else actor.level
+	var info := EmployMath.breakdown(members, foe[0], foe[1], leader_level, target.level, EmployMath.RESPECT_NEUTRAL, [])
+	info["members"] = members.size()
+	info["level_traveler"] = leader_level
+	info["level_enemy"] = target.level
+	info["respect"] = EmployMath.RESPECT_NEUTRAL
+	return info
+
+
+## D-1240: ends the open attempt by the real chance. No roll is made when P is 0 or 100 (D-1230); otherwise
+## roll = randf() * 100 (the global RNG, so --seed rules it) and it succeeds when roll < P. Returns the chance
+## breakdown plus "rolled", "roll" (-1 when none) and "success"; {} when no attempt is open.
+func resolve_employ() -> Dictionary:
+	if _employ.is_empty():
+		return {}
+	var info := employ_chance(_employ["actor"], _employ["target"])
+	var p := float(info["P"])
+	var rolled := EmployMath.needs_roll(p)
+	var roll := -1.0
+	if rolled:
+		roll = employ_roll_override if employ_roll_override >= 0.0 else randf() * 100.0
+	var success := EmployMath.resolve(p, roll)
+	info["rolled"] = rolled
+	info["roll"] = roll
+	info["success"] = success
+	finish_employ(success, false, {"chance": info, "rolled": rolled, "roll": roll})
+	return info
+
+
+## Ends the open attempt and lets the battle run again. Failure: Employ is blocked for the rest of
+## this battle (the BOOST is Phase 7). Success: the target leaves the field without being defeated
+## and joins the roster once; it only fights again through Summon (Phase 8). No damage, XP, loot,
+## death or victory comes from here. `forced`: the result came from debug, not from a roll.
+func finish_employ(success: bool, forced := false, info := {}) -> bool:
+	if _employ.is_empty():
+		return false
+	var actor: Combatant = _employ["actor"]
+	var target: Combatant = _employ["target"]
+	_employ = {}
+	var extra := {"result": "success" if success else "failure", "forced": forced, "cancelled": [], "queue_cleared": []}
+	extra.merge(info)
+	if success:
+		var cleared := _employ_cancel_moves(target)  # D-1239: only what involves the recruit; the rest resumes.
+		extra["cancelled"] = cleared["cancelled"]
+		extra["queue_cleared"] = cleared["queue_cleared"]
+		var list := team_of(target)
+		list.erase(target)
+		for c in party + enemies:
+			if c.engaged_with == target:
+				c.engaged_with = null  # the recruit left the field: nobody stays engaged with it
+		_clear_queued(target)
+		var place := ExpeditionRoster.Place.SUBSTITUTE if roster.capacity_left(ExpeditionRoster.Place.SUBSTITUTE) > 0 else ExpeditionRoster.Place.STATIONED
+		var uid := roster.register(target, place)
+		roster.mark_recruited_in_battle(uid)
+		if _first_alive(list) == null:
+			_employ_left_no_enemy = true
+		extra["uid"] = uid
+		extra["place"] = "SUBSTITUTE" if roster.place_of(uid) == ExpeditionRoster.Place.SUBSTITUTE else "STATIONED"
+		extra["in_field"] = party.has(target) or enemies.has(target)
+	else:
+		roster.mark_employ_failed()
+		target.start_boost(BOOST_SECONDS)  # D-1229/D-1242: the enemy that refused gets the BOOST
+		extra["boost"] = {"target": target.name, "seconds": BOOST_SECONDS}
+	extra["blocked"] = not roster.can_attempt_employ()
+	var alive := 0
+	for e in opponents_of(actor):
+		if e.is_alive():
+			alive += 1
+	extra["enemies_left"] = alive
+	employ_changed.emit("ended", _employ_row("ended", actor, target, extra))
+	state_changed.emit()
+	return true
+
+
+func _employ_row(stage: String, actor: Combatant, target: Combatant, extra := {}) -> Dictionary:
+	var row := {
+		"stage": stage, "actor": actor.name if actor != null else "", "target": target.name if target != null else "",
+		"atb": snappedf(actor.atb, 0.01) if actor != null else 0.0, "extra": actor.extra if actor != null else 0.0,
+		"blocks": snappedf(actor.blocks(), 0.01) if actor != null else 0.0, "burst": actor.burst if actor != null else 0,
+	}
+	row.merge(extra)
+	return row
+
+
+# --- Summon (D-1232/D-1244, Phase 8: the mechanical swap only) ---------------
+
+## D-1244: who commands the menu. The protagonist while it is on the field and alive; otherwise the first
+## living active ally. null when nobody is alive. Read from `party`, never from `is_player` (D-235).
+func menu_owner() -> Combatant:
+	if protagonist != null and party.has(protagonist) and protagonist.is_alive():
+		return protagonist
+	return _first_alive(party)
+
+
+## D-1254: units whose pentagram is still forming. They are not in `party` yet: nobody targets them and
+## they cannot act.
+func arriving() -> Array[Combatant]:
+	var out: Array[Combatant] = []
+	for a in _arrivals:
+		out.append(a["entering"])
+	return out
+
+
+## Seconds since the Summon of `entering` started (0..SUMMON_ARRIVAL_SECONDS); -1 when it is not arriving. For the visuals.
+func arrival_elapsed(entering: Combatant) -> float:
+	for a in _arrivals:
+		if a["entering"] == entering:
+			return SUMMON_ARRIVAL_SECONDS - float(a["left"])
+	return -1.0
+
+
+func is_summon_arriving() -> bool:
+	return not _arrivals.is_empty()
+
+
+## "" when `leaving` may be swapped for `entering` right now; otherwise why not. The codes are telemetry
+## codes, not menu texts. `leaving`: any active member of `party`, alive or knocked out (D-1244 "Pode sair").
+## `entering`: a roster SUBSTITUTE (a STATIONED recruit does not enter, D-1233). D-1254: no ATB cost.
+func summon_refusal(leaving: Combatant, entering: Combatant) -> String:
+	if not running:
+		return "not_running"
+	if is_employ_active():
+		return "busy"
+	if roster == null:
+		return "no_roster"
+	if leaving == null or entering == null or leaving.uid == "" or entering.uid == "":
+		return "no_uid"
+	if not party.has(leaving):
+		return "leaving_invalid"
+	if roster.place_of(entering.uid) != ExpeditionRoster.Place.SUBSTITUTE:
+		return "entering_invalid"
+	for a in _arrivals:
+		if a["entering"] == entering:
+			return "entering_invalid"
+	return ""
+
+
+## D-1254: the one that leaves goes at once (it is out of `party`, keeps its HP and MP, loses every temporary
+## effect and its Moves are cancelled with the cost given back, like the Employ does with the recruit, D-1239).
+## The slot stays EMPTY for SUMMON_ARRIVAL_SECONDS (the pentagram); only then does the entrant enter `party`
+## in that slot with ATB 0 and no temporary effect. No ATB cost, cannot be cancelled, nothing is frozen.
+## False, with nothing changed, when summon_refusal() refuses.
+func summon(leaving: Combatant, entering: Combatant) -> bool:
+	var why := summon_refusal(leaving, entering)
+	if why != "":
+		summon_changed.emit("refused", _summon_row("refused", leaving, entering, {"reason": why}))
+		return false
+	var cleared := _employ_cancel_moves(leaving)
+	var slot := party.find(leaving)
+	leaving.clear_pending()  # D-1244 "quem sai perde tudo": HP and MP stay as they were.
+	leaving.end_boost()
+	for c in party + enemies:
+		if c.engaged_with == leaving:
+			c.engaged_with = null
+	leaving.engaged_with = null
+	leaving.in_battle = false
+	party.remove_at(slot)
+	roster.swap(leaving.uid, entering.uid)  # Uids never change.
+	roster.note_leave(leaving.uid, battle_time)  # D-1234: participation by identity, not by slot.
+	_arrivals.append({"entering": entering, "leaving": leaving, "slot": slot, "left": SUMMON_ARRIVAL_SECONDS})
+	summon_changed.emit("started", _summon_row("started", leaving, entering, {
+		"slot": slot, "cancelled": cleared["cancelled"], "queue_cleared": cleared["queue_cleared"],
+	}))
+	state_changed.emit()
+	return true
+
+
+func _step_arrivals(delta: float) -> void:
+	for a in _arrivals.duplicate():
+		a["left"] = float(a["left"]) - delta
+		if float(a["left"]) <= 0.0:
+			_arrivals.erase(a)
+			_finish_arrival(a["leaving"], a["entering"], int(a["slot"]))
+
+
+func _finish_arrival(leaving: Combatant, entering: Combatant, slot: int) -> void:
+	entering.clear_pending()  # D-1244 "quem entra começa limpo": HP, MP and Burst stay as they were.
+	entering.pos = leaving.pos
+	entering.home = leaving.home
+	entering.rest = leaving.rest
+	entering.has_rest = leaving.has_rest
+	entering.yaw = leaving.yaw
+	entering.pos_step = leaving.pos_step
+	entering.step_from = leaving.step_from
+	entering.step_t = 1.0
+	entering.tactic_pos = leaving.tactic_pos
+	entering.engaged_with = null
+	entering.in_battle = true
+	party.insert(mini(slot, party.size()), entering)
+	entering.atb = 0.0  # D-1244 "Entra com ATB 0".
+	entering.extra = 0.0
+	if not entering.armor_changed.is_connected(_on_armor_changed):
+		entering.armor_changed.connect(_on_armor_changed)  # D-1026
+	if not entering.mp_regenerated.is_connected(_on_mp_regenerated):
+		entering.mp_regenerated.connect(_on_mp_regenerated)  # D-1062
+	roster.note_enter(entering.uid, battle_time)
+	summon_changed.emit("done", _summon_row("done", leaving, entering, {"slot": party.find(entering)}))
+	state_changed.emit()
+
+
+func _summon_row(stage: String, leaving: Combatant, entering: Combatant, extra := {}) -> Dictionary:
+	var row := {
+		"stage": stage,
+		"leaving": leaving.name if leaving != null else "",
+		"entering": entering.name if entering != null else "",
+		"slot": -1,
+		"arrival_seconds": SUMMON_ARRIVAL_SECONDS,
+		"cancelled": [],
+		"queue_cleared": [],
+	}
+	row.merge(extra, true)  # overwrite: the defaults above are placeholders for the refused rows
+	return row
+
+
 func _first_alive(list: Array[Combatant]) -> Combatant:
 	for c in list:
 		if c.is_alive():
@@ -1306,8 +1791,10 @@ func _first_alive(list: Array[Combatant]) -> Combatant:
 func _check_end() -> void:
 	if not running:
 		return
-	var enemies_dead := _first_alive(enemies) == null
-	var party_dead := _first_alive(party) == null
+	# D-1229: an enemy that left by Employ was not defeated (D-105); with no living enemy left that
+	# way, victory/XP/loot are still the creator's to decide, so the battle is not ended here.
+	var enemies_dead := _first_alive(enemies) == null and not _employ_left_no_enemy
+	var party_dead := _first_alive(party) == null and _arrivals.is_empty()  # D-1254: an ally still arriving keeps the team alive
 	if not enemies_dead and not party_dead:
 		return
 	running = false
@@ -1334,10 +1821,13 @@ func _check_end() -> void:
 		c.engaged_with = null
 		c.in_battle = false
 		c.end_guard("battle_end")
+		c.end_boost()  # D-1242/D-1244: the BOOST ends with the battle (attributes back, Burst above 5 back to 5)
 		c.end_armor("battle_end")
 		_clear_queued(c)
 		if c.is_alive():
 			c.clear_buffs()  # The drawing goes back to normal too (D-158); a launched body keeps its own (D-166).
+	if roster != null:
+		roster.end_battle()
 	log_message.emit("Vitória!" if enemies_dead else "Derrota...")
 	battle_ended.emit(enemies_dead)
 
@@ -1351,6 +1841,8 @@ func save_state() -> Dictionary:
 		"running": running,
 		"debug_roll": debug_roll,
 		"freeze_left": _freeze_left,
+		"employ_failed": roster != null and roster.employ_failed(),  # D-1229: the block lasts the whole battle
+		"employ_left_no_enemy": _employ_left_no_enemy,
 		"units": units_state,
 	}
 
@@ -1363,6 +1855,10 @@ func restore_state(state: Dictionary) -> void:
 	_landing.clear()
 	_returning.clear()
 	_status_pause = null
+	_employ = {}
+	if roster != null:
+		roster.restore_employ_failed(bool(state.get("employ_failed", false)))
+	_employ_left_no_enemy = bool(state.get("employ_left_no_enemy", false))
 	var units_state: Dictionary = state.get("units", {})
 	for c in party + enemies:
 		if units_state.has(c):

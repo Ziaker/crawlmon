@@ -28,6 +28,7 @@ var _frame := 0
 var _prev: Dictionary = {}  ## Combatant -> {pos, vis, scale, who}
 var _prev_queue: Dictionary = {}  ## Combatant -> "skill>target" (D-1150 debug)
 var _vis_changes: Dictionary = {}
+var _connected: Dictionary = {}  ## Combatant -> true: its own signals are already hooked.
 var anomaly_count := 0
 static var _opened := false
 var _drive := false  ## --drive: the leader plays by itself (attacks, evades) so every path is exercised.
@@ -120,15 +121,34 @@ func _connect_events() -> void:
 	b.reward_spawned.connect(func(r) -> void: _event("reward_spawned", {"kind": r.kind, "owner": r.owner.name, "source": r.source.name, "slot": r.slot, "extra": r.extra}))
 	b.reward_landed.connect(func(r) -> void: _event("reward_landed", {"kind": r.kind, "owner": r.owner.name, "slot": r.slot}))
 	b.battle_ended.connect(func(won: bool) -> void: _event("battle_ended", {"player_won": won}))
+	b.employ_changed.connect(func(_stage: String, data: Dictionary) -> void: _event("employ", data))  # D-1229
+	b.summon_changed.connect(_on_summon)  # D-1232/D-1244
+
+
+## D-1232/D-1244: the Summon entrant was not on the field at setup(), so its own signals are hooked here.
+func _on_summon(stage: String, data: Dictionary) -> void:
+	_event("summon", data)
+	if stage != "done":
+		return
+	for c in battle.party:
+		if c.name == String(data.get("entering", "")):
+			_connect_combatant(c)
+			break
 
 
 func _connect_combatant(c: Combatant) -> void:
+	if _connected.has(c):
+		return
+	_connected[c] = true
 	c.damaged.connect(func(who: Combatant, amount: int) -> void:
 		_event("damaged", {"actor": who.name, "amount": amount, "hp": who.hp, "max_hp": who.max_hp}))
 	c.died.connect(func(who: Combatant) -> void:
 		_event("died", {"actor": who.name, "hp": who.hp}))
 	c.buff_changed.connect(func(who: Combatant, stat: String, val: int) -> void:
 		_event("buff_changed", {"actor": who.name, "stat": stat, "value": val}))
+	c.boost_changed.connect(func(who: Combatant, active: bool) -> void:  # D-1242
+		_event("boost", {"actor": who.name, "active": active, "left": snappedf(who.boost_timer, 0.01), "burst": who.burst, "blocks": snappedf(who.blocks(), 0.01),
+			"str": who.str, "mag": who.mag, "vit": who.vit, "wis": who.wis, "agi": who.agi, "luk": who.luk}))
 	c.shield_ended.connect(func(who: Combatant, reason: String) -> void:
 		_event("shield_ended", {"actor": who.name, "reason": reason}))
 	c.experience_gained.connect(func(amount: int, current: int, required: int) -> void:
@@ -271,8 +291,13 @@ func _process(delta: float) -> void:
 		"ts": Engine.time_scale, "paused": get_tree().paused, "freeze_left": snappedf(battle._freeze_left, 0.001),
 		"status_pause": battle.is_status_paused(),
 		"status_move": battle._status_pause.label if battle._status_pause != null else "",
+		"employ": battle.is_employ_active(),  # D-1229
 		"c": rows,
 	})
+	var martial: Variant = fx.fx_martial
+	if martial != null:
+		for s in martial.telemetry():
+			_event("martial_hand", s)  # D-1218: one row per live hand, every frame
 
 
 ## D-1150: a queue change is an event, with the state that explains why. A lost slot is
@@ -406,7 +431,7 @@ func _detect(c: Combatant, m: Node3D, row: Dictionary, dt: float) -> void:
 	# Logic invariants.
 	if c.atb < -0.001 or c.atb > Combatant.BLOCKS + 0.001 or c.extra < -0.001:
 		_anomaly("ATB_RANGE", c, "atb=%.2f extra=%.2f" % [c.atb, c.extra])
-	if c.burst < 0 or c.burst > Combatant.BURST_MAX:
+	if c.burst < 0 or c.burst > Combatant.BURST_MAX + (1 if c.is_boosted() else 0):  # D-1242: the BOOST may push it one past
 		_anomaly("BURST_RANGE", c, "burst=%d" % c.burst)
 	if c.pending_atb < 0 or c.pending_extra < 0 or c.pending_burst < 0:
 		_anomaly("PENDING_NEGATIVE", c, "pending=%s" % [[c.pending_atb, c.pending_extra, c.pending_burst]])

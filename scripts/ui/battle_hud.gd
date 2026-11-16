@@ -35,9 +35,64 @@ var _log_lines: Array[String] = []
 var _skill_info
 var _tabs: CameraTabs
 var _target: Combatant
+var arriving: Array[Combatant] = []  ## D-1254: entrants whose pentagram is still forming (their card is generated, see below).
+var dissolving := {}  ## D-1254: Combatant (leaving) -> 0..1: its card closes from both sides into a beam and fades in light.
+var _pending_owner: Combatant = null
+var _has_pending_owner := false
+var arrival_progress := {}  ## D-1254: Combatant -> 0..1, how much of the card is generated (left to right, pixel by pixel).
+
+## D-1254 ("gerado proceduralmente da esquerda pra direita com efeito pixel por pixel na mesma coloracao do raio"):
+## blocks of the card appear from the left with a ragged edge; the blocks at the front glow in the beam's neon.
+const CARD_GEN_SHADER := "
+shader_type canvas_item;
+uniform float progress = 0.0;
+uniform vec2 card_size = vec2(300.0, 100.0);
+uniform vec4 neon : source_color = vec4(0.839, 0.980, 0.4, 1.0);
+uniform float cell = 6.0;
+uniform float dissolve = 0.0;
+varying vec2 v_pos;
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+void vertex() { v_pos = VERTEX; }
+void fragment() {
+	if (dissolve > 0.0) {
+		// D-1254: the card of the unit that leaves closes from the left and the right into a thin rectangle (a beam)
+		float close = smoothstep(0.0, 0.85, dissolve);
+		float half_w = mix(0.5, 0.012, close);
+		if (abs(v_pos.x / card_size.x - 0.5) > half_w) { discard; }
+		COLOR.rgb = mix(COLOR.rgb, neon.rgb * 1.8, close);
+		COLOR.a *= 1.0 - smoothstep(0.85, 1.0, dissolve);
+	} else {
+		vec2 id = floor(v_pos / cell);
+		float r = hash(id);
+		float edge = progress * 1.3 - 0.12;
+		float k = id.x * cell / card_size.x + r * 0.12;
+		if (k > edge) { discard; }
+		float settle = smoothstep(0.0, 0.14, edge - k);
+		vec3 glow = neon.rgb * (1.2 + 0.5 * r);
+		COLOR.rgb = mix(glow, COLOR.rgb, settle);
+	}
+}
+"
+var _card_gen_shader: Shader
+var summon_cursor: Combatant  ## D-1249 PREVIEW: the card the Summon cursor is on (white pulsing outline).
+var _summon_strip: Array[UnitCard] = []  ## D-1249 PREVIEW: cards of the SUBSTITUTES, in a row above the leaving card.
+var _summon_anchor: Combatant
+var _summon_hide_menu := false
 ## Prototype hook: the portrait shield arc replaces the small shield badges.
 ## Default false; only the shield-HUD lab turns it on.
 var hide_shield_badges := false
+## PROTOTYPE (BOOST visual, D-1229): enemy Combatant -> {"variant": 1..3, "left": seconds}. HUD only; no game state.
+var boost_preview: Dictionary = {}
+
+
+## D-1242/D-1243: what the card shows for the BOOST: the debug preview if there is one, else the real state
+## (aura style 2 = Chakra, the approved one; the badge counts down the real timer).
+func boost_state(c: Combatant) -> Dictionary:
+	if boost_preview.has(c):
+		return boost_preview[c]
+	if c != null and c.is_boosted():
+		return {"variant": 2, "left": c.boost_timer}
+	return {}
 var _status: StatusPanel
 var _status_open := false
 var _reward_layer: RewardLayer
@@ -96,29 +151,7 @@ func setup(battle: Battle, party: Array[Combatant], enemies: Array[Combatant], c
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_add_vignette()
 	for i in party.size():
-		var card := UnitCard.new()
-		card.combatant = party[i]
-		card.hud = self
-		card.hero = i == 0
-		card.order = i
-		add_child(card)
-		_cards.append(card)
-		# D-1134: two translucent copies of the whole card for the BLIND ghost.
-		var ghosts: Array[UnitCard] = []
-		for g in 2:
-			var ghost := UnitCard.new()
-			ghost.combatant = party[i]
-			ghost.hud = self
-			ghost.hero = card.hero
-			ghost.order = i
-			ghost.is_ghost = true
-			ghost.z_index = 1
-			ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			ghost.visible = false
-			add_child(ghost)
-			ghost.process_mode = Node.PROCESS_MODE_DISABLED
-			ghosts.append(ghost)
-		_card_ghosts[party[i]] = ghosts
+		_make_card(party[i], i)
 	for e in enemies:
 		var tag := EnemyTag.new()
 		tag.combatant = e
@@ -338,6 +371,126 @@ func debug_rebind_party(party: Array[Combatant]) -> void:
 	_layout_cards()
 
 
+## One ally card plus its two BLIND ghosts (D-1134) for slot `i`.
+func _make_card(member: Combatant, i: int) -> void:
+	var card := UnitCard.new()
+	card.combatant = member
+	card.hud = self
+	card.hero = i == 0
+	card.order = i
+	add_child(card)
+	_cards.append(card)
+	# D-1134: two translucent copies of the whole card for the BLIND ghost.
+	var ghosts: Array[UnitCard] = []
+	for g in 2:
+		var ghost := UnitCard.new()
+		ghost.combatant = member
+		ghost.hud = self
+		ghost.hero = card.hero
+		ghost.order = i
+		ghost.is_ghost = true
+		ghost.z_index = 1
+		ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ghost.visible = false
+		add_child(ghost)
+		ghost.process_mode = Node.PROCESS_MODE_DISABLED
+		ghosts.append(ghost)
+	_card_ghosts[member] = ghosts
+
+
+## Debug (--summon-ui): an ally that joins the active team mid-battle gets its card.
+func add_ally(c: Combatant) -> void:
+	_make_card(c, _cards.size())
+
+
+## D-1244 (Phase 8): `entering` takes the card of `leaving` (same slot); the leaving card is not kept.
+## The hero card then follows the menu owner (the protagonist, or the first living active ally).
+func swap_card(leaving: Combatant, entering: Combatant, owner: Combatant) -> void:
+	for card in _cards:
+		if card.combatant != leaving:
+			continue
+		card.combatant = entering
+		var ghosts: Array = _card_ghosts.get(leaving, [])
+		for ghost in ghosts:
+			ghost.combatant = entering
+		_card_ghosts.erase(leaving)
+		_card_ghosts[entering] = ghosts
+		card.queue_redraw()
+	_card_knock.erase(leaving)
+	if _target == leaving:
+		_target = null
+	set_menu_owner(owner)
+
+
+## D-1244: the hero card (lead position, the menu's unit) is the owner's; the others keep slot order below it.
+func set_menu_owner(owner: Combatant) -> void:
+	if not dissolving.is_empty():
+		_pending_owner = owner  # D-1254: the dissolving card keeps its place; the order is applied when it is gone
+		_has_pending_owner = true
+		return
+	var rank := 1
+	for card in _cards:
+		var is_hero: bool = card.combatant == owner
+		card.hero = is_hero
+		card.order = 0 if is_hero else rank
+		if not is_hero:
+			rank += 1
+		for ghost in _card_ghosts.get(card.combatant, []):
+			ghost.hero = card.hero
+			ghost.order = card.order
+			ghost.queue_redraw()
+		card.queue_redraw()
+	_layout_cards()
+
+
+## D-1249 PREVIEW (placeholder look, nothing decided): the Summon cursor and the strip of substitute cards.
+func set_summon_cursor(c: Combatant) -> void:
+	summon_cursor = c
+
+
+## Cards of `subs` in a row above the card of `anchor` (the one that leaves). Empty list = hide.
+func show_summon_strip(subs: Array[Combatant], anchor: Combatant) -> void:
+	hide_summon_strip()
+	_summon_anchor = anchor
+	for i in subs.size():
+		var card := UnitCard.new()
+		card.combatant = subs[i]
+		card.hud = self
+		card.hero = false
+		card.order = 0
+		card.z_index = 2
+		add_child(card)
+		_summon_strip.append(card)
+
+
+func hide_summon_strip() -> void:
+	for card in _summon_strip:
+		card.queue_free()
+	_summon_strip.clear()
+	_summon_anchor = null
+
+
+func set_summon_picking(on: bool) -> void:
+	_summon_hide_menu = on
+	if not on:
+		summon_cursor = null
+		hide_summon_strip()
+
+
+func _layout_summon_strip() -> void:
+	var anchor: UnitCard = null
+	for card in _cards:
+		if card.combatant == _summon_anchor:
+			anchor = card
+	if anchor == null:
+		return
+	for i in _summon_strip.size():
+		var card := _summon_strip[i]
+		var w := card.size.x * card.scale.x
+		var h := card.size.y * card.scale.y
+		card.position = Vector2(anchor.position.x - i * (w + 12.0), anchor.position.y - h - 10.0)
+
+
 func set_target(c: Combatant) -> void:
 	_target = c
 
@@ -366,6 +519,7 @@ func _process(_delta: float) -> void:
 	_track_burn(_delta)
 	_follow_leader(_delta)
 	_layout_cards()
+	_layout_summon_strip()
 	_layout_tags()
 	for card in _cards:  # A landed reward nudges its card for a moment.
 		if card.pulse > 0.0:
@@ -655,6 +809,24 @@ func _follow_leader(delta: float) -> void:
 				covered = true
 	var real_dt := delta / maxf(Engine.time_scale, 0.05)
 	var want := MENU_FADE_ALPHA if covered else 1.0
+	for card in _cards:
+		card.modulate.a = 1.0
+		if arriving.has(card.combatant) or dissolving.has(card.combatant):
+			if not (card.material is ShaderMaterial):
+				if _card_gen_shader == null:
+					_card_gen_shader = Shader.new()
+					_card_gen_shader.code = CARD_GEN_SHADER
+				var gen := ShaderMaterial.new()
+				gen.shader = _card_gen_shader
+				card.material = gen
+			var gen_p: float = 1.0 if dissolving.has(card.combatant) else float(arrival_progress.get(card.combatant, 0.0))
+			(card.material as ShaderMaterial).set_shader_parameter("progress", gen_p)
+			(card.material as ShaderMaterial).set_shader_parameter("dissolve", float(dissolving.get(card.combatant, 0.0)))
+			(card.material as ShaderMaterial).set_shader_parameter("card_size", card.size)
+		elif card.material != null:
+			card.material = null
+	if _summon_hide_menu:
+		want = 0.0  # D-1249 PREVIEW: the Summon is picked on the cards; the list stays only as the input source
 	menu.modulate.a = lerpf(menu.modulate.a, want, 1.0 - exp(-12.0 * real_dt))
 
 
@@ -1075,6 +1247,25 @@ class UnitCard extends Control:
 	var _extra_flash: Array[float] = [0.0, 0.0, 0.0, 0.0, 0.0]
 	var _burst_gain_flash := 0.0
 	var pulse := 0.0  ## Set when a reward lands: a small nudge of the whole card.
+	var _boost_fx: BoostFx
+
+	func boost_layout() -> Dictionary:
+		return {"box": Rect2(0, 18, size.x, 82), "skew": 8.0, "masks": [Rect2(16, 26, 56, 62), Rect2(84, 26, 150, 22), Rect2(84, 52, 180, 17), Rect2(84, 78, 170, 16), _burst_slot_rect()]}
+
+	## PROTOTYPE (BOOST visual, D-1243): the same shader aura on the player's card. HUD only.
+	func _update_boost_fx() -> void:
+		var boost: Dictionary = hud.boost_state(combatant) if hud != null else {}
+		if boost.is_empty():
+			if _boost_fx != null:
+				_boost_fx.visible = false
+			return
+		if _boost_fx == null:
+			_boost_fx = BoostFx.new()
+			add_child(_boost_fx)
+		_boost_fx.visible = true
+		_boost_fx.tag = self
+		_boost_fx.style = int(boost["variant"])
+		_boost_fx.queue_redraw()
 
 	func atb_slot_global(i: int) -> Vector2:
 		return position + Vector2(84.0 + 30.0 + i * 29.0 + 13.0, 86.5) * scale
@@ -1117,6 +1308,7 @@ class UnitCard extends Control:
 		_apply_card_knock()
 		if combatant == null:
 			return
+		_update_boost_fx()
 		var cur_atb := combatant.shown_atb()
 		var cur_burst := combatant.shown_burst()
 
@@ -1179,6 +1371,9 @@ class UnitCard extends Control:
 		var body := Rect2(0, 18, size.x, 82)
 		BattleHud.slant(self, Rect2(body.position + Vector2(6, 6), body.size), 8.0, Color(0, 0, 0, 0.5))
 		BattleHud.draw_card_bg(self, body, 8.0, bg, bk, 10.0, now)
+		if hud.summon_cursor == c and not is_ghost:  # D-1249 PREVIEW (placeholder look)
+			var glow := 0.65 + 0.35 * sin(now / 160.0)
+			draw_rect(Rect2(body.position - Vector2(5, 5), body.size + Vector2(10, 10)), Color(1, 1, 1, glow), false, 3.0)
 		# D-1062: the MP CHARGE BLOCK. It sits OUTSIDE the card (a little apart from it), a bit bigger than the old strip, and fills
 		# like water as the 8 s of the next MP pulse run: two waves slide on the surface and bubbles rise through the water.
 		# Full when the MP is full. (It no longer sits on the card, so the ARMOR chrome border never covers it.)
@@ -1403,6 +1598,7 @@ class EnemyTag extends Control:
 	var card_pose: Dictionary = {}  ## Knock-up card effect state, filled by _apply_card_knock()
 	var _portrait: Texture2D
 	var _portrait_tried := false
+	var _boost_fx: BoostFx
 	const W := 136.0
 	const BOX_H := 44.0
 	const PR := Rect2(4, 4, 30, 36)
@@ -1432,10 +1628,30 @@ class EnemyTag extends Control:
 			return
 		card_pose = hud.card_knock_pose(combatant)
 
+	func boost_layout() -> Dictionary:
+		var br := _burst_slot_rect()
+		return {"box": Rect2(0, 0, W, BOX_H), "skew": 6.0, "masks": [PR, Rect2(X0, 3.0, W - X0 - 34.0, 12.0), Rect2(X0, 18.0, W - X0 - 6.0, 5.0), Rect2(X0, ATB_Y, 5.0 * 13.0, 7.0), br]}
+
+	## PROTOTYPE (BOOST visual, D-1229/D-1241): shader aura child, only while the preview is on. HUD only.
+	func _update_boost_fx() -> void:
+		var boost: Dictionary = hud.boost_state(combatant)
+		if boost.is_empty():
+			if _boost_fx != null:
+				_boost_fx.visible = false
+			return
+		if _boost_fx == null:
+			_boost_fx = BoostFx.new()
+			add_child(_boost_fx)
+		_boost_fx.visible = true
+		_boost_fx.tag = self
+		_boost_fx.style = int(boost["variant"])
+		_boost_fx.queue_redraw()
+
 	func _process(_d: float) -> void:
 		_apply_card_knock()
 		if combatant == null or hud == null:
 			return
+		_update_boost_fx()
 		# D-981: the tag gets dizzy too while its enemy is stunned (slow sway).
 		pivot_offset = size * 0.5
 		rotation = deg_to_rad(2.2) * sin(BattleHud.clock_ms() / 1000.0 * TAU * BattleHud.STUN_SWAY_HZ) * hud.stun_k(combatant)
@@ -1450,6 +1666,7 @@ class EnemyTag extends Control:
 		var bk := hud.burn_k(c)  # D-239
 		# D-981: a bit translucent so the arena shows through.
 		BattleHud.draw_card_bg(self, box, 6.0, Color("eae9d9", 0.82) if active else Color(INK, 0.4), bk, 5.0, now)
+		var boost: Dictionary = hud.boost_state(c)  # PROTOTYPE (BOOST visual, D-1229): the aura is the BoostFx child (shader)
 
 		# Status and Buff badges floating above enemy tag (D-032)
 		# D-984: negative effects (debuffs, harmful status) line up from the far left; positive ones (buffs, protections)
@@ -1480,6 +1697,9 @@ class EnemyTag extends Control:
 			pos.append({"text": "S %d | %.1fs" % [c.shield_hp, c.shield_timer], "bg": Color("0b3f7a"), "fg": Color("8fe8ff")})
 		if c.is_magic_immune():
 			pos.append({"text": "IMM %.1fs" % c.magic_immune_timer, "bg": Color("5b3f99"), "fg": Color("e2d6ff")})
+		if not boost.is_empty():
+			var bc: Array = BattleHud.boost_badge_colors(4)  # D-1243: light blue, like the aura
+			pos.append({"text": "BOOST %.1fs" % float(boost["left"]), "bg": bc[0], "fg": bc[1]})
 		if c.queued_skill != null:
 			pos.append({"text": "QUEUE %s" % c.queued_skill.display_name.to_upper(), "bg": Color("7a5a00"), "fg": Color("ffe38a")})
 		# D-1204: nothing is dropped or overlapped. A badge that does not fit wraps to another row above (14 px per row);
@@ -1606,6 +1826,47 @@ class EnemyTag extends Control:
 			BattleHud.draw_chrome_border(self, box, 6.0, now, 3.0)  # D-1026
 		hud.draw_burn_tick_jump(self, font, hp_r, shown / c.max_hp, c, 8)
 		# D-983: the red target diamond under the tag was removed (the selected tag keeps its light background).
+
+
+## PROTOTYPE (BOOST visual, D-1229/D-1243): additive shader aura around and over a card (enemy tag or player card). The owner
+## (`tag`) gives `boost_layout()` = {box, skew, masks}; the info rects (portrait, name, bars...) are only dimmed, so nothing is hidden.
+## Composes with the card's knock-up pose (`tag.pose_xf`).
+class BoostFx extends Control:
+	const SHADER := preload("res://shaders/boost_card_aura.gdshader")
+	const OPACITY := 0.45  ## D-1243: creator set 0.45 (first 0.2 = "80% less", then raised)
+	var tag  ## EnemyTag or UnitCard
+	var style := 2
+	var _mat: ShaderMaterial
+
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_mat = ShaderMaterial.new()
+		_mat.shader = SHADER
+		material = _mat
+		position = Vector2.ZERO
+		size = Vector2(136.0, 66.0)
+
+	func _draw() -> void:
+		if tag == null:
+			return
+		var lay: Dictionary = tag.boost_layout()
+		var box: Rect2 = lay["box"]
+		var masks: Array = lay["masks"]
+		_mat.set_shader_parameter("style", style)
+		_mat.set_shader_parameter("opacity", OPACITY)
+		_mat.set_shader_parameter("t", BattleHud.clock_ms() / 1000.0)
+		_mat.set_shader_parameter("box_size", box.size)
+		_mat.set_shader_parameter("skew", float(lay["skew"]))
+		for i in 5:
+			var m := Vector4.ZERO
+			if i < masks.size():
+				var r: Rect2 = masks[i]
+				m = Vector4(r.position.x - box.position.x, r.position.y - box.position.y, r.size.x, r.size.y)
+			_mat.set_shader_parameter("m%d" % i, m)
+		var mg := Vector4(60.0, 120.0, 60.0, 24.0)  # aura reach outside the card: left, top, right, bottom
+		_mat.set_shader_parameter("margin", mg)
+		draw_set_transform_matrix(tag.pose_xf)
+		draw_rect(Rect2(box.position - Vector2(mg.x, mg.y), box.size + Vector2(mg.x + mg.z, mg.y + mg.w)), Color.WHITE)
 
 
 # --- Camera indicator --------------------------------------------------------------

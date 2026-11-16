@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Summon: seletor nos cartões (D-1249)</title>
+<style>
+:root{--bg:#10131a;--card:#1d2431;--line:#3a465c;--txt:#e8edf6;--dim:#8793a8;--acc:#4fb3ff;--ko:#d9534f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px system-ui,sans-serif;display:flex;gap:16px;padding:16px;flex-wrap:wrap}
+#stage{position:relative;width:1280px;height:720px;transform-origin:0 0;background:radial-gradient(ellipse at 40% 60%,#27324a,#0c0f15);border:1px solid var(--line);overflow:hidden;flex:none}
+#wrap{width:960px;height:540px;flex:none}
+#panel{flex:1;min-width:300px;max-width:420px}
+h1{font-size:16px;margin:0 0 4px}h2{font-size:13px;margin:14px 0 4px;color:var(--acc)}
+p.note{color:var(--dim);margin:0 0 8px;font-size:12px}
+label{display:block;margin:2px 0;cursor:pointer}small{color:var(--dim)}
+.rec{color:#7ee787;font-size:11px}
+.card{position:absolute;width:260px;height:96px;background:var(--card);border:2px solid var(--line);border-radius:8px;padding:8px 10px;transition:all .25s}
+.card b{font-size:18px}.bar{height:8px;background:#0c0f15;border-radius:4px;margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;background:#59d36b}
+.bar.mp i{background:#4fb3ff}.atb{position:absolute;right:8px;top:8px;font-size:12px;color:var(--dim)}
+.hero{border-color:var(--acc)}
+.ko{filter:grayscale(1) brightness(.7)}.ko .tag{display:block}.tag{display:none;position:absolute;left:8px;top:8px;background:var(--ko);color:#fff;font-size:11px;padding:1px 6px;border-radius:3px}
+.ko.kostyle2::after{content:"";position:absolute;left:0;right:0;top:50%;height:3px;background:var(--ko);transform:rotate(-8deg)}
+.ko.kostyle3{filter:brightness(.45)}.ko.kostyle3 .hp{color:var(--ko)}
+.cur-a{outline:3px solid #fff;animation:p 1s infinite}@keyframes p{50%{outline-color:var(--acc)}}
+.cur-b{transform:translateX(-26px) scale(1.06);border-color:#fff}
+.cur-c::before{content:"◀";position:absolute;left:-26px;top:34px;color:var(--acc);font-size:20px}
+#head{position:absolute;left:0;right:0;top:14px;text-align:center;font-size:18px;letter-spacing:2px}
+#hint{position:absolute;left:0;right:0;bottom:12px;text-align:center;color:var(--dim);font-size:13px}
+#freeze{position:absolute;inset:0;background:rgba(0,0,40,.35);display:none;align-items:center;justify-content:center;font-size:28px;letter-spacing:6px;pointer-events:none}
+#log{position:absolute;left:20px;bottom:40px;color:var(--dim)}
+.badge{position:absolute;left:20px;top:14px;background:#7a5c00;color:#ffd866;padding:2px 8px;border-radius:4px;font-size:12px}
+</style></head><body>
+<div id="wrap"><div id="stage"></div></div>
+<div id="panel">
+<h1>Summon: seletor nos cartões <small>(D-1249)</small></h1>
+<p class="note">PROTÓTIPO de opções. Nada aqui está decidido: o rótulo "recomendação" é só minha sugestão. Teclas: ← → ou ↑ ↓ move, Enter confirma, Esc cancela, R reinicia.</p>
+<h2>1. Layout da faixa de substitutos</h2>
+<label><input type=radio name=lay value=A checked> A: faixa horizontal acima do cartão que sai <span class=rec>recomendação</span></label>
+<label><input type=radio name=lay value=B> B: coluna à esquerda do cartão que sai</label>
+<label><input type=radio name=lay value=C> C: os substitutos trocam dentro do próprio cartão (←/→ gira)</label>
+<h2>2. Destaque do cursor</h2>
+<label><input type=radio name=cur value=a checked> a: contorno branco pulsante <span class=rec>recomendação</span></label>
+<label><input type=radio name=cur value=b> b: cartão sai para o lado e cresce</label>
+<label><input type=radio name=cur value=c> c: seta ◀ ao lado</label>
+<h2>3. Nocauteado</h2>
+<label><input type=radio name=ko value=kostyle1 checked> cinza + etiqueta KO <span class=rec>recomendação</span></label>
+<label><input type=radio name=ko value=kostyle2> cinza + risco vermelho</label>
+<label><input type=radio name=ko value=kostyle3> escurecido, HP 0 em vermelho</label>
+<h2>4. Textos (provisórios)</h2>
+<label><input type=radio name=txt value=0 checked> "QUEM SAI?" / "QUEM ENTRA?" <span class=rec>recomendação</span></label>
+<label><input type=radio name=txt value=1> "SUMMON: ESCOLHA QUEM SAI" / "SUMMON: ESCOLHA QUEM ENTRA"</label>
+<label><input type=radio name=txt value=2> "TROCAR" / "SUBSTITUIR POR"</label>
+<h2>5. Cor de destaque</h2>
+<label><input type=radio name=col value="#4fb3ff" checked> azul <span class=rec>recomendação</span></label>
+<label><input type=radio name=col value="#ffb347"> âmbar</label>
+<label><input type=radio name=col value="#b48cff"> violeta</label>
+<h2>6. Animação da troca</h2>
+<label><input type=radio name=anim value=cut> corte instantâneo</label>
+<label><input type=radio name=anim value=slide checked> o novo cartão desliza para a vaga <span class=rec>recomendação</span></label>
+<label><input type=radio name=anim value=flip> giro do cartão</label>
+<h2>7. Teclas</h2>
+<label><input type=radio name=keys value=0 checked> confirmar = Z / Enter, cancelar = X / Esc (as do jogo) <span class=rec>recomendação</span></label>
+<label><input type=radio name=keys value=1> confirmar = Enter, cancelar = Backspace</label>
+<h2>8. Congelar durante a escolha?</h2>
+<label><input type=radio name=frz value=0 checked> não congela: a batalha segue enquanto escolhe (a troca em si é instantânea, D-1244)</label>
+<label><input type=radio name=frz value=1> congela enquanto escolhe, como o Employ (nada gasta até confirmar) <span class=rec>recomendação</span></label>
+<p class="note" style="margin-top:10px">Custo: 2 ATB, pago pelo protagonista (ou dono do menu). Cancelar em qualquer etapa não gasta nada.</p>
+</div>
+<script>
+const $=s=>document.querySelector(s),stage=$('#stage');
+const val=n=>document.querySelector(`input[name=${n}]:checked`).value;
+let active,subs,step,cur,log;
+function reset(){active=[{n:'Abra',hp:80,mp:60,atb:3,ko:0,hero:1},{n:'Gible',hp:0,mp:20,atb:1,ko:1},{n:'Pancham',hp:55,mp:30,atb:2,ko:0}];
+ subs=[{n:'Riolu',hp:70,mp:40},{n:'Eevee',hp:40,mp:50}];step=0;cur=0;log='';render()}
+function pos(i){return{x:1000,y:560-i*108}}
+function cardHTML(c,cls,x,y,extra=''){return `<div class="card ${cls}" style="left:${x}px;top:${y}px;${extra}"><span class=tag>KO</span><b>${c.n}</b><span class=atb>ATB ${c.atb??'-'}</span><div class=bar><i style="width:${c.hp}%"></i></div><div class="bar mp"><i style="width:${c.mp}%"></i></div><small class=hp>HP ${c.hp}</small></div>`}
+function render(){document.documentElement.style.setProperty('--acc',val('col'));
+ const txt=[['QUEM SAI?','QUEM ENTRA?'],['SUMMON: ESCOLHA QUEM SAI','SUMMON: ESCOLHA QUEM ENTRA'],['TROCAR','SUBSTITUIR POR']][+val('txt')];
+ const k=val('keys')==='0'?['Z/Enter confirma','X/Esc cancela']:['Enter confirma','Backspace cancela'];
+ let h=`<div class=badge>PLACEHOLDER / PROTÓTIPO</div>`;
+ if(step>0)h+=`<div id=head>${txt[step-1]}</div>`;
+ const curCls='cur-'+val('cur'),lay=val('lay');
+ active.forEach((c,i)=>{const p=pos(i);let cls=(c.ko?'ko '+val('ko'):'')+(c.hero?' hero':'');
+  const sel=step===1&&cur===i;if(sel)cls+=' '+curCls;
+  if(step===2&&i===leaving)cls+=' hero';
+  h+=cardHTML(c,cls,p.x,p.y)});
+ if(step===2){const p=pos(leaving);
+  if(lay==='C'){const s=subs[cur];h+=cardHTML(s,'cur-a',p.x,p.y,'z-index:5;border-color:var(--acc)');}
+  else subs.forEach((s,i)=>{const x=lay==='A'?1000-i*270:730,y=lay==='A'?p.y-108:p.y-i*108;
+   h+=cardHTML(s,cur===i?curCls:'',x,y,'z-index:5;box-shadow:0 0 14px #000')})}
+ h+=`<div id=hint>${step?k.join(' · '):'Enter abre o Summon (ATB 3)'}</div><div id=log>${log}</div><div id=freeze style="display:${step&&val('frz')==='1'?'flex':'none'}">PAUSADO</div>`;
+ stage.innerHTML=h}
+let leaving=0;
+function key(e){const L=['ArrowLeft','ArrowUp'].includes(e.key),R=['ArrowRight','ArrowDown'].includes(e.key);
+ const ok=e.key==='Enter'||(val('keys')==='0'&&e.key.toLowerCase()==='z'),no=e.key==='Escape'||(val('keys')==='0'?e.key.toLowerCase()==='x':e.key==='Backspace');
+ if(e.key.toLowerCase()==='r'){reset();return}
+ const n=step===1?active.length:subs.length;
+ if(step&&(L||R)){cur=(cur+(R?1:-1)+n)%n;e.preventDefault()}
+ else if(ok){if(step===0){step=1;cur=0;log=''}else if(step===1){leaving=cur;step=2;cur=0}else done()}
+ else if(no&&step){if(step===2){step=1;cur=leaving}else{step=0;log='cancelado: nada gasto'}}
+ render()}
+function done(){const a=active[leaving],s=subs[cur];const m=val('anim');
+ active[leaving]={...s,atb:0,ko:0};subs.splice(cur,1,{...a});step=0;log=`${a.n} saiu, ${s.n} entrou (ATB 0), -2 ATB. Animação: ${m}`;
+ if(m!=='cut'){render();const el=stage.querySelectorAll('.card')[leaving];if(el){el.style.transition='none';el.style.transform=m==='slide'?'translateX(300px)':'rotateY(90deg)';requestAnimationFrame(()=>requestAnimationFrame(()=>{el.style.transition='all .4s';el.style.transform=''}))}}}
+document.addEventListener('keydown',key);document.querySelectorAll('input').forEach(i=>i.addEventListener('change',()=>{render()}));
+function fit(){const w=Math.min(innerWidth-32,960)/1280;stage.style.transform=`scale(${w})`;$('#wrap').style.width=1280*w+'px';$('#wrap').style.height=720*w+'px'}
+addEventListener('resize',fit);fit();reset();
+</script></body></html>

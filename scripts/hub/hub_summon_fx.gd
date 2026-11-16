@@ -232,6 +232,25 @@ func pose(state: String, p: float, time_s: float, body_y: float) -> void:
 			_shock.scale = Vector3.ONE * _r * lerpf(0.4, float(TUNING["shock_r"]), 1.0 - (1.0 - wave) * (1.0 - wave))
 			_shock_mat.set_shader_parameter("alpha", 1.0 - wave)
 			_light.light_energy = float(TUNING["light_peak"]) * (1.0 - p) * (1.0 - p)
+		"EXIT":
+			# D-1254 (combat Summon): the same pillar, inverted: it rises from the floor taking the unit that is swapped out.
+			visible = true
+			# D-1254: the circle and pentagram trace themselves in the first 45% of the exit; the beam rises from 30%.
+			_glyph_mat.set_shader_parameter("draw", _smooth(clampf(p / 0.45, 0.0, 1.0)))
+			_glyph_mat.set_shader_parameter("alpha", 1.0 - smoothstep(0.6, 1.0, p))
+			_glyph_mat.set_shader_parameter("energy", 1.6)
+			var q: float = clampf((p - 0.3) / 0.7, 0.0, 1.0)
+			_set_rings((1.0 - smoothstep(0.55, 1.0, p)) * clampf(q * 4.0, 0.0, 1.0), _smooth(q), p * TAU * float(TUNING["ring_turns"]))
+			var up: float = clampf((p - 0.3) / 0.45, 0.0, 1.0)
+			_pillar.visible = up > 0.0
+			var top_m: float = float(TUNING["pillar_h_m"]) * up
+			_pillar.position = Vector3(0.0, top_m * 0.5, 0.0)
+			var rad: float = _r * float(TUNING["pillar_r"]) * (1.0 + 0.6 * sin(clampf(p / 0.5, 0.0, 1.0) * PI * 0.5))
+			_pillar.scale = Vector3(maxf(rad, 0.001), maxf(top_m, 0.01), maxf(rad, 0.001))
+			_pillar_mat.set_shader_parameter("alpha", 1.0 - smoothstep(0.6, 1.0, p))
+			_comet.visible = false
+			_shock.visible = false
+			_light.light_energy = 2.4 * (1.0 - p)
 		_:
 			visible = false
 

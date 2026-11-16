@@ -23,6 +23,9 @@ const DrainSpearMove = preload("res://scripts/data/drain_spear_move.gd")
 ##   (--dqt/--dqt-mirror não são lidos aqui: o BattleScene os lê de OS.get_cmdline_user_args())
 ##   --pause-at=release|travel|strike|impact --pause-delay= --shot=arquivo.png
 ##   --hud=status|victory [--hud-member=N] --shot=arquivo.png (HUD de tela cheia com o grupo da sala, captura e sai)
+##   --boost=<1|2|3|all> --shot=arquivo.png (PROTÓTIPO do BOOST no cartão do inimigo, D-1229)
+##   --command-tab=<atb>[:subs][:down] --shot=arquivo.png (D-1236: leque lateral EMPLOY/SUMMON de TACTICS)
+##   --employ=cancel|noatb|fail|success|last|moves[:flight][:burst][:mp][:win]|returning|status|lastblock|chance|roll[:win|:zero]|boost [--mirror] (D-1229: fluxo do Employ pelo menu real; imprime EMPLOY_JSON)
 ##   --picker=<move_id> [--mirror] --shot=arquivo.png (D-1200: Fight do líder + menu S.TARGET do Move, imprime os alvos oferecidos)
 ##   --hide=linhas,particulas,shaders,sprites,malhas --record=SEGUNDOS --step=SEGUNDOS --out=pasta
 ##   --log=arquivo.txt --quit
@@ -93,6 +96,7 @@ var _rec_request := 0.0  ## segundos a gravar no próximo disparo (0 = nada)
 var _rec_step := 0.05
 var _rec: Dictionary = {}
 var _shot_path := ""
+var _stage_rows := 0  ## D-1218: --shot-at-stage row counter
 var _shot_taken := false
 var _quit_flag := false
 var _hidden_prev: Dictionary = {}
@@ -185,6 +189,11 @@ var _bone_trail: Array[Vector3] = []
 var _envelope_samples: Array[Dictionary] = []
 var _prev_node_alphas: Dictionary = {}
 var _envelope_pops: Array[String] = []
+var _vfx_trace_on := false  ## D-1220: telemetria cinemática genérica, opt-in (--vfx-trace / --stdout-trace)
+var _first_hit_clock := -1.0  ## D-1220: relógio da sala no primeiro hit do disparo (-1 = sem hit)
+var _vfx_prev_pos: Dictionary = {}  ## D-1220: instance_id -> posição de mundo no quadro anterior
+var _vfx_prev_rot: Dictionary = {}  ## D-1222: instance_id -> rotação global (graus) no quadro anterior
+var _vfx_frame_count := 0
 var _overdraw_mat: StandardMaterial3D
 var _orig_materials: Dictionary = {}
 var _macro_slow_until := -1.0
@@ -254,6 +263,1217 @@ func _run_hud_shot(kind: String) -> void:
 		print("[vfx_room] hud shot: ", path)
 	if _quit_flag or _shot_path != "":
 		_quit()
+
+
+## D-1232/D-1244/D-1254 (Fase 8) --summon=<basic|ko|free|moves|protagonist|notsub|arrive> [--mirror]: a troca por Summon pela API
+## de `Battle` (sem cena), em segundos, e imprime `[vfx_room] summon mode=... result=ok|fail` e `SUMMON_JSON: {...}`.
+## D-1254: sem custo de ATB; quem sai vai na hora, a vaga fica vazia 4 s (pentagrama) e so entao quem entra chega em `party`.
+## `arrive` usa o relogio real da batalha (~4 s); os outros avancam as chegadas com `_step_arrivals`.
+func _run_summon(spec: String) -> void:
+	var mode := String(spec.split(":")[0])
+	if not (mode in ["basic", "ko", "free", "moves", "protagonist", "notsub", "arrive"]):
+		print("[vfx_room] summon mode=%s result=fail reason=unknown_mode" % mode)
+		_quit(1)
+		return
+	if _immortal != null:
+		_immortal.button_pressed = false
+	var places = GameState.ExpeditionRosterClass.Place
+	var roster: ExpeditionRoster = GameState.ExpeditionRosterClass.new()  # elenco limpo: so o que o cenario monta
+	_battle.roster = roster
+	var real_count := _battle.party.size()  # quem tem modelo na cena; os que faltam para 3 sao so logica
+	while _battle.party.size() < 3:
+		var extra := Combatant.new("Ally%d" % _battle.party.size(), 40, 6, 1.0, true)
+		extra.in_battle = true
+		_battle.party.append(extra)
+	roster.sync_active(_battle.party)
+	roster.begin_battle(_battle.battle_time)
+	_battle.party[0].max_hp = 100000
+	_battle.party[0].hp = 100000
+	var rows: Array = []
+	_battle.summon_changed.connect(func(_stage: String, data: Dictionary) -> void:
+		rows.append(data))
+	var reserve := Combatant.new("Reserve", 20, 5, 1.0, true)
+	roster.register(reserve, places.STATIONED if mode == "notsub" else places.SUBSTITUTE)
+	var party: Array[Combatant] = _battle.party
+	var protagonist: Combatant = _battle.protagonist
+	var secs: float = Battle.SUMMON_ARRIVAL_SECONDS
+	var out := {}
+	var ok := false
+	var view := "mirror" if _mirror else "normal"
+	if mode == "basic":
+		var leaving: Combatant = party[party.size() - 1]
+		protagonist.atb = 0.5  # D-1254: nada e cobrado, nem com pouco ATB
+		protagonist.extra = 0.0
+		protagonist.burst = 1
+		leaving.atk_buff = 2
+		leaving.hp = leaving.max_hp - 3
+		var slot := party.find(leaving)
+		var size_before := party.size()
+		var hp_leaving := leaving.hp
+		var hp_reserve := reserve.hp
+		var uid_l := leaving.uid
+		var uid_r := reserve.uid
+		var done: bool = _battle.summon(leaving, reserve)
+		var empty_slot: bool = not party.has(leaving) and not party.has(reserve) and party.size() == size_before - 1 and _battle.arriving() == [reserve]
+		_battle._step_arrivals(secs - 0.1)
+		var still_out: bool = not party.has(reserve) and _battle.is_summon_arriving()
+		_battle._step_arrivals(0.2)
+		out = {"done": done, "slot": slot, "empty_slot": empty_slot, "still_out_before_4s": still_out, "protagonist_blocks": protagonist.blocks(), "protagonist_burst": protagonist.burst,
+			"at_slot": party.find(reserve) == slot, "entering_atb": reserve.atb, "entering_in_battle": reserve.in_battle,
+			"leaving_in_battle": leaving.in_battle, "leaving_hp_kept": leaving.hp == hp_leaving, "entering_hp_kept": reserve.hp == hp_reserve,
+			"leaving_atk_buff": leaving.atk_buff, "entering_place": roster.place_of(reserve.uid), "leaving_place": roster.place_of(leaving.uid),
+			"uids_kept": leaving.uid == uid_l and reserve.uid == uid_r, "rows": rows.size()}
+		ok = done and slot >= 0 and empty_slot and still_out and absf(protagonist.blocks() - 0.5) < 0.01 and protagonist.burst == 1 and bool(out["at_slot"]) \
+			and reserve.atb == 0.0 and reserve.extra == 0.0 and reserve.in_battle and not leaving.in_battle \
+			and bool(out["leaving_hp_kept"]) and bool(out["entering_hp_kept"]) and leaving.atk_buff == 0 \
+			and int(out["entering_place"]) == int(places.ACTIVE) and int(out["leaving_place"]) == int(places.SUBSTITUTE) \
+			and bool(out["uids_kept"]) and rows.size() == 2 and String(rows[0].get("stage", "")) == "started" and String(rows[1].get("stage", "")) == "done" \
+			and absf(float(rows[0].get("arrival_seconds", 0.0)) - secs) < 0.001 and not rows[0].has("cost")
+	elif mode == "ko":
+		var leaving: Combatant = party[1]
+		protagonist.hp = 0
+		leaving.hp = 0
+		var done: bool = _battle.summon(leaving, reserve)
+		_battle._step_arrivals(secs + 0.1)
+		out = {"done": done, "leaving_out": not party.has(leaving), "rows": rows.size()}
+		ok = done and bool(out["leaving_out"]) and party.has(reserve) and _battle.running  # a equipe so com nocauteados + um que chega nao termina a batalha
+	elif mode == "free":
+		var leaving: Combatant = party[1]
+		protagonist.atb = 0.0
+		protagonist.extra = 0.0
+		protagonist.burst = 0
+		var done: bool = _battle.summon(leaving, reserve)
+		out = {"done": done, "refusal": _battle.summon_refusal(party[0], reserve), "protagonist_blocks": protagonist.blocks(), "reserve_place": roster.place_of(reserve.uid), "rows": rows.size()}
+		ok = done and absf(protagonist.blocks()) < 0.001 and int(out["reserve_place"]) == int(places.ACTIVE) and String(out["refusal"]) == "entering_invalid"  # nem ATB 0 impede; quem ja esta chegando nao entra de novo
+	elif mode == "moves":
+		var leaving: Combatant = party[mini(1, real_count - 1)]  # um membro com modelo na cena
+		var foe: Combatant = _battle.enemies[0]
+		leaving.atb = 5.0
+		leaving.extra = 0.0
+		var started: bool = _battle.use_skill(leaving, _shaped(_find_skill(leaving, "Tackle")), foe)
+		for i in 20:
+			await get_tree().process_frame
+		var before := 0
+		for inc in _battle.active_attacks():
+			if inc.attacker == leaving:
+				before += 1
+		var done: bool = _battle.summon(leaving, reserve)
+		var left := 0
+		for inc in _battle.active_attacks():
+			if inc.attacker == leaving:
+				left += 1
+		var cancelled: Array = rows[0].get("cancelled", []) if rows.size() > 0 else []
+		out = {"row": rows[0] if rows.size() > 0 else {}, "started": started, "attacks_before": before, "done": done, "attacks_of_leaving_left": left, "cancelled": cancelled.size(), "running": _battle.running}
+		ok = started and before > 0 and done and left == 0 and cancelled.size() >= 1 and _battle.running
+	elif mode == "protagonist":
+		var done: bool = _battle.summon(protagonist, reserve)
+		var owner: Combatant = _battle.menu_owner()  # ja na hora: a vaga esta vazia, o dono e o primeiro ativo vivo
+		for i in 120:
+			await get_tree().process_frame
+		var owner_attacks := 0
+		for inc in _battle.incoming:
+			if inc.attacker == owner:
+				owner_attacks += 1
+		out = {"done": done, "owner_is_protagonist": owner == protagonist, "owner_is_slot0": owner == party[0],
+			"protagonist_place": roster.place_of(protagonist.uid), "owner_queued": owner.queued_skill != null, "owner_attacks": owner_attacks}
+		ok = done and owner != null and owner != protagonist and owner == party[0] \
+			and int(out["protagonist_place"]) == int(places.SUBSTITUTE) and owner.queued_skill == null and owner_attacks == 0
+	elif mode == "notsub":
+		var leaving: Combatant = party[1]
+		var done: bool = _battle.summon(leaving, reserve)
+		var reason := String(rows[0].get("reason", "")) if rows.size() > 0 else ""
+		out = {"done": done, "reason": reason, "party_kept": party.has(leaving) and not party.has(reserve)}
+		ok = not done and reason == "entering_invalid" and bool(out["party_kept"]) and not _battle.is_summon_arriving()
+	elif mode == "arrive":
+		var leaving: Combatant = party[1]
+		for e in _battle.enemies + _battle.party:
+			e.act_policy = Combatant.Act.HOLD  # o clock corre de verdade: nada ataca os aliados sem modelo deste teste
+		var t0: float = _battle.battle_time
+		var done: bool = _battle.summon(leaving, reserve)
+		var acted_early := false
+		var t_in := -1.0
+		for i in 1500:  # D-1254: 6,9 s de relogio real da batalha
+			await get_tree().process_frame
+			if party.has(reserve):
+				t_in = _battle.battle_time - t0
+				break
+			if reserve.atb > 0.0:
+				acted_early = true  # quem esta chegando nao ganha ATB nem age
+		out = {"done": done, "arrival_seconds": t_in, "acted_early": acted_early, "rows": rows.size()}
+		ok = done and t_in >= secs - 0.1 and t_in <= secs + 0.5 and not acted_early and reserve.atb < 0.2
+	out["mode"] = mode
+	out["view"] = view
+	print("[vfx_room] summon mode=%s view=%s result=%s" % [mode, view, "ok" if ok else "fail"])
+	print("[vfx_room] SUMMON_JSON: ", JSON.stringify(out))
+	_quit(0 if ok else 1)
+
+
+## D-1244 (Fase 8, cena) --summon-ui=<basic|cancel|lowatb|protagonist|ko> [--mirror]: (D-1254: sem custo de ATB; `lowatb` = ATB 0 e mesmo assim troca) percorre o Summon pelo menu REAL
+## (TACTICS -> leque lateral -> quem sai -> quem entra -> confirma), sem clique, e confere por dados a cena (modelos,
+## cartoes, dono do menu), o ATB e a telemetria. Imprime `[vfx_room] summon_ui mode=... result=ok|fail` e `SUMMON_UI_JSON:`.
+## Modos de visual (prévia D-1249, sem asserções de regra): `shot` (captura, precisa de --shot=arq.png e janela) e `video`
+## (fluxo completo, grave com --write-movie). Variantes combináveis, separadas por ":":
+##   ko = aliado Ally2 nocauteado | pko = protagonista nocauteado | pleave = o protagonista é quem sai (senão Ally2)
+##   subs2 = dois substitutos | atb=N = ATB do pagador | step=1|2 (só shot; também aceita o número direto, ex. shot:2)
+##   (video) o cursor percorre TODOS os cartões e as duas etapas, com legenda das variantes
+## Ex.: --summon-ui=video:ko:subs2 | --summon-ui=shot:2:pko:pleave --shot=a.png (e --mirror para a outra vista).
+func _run_summon_ui(spec: String) -> void:
+	var parts := spec.split(":")
+	var mode := String(parts[0])
+	if not (mode in ["basic", "cancel", "lowatb", "protagonist", "ko", "shot", "video"]):
+		print("[vfx_room] summon_ui mode=%s result=fail reason=unknown_mode" % mode)
+		_quit(1)
+		return
+	if _immortal != null:
+		_immortal.button_pressed = false
+	var places = GameState.ExpeditionRosterClass.Place
+	var roster: ExpeditionRoster = GameState.get_roster()
+	_battle.roster = roster
+	var protagonist: Combatant = _battle.protagonist
+	var ally2 := CharacterFactory.create("gible", {"is_player": true})
+	ally2.name = "Ally2"
+	ally2.act_policy = Combatant.Act.HOLD
+	ally2.react_policy = Combatant.React.NONE
+	_bs.debug_add_ally(ally2)
+	var reserve := CharacterFactory.create("gible", {"is_player": true})
+	reserve.name = "Reserve"
+	reserve.act_policy = Combatant.Act.HOLD
+	reserve.react_policy = Combatant.React.NONE
+	roster.sync_active(_battle.party)
+	var existing := roster.members(places.SUBSTITUTE)  # o elenco real pode ja ter substituto (e vaga cheia)
+	if existing.is_empty():
+		roster.register(reserve, places.SUBSTITUTE)
+	else:
+		reserve = existing[0]
+	roster.begin_battle(_battle.battle_time)
+	var rows: Array = []
+	_battle.summon_changed.connect(func(_stage: String, data: Dictionary) -> void:
+		rows.append(data))
+	_battle.freeze(100000.0)  # relogio parado: o ATB ajustado nao regenera entre os passos
+	await get_tree().process_frame
+	var n := _battle.party.size()
+	var party: Array[Combatant] = _battle.party
+	var out := {}
+	var ok := false
+	var view := "mirror" if _mirror else "normal"
+	_battle.state_changed.emit()
+	if mode == "ko":
+		protagonist.hp = 0
+		_battle.state_changed.emit()
+		await get_tree().process_frame
+		protagonist.atb = 3.0  # "do ATB que ele tinha ao cair"
+		ally2.atb = 0.5
+	else:
+		protagonist.atb = 3.0 if mode != "lowatb" else 0.0
+	var vis := mode in ["shot", "video"]
+	if vis:
+		if "subs2" in parts:
+			var r2 := CharacterFactory.create("gible", {"is_player": true})
+			r2.name = "Reserve2"
+			r2.act_policy = Combatant.Act.HOLD
+			r2.react_policy = Combatant.React.NONE
+			roster.register(r2, places.SUBSTITUTE)
+		for p in parts:
+			if String(p).begins_with("atb="):
+				protagonist.atb = float(String(p).substr(4))
+		if "ko" in parts:
+			ally2.hp = 0
+			_bs._on_died(ally2)
+		if "pko" in parts:
+			protagonist.hp = 0
+			_bs._on_died(protagonist)
+		_battle.state_changed.emit()
+		await get_tree().process_frame
+		var cap := Label.new()  # legenda da variante, para o video falar por si
+		cap.text = "SUMMON (prévia D-1249) | " + spec + (" | espelhado" if _mirror else "")
+		cap.position = Vector2(20, 640)
+		cap.add_theme_font_size_override("font_size", 16)
+		_bs.hud.add_child(cap)
+	protagonist.extra = 0.0
+	protagonist.burst = 1  # o Burst nunca paga
+	var before := protagonist.blocks()
+	var leaving: Combatant = protagonist if (mode in ["protagonist", "ko"] or "pleave" in parts) else ally2
+	out["can_summon"] = _bs._can_summon()
+	var opened := _summon_ui_open()
+	out["step1_open"] = opened
+	var step2 := false
+	var cancelled_back := false
+	if opened and mode == "video":  # D-1249 PREVIEW: fluxo completo para gravar com --write-movie (cursor, etapa 2, volta, confirma)
+		_panel_user_hidden = true
+		_panel.visible = false
+		_layout_view()
+		var wait := func(n: int) -> void:
+			for i in n:
+				await get_tree().process_frame
+		await wait.call(50)
+		for k in _bs._targets.size():  # o cursor passeia por TODOS os cartoes (nocauteados incluidos)
+			_bs._menu.select(k)
+			await wait.call(35)
+		_bs._menu.select(_bs._targets.find(leaving))
+		await wait.call(30)
+		_bs._on_chosen(_bs._targets.find(leaving))  # etapa 2
+		await wait.call(30)
+		for k in range(1, _bs._targets.size()):  # o cursor passeia pelos substitutos
+			_bs._menu.select(k)
+			await wait.call(30)
+		_bs._menu.select(0)
+		await wait.call(30)
+		_bs._on_cancel()  # volta a etapa 1
+		await wait.call(40)
+		_bs._on_chosen(_bs._targets.find(leaving))
+		await wait.call(40)
+		_bs._on_chosen(_bs._targets.find(reserve))  # confirma
+		await wait.call(80)
+		_battle._freeze_left = 0.0  # D-1254: o video mostra a invocacao inteira em tempo real (6,9 s + clarao)
+		for e in _battle.enemies + _battle.party:
+			e.act_policy = Combatant.Act.HOLD
+		for i in 600:
+			await get_tree().process_frame
+			if party.has(reserve):
+				break
+		await wait.call(60)
+		ok = rows.size() == 2
+	elif opened and mode == "shot":  # D-1249 PREVIEW: captura do seletor nos cartoes (precisa de janela, com --shot=arquivo.png)
+		var step := 1
+		for p in parts.slice(1):
+			if String(p).is_valid_int():
+				step = int(p)
+			elif String(p).begins_with("step="):
+				step = int(String(p).substr(5))
+		_panel_user_hidden = true
+		_panel.visible = false
+		_layout_view()
+		if step >= 2:
+			_bs._on_chosen(_bs._targets.find(leaving))
+		for p in parts:  # D-1254: confirm:t=SEGUNDOS confirma a troca e captura SEGUNDOS depois (0 a 6,9 = ate agir; depois = clarao)
+			if String(p).begins_with("t="):
+				_bs._on_chosen(_bs._targets.find(reserve))
+				_battle._step_arrivals(minf(float(String(p).substr(2)), Battle.SUMMON_ARRIVAL_SECONDS - 0.001))
+				if float(String(p).substr(2)) >= Battle.SUMMON_ARRIVAL_SECONDS:
+					_battle._step_arrivals(0.01)
+					for i in int((float(String(p).substr(2)) - Battle.SUMMON_ARRIVAL_SECONDS) * 60.0):
+						await get_tree().process_frame
+		for i in 20:
+			await get_tree().process_frame
+		await RenderingServer.frame_post_draw
+		var path := ProjectSettings.globalize_path(_shot_path) if _shot_path.begins_with("res://") else _shot_path
+		get_window().get_viewport().get_texture().get_image().save_png(path)
+		print("[vfx_room] summon_ui shot: ", path)
+		ok = true
+	elif opened:
+		out["step1_candidates"] = _bs._targets.size()
+		_bs._on_chosen(_bs._targets.find(leaving))
+		step2 = _bs.state == _bs.S.TARGET and _bs._targets.has(reserve) and not _bs._targets.has(leaving)  # so substitutos do elenco
+		out["step2_open"] = step2
+		if mode == "cancel":
+			_bs._on_cancel()  # passo 2 -> volta ao passo 1
+			cancelled_back = _bs.state == _bs.S.TARGET and _bs._targets.size() == party.size()
+			_bs._on_cancel()  # passo 1 -> menu
+			out["back_to_step1"] = cancelled_back
+			out["state_main"] = _bs.state == _bs.S.MAIN
+			ok = step2 and cancelled_back and _bs.state == _bs.S.MAIN and rows.size() == 0 and party.size() == n \
+				and absf(protagonist.blocks() - before) < 0.001 and protagonist.burst == 1 and party.has(leaving) and not party.has(reserve) \
+				and int(roster.place_of(reserve.uid)) == int(places.SUBSTITUTE)
+		else:
+			_bs._on_chosen(_bs._targets.find(reserve))  # confirma a entrada do substituto
+			for i in 4:
+				await get_tree().process_frame
+			# D-1254, durante o pentagrama: quem sai ja foi (modelo e vaga), quem entra so tem o cartao, a lista de ativos nao o tem
+			var cards_arriving := false
+			var card_dim := false
+			for card in _bs.hud._cards:
+				if card.combatant == leaving:  # D-1254: no inicio o cartao de quem sai ainda esta la, se dissolvendo
+					cards_arriving = true
+					card_dim = card.material is ShaderMaterial and _bs.hud.dissolving.has(leaving)
+			var during := {"started": rows.size() == 1 and String(rows[0].get("stage", "")) == "started", "arriving": _battle.arriving() == [reserve],
+				"leaving_model_gone": not _bs.models.has(leaving), "entering_model_absent": not _bs.models.has(reserve), "entering_card": cards_arriving,
+				"entering_card_dimmed": card_dim, "party_has_neither": not party.has(leaving) and not party.has(reserve) and party.size() == n - 1,
+				"atb_unchanged": absf(protagonist.blocks() - before) < 0.001 or leaving == protagonist}
+			out["during"] = during
+			_battle._step_arrivals(Battle.SUMMON_ARRIVAL_SECONDS + 0.1)  # o relogio esta parado nesta sala: avanca a chegada
+			for i in 4:
+				await get_tree().process_frame
+			var slot := party.find(reserve)
+			var hero_card: Variant = null
+			for card in _bs.hud._cards:
+				if card.hero:
+					hero_card = card.combatant
+			var cards_have_reserve := false
+			var cards_have_leaving := false
+			var reserve_dim := false
+			for card in _bs.hud._cards:
+				cards_have_reserve = cards_have_reserve or card.combatant == reserve
+				cards_have_leaving = cards_have_leaving or card.combatant == leaving
+				if card.combatant == reserve:
+					reserve_dim = card.material != null
+			var owner: Combatant = _battle.menu_owner()
+			out.merge({"slot": slot, "rows": rows.size(), "stage": String(rows[rows.size() - 1].get("stage", "")) if rows.size() > 0 else "",
+				"burst": protagonist.burst,
+				"model_entering": _bs.models.has(reserve), "model_leaving": _bs.models.has(leaving), "card_entering": cards_have_reserve, "card_leaving": cards_have_leaving,
+				"card_full": not reserve_dim,
+				"leader_is_owner": _bs.leader == owner, "fx_leader_is_owner": _bs.fx.leader == owner, "hero_card_is_owner": hero_card == owner,
+				"owner": owner.name if owner != null else "", "entering_atb": reserve.atb, "state_main": _bs.state == _bs.S.MAIN,
+				"entering_place": int(roster.place_of(reserve.uid)), "leaving_place": int(roster.place_of(leaving.uid))})
+			ok = bool(during["started"]) and bool(during["arriving"]) and bool(during["leaving_model_gone"]) and bool(during["entering_model_absent"]) \
+				and bool(during["entering_card"]) and bool(during["entering_card_dimmed"]) and bool(during["party_has_neither"]) and bool(during["atb_unchanged"])
+			ok = ok and slot >= 0 and rows.size() == 2 and String(out["stage"]) == "done" and bool(out["model_entering"]) \
+				and not bool(out["model_leaving"]) and bool(out["card_entering"]) and not bool(out["card_leaving"]) and bool(out["card_full"]) and bool(out["leader_is_owner"]) \
+				and bool(out["fx_leader_is_owner"]) and bool(out["hero_card_is_owner"]) and reserve.atb < 0.2 and _bs.state == _bs.S.MAIN \
+				and int(out["entering_place"]) == int(places.ACTIVE) and int(out["leaving_place"]) == int(places.SUBSTITUTE) \
+				and protagonist.burst == 1
+			if mode in ["protagonist", "ko"]:
+				ok = ok and owner != null and owner != protagonist and owner == party[0] and not party.has(protagonist)  # D-1244: o 1o ativo vivo
+			else:
+				ok = ok and owner == protagonist and party.has(protagonist)
+	out["mode"] = mode
+	out["view"] = view
+	print("[vfx_room] summon_ui mode=%s view=%s result=%s" % [mode, view, "ok" if ok else "fail"])
+	print("[vfx_room] SUMMON_UI_JSON: ", JSON.stringify(out))
+	_quit(0 if ok else 1)
+
+
+## Abre TACTICS -> leque lateral -> SUMMON pelo mesmo caminho do jogador. Sincrono (o ATB nao regenera). true = o passo 1 abriu.
+func _summon_ui_open() -> bool:
+	_bs._show_main()
+	_bs._menu.visible = true
+	_bs._menu.select(_bs.MAIN_TACTICS)
+	_bs._on_menu_side(1)
+	if not _bs._menu.side_open:
+		return false
+	_bs._update_main_enabled()
+	if _bs._menu._side_enabled[1]:
+		_bs._menu.side_chosen.emit(1)
+	return _bs.state == _bs.S.TARGET
+
+
+## PROTOTYPE (BOOST visual, D-1229) --boost=<1|2|3|all> [--shot=arquivo.png]: põe o badge BOOST e as chamas no cartão
+## de cada inimigo (all = uma variante por inimigo: 1, 2, 3...), congela a batalha e captura. A captura precisa de
+## janela (sem --headless). Só HUD: nenhum estado de jogo muda.
+func _run_boost_shot(spec: String) -> void:
+	_battle.freeze(100000.0)
+	var n := 0
+	for e in _battle.enemies:
+		n += 1
+		var v := ((n - 1) % BattleHud.BOOST_VARIANTS + 1) if spec == "all" else (int(spec) if spec.is_valid_int() else 1)
+		_bs.hud.boost_preview[e] = {"variant": v, "left": 10.0}
+	if _args.has("boost-player"):  # --boost-player: the player's own cards get the aura too
+		for m in _battle.party:
+			_bs.hud.boost_preview[m] = {"variant": (int(spec) if spec.is_valid_int() else 2), "left": 10.0}
+	for i in 45:
+		await get_tree().process_frame
+	print("[vfx_room] boost result=ok variants=%s enemies=%d view=%s" % [spec, n, "mirror" if _mirror else "normal"])
+	if _args.has("boost-hold"):  # --boost-hold=<frames>: keep running (for --write-movie), then quit
+		for i in int(_args["boost-hold"]):
+			await get_tree().process_frame
+		_quit(0)
+		return
+	if _shot_path != "":
+		await RenderingServer.frame_post_draw
+		var path := ProjectSettings.globalize_path(_shot_path) if _shot_path.begins_with("res://") else _shot_path
+		get_window().get_viewport().get_texture().get_image().save_png(path)
+		print("[vfx_room] boost shot: ", path)
+		# Real-size crop of the enemy cards (x3, nearest) next to the full capture: <path>_cards.png
+		# --boost-seq=N: N frames 0.25 s apart stacked in <path>_seq.png (the motion of the aura)
+		var u := Rect2()
+		for e in _battle.enemies:
+			var tg = _bs.hud._tags.get(e)
+			if tg != null:
+				var r: Rect2 = tg.get_global_transform() * Rect2(Vector2.ZERO, Vector2(136.0, 66.0))
+				u = r if u.size == Vector2.ZERO else u.merge(r)
+		if u.size != Vector2.ZERO:
+			var seq_n := int(_args.get("boost-seq", 0)) if _args.has("boost-seq") else 0
+			var frames: Array[Image] = []
+			for fi in maxi(seq_n, 1):
+				if fi > 0:
+					var t0 := Time.get_ticks_msec()
+					while Time.get_ticks_msec() - t0 < 250:
+						await get_tree().process_frame
+					await RenderingServer.frame_post_draw
+				var fimg := get_window().get_viewport().get_texture().get_image()
+				var ir := Rect2i(u.grow(80.0)).intersection(Rect2i(Vector2i.ZERO, fimg.get_size()))
+				var crop := fimg.get_region(ir)
+				crop.resize(ir.size.x * 3, ir.size.y * 3, Image.INTERPOLATE_NEAREST)
+				frames.append(crop)
+			frames[0].save_png(path.get_basename() + "_cards.png")
+			print("[vfx_room] boost cards crop: ", path.get_basename() + "_cards.png")
+			if seq_n > 1:
+				var fw := frames[0].get_width()
+				var fh := frames[0].get_height()
+				var sheet := Image.create(fw, fh * seq_n, false, frames[0].get_format())
+				for fi in seq_n:
+					sheet.blit_rect(frames[fi], Rect2i(0, 0, fw, fh), Vector2i(0, fh * fi))
+				sheet.save_png(path.get_basename() + "_seq.png")
+				print("[vfx_room] boost seq: ", path.get_basename() + "_seq.png", " frames=", seq_n)
+	_quit(0)
+
+
+## D-1236/D-1204 --command-tab=<atb>[:subs][:down] [--shot=arquivo.png]: põe o ATB do líder em <atb> blocos,
+## abre o leque lateral de TACTICS (EMPLOY / SUMMON) como o jogador o vê e imprime `[vfx_room] command_tab ...`.
+## `:subs` registra um substituto no elenco (para o SUMMON ficar disponível); `:down` desce para o SUMMON.
+## Com --shot salva a captura (precisa de janela: sem --headless). Sem clicar, em poucos segundos.
+func _run_command_tab_shot(spec: String) -> void:
+	var parts := spec.split(":")
+	var leader: Combatant = _battle.party[0]
+	var blocks := clampf(float(parts[0]) if parts[0].is_valid_float() else Combatant.BLOCKS, 0.0, Combatant.BLOCKS)
+	if _immortal != null:
+		_immortal.button_pressed = false
+	var roster = GameState.get_roster()
+	var sub_place: int = GameState.ExpeditionRosterClass.Place.SUBSTITUTE
+	if "subs" in parts and roster.count(sub_place) == 0:
+		roster.register(Combatant.new("Reserve", 20, 5, 1.0, true), sub_place)
+	_battle.freeze(100000.0)  # hold the battle clock (still running, so EMPLOY can be offered): the capture shows exactly <atb> blocks
+	leader.atb = blocks
+	leader.extra = 0.0
+	leader.burst = 0
+	await get_tree().process_frame
+	_bs._show_main()
+	_bs._menu.visible = true
+	_bs._menu.select(_bs.MAIN_TACTICS)
+	_bs._on_menu_side(1)
+	if "down" in parts:
+		_bs._menu.side_index = 1
+	_bs._update_main_enabled()
+	_bs._menu.queue_redraw()
+	for i in 20:
+		await get_tree().process_frame
+	_bs._menu.visible = true
+	var m: FanMenu = _bs._menu
+	print("[vfx_room] command_tab result=%s atb=%d open=%s index=%d employ=%s:%s summon=%s:%s width=%d view=%s" % [
+		"ok" if m.side_open else "fail", int(blocks), m.side_open, m.side_index,
+		m._side_details[0] if m.side_open else "-", m._side_enabled[0] if m.side_open else false,
+		m._side_details[1] if m.side_open else "-", m._side_enabled[1] if m.side_open else false,
+		int(m.side_width()) if m.side_open else 0, "mirror" if _mirror else "normal"])
+	if _shot_path != "":
+		await RenderingServer.frame_post_draw
+		var path := ProjectSettings.globalize_path(_shot_path) if _shot_path.begins_with("res://") else _shot_path
+		get_window().get_viewport().get_texture().get_image().save_png(path)
+		print("[vfx_room] command_tab shot: ", path)
+	_quit(0 if m.side_open else 1)
+
+
+## D-1229 (Fase 5)/D-1204 --employ=<cancel|noatb|fail|success|last>[:flight] [--mirror]: percorre o
+## Employ pelo caminho real do menu (TACTICS -> leque lateral -> alvo -> congelamento -> desfecho),
+## sem clique e em poucos segundos, e imprime `[vfx_room] employ ...` com `EMPLOY_JSON:`.
+## `:flight` (só no fail) deixa um ataque inimigo no ar antes da tentativa, para provar o congelamento.
+func _run_employ(spec: String) -> void:
+	var parts := spec.split(":")
+	var mode := String(parts[0])
+	var flight := "flight" in parts
+	var win := "win" in parts  # D-1239: sucesso forçado (só no modo moves); sem isso o Employ falha
+	var by_burst := "burst" in parts  # D-1239: o líder paga o Move com 1 Burst (não com ATB)
+	var mp_mode := "mp" in parts  # D-1239: Move que gasta MP (Bubble Shot): MP e timer de regeneração voltam
+	var zero := "zero" in parts  # D-1240: modo roll com P = 0 (nenhum sorteio)
+	var mode_with_flight := mode + ("_zero" if zero else "") + ("_flight" if flight else "") + ("_burst" if by_burst else "") + ("_mp" if mp_mode else "") + ("_win" if win else "")
+	if not (mode in ["cancel", "noatb", "fail", "success", "last", "moves", "returning", "status", "lastblock", "chance", "roll", "boost"]):
+		print("[vfx_room] employ mode=%s result=fail reason=unknown_mode" % mode_with_flight)
+		_quit(1)
+		return
+	var leader: Combatant = _battle.party[0]
+	if _immortal != null:
+		_immortal.button_pressed = false  # D-1204: vida real, sem a imortalidade da sala
+	var rows: Array = []
+	var captured := {"ended": false, "won": false}
+	_battle.employ_changed.connect(func(_stage: String, data: Dictionary) -> void:
+		rows.append(data))
+	_battle.battle_ended.connect(func(player_won: bool) -> void:
+		captured["ended"] = true
+		captured["won"] = player_won)
+	var out := {}
+	var ok := false
+	if mode == "cancel":
+		_employ_set_atb(leader, 5.0)
+		var picker := _employ_open_picker()
+		var targets: int = _bs._targets.size()
+		_bs._on_cancel()
+		await get_tree().process_frame
+		var stages := _employ_stages(rows)
+		out = {
+			"picker": picker, "targets": targets, "blocks_after": leader.blocks(),
+			"burst": leader.burst, "state_main": _bs.state == _bs.S.MAIN,
+			"active": _battle.is_employ_active(), "stages": stages,
+		}
+		ok = picker and leader.blocks() >= 4.999 and leader.burst == 1 \
+			and bool(out["state_main"]) and not bool(out["active"]) \
+			and stages == ["picking", "cancelled"]
+	elif mode == "noatb":
+		_employ_set_atb(leader, 4.0)
+		var picker := _employ_open_picker()
+		var side_open: bool = _bs._menu.side_open
+		var entry_enabled: bool = _bs._menu._side_enabled[0] if side_open and not _bs._menu._side_enabled.is_empty() else false
+		_bs._begin_employ_pick()
+		var direct_opened: bool = _bs.state == _bs.S.TARGET
+		var begin_ok := _battle.begin_employ(leader, _battle.enemies[0])
+		out = {
+			"side_open": side_open, "entry_enabled": entry_enabled, "picker": picker,
+			"direct_opened": direct_opened, "begin_ok": begin_ok,
+			"reason": _employ_last_reason(rows), "blocks_after": leader.blocks(),
+			"burst": leader.burst, "active": _battle.is_employ_active(),
+		}
+		ok = side_open and not entry_enabled and not picker and not direct_opened \
+			and not begin_ok and String(out["reason"]) == "need_atb" \
+			and float(out["blocks_after"]) >= 3.999 and float(out["blocks_after"]) < 5.0 \
+			and leader.burst == 1 and not bool(out["active"])
+	elif mode == "fail":
+		# Um substituto no elenco, como no --command-tab=...:subs (o SUMMON fica disponível).
+		var roster = GameState.get_roster()
+		var sub_place: int = GameState.ExpeditionRosterClass.Place.SUBSTITUTE
+		if roster.count(sub_place) == 0:
+			roster.register(Combatant.new("Reserve", 20, 5, 1.0, true), sub_place)
+		var enemies_before := _battle.enemies.size()
+		var flight_started := false
+		var flight_before := 0
+		var flight_resumed := false
+		if flight:
+			var e: Combatant = _battle.enemies[0]
+			e.atb = 5.0
+			flight_started = _battle.use_skill(e, _shaped(_find_skill(e, "Tackle")), leader)
+			for i in 20:
+				await get_tree().process_frame  # o ataque já está no ar / em wind-up
+			flight_before = _battle.active_attacks().size()
+		_employ_set_atb(leader, 5.0)
+		var a: Dictionary = await _employ_attempt(0, false)
+		if flight:
+			var live := _battle.active_attacks()
+			var first = live[0] if not live.is_empty() else null
+			var p_frozen := float(first.time_left + first.phase_time) if first != null else -1.0  # relógios do ataque parado
+			var phase_frozen := int(first.phase) if first != null else -1
+			for i in 30:
+				await get_tree().process_frame
+			var now := _battle.active_attacks()
+			flight_resumed = now.is_empty() or (first != null \
+				and (float(first.time_left + first.phase_time) != p_frozen or int(first.phase) != phase_frozen))
+		_employ_set_atb(leader, 5.0)
+		var can_employ_after: bool = _bs._can_employ()
+		var can_summon_after: bool = _bs._can_summon()
+		var second := _battle.begin_employ(leader, _battle.enemies[0])
+		var second_reason := _employ_last_reason(rows)
+		var blocks_after_second := leader.blocks()
+		var blocked := false
+		for row in rows:
+			if String((row as Dictionary).get("stage", "")) == "ended":
+				blocked = bool((row as Dictionary).get("blocked", false))
+		out = a.duplicate()
+		out.erase("target")
+		out["enemies_before"] = enemies_before
+		out["enemies_after"] = _battle.enemies.size()
+		out["can_employ_after"] = can_employ_after
+		out["can_summon_after"] = can_summon_after
+		out["second"] = second
+		out["second_reason"] = second_reason
+		out["blocks_after_second"] = blocks_after_second
+		out["running"] = _battle.running
+		out["ended_emitted"] = bool(captured["ended"])
+		out["stages"] = _employ_stages(rows)
+		out["blocked"] = blocked
+		if flight:
+			out["flight_started"] = flight_started
+			out["flight_before"] = flight_before
+			out["flight_resumed"] = flight_resumed
+		ok = bool(a.get("picker", false)) and bool(a.get("state_employ", false)) \
+			and bool(a.get("tree_paused", false)) and bool(a.get("active", false)) \
+			and bool(a.get("marker", false)) and bool(a.get("menu_hidden", false)) \
+			and absf(float(a.get("spent", 0.0)) - 5.0) < 0.001 \
+			and int(a.get("burst_after_pay", 0)) == 1 and bool(a.get("frozen", false)) \
+			and bool(a.get("guard_refused", false)) and bool(a.get("evade_refused", false)) \
+			and bool(a.get("skill_refused", false)) and bool(a.get("resumed", false)) \
+			and enemies_before == _battle.enemies.size() and not can_employ_after and can_summon_after \
+			and not second and second_reason == "blocked" and blocks_after_second >= 4.999 \
+			and _battle.running and not bool(captured["ended"]) and blocked \
+			and (not flight or (flight_started and flight_before > 0 and flight_resumed))
+	elif mode == "success":
+		var enemies_before := _battle.enemies.size()
+		var party_before := _battle.party.size()
+		var roster: ExpeditionRoster = _battle.roster
+		var roster_before := roster.count(GameState.ExpeditionRosterClass.Place.ACTIVE) \
+			+ roster.count(GameState.ExpeditionRosterClass.Place.SUBSTITUTE) \
+			+ roster.count(GameState.ExpeditionRosterClass.Place.STATIONED)
+		var hp_before := int(_battle.enemies[0].hp)
+		_employ_set_atb(leader, 5.0)
+		var a: Dictionary = await _employ_attempt(0, true)
+		var t: Combatant = a.get("target")
+		var uid := ""
+		var place := ""
+		var in_field := true
+		var blocked := true
+		for row in rows:
+			var r: Dictionary = row
+			if String(r.get("stage", "")) == "ended":
+				uid = String(r.get("uid", ""))
+				place = String(r.get("place", ""))
+				in_field = bool(r.get("in_field", true))
+				blocked = bool(r.get("blocked", true))
+		var again := _battle.finish_employ(true, true)  # a tentativa já terminou: tem de recusar
+		var re_uid := roster.register(t, GameState.ExpeditionRosterClass.Place.SUBSTITUTE) if t != null else ""
+		var roster_after := roster.count(GameState.ExpeditionRosterClass.Place.ACTIVE) \
+			+ roster.count(GameState.ExpeditionRosterClass.Place.SUBSTITUTE) \
+			+ roster.count(GameState.ExpeditionRosterClass.Place.STATIONED)
+		for i in 60:
+			await get_tree().process_frame
+		var recruited := roster.recruited_in_battle()
+		_employ_set_atb(leader, 5.0)
+		var can_employ_after: bool = _bs._can_employ()
+		var model_present: bool = t != null and _bs.models.has(t)
+		var model_visible := false
+		if model_present and is_instance_valid(_bs.models[t]):
+			model_visible = (_bs.models[t] as Node3D).visible  # só observado, nunca entra no ok
+		out = a.duplicate()
+		out.erase("target")
+		out["uid"] = uid
+		out["place"] = place
+		out["in_field"] = in_field
+		out["in_enemies"] = _battle.enemies.has(t)
+		out["in_party"] = _battle.party.has(t)
+		out["enemies_before"] = enemies_before
+		out["enemies_after"] = _battle.enemies.size()
+		out["party_after"] = _battle.party.size()
+		out["roster_before"] = roster_before
+		out["roster_after"] = roster_after
+		out["recruited"] = recruited
+		out["again"] = again
+		out["re_uid"] = re_uid
+		out["alive"] = t != null and t.is_alive()
+		out["hp_before"] = hp_before
+		out["hp_after"] = int(t.hp) if t != null else -1
+		out["running"] = _battle.running
+		out["ended_emitted"] = bool(captured["ended"])
+		out["blocked"] = blocked
+		out["can_employ_after"] = can_employ_after
+		out["model_present"] = model_present
+		out["model_visible"] = model_visible
+		out["stages"] = _employ_stages(rows)
+		ok = bool(a.get("picker", false)) and bool(a.get("state_employ", false)) \
+			and bool(a.get("tree_paused", false)) and bool(a.get("frozen", false)) \
+			and absf(float(a.get("spent", 0.0)) - 5.0) < 0.001 \
+			and int(a.get("burst_after_pay", 0)) == 1 and bool(a.get("resumed", false)) \
+			and uid != "" and roster.has(uid) and not bool(out["in_enemies"]) \
+			and not bool(out["in_party"]) and not in_field \
+			and int(out["enemies_after"]) == enemies_before - 1 \
+			and int(out["party_after"]) == party_before and roster_after == roster_before + 1 \
+			and recruited == [uid] and not again and re_uid == uid and bool(out["alive"]) \
+			and int(out["hp_after"]) == hp_before and _battle.running \
+			and not bool(captured["ended"]) and not blocked
+	elif mode == "last":
+		_battle.employ_allow_last = true  # só aqui o último inimigo pode ser recrutado ("Sim, só teste")
+		var n := _battle.enemies.size()
+		var uids: Array = []
+		var places: Array = []
+		var recruited_count := 0
+		var guard := 0
+		while _battle.enemies.size() > 0 and guard < n:
+			guard += 1
+			_employ_set_atb(leader, 5.0)
+			var a: Dictionary = await _employ_attempt(0, true)
+			if not bool(a.get("picker", false)):
+				break
+			var uid := ""
+			var place := ""
+			for i in range(rows.size() - 1, -1, -1):
+				var r: Dictionary = rows[i]
+				if String(r.get("stage", "")) == "ended":
+					uid = String(r.get("uid", ""))
+					place = String(r.get("place", ""))
+					break
+			if uid != "":
+				uids.append(uid)
+				places.append(place)
+				recruited_count += 1
+		for i in 90:
+			await get_tree().process_frame
+		_employ_set_atb(leader, 5.0)
+		var can_employ_after: bool = _bs._can_employ()
+		var unique := {}
+		for u in uids:
+			unique[u] = true
+		out = {
+			"enemies_start": n, "recruited_count": recruited_count, "uids": uids,
+			"places": places, "uids_unique": uids.size() == unique.size(),
+			"enemies_left": _battle.enemies.size(),
+			"roster_recruited": _battle.roster.recruited_in_battle().size(),
+			"running": _battle.running, "ended_emitted": bool(captured["ended"]),
+			"player_won": bool(captured["won"]), "can_employ_after": can_employ_after,
+		}
+		ok = recruited_count == n and bool(out["uids_unique"]) \
+			and int(out["enemies_left"]) == 0 and int(out["roster_recruited"]) == n
+	elif mode == "moves":
+		# D-1239 (revista): o Employ congela e a batalha retoma. Fracasso: nada é cancelado. Sucesso (`:win`):
+		# só o que envolve o recrutado (atacante ou alvo) é cancelado com o custo devolvido; o resto retoma.
+		var e: Combatant = _battle.enemies[0]  # alvo do Employ (o recrutado em `:win`)
+		var e2: Combatant = _battle.enemies[1]  # não tem relação com o recrutado
+		var sk_name := "Bubble Shot" if mp_mode else "Tackle"
+		var tk_e := _shaped(_find_skill(e, sk_name))
+		var tk_l := _shaped(_find_skill(leader, sk_name))
+		var tk_2 := _shaped(_find_skill(e2, sk_name))
+		for u in [e, e2, leader]:
+			(u as Combatant).atb = 5.0
+			(u as Combatant).extra = 0.0
+			(u as Combatant).burst = 0
+		if by_burst:
+			leader.burst = 1
+		var mp_start := {}
+		if mp_mode:
+			for u in [e, e2, leader]:
+				(u as Combatant).mp = (u as Combatant).max_mp - 5
+				(u as Combatant).mp_regen_timer = 0.5
+				mp_start[(u as Combatant).name] = [(u as Combatant).mp, 0.5]
+		var e_started: bool = _battle.use_skill(e, tk_e, leader)
+		var e2_started: bool = _battle.use_skill(e2, tk_2, leader)
+		var l_started: bool = _battle.use_skill(leader, tk_l, e)
+		var e_queued: bool = _battle.request_skill(e, tk_e, leader) and e.queued_skill != null
+		var e2_queued: bool = _battle.request_skill(e2, tk_2, leader) and e2.queued_skill != null
+		var l_queued: bool = _battle.request_skill(leader, tk_l, e) and leader.queued_skill != null
+		if flight:
+			_battle.step_ticks(100)
+		var live_before := _battle.incoming.size() + _battle._landing.size()
+		var mp_paid_e := e.mp
+		var timer_paid_e := e.mp_regen_timer
+		leader.extra = maxf(0.0, 5.0 - leader.atb)  # 5 blocos para poder pedir o Employ
+		var e_pre := e.blocks()
+		var e2_pre := e2.blocks()
+		var l_pre := leader.blocks()
+		var a: Dictionary = await _employ_attempt(0, win)
+		var e_now := e.blocks()
+		var e2_now := e2.blocks()
+		var l_now := leader.blocks()
+		var mp_now := [e.mp, snappedf(e.mp_regen_timer, 0.001), leader.mp, snappedf(leader.mp_regen_timer, 0.001)]
+		var live_after := _battle.incoming.size() + _battle._landing.size()
+		var queue_left := (1 if e.queued_skill != null else 0) + (1 if e2.queued_skill != null else 0) + (1 if leader.queued_skill != null else 0)
+		var e2_queue_kept := e2.queued_skill != null
+		var clock_a := _employ_clock()
+		for i in 20:
+			await get_tree().process_frame
+		var resumed_progress := _employ_clock() != clock_a
+		var ended_row := {}
+		for row in rows:
+			if String((row as Dictionary).get("stage", "")) == "ended":
+				ended_row = row
+		var cancelled: Array = ended_row.get("cancelled", [])
+		var cleared: Array = ended_row.get("queue_cleared", [])
+		var refund_e := 0.0
+		var refund_l := 0.0
+		var l_burst_refund := 0
+		var phases_ok := true
+		var only_involved := true
+		for c in cancelled:
+			var cd: Dictionary = c
+			if String(cd["actor"]) == e.name:
+				refund_e += float(cd["atb"])
+			elif String(cd["actor"]) == leader.name:
+				refund_l += float(cd["atb"])
+				l_burst_refund += int(cd["burst"])
+			else:
+				only_involved = false
+			phases_ok = phases_ok and ((String(cd["phase"]) != "WINDUP") == flight)
+		out = a.duplicate()
+		out.erase("target")
+		out["win"] = win
+		out["started"] = [e_started, e2_started, l_started]
+		out["queued"] = [e_queued, e2_queued, l_queued]
+		out["cancelled"] = cancelled
+		out["queue_cleared"] = cleared
+		out["refund_e"] = refund_e
+		out["refund_l"] = refund_l
+		out["l_burst_refund"] = l_burst_refund
+		out["l_burst_now"] = leader.burst
+		out["mp_start"] = mp_start
+		out["mp_paid_e"] = mp_paid_e
+		out["timer_paid_e"] = timer_paid_e
+		out["mp_now"] = mp_now
+		out["e_pre"] = e_pre
+		out["e_now"] = e_now
+		out["e2_pre"] = e2_pre
+		out["e2_now"] = e2_now
+		out["l_pre"] = l_pre
+		out["l_now"] = l_now
+		out["live_before"] = live_before
+		out["live_after"] = live_after
+		out["queue_left"] = queue_left
+		out["resumed_progress"] = resumed_progress
+		out["recruit_left_field"] = not _battle.enemies.has(e)
+		out["stages"] = _employ_stages(rows)
+		var want_live := live_before - (2 if win else 0)
+		var want_refund_e := float(tk_e.cost) if win else 0.0
+		var want_refund_l := (0.0 if by_burst else float(tk_l.cost)) if win else 0.0
+		ok = e_started and e2_started and l_started and e_queued and e2_queued and l_queued \
+			and bool(a.get("picker", false)) and bool(a.get("active", false)) and bool(a.get("frozen", false)) and bool(a.get("resumed", false)) \
+			and live_before == 3 and live_after == want_live and cancelled.size() == (2 if win else 0) and only_involved and phases_ok \
+			and cleared.size() == (2 if win else 0) and queue_left == (1 if win else 3) and e2_queue_kept \
+			and absf(refund_e - want_refund_e) < 0.001 and absf(refund_l - want_refund_l) < 0.001 \
+			and l_burst_refund == (1 if (win and by_burst) else 0) and leader.burst == (1 if by_burst else 0) \
+			and absf(e_now - (e_pre + refund_e + (0.0 if win else 2.0))) < 0.05 and absf(e2_now - e2_pre) < 0.05 and absf(l_now - (l_pre + refund_l - 5.0)) < 0.05 \
+			and resumed_progress and bool(out["recruit_left_field"]) == win \
+			and (not mp_mode or (mp_paid_e < e.max_mp - 5 and timer_paid_e < 0.01 and (not win or (int(mp_now[0]) == e.max_mp - 5 and int(mp_now[2]) == leader.max_mp - 5 \
+				and absf(float(mp_now[1]) - 0.5) < 0.1 and absf(float(mp_now[3]) - 0.5) < 0.1)) and (win or (e.mp == mp_paid_e and leader.mp < leader.max_mp - 5))))
+	elif mode == "returning":
+		# D-1239: o recrutado já acertou e só falta o retorno: o Move some junto com ele ("Some junto com ele").
+		var e: Combatant = _battle.enemies[0]
+		var tk := _shaped(_find_skill(e, "Tackle"))
+		e.atb = 5.0
+		e.extra = 0.0
+		e.burst = 0
+		var started: bool = _battle.use_skill(e, tk, leader)
+		var ticks := 0
+		var returning_seen := false
+		while ticks < 900 and not returning_seen:
+			_battle.step_ticks(5)
+			ticks += 5
+			for inc in _battle._returning:
+				if inc.attacker == e and not inc.ghost:
+					returning_seen = true
+		var leader_hit := leader.hp < leader.max_hp
+		leader.atb = 5.0
+		leader.extra = 0.0
+		var a: Dictionary = await _employ_attempt(0, true)
+		var left := 0
+		for inc in _battle._returning + _battle._landing + _battle.incoming:
+			if inc.attacker == e:
+				left += 1
+		for i in 120:
+			await get_tree().process_frame
+		out = a.duplicate()
+		out.erase("target")
+		out["started"] = started
+		out["returning_seen"] = returning_seen
+		out["leader_hit"] = leader_hit
+		out["moves_of_recruit_left"] = left
+		out["recruit_left_field"] = not _battle.enemies.has(e)
+		out["running"] = _battle.running
+		out["stages"] = _employ_stages(rows)
+		ok = started and returning_seen and leader_hit and bool(a.get("picker", false)) and bool(a.get("frozen", false)) and bool(a.get("resumed", false)) \
+			and left == 0 and bool(out["recruit_left_field"]) and _battle.running
+	elif mode == "status":
+		# D-1239 ("Sim, cancela"): um Move de status em curso do recrutado (pausa de status aberta) é cancelado
+		# no sucesso e a pausa fecha junto, uma única vez.
+		var e: Combatant = _battle.enemies[0]
+		var tk := _shaped(_find_skill(e, "Armored Bulk"))
+		e.atb = 5.0
+		e.extra = 0.0
+		e.burst = 0
+		e.mp = e.max_mp
+		var pause_count := {"started": 0, "ended": 0}
+		_battle.status_pause_started.connect(func(_inc) -> void: pause_count["started"] += 1)
+		_battle.status_pause_ended.connect(func(_inc) -> void: pause_count["ended"] += 1)
+		var started: bool = _battle.use_skill(e, tk, e)
+		var paused_before: bool = _battle.is_status_paused()
+		leader.atb = 5.0
+		leader.extra = 0.0
+		var a: Dictionary = await _employ_attempt(0, true)
+		var paused_after: bool = _battle.is_status_paused()
+		for i in 60:
+			await get_tree().process_frame
+		var ended_row := {}
+		for row in rows:
+			if String((row as Dictionary).get("stage", "")) == "ended":
+				ended_row = row
+		var cancelled: Array = ended_row.get("cancelled", [])
+		out = a.duplicate()
+		out.erase("target")
+		out["started"] = started
+		out["paused_before"] = paused_before
+		out["paused_after"] = paused_after
+		out["pause_started"] = pause_count["started"]
+		out["pause_ended"] = pause_count["ended"]
+		out["cancelled"] = cancelled
+		out["moves_left"] = _battle.incoming.size() + _battle._landing.size()
+		out["recruit_left_field"] = not _battle.enemies.has(e)
+		out["running"] = _battle.running
+		out["stages"] = _employ_stages(rows)
+		ok = started and paused_before and not paused_after and int(pause_count["started"]) == 1 and int(pause_count["ended"]) == 1 \
+			and bool(a.get("picker", false)) and bool(a.get("frozen", false)) and bool(a.get("resumed", false)) and cancelled.size() == 1 \
+			and int(out["moves_left"]) == 0 and bool(out["recruit_left_field"]) and _battle.running
+	elif mode == "lastblock":
+		# D-1229 "Sim, só teste": no jogo real o último inimigo vivo não pode ser recrutado (nada é gasto).
+		while _battle.enemies.size() > 1:
+			_battle.enemies.pop_back()
+		_employ_set_atb(leader, 5.0)
+		var picker: bool = _employ_open_picker()
+		var side_open: bool = _bs._menu.side_open
+		var entry_enabled: bool = _bs._menu._side_enabled[0] if side_open and not _bs._menu._side_enabled.is_empty() else false
+		var refusal: String = _battle.employ_refusal(leader)
+		var begin_ok: bool = _battle.begin_employ(leader, _battle.enemies[0])
+		out = {
+			"side_open": side_open, "entry_enabled": entry_enabled, "picker": picker, "refusal": refusal,
+			"begin_ok": begin_ok, "reason": _employ_last_reason(rows), "blocks_after": leader.blocks(),
+			"burst": leader.burst, "active": _battle.is_employ_active(),
+		}
+		ok = side_open and not entry_enabled and not picker and refusal == "last_enemy" and not begin_ok \
+			and String(out["reason"]) == "last_enemy" and leader.blocks() >= 4.999 and leader.burst == 1 and not bool(out["active"])
+	elif mode == "chance":
+		# D-1240: a chance (só a conta, sem rolagem) com atributos conhecidos, buff de ATK e um aliado nocauteado.
+		var ally: Combatant = _battle.party[1] if _battle.party.size() > 1 else null
+		var foe: Combatant = _battle.enemies[0]
+		for i in _battle.party.size():
+			var c: Combatant = _battle.party[i]
+			c.str = 10 + i
+			c.mag = 4
+			c.atk_buff = 0
+			c.level = 5
+		foe.str = 8
+		foe.mag = 12
+		foe.level = 3
+		var plain: Dictionary = _battle.employ_chance(leader, foe)
+		leader.atk_buff = 2  # x1,5 em STR e MAG do líder
+		var buffed: Dictionary = _battle.employ_chance(leader, foe)
+		leader.atk_buff = 0
+		var ko_members := int(plain["members"])
+		if ally != null:
+			ally.hp = 0
+			ko_members = int(_battle.employ_chance(leader, foe)["members"])
+		var living_a := 0.0
+		for i in _battle.party.size():
+			var c2: Combatant = _battle.party[i]
+			if c2.is_alive():
+				living_a += maxf(float(c2.str), float(c2.mag))
+		var a_buffed := 0.0
+		for i in _battle.party.size():
+			var c3: Combatant = _battle.party[i]
+			a_buffed += maxf(float(c3.str), float(c3.mag)) * (1.5 if i == 0 else 1.0)
+		var expect_plain := 0.0
+		var all_a := 0.0
+		for i in _battle.party.size():
+			var c4: Combatant = _battle.party[i]
+			all_a += maxf(float(c4.str), float(c4.mag))
+		expect_plain = 45.0 * all_a / (all_a + 12.0) + 4.0
+		var expect_buffed := 45.0 * a_buffed / (a_buffed + 12.0) + 4.0
+		var after_ko: Dictionary = _battle.employ_chance(leader, foe)
+		var expect_ko := 45.0 * living_a / (living_a + 12.0) + 4.0
+		out = {
+			"party": _battle.party.size(), "A": plain["A"], "E": plain["E"], "F": plain["F"], "N": plain["N"],
+			"R": plain["R"], "B": plain["B"], "P": plain["P"], "expect_P": expect_plain,
+			"P_buffed": buffed["P"], "expect_P_buffed": expect_buffed, "members_ko": ko_members,
+			"P_after_ko": after_ko["P"], "expect_P_after_ko": expect_ko,
+		}
+		ok = absf(float(plain["P"]) - expect_plain) < 0.0001 and absf(float(buffed["P"]) - expect_buffed) < 0.0001 \
+			and float(buffed["P"]) > float(plain["P"]) and absf(float(after_ko["P"]) - expect_ko) < 0.0001 \
+			and absf(float(plain["N"]) - 4.0) < 0.0001 and absf(float(plain["R"])) < 0.0001 and absf(float(plain["B"])) < 0.0001 \
+			and (ally == null or ko_members == int(plain["members"]) - 1)
+	elif mode == "roll":
+		# D-1240: o desfecho vem da chance real. win: rolagem 0 (sucesso); sem flag: rolagem 99,999 (fracasso);
+		# zero: P = 0, nenhuma rolagem é feita (a sobreposição de 50 tem de ser ignorada).
+		var foe: Combatant = _battle.enemies[0]
+		for i in _battle.party.size():
+			var c: Combatant = _battle.party[i]
+			c.str = 10
+			c.mag = 4
+			c.atk_buff = 0
+			c.level = 5
+		foe.str = 8
+		foe.mag = 12
+		foe.level = 3
+		if zero:
+			foe.str = 100000
+			foe.level = 25
+			leader.level = 1
+		_battle.employ_roll_override = 50.0 if zero else (0.0 if win else 99.999)
+		_employ_set_atb(leader, 5.0)
+		var a: Dictionary = await _employ_attempt(0, false, true)
+		var ended_row := {}
+		for row in rows:
+			if String((row as Dictionary).get("stage", "")) == "ended":
+				ended_row = row
+		var result := String(ended_row.get("result", ""))
+		var chance: Dictionary = ended_row.get("chance", {})
+		out = a.duplicate()
+		out.erase("target")
+		out["result"] = result
+		out["forced"] = ended_row.get("forced", true)
+		out["P"] = chance.get("P", -1.0)
+		out["rolled"] = ended_row.get("rolled", null)
+		out["roll"] = ended_row.get("roll", null)
+		out["stages"] = _employ_stages(rows)
+		out["enemies_after"] = _battle.enemies.size()
+		var want_success := win and not zero
+		ok = bool(a.get("picker", false)) and bool(a.get("frozen", false)) and bool(a.get("resumed", false)) and not bool(out["forced"]) \
+			and result == ("success" if want_success else "failure") and bool(out["rolled"]) == (not zero) \
+			and (not zero or (absf(float(out["P"])) < 0.0001 and float(out["roll"]) < 0.0)) \
+			and (zero or (float(out["P"]) > 0.0 and float(out["P"]) < 100.0 and absf(float(out["roll"]) - (0.0 if win else 99.999)) < 0.0001)) \
+			and (_battle.enemies.has(a.get("target")) != want_success)
+	elif mode == "boost":
+		# D-1242 (Fase 7): o Employ fracassa e o alvo recebe o BOOST: +1 nos 6 atributos, +1 Burst (passa de 5), +2 ATB,
+		# 10 s que param junto com o congelamento, e tudo (menos ATB/Burst concedidos) volta no fim, com o Burst em 5.
+		var e: Combatant = _battle.enemies[0]
+		leader.max_hp = 100000
+		leader.hp = 100000
+		e.burst = 5
+		e.atb = 0.0
+		e.extra = 0.0
+		e.guard_timer = 1000.0  # parado: a IA não gasta o Burst nem o ATB durante a medição
+		var before := _boost_stats(e)
+		var snaps := {}
+		e.boost_changed.connect(func(_who: Combatant, active: bool) -> void:
+			snaps["start" if active else "end"] = _boost_stats(e))
+		_employ_set_atb(leader, 5.0)
+		var snap_pre: Dictionary = _battle.save_state()  # antes do fracasso
+		var a: Dictionary = await _employ_attempt(0, false)
+		var snap_post: Dictionary = _battle.save_state()  # BOOST ativo e Employ bloqueado
+		var t0 := e.boost_timer
+		var boosted_a := e.is_boosted()
+		var hud_state: Dictionary = _bs.hud.boost_state(e)  # D-1243: o cartão lê o estado real
+		var hud_ok: bool = not hud_state.is_empty() and int(hud_state["variant"]) == 2 and absf(float(hud_state["left"]) - e.boost_timer) < 0.001
+		_battle.freeze(2.5)
+		_battle.step_ticks(150)
+		var t_frozen := e.boost_timer
+		_battle.step_ticks(300)
+		var t_mid := e.boost_timer
+		_battle.step_ticks(int((t_mid - 0.1) * 60.0))
+		var burst_late := e.burst
+		var boosted_late := e.is_boosted()
+		_battle.step_ticks(30)
+		var final_stats := _boost_stats(e)
+		_battle.restore_state(snap_post)  # D-1242: o snapshot leva atributos, BOOST e o bloqueio do Employ
+		var post_ok: bool = e.is_boosted() and _boost_stats(e)["str"] == before["str"] + 1 and not _battle.roster.can_attempt_employ()
+		_battle.restore_state(snap_pre)
+		var pre_ok: bool = not e.is_boosted() and _boost_stats(e)["str"] == before["str"] and _battle.roster.can_attempt_employ()
+		var st: Dictionary = snaps.get("start", {})
+		var en: Dictionary = snaps.get("end", {})
+		var blocked := false
+		for row in rows:
+			if String((row as Dictionary).get("stage", "")) == "ended":
+				blocked = not bool((row as Dictionary).get("blocked", false)) == false
+		out = a.duplicate()
+		out.erase("target")
+		out["before"] = before
+		out["at_start"] = st
+		out["at_end"] = en
+		out["timer_start"] = t0
+		out["hud_state"] = hud_state
+		out["snapshot_post_ok"] = post_ok
+		out["snapshot_pre_ok"] = pre_ok
+		out["hud_after"] = _bs.hud.boost_state(e).is_empty()
+		out["timer_after_freeze"] = t_frozen
+		out["timer_mid"] = t_mid
+		out["burst_late"] = burst_late
+		out["boosted_late"] = boosted_late
+		out["boosted_after"] = e.is_boosted()
+		out["blocks_after"] = final_stats["blocks"]
+		out["employ_blocked"] = blocked
+		var plus := true
+		for k in ["str", "mag", "vit", "wis", "agi", "luk"]:
+			plus = plus and int(st.get(k, -99)) == int(before[k]) + 1 and int(en.get(k, -99)) == int(before[k])
+		ok = bool(a.get("picker", false)) and bool(a.get("resumed", false)) and boosted_a and plus \
+			and int(st.get("burst", 0)) == 6 and absf(float(st.get("blocks", 0.0)) - 2.0) < 0.001 \
+			and t0 > 9.9 and t0 <= 10.0 and absf(t_frozen - t0) < 0.0001 and absf(t_mid - (t0 - 5.0)) < 0.05 \
+			and hud_ok and post_ok and pre_ok and _bs.hud.boost_state(e).is_empty() and burst_late == 6 and boosted_late and not e.is_boosted() and int(en.get("burst", 99)) == 5 \
+			and absf(float(final_stats["blocks"]) - 2.0) < 0.001 and blocked
+	out["mode"] = mode_with_flight
+	out["view"] = "mirror" if _mirror else "normal"
+	print("[vfx_room] employ mode=%s view=%s result=%s" % [
+		mode_with_flight, out["view"], "ok" if ok else "fail"])
+	print("[vfx_room] EMPLOY_JSON: ", JSON.stringify(out))
+	_quit(0 if ok else 1)
+
+
+## Põe o ATB do líder em `v` blocos, sem extra e com Burst 1 (o Burst nunca paga o Employ: tem de ficar 1).
+func _boost_stats(c: Combatant) -> Dictionary:
+	return {"str": c.str, "mag": c.mag, "vit": c.vit, "wis": c.wis, "agi": c.agi, "luk": c.luk, "burst": c.burst, "blocks": c.blocks(), "attack": c.attack}
+
+
+func _employ_set_atb(leader: Combatant, v: float) -> void:
+	leader.atb = v
+	leader.extra = 0.0
+	leader.burst = 1
+
+
+## Abre o leque lateral de TACTICS e confirma o EMPLOY pelo mesmo caminho do jogador. Síncrono de
+## propósito: o ATB não pode regenerar entre o ajuste e a abertura. true = o seletor de alvo abriu.
+func _employ_open_picker() -> bool:
+	_bs._show_main()
+	_bs._menu.visible = true
+	_bs._menu.select(_bs.MAIN_TACTICS)
+	_bs._on_menu_side(1)
+	if not _bs._menu.side_open:
+		return false
+	_bs._update_main_enabled()
+	if _bs._menu._side_enabled[0]:
+		_bs._menu.side_chosen.emit(0)
+	return _bs.state == _bs.S.TARGET
+
+
+## Estado observável de todas as unidades e dos ataques no ar (para provar o congelamento do D-1229).
+func _employ_snapshot() -> Array:
+	var snap := []
+	for u in _battle.party + _battle.enemies:
+		snap.append([u.name, snappedf(u.atb, 0.0001), u.extra, u.burst, u.hp, u.mp,
+			snappedf(u.pos.x, 0.0001), snappedf(u.pos.z, 0.0001)])
+	for inc in _battle.active_attacks():
+		snap.append([inc.attacker.name, inc.phase, snappedf(inc.time_left, 0.0001), snappedf(inc.phase_time, 0.0001)])  # time_left = relógio do wind-up; phase_time = das fases seguintes
+	return snap
+
+
+## Soma dos relógios de todos os ataques que ainda existem (wind-up, fases e a fase em si): muda quando retoma.
+func _employ_clock() -> float:
+	var total := 0.0
+	for inc in _battle.incoming + _battle._landing:
+		total += float(inc.time_left) + float(inc.phase_time) + 100.0 * float(inc.phase)
+	return total
+
+
+## Etapas do `employ_changed` recebidas nesta execução, em ordem.
+func _employ_stages(rows: Array) -> Array:
+	var stages: Array = []
+	for row in rows:
+		stages.append(String((row as Dictionary).get("stage", "")))
+	return stages
+
+
+## Motivo da última recusa registrada ("" quando não houve).
+func _employ_last_reason(rows: Array) -> String:
+	for i in range(rows.size() - 1, -1, -1):
+		var row: Dictionary = rows[i]
+		if String(row.get("stage", "")) == "refused":
+			return String(row.get("reason", ""))
+	return ""
+
+
+## Uma tentativa completa pelo menu: confirma o alvo, mede o congelamento e o que fica recusado, e
+## termina conforme `success`. Devolve os dados; a chave "target" é o Combatant (não vai ao JSON).
+func _employ_attempt(target_index: int, success: bool, real_roll := false) -> Dictionary:
+	var leader: Combatant = _battle.party[0]
+	var out := {}
+	var blocks_before := leader.blocks()
+	var burst_before := leader.burst
+	var picker := _employ_open_picker()
+	out["picker"] = picker
+	out["blocks_before"] = blocks_before
+	out["burst_before"] = burst_before
+	if not picker:
+		return out
+	out["targets"] = _bs._targets.size()
+	var target: Combatant = _bs._targets[target_index]
+	out["target_name"] = target.name
+	_bs._on_chosen(target_index)
+	out["state_employ"] = _bs.state == _bs.S.EMPLOY
+	out["tree_paused"] = get_tree().paused
+	out["active"] = _battle.is_employ_active()
+	out["marker"] = _bs._employ_marker.visible
+	out["menu_hidden"] = not _bs._menu.visible
+	out["spent"] = blocks_before - leader.blocks()
+	out["burst_after_pay"] = leader.burst
+	var snap_a := _employ_snapshot()
+	_battle.step_ticks(30)
+	for i in 20:
+		await get_tree().process_frame
+	out["frozen"] = snap_a == _employ_snapshot()
+	var g: Combatant = leader
+	for e in _battle.enemies:
+		if e.is_alive():
+			g = e
+			break
+	var g_atb := g.atb
+	g.atb = 5.0
+	out["guard_refused"] = not _battle.use_guard(g)
+	g.atb = g_atb
+	out["evade_refused"] = not _battle.try_evade(leader, _battle.find_evadable(leader))
+	var tackle := _shaped(_find_skill(leader, "Tackle"))
+	out["skill_refused"] = true if tackle == null else not _battle.use_skill(leader, tackle, target)
+	if real_roll:
+		_bs._roll_employ()  # D-1240: o desfecho vem da chance real
+	else:
+		_bs._finish_employ(success)
+	await get_tree().process_frame
+	out["resumed"] = _bs.state == _bs.S.MAIN and not get_tree().paused \
+		and not _battle.is_employ_active() and not _bs._employ_marker.visible
+	out["target"] = target
+	return out
 
 
 ## D-1200/D-1204 --picker=<move_id> [--mirror] [--shot=arquivo.png]: o líder da sala passa a ter o Move,
@@ -568,6 +1788,11 @@ func _run_cli() -> void:
 		_envelope_graph_on = true
 	if _args.has("audit-leaks"):
 		_audit_leaks_on = true
+	if _args.has("vfx-trace") or _args.has("stdout-trace") or OS.get_cmdline_user_args().has("--stdout-trace"):
+		_vfx_trace_on = true  # D-1220: telemetria cinemática genérica opt-in
+	if _args.has("vfx-trace"):
+		_envelope_graph_on = true
+		_audit_leaks_on = true
 	if _args.has("bg"):
 		_apply_bg_mode(String(_args["bg"]).to_lower())
 	if _args.has("solo-node"):
@@ -635,6 +1860,21 @@ func _run_cli() -> void:
 		return
 	if _args.has("picker"):
 		await _run_picker_shot(String(_args["picker"]))
+		return
+	if _args.has("command-tab"):
+		await _run_command_tab_shot(String(_args["command-tab"]))
+		return
+	if _args.has("employ"):
+		await _run_employ(String(_args["employ"]))
+		return
+	if _args.has("summon"):
+		await _run_summon(String(_args["summon"]))
+		return
+	if _args.has("summon-ui"):
+		await _run_summon_ui(String(_args["summon-ui"]))
+		return
+	if _args.has("boost"):
+		await _run_boost_shot(String(_args["boost"]))
 		return
 	if _args.has("test-d235"):
 		await _run_test_d235()
@@ -853,12 +2093,33 @@ func _process(delta: float) -> void:
 	_sweep_layers()
 	_tick_vfx_analysis(delta)
 	_dread_flash_live_max = maxi(_dread_flash_live_max, _dread_live_count())  # D-1203
+	if _fired and not _paused and _args.has("shot-at-stage") and _bs != null and _bs.fx != null and _bs.fx.fx_martial != null:
+		# D-1218: --shot-at-stage=run|jump|cut|post|fade[:N] pauses and photographs the frame in which the hand
+		# telemetry (`martial_hand`) reaches that stage (N-th row of the stage, default the first).
+		var want := String(_args["shot-at-stage"]).split(":")
+		var skip := int(want[1]) if want.size() > 1 else 0
+		for row in _bs.fx.fx_martial.telemetry():
+			if String(row.get("stage", "")) == want[0]:
+				if _stage_rows >= skip:
+					_args.erase("shot-at-stage")
+					_toggle_pause()
+					print("[vfx_room] shot-at-stage=%s row=%d t=%.3f" % [want[0], _stage_rows, _clock - _fire_clock])
+					await RenderingServer.frame_post_draw
+					await _take_shot()
+					_emit_summary_json()
+					if _quit_flag:
+						_quit()
+					return
+				_stage_rows += 1
+				break
 	if _fired and not _paused:
 		_tick_from_fire += 1
 		if _step_ticks_limit > 0 and _tick_from_fire >= _step_ticks_limit:
 			_step_ticks_limit = -1
 			_toggle_pause()
 			print("[vfx_room] Pausado em step-ticks=%d (t=%.3f)" % [_tick_from_fire, _clock - _fire_clock])
+			if _shot_path != "":
+				await _take_shot()  # D-1218: --step-ticks + --shot = a frame at an exact physics tick
 			_emit_summary_json()
 			if _quit_flag:
 				_quit()
@@ -988,6 +2249,13 @@ func _connect_events() -> void:
 			_note("VFX nasce: %s" % n.name)
 		if _telemetry.has("vfx_spawns"):
 			(_telemetry["vfx_spawns"] as Array).append(String(n.name)))
+	var smt_node := _bs.get("smt_vfx") as Node
+	if smt_node != null:
+		smt_node.child_entered_tree.connect(func(n: Node) -> void:
+			if not String(n.name).begins_with("@"):
+				_note("SMT VFX nasce: %s" % n.name)
+			if _telemetry.has("vfx_spawns"):
+				(_telemetry["vfx_spawns"] as Array).append(String(n.name)))
 
 
 func _event(kind: String) -> void:
@@ -2838,11 +4106,19 @@ func _init_fire_telemetry(a: Combatant, t: Combatant, skill: Skill) -> void:
 	if _bs != null and _bs.fx != null:
 		for ch in _bs.fx.get_children():
 			_baseline_fx_ids[ch.get_instance_id()] = true
+	var smt_node := _bs.get("smt_vfx") as Node if _bs != null else null
+	if smt_node != null:
+		for ch in smt_node.get_children():
+			_baseline_fx_ids[ch.get_instance_id()] = true
 	_last_leaks.clear()
 	_dread_flash_live_max = 0
 	_envelope_samples.clear()
 	_prev_node_alphas.clear()
 	_envelope_pops.clear()
+	_first_hit_clock = -1.0
+	_vfx_prev_pos.clear()
+	_vfx_prev_rot.clear()
+	_vfx_frame_count = 0
 	_bone_has_prev = false
 	_bone_cur_speed = 0.0
 	_bone_peak_speed = 0.0
@@ -2926,6 +4202,18 @@ func _dread_live_count() -> int:
 	return flash._live.size()
 
 
+## D-1220: entrega um registro vfx_frame ao BattleTrace (--trace/--stdout-trace) ou imprime JSONL no stdout.
+func _emit_vfx_frame(row: Dictionary) -> void:
+	_vfx_frame_count += 1
+	var tr: BattleTrace = null
+	if _bs != null:
+		tr = _bs.get("trace") as BattleTrace
+	if tr != null:
+		tr.record_vfx_frame(row)
+	elif _vfx_trace_on:
+		print("[TRACE_JSONL] ", JSON.stringify({"t": snappedf(_clock - _fire_clock, 0.001), "ev": "vfx_frame", "data": row}))
+
+
 func _emit_summary_json() -> void:
 	if not _args.has("summary-json"):
 		return
@@ -2945,6 +4233,8 @@ func _emit_summary_json() -> void:
 	_telemetry["vfx_leaks"] = _last_leaks
 	_telemetry["leaks_detected"] = _last_leaks.size()
 	_telemetry["envelope_pops"] = _envelope_pops
+	_telemetry["envelope_samples"] = _envelope_samples
+	_telemetry["vfx_frame_count"] = _vfx_frame_count
 	_telemetry["camera_travel_m"] = snappedf(_cam_travel, 0.001)
 	_telemetry["camera_travel_bins"] = _cam_bins.map(func(v): return snappedf(float(v), 0.01))
 	_telemetry["camera_fov_travel"] = snappedf(_cam_fov_travel, 0.001)

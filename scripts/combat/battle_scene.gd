@@ -4,7 +4,7 @@ extends Node3D
 ## The player controls party[0]; the others follow Tactics. All on-screen UI
 ## lives in BattleHud; BattleCamera frames the action.
 
-enum S { MAIN, FIGHT, ITEMS, TARGET, TACTICS, STATUS }
+enum S { MAIN, FIGHT, ITEMS, TARGET, TACTICS, STATUS, EMPLOY }
 
 const MODEL_SCALE := 2.5
 const TEAM_DISTANCE := 30.0  ## Units between the two lines.
@@ -28,6 +28,7 @@ const CrawlmonAttributeMath = preload("res://scripts/combat/crawlmon_attribute_m
 const VictoryPanelScript = preload("res://scripts/ui/victory_panel.gd")
 const LevelUpModalScript = preload("res://scripts/ui/level_up_modal.gd")
 const EnemyFactory = preload("res://scripts/combat/enemy_factory.gd")
+const EmployMarker = preload("res://scripts/ui/employ_marker.gd")
 
 @onready var battle: Battle = $Battle
 @onready var ui: CanvasLayer = $UI
@@ -68,6 +69,7 @@ var _status_unit: Combatant
 var _saved_anim: Dictionary = {}  ## AnimationPlayer -> [name, position]
 
 var _menu: FanMenu
+var _employ_marker: EmployMarker  ## D-1229 (Phase 5): placeholder shown while an Employ attempt freezes the battle.
 var _last_main := 0  ## Last command picked on the main menu (it reopens there).
 var _fight_target: Combatant  ## The opponent highlighted while the move list is open.
 var _last_skill := ""  ## Last Fight skill and target, by name.
@@ -153,7 +155,13 @@ func _ready() -> void:
 	_menu.cancelled.connect(_on_cancel)
 	_menu.moved.connect(_on_moved)
 	_menu.side.connect(_on_menu_side)
+	_menu.side_chosen.connect(_on_command_chosen)
+	_employ_marker = EmployMarker.new()
+	ui.add_child(_employ_marker)
+	_employ_marker.decided.connect(_finish_employ)
+	_employ_marker.roll_requested.connect(_roll_employ)
 	battle.state_changed.connect(_refresh)
+	battle.summon_changed.connect(_on_summon_changed)  # D-1244 (Phase 8): the swap of a unit on the field
 	battle.battle_ended.connect(_on_battle_ended)
 	battle.attack_telegraphed.connect(fx.telegraph)
 	battle.status_pause_started.connect(fx.on_status_pause_started)
@@ -205,6 +213,7 @@ func _ready() -> void:
 	if tr != null and tr.active and not tr.has_revealed:
 		await tr.revealed  # The run-in plays while the panels open.
 	await fx.intro()
+	battle.roster = GameState.get_roster()  # D-1229/D-1233: Employ block and recruits live in the player's roster.
 	battle.start(party, enemies)
 	# D-1101: encounter advantage applied after the base START_ATB (4 vs 2 for the winner).
 	EncounterRules.apply_atb(party, enemies, GameState.encounter_advantage)
@@ -253,6 +262,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_show_main()
 			get_viewport().set_input_as_handled()
 			return
+	if state == S.EMPLOY:
+		return  # D-1229: the Employ attempt freezes everything, without Evade or Guard.
 	if event.is_action_pressed("guard") and battle.running and leader.is_alive():
 		battle.use_guard(leader)  # D-272: own hotkey (Shift).
 		get_viewport().set_input_as_handled()
@@ -296,6 +307,17 @@ func debug_party_selector_entries() -> Array[Dictionary]:
 	return entries
 
 
+## Debug (--summon-ui): an ally that joins the active team mid-battle, with model and card, in the next party slot.
+func debug_add_ally(c: Combatant) -> void:
+	var idx := battle.party.size()
+	c.in_battle = true
+	battle.party.append(c)
+	var one: Array[Combatant] = [c]
+	var spots: Array[Vector3] = [PARTY_SLOTS[mini(idx, PARTY_SLOTS.size() - 1)]]
+	_spawn(one, spots, PI, Color(0.3, 0.6, 0.9))
+	hud.add_ally(c)
+
+
 ## Debug/test tool (E selector): swaps party[0] with party[i] and makes the two
 ## Combatants trade places. The battle is not restarted; rules, ATB and damage
 ## are untouched. All position/step fields move together so each body keeps its
@@ -318,6 +340,7 @@ func debug_swap_party(i: int) -> Dictionary:
 
 	battle.party[0] = b
 	battle.party[i] = a
+	battle.protagonist = b  # D-1244: the menu owner follows the debug swap
 	leader = battle.party[0]
 	if fx != null:
 		fx.leader = leader
@@ -480,7 +503,8 @@ func _spawn(list: Array[Combatant], slots: Array[Vector3], yaw: float, color: Co
 		fx.register(c, model)
 		if smt_vfx != null:
 			smt_vfx.register_model(c, model)
-		c.died.connect(_on_died)
+		if not c.died.is_connected(_on_died):
+			c.died.connect(_on_died)
 
 
 ## D-015 test: where each living enemy's torso is drawn (the camera keeps these in view).
@@ -514,7 +538,7 @@ func _safe_area_units() -> Array:
 					base + Vector3(-r, 0, 0), base + Vector3(r, 0, 0),
 					base + Vector3(-r, head_y * 0.6, 0), base + Vector3(r, head_y * 0.6, 0)]
 			out.append({"pts": pts, "pad": BattleHud.tag_pad() if enemy else Vector4(0, 0, 0, 0),
-					"leader": c == battle.party[0], "c": c})
+					"leader": c == battle.menu_owner(), "c": c})
 	return out
 
 
@@ -646,6 +670,7 @@ func _find_anim_player(node: Node) -> AnimationPlayer:
 
 
 func _on_died(c: Combatant) -> void:
+	_sync_leader.call_deferred()  # D-1244: if the menu owner fell, the menu passes to the first living ally
 	var by_burn: bool = c.has_meta("died_by_burn") and bool(c.get_meta("died_by_burn"))  # D-238
 	if not c.is_player and not by_burn:
 		# Inimigos são lançados balisticamente com VFX e shake épico via BattleFx (D-049);
@@ -883,9 +908,10 @@ func _trigger_victory_flow() -> void:
 # --- Command flow ----------------------------------------------------------
 
 func _refresh() -> void:
+	_sync_leader()
 	for c in models:
 		(models[c].get_node("BurstRing") as Node3D).visible = c.burst > 0
-	_menu.visible = leader.is_alive() and battle.running
+	_menu.visible = leader.is_alive() and battle.running and state != S.EMPLOY
 	if state == S.MAIN:
 		_update_main_enabled()
 		if leader.queued_skill != _shown_queue:
@@ -902,8 +928,8 @@ func _refresh() -> void:
 func _set_state(s: S) -> void:
 	var was_target := state == S.TARGET
 	state = s
-	# Tactics and Status pause the whole game while they are open.
-	get_tree().paused = s == S.TACTICS or s == S.STATUS
+	# Tactics and Status pause the whole game while they are open; so does an Employ attempt (D-1229).
+	get_tree().paused = s == S.TACTICS or s == S.STATUS or s == S.EMPLOY
 	if s != S.TARGET and s != S.FIGHT:
 		hud.set_target(null)  # The target tag stays lit while the move list is open.
 	if s != S.FIGHT:
@@ -951,10 +977,311 @@ func _main_entries() -> Array:
 	]
 
 
+const MAIN_TACTICS := 3  ## Row of TACTICS in _main_entries().
+
+
+## D-1229/D-1232: the two commands of the side fan, with their real ATB costs. Burst never pays them,
+## so availability looks at the ATB blocks only (never at `can_pay`).
+func _command_entries() -> Array:
+	return [
+		{"text": "Employ", "detail": "%d ATB" % int(Battle.EMPLOY_BLOCKS), "enabled": _can_employ()},
+		{"text": "Summon", "detail": "", "enabled": _can_summon()},  # D-1254: Summon costs no ATB
+	]
+
+
+## D-1229: 5 ATB in blocks, no attempt open, a living enemy, and no failed Employ in this battle.
+func _can_employ() -> bool:
+	return battle.employ_refusal(leader) == ""
+
+
+## D-1254: no ATB cost. No Employ attempt may be open, someone must be able to leave and at least one SUBSTITUTE
+## must exist. The pair is checked on confirm.
+func _can_summon() -> bool:
+	if not battle.running or battle.is_employ_active() or battle.roster == null or battle.party.is_empty():
+		return false
+	return battle.roster.count(GameState.ExpeditionRosterClass.Place.SUBSTITUTE) > 0
+
+
+## Z on EMPLOY / SUMMON. EMPLOY opens its target picker (Phase 5); SUMMON opens the two-step picker (Phase 8).
+func _on_command_chosen(i: int) -> void:
+	if i == 0:
+		_begin_employ_pick()
+	else:
+		_begin_summon_pick()
+
+
+## D-1244: the menu belongs to Battle.menu_owner() (the protagonist while it is alive on the active team, else
+## the first living active ally). Called on every refresh and when the owner falls or leaves.
+func _sync_leader() -> void:
+	if battle == null or fx == null:
+		return
+	var owner := battle.menu_owner()
+	if owner == null or owner == leader:
+		return
+	leader = owner
+	fx.leader = owner
+	_fight_target = null
+	if hud != null:
+		hud.set_menu_owner(owner)
+	if state == S.FIGHT:
+		_leave_fight_camera()
+	if state == S.MAIN or state == S.FIGHT or state == S.ITEMS:
+		_show_main()
+
+
+# --- Summon flow (D-1232/D-1244, Phase 8). PLACEHOLDER selector: the creator has not decided its look or text. ---
+var _summon_leaving: Combatant = null
+const SUMMON_CARD_GEN_SECONDS := 3.8  ## D-1254: the entrant card is generated in 3.8 s (creator: 4 s was a bit slow, 3.2 s too fast)
+var _summon_fx := {}  ## D-1254: Combatant (entering) -> {exit, enter, model, base_y, r, land_start}
+var _summon_yaw := {}  ## D-1254: facing of the unit that left, for the entrant that arrives 4 s later
+
+
+## Step 1: who leaves (any active member, alive or knocked out). Cancel here spends nothing.
+func _begin_summon_pick() -> void:
+	if not _can_summon():
+		return
+	_menu.close_side()
+	_summon_leaving = null
+	hud.show_summon_strip([], null)
+	hud.set_summon_picking(true)
+	_pick_target(battle.party.duplicate(), _summon_pick_entering, _cancel_summon, true,
+		"SUMMON: WHO LEAVES? [PLACEHOLDER]", true)
+	hud.set_summon_cursor(_targets[_menu.index] if _menu.index < _targets.size() else null)
+
+
+## Step 2: who enters (SUBSTITUTES of the roster). Cancel goes back to step 1; nothing is spent either way.
+func _summon_pick_entering(leaving: Combatant) -> void:
+	_summon_leaving = leaving
+	var subs: Array[Combatant] = battle.roster.members(GameState.ExpeditionRosterClass.Place.SUBSTITUTE)
+	_pick_target(subs, _confirm_summon, _begin_summon_pick, true, "SUMMON: WHO ENTERS? [PLACEHOLDER]", true)
+	hud.show_summon_strip(subs, leaving)  # D-1249 PREVIEW: substitutes as cards above the card that leaves
+	hud.set_summon_cursor(_targets[_menu.index] if _menu.index < _targets.size() else null)
+
+
+## Confirm: Battle starts the Summon (no ATB cost, cannot be cancelled afterwards, D-1254). A refusal spends nothing and goes back to the main menu
+## (the reason texts are not decided yet: only the code is printed).
+func _confirm_summon(entering: Combatant) -> void:
+	var leaving := _summon_leaving
+	_summon_leaving = null
+	hud.set_summon_picking(false)
+	if leaving == null or not battle.summon(leaving, entering):
+		print("[summon] refused: ", battle.summon_refusal(leaving, entering) if leaving != null else "no_leaving")
+
+
+func _cancel_summon() -> void:
+	_summon_leaving = null
+	hud.set_summon_picking(false)
+	_show_main()
+
+
+## Visuals of the swap, driven by the Battle signal (so any caller of Battle.summon gets them): the one that
+## left loses model and effects; the entrant gets a model and the same card, in the same slot.
+func _on_summon_changed(stage: String, data: Dictionary) -> void:
+	if stage == "started":
+		# D-1254: the one that leaves goes at once; the slot shows only the card of the entrant being generated.
+		var leaving: Combatant = null
+		var entering: Combatant = null
+		for c in models:
+			if not battle.party.has(c) and not battle.enemies.has(c) and c.name == String(data.get("leaving", "")):
+				leaving = c
+		for c in battle.arriving():
+			if c.name == String(data.get("entering", "")):
+				entering = c
+		if leaving == null or entering == null:
+			return
+		var old_model: Node3D = models.get(leaving)
+		_summon_yaw[entering] = old_model.rotation.y if old_model != null else PI
+		var floor_pt := leaving.home
+		var height := _model_height(old_model) if old_model != null else 1.2
+		_hide_unit_visual(leaving, true)
+		_summon_fx_start(entering, floor_pt, height, old_model, leaving)
+		hud.dissolving[leaving] = 0.0  # D-1254: the card of the one that leaves dissolves in light; the entrant's card comes later
+		if _fight_target == leaving:
+			_fight_target = null
+		_sync_leader()
+	elif stage == "done":
+		var slot := int(data.get("slot", -1))
+		if slot < 0 or slot >= battle.party.size():
+			return
+		var entering: Combatant = battle.party[slot]
+		_summon_card_swap(entering)
+		hud.arriving.erase(entering)
+		hud.arrival_progress.erase(entering)
+		_summon_fx_land(entering)
+		var one: Array[Combatant] = [entering]
+		var spots: Array[Vector3] = [entering.home]
+		_spawn(one, spots, float(_summon_yaw.get(entering, PI)), Color(0.3, 0.6, 0.9))
+		_summon_yaw.erase(entering)
+		hud.set_menu_owner(battle.menu_owner())
+		_sync_leader()
+
+
+## D-1254: the Summon visuals reuse the hub arrival effect (HubSummonFx, D-1237): a beam rises from the floor taking
+## the unit that leaves (0.95 s), 1 s later the circle with the pentagram traces itself (4 s), the beam falls (0.95 s)
+## and, when it touches the floor, the entrant is in `party` (Battle) and the impact flare plays (0.95 s, LAND).
+## Radius from the leaver's height like the hub (D-235). Driven by `Battle.arrival_elapsed()` every frame.
+func _summon_fx_start(entering: Combatant, floor_pt: Vector3, height: float, old_model: Node3D, leaving: Combatant) -> void:
+	var r := 2.1 * clampf(height, 1.0, 2.0)
+	var exit_fx := HubSummonFx.new()
+	var enter_fx := HubSummonFx.new()
+	for f in [exit_fx, enter_fx]:
+		add_child(f)
+		f.position = Vector3(floor_pt.x, 0.0, floor_pt.z)
+		f.build(r)
+	_summon_fx[entering] = {"exit": exit_fx, "enter": enter_fx, "model": old_model, "base_y": old_model.position.y if old_model != null else 0.0,
+		"r": r, "land_start": -1.0, "leaving": leaving, "swapped": false}
+
+
+## D-1254: once the leaving card has dissolved, the slot's card becomes the entrant's (generated later); idempotent.
+func _summon_card_swap(entering: Combatant) -> void:
+	var d: Dictionary = _summon_fx.get(entering, {})
+	if d.is_empty() or bool(d["swapped"]):
+		return
+	d["swapped"] = true
+	var leaving: Combatant = d["leaving"]
+	hud.dissolving.erase(leaving)
+	hud.arriving.append(entering)
+	hud.arrival_progress[entering] = 0.0
+	hud.swap_card(leaving, entering, battle.menu_owner())
+
+
+func _summon_fx_land(entering: Combatant) -> void:
+	var d: Dictionary = _summon_fx.get(entering, {})
+	if not d.is_empty():
+		d["land_start"] = battle.battle_time
+		d["exit"].queue_free()
+
+
+func _process(_delta: float) -> void:
+	if _summon_fx.is_empty() or battle == null:
+		return
+	for entering in _summon_fx.keys():
+		var d: Dictionary = _summon_fx[entering]
+		var enter_fx: HubSummonFx = d["enter"]
+		var r: float = d["r"]
+		if float(d["land_start"]) >= 0.0:  # impact flare after the entrant is in play
+			var p := (battle.battle_time - float(d["land_start"])) / Battle.SUMMON_FALL_SECONDS
+			if p >= 1.0:
+				enter_fx.queue_free()
+				_summon_fx.erase(entering)
+			else:
+				enter_fx.pose("LAND", p, battle.battle_time, 0.0)
+			continue
+		var t := battle.arrival_elapsed(entering)
+		if t < 0.0:
+			continue
+		# D-1254: the card is generated along the pentagram (nothing of it before the pentagram starts).
+		hud.arrival_progress[entering] = clampf((t - Battle.SUMMON_EXIT_SECONDS - Battle.SUMMON_GAP_SECONDS) / SUMMON_CARD_GEN_SECONDS, 0.0, 1.0)
+		var exit_fx: HubSummonFx = d["exit"]
+		if t < Battle.SUMMON_EXIT_SECONDS:
+			hud.dissolving[d["leaving"]] = t / Battle.SUMMON_EXIT_SECONDS
+		else:
+			_summon_card_swap(entering)
+		var pent_start := Battle.SUMMON_EXIT_SECONDS + Battle.SUMMON_GAP_SECONDS
+		var model: Variant = d["model"]  # may be freed already (Variant avoids the typed-assign error)
+		if t < Battle.SUMMON_EXIT_SECONDS:
+			var p := t / Battle.SUMMON_EXIT_SECONDS
+			exit_fx.pose("EXIT", p, t, 0.0)
+			if is_instance_valid(model):
+				var q := clampf((p - 0.3) / 0.7, 0.0, 1.0)
+				model.position.y = float(d["base_y"]) + q * q * r * 5.0  # carried up by the beam
+		else:
+			exit_fx.pose("", 1.0, t, 0.0)
+			if is_instance_valid(model):
+				model.visible = false
+		if t < pent_start:
+			enter_fx.pose("", 0.0, t, 0.0)
+		elif t < pent_start + Battle.SUMMON_PENTAGRAM_SECONDS:
+			enter_fx.pose("REVEAL", (t - pent_start) / Battle.SUMMON_PENTAGRAM_SECONDS, t, 0.0)
+		else:
+			var p := clampf((t - pent_start - Battle.SUMMON_PENTAGRAM_SECONDS) / Battle.SUMMON_FALL_SECONDS, 0.0, 1.0)
+			enter_fx.pose("FALL", p, t, lerpf(r * 10.0, 0.0, p * p))
+
+
+## D-1229: any living enemy may be picked (provisional). The picker is always shown, even with a
+## single enemy, because the 5 ATB are charged when the target is confirmed and cancelling here
+## must cost nothing. The battle keeps running while the picker is open.
+func _begin_employ_pick() -> void:
+	if not _can_employ():
+		return
+	_menu.close_side()
+	battle.note_employ_pick(leader, "picking")
+	_pick_target(battle.opponents_of(leader), _confirm_employ, _cancel_employ, true)
+
+
+## D-1239 (recommendation adopted by the creator): the recruit leaves the field, so its model, its card and
+## its effects go too, the same way the debug test enemies are removed. It returns only through Summon (Phase 8).
+func _remove_recruit_visual(c: Combatant) -> void:
+	_hide_unit_visual(c)
+	hud.remove_enemy(c)
+
+
+## Model, effects and registration of a unit that left the field (Employ recruit, Summon leaver).
+func _hide_unit_visual(c: Combatant, keep_visible := false) -> void:
+	var m: Node3D = models.get(c)
+	models.erase(c)
+	fx.unregister(c)
+	if smt_vfx != null:
+		smt_vfx.unregister_model(c)
+	if m != null:
+		m.visible = keep_visible  # Hidden now (or kept for the Summon exit beam); freed a little later so a hit-stop or tween already running on it ends cleanly.
+		get_tree().create_timer(3.0, true, false, true).timeout.connect(func() -> void:
+			if is_instance_valid(m):
+				m.queue_free())
+
+
+func _cancel_employ() -> void:
+	battle.note_employ_pick(leader, "cancelled")
+	_show_main()
+
+
+## The target was confirmed: Battle charges the 5 ATB and freezes; the placeholder marker opens.
+## A refusal (the ATB or the target changed while picking) spends nothing and goes back to the menu.
+func _confirm_employ(target: Combatant) -> void:
+	if not battle.begin_employ(leader, target):
+		return
+	_pick_seq += 1  # Keeps _on_chosen from reopening the main menu over the attempt.
+	_set_state(S.EMPLOY)
+	_menu.hide()
+	_employ_marker.open(leader.name, target.name)
+
+
+## Phase 5: the result is forced (marker keys or debug); the dialogue, the minigame and the real
+## roll are Phase 6. Either way the battle resumes at the main menu.
+func _finish_employ(success: bool) -> void:
+	if state != S.EMPLOY:
+		return
+	var target: Combatant = battle._employ.get("target")
+	_employ_marker.close()
+	battle.finish_employ(success, true)
+	_after_employ(target, success)
+
+
+## D-1240: the real Employ chance decides (Battle rolls it); the rest is the same as a forced result.
+func _roll_employ() -> void:
+	if state != S.EMPLOY:
+		return
+	var target: Combatant = battle._employ.get("target")
+	_employ_marker.close()
+	var r := battle.resolve_employ()
+	_after_employ(target, bool(r.get("success", false)))
+
+
+func _after_employ(target: Combatant, success: bool) -> void:
+	if success:
+		if _fight_target == target:
+			_fight_target = null  # It left the enemy line: the Fight list must not keep aiming at it.
+		_remove_recruit_visual(target)
+	_show_main()
+
+
 func _update_main_enabled() -> void:
+	if _menu.side_open:
+		_menu.set_side_enabled(0, _can_employ())
+		_menu.set_side_enabled(1, _can_summon())
 	var min_cost := Battle.min_skill_cost(leader)
 	var guarding := leader.is_guarding()  # D-1146: Guard cannot hold a queue slot either.
-	var waits := not battle.can_start_windup_now(leader, Skill.basic()) and not guarding  # D-1159: an attack may start during the pause
+	var waits := not battle.can_start_windup_now(leader, Skill.basic_for(leader)) and not guarding  # D-1159: an attack may start during the pause
 	var can_fight := not leader.is_stunned() and not guarding and (waits or leader.can_pay(min_cost))
 	_menu.set_enabled(0, can_fight)
 	var fight_detail := "queue" if can_fight and waits else (("FREE" if leader.burst > 0 else "%d ATB" % int(min_cost)) if can_fight else ("GUARD" if guarding else ("stunned" if leader.is_stunned() else "need ATB")))
@@ -1023,8 +1350,7 @@ func _leave_fight_camera() -> void:
 
 func _build_fight_skills() -> void:
 	_fight_skills.clear()
-	_fight_skills.append(Skill.basic())
-	_fight_skills.append_array(leader.skills)
+	_fight_skills.append_array(Skill.combatant_moves(leader))
 
 
 ## The opponent a move goes to when none was picked: the engaged one, the last target
@@ -1289,6 +1615,10 @@ func _on_menu_side(direction: int) -> void:
 			_guard_mode = direction > 0
 			_menu.set_entries(_main_entries(), true)
 			_refresh()
+		elif _menu.index == MAIN_TACTICS and direction > 0:
+			# D-1229/D-1236: right on TACTICS opens the side fan with EMPLOY and SUMMON. Opening,
+			# moving and closing it cost nothing and do not pause the battle.
+			_menu.open_side(_command_entries())
 		return
 	if state == S.FIGHT:
 		# Left/right changes the target without leaving the move list.
@@ -1348,20 +1678,22 @@ func _commit_picked_move(skill: Skill, target: Combatant, target2: Combatant) ->
 		_leave_fight_camera()
 
 
-func _pick_target(candidates: Array[Combatant], on_target: Callable, back: Callable) -> void:
+## `always_ask` (D-1229, Employ): every living candidate is offered and the picker opens even for a
+## single one, so there is always a confirmation to cancel.
+func _pick_target(candidates: Array[Combatant], on_target: Callable, back: Callable, always_ask := false, title := "CHOOSE TARGET", include_down := false) -> void:
 	_pick_seq += 1
-	if leader.engaged_with != null and leader.engaged_with.is_alive() and candidates == battle.enemies:
+	if not always_ask and leader.engaged_with != null and leader.engaged_with.is_alive() and candidates == battle.enemies:
 		var only: Array[Combatant] = [leader.engaged_with]  # Engaged: it can only act on that opponent.
 		candidates = only
-	var alive := candidates.filter(func(c: Combatant) -> bool: return c.is_alive())
-	if alive.size() == 1 and alive[0] != leader and not alive[0].is_player:
+	var alive := candidates.filter(func(c: Combatant) -> bool: return include_down or c.is_alive())
+	if not always_ask and alive.size() == 1 and alive[0] != leader and not alive[0].is_player:
 		var seq := _pick_seq
 		on_target.call(alive[0])  # Only one possible enemy: no need to pick.
 		if battle.running and seq == _pick_seq:  # D-1200: a callback that opened the next picker keeps it.
 			_show_main()
 		return
 	_set_state(S.TARGET)
-	hud.set_menu_style(FanMenu.Style.DRAWER, "CHOOSE TARGET")
+	hud.set_menu_style(FanMenu.Style.DRAWER, title)
 	_targets.assign(alive)
 	_on_target = on_target
 	_back = back
@@ -1377,6 +1709,8 @@ func _pick_target(candidates: Array[Combatant], on_target: Callable, back: Calla
 ## Compact target line for the picker: HP plus the statuses that change the choice.
 func _target_brief(t: Combatant) -> String:
 	var bits: Array[String] = ["HP %d/%d" % [t.hp, t.max_hp]]
+	if not t.is_alive():
+		bits.append("KO")
 	if t.is_shielded():
 		bits.append("S%d" % t.shield_hp)
 	if t.is_guarding():
@@ -1473,5 +1807,8 @@ func _on_moved(i: int) -> void:
 		_update_items_header()
 	if state == S.TARGET and i < _targets.size():
 		var target := _targets[i]
-		hud.set_target(target)
-		director.tactical((models[target] as Node3D).global_position)
+		if hud.summon_cursor != null or hud._summon_hide_menu:
+			hud.set_summon_cursor(target)  # D-1249 PREVIEW
+		if models.has(target):  # D-1244: a Summon substitute has no model on the field yet
+			hud.set_target(target)
+			director.tactical((models[target] as Node3D).global_position)

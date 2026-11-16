@@ -82,8 +82,12 @@ Eventos de combate:
 | `buff_changed` | buff/debuff | ator, atributo, valor |
 | `reward_spawned/landed` | ATB/Burst/Badge | dono, tipo, slot |
 | `experience_gained` / `level_up` | XP / nível | ator, valor/nível/pontos |
+| `martial_hand` | **D-1218:** um por quadro enquanto existe a mão holograma do Karate Chop | `move`, `attacker`, `target`, `pos` [x,y,z], `rot` (euler [x,y,z]), `scale`, `fade`, `dissolve`, `form`, `speed` (m/s da posição), `stage` (`windup`/`run`/`jump`/`cut`/`post`/`fade`/`cancel`), `contact_in` (s até o contato; negativo depois) |
+| `vfx_frame` | **D-1220/D-1222:** um por quadro por nó ativo de `BattleFx`/`SmtVfx` na `vfx_room` (opt-in `--vfx-trace` / `--stdout-trace`) | `node`, `kind`, `stage`, `pos`, `rot` (graus), `vel`, `speed`, `ang_speed` (graus/s), `aabb_size`, `progress` (`0..1` no eixo atacante→alvo), `lateral_offset`, `height_y`, `dist_to_target`, `screen_px` `[w,h]`, `alpha`, `scale`, `visible`, `contact_delta_s` |
 | `queue` | a vaga D-161 mudou | `actor`, `skill`, `target`, `started`, `lost`, `previous`, `current`, `status_pause`, `status_move`, `attacking`, `guarding`, `stunned`, `alive`, `atb`, `mp` |
 | `status_pause_started/ended` | pausa D-031/D-1150 | `inc` + `queued` de todos |
+| `employ` | **D-1229 (Fase 5):** a tentativa de Employ mudou de etapa | `stage`, `actor`, `target`, `atb`, `extra`, `blocks`, `burst` + campos da etapa (ver "Employ" abaixo) |
+| `summon` | **D-1232/D-1244 (Fase 8):** a troca por Summon foi recusada (`refused`) ou feita (`done`) | `stage`, `payer`, `leaving`, `entering`, `slot`, `cost`, `blocks_before`, `blocks_after`, `burst_after`, `cancelled`, `queue_cleared` + `reason` (só em `refused`) |
 | `battle_ended` | fim | `player_won` |
 | `ANOMALY` | invariante quebrada | `kind`, `who`, `detail` |
 
@@ -111,6 +115,41 @@ O `info` do evento `hit` carrega:
 
 Use esses campos para provar RESIST no `--stdout-trace`; não crie um evento novo para isso.
 
+### Employ (D-1229, Fase 5: só o fluxo mecânico)
+
+Um evento `employ` por mudança de etapa. Campos comuns: `stage`, `actor`, `target` (vazio quando ainda não há alvo), `atb`, `extra`, `blocks` (`atb + extra`) e `burst` do ator **depois** da etapa.
+
+| `stage` | Quando | Campos extras |
+|---|---|---|
+| `picking` | o seletor de alvo abriu (nada foi pago) | — |
+| `cancelled` | o seletor fechou sem confirmar (nada foi pago) | — |
+| `refused` | `Battle.begin_employ()` recusou; nada foi pago | `reason`: `not_running`, `busy` (já há tentativa), `actor_down`, `blocked` (fracasso anterior nesta batalha), `need_atb`, `no_target`, `last_enemy` (só resta um inimigo vivo: no jogo real não pode ser recrutado), `target_invalid` |
+| `started` | alvo confirmado: 5 ATB pagos com `spend()` (Burst nunca paga) e a batalha congela **inteira**, inclusive wind-ups, ataques em voo e a fila (D-1239 revista: nada é cancelado aqui) | `cost`, `blocks_before`, `burst_before` |
+| `ended` | a tentativa terminou e a batalha retoma de onde parou. **D-1239:** só no sucesso são cancelados, com o custo devolvido, os Moves que envolvem o recrutado (atacante ou alvo) e as filas dele ou apontadas a ele; o resto retoma | `result` (`success`/`failure`), `cancelled` (lista `{actor, move, phase, atb, mp, mp_timer, burst}`: o que voltou; `mp_timer` = timer de regeneração de MP restaurado), `queue_cleared` (lista `{actor, move}`), `forced` (`true` = resultado forçado por debug; na Fase 5 é sempre), `blocked` (Employ bloqueado no resto da batalha), `enemies_left` (inimigos vivos em campo); no sucesso também `uid`, `place` (`SUBSTITUTE`/`STATIONED`) e `in_field` (sempre `false`: só entra por Convocação) |
+
+- `reason` são códigos internos de telemetria, **não** textos de menu (os textos de motivo continuam pendentes).
+- Linha por quadro: campo de topo `employ` (`true` enquanto a tentativa existe). Nesse intervalo `Battle._process` não avança nada e `use_skill`, `request_skill`, `use_item`, `use_guard`, `step` e `try_evade` devolvem `false`.
+- **D-1240 (Fase 6):** no `ended` por rolagem real (`Battle.resolve_employ()`, `forced: false`) entram `chance` (`A`, `E`, `F`, `N`, `R`, `B`, `raw`, `P`, `members`, `level_traveler`, `level_enemy`, `respect`, `rolled`, `roll`, `success`), `rolled` e `roll` (`-1` quando P é 0 ou 100 e nada foi sorteado). Participantes: vivos do time do ator; STR/MAG efetivos x multiplicador do estágio de ATK; respeito 50 e bônus de ritmo 0 por enquanto. Sorteio: `randf() * 100`, sucesso se `roll < P`; `--seed` o controla.
+- **D-1242 (Fase 7, BOOST):** no fracasso o alvo recebe o BOOST: o `ended` traz `boost` (`target`, `seconds`) e o evento `boost` (`actor`, `active`, `left`, `burst`, `blocks`, `str`, `mag`, `vit`, `wis`, `agi`, `luk`) sai ao começar (`active: true`) e ao acabar (`active: false`). +1 nos 6 atributos (WIS = SPI), +1 Burst (a invariante `BURST_RANGE` aceita 6 enquanto o BOOST dura), +2 ATB uma vez; 10 s contados só enquanto a batalha corre (pausa de status e congelamento do Employ param a conta); no fim os atributos voltam e o Burst acima de 5 volta a 5. Cenário `--employ=boost`.
+- Sala de debug: `--employ=<modo>` imprime `[vfx_room] employ mode=... result=ok|fail ...` e `[vfx_room] EMPLOY_JSON: {...}` (ver "Employ no debug" no fim deste arquivo).
+
+### Summon (D-1232/D-1244/D-1254, Fase 8)
+
+**D-1254:** sem custo de ATB; sem cancelar; a batalha não congela. Quem sai vai na hora; a vaga fica **vazia** durante `arrival_seconds` (`Battle.SUMMON_ARRIVAL_SECONDS` = 6,9 = saída 0,95 + intervalo 1 + pentagrama 4 + queda 0,95) e só então quem entra chega em `party`. Enquanto chega (`Battle.arriving()`), não está em `party`: ninguém o alveja, não ganha ATB, não age; uma equipe sem ninguém vivo mas com alguém chegando não perde a batalha.
+
+Um evento `summon` por etapa. `leaving` e `entering` são nomes; `slot` é o índice em `party` (o mesmo de quem saiu; `-1` na recusa); `arrival_seconds` é 6,9; `cancelled` e `queue_cleared` têm o mesmo formato do `employ`.
+
+| `stage` | Quando | Campos extras |
+|---|---|---|
+| `refused` | `Battle.summon()` recusou; nada foi alterado | `reason`: `not_running`, `busy` (tentativa de Employ em curso), `no_roster`, `no_uid` (quem sai ou quem entra sem `uid`), `leaving_invalid` (não está em `party`), `entering_invalid` (não é `SUBSTITUTE` no roster, ou já está chegando) |
+| `started` | quem sai foi embora; o pentagrama começa (a vaga fica vazia) | `slot`, `cancelled`, `queue_cleared` |
+| `done` | passaram os 6,9 s (o raio tocou o chão): quem entra está em `party` com `atb = 0` | `slot` |
+
+- Dono do menu: `menu_owner()` (o protagonista vivo em `party`, senão o 1º ativo vivo); com a vaga vazia no pentagrama, vale quem restar; ao chegar, o 1º ativo vivo pode voltar a ser quem entrou na vaga 0 (D-1244). Nada aqui lê `is_player` (D-235).
+- Quem sai: perde todos os efeitos temporários (buffs, status, Guard, Burn, ARMOR, escudo, BOOST) e mantém HP e MP; seus Moves são cancelados com o custo devolvido, igual ao Employ (D-1239), e as filas dele e apontadas a ele são limpas. Quem entra: começa limpo, com `atb = 0`, `extra = 0` e sem efeitos; HP, MP e Burst ficam como estavam.
+- O entrante assume o mesmo índice e a mesma colocação (`pos`, `home`, `rest`, `has_rest`, `yaw`, `pos_step`, `step_from`, `tactic_pos`); ele e quem estava engajado com quem saiu ficam com `engaged_with = null`.
+- Roster: `swap(uid_saindo, uid_entrando)` (uids não mudam), `note_leave(uid_saindo, t)` e `note_enter(uid_entrando, t)` com `t` = relógio da batalha (`Battle.battle_time`), para a partilha de XP da D-1234.
+
 ### `queue`: começou vs. foi perdido
 
 - `started: true` → a vaga esvaziou porque **o Move começou** (`current` bate com o Move anterior).
@@ -122,7 +161,7 @@ Use esses campos para provar RESIST no `--stdout-trace`; não crie um evento nov
 
 Campos de topo:
 
-`t`, `f`, `dt`, `ts` (`Engine.time_scale`), `paused`, `freeze_left`, `status_pause`, `status_move`, `c`.
+`t`, `f`, `dt`, `ts` (`Engine.time_scale`), `paused`, `freeze_left`, `status_pause`, `status_move`, `employ` (D-1229: tentativa de Employ em curso), `c`.
 
 Cada item de `c`:
 
@@ -190,3 +229,46 @@ Além dos campos antigos (dano, HP, fases, leaks, VFX), a sala inclui:
 - **Vários instantes numa folha (debug, ~10 s por foto):** `python tools/room_seq.py <cenario> --phase <fase> --delays 0,0.3,0.6,0.9 --out <saida.png> [--cols N] [--crop x0,y0,x1,y1] [--scale S] [-- flags da sala]` roda até 3 Godot em paralelo (~10 s cada) e monta uma folha de contato rotulada de vários instantes do cenário.
 - Cada atraso de `--delays` é escrito em amarelo no canto de cada tile; os flags da sala vão **depois do `--`**, como no `room_shot.sh`.
 - Execução que falha (exit diferente de 0, timeout de 100 s ou png ausente) não derruba a folha: vira um tile vermelho `FAIL t=...`, e o motivo com as últimas linhas do stderr é impresso no fim (`FAILED RUNS: n`).
+
+## Respeito do grupo de Travelers: `RESPECT_JSON` (D-1231, D-1235)
+
+Fora do `BattleTrace` (o Respeito muda fora da batalha). Com `--stdout-trace`, cada chamada de `GameState.apply_respect()` imprime uma linha:
+
+```
+RESPECT_JSON: {"event":"EXPEDITION_DEFEAT","source":"expedition_defeat","feat_id":"","delta":-2,"value":48,"challenging_left":3}
+```
+
+| Campo | Significado |
+|---|---|
+| `event` | nome em `RespectState.Event` |
+| `source` | de onde veio: `expedition_defeat` (`GameState.end_battle(false)` em expedição saída do Hub), `retreat` (`return_to_hub_from_expedition`) ou o nome de um teste |
+| `feat_id` | identificador do feito (chefe, desafio); vazio quando não se aplica |
+| `delta` | variação realmente aplicada, depois das proteções e do limite 0–100 |
+| `value` | Respeito depois do evento |
+| `challenging_left` | recompensas de encontro desafiador que restam na expedição (máx. 3) |
+
+Os últimos 32 eventos ficam em `GameState.respect_log`. **Fontes ligadas hoje:** início de expedição (zera o contador), derrota definitiva (−2) e retirada (0). **Não ligadas** (sem fonte aprovada): encontro desafiador, chefe importante, desafio tático, corrida de rivais.
+
+Teste: `--script res://tests/combat/test_respect_expedition_cycle.gd` (menos de 10 s).
+
+## Employ no debug: `--employ=<modo>` (D-1229, Fase 5; D-1204)
+
+Atalho da sala (`scripts/debug/vfx_room.gd`) que percorre o caminho real do menu (leque lateral de TACTICS → EMPLOY → seletor de alvo → tentativa) e imprime `[vfx_room] employ mode=<modo> view=<normal|mirror> result=<ok|fail>` e `[vfx_room] EMPLOY_JSON: {...}`. Menos de 10 s; `--mirror` roda a vista espelhada; com `--stdout-trace` saem também os eventos `employ`. Sai com código 1 quando `result=fail`.
+
+| Modo | O que prova |
+|---|---|
+| `cancel` | abrir o seletor e cancelar não gasta ATB nem Burst (`stages = ["picking","cancelled"]`) |
+| `noatb` | com 4 ATB a entrada EMPLOY fica desabilitada, o seletor não abre e `begin_employ` recusa com `need_atb` |
+| `fail` | confirmar gasta exatamente 5 ATB e 0 Burst; batalha congelada (`frozen`, Guard/Evade/Move recusados, `step_ticks(30)` sem efeito); fracasso forçado retoma, bloqueia novo Employ (`blocked`) e deixa o SUMMON disponível |
+| `fail:flight` | o mesmo, com um ataque inimigo em voo: ele fica parado durante a tentativa e continua depois |
+| `success` | sucesso forçado: o inimigo sai de campo sem K.O., entra no elenco uma única vez (`uid`, `recruited`, `re_uid`), não entra em campo, sem `battle_ended` |
+| `status` | **D-1239:** Armored Bulk do recrutado (pausa de status aberta) é cancelado no sucesso: `cancelled` com 1 entrada, `pause_started: 1`, `pause_ended: 1`, `paused_after: false` |
+| `returning` | **D-1239:** o recrutado já acertou e só falta o retorno: ao recrutá-lo, `moves_of_recruit_left: 0` (o Move some com ele) e a batalha segue (`running: true`) |
+| `moves[:flight][:burst][:mp][:win]` | **D-1239 (revista):** três atacantes com um Move em wind-up (ou em voo com `:flight`) e outro na fila: o recrutado (alvo do Employ), um inimigo sem relação e o líder (que ataca o recrutado). Fracasso (padrão): `cancelled` vazio, `live_after = live_before`, fila intacta, `resumed_progress: true`, ATB só perde os 5 do líder. `:win`: só os 2 Moves do recrutado e do líder contra ele são cancelados (`live_after = live_before − 2`), `queue_left` 1 (a do inimigo sem relação), custos devolvidos (`refund_*`; ATB final = antes + reembolso − 5) e o inimigo sem relação retoma. `:burst` prova o Burst devolvido; `:mp` (Bubble Shot) prova MP e timer de regeneração devolvidos |
+| `lastblock` | no jogo real o último inimigo vivo não pode ser recrutado: entrada desabilitada, `refusal`/`reason` = `last_enemy`, nada é gasto |
+| `last` | recruta todos os inimigos: só observa e relata `running`, `ended_emitted`, `player_won` (vitória/XP/loot desse caso não estão decididos) |
+
+```powershell
+.\Godot_v4.7.2-stable_win64_console.exe --headless --path . res://scenes/debug/vfx_room.tscn -- --employ=fail --stdout-trace --quit
+.\Godot_v4.7.2-stable_win64_console.exe --headless --path . res://scenes/debug/vfx_room.tscn -- --employ=success --mirror --quit
+```
