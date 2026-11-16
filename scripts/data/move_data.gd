@@ -42,6 +42,8 @@ enum TargetSide { ANY, ALLY, ENEMY }
 @export var stand_gap: float = -1.0
 @export var run_base: float = -1.0
 @export var run_fixed: float = -1.0
+## D-1208: seconds added to the final melee run (after AGI, steps and travel_extra); negative = faster than a plain Tackle. 0 = off.
+@export var run_offset: float = 0.0
 @export var hit_offset: float = 0.0
 @export var strike_time: float = -1.0
 @export var hold: float = -1.0

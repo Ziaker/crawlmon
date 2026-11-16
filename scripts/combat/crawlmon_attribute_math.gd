@@ -203,7 +203,8 @@ static func get_enemy_xp_drop(base_exp: int, level: int) -> int:
 	return maxi(1, base_exp) * maxi(1, level)
 
 
-## Retorna os pontos de atributo distribuidos ao alcancar determinado nivel (D-394).
+## Retorna os pontos de atributo distribuidos ao alcancar determinado nivel (D-1225).
+## Marcos a cada 5 niveis (5, 10, 15, 20...) concedem 3 pontos; demais niveis concedem 1.
 static func get_stat_points_for_level(new_level: int) -> int:
-	return 3 if new_level % 10 == 0 else 1
+	return 3 if new_level % 5 == 0 else 1
 

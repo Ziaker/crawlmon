@@ -40,6 +40,7 @@ var _enter_i := 0
 var _last_enter := 0.0
 
 var _stage: Control
+var _bgc: Control = null
 var _overlay: Control
 var _fx: Control
 var _hot: Array = []  ## {b: PcBlock, r: Rect2 (local), tip: String}
@@ -75,6 +76,7 @@ func open(total_xp: int, summaries: Array, steps: Array) -> void:
 	bgc.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bgc.draw.connect(_draw_bg.bind(bgc))
 	add_child(bgc)
+	_bgc = bgc
 	_stage = Control.new()
 	_stage.size = size
 	_stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -103,8 +105,18 @@ func _draw_bg(c: Control) -> void:
 	while x < 1280.0:
 		c.draw_rect(Rect2(x, 0, 50, 720), Color(40 / 255.0, 80 / 255.0, 110 / 255.0, 0.08 * 0.7))
 		x += 170.0
+	# D-1224: faixas diagonais sutis em movimento contínuo.
+	var drift := fmod(PcBlock.now() * 24.0, 360.0)
+	var d := -360.0 + drift
+	while d < 1640.0:
+		c.draw_colored_polygon(PackedVector2Array([
+			Vector2(d, 0), Vector2(d + 44.0, 0),
+			Vector2(d - 220.0 + 44.0, 720), Vector2(d - 220.0, 720)
+		]), Color(99 / 255.0, 217 / 255.0, 236 / 255.0, 0.032))
+		d += 360.0
 
 
+var _lv_gen := 0
 var _bg_texture: Texture2D = null
 
 
@@ -354,9 +366,9 @@ func _art(c: Combatant) -> Texture2D:
 
 
 ## Retrato (portrait() do protótipo): o recorte cobre a caixa, centrado na horizontal, topo alinhado.
-func _portrait(b: PcBlock, c: Combatant, r: Rect2, outline: float, rot_deg := 0.0) -> void:
-	if rot_deg != 0.0:
-		b.draw_set_transform(r.get_center(), deg_to_rad(rot_deg), Vector2.ONE)
+func _portrait(b: PcBlock, c: Combatant, r: Rect2, outline: float, rot_deg := 0.0, scale_f := 1.0) -> void:
+	if rot_deg != 0.0 or scale_f != 1.0:
+		b.draw_set_transform(r.get_center(), deg_to_rad(rot_deg), Vector2(scale_f, scale_f))
 		r = Rect2(-r.size * 0.5, r.size)
 	b.draw_rect(r.grow(outline), PcDraw.INK2)
 	b.draw_rect(r, Color("5c3c1e"))
@@ -541,55 +553,129 @@ func _queue_label(s: Dictionary) -> Array:
 # --- Etapa LV ---------------------------------------------------------------------------
 
 func _build_lv(i: int) -> void:
+	_lv_gen += 1
+	var gen := _lv_gen
 	var sm: Dictionary = _sums[i]
 	var c: Combatant = sm["combatant"]
 	var hero: bool = sm.get("is_leader", false)
 	var pts := int(c.distributable_points) if hero else PostCombatFlow.ally_points_pending(sm)
+	var target_alloc: Dictionary = {} if hero else (sm.get("auto_alloc", {}) as Dictionary).duplicate()
+	_ui["lv_gen"] = gen
 	_ui["m"] = i
 	_ui["hero"] = hero
 	_ui["alloc"] = {}
+	_ui["prev_alloc"] = {}
+	_ui["row_hit_t"] = {}
+	_ui["alloc_target"] = target_alloc
 	_ui["left"] = pts if hero else 0
 	_ui["pts"] = pts
 	_ui["sel"] = 0 if hero else 6
-	var lvc := _blk(_stage, Rect2(52, 118, 500, 500), -2.5, 26.0, PcDraw.PAPER if hero else Color("e6e3d2"), Vector2(7, 7), _paint_lvcard.bind(i))
+	var lvc := _blk(_stage, Rect2(52, 118, 500, 500), -2.5, 26.0, PcDraw.PAPER if hero else Color("e6e3d2"), Vector2(7, 7), _paint_lvcard.bind(i), false)
+	lvc.t0 = _step_t0
 	lvc.live = true
+	lvc.idle_amp = 2.2
+	lvc.idle_phase = 0.0
+	lvc.open_from_rect(Rect2(44, 34, 196, 216), 0.14, 0.28)
 	var hp_g := int(sm.get("new_max_hp", c.max_hp)) - int(sm.get("old_max_hp", c.max_hp))
 	var mp_g := int(sm.get("new_max_mp", c.max_mp)) - int(sm.get("old_max_mp", c.max_mp))
 	var sg := [["HP MÁX", "HP", int(sm.get("old_max_hp", c.max_hp)), hp_g], ["MP MÁX", "MP", int(sm.get("old_max_mp", c.max_mp)), mp_g]]
 	for j in 2:
 		var row: Array = sg[j]
+		var base_v := int(row[2])
+		var gain_v := int(row[3])
 		var b := PcBlock.new().setup(Rect2(44, 282 + j * 56, 412, 44), TILT_SG[j], 12.0, PcDraw.INK2)
+		b.t0 = _step_t0 + 0.26 + float(j) * 0.06
+		b.live = true
 		b.painter = func(bb: PcBlock) -> void:
 			var sc: Color = PcDraw.STAT_C[row[1]]
-			PcDraw.fill_para(bb, Rect2(0, 0, 22, 44), 12.0, sc)
-			PcDraw.line(bb, PcDraw.impact(1), row[0], 26, 0, 20, sc, 200, 0, 44)
-			var af := PcDraw.arial()
-			var gtxt := "+%d" % row[3]
-			var gw := PcDraw.width(af, gtxt, 17)
-			PcDraw.line(bb, af, gtxt, bb.size.x - 26, 0, 17, PcDraw.LIME, 80, 2, 44)
-			PcDraw.line(bb, af, str(row[2]), bb.size.x - 26 - gw - 8, 0, 17, Color("dbe4ee"), 80, 2, 44)
+			var w_tab := 28.0 if gain_v > 0 else 22.0
+			PcDraw.fill_para(bb, Rect2(0, 0, w_tab, 44), 12.0, sc)
+			PcDraw.line(bb, PcDraw.impact(1), row[0], w_tab + 8.0, 0, 20, sc, 130, 0, 44)
+			var roll_p := clampf((bb.age() - 0.16) / 0.34, 0.0, 1.0) if TEXT_FX else 1.0
+			var badge_p := clampf((bb.age() - 0.12) / 0.28, 0.0, 1.0) if TEXT_FX else 1.0
+			var badge_e := PcDraw.bezier(0.18, 1.25, 0.32, 1.0, badge_p)
+			var pw := 68.0 * clampf(badge_e, 0.0, 1.08)
+			var right_edge := bb.size.x - 24.0
+			if pw >= 8.0:
+				var pill_col := PcDraw.LIME if gain_v > 0 else Color("1e293b")
+				PcDraw.fill_para(bb, Rect2(right_edge - pw, 7.0, pw, 30.0), 8.0, pill_col)
+			if badge_p >= 0.35:
+				var gcol := PcDraw.INK if gain_v > 0 else Color("64748b")
+				PcDraw.line(bb, PcDraw.impact(1), "+%d" % gain_v, right_edge - 34.0, 7.0, 18, gcol, 56.0, 1, 30.0)
+			PcDraw.odometer_number(bb, PcDraw.impact(1), str(base_v), str(base_v + gain_v), right_edge - 82.0, 0.0, 24, Color("f1f5f9"), roll_p, 2, 44.0)
 		lvc.add_child(b)
+		b.extrude_bar(0.26 + float(j) * 0.06, 0.30)
 	var stamp := PcBlock.new().setup(Rect2(290, -22, 186, 42), -5.0, 12.0, PcDraw.CORAL)
-	stamp.t0 = lvc.t0
+	stamp.t0 = _step_t0 + 0.28
 	stamp.live = true
+	stamp.anim_rot = deg_to_rad(-14.0)
+	stamp.apply()
 	stamp.painter = func(b: PcBlock) -> void:
-		PcDraw.letters(b, PcDraw.impact(1), [["LEVEL UP!", Color.WHITE]], 93, 0, 26, 170, (b.now() - lvc.t0 - 0.14) if TEXT_FX else 999.0, 42, 1)
+		PcDraw.letters(b, PcDraw.impact(1), [["LEVEL UP!", Color.WHITE]], 93, 0, 26, 170, ((b.now() - stamp.t0) * 1.6 + 0.14) if TEXT_FX else 999.0, 42, 1)
 	lvc.add_child(stamp)
-	var attr := _blk(_stage, Rect2(604, 128, 620, 482), 1.5, 26.0, PcDraw.NAVY, Vector2(7, 7), _paint_attr)
+	stamp.extrude_bar(0.28, 0.24)
+	var stw_s := stamp.create_tween()
+	stw_s.tween_interval(0.28)
+	stw_s.tween_method(func(q: float) -> void:
+		if not is_instance_valid(stamp):
+			return
+		var e := PcDraw.bezier(0.16, 1.22, 0.30, 1.0, q)
+		stamp.anim_rot = deg_to_rad(lerpf(-14.0, 0.0, e))
+		stamp.apply(), 0.0, 1.0, 0.22)
+	var attr := _blk(_stage, Rect2(604, 128, 620, 482), 1.5, 26.0, PcDraw.NAVY, Vector2(7, 7), _paint_attr, false)
+	attr.t0 = _step_t0 + 0.05
 	attr.live = true
+	attr.idle_amp = 2.2
+	attr.idle_phase = 2.1
+	attr.unfold_card(PcDraw.AQUA, Vector2(70.0, -18.0), 5.5, 0.05, 0.46)
+	_ui["attr"] = attr
 	_ui["rows"] = []
 	for r in 6:
 		var rb := PcBlock.new().setup(Rect2(44, 84 + r * 52, 532, 46), TILT_ROWS[r], 12.0, PcDraw.NAVY2)
+		rb.t0 = _step_t0 + 0.14 + float(r) * 0.045
+		rb.live = true
 		rb.painter = _paint_row.bind(r)
 		attr.add_child(rb)
-		_enter_block(rb, true)
+		rb.extrude_bar(0.14 + float(r) * 0.045, 0.34)
 		_ui["rows"].append(rb)
 	var cb := PcBlock.new().setup(Rect2(44, 404, 532, 54), -1.0, 16.0, Color("253446"), Vector2(7, 7))
+	cb.t0 = _step_t0 + 0.40
 	cb.painter = _paint_cbtn
 	attr.add_child(cb)
-	_enter_block(cb, true)
+	cb.extrude_bar(0.40, 0.34)
 	_ui["cbtn"] = cb
+	_enter_i = 2
 	_strip()
+	if not hero:
+		var hit_list: Array = []
+		for r in 6:
+			var st_name: String = STATS[r][0]
+			var cnt := int(target_alloc.get(st_name, 0))
+			for _k in cnt:
+				hit_list.append([r, st_name])
+		_ui["pending_hits"] = hit_list
+		if not hit_list.is_empty():
+			var atw := attr.create_tween()
+			for hi in hit_list.size():
+				atw.tween_interval(0.52 if hi == 0 else 0.24)
+				atw.tween_callback(func() -> void:
+					if int(_ui.get("lv_gen", -1)) != gen or not is_instance_valid(attr):
+						return
+					var item: Array = hit_list[hi]
+					var r_idx: int = item[0]
+					var st_key: String = item[1]
+					var cur_alloc: Dictionary = _ui.get("alloc", {})
+					var tgt := int((_ui.get("alloc_target", {}) as Dictionary).get(st_key, 0))
+					var cur_a := int(cur_alloc.get(st_key, 0))
+					if cur_a < tgt:
+						(_ui.get("prev_alloc", {}) as Dictionary)[st_key] = cur_a
+						cur_alloc[st_key] = cur_a + 1
+						(_ui.get("row_hit_t", {}) as Dictionary)[st_key] = PcBlock.now()
+						_trigger_stat_hit(r_idx, st_key))
+			atw.tween_interval(0.16)
+			atw.tween_callback(func() -> void:
+				if int(_ui.get("lv_gen", -1)) == gen and is_instance_valid(cb):
+					cb.kick_bar(14.0))
 
 
 func _paint_lvcard(b: PcBlock, i: int) -> void:
@@ -598,31 +684,56 @@ func _paint_lvcard(b: PcBlock, i: int) -> void:
 	var sm: Dictionary = _sums[i]
 	var c: Combatant = sm["combatant"]
 	var hero: bool = sm.get("is_leader", false)
-	_portrait(b, c, Rect2(44, 34, 196, 216), 4.0, 2.0)
-	var tf := PcDraw.impact(0)
-	PcDraw.letters(b, tf, [[c.name.to_upper(), PcDraw.TEXT_DARK]], 262, 38, 46, b.size.x - 262 - 30, _letters_t(b))
-	# LV. a → b
-	var af := PcDraw.arial()
-	var base := PcDraw.baseline(tf, 44, 98)
-	var x := 262.0
-	b.draw_string(af, Vector2(x, base), "LV. ", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("3a4250"))
-	x += PcDraw.width(af, "LV. ", 20)
-	for p in [[str(sm["old_level"]), 44, PcDraw.TEXT_DARK], ["→", 24, PcDraw.CORAL], [str(sm["new_level"]), 44, PcDraw.TEXT_DARK]]:
-		if p[0] == "→":
-			x += 4.0
-		b.draw_string(tf, Vector2(x, base), p[0], HORIZONTAL_ALIGNMENT_LEFT, -1, p[1], p[2])
-		x += PcDraw.width(tf, p[0], p[1]) + (4.0 if p[0] == "→" else 0.0)
-	var pts := int(_ui.get("pts", 0))
-	var l1 := "Líder · distribua os pontos" if hero else "Aliado · pontos automáticos"
-	var l2 := "%d ponto%s de atributo" % [pts, "s" if pts > 1 else ""]
-	var n := _typed(b)
-	var maxw := b.size.x - 262 - 26
-	var s1 := PcDraw.fit(af, l1, 15, maxw)
-	var s2 := PcDraw.fit(af, l2, 15, maxw)
-	var t1 := l1 if n < 0 else l1.substr(0, n)
-	var t2 := l2 if n < 0 else l2.substr(0, maxi(0, n - l1.length() - 1))
-	b.draw_string(af, Vector2(262, PcDraw.baseline(af, s1, 166, 24)), t1, HORIZONTAL_ALIGNMENT_LEFT, -1, s1, Color("3a4250"))
-	b.draw_string(af, Vector2(262, PcDraw.baseline(af, s2, 190, 24)), t2, HORIZONTAL_ALIGNMENT_LEFT, -1, s2, Color("3a4250"))
+	var port_r := Rect2(44, 34, 196, 216)
+	var frame_col := PcDraw.CORAL if hero else PcDraw.AQUA
+	var port_t := clampf(b.age() / 0.22, 0.0, 1.0) if TEXT_FX else 1.0
+	var port_e := PcDraw.bezier(0.18, 1.25, 0.32, 1.0, port_t)
+	var port_sc := lerpf(1.55, 1.0, port_e)
+	if b.construct_mode != 3 or b.construct_p >= 0.45:
+		var tf := PcDraw.impact(0)
+		PcDraw.letters(b, tf, [[c.name.to_upper(), PcDraw.TEXT_DARK]], 262, 38, 46, b.size.x - 262 - 30, _letters_t(b))
+		# LV. a → b com odômetro vertical e sublinhado verde-lima
+		var af := PcDraw.arial()
+		var lv_top := 98.0
+		var old_top := lv_top + 6.0
+		var arr_top := lv_top + 10.0
+		var new_top := lv_top - 4.0
+		var x := 262.0
+		PcDraw.line(b, af, "LV. ", x, lv_top + 18.0, 20, Color("3a4250"), 60.0, 0)
+		x += PcDraw.width(af, "LV. ", 20)
+		var old_s := str(sm["old_level"])
+		var new_s := str(sm["new_level"])
+		PcDraw.line(b, tf, old_s, x, old_top, 38, Color("64748b"), 80.0, 0)
+		x += PcDraw.width(tf, old_s, 38) + 6.0
+		var lv_age := (b.age() - 0.14) if TEXT_FX else 999.0
+		var arr_e := PcDraw.bezier(0.2, 1.25, 0.3, 1.0, clampf(lv_age / 0.22, 0.0, 1.0))
+		PcDraw.line(b, tf, "→", x - 10.0 * (1.0 - arr_e), arr_top, 28, PcDraw.CORAL, 40.0, 0)
+		x += PcDraw.width(tf, "→", 28) + 8.0
+		var roll_p := clampf((lv_age - 0.12) / 0.34, 0.0, 1.0) if TEXT_FX else 1.0
+		var w_new := PcDraw.width(tf, new_s, 52)
+		var line_e := PcDraw.bezier(0.18, 1.2, 0.3, 1.0, clampf((lv_age - 0.16) / 0.30, 0.0, 1.0))
+		if line_e > 0.02:
+			var line_y := PcDraw.baseline(tf, 52, new_top) + 4.0
+			PcDraw.fill_para(b, Rect2(x - 4.0, line_y, (w_new + 12.0) * clampf(line_e, 0.0, 1.05), 6.0), 3.0, PcDraw.LIME)
+		PcDraw.odometer_number(b, tf, old_s, new_s, x, new_top, 52, PcDraw.TEXT_DARK, roll_p, 0)
+		var pts := int(_ui.get("pts", 0))
+		var l1 := "Líder · distribua os pontos" if hero else "Aliado · pontos automáticos"
+		var reason := String(sm.get("auto_reason", ""))
+		var l2 := "%d ponto%s de atributo" % [pts, "s" if pts > 1 else ""]
+		if not hero and reason != "":
+			l2 = "%d ponto%s · %s" % [pts, "s" if pts > 1 else "", reason]
+		var n := _typed(b)
+		var maxw := b.size.x - 262 - 26
+		var s1 := PcDraw.fit(af, l1, 15, maxw)
+		var s2 := PcDraw.fit(af, l2, 15, maxw)
+		var t1 := l1 if n < 0 else l1.substr(0, n)
+		var t2 := l2 if n < 0 else l2.substr(0, maxi(0, n - l1.length() - 1))
+		b.draw_string(af, Vector2(262, PcDraw.baseline(af, s1, 166, 24)), t1, HORIZONTAL_ALIGNMENT_LEFT, -1, s1, Color("3a4250"))
+		b.draw_string(af, Vector2(262, PcDraw.baseline(af, s2, 190, 24)), t2, HORIZONTAL_ALIGNMENT_LEFT, -1, s2, Color("3a4250"))
+	b.draw_set_transform(port_r.get_center() + Vector2(6, 6) * port_sc, deg_to_rad(2.0), Vector2(port_sc, port_sc))
+	b.draw_rect(Rect2(-port_r.size * 0.5 - Vector2(4, 4), port_r.size + Vector2(8, 8)), frame_col)
+	b.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	_portrait(b, c, port_r, 4.0, 2.0, port_sc)
 
 
 func _paint_attr(b: PcBlock) -> void:
@@ -639,37 +750,48 @@ func _paint_row(b: PcBlock, r: int) -> void:
 	var c := _cmb(int(_ui["m"]))
 	var st: String = STATS[r][0]
 	var a := int((_ui["alloc"] as Dictionary).get(st, 0))
+	var prev_a := int((_ui.get("prev_alloc", {}) as Dictionary).get(st, a))
 	var sel := int(_ui["sel"]) == r
-	var auto: bool = (not bool(_ui["hero"])) and a > 0
-	b.bg = Color("21486a") if sel else (Color("3a2f12") if auto else PcDraw.NAVY2)
+	b.bg = Color("1e3a5f") if sel else (Color("162c46") if a > 0 else PcDraw.NAVY2)
 	var sc: Color = PcDraw.STAT_C[st]
-	PcDraw.fill_para(b, Rect2(0, 0, 22, b.size.y), 12.0, sc)
+	var row_w := b.size.x + b.extra_w
+	var hit_t := float((_ui.get("row_hit_t", {}) as Dictionary).get(st, -999.0))
+	var raw_t := clampf((b.now() - hit_t) / 0.26, 0.0, 1.0) if (a > 0 and hit_t >= 0.0 and TEXT_FX) else (1.0 if a > 0 else 0.0)
+	var tab_e := PcDraw.bezier(0.18, 1.25, 0.30, 1.0, raw_t) if (a > 0 and hit_t >= 0.0 and TEXT_FX) else (1.0 if a > 0 else 0.0)
+	var tab_w := lerpf(22.0, 92.0, clampf(tab_e, 0.0, 1.04)) if a > 0 else (26.0 if sel else 22.0)
+	PcDraw.fill_para(b, Rect2(0, 0, tab_w, b.size.y), 12.0, sc)
+	if a > 0:
+		PcDraw.fill_para(b, Rect2(0, b.size.y - 3.0, row_w, 3.0), 3.0, sc)
 	var tf := PcDraw.impact(1)
 	var af := PcDraw.arial()
-	PcDraw.line(b, tf, st, 28, 0, 24, sc, 66, 0, b.size.y)
+	var st_col := PcDraw.INK if tab_w >= 54.0 else sc
+	PcDraw.line(b, tf, st, 28, 0, 24, st_col, 62, 0, b.size.y)
 	var hero: bool = _ui["hero"]
-	var right := b.size.x - 24.0
+	var base_val := c.get_effective_stat(st) if hero else int((_sums[int(_ui["m"])].get("old_stats", {}) as Dictionary).get(st, c.get_effective_stat(st)))
+	var right := row_w - 24.0
 	var arrow_c := Color.WHITE if sel else Color("4f6077")
 	var x := right
 	if hero:
 		var w := PcDraw.width(af, "▶", 16)
 		PcDraw.line(b, af, "▶", right, 0, 16, arrow_c, 30, 2, b.size.y)
-		x = right - w - 10.0
-	var plus := ("+%d" % a) if a > 0 else ""
-	if hero:
-		PcDraw.line(b, af, plus, x - 34, 0, 18, PcDraw.LIME, 34, 0, b.size.y)
-		x -= 34.0 + 10.0
-	else:
-		PcDraw.line(b, af, plus, x, 0, 18, PcDraw.LIME, 34, 2, b.size.y)
-		x -= 34.0 + 10.0
-	PcDraw.line(b, af, str(c.get_effective_stat(st) + a), x, 0, 24, Color("e6edf5"), 60, 2, b.size.y)
-	x -= 34.0 + 10.0
+		x = right - w - 8.0
+	var pill_slot := 48.0
+	if a > 0:
+		var pill_w := 44.0 * clampf(tab_e, 0.0, 1.06)
+		if pill_w >= 8.0:
+			PcDraw.fill_para(b, Rect2(x - pill_w, 9.0, pill_w, 28.0), 8.0, PcDraw.LIME)
+		if raw_t >= 0.30:
+			PcDraw.line(b, tf, "+%d" % a, x - 22.0, 9.0, 17, PcDraw.INK, 40.0, 1, 28.0)
+	x -= pill_slot + 10.0
+	var roll_p := clampf((b.now() - hit_t) / 0.24, 0.0, 1.0) if (hit_t >= 0.0 and TEXT_FX) else 1.0
+	PcDraw.odometer_number(b, tf, str(base_val + prev_a), str(base_val + a), x, 0.0, 26, Color.WHITE if a > 0 else Color("dbe4ee"), roll_p, 2, b.size.y)
+	x -= 38.0 + 10.0
 	if hero:
 		PcDraw.line(b, af, "◀", x, 0, 16, arrow_c, 30, 2, b.size.y)
 		x -= PcDraw.width(af, "◀", 16)
-	var ds_x := 28.0 + 66.0
-	var ds_w := (b.size.x - 24.0 - 130.0) - ds_x
-	PcDraw.line(b, af, STATS[r][1], ds_x, 0, 14, Color("8fa3b8"), ds_w, 0, b.size.y)
+	var ds_x := 104.0
+	var ds_w := (row_w - 24.0 - 150.0) - ds_x
+	PcDraw.line(b, af, STATS[r][1], ds_x, 0, 14, Color("9cb0c4") if a > 0 else Color("8fa3b8"), ds_w, 0, b.size.y)
 
 
 func _paint_cbtn(b: PcBlock) -> void:
@@ -687,6 +809,41 @@ func _lv_redraw() -> void:
 		(rb as PcBlock).queue_redraw()
 	if _ui.has("cbtn"):
 		(_ui["cbtn"] as PcBlock).queue_redraw()
+	if _ui.has("attr") and is_instance_valid(_ui["attr"]):
+		(_ui["attr"] as PcBlock).queue_redraw()
+
+
+func _trigger_stat_hit(r: int, _st: String) -> void:
+	var rows: Array = _ui.get("rows", [])
+	if r >= 0 and r < rows.size() and is_instance_valid(rows[r]):
+		(rows[r] as PcBlock).kick_bar(18.0)
+	_lv_redraw()
+
+
+func _flush_ally_alloc() -> void:
+	if bool(_ui.get("hero", false)):
+		return
+	var tgt: Dictionary = _ui.get("alloc_target", {})
+	if not tgt.is_empty():
+		_ui["alloc"] = tgt.duplicate()
+		_ui["prev_alloc"] = tgt.duplicate()
+		var hit_map: Dictionary = _ui.get("row_hit_t", {})
+		var settled_t := PcBlock.now() - 1.0
+		for k in tgt:
+			hit_map[k] = settled_t
+		_lv_redraw()
+
+
+func _hero_add_point(sel: int, alloc: Dictionary) -> void:
+	var stn: String = STATS[sel][0]
+	var old_a := int(alloc.get(stn, 0))
+	(_ui.get("prev_alloc", {}) as Dictionary)[stn] = old_a
+	(_ui.get("row_hit_t", {}) as Dictionary)[stn] = PcBlock.now()
+	alloc[stn] = old_a + 1
+	_ui["left"] = int(_ui["left"]) - 1
+	_trigger_stat_hit(sel, stn)
+	if int(_ui["left"]) == 0 and _ui.has("cbtn") and is_instance_valid(_ui["cbtn"]):
+		(_ui["cbtn"] as PcBlock).kick_bar(14.0)
 
 
 func _lv_key(k: String) -> void:
@@ -698,20 +855,29 @@ func _lv_key(k: String) -> void:
 	elif k == "down":
 		_ui["sel"] = (sel + 1) % 7
 	elif hero and k == "right" and sel < 6 and int(_ui["left"]) > 0:
-		alloc[STATS[sel][0]] = int(alloc.get(STATS[sel][0], 0)) + 1
-		_ui["left"] = int(_ui["left"]) - 1
+		_hero_add_point(sel, alloc)
 	elif hero and k == "left" and sel < 6:
 		var stn: String = STATS[sel][0]
-		if int(alloc.get(stn, 0)) > 0:
-			alloc[stn] = int(alloc[stn]) - 1
+		var old_a := int(alloc.get(stn, 0))
+		if old_a > 0:
+			(_ui.get("prev_alloc", {}) as Dictionary)[stn] = old_a
+			alloc[stn] = old_a - 1
 			_ui["left"] = int(_ui["left"]) + 1
+			if old_a - 1 <= 0:
+				(_ui.get("row_hit_t", {}) as Dictionary).erase(stn)
+			else:
+				(_ui.get("row_hit_t", {}) as Dictionary)[stn] = PcBlock.now()
+			var rows: Array = _ui.get("rows", [])
+			if sel < rows.size() and is_instance_valid(rows[sel]):
+				(rows[sel] as PcBlock).kick_bar(-10.0)
 	elif k == "z":
 		if sel < 6 and int(_ui["left"]) > 0 and hero:
-			alloc[STATS[sel][0]] = int(alloc.get(STATS[sel][0], 0)) + 1
-			_ui["left"] = int(_ui["left"]) - 1
+			_hero_add_point(sel, alloc)
 		elif int(_ui["left"]) == 0 and (sel == 6 or not hero):
 			if hero:
 				PostCombatFlow.apply_leader_allocation(_cmb(int(_ui["m"])), alloc)
+			else:
+				_flush_ally_alloc()
 			_next()
 			return
 		elif int(_ui["left"]) == 0:
@@ -1023,16 +1189,21 @@ func _epic_arrive(b: PcBlock, delay: float) -> void:
 			_spot.create_tween().tween_property(_spot, "modulate:a", 0.0, 0.25))
 
 
+func _ensure_fx() -> void:
+	if _fx != null and is_instance_valid(_fx):
+		return
+	_fx = Control.new()
+	_fx.size = size
+	_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fx.z_index = 9
+	_fx.draw.connect(_draw_fx)
+	_stage.add_child(_fx)
+
+
 func _impact(b: PcBlock, e: int, col: Color) -> void:
 	if not is_instance_valid(b):
 		return
-	if _fx == null:
-		_fx = Control.new()
-		_fx.size = size
-		_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_fx.z_index = 9
-		_fx.draw.connect(_draw_fx)
-		_stage.add_child(_fx)
+	_ensure_fx()
 	var c := b.base_pos + b.size * 0.5
 	var t := PcBlock.now()
 	_fx_list.append({"kind": "ghost", "c": c, "t": t, "col": col, "icon": PcDraw.el_icon(e)})
@@ -1470,6 +1641,8 @@ func _close_tip() -> void:
 
 func _process(_d: float) -> void:
 	_xp_tick()
+	if _bgc != null and is_instance_valid(_bgc):
+		_bgc.queue_redraw()
 	if _fx != null and is_instance_valid(_fx):
 		_fx.queue_redraw()
 	if _tip != null and PcBlock.now() - _tip_t >= 5.0:

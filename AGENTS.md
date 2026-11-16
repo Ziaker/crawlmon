@@ -6,6 +6,7 @@
 > Passou de 1 minuto = o debug está incompleto: melhore a ferramenta primeiro. Ver `docs/decisoes/D-1204-*.md` e `docs/TELEMETRIA.md`.
 <!-- /DEBUG-OBRIGATORIO-D1204 -->
 
+> **MOVE = 3D, NUNCA 2D (D-1222).** Todo Move, efeito, mão, trajetória e protótipo é visualmente 3D de verdade (curvas em x, y e z, rotação de pulso/lâmina, volume, luz). É PROIBIDO tratá-lo como 2D (plano único, peça rígida deslizando, câmera 3D com movimento 2D) a não ser que o criador mande EXPLICITAMENTE, Move a Move. Referência de movimento: trajetória 3D real dos ossos dos ataques do Abra/Pancham.
 # Regras obrigatórias para qualquer agente neste projeto
 
 **Leia isto e `docs/decisoes/` ANTES de qualquer tarefa. Sempre. Sem exceção. Mesmo que a tarefa pareça pequena ou não relacionada.**
@@ -16,6 +17,9 @@
 2. Comece a resposta citando os IDs que se aplicam (ex.: "Decisões aplicáveis: D-006, D-007") ou escreva "nenhuma decisão se aplica". Isso prova que você leu. Se a tarefa for de combate/debug/VFX, cite também **D-1154** e diga explicitamente que leu **`docs/TELEMETRIA.md`**.
 3. Também leia `docs/REGRAS_DO_JOGO.md` e **`docs/TELEMETRIA.md`** antes de mexer em combate, fila, pausa de status ou debug. **O GDD (`docs/GDD.md`) é ignorado no combate** (D-001).
 4. Se o código contradiz uma decisão, a decisão vale. Diga a divergência; não "conserte" por conta própria sem pedir.
+5. **Atalho sem perder decisões (DeepSeek CLI) e papel de Co-Criador:** use `node "$env:USERPROFILE\.claude\tools\ds-decisions.mjs" <arquivo-tarefa>` para ler todos os `D-*.md` em lotes; delegue código não-visual ao DeepSeek V4.1 Flash (`deepseek-command-code`) e atue com a postura de Level Designer / auditor e editor visual definida na skill `crawlmon-co-creator`.
+6. **Divisão obrigatória (DeepSeek × Antigravity):** toda implementação não-visual (GDScript, regras, dados de Move, cenários de debug, testes, correções lógicas) vai ao DeepSeek **sempre via `ds-run.mjs`** (nunca `cmdc` direto); o Antigravity fica exclusivo para revisar `.patch` (`ds-compliance.mjs` + debug), **auditoria visual** (duas vistas D-235, `--audit-leaks`, `--envelope-graph`, `--scale-overlay`) e **melhora visual** (VFX, shaders, UI/HUD, iluminação, câmera, animação).
+7. **Prova real obrigatória:** nunca afirme ter delegado ao DeepSeek sem ter executado `ds-run.mjs` e devolvido `proof=...` e `patch=...` reais.
 
 ## 2. Ambiguidade = perguntar
 
@@ -88,6 +92,13 @@ Sempre que trabalhar com combate, Moves, dano, animações, regras ou efeitos vi
 6. **Controles de ATB no debug (D-1070):** para montar situações de ATB sem esperar o relógio (ATB cheio acelera a recuperação de MP em 1,75x; ATB cheio, zerado, +1 e -1 bloco), use no painel F1 do `BattleDebug`: `]` soma 1 bloco, `[` tira 1, `Shift+]` deixa cheio, `Shift+[` zera (no lutador escolhido com `Tab`; `F2` continua enchendo o ATB de todos). Na sala de VFX, a grade de status tem os botões "ATB +1", "ATB -1", "ATB cheio" e "ATB zerado". Antes de testar recuperação de MP, regenere o ATB para os 5 blocos ou o 1,75x não se aplica.
 7. **Catálogo completo e aba "Análise VFX" da sala (D-1042, D-1044):** a sala de VFX carrega **todos** os Moves do jogo (`Skill.all_catalog_skills()`, ligado por `_seed_full_catalog()`), então qualquer Move pode ser testado com qualquer atacante e em qualquer lado (D-235): não dependa de quem foi sorteado na sessão. As ferramentas do item 4 também ficam na aba **"Análise VFX"** da sala (solo/mute de nós, sobreposições, folha de prova, comparador A/B). O estado de uma batalha pode ser salvo e restaurado com `Battle.save_state()` / `restore_state()` para repetir um mesmo instante.
 
+8. **VFX/animação de Move: dados antes de imagens, SEMPRE (D-1218, D-1220, ordem do criador).** Proibido ajustar VFX por tentativa e erro com capturas em instantes chutados. Antes de dizer que um efeito "está certo" ou de mexer nele pela segunda vez, o agente é obrigado a:
+   1. Registrar o contrato literal do Move em `tests/vfx/specs/<move_slug>.json` e consultar `docs/vfx/VFX_RUBRICA_E_ERROS.md` + `tests/vfx/regressions.json`.
+   2. Rodar o scorecard unificado `python tools/vfx/score_vfx.py --move="<Nome>"` (Normal + Espelhado, cinemática `vfx_frame`, arquétipo de movimento, `leaks=0`, `pops=0`, `screen_px` legível a 37 m). **Se der `FAIL`, é proibido prosseguir para vídeo ou entrega** — corrija a causa raiz primeiro.
+   3. Capturar por quadro físico exato (`--step-ticks=N` / `--acts-ticks=`), nunca por `--pause-delay` estimado; usar `--vfx-trace`, `--envelope-graph`, `--bone-probe`, `--proof-sheet` e `--diff-with` contra a referência.
+   4. Só então olhar imagens, para o julgamento visual final, em tamanho real e nas duas vistas.
+   Nunca afirmar "verificado" a partir de quadro estático ou distante. Relatar números (comando + saída), não impressões. Toda reprovação do criador deve virar uma nova regra no `specs/<move_slug>.json` ou em `tests/vfx/regressions.json`.
+
 ## 10. Telemetria do jogo (OBRIGATÓRIO — D-1154)
 
 **Antes de qualquer tarefa de combate, Moves, dano, animação, regra, fila, pausa de status, VFX ou debug, leia `docs/TELEMETRIA.md`.** Não é opcional e não vale “já sei como funciona”.
@@ -98,3 +109,9 @@ Sempre que trabalhar com combate, Moves, dano, animações, regras ou efeitos vi
 4. **Evento novo:** se precisar de telemetria que não existe, registre a decisão e documente o campo em `docs/TELEMETRIA.md` antes de usar.
 5. **Evidência:** entregue comando, JSON/arquivo:linha, o que foi verificado e o que não foi. Se um detector acusar anomalia, diga se o jogo ou o teste está errado; não mude a regra para o teste passar.
 6. **Escopo atual:** combate. Overworld/exploração/áudio/UI fora do combate ainda não têm `GameTrace`; se a tarefa for lá, diga que a telemetria é limitada e proponha a camada separada.
+
+## 11. Referência visual da Murky Forest (OBRIGATÓRIA)
+
+Antes de planejar, implementar, prototipar ou auditar mudanças no visual da Murky Forest, siga o [prompt de implementação visual](docs/plans/PROMPT_IMPLEMENTACAO_VISUAL_MURKY_FOREST.md). Abra os três PNGs da tabela **Referências visuais obrigatórias** em tamanho completo e abra as capturas da cena real citadas no mesmo documento. A referência inclui a vista principal e os três painéis de sala de cada prancha.
+
+Use conjuntamente as três pranchas revisadas como referências do mesmo mapa autoral, construído do zero e sem geração procedural, conforme D-1256. Antes de editar, cite os PNGs consultados e relacione as três pranchas aos trechos do novo mapa, à cena anterior e aos modelos e materiais locais. Na entrega, compare cada tratamento com capturas da câmera real e registre as divergências visuais.

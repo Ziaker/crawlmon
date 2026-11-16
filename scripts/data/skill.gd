@@ -197,6 +197,24 @@ static func kind_name(k: Kind) -> String:
 static func basic() -> Skill:
 	return Skill.new("Tackle", 1.0, 2, Element.Type.FISICO, Kind.MELEE, false, false, false, 1.5)
 
+static func basic_for(c: Combatant) -> Skill:
+	if c != null:
+		for s in c.skills:
+			if s != null and s.data != null and s.data.tags.has(&"basic_variant"):
+				return s
+	return basic()
+
+
+static func combatant_moves(c: Combatant) -> Array[Skill]:
+	if c == null:
+		return [basic()] as Array[Skill]
+	for s in c.skills:
+		if s != null and s.data != null and s.data.tags.has(&"basic_variant"):
+			return c.skills.duplicate()
+	var moves: Array[Skill] = [basic()]
+	moves.append_array(c.skills)
+	return moves
+
 
 ## Fire Moves of D-236. Basic Skills only: element, how they travel, ATB cost and wind-up from the sheet.
 ## `power` is PROVISIONAL (1.0, like Tackle): the sheet's `10 + MAG` formula, MP, Burn and the Burn chances

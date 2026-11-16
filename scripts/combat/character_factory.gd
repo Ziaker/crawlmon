@@ -36,7 +36,7 @@ static func create(species_id: String, opts: Dictionary = {}) -> Combatant:
 
 	var nat_id := str(opts.get("forced_nature", data.nature_id)).to_lower()
 	if nat_id.is_empty():
-		var all_natures := NatureData.get_all_nature_ids()
+		var all_natures := NatureData.INITIAL_IDS  # D-405: pool de sorteio fora da roleta segue as 8 iniciais.
 		nat_id = all_natures[rng.randi_range(0, all_natures.size() - 1)]
 	var nature_mods: Dictionary = NatureData.get_nature(nat_id)["mods"]
 	var innate := CrawlmonAttributeMath.consolidate_innate_attributes(base_stats, offsets, nature_mods)

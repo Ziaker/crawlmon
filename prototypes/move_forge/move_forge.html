@@ -304,7 +304,29 @@ function sanitize(list) { return (list || []).filter(n => { if (B[n.key] === und
 let M, selNode = null, selLane = 'impact', tab = 'bloco';
 const sim = { tgt: 'orc', str: 10, mag: 10, luk: 5, tluk: 5, wis: 5, hpT: 100, hpU: 100, aff: 1, intr: 50 };
 const KEY = 'crawlmon-move-forge-v1';
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(M)); } catch (e) {} };
+const MATRIX_MOVES_KEY = 'crawlmon-custom-moves-v1';
+const MATRIX_EL = { 0: 'neutral', 1: 'fire', 2: 'water', 3: 'electric', 4: 'psychic', 5: 'nature', 6: 'sound', 7: 'earth', 8: 'wind', 9: 'light', 10: 'dark', 11: 'mystic' };
+const MATRIX_KIND = ['Melee', 'Projectile', 'Cast', 'Status'];
+let forgeDirty = false;
+const syncMoveToMatrix = () => {
+  if (!forgeDirty || !M || !M.id) return;
+  const id = String(M.id).trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+  if (!id || id === 'novo_move') return;
+  try {
+    const map = JSON.parse(localStorage.getItem(MATRIX_MOVES_KEY) || '{}');
+    map[id] = {
+      id,
+      name: String(M.name || id).trim() || id,
+      element: MATRIX_EL[+M.element] || 'neutral',
+      atb: Math.max(0, +M.atb || 0),
+      mp: Math.max(0, +M.mp || 0),
+      kind: MATRIX_KIND[+M.kind] || 'Status',
+      custom: true
+    };
+    localStorage.setItem(MATRIX_MOVES_KEY, JSON.stringify(map));
+  } catch (e) {}
+};
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(M)); syncMoveToMatrix(); } catch (e) {} };
 function find(list, id, parent) { for (const n of list) { if (n.uid === id) return { n, list, parent }; const r = find(n.kids, id, n); if (r) return r; } return null; }
 function findAny(id) { for (const [k] of PHASES) { const r = find(M.phases[k], id); if (r) return r; } return null; }
 function walk(fn, list, depth) { (list || PHASES.flatMap(([k]) => M.phases[k])).forEach(n => { fn(n, depth || 0); walk(fn, n.kids, (depth || 0) + 1); }); }
@@ -716,13 +738,13 @@ document.addEventListener('click', e => {
   else if (q('#stRoll')) { stageRoll(); stageDraw(); }
   else if (q('#btnUndo')) travel(-1); else if (q('#btnRedo')) travel(1);
   else if (q('#btnDice')) dice();
-  else if (q('#btnShelf')) { const sh = shelf(); sh[M.id] = JSON.parse(JSON.stringify(M)); localStorage.setItem(LIB, JSON.stringify(sh)); fillPreset(); toast('Guardado na estante: ' + M.name); }
+  else if (q('#btnShelf')) { forgeDirty = true; syncMoveToMatrix(); const sh = shelf(); sh[M.id] = JSON.parse(JSON.stringify(M)); localStorage.setItem(LIB, JSON.stringify(sh)); fillPreset(); toast('Guardado na estante e na Matriz: ' + M.name); }
 });
 document.addEventListener('input', e => {
   const t = e.target;
-  if (t.dataset.h) { M[t.dataset.h] = t.type === 'number' || t.tagName === 'SELECT' ? +t.value : t.value; if (t.dataset.h === 'name' || t.dataset.h === 'id') { save(); return; } renderHead(); const f = $('head').querySelector(`[data-h="${t.dataset.h}"]`); if (f && t.tagName !== 'SELECT') { f.focus(); } if (tab !== 'bloco') TABS[tab][1](); save(); }
-  else if (t.dataset.p) { const r = findAny(selNode); if (!r) return; r.n.params[t.dataset.p] = t.type === 'number' ? +t.value : t.value; renderLanes(); save(); stageDraw(); }
-  else if (t.dataset.note) { M.notes[t.dataset.note] = t.value; save(); }
+  if (t.dataset.h) { forgeDirty = true; M[t.dataset.h] = t.type === 'number' || t.tagName === 'SELECT' ? +t.value : t.value; if (t.dataset.h === 'name' || t.dataset.h === 'id') { save(); return; } renderHead(); const f = $('head').querySelector(`[data-h="${t.dataset.h}"]`); if (f && t.tagName !== 'SELECT') { f.focus(); } if (tab !== 'bloco') TABS[tab][1](); save(); }
+  else if (t.dataset.p) { forgeDirty = true; const r = findAny(selNode); if (!r) return; r.n.params[t.dataset.p] = t.type === 'number' ? +t.value : t.value; renderLanes(); save(); stageDraw(); }
+  else if (t.dataset.note) { forgeDirty = true; M.notes[t.dataset.note] = t.value; save(); }
   else if (t.dataset.cmp) { renderSim.cmp = t.value; renderSim(); }
   else if (t.id === 'stT') { ST.playing = false; ST.t = t.value / 1000 * stageSpan().end; stageDraw(); }
   else if (t.dataset.sim) { sim[t.dataset.sim] = t.dataset.sim === 'dual' ? !!t.value : +t.value; renderSim(); const f = document.querySelector(`[data-sim="${t.dataset.sim}"]`); if (f && f.type === 'range') f.focus(); }
@@ -732,6 +754,7 @@ document.addEventListener('change', e => {
   const t = e.target;
   if (t.id === 'onlyOk') { ONLY_OK = t.checked; renderPalette(); render(); return; }
   const k = t.dataset.s; if (!k) return;
+  forgeDirty = true;
   if (k === 'element') M.element = +t.value;
   else if (k === 'cat') { M.cat = t.value; derive(); }
   else if (k === 'range') { M.range = t.value; derive(); }

@@ -11,47 +11,62 @@ func _init(p_room) -> void:
 	room = p_room
 
 
+func _fx_roots() -> Array[Node]:
+	var roots: Array[Node] = []
+	if room._bs == null:
+		return roots
+	if room._bs.fx != null:
+		roots.append(room._bs.fx)
+	var smt := room._bs.get("smt_vfx") as Node
+	if smt != null:
+		roots.append(smt)
+	return roots
+
+
 ## 1. Auditor Automático de "Restos e Órfãos" (VFX Leak & Ghost Detector)
 func _audit_vfx_leaks() -> void:
 	room._last_leaks.clear()
-	if room._bs == null or room._bs.fx == null:
+	var roots := _fx_roots()
+	if roots.is_empty():
 		return
-	for ch in room._bs.fx.get_children():
-		if room._baseline_fx_ids.has(ch.get_instance_id()):
-			continue
-		var cname := String(ch.name)
-		if cname in ["DebugFreeCam3D", "DebugGizmos3D"] or cname.begins_with("FxLane"):
-			continue
-		var is_leaking := false
-		if ch is OmniLight3D and (ch as OmniLight3D).visible and (ch as OmniLight3D).light_energy > 0.01:
-			is_leaking = true
-		elif ch is CPUParticles3D:
-			if (ch as CPUParticles3D).visible and (ch as CPUParticles3D).emitting and not (ch as CPUParticles3D).one_shot:
+	for root in roots:
+		for ch in root.get_children():
+			if room._baseline_fx_ids.has(ch.get_instance_id()):
+				continue
+			var cname := String(ch.name)
+			if cname in ["DebugFreeCam3D", "DebugGizmos3D"] or cname.begins_with("FxLane"):
+				continue
+			var is_leaking := false
+			if ch is OmniLight3D and (ch as OmniLight3D).visible and (ch as OmniLight3D).light_energy > 0.01:
 				is_leaking = true
-		elif ch is GPUParticles3D:
-			if (ch as GPUParticles3D).visible and (ch as GPUParticles3D).emitting and not (ch as GPUParticles3D).one_shot:
-				is_leaking = true
-			is_leaking = true
-		elif ch is VisualInstance3D and (ch as VisualInstance3D).visible:
-			var a := _node_alpha(ch)
-			if a > 0.02:
-				is_leaking = true
-		elif ch is Node3D and (ch as Node3D).visible:
-			for sub in ch.find_children("*", "VisualInstance3D", true, false):
-				if not (sub is CPUParticles3D or sub is GPUParticles3D) and (sub as VisualInstance3D).visible and _node_alpha(sub) > 0.02:
+			elif ch is CPUParticles3D:
+				if (ch as CPUParticles3D).visible and (ch as CPUParticles3D).emitting and not (ch as CPUParticles3D).one_shot:
 					is_leaking = true
-					break
-		if is_leaking:
-			var kids: PackedStringArray = []
-			for k in ch.get_children():
-				kids.append("%s:%s" % [k.get_class(), String(k.name)])
-			room._last_leaks.append("%s[%s]{%s}" % [cname, ch.get_class(), ",".join(kids.slice(0, 4))])  # which node leaks (D-1196 debugging)
+			elif ch is GPUParticles3D:
+				if (ch as GPUParticles3D).visible and (ch as GPUParticles3D).emitting and not (ch as GPUParticles3D).one_shot:
+					is_leaking = true
+			elif ch is VisualInstance3D and (ch as VisualInstance3D).visible:
+				var a := _node_alpha(ch)
+				if a > 0.02:
+					is_leaking = true
+			elif ch is Node3D and (ch as Node3D).visible:
+				for sub in ch.find_children("*", "VisualInstance3D", true, false):
+					if not (sub is CPUParticles3D or sub is GPUParticles3D) and (sub as VisualInstance3D).visible and _node_alpha(sub) > 0.02:
+						is_leaking = true
+						break
+			if is_leaking:
+				var kids: PackedStringArray = []
+				for k in ch.get_children():
+					kids.append("%s:%s" % [k.get_class(), String(k.name)])
+				room._last_leaks.append("%s[%s]{%s}" % [cname, ch.get_class(), ",".join(kids.slice(0, 4))])  # which node leaks (D-1196 debugging)
 	if room._audit_leaks_on or not room._last_leaks.is_empty():
 		print("[vfx_audit] leaks=%d nodes=%s" % [room._last_leaks.size(), JSON.stringify(room._last_leaks)])
 		room._note("AUDITORIA VFX: %d sobras (%s)" % [room._last_leaks.size(), ", ".join(room._last_leaks) if not room._last_leaks.is_empty() else "limpo"])
 
 
 func _node_alpha(n: Node) -> float:
+	if n is Node3D and not (n as Node3D).visible:
+		return 0.0
 	if n is MeshInstance3D:
 		var mi := n as MeshInstance3D
 		var mat := mi.material_override
@@ -66,6 +81,14 @@ func _node_alpha(n: Node) -> float:
 					return float(v)
 				elif v is Color:
 					return (v as Color).a
+	if n is Sprite3D:
+		return (n as Sprite3D).modulate.a
+	if n is OmniLight3D:
+		return clampf((n as OmniLight3D).light_energy, 0.0, 1.0)
+	if n is CPUParticles3D:
+		return (n as CPUParticles3D).color.a if (n as CPUParticles3D).emitting else 0.0
+	if n is GPUParticles3D:
+		return 1.0 if (n as GPUParticles3D).emitting else 0.0
 	return 1.0
 
 
@@ -88,6 +111,8 @@ func _tick_vfx_analysis(delta: float) -> void:
 		_sample_bone_probe(delta)
 	if room._envelope_graph_on and room._fired and not room._paused:
 		_sample_envelope()
+	if room._vfx_trace_on and room._fired and not room._paused and delta > 0.0001:
+		_sample_vfx_frame(delta)
 	if room._overdraw_on:
 		_apply_overdraw_pass()
 	if room._analysis_overlay != null:
@@ -151,29 +176,145 @@ func _sample_envelope() -> void:
 	var max_a := 0.0
 	var count := 0
 	var cur_alphas: Dictionary = {}
-	for ch in room._bs.fx.get_children():
-		if room._baseline_fx_ids.has(ch.get_instance_id()):
-			continue
-		for v in ch.find_children("*", "VisualInstance3D", true, false) + ([ch] if ch is VisualInstance3D else []):
-			var vi := v as VisualInstance3D
-			if vi == null or not vi.visible:
+	for root in _fx_roots():
+		for ch in root.get_children():
+			if room._baseline_fx_ids.has(ch.get_instance_id()):
 				continue
-			var a := _node_alpha(vi)
-			var id := vi.get_instance_id()
-			cur_alphas[id] = {"name": String(vi.name), "a": a}
-			if room._prev_node_alphas.has(id):
-				var prev_a: float = float(room._prev_node_alphas[id]["a"])
-				if prev_a - a > 0.55:
-					var msg := "%s: %.2f -> %.2f" % [String(vi.name), prev_a, a]
-					if not room._envelope_pops.has(msg):
-						room._envelope_pops.append(msg)
-						print("[POP_DETECTED] node=%s prev_alpha=%.2f new_alpha=%.2f t=%.3f" % [String(vi.name), prev_a, a, room._clock - room._fire_clock])
-			max_a = maxf(max_a, a)
-			count += 1
+			var nodes: Array = []
+			if ch is VisualInstance3D or ch is OmniLight3D:
+				nodes.append(ch)
+			nodes.append_array(ch.find_children("*", "VisualInstance3D", true, false))
+			nodes.append_array(ch.find_children("*", "OmniLight3D", true, false))
+			for v in nodes:
+				var vi := v as Node3D
+				if vi == null:
+					continue
+				var vis := vi.visible
+				var a := _node_alpha(vi) if vis else 0.0
+				var id := vi.get_instance_id()
+				cur_alphas[id] = {"name": String(vi.name), "a": a, "vis": vis}
+				var prev: Dictionary = room._prev_node_alphas.get(id, {})
+				var is_oneshot_part := (vi is CPUParticles3D and (vi as CPUParticles3D).one_shot) or (vi is GPUParticles3D and (vi as GPUParticles3D).one_shot)
+				if not prev.is_empty() and not is_oneshot_part:
+					var prev_a: float = float(prev["a"])
+					var prev_vis: bool = bool(prev.get("vis", true))
+					if prev_a - a > 0.55 or (prev_vis and not vis and prev_a > 0.15):
+						var msg := "%s: %.2f -> %.2f" % [String(vi.name), prev_a, a]
+						if not room._envelope_pops.has(msg):
+							room._envelope_pops.append(msg)
+							print("[POP_DETECTED] node=%s prev_alpha=%.2f new_alpha=%.2f t=%.3f" % [String(vi.name), prev_a, a, room._clock - room._fire_clock])
+				if vis:
+					max_a = maxf(max_a, a)
+					count += 1
 	room._prev_node_alphas = cur_alphas
-	room._envelope_samples.append({"t": room._clock - room._fire_clock, "a": max_a, "n": count})
-	if room._envelope_samples.size() > 180:
+	room._envelope_samples.append({"t": snappedf(room._clock - room._fire_clock, 0.001), "a": snappedf(max_a, 0.001), "n": count})
+	if room._envelope_samples.size() > 600:
 		room._envelope_samples.pop_front()
+
+
+## D-1220: telemetria cinemática genérica, um registro por nó ativo de BattleFx/SmtVfx e por quadro.
+func _sample_vfx_frame(delta: float) -> void:
+	if room._bs == null or room._battle == null or room._units.is_empty():
+		return
+	var roots := _fx_roots()
+	if roots.is_empty():
+		return
+	var cam := room._bs.get_node_or_null("Camera3D") as Camera3D
+	var atk: Node3D = null
+	var tgt: Node3D = null
+	var stage := "post"
+	for inc in room._battle.attacks_in_flight():
+		atk = room._bs.models.get(inc.attacker)
+		tgt = room._bs.models.get(inc.target)
+		stage = String(Battle.Phase.keys()[inc.phase]).to_lower()
+		break
+	if atk == null or tgt == null:
+		var a_unit: Combatant = room._units[clampi(room._attacker.selected, 0, room._units.size() - 1)]
+		var t_unit: Combatant = room._units[clampi(room._target.selected, 0, room._units.size() - 1)]
+		atk = room._bs.models.get(a_unit)
+		tgt = room._bs.models.get(t_unit)
+	if atk == null or tgt == null:
+		return
+	var axis := tgt.global_position - atk.global_position
+	axis.y = 0.0
+	var span := axis.length()
+	axis = axis / span if span > 0.01 else Vector3.FORWARD
+	var side := Vector3(-axis.z, 0.0, axis.x)
+	var contact: Variant = null
+	if room._first_hit_clock >= 0.0:
+		contact = snappedf(room._clock - room._first_hit_clock, 0.001)
+	var tracked := 0
+	for root in roots:
+		for ch in root.get_children():
+			if room._baseline_fx_ids.has(ch.get_instance_id()):
+				continue
+			var cname := String(ch.name)
+			if cname in ["DebugFreeCam3D", "DebugGizmos3D", "EvadeFlash"] or cname.begins_with("FxLane"):
+				continue
+			var candidates: Array[Node] = [ch]
+			for sub in ch.find_children("*", "VisualInstance3D", true, false):
+				if not (sub is Label3D):
+					candidates.append(sub)
+			for cand in candidates:
+				if tracked >= 24:
+					break
+				if not (cand is Node3D):
+					continue
+				var n3 := cand as Node3D
+				if cand != ch and not n3.visible:
+					continue
+				var pos := n3.global_position
+				var rot_deg := n3.global_rotation_degrees
+				var vis := n3.visible
+				var scale_v: Array = [snappedf(n3.scale.x, 0.001), snappedf(n3.scale.y, 0.001), snappedf(n3.scale.z, 0.001)]
+				var id: int = n3.get_instance_id()
+				var vel := Vector3.ZERO
+				if room._vfx_prev_pos.has(id):
+					vel = (pos - (room._vfx_prev_pos[id] as Vector3)) / delta
+				room._vfx_prev_pos[id] = pos
+				var ang_speed := 0.0
+				if room._vfx_prev_rot.has(id):
+					var pr := room._vfx_prev_rot[id] as Vector3
+					var dr := Vector3(wrapf(rot_deg.x - pr.x, -180.0, 180.0), wrapf(rot_deg.y - pr.y, -180.0, 180.0), wrapf(rot_deg.z - pr.z, -180.0, 180.0))
+					ang_speed = dr.length() / delta
+				room._vfx_prev_rot[id] = rot_deg
+				var rel := pos - atk.global_position
+				rel.y = 0.0
+				var half := 0.5
+				var aabb_v: Array = [1.0, 1.0, 1.0]
+				if n3 is MeshInstance3D and (n3 as MeshInstance3D).mesh != null:
+					var aabb := (n3 as MeshInstance3D).get_aabb()
+					var gs := n3.global_transform.basis.get_scale()
+					var sx := aabb.size.x * gs.x
+					var sy := aabb.size.y * gs.y
+					var sz := aabb.size.z * gs.z
+					aabb_v = [snappedf(sx, 0.001), snappedf(sy, 0.001), snappedf(sz, 0.001)]
+					half = maxf(sx, maxf(sy, sz)) * 0.5
+				var screen_px: Array = [0.0, 0.0]
+				if cam != null and not cam.is_position_behind(pos):
+					var right := cam.global_transform.basis.x
+					var up := cam.global_transform.basis.y
+					screen_px = [
+						snappedf(cam.unproject_position(pos - right * half).distance_to(cam.unproject_position(pos + right * half)), 0.1),
+						snappedf(cam.unproject_position(pos - up * half).distance_to(cam.unproject_position(pos + up * half)), 0.1),
+					]
+				var nname := String(n3.name) if cand == ch else "%s/%s" % [cname, String(n3.name)]
+				room._emit_vfx_frame({
+					"node": nname, "kind": n3.get_class(), "stage": stage,
+					"pos": [snappedf(pos.x, 0.01), snappedf(pos.y, 0.01), snappedf(pos.z, 0.01)],
+					"rot": [snappedf(rot_deg.x, 0.1), snappedf(rot_deg.y, 0.1), snappedf(rot_deg.z, 0.1)],
+					"vel": [snappedf(vel.x, 0.01), snappedf(vel.y, 0.01), snappedf(vel.z, 0.01)],
+					"speed": snappedf(vel.length(), 0.01),
+					"ang_speed": snappedf(ang_speed, 0.1),
+					"aabb_size": aabb_v,
+					"progress": snappedf(rel.dot(axis) / maxf(span, 0.01), 0.001),
+					"lateral_offset": snappedf(rel.dot(side), 0.01),
+					"height_y": snappedf(pos.y, 0.01),
+					"dist_to_target": snappedf(pos.distance_to(tgt.global_position), 0.01),
+					"screen_px": screen_px, "alpha": snappedf(_node_alpha(n3), 0.001),
+					"scale": scale_v, "visible": vis, "contact_delta_s": contact,
+				})
+				tracked += 1
 
 
 func _draw_analysis_overlay() -> void:
@@ -217,9 +358,10 @@ func _draw_analysis_overlay() -> void:
 		room._analysis_overlay.draw_rect(rect, Color(0.02, 0.04, 0.08, 0.82), true)
 		room._analysis_overlay.draw_rect(rect, Color("62d8e7"), false, 1.5)
 		room._analysis_overlay.draw_string(font, rect.position + Vector2(8, 16), "ENVELOPE DE OPACIDADE (pops=%d)" % room._envelope_pops.size(), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color("62d8e7"))
+		var n_samples := maxf(float(room._envelope_samples.size()), 180.0)
 		for i in range(1, room._envelope_samples.size()):
-			var x0 := rect.position.x + 8.0 + float(i - 1) / 180.0 * (rect.size.x - 16.0)
-			var x1 := rect.position.x + 8.0 + float(i) / 180.0 * (rect.size.x - 16.0)
+			var x0 := rect.position.x + 8.0 + float(i - 1) / n_samples * (rect.size.x - 16.0)
+			var x1 := rect.position.x + 8.0 + float(i) / n_samples * (rect.size.x - 16.0)
 			var y0 := rect.position.y + rect.size.y - 10.0 - float(room._envelope_samples[i - 1]["a"]) * (rect.size.y - 30.0)
 			var y1 := rect.position.y + rect.size.y - 10.0 - float(room._envelope_samples[i]["a"]) * (rect.size.y - 30.0)
 			room._analysis_overlay.draw_line(Vector2(x0, y0), Vector2(x1, y1), Color("d7fd6a"), 2.0)
@@ -368,6 +510,16 @@ func _run_proof_sheet(out_arg: String) -> void:
 		get_tree().quit()
 
 
+## Helper D-235: espera o ataque terminar antes de auditar restos (evita falso leak em Moves longos).
+func _wait_move_finish() -> void:
+	for _i in 300:
+		await get_tree().process_frame
+		if _i > 12 and not room._busy():
+			break
+	for _j in 10:
+		await get_tree().process_frame
+
+
 ## Runner Automatizado de Simetria D-235 (outro atacante + lado espelhado + alvos de tamanhos diferentes)
 func _run_test_d235() -> void:
 	var test_moves := [String(room._args["move"])] if room._args.has("move") else ["Tackle", "Fire Bullet", "Electric Beam", "Drain Spear"]
@@ -381,9 +533,10 @@ func _run_test_d235() -> void:
 		room._pick(room._move, mv)
 		room._target.select(mini(2, room._units.size() - 1))
 		await room._fire()
-		for _i in 25:
-			await get_tree().process_frame
-		var ok_a: bool = room._fired
+		await _wait_move_finish()
+		_audit_vfx_leaks()
+		var spawns_a: Array = room._telemetry.get("vfx_spawns", [])
+		var ok_a: bool = room._fired and not spawns_a.is_empty() and room._last_leaks.is_empty() and room._envelope_pops.is_empty()
 		# Caso B: Vista normal, Outro Atacante (Pancham, índice 1) -> Inimigo
 		await room._load_battle(false)
 		room._attacker.select(mini(1, room._units.size() - 1))
@@ -391,9 +544,10 @@ func _run_test_d235() -> void:
 		room._pick(room._move, mv)
 		room._target.select(mini(2, room._units.size() - 1))
 		await room._fire()
-		for _i in 25:
-			await get_tree().process_frame
-		var ok_b: bool = room._fired
+		await _wait_move_finish()
+		_audit_vfx_leaks()
+		var spawns_b: Array = room._telemetry.get("vfx_spawns", [])
+		var ok_b: bool = room._fired and not spawns_b.is_empty() and room._last_leaks.is_empty() and room._envelope_pops.is_empty()
 		# Caso C: Vista Espelhada (Inimigo distante ataca aliado próximo) + escala diferente (2,5m vs 0,8m)
 		await room._load_battle(true)
 		room._apply_scale_test(2.2)
@@ -402,9 +556,10 @@ func _run_test_d235() -> void:
 		room._pick(room._move, mv)
 		room._target.select(0)
 		await room._fire()
-		for _i in 25:
-			await get_tree().process_frame
-		var ok_c: bool = room._fired
+		await _wait_move_finish()
+		_audit_vfx_leaks()
+		var spawns_c: Array = room._telemetry.get("vfx_spawns", [])
+		var ok_c: bool = room._fired and not spawns_c.is_empty() and room._last_leaks.is_empty() and room._envelope_pops.is_empty()
 		var mv_ok: bool = ok_a and ok_b and ok_c
 		if not mv_ok:
 			all_ok = false

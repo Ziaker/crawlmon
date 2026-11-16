@@ -17,6 +17,11 @@ var is_aoe := false
 var is_friendly := false
 var skill: Skill = null
 var time_left := 0.0
+## D-1239: what the attacker really paid to start this move, so an Employ can give it back.
+var paid_burst := false  ## 1 Burst paid the whole move (D-033).
+var paid_blocks := 0.0  ## ATB blocks spent (0 when the Burst paid).
+var paid_mp := 0
+var paid_mp_timer := 0.0  ## D-1239: the actor's MP regen timer before this move reset it (D-413).
 var total_windup := 1.5
 var dodged := false
 var instant := false  ## A counter-attack after a Perfect Evade: no wind-up at all.

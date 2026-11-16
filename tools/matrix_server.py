@@ -10,6 +10,7 @@ Nao contorna bloqueio/CAPTCHA: devolve {"ok": false, "blocked": true, "url": ...
 para o criador salvar a imagem a mao. User-Agent honesto e fixo.
 """
 import argparse
+import base64
 import hashlib
 import http.client
 import http.server
@@ -24,10 +25,15 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import webbrowser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DEST = ROOT / "sugimori" / "dqt_web" / "wiki"
+PORTRAITS_DIR = ROOT / "personagens" / "portraits"
+PORTRAITS_CUSTOM_DIR = ROOT / "personagens" / "portraits_custom"
+RENDERS_DIR = ROOT / "sugimori" / "por_nome"
+SAFE_CHAR_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
 DEFAULT_WIKI = "https://dragon-quest.org/w/api.php"
 UA = "CrawlmonArtFetch/1.0 (uso pessoal, projeto de jogo)"
 CDN = "wikia.nocookie.net"
@@ -386,11 +392,58 @@ def wiki_save(payload):
             "height": height, "bytes": final.stat().st_size, "has_alpha": has_alpha}
 
 
+def character_save_asset(payload):
+    if not isinstance(payload, dict):
+        raise Failure("corpo JSON deve ser um objeto", 400)
+    raw_id = str(payload.get("id") or "").strip().lower()
+    key = re.sub(r"^dqt_", "", raw_id)
+    if not SAFE_CHAR_RE.match(key):
+        raise Failure("id de personagem invalido", 400)
+    kind = str(payload.get("kind") or "").strip().lower()
+    if kind not in ("icon", "render"):
+        raise Failure("kind deve ser 'icon' ou 'render'", 400)
+    data_url = str(payload.get("data_url") or "")
+    if not data_url.startswith("data:image/png;base64,"):
+        raise Failure("data_url deve ser PNG em base64", 400)
+    try:
+        raw = base64.b64decode(data_url.split(",", 1)[1], validate=True)
+    except Exception:
+        raise Failure("base64 invalido", 400) from None
+    if len(raw) > MAX_BYTES or not raw.startswith(PNG_SIG):
+        raise Failure("PNG invalido ou grande demais", 400)
+
+    def _atomic_write(target: Path):
+        target.parent.mkdir(parents=True, exist_ok=True)
+        tmp = target.with_suffix(".png.part")
+        tmp.write_bytes(raw)
+        os.replace(tmp, target)
+
+    if kind == "icon":
+        main_target = PORTRAITS_DIR / f"{key}.png"
+        _atomic_write(main_target)
+        _atomic_write(PORTRAITS_CUSTOM_DIR / f"{key}.png")
+    else:
+        main_target = RENDERS_DIR / f"{key}.png"
+        _atomic_write(main_target)
+    rel = main_target.relative_to(ROOT).as_posix()
+    return {"ok": True, "key": key, "kind": kind, "path": rel, "res_path": "res://" + rel, "bytes": len(raw)}
+
+
 class Handler(http.server.SimpleHTTPRequestHandler):
     server_version = "MatrixServer/1.0"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
+
+    def end_headers(self):
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        super().end_headers()
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.end_headers()
 
     def list_directory(self, path):
         self.send_error(403, "listagem de diretorios desativada")
@@ -427,18 +480,20 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             if not self.path.startswith("/api/"):
                 return self.send_error(405)
             parts = urllib.parse.urlsplit(self.path)
-            if parts.path != "/api/wiki/save":
+            if parts.path not in ("/api/wiki/save", "/api/character/save_asset"):
                 self._log("POST", parts.path, 404)
                 return self._json(404, {"ok": False, "error": "rota desconhecida"})
             try:
                 size = int(self.headers.get("Content-Length") or 0)
             except ValueError:
                 size = 0
-            if not 0 < size <= 1 << 20:
+            max_post = (16 << 20) if parts.path == "/api/character/save_asset" else (1 << 20)
+            if not 0 < size <= max_post:
                 self._log("POST", parts.path, 400)
                 return self._json(400, {"ok": False, "error": "corpo JSON ausente ou grande demais"})
             try:
-                out = wiki_save(json.loads(self.rfile.read(size).decode("utf-8")))
+                body = json.loads(self.rfile.read(size).decode("utf-8"))
+                out = character_save_asset(body) if parts.path == "/api/character/save_asset" else wiki_save(body)
             except (UnicodeDecodeError, ValueError):
                 self._log("POST", parts.path, 400)
                 return self._json(400, {"ok": False, "error": "JSON invalido"})
@@ -478,23 +533,41 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 
     def _log(self, method, path, status):
-        sys.stderr.write("[matrix_server] API %s %s -> %s\n" % (method, path, status))
+        if sys.stderr:
+            sys.stderr.write("[matrix_server] API %s %s -> %s\n" % (method, path, status))
 
     def log_message(self, fmt, *args):
-        if self.path.startswith("/api/"):
+        if self.path.startswith("/api/") and sys.stderr:
             sys.stderr.write("[matrix_server] %s\n" % (fmt % args))
+
+
+def _port_listening(port):
+    try:
+        with socket.create_connection(("127.0.0.1", port), timeout=0.5):
+            return True
+    except OSError:
+        return False
 
 
 def main():
     parser = argparse.ArgumentParser(description="Servidor local da matriz de afinidades")
     parser.add_argument("--port", type=int, default=8791)
+    parser.add_argument("--open", action="store_true", help="Abre a matriz no navegador (e reutiliza servidor ativo)")
     args = parser.parse_args()
+    url = f"http://localhost:{args.port}/prototypes/affinity_matrix.html"
+    if args.open and _port_listening(args.port):
+        webbrowser.open(url)
+        return
     server = http.server.ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
-    print(f"Matriz: http://localhost:{args.port}/prototypes/affinity_matrix.html  (Ctrl+C encerra)")
+    if sys.stdout:
+        print(f"Matriz: {url}  (Ctrl+C encerra)")
+    if args.open:
+        webbrowser.open(url)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\nencerrado")
+        if sys.stdout:
+            print("\nencerrado")
     finally:
         server.server_close()
 

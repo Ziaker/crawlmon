@@ -22,6 +22,7 @@ const FxLaneScript = preload("res://scripts/vfx/combat/fx_lane.gd")
 const FxDrainSpearScript = preload("res://scripts/vfx/combat/fx_drain_spear.gd")
 const FxJavelinThrowScript = preload("res://scripts/vfx/combat/fx_javelin_throw.gd")
 const FxDigScript = preload("res://scripts/vfx/combat/fx_dig.gd")
+const FxMartialScript = preload("res://scripts/vfx/combat/fx_martial.gd")
 const FxSandAttackScript = preload("res://scripts/vfx/combat/fx_sand_attack.gd")
 const FxMabufulaScript = preload("res://scripts/vfx/combat/fx_mabufula.gd")
 const FxKnockScript = preload("res://scripts/vfx/combat/fx_knock.gd")
@@ -82,10 +83,11 @@ var fx_armor: FxArmor  ## D-1026
 var fx_drain_spear: RefCounted
 var fx_javelin: RefCounted  ## D-1162: Javelin Throw's authored 3D effect, drawn from the attack's own phases
 var fx_knock: RefCounted  ## D-1205: generic impact reaction (knock-up, soft push, FOV) driven by the Move's data
+var fx_martial: RefCounted  ## D-1209: Karate Chop / Brick Break white holo hand, drawn from the attack phases
 var fx_dig: RefCounted  ## D-1196: Dig (option A of the unified dust HTML): body choreography + dust from the attack's phases
+var fx_sand_attack: RefCounted  ## D-1196: Sand Attack (option A of the unified dust HTML): kick cloud, jet and blinding veil
 var fx_mabufula: RefCounted
 var fx_bubble_shot: RefCounted  ## D-1170: Bubble Shot's authored 3D effect, drawn from the attack's own phases
-var fx_sand_attack: RefCounted  ## D-1196: Sand Attack (option A of the unified dust HTML): kick cloud, jet and blinding veil
 var fx_bubble: RefCounted  ## D-323/D-324: Bubble Shield wind-up, domes and hits
 var fx_projectiles: FxProjectiles
 var fx_text: FxText
@@ -105,9 +107,10 @@ func _init() -> void:
 	fx_drain_spear = FxDrainSpearScript.new(self)
 	fx_javelin = FxJavelinThrowScript.new(self)
 	fx_dig = FxDigScript.new(self)
+	fx_martial = FxMartialScript.new(self)
+	fx_sand_attack = FxSandAttackScript.new(self)
 	fx_mabufula = FxMabufulaScript.new(self)
 	fx_knock = FxKnockScript.new(self)
-	fx_sand_attack = FxSandAttackScript.new(self)
 	fx_bubble_shot = FxBubbleShotScript.new(self)
 	fx_bubble = FxBubbleShieldScript.new(self)
 	fx_projectiles = FxProjectiles.new(self)
@@ -350,11 +353,11 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 	var move_id := normalize_move_id(String(info.get("skill_name", "")))
 	if move_id == "mabufula":
 		fx_mabufula.on_hit(attacker, target, info)
+	if move_id == "tiro_areia" and fx_sand_attack != null:
+		fx_sand_attack.on_hit(attacker, target, info)  # D-1196: the blinding veil only when the sand really hit
 	if _move_has_tag_or(move_id, &"badge_steal", ["drain_spear"]):
 		color = Color("62d8e7")  # the Move's cyan magical energy, not the white physical tint
 	var a_pos: Vector3 = (_models[attacker] as Node3D).position if _models.has(attacker) else rest_pos(attacker)
-	if move_id == "tiro_areia" and fx_sand_attack != null:
-		fx_sand_attack.on_hit(attacker, target, info)  # D-1196: the blinding veil only when the sand really hit
 	a_pos.y = 0.0
 	var t_pos: Vector3 = (_models[target] as Node3D).position if _models.has(target) else rest_pos(target)
 	t_pos.y = 0.0
@@ -459,7 +462,7 @@ func play_hit(attacker: Combatant, target: Combatant, element: Element.Type, inf
 
 	flash(target)
 	# Screen-space post-processing (chromatic aberration, radial blur, elemental tint)
-	if cam != null and not is_ko:
+	if cam != null and not is_ko and not _move_has_tag_or(move_id, &"no_screen_post", []):  # D-1209: no radial-blur "zoom" on Karate Chop / Brick Break
 		var bw_pulse := (move_uses_bw_pulse(move_id) or (heavy and not _move_has_tag_or(move_id, &"no_bw_pulse", ["soco_rapido"]))) and not drain_spear
 		cam.impact_post(to, color, heavy, bw_pulse)
 
@@ -582,12 +585,13 @@ func _process(delta: float) -> void:
 	fx_stun.update(delta)  # D-979: dizzy body + spinning stars while stunned (after the idle pose is set)
 	fx_bubble.process(delta)  # D-323/D-324: domes, paper wind-up and shield hits
 	fx_knock.process(delta)  # D-1205: after fx_dig, so a Move's soft push is added on top of its choreography
+	fx_martial.process(delta)  # D-1209
 	fx_dig.process(delta)  # D-1196: last word on the pose of Dig's body and of its target (after the idle pose and fx_motion)
+	fx_sand_attack.process(delta)  # D-1196: Sand Attack's 0.06 s jet kick, on the attack's own clock
 	fx_mabufula.process(delta)
 
 
 func _is_idle(c: Combatant) -> bool:
-	fx_sand_attack.process(delta)  # D-1196: Sand Attack's 0.06 s jet kick, on the attack's own clock
 	var m: Node3D = _models[c]
 	if not c.is_alive() or not m.visible or _displaced.get(c, false) or fx_motion.is_driven(c):
 		return false
@@ -732,6 +736,7 @@ func telegraph(inc) -> void:
 	fx_drain_spear.start(inc)
 	fx_bubble_shot.start(inc)  # D-1170: the bubble inflates with the wind-up
 	fx_javelin.start(inc)  # D-1162: the javelin's pieces are born with the wind-up
+	fx_martial.start(inc)  # D-1209: the hand is born with the wind-up
 	fx_dig.start(inc)  # D-1196: Dig's hop is its wind-up
 	fx_mabufula.start(inc)
 	_freeze_new_windup_if_paused(inc.attacker)  # D-1159: a wind-up started during the pause stays stopped.
@@ -746,12 +751,13 @@ func on_attack_cancelled(inc) -> void:
 	fx_drain_spear.cancel(inc)
 	fx_javelin.cancel(inc)
 	fx_dig.cancel(inc)
+	fx_martial.cancel(inc)
+	fx_sand_attack.cancel(inc)
 	fx_mabufula.cancel(inc)
 	fx_bubble_shot.cancel(inc)
 
 
 func resolve_attack(inc) -> void:
-	fx_sand_attack.cancel(inc)
 	fx_telegraph.resolve_attack(inc)
 
 
@@ -829,14 +835,14 @@ func finish(player_won: bool) -> void:
 		fx_javelin.clear_all()
 	if fx_bubble_shot != null:
 		fx_bubble_shot.clear_all()
+	if fx_sand_attack != null:
+		fx_sand_attack.clear_all()
 	if fx_bubble != null:
 		fx_bubble.clear_all("battle_end")
 
 
 func _hit_stop(attacker: Combatant, target: Combatant, heavy: bool, strike_dir := Vector3.FORWARD, impact_fx: Array[Node3D] = [], duration_override := -1.0, slow_target := false) -> void:
 	await fx_motion._hit_stop(attacker, target, heavy, strike_dir, impact_fx, duration_override, slow_target)
-	if fx_sand_attack != null:
-		fx_sand_attack.clear_all()
 
 
 func dodge(target: Combatant, _text: String, hold := false) -> void:
@@ -953,16 +959,16 @@ func on_phase(inc, phase: int) -> void:
 	# D-1147: an interrupted cast emits a synthetic RETURN; the cone must not appear then.
 	if phase == Battle.Phase.RETURN and normalize_move_id(inc.label) == "war_cry" and not inc.interrupted:
 		WarCryVfxScript.start(self, inc)
+	# Sand Attack: sem o atraso pós wind-up (criador): o release nasce na 1a fase depois do wind-up (STRIKE),
+	# não no TRAVEL (que só começa depois da animação de lançar). O TRAVEL chama de novo e start() ignora.
+	if phase == Battle.Phase.STRIKE or phase == Battle.Phase.TRAVEL:
+		fx_sand_attack.start(inc)
 	fx_motion.on_phase(inc, phase)
 
 
 ## D-031/D-1147: while a status pause (or War Cry) freezes attack animations, each event
 ## owns the AnimationPlayers it froze, so one ending cannot wake the other's freeze.
 var _status_freeze_batches: Dictionary = {}  # Incoming -> Array[AnimationPlayer]
-	# Sand Attack: sem o atraso pós wind-up (criador): o release nasce na 1a fase depois do wind-up (STRIKE),
-	# não no TRAVEL (que só começa depois da animação de lançar). O TRAVEL chama de novo e start() ignora.
-	if phase == Battle.Phase.STRIKE or phase == Battle.Phase.TRAVEL:
-		fx_sand_attack.start(inc)
 
 
 func _freeze_new_windup_if_paused(c: Combatant) -> void:

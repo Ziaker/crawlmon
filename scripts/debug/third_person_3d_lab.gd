@@ -90,9 +90,14 @@ const HEIGHTS := {
 	"pancham": 0.7,
 	"dqt_orc": 2.1,
 	"dqt_slime": 1.4,
+	"gible": 1.0,
+	"dqt_cyclops": 2.2,
 }
 
 ## O recorder liga isso antes de add_child para o vídeo com os três.
+## D-1208: which protagonist the lab controls. The Murky Forest lab overrides it
+## from GameState.party[0]; the base lab stays on Abra by default.
+@export var player_species := "abra"
 @export var start_party := false
 ## D-1086: só o lab da Murky Forest liga o protótipo do Medroso.
 @export var enable_threat_demo := false
@@ -503,12 +508,13 @@ func _build_player() -> void:
 	add_child(player)
 	player_yaw = PI
 	player.rotation.y = player_yaw
-
-	player_model = _make_model("abra", float(HEIGHTS["abra"]))
+	# D-1208: any of the 6 protagonists can be spawned by exporting player_species.
+	var player_id := player_species if HEIGHTS.has(player_species) else "abra"
+	player_model = _make_model(player_id, float(HEIGHTS[player_id]))
 	player.add_child(player_model)
 	player_ap = _anim_player(player_model)
-	player_height = float(HEIGHTS["abra"])
-	player_model_id = "abra"
+	player_height = float(HEIGHTS[player_id])
+	player_model_id = player_id
 	_play(player_ap, "idle")
 	_add_blob_shadow(player, 0.9, 0.6)
 
@@ -781,7 +787,7 @@ func _build_exit() -> void:
 	_box(Vector3(0.3, 0.3, 3.2), Vector3(17.7, 3.2, -10.0), gate_mat, false)
 	_box(Vector3(0.15, 2.6, 2.6), Vector3(17.85, 1.4, -10.0), _stone_mat(Color(0.03, 0.05, 0.07), 1.0), false)
 	var tag := Label3D.new()
-	tag.text = "SAÍDA"
+	tag.text = "RETURN TO HUB"
 	tag.font_size = 46
 	tag.modulate = Color(1.0, 0.88, 0.55)
 	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
@@ -1552,13 +1558,16 @@ func _update_door_prompt() -> void:
 	_door_near = near
 	if _door_used:
 		_door_prompt.visible = near
-		_door_prompt.text = "SAÍDA" if near else ""
+		_door_prompt.text = "RETURN TO HUB" if near else ""
 		return
 	_door_prompt.visible = near
 	if near:
-		_door_prompt.text = "Z/E: SAÍDA"
+		_door_prompt.text = "Z/E: RETURN TO HUB"
 		if Input.is_action_pressed("lab_interact"):
+			if GameState.expedition_origin_scene == GameState.HUB_3D:
+				GameState.return_to_hub_from_expedition()
+				return
 			_door_used = true
-			_door_prompt.text = "SAÍDA"
+			_door_prompt.text = "RETURN TO HUB"
 	else:
 		_door_prompt.text = ""

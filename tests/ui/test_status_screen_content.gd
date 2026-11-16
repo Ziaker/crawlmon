@@ -53,7 +53,7 @@ func _test_nature_formatting_helpers() -> bool:
 	# Brave
 	var brave := NatureData.get_nature("brave")
 	var brave_mods: String = screen._format_nature_mods(brave["mods"])
-	if not _assert_test("+2 STR" in brave_mods and "-2 AGI" in brave_mods,
+	if not _assert_test("+2 STR" in brave_mods and "-3 AGI" in brave_mods,
 		"Brave mods formatado incorretamente: " + brave_mods):
 		return false
 

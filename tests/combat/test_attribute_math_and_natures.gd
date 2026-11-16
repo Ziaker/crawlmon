@@ -84,9 +84,9 @@ func _test_canonical_species_conversions() -> bool:
 
 
 func _test_natures_zero_sum() -> bool:
-	print("  -> Testando soma zero e catalogo de todas as 8 Natures...")
+	print("  -> Testando soma zero e catalogo de todas as 18 Natures...")
 	var ids := NatureData.get_all_nature_ids()
-	if not _assert_test(ids.size() == 8, "Catalogo deve conter exatamente 8 Natures"):
+	if not _assert_test(ids.size() == 18, "Catalogo deve conter exatamente 18 Natures (D-1216)"):
 		return false
 
 	for id in ids:

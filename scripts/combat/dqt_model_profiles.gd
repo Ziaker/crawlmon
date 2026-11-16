@@ -67,19 +67,25 @@ const PROFILES := {
 		"clip_prefix": "cm_00_0020_",
 		"rotation_y": 180.0,
 		# Ready (32) is the battle stance. Idle (00) is an appear/idle/end clip.
-		"idle_source": "32",
-		"idle_pose_time": 1.90,
-		"idle_full": true,
+		"idle_source": "00",
+		"idle_full": false,
+		"idle_speed": 0.5,
 		# D-341: the creator wants the Orc's run at its normal 1x speed (no stride matching).
 		"ally_scale": 1.2,  # D-342: 1.2x bigger on the player's side only
 		# qa_export flags the spear detached on Die/Joy/SkillB; keep it in the hand.
 		"charge_clip": "32",  # D-1004: wind-up plays the whole clip 32
-		"guard_clip": "12",  # D-1004
+		"guard_clip": "32",
+		"guard_range": [0.50, 1.25],
 		"weapon_follow": {
 			"hand": "j_te_r",
+			"hand_fingers": "j_yubi_r",
+			"second_hand": "j_te_l",
+			"second_fingers": "j_yubi_l",
 			"bone": "n_buki_r_n_hara",
 			"ref_clip": "32",
-			"anims": ["down", "victory", "attack_special"],
+			"ref_time": 1.90,
+			"anims": ["down", "victory", "guard", "attack_special", "charge", "battle_idle", "idle", "cm_00_0020_32"],
+			"two_hand_anims": ["guard"],
 		},
 	},
 	"dqt_cyclops": {
@@ -160,6 +166,9 @@ static func apply_anim_aliases(ap: AnimationPlayer, profile: Dictionary) -> void
 		if profile.get("idle_full", false) and alias in ["idle", "battle_idle"]:
 			anim = base.duplicate(true) as Animation
 			anim.loop_mode = Animation.LOOP_NONE
+		elif profile.has(alias + "_range"):
+			var r: Array = profile[alias + "_range"]
+			anim = _slice_animation(base, float(r[0]), float(r[1]), Animation.LOOP_PINGPONG)
 		elif alias in ["charge", "guard"] and profile.has(alias + "_clip"):
 			anim = base.duplicate(true) as Animation  # D-1004: the whole clip, looped
 			anim.loop_mode = Animation.LOOP_LINEAR
@@ -167,6 +176,8 @@ static func apply_anim_aliases(ap: AnimationPlayer, profile: Dictionary) -> void
 			anim = _hold_pose(base, float(profile["idle_pose_time"]))
 		else:
 			anim = base.duplicate(true) as Animation
+		if alias in ["idle", "battle_idle"] and profile.has("idle_speed"):
+			_scale_animation_duration(anim, 1.0 / maxf(float(profile["idle_speed"]), 0.05))
 		library.add_animation(alias, anim)
 	ap.clear_caches()
 
@@ -270,26 +281,32 @@ static func setup_weapon_follow(model: Node, ap: AnimationPlayer, profile: Dicti
 	var ref := ap.get_animation(str(profile.get("clip_prefix", "")) + str(cfg["ref_clip"]))
 	if hand < 0 or weapon < 0 or ref == null:
 		return
+	var ref_t := float(cfg.get("ref_time", 0.0))
 	for i in ref.get_track_count():
 		var bone := sk.find_bone(_bone_name(ref.track_get_path(i)))
 		if bone < 0:
 			continue
 		match ref.track_get_type(i):
 			Animation.TYPE_POSITION_3D:
-				sk.set_bone_pose_position(bone, ref.position_track_interpolate(i, 0.0))
+				sk.set_bone_pose_position(bone, ref.position_track_interpolate(i, ref_t))
 			Animation.TYPE_ROTATION_3D:
-				sk.set_bone_pose_rotation(bone, ref.rotation_track_interpolate(i, 0.0))
+				sk.set_bone_pose_rotation(bone, ref.rotation_track_interpolate(i, ref_t))
 			Animation.TYPE_SCALE_3D:
-				sk.set_bone_pose_scale(bone, ref.scale_track_interpolate(i, 0.0))
+				sk.set_bone_pose_scale(bone, ref.scale_track_interpolate(i, ref_t))
 	sk.force_update_all_bone_transforms()
 	var follow := WeaponFollow.new()
 	follow.name = "DqtWeaponFollow"
 	follow.animation_player = ap
 	follow.hand_bone = str(cfg["hand"])
 	follow.weapon_bone = str(cfg["bone"])
+	follow.second_hand_bone = str(cfg.get("second_hand", ""))
+	follow.hand_fingers_bone = str(cfg.get("hand_fingers", ""))
+	follow.second_fingers_bone = str(cfg.get("second_fingers", ""))
 	follow.offset = sk.get_bone_global_pose(hand).affine_inverse() * sk.get_bone_global_pose(weapon)
 	for a in cfg.get("anims", []):
 		follow.active_anims.append(str(a))
+	for a in cfg.get("two_hand_anims", []):
+		follow.two_hand_anims.append(str(a))
 	sk.reset_bone_poses()
 	sk.add_child(follow)
 
@@ -324,6 +341,46 @@ static func _hold_pose(source: Animation, at_time: float, length := 2.0) -> Anim
 		out.track_insert_key(track, 0.0, value)
 		out.track_insert_key(track, length, value)
 	return out
+
+
+## Slices [t_start, t_end] from `source` into a standalone Animation with boundary keys.
+static func _slice_animation(source: Animation, t_start: float, t_end: float, loop_mode: Animation.LoopMode) -> Animation:
+	var out := Animation.new()
+	var dur := maxf(t_end - t_start, 0.05)
+	out.length = dur
+	out.loop_mode = loop_mode
+	for i in source.get_track_count():
+		var type := source.track_get_type(i)
+		if type not in [Animation.TYPE_POSITION_3D, Animation.TYPE_ROTATION_3D, Animation.TYPE_SCALE_3D]:
+			continue
+		var track := out.add_track(type)
+		out.track_set_path(track, source.track_get_path(i))
+		var sample_at := func(t: float) -> Variant:
+			match type:
+				Animation.TYPE_POSITION_3D:
+					return source.position_track_interpolate(i, t)
+				Animation.TYPE_ROTATION_3D:
+					return source.rotation_track_interpolate(i, t)
+				Animation.TYPE_SCALE_3D:
+					return source.scale_track_interpolate(i, t)
+			return null
+		out.track_insert_key(track, 0.0, sample_at.call(t_start))
+		for k in source.track_get_key_count(i):
+			var kt := source.track_get_key_time(i, k)
+			if kt > t_start + 1e-4 and kt < t_end - 1e-4:
+				out.track_insert_key(track, kt - t_start, source.track_get_key_value(i, k))
+		out.track_insert_key(track, dur, sample_at.call(t_end))
+	return out
+
+
+## Scales an Animation's length and all keyframe timestamps by `factor`.
+static func _scale_animation_duration(anim: Animation, factor: float) -> void:
+	if anim == null or absf(factor - 1.0) < 1e-4:
+		return
+	anim.length *= factor
+	for i in anim.get_track_count():
+		for k in range(anim.track_get_key_count(i) - 1, -1, -1):
+			anim.track_set_key_time(i, k, anim.track_get_key_time(i, k) * factor)
 
 
 ## Gentle breathing on the held pose: scale + vertical bob on a wrapper.

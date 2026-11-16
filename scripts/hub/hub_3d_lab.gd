@@ -15,7 +15,7 @@ extends "res://scripts/debug/third_person_3d_lab.gd"
 ##                  --view=<id> --quit
 ## Hotkeys: [1] Followers · [F6] Swap Leader · [F7] Lighting · [E/Z] Interact
 ## Scenarios: HUB_BOOT HUB_NAVIGATION HUB_INTERACTION HUB_GATE HUB_GUILD
-##            HUB_CAMERA HUB_STATE HUB_LIVING HUB_ATMOSPHERE
+##            HUB_CAMERA HUB_STATE HUB_LIVING HUB_ATMOSPHERE HUB_PORTAL_CYCLE
 
 const NPC_PROMPT := preload("res://scripts/debug/overworld_prompt.gd")
 const NPC_HUD := preload("res://scripts/debug/dialogue_hud_styles.gd")
@@ -27,6 +27,7 @@ const NATURE_DATA := preload("res://scripts/data/nature_data.gd")
 const PreGameCatalog = preload("res://scripts/ui/pre_game/pre_game_catalog.gd")
 const PreGameViewModals = preload("res://scripts/ui/pre_game/pre_game_view_modals.gd")
 const WALL_SHADER := preload("res://shaders/wall_palisade_blend.gdshader")
+const MARKER_RING_SHADER := preload("res://shaders/overworld_marker_ring.gdshader")
 const ICON_ALERT := preload("res://assets/ui/overworld_icons/state_alert.png")
 const ICON_QUESTION := preload("res://assets/ui/overworld_icons/state_question.png")
 const ICON_TALKED := preload("res://assets/ui/overworld_icons/state_talked.png")
@@ -35,6 +36,11 @@ const WALL_TEXTURES := {
 	"slate": preload("res://assets/textures/walls/murky_wall_slate_cracks.png"),
 	"bark": preload("res://assets/textures/walls/murky_wall_bark_roots.png"),
 	"palisade": preload("res://assets/textures/walls/murky_wall_root_palisade.png"),
+	"palisade_v1": preload("res://assets/textures/walls/murky_wall_root_palisade_v1.png"),
+	"palisade_v2": preload("res://assets/textures/walls/murky_wall_root_palisade_v2.png"),
+	"palisade_v3": preload("res://assets/textures/walls/murky_wall_root_palisade_v3.png"),
+	"palisade_v4": preload("res://assets/textures/walls/murky_wall_root_palisade_v4.png"),
+	"palisade_v5": preload("res://assets/textures/walls/murky_wall_root_palisade_v5.png"),
 }
 
 const PLAYABLE_LEADERS := ["abra", "pancham", "gible", "dqt_slime", "dqt_orc", "dqt_cyclops"]
@@ -54,6 +60,10 @@ const HUB_HEIGHTS := {
 	"charmander": 0.78,
 	"eevee": 0.62,
 	"dqt_healslime": 1.15,
+	"dqt_dracky": 0.95,
+	"dqt_sabrecub": 0.85,
+	"dqt_platypunk": 0.95,
+	"dqt_fungi": 0.95,
 }
 const HUB_NAMES := {
 	"abra": "ABRA",
@@ -68,6 +78,10 @@ const HUB_NAMES := {
 	"charmander": "CHARMANDER",
 	"eevee": "EEVEE",
 	"dqt_healslime": "HEAL SLIME",
+	"dqt_dracky": "DRACKY",
+	"dqt_sabrecub": "SABRECUB",
+	"dqt_platypunk": "PLATYPUNK",
+	"dqt_fungi": "FUNGHOUL",
 }
 
 const PLAYER_START := Vector3(0.0, 0.0, 4.0)
@@ -80,6 +94,10 @@ const BOARD_POS := Vector3(-3.2, 0.0, -9.5)
 const GUILD_POS := Vector3(-10.5, 0.0, -2.0)
 const PLOT_EAST := Vector3(10.5, 0.0, -2.0)
 const PLOT_SOUTHEAST := Vector3(8.0, 0.0, 6.5)
+
+const PORTAL_ENTRY_POS := Vector3(0.0, 0.0, -9.2)
+const PORTAL_VORTEX_POS := Vector3(0.0, 0.0, -10.85)
+const PORTAL_EXIT_LAND_POS := Vector3(0.0, 0.0, -8.2)
 
 const GATE_RADIUS := 3.0
 const GUILD_RADIUS := 3.0
@@ -112,11 +130,13 @@ const HUB_NPC_SPECS := [
 	{
 		"id": "pikachu", "role": "GUILD CLERK", "pos": Vector3(-7.2, 0.0, -4.5),
 		"yaw": 0.85, "icon": "alert", "patrol": false,
+		"portal_eligible": false,
 		"line": "[PROTOTYPE] Step up to the Guild Desk to open the Guild Hall menu or inspect your active party StatusScreen.",
 	},
 	{
 		"id": "squirtle", "role": "GATE WARDEN", "pos": Vector3(3.4, 0.0, -8.8),
 		"yaw": -0.45, "icon": "alert", "patrol": false,
+		"portal_eligible": false,
 		"line": "[PROTOTYPE] Murky Forest (5 floors) is the authorized gate route. Expedition Nature is rolled only on departure (R18-Q4).",
 	},
 	{
@@ -134,44 +154,65 @@ const HUB_NPC_SPECS := [
 		"yaw": 2.30, "icon": "question", "patrol": true,
 		"line": "[PROTOTYPE] Dusk, Day, and Night presets retune skylights without full-screen flashes (D-418).",
 	},
+	{
+		"id": "dqt_dracky", "role": "NIGHT SCOUT", "pos": Vector3(6.8, 0.0, -5.8),
+		"yaw": -2.2, "icon": "question", "patrol": true, "portal_eligible": true,
+		"line": "[PROTÓTIPO] Night Scout faz a ronda da praça após o crepúsculo.",
+	},
+	{
+		"id": "dqt_sabrecub", "role": "STRIKER", "pos": Vector3(-6.2, 0.0, 7.6),
+		"yaw": 2.4, "icon": "question", "patrol": true, "portal_eligible": true,
+		"line": "[PROTÓTIPO] Striker patrulha o calçadão oeste antes da incursão.",
+	},
+	{
+		"id": "dqt_platypunk", "role": "FORAGER", "pos": Vector3(6.4, 0.0, 2.4),
+		"yaw": -1.4, "icon": "question", "patrol": true, "portal_eligible": true,
+		"line": "[PROTÓTIPO] Forager confere os suprimentos perto dos lotes leste.",
+	},
+	{
+		"id": "dqt_fungi", "role": "SPORE KEEPER", "pos": Vector3(4.2, 0.0, 8.2),
+		"yaw": -2.8, "icon": "question", "patrol": true, "portal_eligible": true,
+		"line": "[PROTÓTIPO] Spore Keeper cuida dos canteiros ao sul da praça.",
+	},
 ]
+const TRAVELER_SLOTS := [{"pos": Vector3(-4.2, 0.0, 8.2), "yaw": 2.5}, {"pos": Vector3(5.6, 0.0, -5.6), "yaw": -2.2}]
 
 const LIGHTING_PRESETS := {
 	"dusk": {
 		"label": "WARM DUSK SANCTUARY",
-		"bg": Color(0.036, 0.026, 0.028),
-		"ambient": Color(0.32, 0.24, 0.22),
-		"ambient_e": 0.48,
-		"fog": Color(0.09, 0.06, 0.05),
-		"fog_d": 0.011,
-		"dir": Color(0.95, 0.72, 0.52),
-		"dir_e": 0.34,
-		"lamp_mult": 1.0,
-		"spot_mult": 1.0,
+		"bg": Color(0.025, 0.019, 0.022),
+		"ambient": Color(0.28, 0.21, 0.20),
+		"ambient_e": 0.35,
+		"fog": Color(0.07, 0.048, 0.042),
+		"fog_d": 0.012,
+		"dir": Color(0.92, 0.68, 0.48),
+		"dir_e": 0.25,
+		"lamp_mult": 1.05,
+		"spot_mult": 0.72,
 	},
 	"day": {
 		"label": "OVERCAST DAYLIGHT",
-		"bg": Color(0.18, 0.20, 0.22),
-		"ambient": Color(0.56, 0.52, 0.46),
-		"ambient_e": 0.86,
-		"fog": Color(0.22, 0.21, 0.19),
-		"fog_d": 0.005,
-		"dir": Color(1.0, 0.94, 0.82),
-		"dir_e": 0.92,
-		"lamp_mult": 0.45,
-		"spot_mult": 1.35,
+		"bg": Color(0.15, 0.17, 0.19),
+		"ambient": Color(0.50, 0.46, 0.42),
+		"ambient_e": 0.68,
+		"fog": Color(0.19, 0.18, 0.17),
+		"fog_d": 0.006,
+		"dir": Color(0.98, 0.92, 0.80),
+		"dir_e": 0.74,
+		"lamp_mult": 0.42,
+		"spot_mult": 1.18,
 	},
 	"night": {
 		"label": "VELVET NIGHT",
-		"bg": Color(0.018, 0.014, 0.020),
-		"ambient": Color(0.18, 0.14, 0.16),
-		"ambient_e": 0.26,
-		"fog": Color(0.04, 0.03, 0.04),
+		"bg": Color(0.014, 0.012, 0.018),
+		"ambient": Color(0.17, 0.14, 0.18),
+		"ambient_e": 0.20,
+		"fog": Color(0.036, 0.028, 0.038),
 		"fog_d": 0.015,
-		"dir": Color(0.76, 0.56, 0.44),
-		"dir_e": 0.16,
+		"dir": Color(0.76, 0.56, 0.46),
+		"dir_e": 0.14,
 		"lamp_mult": 1.35,
-		"spot_mult": 0.70,
+		"spot_mult": 0.60,
 	},
 }
 
@@ -236,6 +277,12 @@ var _last_interact := false
 var _last_z := false
 var _hud_help_mode_label: Label
 var _rng := RandomNumberGenerator.new()
+var _portal_entries_count := 0
+var _portal_exits_count := 0
+var _last_portal_pulse: Dictionary = {}
+var _portal_quad_mat: ShaderMaterial
+var _portal_pulse_val := 0.0
+var _portal_ring_fx: Array[Dictionary] = []
 # Dynamic atmosphere state (structural hooks only; no game rules).
 var _atmo_time := 0.0
 var _wind_strength := 0.35
@@ -340,17 +387,17 @@ func _build_environment() -> void:
 	env.ambient_light_color = preset["ambient"]
 	env.ambient_light_energy = float(preset["ambient_e"])
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	env.tonemap_exposure = 1.02
+	env.tonemap_exposure = 0.93
 	env.fog_enabled = true
 	env.fog_light_color = preset["fog"]
 	env.fog_density = float(preset["fog_d"])
 	env.glow_enabled = true
-	env.glow_intensity = 0.42
-	env.glow_bloom = 0.06
+	env.glow_intensity = 0.38
+	env.glow_bloom = 0.05
 	env.adjustment_enabled = true
-	env.adjustment_brightness = 1.0
-	env.adjustment_contrast = 1.04
-	env.adjustment_saturation = 1.02
+	env.adjustment_brightness = 0.96
+	env.adjustment_contrast = 0.96
+	env.adjustment_saturation = 0.95
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
@@ -362,15 +409,16 @@ func _build_environment() -> void:
 	cavern_fill.light_color = preset["dir"]
 	cavern_fill.light_energy = float(preset["dir_e"])
 	cavern_fill.shadow_enabled = true
-	cavern_fill.shadow_opacity = 0.65
+	cavern_fill.shadow_opacity = 0.55
 	cavern_fill.directional_shadow_max_distance = 46.0
 	add_child(cavern_fill)
 	_cavern_fill_light = cavern_fill
 
 	# Warm local bounce around the main landmarks (no blue lights; D-1023).
 	for data in [
-		[Vector3(-9.2, 2.8, -2.0), Color(1.0, 0.68, 0.36), 0.58, 10.0],
-		[Vector3(0.0, 3.0, -10.2), Color(1.0, 0.64, 0.30), 0.62, 10.5],
+		[Vector3(-9.2, 2.8, -2.0), Color(1.0, 0.66, 0.34), 0.32, 7.8],
+		[Vector3(0.0, 3.0, -10.2), Color(1.0, 0.62, 0.28), 0.34, 8.0],
+		[Vector3(8.8, 2.6, 2.4), Color(1.0, 0.68, 0.36), 0.30, 7.2],
 	]:
 		var lamp := OmniLight3D.new()
 		lamp.position = data[0]
@@ -483,6 +531,70 @@ func _update_atmosphere(delta: float) -> void:
 	_set_particles_scale(_rain_particles, _rain_intensity)
 	_set_particles_scale(_splash_particles, _rain_intensity)
 	_set_particles_scale(_wind_particles, _wind_strength)
+	_update_portal_fx(delta)
+
+
+func _soft_orb_particle_shader(tint: Color, additive := false) -> ShaderMaterial:
+	var blend_mode := "blend_add" if additive else "blend_mix"
+	var sh := Shader.new()
+	sh.code = """shader_type spatial;
+render_mode unshaded, %s, depth_draw_never, cull_disabled;
+
+uniform vec4 orb_color : source_color = vec4(1.0, 0.85, 0.55, 0.55);
+
+void vertex() {
+	vec3 sc = vec3(
+		length(MODEL_MATRIX[0].xyz),
+		length(MODEL_MATRIX[1].xyz),
+		length(MODEL_MATRIX[2].xyz)
+	);
+	MODELVIEW_MATRIX = VIEW_MATRIX * mat4(
+		INV_VIEW_MATRIX[0] * sc.x,
+		INV_VIEW_MATRIX[1] * sc.y,
+		INV_VIEW_MATRIX[2] * sc.z,
+		MODEL_MATRIX[3]
+	);
+	MODELVIEW_NORMAL_MATRIX = mat3(MODELVIEW_MATRIX);
+}
+
+void fragment() {
+	vec2 p = UV * 2.0 - 1.0;
+	float d = length(p);
+	float core = exp(-d * d * 7.2) * (1.0 - smoothstep(0.65, 1.0, d));
+	ALBEDO = orb_color.rgb;
+	ALPHA = clamp(core * orb_color.a, 0.0, 1.0);
+}
+""" % blend_mode
+	var mat := ShaderMaterial.new()
+	mat.shader = sh
+	mat.set_shader_parameter("orb_color", tint)
+	return mat
+
+
+func _update_portal_fx(delta: float) -> void:
+	if _portal_pulse_val > 0.0:
+		_portal_pulse_val = maxf(0.0, _portal_pulse_val - delta * 1.9)
+		if _portal_quad_mat != null:
+			_portal_quad_mat.set_shader_parameter("pulse_boost", _portal_pulse_val)
+	for i in range(_portal_ring_fx.size() - 1, -1, -1):
+		var fx: Dictionary = _portal_ring_fx[i]
+		var mesh := fx.get("mesh") as MeshInstance3D
+		if mesh == null or not is_instance_valid(mesh):
+			_portal_ring_fx.remove_at(i)
+			continue
+		var age := float(fx.get("age", 0.0)) + delta
+		var dur := float(fx.get("dur", 0.55))
+		if age >= dur:
+			mesh.queue_free()
+			_portal_ring_fx.remove_at(i)
+			continue
+		fx["age"] = age
+		var u := clampf(age / dur, 0.0, 1.0)
+		var s := lerpf(0.6, 2.35, 1.0 - pow(1.0 - u, 2.0))
+		mesh.scale = Vector3(s, s, 1.0)
+		var mat := fx.get("mat") as ShaderMaterial
+		if mat != null:
+			mat.set_shader_parameter("alpha", (1.0 - u) * 0.85)
 
 
 func _set_particles_scale(node: Node, factor: float) -> void:
@@ -749,51 +861,68 @@ void fragment() {
 
 
 func _build_room() -> void:
-	var ground := _plaza_floor_shader(Color(0.28, 0.22, 0.19), 2.4)
-	var plaza := _plaza_floor_shader(Color(0.45, 0.38, 0.32), 1.55)
-	var paver := _plaza_floor_shader(Color(0.38, 0.32, 0.27), 1.20)
-	var trim := _toon_mat(Color(0.20, 0.17, 0.16), Color(0.85, 0.55, 0.28), 0.35)
-	var stone := _toon_mat(Color(0.36, 0.31, 0.27))
-	var dark := _toon_mat(Color(0.16, 0.14, 0.14))
+	var ground := _plaza_floor_shader(Color(0.24, 0.19, 0.16), 2.4)
+	var plaza := _plaza_floor_shader(Color(0.37, 0.30, 0.26), 1.55)
+	var paver := _plaza_floor_shader(Color(0.32, 0.26, 0.22), 1.20)
+	var trim := _toon_mat(Color(0.18, 0.15, 0.14), Color(0.82, 0.50, 0.24), 0.28)
+	var bronze := _toon_mat(Color(0.46, 0.34, 0.20), Color(0.88, 0.56, 0.22), 0.18)
+	var stone := _toon_mat(Color(0.29, 0.25, 0.22))
+	var dark := _toon_mat(Color(0.14, 0.12, 0.12))
 
 	# Base ground and the raised central plaza slab.
 	_box(Vector3(PLAZA_HALF_X * 2.0 + 2.0, 0.4, PLAZA_HALF_Z * 2.0 + 2.0), Vector3(0.0, -0.2, 0.0), ground)
 	_box(Vector3(12.0, 0.10, 10.0), Vector3(0.0, 0.05, 1.0), plaza, false)
-	# Plaza trim lines and a central medallion.
+	# Plaza trim lines and stepped dark-stone/bronze central medallion (top <= 0.132m for D-1237).
 	for i in 5:
 		_box(Vector3(11.2, 0.02, 0.10), Vector3(0.0, 0.105, -3.6 + float(i) * 2.3), trim, false)
-	var medallion := MeshInstance3D.new()
-	var cyl := CylinderMesh.new()
-	cyl.top_radius = 2.2
-	cyl.bottom_radius = 2.2
-	cyl.height = 0.04
-	cyl.radial_segments = 8
-	medallion.mesh = cyl
-	medallion.position = Vector3(0.0, 0.11, 1.0)
-	medallion.material_override = trim
-	add_child(medallion)
+	var med_specs := [
+		[2.50, 0.022, 0.105, dark],
+		[2.16, 0.026, 0.111, trim],
+		[1.56, 0.024, 0.116, bronze],
+		[1.12, 0.022, 0.120, dark],
+	]
+	for ms in med_specs:
+		var m_mesh := MeshInstance3D.new()
+		var cyl := CylinderMesh.new()
+		cyl.top_radius = float(ms[0])
+		cyl.bottom_radius = float(ms[0]) + 0.06
+		cyl.height = float(ms[1])
+		cyl.radial_segments = 16
+		m_mesh.mesh = cyl
+		m_mesh.position = Vector3(0.0, float(ms[2]), 1.0)
+		m_mesh.material_override = ms[3]
+		add_child(m_mesh)
+	for c_dir in [Vector3(0, 0, 1.9), Vector3(0, 0, -1.9), Vector3(1.9, 0, 0), Vector3(-1.9, 0, 0)]:
+		var tick_sz := Vector3(0.16, 0.02, 0.48) if absf(c_dir.z) > 0.1 else Vector3(0.48, 0.02, 0.16)
+		_box(tick_sz, Vector3(0.0, 0.118, 1.0) + c_dir, bronze, false)
 
-	# Cardinal stone walkways leading from Central Plaza to Gate, Guild, and Plots A/B.
+	# Cardinal stone walkways with low dark-stone curbs to Gate, Guild, and Plots A/B.
 	for pz in [-4.8, -6.4, -8.0, -9.5]:
 		_box(Vector3(2.4, 0.05, 1.25), Vector3(0.0, 0.025, pz), paver, false)
+		for cx in [-1.32, 1.32]:
+			_box(Vector3(0.16, 0.07, 1.32), Vector3(cx, 0.035, pz), dark, false)
 	for px in [-6.8, -8.2]:
 		_box(Vector3(1.25, 0.05, 2.2), Vector3(px, 0.025, -2.0), paver, false)
+		for cz in [-3.2, -0.8]:
+			_box(Vector3(1.32, 0.07, 0.16), Vector3(px, 0.035, cz), dark, false)
 	for px in [6.8, 8.2]:
 		_box(Vector3(1.25, 0.05, 1.8), Vector3(px, 0.025, -2.0), paver, false)
+		for cz in [-3.0, -1.0]:
+			_box(Vector3(1.32, 0.07, 0.16), Vector3(px, 0.035, cz), dark, false)
 	_box(Vector3(1.4, 0.05, 1.4), Vector3(6.2, 0.025, 4.6), paver, false)
 
-	# Perimeter walls with triplanar palisade blend shader (D-1118); north center left open for Gate.
+	# Perimeter walls with all 6 palisade variations blended cleanly (D-1116).
 	var wall_specs := [
 		[Vector3(0.5, PLAZA_WALL_HEIGHT, PLAZA_HALF_Z * 2.0), Vector3(-PLAZA_HALF_X - 0.25, PLAZA_WALL_HEIGHT * 0.5, 0.0),
-			"stone", "palisade", "bark", Vector4(-PLAZA_HALF_X, -PLAZA_HALF_Z, 0.0, 1.0), Vector4(-PLAZA_HALF_X, PLAZA_HALF_Z, 0.0, 1.0)],
+			"palisade_v1", "palisade", "bark", Vector4(-PLAZA_HALF_X, -PLAZA_HALF_Z, 0.0, 1.0), Vector4(-PLAZA_HALF_X, PLAZA_HALF_Z, 0.0, 1.0)],
 		[Vector3(0.5, PLAZA_WALL_HEIGHT, PLAZA_HALF_Z * 2.0), Vector3(PLAZA_HALF_X + 0.25, PLAZA_WALL_HEIGHT * 0.5, 0.0),
-			"stone", "palisade", "slate", Vector4(PLAZA_HALF_X, -PLAZA_HALF_Z, 0.0, 1.0), Vector4(PLAZA_HALF_X, PLAZA_HALF_Z, 0.0, 1.0)],
+			"palisade_v2", "palisade_v3", "slate", Vector4(PLAZA_HALF_X, -PLAZA_HALF_Z, 0.0, 1.0), Vector4(PLAZA_HALF_X, PLAZA_HALF_Z, 0.0, 1.0)],
 		[Vector3(PLAZA_HALF_X * 2.0 + 1.0, PLAZA_WALL_HEIGHT, 0.5), Vector3(0.0, PLAZA_WALL_HEIGHT * 0.5, PLAZA_HALF_Z + 0.25),
-			"palisade", "bark", "stone", Vector4(-PLAZA_HALF_X, PLAZA_HALF_Z, 0.0, 1.0), Vector4(PLAZA_HALF_X, PLAZA_HALF_Z, 0.0, 1.0)],
+			"palisade_v4", "bark", "stone", Vector4(-PLAZA_HALF_X, PLAZA_HALF_Z, 0.0, 1.0), Vector4(PLAZA_HALF_X, PLAZA_HALF_Z, 0.0, 1.0)],
 		[Vector3(11.0, PLAZA_WALL_HEIGHT, 0.5), Vector3(-8.5, PLAZA_WALL_HEIGHT * 0.5, -PLAZA_HALF_Z - 0.25),
-			"slate", "stone", "bark", Vector4(-PLAZA_HALF_X, -PLAZA_HALF_Z, 0.0, 1.0), Vector4(-3.0, -PLAZA_HALF_Z, 0.0, 0.8)],
+			"palisade_v5", "stone", "palisade", Vector4(-PLAZA_HALF_X, -PLAZA_HALF_Z, 0.0, 1.0), Vector4(-3.0, -PLAZA_HALF_Z, 0.0, 0.8)],
 		[Vector3(11.0, PLAZA_WALL_HEIGHT, 0.5), Vector3(8.5, PLAZA_WALL_HEIGHT * 0.5, -PLAZA_HALF_Z - 0.25),
-			"slate", "stone", "bark", Vector4(PLAZA_HALF_X, -PLAZA_HALF_Z, 0.0, 1.0), Vector4(3.0, -PLAZA_HALF_Z, 0.0, 0.8)],
+			"palisade_v3", "slate", "palisade_v1", Vector4(PLAZA_HALF_X, -PLAZA_HALF_Z, 0.0, 1.0), Vector4(3.0, -PLAZA_HALF_Z, 0.0, 0.8)],
 	]
 	for wspec in wall_specs:
 		var wmi := _box(wspec[0], wspec[1], stone)
@@ -821,38 +950,49 @@ func _build_room() -> void:
 		bmesh.height = PLAZA_WALL_HEIGHT + 0.6
 		bmesh.radial_segments = 8
 		bmi.mesh = bmesh
-		bmi.material_override = _wall_shader_mat("bark", "stone", "slate", Vector4.ZERO, Vector4.ZERO, Color(0.22, 0.18, 0.16, 1.0))
+		bmi.material_override = _wall_shader_mat("bark", "palisade_v4", "slate", Vector4.ZERO, Vector4.ZERO, Color(0.20, 0.16, 0.15, 1.0))
 		bastion.add_child(bmi)
 		add_child(bastion)
 
-	# Lamp posts and benches around the plaza.
+	# Detailed lamp posts (stone plinth, bracket, lantern cage) and benches with backrests.
+	var metal := _toon_mat(Color(0.11, 0.11, 0.12))
+	var lamp_wood := _toon_mat(Color(0.28, 0.19, 0.13))
 	for p in [
 		Vector3(-6.2, 0.0, 4.6), Vector3(6.2, 0.0, 4.6),
 		Vector3(-6.2, 0.0, -4.6), Vector3(6.2, 0.0, -4.6),
 	]:
-		_box(Vector3(0.22, 2.6, 0.22), p + Vector3(0.0, 1.3, 0.0), dark)
+		_box(Vector3(0.46, 0.30, 0.46), p + Vector3(0.0, 0.15, 0.0), stone)
+		_box(Vector3(0.20, 2.55, 0.20), p + Vector3(0.0, 1.55, 0.0), metal)
+		_box(Vector3(0.56, 0.10, 0.56), p + Vector3(0.0, 2.88, 0.0), metal, false)
+		_box(Vector3(0.42, 0.08, 0.42), p + Vector3(0.0, 2.42, 0.0), metal, false)
+		for cx in [-0.18, 0.18]:
+			for cz in [-0.18, 0.18]:
+				_box(Vector3(0.05, 0.44, 0.05), p + Vector3(cx, 2.65, cz), metal, false)
 		var bulb := MeshInstance3D.new()
 		var sph := SphereMesh.new()
-		sph.radius = 0.24
-		sph.height = 0.48
+		sph.radius = 0.17
+		sph.height = 0.34
 		sph.radial_segments = 8
 		sph.rings = 4
 		bulb.mesh = sph
-		bulb.position = p + Vector3(0.0, 2.7, 0.0)
-		bulb.material_override = _toon_mat(Color(1.0, 0.78, 0.42), Color(1.0, 0.68, 0.34), 1.6)
+		bulb.position = p + Vector3(0.0, 2.66, 0.0)
+		bulb.material_override = _toon_mat(Color(1.0, 0.78, 0.42), Color(1.0, 0.66, 0.30), 1.65)
 		add_child(bulb)
 		var light := OmniLight3D.new()
-		light.position = p + Vector3(0.0, 2.7, 0.0)
-		light.light_color = Color(1.0, 0.70, 0.38)
-		light.light_energy = 0.55
-		light.omni_range = 5.0
+		light.position = p + Vector3(0.0, 2.68, 0.0)
+		light.light_color = Color(1.0, 0.70, 0.36)
+		light.light_energy = 0.58
+		light.omni_range = 5.4
 		add_child(light)
 		_torches.append(light)
-		_torch_base.append(0.55)
+		_torch_base.append(0.58)
 
 	for b in [Vector3(-8.0, 0.0, 4.2), Vector3(8.0, 0.0, 4.2)]:
-		_box(Vector3(2.0, 0.42, 0.60), b + Vector3(0.0, 0.21, 0.0), stone)
-		_box(Vector3(2.0, 0.10, 0.60), b + Vector3(0.0, 0.47, 0.0), trim, false)
+		_box(Vector3(2.0, 0.34, 0.58), b + Vector3(0.0, 0.17, 0.0), stone)
+		_box(Vector3(2.06, 0.10, 0.62), b + Vector3(0.0, 0.40, 0.0), lamp_wood, false)
+		_box(Vector3(1.94, 0.32, 0.10), b + Vector3(0.0, 0.66, 0.25), lamp_wood, false)
+		for ax in [-0.90, 0.90]:
+			_box(Vector3(0.14, 0.36, 0.56), b + Vector3(ax, 0.54, 0.0), stone, false)
 
 	# Planters framing the plaza.
 	for p in [
@@ -860,6 +1000,7 @@ func _build_room() -> void:
 		Vector3(-11.5, 0.0, -9.0), Vector3(11.5, 0.0, -9.0),
 	]:
 		_box(Vector3(1.4, 0.55, 1.4), p + Vector3(0.0, 0.275, 0.0), stone)
+		_box(Vector3(1.52, 0.10, 1.52), p + Vector3(0.0, 0.55, 0.0), dark, false)
 		for k in 3:
 			var leaf := MeshInstance3D.new()
 			var s := SphereMesh.new()
@@ -870,36 +1011,111 @@ func _build_room() -> void:
 			leaf.mesh = s
 			leaf.position = p + Vector3(
 				-0.25 + 0.25 * float(k), 0.85 + 0.08 * float(k), 0.12 * float(k - 1))
-			leaf.material_override = _foliage_wind_shader(Color(0.18, 0.42, 0.30), 0.16)
+			leaf.material_override = _foliage_wind_shader(Color(0.16, 0.38, 0.28), 0.16)
 			add_child(leaf)
 			_register_fade_mesh(leaf, 0.6)
 
-	# Stylized perimeter trees & stone buttresses to frame the settlement against the sky.
-	var trunk_mat := _toon_mat(Color(0.24, 0.17, 0.13))
-	var canopy_a := _foliage_wind_shader(Color(0.16, 0.34, 0.24), 0.18)
-	var canopy_b := _foliage_wind_shader(Color(0.22, 0.40, 0.26), 0.22)
+	# Perimeter trees with tapered trunks, angled branches, and multi-cluster canopies.
+	var trunk_mat := _toon_mat(Color(0.20, 0.14, 0.11))
+	var canopy_a := _foliage_wind_shader(Color(0.14, 0.30, 0.22), 0.18)
+	var canopy_b := _foliage_wind_shader(Color(0.19, 0.36, 0.24), 0.22)
 	for tpos in [
 		Vector3(-13.4, 0.0, -11.5), Vector3(-7.0, 0.0, -12.6),
 		Vector3(7.0, 0.0, -12.6), Vector3(13.4, 0.0, -11.5),
 		Vector3(13.4, 0.0, 2.2), Vector3(-13.4, 0.0, 9.8), Vector3(13.4, 0.0, 10.2),
 	]:
-		_box(Vector3(0.55, 3.6, 0.55), tpos + Vector3(0.0, 1.8, 0.0), trunk_mat, false)
-		for ci in 3:
+		var trunk := MeshInstance3D.new()
+		var tcyl := CylinderMesh.new()
+		tcyl.top_radius = 0.22
+		tcyl.bottom_radius = 0.38
+		tcyl.height = 3.8
+		tcyl.radial_segments = 7
+		trunk.mesh = tcyl
+		trunk.position = tpos + Vector3(0.0, 1.9, 0.0)
+		trunk.material_override = trunk_mat
+		add_child(trunk)
+		_register_fade_mesh(trunk, 0.45)
+		for bi in 2:
+			var br := _box(Vector3(0.18, 1.35, 0.18), tpos + Vector3(-0.35 + 0.7 * float(bi), 3.1, 0.15 * float(bi)), trunk_mat, false)
+			br.rotation.z = 0.45 if bi == 0 else -0.42
+			br.rotation.x = 0.18 * float(1 - bi * 2)
+		for ci in 4:
 			var c_mesh := MeshInstance3D.new()
 			var cs := SphereMesh.new()
-			cs.radius = 1.35 - 0.18 * float(ci)
-			cs.height = 2.0 - 0.2 * float(ci)
+			cs.radius = 1.35 - 0.16 * float(ci)
+			cs.height = 1.95 - 0.18 * float(ci)
 			cs.radial_segments = 7
 			cs.rings = 4
 			c_mesh.mesh = cs
 			c_mesh.position = tpos + Vector3(
-				(-0.5 + 0.5 * float(ci)), 3.9 + 0.55 * float(ci % 2), -0.2 + 0.25 * float(ci))
+				(-0.55 + 0.42 * float(ci)), 3.85 + 0.48 * float(ci % 2), -0.25 + 0.22 * float(ci))
 			c_mesh.material_override = canopy_a if (ci % 2 == 0) else canopy_b
 			add_child(c_mesh)
 			_register_fade_mesh(c_mesh, cs.radius + 0.25)
 
+	_build_cavern_details()
 	_build_cavern_ceiling()
 	_build_atmosphere_particles()
+
+
+func _build_cavern_details() -> void:
+	# Hanging vines, exposed roots, ferns, boulders, and discrete cavern mushrooms.
+	var vine_mat := _foliage_wind_shader(Color(0.14, 0.28, 0.18), 0.26)
+	var fern_mat := _foliage_wind_shader(Color(0.18, 0.36, 0.22), 0.14)
+	var root_mat := _toon_mat(Color(0.22, 0.16, 0.12))
+	var moss_rock := _toon_mat(Color(0.22, 0.20, 0.18))
+	var mush_stem := _toon_mat(Color(0.56, 0.50, 0.42))
+	var mush_cap := _toon_mat(Color(0.28, 0.46, 0.36), Color(0.52, 0.82, 0.50), 0.45)
+
+	for vp in [
+		Vector3(-13.1, 4.1, -7.2), Vector3(-13.1, 4.3, 3.8), Vector3(-13.1, 3.9, 9.2),
+		Vector3(13.1, 4.2, -6.5), Vector3(13.1, 3.9, 5.4), Vector3(13.1, 4.4, 9.5),
+		Vector3(-9.5, 4.2, -12.1), Vector3(9.5, 4.1, -12.1), Vector3(-4.5, 4.3, 12.1), Vector3(5.2, 4.0, 12.1),
+	]:
+		var vlen := 1.45 + 0.35 * sin(vp.x + vp.z)
+		var vmi := _box(Vector3(0.09, vlen, 0.09), vp - Vector3(0.0, vlen * 0.5, 0.0), vine_mat, false)
+		vmi.rotation.z = 0.08 * cos(vp.z)
+
+	for rp in [
+		Vector3(-12.2, 0.18, -11.4), Vector3(12.2, 0.18, -11.4),
+		Vector3(-12.2, 0.18, 11.2), Vector3(12.2, 0.18, 11.2),
+	]:
+		for k in 2:
+			var rmi := _box(Vector3(0.22, 0.22, 1.35), rp + Vector3(0.35 * float(k), 0.0, 0.35 * float(1 - k)), root_mat, false)
+			rmi.rotation.y = 0.65 * float(k) - 0.32
+			rmi.rotation.x = 0.22
+
+	for bp in [
+		Vector3(-12.4, 0.28, 6.2), Vector3(-11.8, 0.22, 10.6), Vector3(12.4, 0.30, -8.2),
+		Vector3(12.1, 0.24, 9.6), Vector3(-6.8, 0.22, 11.4), Vector3(6.6, 0.24, 11.4),
+	]:
+		_box(Vector3(0.75, 0.48, 0.65), bp, moss_rock, false)
+		_box(Vector3(0.45, 0.32, 0.42), bp + Vector3(0.42, -0.06, 0.22), moss_rock, false)
+		for fi in 3:
+			var frond := _box(Vector3(0.14, 0.42, 0.04), bp + Vector3(-0.2 + 0.2 * float(fi), 0.28, 0.38), fern_mat, false)
+			frond.rotation.x = 0.48
+			frond.rotation.y = -0.35 + 0.35 * float(fi)
+
+	for mp in [
+		Vector3(-11.4, 0.0, 8.6), Vector3(11.3, 0.0, 8.8),
+		Vector3(-10.8, 0.0, -9.6), Vector3(10.8, 0.0, -9.8),
+		Vector3(-12.3, 0.0, 2.4), Vector3(12.2, 0.0, 3.8),
+	]:
+		for mi_idx in 2:
+			var off := Vector3(0.22 * float(mi_idx), 0.0, -0.18 * float(mi_idx))
+			var h := 0.24 if mi_idx == 0 else 0.16
+			_box(Vector3(0.06, h, 0.06), mp + off + Vector3(0.0, h * 0.5, 0.0), mush_stem, false)
+			var cap := MeshInstance3D.new()
+			var cm := CylinderMesh.new()
+			cm.top_radius = 0.04
+			cm.bottom_radius = 0.16 if mi_idx == 0 else 0.11
+			cm.height = 0.10
+			cm.radial_segments = 8
+			cap.mesh = cm
+			cap.position = mp + off + Vector3(0.0, h + 0.04, 0.0)
+			cap.material_override = mush_cap
+			add_child(cap)
+			_register_fade_mesh(cap, 0.3)
 
 
 func _light_shaft_shader() -> ShaderMaterial:
@@ -973,9 +1189,9 @@ func _build_cavern_ceiling() -> void:
 
 	# Three skylight holes casting pools of warm light into the dark cavern.
 	var shafts := [
-		{"pos": Vector3(0.0, 0.0, 1.0), "top_r": 2.3, "bot_r": 4.2, "energy": 3.4, "angle": 36.0, "dust": true},
-		{"pos": Vector3(0.0, 0.0, -5.8), "top_r": 1.25, "bot_r": 2.2, "energy": 2.4, "angle": 32.0, "dust": false},
-		{"pos": Vector3(-6.2, 0.0, -1.8), "top_r": 1.35, "bot_r": 2.6, "energy": 2.1, "angle": 28.0, "dust": false},
+		{"pos": Vector3(0.0, 0.0, 1.0), "top_r": 2.3, "bot_r": 4.2, "energy": 1.95, "angle": 28.0, "dust": true},
+		{"pos": Vector3(0.0, 0.0, -5.8), "top_r": 1.25, "bot_r": 2.2, "energy": 1.35, "angle": 25.0, "dust": false},
+		{"pos": Vector3(-6.2, 0.0, -1.8), "top_r": 1.35, "bot_r": 2.6, "energy": 1.20, "angle": 25.0, "dust": false},
 	]
 	for sh in shafts:
 		var p: Vector3 = sh["pos"]
@@ -1036,16 +1252,11 @@ func _build_cavern_ceiling() -> void:
 			dust.gravity = Vector3(0.0, -0.06, 0.0)
 			dust.initial_velocity_min = 0.05
 			dust.initial_velocity_max = 0.18
-			dust.scale_amount_min = 0.03
-			dust.scale_amount_max = 0.07
+			dust.scale_amount_min = 0.04
+			dust.scale_amount_max = 0.09
 			var qm := QuadMesh.new()
-			qm.size = Vector2(0.10, 0.10)
-			var pm := StandardMaterial3D.new()
-			pm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-			pm.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-			pm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-			pm.albedo_color = Color(1.0, 0.85, 0.52, 0.55)
-			qm.material = pm
+			qm.size = Vector2(0.09, 0.09)
+			qm.material = _soft_orb_particle_shader(Color(1.0, 0.85, 0.52, 0.50), false)
 			dust.mesh = qm
 			add_child(dust)
 
@@ -1220,7 +1431,8 @@ func _build_atmosphere_particles() -> void:
 		add_child(mmi)
 	_wind_particles = null
 
-	# Rising warm embers over the four plaza lamp posts.
+	# Rising warm embers over the four plaza lamp posts (soft circular orbs).
+	var ember_mat := _soft_orb_particle_shader(Color(1.0, 0.68, 0.28, 0.78), true)
 	for p in [
 		Vector3(-6.2, 3.0, 4.6), Vector3(6.2, 3.0, 4.6),
 		Vector3(-6.2, 3.0, -4.6), Vector3(6.2, 3.0, -4.6),
@@ -1234,24 +1446,41 @@ func _build_atmosphere_particles() -> void:
 		emb.gravity = Vector3(0.25, 0.55, 0.15)
 		emb.initial_velocity_min = 0.08
 		emb.initial_velocity_max = 0.22
-		emb.scale_amount_min = 0.025
-		emb.scale_amount_max = 0.05
+		emb.scale_amount_min = 0.04
+		emb.scale_amount_max = 0.08
 		var eq := QuadMesh.new()
 		eq.size = Vector2(0.08, 0.08)
-		var em := StandardMaterial3D.new()
-		em.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		em.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-		em.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		em.albedo_color = Color(1.0, 0.68, 0.28, 0.72)
-		eq.material = em
+		eq.material = ember_mat
 		emb.mesh = eq
 		add_child(emb)
+
+	# Quiet warm firefly motes drifting near perimeter planters.
+	var firefly_mat := _soft_orb_particle_shader(Color(0.84, 0.96, 0.48, 0.68), true)
+	for fp in [Vector3(-11.4, 1.4, 7.6), Vector3(11.4, 1.4, 7.6), Vector3(-11.4, 1.4, -8.8), Vector3(11.4, 1.4, -8.8)]:
+		var ff := CPUParticles3D.new()
+		ff.position = fp
+		ff.amount = 6
+		ff.lifetime = 3.2
+		ff.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+		ff.emission_sphere_radius = 1.2
+		ff.gravity = Vector3(0.0, 0.04, 0.0)
+		ff.initial_velocity_min = 0.06
+		ff.initial_velocity_max = 0.16
+		ff.scale_amount_min = 0.045
+		ff.scale_amount_max = 0.09
+		var fq := QuadMesh.new()
+		fq.size = Vector2(0.09, 0.09)
+		fq.material = firefly_mat
+		ff.mesh = fq
+		add_child(ff)
 
 
 func _gate_portal_shader() -> ShaderMaterial:
 	var sh := Shader.new()
 	sh.code = """shader_type spatial;
 render_mode unshaded, cull_disabled;
+
+uniform float pulse_boost : hint_range(0.0, 2.0) = 0.0;
 
 void fragment() {
 	vec2 uv = UV * 2.0 - 1.0;
@@ -1266,21 +1495,23 @@ void fragment() {
 
 	// Glowing inner vortex core + arched frame falloff.
 	float arch_mask = (1.0 - smoothstep(0.72, 1.02, abs(uv.x))) * (1.0 - smoothstep(0.76, 1.02, abs(uv.y)));
-	float core = exp(-r * 2.1);
+	float core = exp(-r * (2.1 - pulse_boost * 0.55));
 	float ring = exp(-pow((r - 0.58) * 5.2, 2.0));
 
-	vec3 void_col = vec3(0.05, 0.03, 0.04);
+	vec3 void_col = vec3(0.04, 0.025, 0.035);
 	vec3 amber_mid = vec3(0.72, 0.34, 0.10);
 	vec3 gold_bright = vec3(1.00, 0.78, 0.32);
 
-	vec3 col = mix(void_col, amber_mid, clamp(arch_mask * (0.45 + stream * 0.55), 0.0, 1.0));
-	col = mix(col, gold_bright, clamp((core * 0.85 + ring * 0.55 + stream * 0.35) * arch_mask, 0.0, 1.0));
+	vec3 col = mix(void_col, amber_mid, clamp(arch_mask * (0.45 + stream * 0.55 + pulse_boost * 0.25), 0.0, 1.0));
+	col = mix(col, gold_bright, clamp((core * (0.85 + pulse_boost * 0.45) + ring * (0.55 + pulse_boost * 0.50) + stream * 0.35) * arch_mask, 0.0, 1.0));
 	ALBEDO = col;
-	EMISSION = col * 0.85;
+	EMISSION = col * (0.88 + pulse_boost * 0.72);
 }
 """
 	var mat := ShaderMaterial.new()
 	mat.shader = sh
+	mat.set_shader_parameter("pulse_boost", 0.0)
+	_portal_quad_mat = mat
 	return mat
 
 
@@ -1288,19 +1519,62 @@ func _build_exit() -> void:
 	_gate_root = Node3D.new()
 	_gate_root.name = "ExpeditionGate"
 	add_child(_gate_root)
-	var stone := _toon_mat(Color(0.40, 0.34, 0.29))
-	var trim_stone := _toon_mat(Color(0.28, 0.23, 0.20))
-	var gold := _toon_mat(Color(0.72, 0.52, 0.22), Color(1.0, 0.62, 0.24), 0.9)
-	# Stepped stone plinth and arch at the north edge.
-	_box(Vector3(6.6, 0.22, 2.0), GATE_POS + Vector3(0.0, 0.11, 0.2), trim_stone, false)
+	var stone := _toon_mat(Color(0.32, 0.27, 0.24))
+	var trim_stone := _toon_mat(Color(0.22, 0.18, 0.16))
+	var gold := _toon_mat(Color(0.68, 0.48, 0.20), Color(0.95, 0.58, 0.22), 0.72)
+	var coal_mat := _toon_mat(Color(0.26, 0.10, 0.05), Color(1.0, 0.44, 0.12), 1.45)
+	var ember_mat := _soft_orb_particle_shader(Color(1.0, 0.58, 0.20, 0.80), true)
+
+	# Stepped stone plinth, carved pillars, rune keystone, and flanking braziers at the north edge.
+	_box(Vector3(7.0, 0.20, 2.2), GATE_POS + Vector3(0.0, 0.10, 0.25), trim_stone, false)
+	_box(Vector3(5.8, 0.14, 1.6), GATE_POS + Vector3(0.0, 0.27, 0.15), stone, false)
 	for x in [-2.4, 2.4]:
 		var pillar := _box(Vector3(0.95, 5.0, 0.95), GATE_POS + Vector3(x, 2.5, 0.0), stone)
 		pillar.name = "GatePillar"
 		_register_fade_mesh(pillar, 0.9)
-		_box(Vector3(1.22, 0.42, 1.22), GATE_POS + Vector3(x, 0.21, 0.0), trim_stone, false)
-		_box(Vector3(1.25, 0.42, 1.25), GATE_POS + Vector3(x, 5.1, 0.0), gold, false)
+		_box(Vector3(1.26, 0.42, 1.26), GATE_POS + Vector3(x, 0.21, 0.0), trim_stone, false)
+		_box(Vector3(1.12, 0.24, 1.12), GATE_POS + Vector3(x, 0.54, 0.0), stone, false)
+		_box(Vector3(1.16, 0.18, 1.16), GATE_POS + Vector3(x, 4.78, 0.0), trim_stone, false)
+		_box(Vector3(1.30, 0.40, 1.30), GATE_POS + Vector3(x, 5.12, 0.0), gold, false)
+		for ry in [1.4, 2.6, 3.8]:
+			_box(Vector3(1.02, 0.12, 1.02), GATE_POS + Vector3(x, ry, 0.0), trim_stone, false)
 	_box(Vector3(6.4, 0.85, 1.05), GATE_POS + Vector3(0.0, 4.7, 0.0), stone)
-	_box(Vector3(2.2, 0.55, 1.15), GATE_POS + Vector3(0.0, 5.32, 0.0), gold, false)
+	_box(Vector3(6.8, 0.22, 1.24), GATE_POS + Vector3(0.0, 5.16, 0.0), trim_stone, false)
+	_box(Vector3(2.2, 0.55, 1.15), GATE_POS + Vector3(0.0, 5.36, 0.0), gold, false)
+	_box(Vector3(0.75, 0.72, 1.16), GATE_POS + Vector3(0.0, 4.65, 0.02), trim_stone, false)
+	_box(Vector3(0.42, 0.42, 1.18), GATE_POS + Vector3(0.0, 4.65, 0.03), gold, false)
+
+	for bx in [-3.45, 3.45]:
+		var bp := GATE_POS + Vector3(bx, 0.0, 1.15)
+		_box(Vector3(0.68, 0.22, 0.68), bp + Vector3(0.0, 0.11, 0.0), trim_stone, false)
+		_box(Vector3(0.46, 0.62, 0.46), bp + Vector3(0.0, 0.52, 0.0), stone, false)
+		_box(Vector3(0.72, 0.20, 0.72), bp + Vector3(0.0, 0.92, 0.0), trim_stone, false)
+		_box(Vector3(0.50, 0.14, 0.50), bp + Vector3(0.0, 1.04, 0.0), coal_mat, false)
+		var brazier_l := OmniLight3D.new()
+		brazier_l.position = bp + Vector3(0.0, 1.35, 0.0)
+		brazier_l.light_color = Color(1.0, 0.58, 0.22)
+		brazier_l.light_energy = 0.42
+		brazier_l.omni_range = 4.8
+		add_child(brazier_l)
+		_torches.append(brazier_l)
+		_torch_base.append(0.42)
+		var b_emb := CPUParticles3D.new()
+		b_emb.position = bp + Vector3(0.0, 1.18, 0.0)
+		b_emb.amount = 10
+		b_emb.lifetime = 1.2
+		b_emb.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+		b_emb.emission_sphere_radius = 0.18
+		b_emb.gravity = Vector3(0.0, 0.9, 0.0)
+		b_emb.initial_velocity_min = 0.15
+		b_emb.initial_velocity_max = 0.35
+		b_emb.scale_amount_min = 0.04
+		b_emb.scale_amount_max = 0.08
+		var beq := QuadMesh.new()
+		beq.size = Vector2(0.09, 0.09)
+		beq.material = ember_mat
+		b_emb.mesh = beq
+		add_child(b_emb)
+
 	var portal_quad := MeshInstance3D.new()
 	var pqm := QuadMesh.new()
 	pqm.size = Vector2(3.82, 4.04)
@@ -1310,21 +1584,30 @@ func _build_exit() -> void:
 	add_child(portal_quad)
 	var gate_light := OmniLight3D.new()
 	gate_light.position = GATE_POS + Vector3(0.0, 2.2, 1.4)
-	gate_light.light_color = Color(1.0, 0.66, 0.30)
-	gate_light.light_energy = 0.90
-	gate_light.omni_range = 6.5
+	gate_light.light_color = Color(1.0, 0.64, 0.28)
+	gate_light.light_energy = 0.78
+	gate_light.omni_range = 6.2
 	add_child(gate_light)
-	_lighting_lamps.append({"light": gate_light, "base": 0.90})
+	_lighting_lamps.append({"light": gate_light, "base": 0.78})
 
-	# Expedition board / totem (the interactive landmark).
+	# Expedition board / totem (detailed frame, pediment, quest slips, and warm sconce).
 	var board := Node3D.new()
 	board.name = "ExpeditionBoard"
 	board.position = BOARD_POS
 	add_child(board)
-	_box(Vector3(0.28, 2.0, 0.28), BOARD_POS + Vector3(0.0, 1.0, 0.0), _toon_mat(Color(0.22, 0.17, 0.14)))
-	_box(Vector3(1.30, 1.10, 0.14), BOARD_POS + Vector3(0.0, 2.05, 0.0), _toon_mat(Color(0.10, 0.12, 0.14)))
-	_box(Vector3(1.10, 0.90, 0.04), BOARD_POS + Vector3(0.0, 2.05, 0.09),
-		_toon_mat(Color(0.80, 0.72, 0.55), Color(0.95, 0.80, 0.45), 0.45), false)
+	_box(Vector3(0.46, 0.26, 0.46), BOARD_POS + Vector3(0.0, 0.13, 0.0), trim_stone, false)
+	_box(Vector3(0.28, 2.0, 0.28), BOARD_POS + Vector3(0.0, 1.0, 0.0), _toon_mat(Color(0.20, 0.15, 0.12)))
+	_box(Vector3(1.42, 1.18, 0.16), BOARD_POS + Vector3(0.0, 2.05, 0.0), _toon_mat(Color(0.11, 0.12, 0.14)))
+	_box(Vector3(1.56, 0.18, 0.26), BOARD_POS + Vector3(0.0, 2.68, 0.02), _toon_mat(Color(0.26, 0.18, 0.13)), false)
+	_box(Vector3(1.14, 0.90, 0.04), BOARD_POS + Vector3(0.0, 2.04, 0.09),
+		_toon_mat(Color(0.32, 0.23, 0.16)), false)
+	for slip in [
+		[Vector3(-0.30, 2.22, 0.12), Vector2(0.34, 0.36), Color(0.84, 0.76, 0.56)],
+		[Vector3(0.22, 2.16, 0.12), Vector2(0.38, 0.42), Color(0.78, 0.68, 0.48)],
+		[Vector3(-0.14, 1.82, 0.12), Vector2(0.42, 0.28), Color(0.86, 0.78, 0.58)],
+	]:
+		var ssz: Vector2 = slip[1]
+		_box(Vector3(ssz.x, ssz.y, 0.03), BOARD_POS + slip[0], _toon_mat(slip[2]), false)
 	var tag := Label3D.new()
 	tag.name = "BoardTag"
 	tag.text = "EXPEDITION GATE"
@@ -1337,28 +1620,75 @@ func _build_exit() -> void:
 	tag.no_depth_test = false
 	add_child(tag)
 
-	# Guild Hall (west facade + open counter).
+	# Guild Hall (west facade + open counter + barrels, crates, hanging lanterns, rug).
 	_guild_root = Node3D.new()
 	_guild_root.name = "GuildHall"
 	add_child(_guild_root)
-	var guild_mat := _toon_mat(Color(0.30, 0.24, 0.21))
-	var roof := _toon_mat(Color(0.24, 0.16, 0.14))
-	var wood := _toon_mat(Color(0.44, 0.31, 0.20))
+	var guild_mat := _toon_mat(Color(0.26, 0.21, 0.18))
+	var roof := _toon_mat(Color(0.20, 0.14, 0.12))
+	var wood := _toon_mat(Color(0.38, 0.27, 0.18))
+	var crate_wood := _toon_mat(Color(0.46, 0.34, 0.21))
+	var rug_mat := _toon_mat(Color(0.48, 0.18, 0.14))
+	var rug_trim := _toon_mat(Color(0.72, 0.54, 0.24))
+	var lantern_glow := _toon_mat(Color(1.0, 0.80, 0.44), Color(1.0, 0.66, 0.28), 1.55)
 	# Back hall, warm recessed alcove and a chunky open counter/desk.
 	_box(Vector3(3.6, 4.4, 7.0), Vector3(-12.6, 2.2, -2.0), guild_mat)
 	_box(Vector3(3.8, 0.55, 7.4), Vector3(-12.6, 4.55, -2.0), roof)
 	_box(Vector3(0.30, 2.4, 1.8), Vector3(-10.72, 1.2, -2.0),
-		_toon_mat(Color(0.26, 0.16, 0.10), Color(0.85, 0.52, 0.22), 0.38), false)
+		_toon_mat(Color(0.26, 0.16, 0.10), Color(0.85, 0.52, 0.22), 0.32), false)
 	_box(Vector3(1.55, 1.05, 5.0), Vector3(-10.55, 0.525, -2.0), wood)
-	_box(Vector3(1.95, 0.16, 5.4), Vector3(-10.55, 1.13, -2.0), _toon_mat(Color(0.64, 0.48, 0.26)), false)
+	_box(Vector3(1.95, 0.16, 5.4), Vector3(-10.55, 1.13, -2.0), _toon_mat(Color(0.54, 0.40, 0.22)), false)
 	for z in [-4.2, 0.2]:
-		_box(Vector3(0.24, 3.2, 0.24), Vector3(-9.55, 1.6, z), _toon_mat(Color(0.28, 0.20, 0.14)))
+		_box(Vector3(0.24, 3.2, 0.24), Vector3(-9.55, 1.6, z), _toon_mat(Color(0.24, 0.17, 0.12)))
+		_box(Vector3(0.18, 0.28, 0.18), Vector3(-9.42, 2.75, z), lantern_glow, false)
 	_box(Vector3(2.6, 0.22, 5.4), Vector3(-10.15, 3.15, -2.0), roof, false)
 	_box(Vector3(0.14, 0.52, 2.2), Vector3(-9.48, 2.95, -2.0),
 		_toon_mat(Color(0.14, 0.18, 0.16), Color(0.84, 0.98, 0.40), 0.25), false)
-	# Papers and a small ledger on the counter.
-	_box(Vector3(0.45, 0.04, 0.6), Vector3(-10.5, 1.23, -3.2), _toon_mat(Color(0.86, 0.80, 0.62)), false)
-	_box(Vector3(0.40, 0.10, 0.55), Vector3(-10.5, 1.26, -1.1), _toon_mat(Color(0.30, 0.16, 0.12)), false)
+	# Entry rug in front of Guild desk (non-colliding, flat).
+	_box(Vector3(1.8, 0.02, 3.4), Vector3(-8.45, 0.015, -2.0), rug_trim, false)
+	_box(Vector3(1.5, 0.024, 3.0), Vector3(-8.45, 0.020, -2.0), rug_mat, false)
+	# Barrels (with dark iron hoops) & crates tucked under Guild eaves (outside walking lanes).
+	var hoop_mat := _toon_mat(Color(0.12, 0.12, 0.14))
+	for bpos in [Vector3(-10.55, 0.34, -5.0), Vector3(-10.10, 0.34, 0.95)]:
+		var barrel := MeshInstance3D.new()
+		var bc := CylinderMesh.new()
+		bc.top_radius = 0.28
+		bc.bottom_radius = 0.28
+		bc.height = 0.68
+		bc.radial_segments = 10
+		barrel.mesh = bc
+		barrel.position = bpos
+		barrel.material_override = wood
+		add_child(barrel)
+		for hy in [-0.18, 0.18]:
+			var hoop := MeshInstance3D.new()
+			var hc := CylinderMesh.new()
+			hc.top_radius = 0.295
+			hc.bottom_radius = 0.295
+			hc.height = 0.06
+			hc.radial_segments = 10
+			hoop.mesh = hc
+			hoop.position = bpos + Vector3(0.0, hy, 0.0)
+			hoop.material_override = hoop_mat
+			add_child(hoop)
+	_box(Vector3(0.68, 0.64, 0.68), Vector3(-10.55, 0.32, 1.55), crate_wood, false)
+	_box(Vector3(0.50, 0.48, 0.50), Vector3(-10.55, 0.88, 1.52), crate_wood, false)
+	# Framed quest board & timber shelf inside the Guild alcove wall.
+	_box(Vector3(0.08, 1.15, 1.65), Vector3(-10.68, 2.05, -2.0), _toon_mat(Color(0.24, 0.16, 0.11)), false)
+	_box(Vector3(0.06, 0.95, 1.45), Vector3(-10.64, 2.05, -2.0), _toon_mat(Color(0.36, 0.26, 0.17)), false)
+	for g_slip in [
+		[Vector3(-10.60, 2.22, -2.42), 0.34, 0.32, Color(0.84, 0.76, 0.56)],
+		[Vector3(-10.60, 2.15, -1.92), 0.38, 0.36, Color(0.76, 0.66, 0.46)],
+		[Vector3(-10.60, 1.92, -1.52), 0.30, 0.30, Color(0.88, 0.80, 0.60)],
+	]:
+		_box(Vector3(0.03, float(g_slip[1]), float(g_slip[2])), g_slip[0], _toon_mat(g_slip[3]), false)
+	_box(Vector3(0.32, 0.08, 1.55), Vector3(-10.60, 1.45, -3.55), crate_wood, false)
+	_box(Vector3(0.14, 0.22, 0.14), Vector3(-10.58, 1.60, -3.85), _toon_mat(Color(0.26, 0.52, 0.38), Color(0.42, 0.80, 0.55), 0.35), false)
+	_box(Vector3(0.16, 0.16, 0.24), Vector3(-10.58, 1.57, -3.25), _toon_mat(Color(0.78, 0.70, 0.52)), false)
+	# Papers, mug, and ledger on the counter.
+	_box(Vector3(0.45, 0.04, 0.6), Vector3(-10.5, 1.23, -3.2), _toon_mat(Color(0.80, 0.74, 0.56)), false)
+	_box(Vector3(0.40, 0.10, 0.55), Vector3(-10.5, 1.26, -1.1), _toon_mat(Color(0.28, 0.14, 0.10)), false)
+	_box(Vector3(0.14, 0.16, 0.14), Vector3(-10.42, 1.29, -2.4), _toon_mat(Color(0.58, 0.44, 0.26)), false)
 	var guild_tag := Label3D.new()
 	guild_tag.name = "GuildTag"
 	guild_tag.text = "GUILD HALL"
@@ -1373,10 +1703,10 @@ func _build_exit() -> void:
 	var guild_light := OmniLight3D.new()
 	guild_light.position = Vector3(-9.4, 2.3, -2.0)
 	guild_light.light_color = Color(1.0, 0.72, 0.42)
-	guild_light.light_energy = 0.55
-	guild_light.omni_range = 5.0
+	guild_light.light_energy = 0.48
+	guild_light.omni_range = 4.8
 	add_child(guild_light)
-	_lighting_lamps.append({"light": guild_light, "base": 0.55})
+	_lighting_lamps.append({"light": guild_light, "base": 0.48})
 
 	# Two clearly marked, empty expansion plots (no shop/heal signs).
 	_plot_markers.clear()
@@ -1385,8 +1715,9 @@ func _build_exit() -> void:
 
 
 func _build_plot(center: Vector3, label: String) -> Node3D:
-	var pad := _toon_mat(Color(0.34, 0.29, 0.25))
-	var border := _toon_mat(Color(0.52, 0.46, 0.40))
+	var pad := _toon_mat(Color(0.28, 0.24, 0.20))
+	var border := _toon_mat(Color(0.44, 0.39, 0.34))
+	var rope := _toon_mat(Color(0.62, 0.48, 0.28))
 	_box(Vector3(4.2, 0.28, 4.2), center + Vector3(0.0, 0.14, 0.0), pad, false)
 	for d in [
 		Vector3(0.0, 0.10, 2.15), Vector3(0.0, 0.10, -2.15),
@@ -1398,8 +1729,14 @@ func _build_plot(center: Vector3, label: String) -> Node3D:
 		Vector3(-1.8, 0.0, -1.8), Vector3(1.8, 0.0, -1.8),
 		Vector3(-1.8, 0.0, 1.8), Vector3(1.8, 0.0, 1.8),
 	]:
-		_box(Vector3(0.12, 0.9, 0.12), center + corner + Vector3(0.0, 0.45, 0.0),
-			_toon_mat(Color(0.46, 0.38, 0.26)))
+		_box(Vector3(0.14, 0.95, 0.14), center + corner + Vector3(0.0, 0.475, 0.0),
+			_toon_mat(Color(0.38, 0.30, 0.20)))
+		_box(Vector3(0.20, 0.10, 0.20), center + corner + Vector3(0.0, 0.96, 0.0), rope, false)
+	# Perimeter survey rope rails between corner stakes (north, south, east edges).
+	_box(Vector3(3.6, 0.05, 0.05), center + Vector3(0.0, 0.72, -1.8), rope, false)
+	_box(Vector3(3.6, 0.05, 0.05), center + Vector3(0.0, 0.72, 1.8), rope, false)
+	_box(Vector3(0.05, 0.05, 3.6), center + Vector3(1.8, 0.72, 0.0), rope, false)
+	_box(Vector3(0.05, 0.05, 3.6), center + Vector3(-1.8, 0.72, 0.0), rope, false)
 	var anchor := Node3D.new()
 	anchor.name = label.replace(" ", "")
 	anchor.position = center
@@ -1491,6 +1828,7 @@ func _set_player_species(id: String) -> void:
 	_play(player_ap, "idle")
 	_apply_toon_to_actor(player)
 	_sync_demo_party_leader(id)
+	_sync_dynamic_travelers()
 	_refresh_hud_help_label()
 	_refresh_gate_leader_strip()
 
@@ -1505,6 +1843,119 @@ func _build_enemy() -> void:
 func _build_npcs() -> void:
 	for spec in HUB_NPC_SPECS:
 		_spawn_npc_spec(spec)
+	var travelers := _pick_dynamic_travelers()
+	for i in travelers.size():
+		var slot: Dictionary = TRAVELER_SLOTS[i]
+		_spawn_npc_spec({
+			"id": travelers[i],
+			"role": "TRAVELER",
+			"pos": slot["pos"],
+			"yaw": slot["yaw"],
+			"icon": "question",
+			"patrol": true,
+			"portal_eligible": true,
+			"is_dynamic_traveler": true,
+			"traveler_slot": i,
+			"line": "[PROTÓTIPO] Outro viajante descansando na praça antes do portal.",
+		})
+
+
+func _pick_dynamic_travelers() -> Array[String]:
+	var available: Array[String] = []
+	for leader in PLAYABLE_LEADERS:
+		if leader == player_model_id:
+			continue
+		var used := false
+		for follower in _followers:
+			if String(follower.get("model_id", "")) == leader:
+				used = true
+				break
+		if not used:
+			available.append(leader)
+	var picked: Array[String] = []
+	while picked.size() < 2 and not available.is_empty():
+		var index := _rng.randi_range(0, available.size() - 1)
+		picked.append(available[index])
+		available.remove_at(index)
+	return picked
+
+
+func _sync_dynamic_travelers() -> void:
+	var travelers := _pick_dynamic_travelers()
+	for npc in _npcs:
+		if not bool(npc.get("is_dynamic_traveler", false)):
+			continue
+		var slot := int(npc.get("traveler_slot", 0))
+		if slot >= travelers.size():
+			continue
+		var new_id: String = travelers[slot]
+		if String(npc.get("id", "")) == new_id:
+			continue
+		var body: Node3D = npc.get("node")
+		if body == null:
+			continue
+		var new_h: float = float(HUB_HEIGHTS.get(new_id, 0.9))
+		var old_model: Node = npc.get("model")
+		if old_model != null:
+			body.remove_child(old_model)
+			old_model.queue_free()
+		var new_model: Node3D = _make_model(new_id, new_h)
+		new_model.name = new_id
+		body.add_child(new_model)
+		_apply_toon_to_actor(body)
+		var new_ap = _anim_player(new_model)
+		npc["model"] = new_model
+		npc["ap"] = new_ap
+		npc["id"] = new_id
+		npc["name"] = HUB_NAMES.get(new_id, new_id.to_upper())
+		npc["height"] = new_h
+		body.name = "Npc_%s" % new_id
+		for child in body.get_children():
+			if child is CollisionShape3D:
+				var cap := child.shape as CapsuleShape3D
+				if cap != null:
+					cap.radius = clampf(new_h * 0.30, 0.22, 0.42)
+					cap.height = maxf(new_h, cap.radius * 2.0 + 0.05)
+					child.position.y = cap.height * 0.5
+		var top: float = _actor_visual_top(body)
+		var ring_node := body.get_node_or_null("NpcGroundRing") as MeshInstance3D
+		if ring_node != null and ring_node.mesh is PlaneMesh:
+			var r_size := clampf(new_h * 0.92, 0.80, 1.70)
+			(ring_node.mesh as PlaneMesh).size = Vector2(r_size, r_size)
+		var plate = npc.get("plate")
+		if plate != null:
+			plate.display_name = npc["name"]
+			plate.position.y = top + 0.45
+			plate.set_style(plate.style_id)
+		var icon_entry: Dictionary = npc.get("icon_entry", {})
+		icon_entry["base_scale"] = clampf(top / 1.25, 0.48, 0.88)
+		icon_entry["base_y"] = top + 1.15
+		if icon_entry.get("sprite") is Node3D:
+			var sprite: Node3D = icon_entry["sprite"]
+			sprite.position.y = top + 1.15
+		if str(npc.get("state", "")) != "away_in_portal":
+			new_model.scale = Vector3.ONE
+			_play_idle(new_ap)
+
+
+func _add_npc_ground_ring(body: Node3D, height: float) -> void:
+	var ring := MeshInstance3D.new()
+	ring.name = "NpcGroundRing"
+	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var pm := PlaneMesh.new()
+	var r_size := clampf(height * 0.92, 0.80, 1.70)
+	pm.size = Vector2(r_size, r_size)
+	ring.mesh = pm
+	ring.position = Vector3(0.0, 0.028, 0.0)
+	var mat := ShaderMaterial.new()
+	mat.shader = MARKER_RING_SHADER
+	mat.set_shader_parameter("ring_color", Color(1.0, 1.0, 1.0, 0.68))
+	mat.set_shader_parameter("inner_radius", 0.85)
+	mat.set_shader_parameter("outer_radius", 0.93)
+	mat.set_shader_parameter("softness", 0.04)
+	mat.set_shader_parameter("alpha", 0.68)
+	ring.material_override = mat
+	body.add_child(ring)
 
 
 func _spawn_npc(id: String, pos: Vector3, line: String) -> void:
@@ -1540,6 +1991,7 @@ func _spawn_npc_spec(spec: Dictionary) -> void:
 	var model := _make_model(id, height)
 	body.add_child(model)
 	_add_blob_shadow(body, clampf(height * 0.85, 0.6, 1.1), clampf(height * 0.62, 0.5, 0.9))
+	_add_npc_ground_ring(body, height)
 	var ap := _anim_player(model)
 	_play_idle(ap)
 	_apply_toon_to_actor(body)
@@ -1582,6 +2034,12 @@ func _spawn_npc_spec(spec: Dictionary) -> void:
 		"breath_phase": float(_npcs.size()) * 2.1,
 		"greet_timer": 0.0,
 		"greeted": false,
+		"portal_eligible": bool(spec.get("portal_eligible", patrol_enabled)),
+		"portal_timer": _rng.randf_range(14.0, 24.0),
+		"portal_phase_t": 0.0,
+		"away_duration": 0.0,
+		"is_dynamic_traveler": bool(spec.get("is_dynamic_traveler", false)),
+		"traveler_slot": int(spec.get("traveler_slot", -1)),
 	})
 
 
@@ -1661,23 +2119,163 @@ func _freeze_npc_patrol() -> bool:
 
 
 func _npc_waypoints(home: Vector3, idx: int) -> Array[Vector3]:
-	var out: Array[Vector3] = []
-	var forbidden := [GATE_POS, GUILD_POS, PLAYER_START, BOARD_POS, PLOT_EAST]
+	var candidates: Array[Vector3] = [
+		BOARD_POS + Vector3(0.9, 0.0, 1.5),
+		GUILD_POS + Vector3(2.8, 0.0, 0.8),
+		PLOT_EAST + Vector3(-2.6, 0.0, 0.6),
+		PLOT_SOUTHEAST + Vector3(-2.5, 0.0, -0.6),
+	]
 	for k in 4:
 		var ang := float(idx) * 1.7 + TAU * float(k) / 4.0
-		var p := home + Vector3(cos(ang), 0.0, sin(ang)) * 1.6
-		p.x = clampf(p.x, -PLAZA_HALF_X + 1.5, PLAZA_HALF_X - 1.5)
-		p.z = clampf(p.z, -PLAZA_HALF_Z + 1.5, PLAZA_HALF_Z - 1.5)
+		candidates.append(home + Vector3(cos(ang), 0.0, sin(ang)) * 1.6)
+	var forbidden := [GATE_POS, GUILD_POS, PLOT_EAST, PLOT_SOUTHEAST]
+	var out: Array[Vector3] = []
+	for p in candidates:
+		p.x = clampf(p.x, -PLAZA_HALF_X + 1.8, PLAZA_HALF_X - 1.8)
+		p.z = clampf(p.z, -PLAZA_HALF_Z + 1.8, PLAZA_HALF_Z - 1.8)
 		var clear := true
 		for f in forbidden:
-			if Vector2(p.x - f.x, p.z - f.z).length() < 2.6:
+			if Vector2(p.x - f.x, p.z - f.z).length() < 2.2:
 				clear = false
 				break
 		if clear:
 			out.append(p)
 	if out.is_empty():
 		out.append(home)
-	return out
+	var rotated: Array[Vector3] = []
+	for i in out.size():
+		rotated.append(out[(i + idx) % out.size()])
+	return rotated
+
+
+func _active_portal_travelers() -> int:
+	var count := 0
+	for npc in _npcs:
+		if bool(npc.get("portal_eligible", false)) and str(npc.get("state", "")) in ["to_portal", "entering_portal", "exiting_portal"]:
+			count += 1
+	return count
+
+
+func _set_npc_portal_active(npc: Dictionary, active_in_world: bool) -> void:
+	var body := npc.get("node") as Node3D
+	if is_instance_valid(body):
+		body.visible = active_in_world
+		body.collision_layer = NPC_COLLISION_LAYER if active_in_world else 0
+	var sprite = (npc.get("icon_entry", {}) as Dictionary).get("sprite")
+	if sprite is Node3D and is_instance_valid(sprite):
+		sprite.visible = active_in_world
+
+
+func _on_portal_pulse(kind: String, world_pos: Vector3) -> void:
+	_last_portal_pulse = {"kind": kind, "pos": world_pos, "t": _atmo_time}
+	_portal_pulse_val = 1.0
+	if _portal_quad_mat != null:
+		_portal_quad_mat.set_shader_parameter("pulse_boost", _portal_pulse_val)
+	if not is_inside_tree() or _scenario == "HUB_PORTAL_CYCLE":
+		return
+	var ring := MeshInstance3D.new()
+	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var pm := PlaneMesh.new()
+	pm.size = Vector2(1.4, 1.4)
+	ring.mesh = pm
+	ring.rotation.x = PI * 0.5
+	ring.position = Vector3(world_pos.x, 1.35, world_pos.z + 0.15)
+	var mat := ShaderMaterial.new()
+	mat.shader = MARKER_RING_SHADER
+	var tint := Color(1.0, 0.76, 0.30, 0.92) if kind == "enter" else Color(1.0, 0.90, 0.48, 0.95)
+	mat.set_shader_parameter("ring_color", tint)
+	mat.set_shader_parameter("inner_radius", 0.68)
+	mat.set_shader_parameter("outer_radius", 0.96)
+	mat.set_shader_parameter("softness", 0.08)
+	mat.set_shader_parameter("alpha", 0.85)
+	ring.material_override = mat
+	add_child(ring)
+	_portal_ring_fx.append({"mesh": ring, "mat": mat, "age": 0.0, "dur": 0.55})
+
+
+func _nearest_visible_neighbor(from_body: Node3D, max_dist: float) -> Node3D:
+	var best: Node3D = null
+	var best_dist := max_dist
+	for npc in _npcs:
+		var other := npc.get("node") as Node3D
+		if other == null or other == from_body or not is_instance_valid(other) or not other.visible:
+			continue
+		var d := from_body.global_position.distance_to(other.global_position)
+		if d < best_dist:
+			best_dist = d
+			best = other
+	return best
+
+
+func _update_npc_portal(npc: Dictionary, body: Node3D, model: Node3D, ap: AnimationPlayer, delta: float) -> bool:
+	var state := str(npc.get("state", ""))
+	if state == "away_in_portal":
+		npc["away_duration"] = float(npc.get("away_duration", 0.0)) - delta
+		if float(npc["away_duration"]) <= 0.0:
+			body.global_position = PORTAL_VORTEX_POS
+			body.rotation.y = 0.0
+			if model != null:
+				model.scale = Vector3.ZERO
+			_set_npc_portal_active(npc, true)
+			_on_portal_pulse("exit", PORTAL_VORTEX_POS)
+			_portal_exits_count += 1
+			npc["state"] = "exiting_portal"
+			npc["portal_phase_t"] = 0.0
+		return true
+	if state == "entering_portal":
+		npc["portal_phase_t"] = float(npc.get("portal_phase_t", 0.0)) + delta
+		var t := float(npc["portal_phase_t"])
+		if t < 0.40:
+			body.rotation.y = PI
+			_play_idle(ap)
+		else:
+			var shrink := clampf((t - 0.40) / 0.55, 0.0, 1.0)
+			body.global_position = PORTAL_ENTRY_POS.lerp(PORTAL_VORTEX_POS, shrink)
+			if model != null:
+				model.scale = Vector3.ONE * lerpf(1.0, 0.0, shrink)
+		if t >= 0.95:
+			_portal_entries_count += 1
+			npc["state"] = "away_in_portal"
+			npc["away_duration"] = _rng.randf_range(8.0, 14.0)
+			_set_npc_portal_active(npc, false)
+		return true
+	if state == "exiting_portal":
+		npc["portal_phase_t"] = float(npc.get("portal_phase_t", 0.0)) + delta
+		var t := float(npc["portal_phase_t"])
+		var grow := clampf(t / 0.65, 0.0, 1.0)
+		body.global_position = PORTAL_VORTEX_POS.lerp(PORTAL_EXIT_LAND_POS, grow)
+		body.rotation.y = 0.0
+		if model != null:
+			model.scale = Vector3.ONE * lerpf(0.0, 1.0, grow)
+		if ap != null and ap.has_animation("run"):
+			_play(ap, "run")
+		elif ap != null and ap.has_animation("walk"):
+			_play(ap, "walk")
+		else:
+			_play_idle(ap)
+		if t >= 0.65:
+			if model != null:
+				model.scale = Vector3.ONE
+			npc["portal_timer"] = _rng.randf_range(14.0, 24.0)
+			npc["state"] = "walk"
+		return true
+	if state == "to_portal":
+		var step_to := PORTAL_ENTRY_POS - body.global_position
+		step_to.y = 0.0
+		if step_to.length() <= 0.25:
+			npc["state"] = "entering_portal"
+			npc["portal_phase_t"] = 0.0
+			_on_portal_pulse("enter", PORTAL_VORTEX_POS)
+		else:
+			var speed := maxf(float(npc.get("walk_speed", 1.25)), 1.45) * delta
+			body.global_position += step_to.normalized() * speed
+			body.rotation.y = lerp_angle(body.rotation.y, atan2(step_to.x, step_to.z), 0.15)
+			if ap != null and ap.has_animation("walk"):
+				_play(ap, "walk")
+			else:
+				_play_idle(ap)
+		return true
+	return false
 
 
 func _update_npc_life(delta: float) -> void:
@@ -1688,6 +2286,8 @@ func _update_npc_life(delta: float) -> void:
 			continue
 		var model := npc.get("model") as Node3D
 		var ap := npc.get("ap") as AnimationPlayer
+		if _update_npc_portal(npc, body, model, ap, delta):
+			continue
 		var breath := float(npc.get("breath_phase", 0.0))
 		var hop := 0.0
 		var gt := float(npc.get("greet_timer", 0.0))
@@ -1726,9 +2326,26 @@ func _update_npc_life(delta: float) -> void:
 			if model != null:
 				model.position.y = 0.0
 			_play_idle(ap)
+			var neighbor := _nearest_visible_neighbor(body, 3.4)
+			if neighbor != null:
+				var to_n := neighbor.global_position - body.global_position
+				to_n.y = 0.0
+				body.rotation.y = lerp_angle(body.rotation.y, atan2(to_n.x, to_n.z), 0.08)
+			if not _freeze_npc_patrol() and bool(npc.get("portal_eligible", false)) and not talking and dist >= 3.0:
+				npc["portal_timer"] = float(npc.get("portal_timer", 0.0)) - delta
+				if float(npc["portal_timer"]) <= 0.0 and _active_portal_travelers() < 2:
+					npc["state"] = "to_portal"
+					npc["portal_phase_t"] = 0.0
+					continue
 			if float(npc["pause_timer"]) <= 0.0:
 				npc["state"] = "walk"
 			continue
+		if not _freeze_npc_patrol() and bool(npc.get("portal_eligible", false)) and not talking and dist >= 3.0:
+			npc["portal_timer"] = float(npc.get("portal_timer", 0.0)) - delta
+			if float(npc["portal_timer"]) <= 0.0 and _active_portal_travelers() < 2:
+				npc["state"] = "to_portal"
+				npc["portal_phase_t"] = 0.0
+				continue
 		var wp: Vector3 = waypoints[int(npc.get("wp_idx", 0)) % waypoints.size()]
 		var step := wp - body.global_position
 		step.y = 0.0
@@ -1757,6 +2374,11 @@ func _update_npc_life(delta: float) -> void:
 func _targets() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for npc in _npcs:
+		if str(npc.get("state", "")) == "away_in_portal":
+			continue
+		var t_body := npc.get("node") as Node3D
+		if t_body == null or not t_body.visible:
+			continue
 		out.append({
 			"kind": "npc", "id": str(npc["id"]), "name": str(npc["name"]),
 			"action": "TALK", "pos": (npc["node"] as Node3D).global_position,
@@ -2020,7 +2642,11 @@ func _update_minimap() -> void:
 	for m in _minimap_markers:
 		var rect: Control = m["rect"]
 		var node: Node3D = m["node"]
-		var show := is_instance_valid(node)
+		var show := is_instance_valid(node) and node.visible
+		if show and m["kind"] == "npc":
+			var mnpc: Dictionary = m.get("npc", {})
+			if str(mnpc.get("state", "")) == "away_in_portal":
+				show = false
 		if show and m["kind"] == "ally" and not _party_visible:
 			show = false
 		if show:
@@ -2743,6 +3369,9 @@ func _portrait_for_species(id: String) -> Texture2D:
 		tex = PORTRAIT_ICON.get_icon(key.substr(4))
 	if tex == null and key == "dqt_healslime":
 		tex = PORTRAIT_ICON.get_icon("slime")
+	var fungi_icon := "res://sugimori/dqt/0038_obakekinoko/icone_MonsterIcon_0038_d25f8ed185df1883.png"
+	if tex == null and key == "dqt_fungi" and ResourceLoader.exists(fungi_icon):
+		tex = load(fungi_icon)
 	return tex
 
 
@@ -2950,6 +3579,8 @@ func _run_async() -> void:
 			await _scenario_state()
 		"HUB_LIVING":
 			await _scenario_living()
+		"HUB_PORTAL_CYCLE":
+			await _scenario_portal_cycle()
 		"HUB_ATMOSPHERE":
 			await _scenario_atmosphere()
 		_:
@@ -3020,7 +3651,21 @@ func _scenario_boot() -> void:
 	_check("navigation", _nav_region != null and _nav_region.navigation_mesh != null)
 	_check("gate_built", _gate_root != null and is_instance_valid(_gate_root))
 	_check("guild_built", _guild_root != null and is_instance_valid(_guild_root))
-	_check("npc_count", _npcs.size() == HUB_NPC_SPECS.size(), "%d" % _npcs.size())
+	_check("npc_count", _npcs.size() == HUB_NPC_SPECS.size() + 2, "%d" % _npcs.size())
+	var dynamic_travelers_distinct: Array[String] = []
+	for npc in _npcs:
+		if bool(npc.get("is_dynamic_traveler", false)):
+			var npc_id := str(npc.get("id", ""))
+			if not dynamic_travelers_distinct.has(npc_id):
+				dynamic_travelers_distinct.append(npc_id)
+	var forbidden_traveler_ids: Array[String] = [str(player_model_id)]
+	for follower in _followers:
+		forbidden_traveler_ids.append(str(follower.get("model_id", "")))
+	var travelers_distinct_ok := dynamic_travelers_distinct.size() == 2
+	for traveler_id in dynamic_travelers_distinct:
+		if forbidden_traveler_ids.has(traveler_id):
+			travelers_distinct_ok = false
+	_check("dynamic_travelers_distinct", travelers_distinct_ok, "%d" % dynamic_travelers_distinct.size())
 	_check("prompt_built", _npc_prompt != null)
 	_check("dialogue_hud_built", _npc_hud != null)
 	_check("status_built", _status != null)
@@ -3236,6 +3881,106 @@ func _scenario_living() -> void:
 		str(npc.get("state", "")))
 
 
+func _scenario_portal_cycle() -> void:
+	var t0 := Time.get_ticks_msec()
+	var eligible: Array[Dictionary] = []
+	var first_traveler: Dictionary = {}
+	var first_nontraveler: Dictionary = {}
+	for npc in _npcs:
+		if bool(npc.get("is_dynamic_traveler", false)):
+			if first_traveler.is_empty():
+				first_traveler = npc
+		elif bool(npc.get("portal_eligible", false)) and first_nontraveler.is_empty():
+			first_nontraveler = npc
+	if not first_nontraveler.is_empty():
+		eligible.append(first_nontraveler)
+	if not first_traveler.is_empty():
+		eligible.append(first_traveler)
+	if eligible.size() < 2:
+		eligible.clear()
+		for npc in _npcs:
+			if bool(npc.get("portal_eligible", false)):
+				eligible.append(npc)
+				if eligible.size() == 2:
+					break
+	_check("portal_cycle_pool", eligible.size() >= 2, "%d" % eligible.size())
+	for idx in mini(2, eligible.size()):
+		var npc: Dictionary = eligible[idx]
+		var body := npc.get("node") as Node3D
+		var model := npc.get("model") as Node3D
+		if body == null:
+			continue
+		body.global_position = PORTAL_ENTRY_POS + Vector3(0.0, 0.0, 0.30)
+		body.rotation.y = 0.0
+		if model != null:
+			model.scale = Vector3.ONE
+		_set_npc_portal_active(npc, true)
+		npc["state"] = "to_portal"
+		npc["portal_phase_t"] = 0.0
+		for _k in 25:
+			_update_npc_life(0.1)
+			_update_minimap()
+			if str(npc.get("state", "")) == "away_in_portal":
+				break
+		_check("portal_enter_%d" % idx, str(npc.get("state", "")) == "away_in_portal",
+			str(npc.get("state", "")))
+		_check("portal_hidden_%d" % idx, not body.visible)
+		_check("portal_collision_off_%d" % idx, body.collision_layer == 0)
+		_check("portal_target_hidden_%d" % idx, not _target_has_npc(npc))
+		_check("portal_marker_hidden_%d" % idx, not _minimap_marker_visible(body))
+		_check("portal_entries_%d" % idx, _portal_entries_count >= idx + 1, "%d" % _portal_entries_count)
+		_check("portal_pulse_enter_%d" % idx, str(_last_portal_pulse.get("kind", "")) == "enter",
+			str(_last_portal_pulse.get("kind", "")))
+		npc["away_duration"] = 0.05
+		for _k in 15:
+			_update_npc_life(0.1)
+			_update_minimap()
+			if str(npc.get("state", "")) == "walk":
+				break
+		_check("portal_exit_%d" % idx, str(npc.get("state", "")) == "walk",
+			str(npc.get("state", "")))
+		_check("portal_visible_%d" % idx, body.visible)
+		_check("portal_collision_on_%d" % idx, body.collision_layer == NPC_COLLISION_LAYER)
+		_check("portal_target_shown_%d" % idx, _target_has_npc(npc))
+		_check("portal_marker_shown_%d" % idx, _minimap_marker_visible(body))
+		_check("portal_scale_%d" % idx, model != null and model.scale.is_equal_approx(Vector3.ONE))
+		_check("portal_exits_%d" % idx, _portal_exits_count >= idx + 1, "%d" % _portal_exits_count)
+		_check("portal_pulse_exit_%d" % idx, str(_last_portal_pulse.get("kind", "")) == "exit",
+			str(_last_portal_pulse.get("kind", "")))
+	_set_player_species("pancham")
+	var traveler_ids: Array[String] = []
+	for npc in _npcs:
+		if bool(npc.get("is_dynamic_traveler", false)):
+			var npc_id := str(npc.get("id", ""))
+			if not traveler_ids.has(npc_id):
+				traveler_ids.append(npc_id)
+	var forbidden: Array[String] = [str(player_model_id)]
+	for follower in _followers:
+		forbidden.append(str(follower.get("model_id", "")))
+	var travelers_ok := traveler_ids.size() == 2
+	for traveler_id in traveler_ids:
+		if forbidden.has(traveler_id):
+			travelers_ok = false
+	_check("traveler_f6_synced", travelers_ok, "%d" % traveler_ids.size())
+	_check("portal_cycle_fast", (Time.get_ticks_msec() - t0) < 10000,
+		"%d" % (Time.get_ticks_msec() - t0))
+
+
+func _target_has_npc(npc: Dictionary) -> bool:
+	var body := npc.get("node") as Node3D
+	for target in _targets():
+		if target.get("npc", null) == npc:
+			return true
+		if body != null and target.get("body", null) == body:
+			return true
+	return false
+
+
+func _minimap_marker_visible(node: Node3D) -> bool:
+	for m in _minimap_markers:
+		if m.get("node") == node:
+			return is_instance_valid(m.get("rect")) and m["rect"].visible
+	return false
 func _scenario_atmosphere() -> void:
 	weather_mode = "clear"
 	await _frames(5)
@@ -3349,6 +4094,18 @@ func _run_view(id: String) -> void:
 			await _teleport(Vector3(3.0, 0.0, 6.5), PI * 0.5)
 			_cam_yaw = PI * 0.5
 			await _frames(16)
+		"portal_pulse":
+			await _teleport(Vector3(0.0, 0.0, -4.5), PI)
+			_cam_yaw = PI
+			await _frames(4)
+			for npc in _npcs:
+				if bool(npc.get("portal_eligible", false)) and not bool(npc.get("is_dynamic_traveler", false)):
+					var nb := npc["node"] as Node3D
+					nb.global_position = PORTAL_ENTRY_POS + Vector3(0.0, 0.0, 0.35)
+					npc["state"] = "to_portal"
+					npc["portal_phase_t"] = 0.0
+					break
+			await _frames(46)
 		_:
 			_check("view_known", false, "unknown view '%s'" % id)
 	await _frames(4)

@@ -996,7 +996,7 @@
   .budget.ok { background: rgba(215, 253, 106, 0.14); color: var(--lime); border: 1px solid rgba(215, 253, 106, 0.35); }
   .budget.bad { background: rgba(255, 98, 79, 0.14); color: var(--coral); border: 1px solid rgba(255, 98, 79, 0.4); }
 
-  .nature-chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .nature-chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
   .nature-chip {
     appearance: none;
     border: 1px solid var(--line);
@@ -2298,6 +2298,7 @@
       </div>
       <div class="hero-actions">
         <button id="btnAdd" class="btn primary" type="button">+ Personagem</button>
+        <a class="btn" href="move_forge/move_forge.html" target="_blank" rel="noopener" style="text-decoration:none" title="Abrir o centro de criação e edição de Moves (D-1206)">Move Forge ↗</a>
         <button id="btnReset" class="btn" type="button">Resetar jogo</button>
         <button id="btnNeutral" class="btn" type="button">Tudo neutro</button>
         <label class="btn file-btn">Importar JSON<input id="fileImport" type="file" accept="application/json"></label>
@@ -2596,18 +2597,31 @@
     dqt_cyclops: { STR: 5, MAG: 1, VIT: 3, WIS: 1, AGI: 2, LUK: 3 }
   };
 
-  // D-393: as 8 natures iniciais, com modificadores flat que somam zero.
+  // D-393 / D-1216 / D-1217: as 18 natures oficiais (scripts/data/nature_data.gd), flat que somam zero.
   const NATURES = {
-    hardy:   { name: 'Hardy',   mods: { STR: 0, MAG: 0, VIT: 0, WIS: 0, AGI: 0, LUK: 0 } },
-    docile:  { name: 'Docile',  mods: { STR: 0, MAG: 0, VIT: 0, WIS: 0, AGI: 0, LUK: 0 } },
-    brave:   { name: 'Brave',   mods: { STR: 2, MAG: 0, VIT: 1, WIS: -1, AGI: -2, LUK: 0 } },
-    timid:   { name: 'Timid',   mods: { STR: -2, MAG: 0, VIT: -1, WIS: 0, AGI: 2, LUK: 1 } },
-    modest:  { name: 'Modest',  mods: { STR: -2, MAG: 3, VIT: 0, WIS: 0, AGI: -1, LUK: 0 } },
-    calm:    { name: 'Calm',    mods: { STR: -2, MAG: 0, VIT: 1, WIS: 2, AGI: 0, LUK: -1 } },
-    jolly:   { name: 'Jolly',   mods: { STR: 0, MAG: -3, VIT: 0, WIS: 0, AGI: 2, LUK: 1 } },
-    adamant: { name: 'Adamant', mods: { STR: 3, MAG: -3, VIT: 0, WIS: 0, AGI: 0, LUK: 0 } }
+    hardy:   { name: 'Hardy',   mods: { STR: 0,  MAG: 0,  VIT: 0,  WIS: 0,  AGI: 0,  LUK: 0  } },
+    docile:  { name: 'Docile',  mods: { STR: 0,  MAG: 0,  VIT: 0,  WIS: 0,  AGI: 0,  LUK: 0  } },
+    brave:   { name: 'Brave',   mods: { STR: 2,  MAG: 0,  VIT: 1,  WIS: 0,  AGI: -3, LUK: 0  } },
+    timid:   { name: 'Timid',   mods: { STR: -3, MAG: 0,  VIT: 0,  WIS: 0,  AGI: 2,  LUK: 1  } },
+    modest:  { name: 'Modest',  mods: { STR: -2, MAG: 3,  VIT: 0,  WIS: 0,  AGI: -1, LUK: 0  } },
+    calm:    { name: 'Calm',    mods: { STR: -3, MAG: 0,  VIT: 1,  WIS: 2,  AGI: 0,  LUK: 0  } },
+    jolly:   { name: 'Jolly',   mods: { STR: 0,  MAG: -3, VIT: 0,  WIS: 0,  AGI: 2,  LUK: 1  } },
+    adamant: { name: 'Adamant', mods: { STR: 3,  MAG: -2, VIT: 0,  WIS: 0,  AGI: 0,  LUK: -1 } },
+    bold:    { name: 'Bold',    mods: { STR: -2, MAG: 0,  VIT: 3,  WIS: 0,  AGI: -1, LUK: 0  } },
+    impish:  { name: 'Impish',  mods: { STR: 0,  MAG: -3, VIT: 2,  WIS: 0,  AGI: 0,  LUK: 1  } },
+    relaxed: { name: 'Relaxed', mods: { STR: 0,  MAG: 0,  VIT: 2,  WIS: 1,  AGI: -3, LUK: 0  } },
+    hasty:   { name: 'Hasty',   mods: { STR: 0,  MAG: 0,  VIT: -2, WIS: -1, AGI: 3,  LUK: 0  } },
+    naive:   { name: 'Naive',   mods: { STR: 1,  MAG: 0,  VIT: 0,  WIS: -3, AGI: 2,  LUK: 0  } },
+    rash:    { name: 'Rash',    mods: { STR: 0,  MAG: 2,  VIT: 0,  WIS: -3, AGI: 1,  LUK: 0  } },
+    quiet:   { name: 'Quiet',   mods: { STR: 0,  MAG: 2,  VIT: 0,  WIS: 1,  AGI: -3, LUK: 0  } },
+    careful: { name: 'Careful', mods: { STR: 0,  MAG: -2, VIT: 0,  WIS: 3,  AGI: 0,  LUK: -1 } },
+    lonely:  { name: 'Lonely',  mods: { STR: 3,  MAG: 0,  VIT: -2, WIS: -1, AGI: 0,  LUK: 0  } },
+    quirky:  { name: 'Quirky',  mods: { STR: -1, MAG: 0,  VIT: -2, WIS: 0,  AGI: 0,  LUK: 3  } }
   };
-  const NATURE_ORDER = ['hardy', 'docile', 'brave', 'timid', 'modest', 'calm', 'jolly', 'adamant'];
+  const NATURE_ORDER = [
+    'hardy', 'docile', 'brave', 'timid', 'modest', 'calm', 'jolly', 'adamant',
+    'bold', 'impish', 'relaxed', 'hasty', 'naive', 'rash', 'quiet', 'careful', 'lonely', 'quirky'
+  ];
 
   const MAX_ELEMENTS = 2;
   const MAX_MOVES = 8;
@@ -2629,13 +2643,18 @@
     gible: ['mordida', 'tiro_areia', 'furia_dragao', 'investida_escavadora', 'garra_dragao', 'rakunda', 'mabufula', 'titanomachia'],
     dqt_slime: ['tackle', 'bubble_shot', 'heal', 'electric_beam', 'tidal_surge', 'bubble_shield'],
     dqt_orc: ['spear_thrust', 'drain_spear', 'javelin_throw', 'war_cry', 'armored_bulk'],
-    dqt_cyclops: ['boulder_smash', 'rock_throw', 'glare', 'armored_bulk']
+    dqt_cyclops: ['boulder_smash', 'rock_throw', 'glare', 'armored_bulk'],
+    dqt_platypunk: ['flurry_scratch', 'pounce'],
+    dqt_healslime: ['heal', 'skara'],
+    dqt_sabrecub: ['gale_claw', 'wind_sickle'],
+    dqt_fungi: ['sweet_spore', 'frost_slash'],
+    dqt_dracky: ['frizz', 'sizz']
   };
 
   // Catálogo de moves que já existem no jogo (content/moves/*/move.tres).
   const MOVES = [
     { id: 'armored_bulk', name: 'Armored Bulk', element: 'earth', atb: 1, mp: 10, kind: 'Status' },
-    { id: 'boulder_smash', name: 'Boulder Smash', element: 'neutral', atb: 2, mp: 4, kind: 'Melee' },
+    { id: 'boulder_smash', name: 'Boulder Smash', element: 'neutral', atb: 2, mp: 0, kind: 'Melee' },
     { id: 'bubble_shield', name: 'Bubble Shield', element: 'water', atb: 3, mp: 4, kind: 'Status' },
     { id: 'bubble_shot', name: 'Bubble Shot', element: 'water', atb: 2, mp: 3, kind: 'Projectile' },
     { id: 'confusao', name: 'Confusion', element: 'psychic', atb: 2, mp: 3, kind: 'Projectile' },
@@ -2643,12 +2662,16 @@
     { id: 'electric_beam', name: 'Electric Beam', element: 'electric', atb: 2, mp: 6, kind: 'Projectile' },
     { id: 'fire_bullet', name: 'Fire Bullet', element: 'fire', atb: 2, mp: 3, kind: 'Projectile' },
     { id: 'flame_stream', name: 'Flame Stream', element: 'fire', atb: 2, mp: 3, kind: 'Projectile' },
+    { id: 'flurry_scratch', name: 'Flurry Scratch', element: 'neutral', atb: 2, mp: 3, kind: 'Melee', placeholder: true, note: 'Placeholder Tact (Platypunk · ひっかきのあらし): 4 golpes físicos rápidos no alvo.' },
+    { id: 'frizz', name: 'Frizz', element: 'fire', atb: 2, mp: 3, kind: 'Projectile', placeholder: true, note: 'Placeholder Tact (Dracky · メラ): projétil mágico de fogo em 1 alvo.' },
+    { id: 'frost_slash', name: 'Frost Slash', element: 'water', atb: 2, mp: 3, kind: 'Melee', placeholder: true, note: 'Placeholder Tact (Funghoul · ひょうけつ斬り): corte físico gelado em 1 alvo.' },
     { id: 'furia_dragao', name: 'Dragon Rage', element: 'neutral', atb: 3, mp: 5, kind: 'Projectile' },
+    { id: 'gale_claw', name: 'Gale Claw', element: 'wind', atb: 2, mp: 3, kind: 'Melee', placeholder: true, note: 'Placeholder Tact (Sabrecub · ウィングブロウ): corte físico de vento em 1 alvo.' },
     { id: 'garra_dragao', name: 'Dragon Claw', element: 'neutral', atb: 3, mp: 4, kind: 'Melee' },
     { id: 'glare', name: 'Glare', element: 'dark', atb: 1, mp: 3, kind: 'Status' },
     { id: 'golpe_carate', name: 'Karate Chop', element: 'neutral', atb: 2, mp: 3, kind: 'Melee' },
     { id: 'hassou_tobi', name: 'Hassou Tobi', element: 'neutral', atb: 3, mp: 6, kind: 'Melee' },
-    { id: 'heal', name: 'Heal', element: 'light', atb: 2, mp: 3, kind: 'Status' },
+    { id: 'heal', name: 'Heal', element: 'mystic', atb: 2, mp: 3, kind: 'Status' },
     { id: 'investida_escavadora', name: 'Dig', element: 'earth', atb: 2, mp: 3, kind: 'Melee' },
     { id: 'javelin_throw', name: 'Javelin Throw', element: 'neutral', atb: 2, mp: 5, kind: 'Projectile' },
     { id: 'mabufula', name: 'Mabufula', element: 'water', atb: 2, mp: 5, kind: 'Projectile' },
@@ -2656,24 +2679,57 @@
     { id: 'megido', name: 'Megido', element: 'mystic', atb: 3, mp: 6, kind: 'Projectile' },
     { id: 'mordida', name: 'Bite', element: 'dark', atb: 2, mp: 3, kind: 'Melee' },
     { id: 'onda_choque', name: 'Shock Wave', element: 'electric', atb: 2, mp: 3, kind: 'Cast' },
+    { id: 'pounce', name: 'Pounce', element: 'neutral', atb: 3, mp: 4, kind: 'Melee', placeholder: true, note: 'Placeholder Tact (Platypunk · とびかかってこうげき): salto pesado com golpe físico.' },
     { id: 'provocacao', name: 'Taunt', element: 'neutral', atb: 1, mp: 1, kind: 'Status' },
     { id: 'quebra_telha', name: 'Brick Break', element: 'neutral', atb: 3, mp: 4, kind: 'Melee' },
     { id: 'raio_psiquico', name: 'Psybeam', element: 'psychic', atb: 3, mp: 5, kind: 'Projectile' },
-    { id: 'rakunda', name: 'Rakunda', element: 'dark', atb: 1, mp: 3, kind: 'Status' },
+    { id: 'rakunda', name: 'Rakunda', element: 'mystic', atb: 1, mp: 7, kind: 'Status' },
     { id: 'rock_throw', name: 'Rock Throw', element: 'earth', atb: 2, mp: 3, kind: 'Projectile' },
+    { id: 'sizz', name: 'Sizz', element: 'fire', atb: 2, mp: 4, kind: 'Projectile', placeholder: true, note: 'Placeholder Tact (Dracky · ギラ): onda mágica de fogo em área.' },
+    { id: 'skara', name: 'Skara', element: 'mystic', atb: 2, mp: 6, kind: 'Status', placeholder: true, note: 'Placeholder Tact (Heal Slime · スカラ): aumenta a defesa de 1 aliado.' },
     { id: 'soco_rapido', name: 'Mach Punch', element: 'neutral', atb: 1, mp: 1, kind: 'Melee' },
-    { id: 'spear_thrust', name: 'Spear Thrust', element: 'neutral', atb: 2, mp: 3, kind: 'Melee' },
+    { id: 'spear_thrust', name: 'Spear Thrust', element: 'neutral', atb: 2, mp: 0, kind: 'Melee' },
     { id: 'splitter_flames', name: 'Splitter Flames', element: 'fire', atb: 2, mp: 4, kind: 'Projectile' },
-    { id: 'sukunda', name: 'Sukunda', element: 'wind', atb: 1, mp: 2, kind: 'Status' },
+    { id: 'sukukaja', name: 'Sukukaja', element: 'mystic', atb: 2, mp: 10, kind: 'Status' },
+    { id: 'sukunda', name: 'Sukunda', element: 'mystic', atb: 1, mp: 7, kind: 'Status' },
+    { id: 'sweet_spore', name: 'Sweet Spore', element: 'nature', atb: 2, mp: 4, kind: 'Status', placeholder: true, note: 'Placeholder Tact (Funghoul · あまい息): esporos em área que aplicam sono.' },
     { id: 'tackle', name: 'Tackle', element: 'neutral', atb: 2, mp: 0, kind: 'Melee' },
-    { id: 'tarukaja', name: 'Tarukaja', element: 'fire', atb: 2, mp: 3, kind: 'Status' },
+    { id: 'tarukaja', name: 'Tarukaja', element: 'mystic', atb: 2, mp: 10, kind: 'Status' },
     { id: 'teleporte_rapido', name: 'Teleport', element: 'psychic', atb: 1, mp: 3, kind: 'Melee' },
     { id: 'tidal_surge', name: 'Tidal Surge', element: 'water', atb: 2, mp: 5, kind: 'Projectile' },
     { id: 'tiro_areia', name: 'Sand Attack', element: 'earth', atb: 1, mp: 2, kind: 'Projectile' },
     { id: 'titanomachia', name: 'Titanomachia', element: 'earth', atb: 3, mp: 6, kind: 'Melee' },
-    { id: 'war_cry', name: 'War Cry', element: 'neutral', atb: 3, mp: 3, kind: 'Status' }
+    { id: 'war_cry', name: 'War Cry', element: 'neutral', atb: 3, mp: 3, kind: 'Status' },
+    { id: 'wind_sickle', name: 'Wind Sickle', element: 'wind', atb: 2, mp: 4, kind: 'Projectile', placeholder: true, note: 'Placeholder Tact (Sabrecub · かまいたち): lâmina de vento em área.' }
   ];
-  const MOVE_BY_ID = Object.fromEntries(MOVES.map(move => [move.id, move]));
+  let MOVE_BY_ID = Object.fromEntries(MOVES.map(move => [move.id, move]));
+  const BASE_MOVES = MOVES.map(move => ({ ...move }));
+  const CUSTOM_MOVES_KEY = 'crawlmon-custom-moves-v1';
+  function syncMovesFromForge() {
+    let custom = {};
+    try { custom = JSON.parse(localStorage.getItem(CUSTOM_MOVES_KEY) || '{}') || {}; } catch (_) { custom = {}; }
+    const merged = new Map(BASE_MOVES.map(m => [m.id, { ...m }]));
+    Object.values(custom).forEach(cm => {
+      if (!cm || !cm.id) return;
+      const prev = merged.get(cm.id) || {};
+      merged.set(cm.id, { ...prev, ...cm });
+    });
+    MOVES.length = 0;
+    MOVES.push(...[...merged.values()].sort((a, b) => a.name.localeCompare(b.name)));
+    MOVE_BY_ID = Object.fromEntries(MOVES.map(move => [move.id, move]));
+  }
+  syncMovesFromForge();
+  window.addEventListener('storage', event => {
+    if (event.key === CUSTOM_MOVES_KEY) {
+      syncMovesFromForge();
+      if (view === 'sheet') renderSheet();
+    }
+  });
+  window.addEventListener('focus', () => {
+    const before = JSON.stringify(MOVES);
+    syncMovesFromForge();
+    if (JSON.stringify(MOVES) !== before && view === 'sheet') renderSheet();
+  });
   const ELEMENT_BY_ID = Object.fromEntries(ELEMENTS.map(el => [el.id, el]));
 
   const SEED_ROSTER = [
@@ -2784,7 +2840,7 @@
   }
 
   function normalizeMoves(raw, id) {
-    if (Array.isArray(raw)) {
+    if (Array.isArray(raw) && (raw.length > 0 || !SEED_MOVES[id])) {
       return [...new Set(raw.filter(value => MOVE_BY_ID[value]))].slice(0, MAX_MOVES);
     }
     return (SEED_MOVES[id] || []).slice(0, MAX_MOVES);
@@ -3228,8 +3284,8 @@
       .map(move => {
         const el = ELEMENT_BY_ID[move.element] || ELEMENTS[0];
         const on = c.moves.includes(move.id);
-        const meta = `${move.kind} · ${move.atb} ATB${move.mp ? ` · ${move.mp} MP` : ''}`;
-        return `<button class="move-row ${on ? 'on' : ''}" type="button" data-move-toggle="${c.id}|${move.id}" style="--el:${el.color};--glyph:${el.glyph}">
+        const meta = `${move.kind} · ${move.atb} ATB${move.mp ? ` · ${move.mp} MP` : ''}${move.placeholder ? ' · placeholder' : ''}`;
+        return `<button class="move-row ${on ? 'on' : ''}" type="button" data-move-toggle="${c.id}|${move.id}" style="--el:${el.color};--glyph:${el.glyph}" title="${escapeHtml(move.note || move.name)}">
           <span class="el-dot" style="--el:${el.color};--glyph:${el.glyph}" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#${el.symbol}"></use></svg></span>
           <span class="move-name">${move.name}</span>
           <span class="move-meta">${meta}</span>
@@ -4107,6 +4163,36 @@
     });
   }
 
+  async function syncAssetToGame(id, kind, pngDataUrl) {
+    const base = location.protocol === 'file:' ? 'http://localhost:8791' : '';
+    try {
+      const r = await fetch(base + '/api/character/save_asset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, kind, data_url: pngDataUrl })
+      });
+      const data = await r.json();
+      return data && data.ok ? data.path : '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function dataUrlToPng(dataUrl) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const cv = document.createElement('canvas');
+        cv.width = img.naturalWidth || 1;
+        cv.height = img.naturalHeight || 1;
+        cv.getContext('2d').drawImage(img, 0, 0);
+        resolve(cv.toDataURL('image/png'));
+      };
+      img.onerror = () => reject(new Error('load'));
+      img.src = dataUrl;
+    });
+  }
+
   async function handleAssetUpload(input, field, maxSide) {
     const file = input.files && input.files[0];
     if (!file) return;
@@ -4124,7 +4210,10 @@
       persist();
       renderSheet();
       updateJsonAndStats();
-      showToast(field === 'iconData' ? 'Ícone atualizado.' : 'Render atualizado.');
+      const pngData = await dataUrlToPng(data);
+      const savedPath = await syncAssetToGame(c.id, field === 'iconData' ? 'icon' : 'render', pngData);
+      const baseMsg = field === 'iconData' ? 'Ícone atualizado' : 'Render atualizado';
+      showToast(savedPath ? `${baseMsg} e salvo no jogo (${savedPath}).` : `${baseMsg} (só na matriz; servidor offline).`);
     } catch (err) {
       showToast('Não foi possível ler a imagem.');
     } finally {
@@ -5753,6 +5842,7 @@
     capGalleryRender();
     capModal.hidden = false;
     if (c.renderData) capLoad(c.renderData, 'Render da ficha', false);
+    else if (!capGallery.querySelector('[data-cap-pick]')) capWikiSearch();
   }
 
   function closeCapture() {
@@ -5760,7 +5850,7 @@
     cap.img = null;
   }
 
-  function applyCapture() {
+  async function applyCapture() {
     const c = charById(cap.id);
     if (!c || !cap.img) return;
     if (cap.mode === 'render') {
@@ -5772,7 +5862,11 @@
       out.height = Math.max(1, Math.round(ih * k));
       out.getContext('2d').drawImage(cap.img, 0, 0, out.width, out.height);
       let data;
-      try { data = out.toDataURL('image/webp', 0.95); } catch (err) {
+      let pngData;
+      try {
+        data = out.toDataURL('image/webp', 0.95);
+        pngData = out.toDataURL('image/png');
+      } catch (err) {
         showToast('Não foi possível exportar essa imagem (abra por servidor ou use Arquivo…).');
         return;
       }
@@ -5781,11 +5875,17 @@
       closeCapture();
       if (view === 'sheet') renderSheet(); else refreshAll();
       updateJsonAndStats();
-      showToast(`Render de ${c.name} atualizado.`, { label: 'Desfazer', fn: undo });
+      const savedPath = await syncAssetToGame(c.id, 'render', pngData);
+      showToast(savedPath ? `Render de ${c.name} salvo no jogo (${savedPath}).` : `Render de ${c.name} atualizado na matriz.`, { label: 'Desfazer', fn: undo });
       return;
     }
     let url;
-    try { url = capOutput(ICON_MAX_SIDE).toDataURL('image/webp', 0.92); } catch (err) {
+    let pngUrl;
+    try {
+      const iconCanvas = capOutput(ICON_MAX_SIDE);
+      url = iconCanvas.toDataURL('image/webp', 0.92);
+      pngUrl = iconCanvas.toDataURL('image/png');
+    } catch (err) {
       showToast('Não foi possível exportar essa imagem (abra por servidor ou use Arquivo…).');
       return;
     }
@@ -5795,7 +5895,8 @@
     closeCapture();
     if (view === 'sheet') renderSheet(); else refreshAll();
     updateJsonAndStats();
-    showToast(`Ícone de ${c.name} capturado do render.`, { label: 'Desfazer', fn: undo });
+    const savedPath = await syncAssetToGame(c.id, 'icon', pngUrl);
+    showToast(savedPath ? `Ícone de ${c.name} salvo no jogo (${savedPath}).` : `Ícone de ${c.name} capturado na matriz.`, { label: 'Desfazer', fn: undo });
   }
 
   function capPoint(event) {
@@ -5847,6 +5948,8 @@
   });
   [capTol, capRemoveBg, capPokeBg].forEach(el => el.addEventListener('input', capRedraw));
   capSearch.addEventListener('input', capGalleryRender);
+  const API_BASE = location.protocol === 'file:' ? 'http://localhost:8791' : '';
+  const GALLERY_DIR = location.protocol === 'file:' ? `${API_BASE}/sugimori/dqt/` : DQT_DIR;
   capGallery.addEventListener('click', event => {
     const pick = event.target.closest('[data-cap-pick]');
     if (!pick) return;
@@ -5854,8 +5957,7 @@
     const slash = rel.indexOf('/');
     const dir = rel.slice(0, slash);
     const file = rel.slice(slash + 1);
-    if (location.protocol === 'file:') { showToast('Galeria só funciona por servidor local (veja o aviso).'); return; }
-    capLoad(`${DQT_DIR}${encodeURIComponent(dir)}/${encodeURIComponent(file)}`, `${dir} · ${capImageLabel(file, dir)}`, true);
+    capLoad(`${GALLERY_DIR}${encodeURIComponent(dir)}/${encodeURIComponent(file)}`, `${dir} · ${capImageLabel(file, dir)}`, true);
   });
   document.getElementById('capFile').addEventListener('change', event => {
     const file = event.target.files && event.target.files[0];
@@ -5865,27 +5967,70 @@
     setTimeout(() => URL.revokeObjectURL(url), 60000);
     event.target.value = '';
   });
-  // Buscar na wiki: precisa de `python tools/matrix_server.py` (o http.server simples não tem a API).
+  // Buscar na wiki: usa o servidor local quando ativo e cai para MediaWiki CORS (origin=*) se offline.
   const capWikiUrl = document.getElementById('capWikiUrl');
-  const WIKI_NOTE = 'A busca na wiki precisa do servidor da matriz. Na raiz do projeto rode <kbd>python tools/matrix_server.py</kbd> e abra <kbd>http://localhost:8791/prototypes/affinity_matrix.html</kbd>.';
+  const WIKI_NOTE = 'Servidor local offline: abra pelo atalho <b>Affinity Matrix.lnk</b> para salvar em sugimori/dqt_web/wiki/ e liberar recorte.';
+  async function capWikiDirectSearch(wiki, q) {
+    const base = wiki + (wiki.includes('?') ? '&' : '?') + 'origin=*&format=json';
+    const r1 = await fetch(base + '&action=query&list=search&srnamespace=6&srlimit=20&srsearch=' + encodeURIComponent(q));
+    const d1 = await r1.json();
+    let hits = ((d1.query && d1.query.search) || []).map(h => h.title).filter(Boolean);
+    try {
+      const rOwn = await fetch(base + '&action=query&prop=images&imlimit=50&redirects=1&titles=' + encodeURIComponent(q));
+      const dOwn = await rOwn.json();
+      const own = [];
+      Object.values((dOwn.query && dOwn.query.pages) || {}).forEach(pg => {
+        (pg.images || []).forEach(im => { if (im.title && !own.includes(im.title)) own.push(im.title); });
+      });
+      hits = own.concat(hits.filter(h => !own.includes(h))).slice(0, 50);
+    } catch (_) {}
+    if (!hits.length) return [];
+    const r2 = await fetch(base + '&action=query&prop=imageinfo&iiprop=url|size|mime&iiurlwidth=240&titles=' + encodeURIComponent(hits.join('|')));
+    const d2 = await r2.json();
+    const block = d2.query || {};
+    const aliases = {};
+    (block.normalized || []).forEach(it => { if (it.from) aliases[it.from.toLowerCase()] = it.to || ''; });
+    const pages = {};
+    Object.values(block.pages || {}).forEach(pg => { if (pg.title) pages[pg.title.toLowerCase()] = pg; });
+    const out = [];
+    hits.forEach(t => {
+      const pg = pages[(aliases[t.toLowerCase()] || t).toLowerCase()];
+      const info = pg && pg.imageinfo && pg.imageinfo[0];
+      if (!info || !info.url || !/^image\/(png|jpeg|webp)$/i.test(info.mime || '')) return;
+      out.push({ title: pg.title || t, url: info.url, thumb: info.thumburl || info.url, width: info.width, height: info.height });
+    });
+    const needle = q.toLowerCase();
+    out.sort((a, b) => ((a.title.toLowerCase().includes(needle) ? 0 : 1) - (b.title.toLowerCase().includes(needle) ? 0 : 1))
+      || ((b.width || 0) * (b.height || 0) - (a.width || 0) * (a.height || 0)));
+    return out;
+  }
+  function capRenderWikiResults(results) {
+    if (!results.length) { capGallery.innerHTML = '<div class="empty">A wiki não tem arte com esse nome.</div>'; return; }
+    capGallery.innerHTML = '<div class="cap-grid">' + results.map((item, i) => `
+      <button type="button" class="cap-thumb" data-wiki-pick="${i}" title="${escapeHtml(item.title + ' · ' + item.width + '×' + item.height)}">
+        <img loading="lazy" alt="" src="${escapeHtml(item.thumb || item.url)}" referrerpolicy="no-referrer">
+        <span>${escapeHtml(item.title.replace(/^File:/, ''))}</span>
+      </button>`).join('') + '</div><div class="cap-note">Clique numa arte: ela é salva em sugimori/dqt_web/wiki/ e abre no quadro.</div>';
+    capGallery._wiki = results;
+  }
   async function capWikiSearch() {
     const c = charById(cap.id);
     const q = capSearch.value.trim() || (c ? c.name : '');
     if (!q) { showToast('Digite o nome do monstro.'); return; }
+    const wiki = capWikiUrl.value.trim();
     capGallery.innerHTML = '<div class="cap-note">Buscando “' + escapeHtml(q) + '” na wiki…</div>';
     try {
-      const r = await fetch('/api/wiki/search?wiki=' + encodeURIComponent(capWikiUrl.value.trim()) + '&q=' + encodeURIComponent(q));
+      const r = await fetch(API_BASE + '/api/wiki/search?wiki=' + encodeURIComponent(wiki) + '&q=' + encodeURIComponent(q));
       const data = await r.json();
       if (!data.ok) { capGallery.innerHTML = '<div class="cap-note">' + escapeHtml(data.error || 'Falha na busca.') + '</div>'; return; }
-      if (!data.results.length) { capGallery.innerHTML = '<div class="empty">A wiki não tem arte com esse nome.</div>'; return; }
-      capGallery.innerHTML = '<div class="cap-grid">' + data.results.map((item, i) => `
-        <button type="button" class="cap-thumb" data-wiki-pick="${i}" title="${escapeHtml(item.title + ' · ' + item.width + '×' + item.height)}">
-          <img loading="lazy" alt="" src="${escapeHtml(item.thumb || item.url)}" referrerpolicy="no-referrer">
-          <span>${escapeHtml(item.title.replace(/^File:/, ''))}</span>
-        </button>`).join('') + '</div><div class="cap-note">Clique numa arte: ela é salva em sugimori/dqt_web/wiki/ e abre no quadro.</div>';
-      capGallery._wiki = data.results;
+      capRenderWikiResults(data.results || []);
     } catch (err) {
-      capGallery.innerHTML = '<div class="cap-note">' + WIKI_NOTE + '</div>';
+      try {
+        const direct = await capWikiDirectSearch(wiki, q);
+        capRenderWikiResults(direct);
+      } catch (err2) {
+        capGallery.innerHTML = '<div class="cap-note">' + WIKI_NOTE + '</div>';
+      }
     }
   }
   document.getElementById('capWiki').addEventListener('click', capWikiSearch);
@@ -5897,16 +6042,17 @@
     const c = charById(cap.id);
     showToast('Baixando a arte…');
     try {
-      const r = await fetch('/api/wiki/save', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      const r = await fetch(API_BASE + '/api/wiki/save', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ wiki: capWikiUrl.value.trim(), url: item.url, name: (c ? c.id : '') + '_' + item.title.replace(/^File:/, '').replace(/\.[a-z0-9]+$/i, '') }) });
       const data = await r.json();
       if (!data.ok) {
         showToast(data.blocked ? 'A wiki bloqueou o download: salve a imagem pelo navegador.' : (data.error || 'Falha ao salvar.'));
         return;
       }
-      capLoad('../' + data.path, item.title.replace(/^File:/, '') + ' · salva em ' + data.path, true);
+      const savedSrc = (API_BASE ? API_BASE + '/' : '../') + data.path;
+      capLoad(savedSrc, item.title.replace(/^File:/, '') + ' · salva em ' + data.path, true);
     } catch (err) {
-      capGallery.insertAdjacentHTML('afterbegin', '<div class="cap-note">' + WIKI_NOTE + '</div>');
+      capLoad(item.url, item.title.replace(/^File:/, '') + ' · prévia direta (abra pelo Affinity Matrix.lnk para recortar/salvar)', false);
     }
   });
   document.getElementById('capUseSheet').addEventListener('click', () => {

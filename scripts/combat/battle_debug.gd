@@ -261,8 +261,7 @@ func _select_skill(idx: int) -> void:
 	var actor := _current_attacker()
 	if actor == null:
 		return
-	var skills: Array[Skill] = [Skill.basic()]
-	skills.append_array(actor.skills)
+	var skills: Array[Skill] = Skill.combatant_moves(actor)
 	if idx < skills.size():
 		_skill_idx = idx
 		_note = "Habilidade: %s (%s)" % [skills[_skill_idx].display_name, Skill.kind_name(skills[_skill_idx].kind)]
@@ -303,7 +302,7 @@ func _fill_all_atb() -> void:
 	for c in _all_combatants():
 		c.atb = Combatant.BLOCKS
 	if _party.size() > 0:
-		_party[0].burst = mini(_party[0].burst + 1, Combatant.BURST_MAX)
+		_party[0].gain_burst(1)
 	_note = "ATB cheio para todos e +1 Burst no líder"
 
 
@@ -353,8 +352,7 @@ func _apply_test_ko() -> void:
 
 
 func _force_attack(actor: Combatant, target: Combatant) -> void:
-	var skills: Array[Skill] = [Skill.basic()]
-	skills.append_array(actor.skills)
+	var skills: Array[Skill] = Skill.combatant_moves(actor)
 	var sk := skills[_skill_idx % skills.size()]
 	actor.atb = Combatant.BLOCKS
 	var ok := _battle.use_skill(actor, sk, target)
@@ -367,8 +365,7 @@ func _trigger_strike_vfx_only() -> void:
 	var target := _current_target()
 	if actor == null or target == null or _fx == null:
 		return
-	var skills: Array[Skill] = [Skill.basic()]
-	skills.append_array(actor.skills)
+	var skills: Array[Skill] = Skill.combatant_moves(actor)
 	var sk := skills[_skill_idx % skills.size()]
 	var mid := BattleFx.normalize_move_id(sk.display_name)
 	var from_pos := actor.pos
@@ -391,8 +388,7 @@ func _trigger_impact_vfx_only() -> void:
 	var target := _current_target()
 	if actor == null or target == null or _fx == null:
 		return
-	var skills: Array[Skill] = [Skill.basic()]
-	skills.append_array(actor.skills)
+	var skills: Array[Skill] = Skill.combatant_moves(actor)
 	var sk := skills[_skill_idx % skills.size()]
 	var mid := BattleFx.normalize_move_id(sk.display_name)
 	var to_pos := target.pos + Vector3(0, 1.0, 0)
@@ -583,9 +579,7 @@ func _update_hud_text() -> void:
 
 	var cur_att := _current_attacker()
 	var cur_tgt := _current_target()
-	var skills: Array[Skill] = [Skill.basic()]
-	if cur_att != null:
-		skills.append_array(cur_att.skills)
+	var skills: Array[Skill] = Skill.combatant_moves(cur_att)
 	var active_sk := skills[_skill_idx % skills.size()] if not skills.is_empty() else null
 	var sk_name := active_sk.display_name if active_sk != null else "-"
 

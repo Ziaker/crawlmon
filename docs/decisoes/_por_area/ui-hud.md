@@ -106,3 +106,4 @@
 - D-984-badges-inimigo-negativos-esquerda-positivos-direita
 - D-985-etiqueta-windup-overhaul-escolhas
 - D-1192-pos-combate-novo-do-prototipo-no-jogo
+- D-1243-boost-aura-shader-opcao-b-chakra-80-menos-opacidade

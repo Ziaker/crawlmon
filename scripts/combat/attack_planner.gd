@@ -83,6 +83,8 @@ func plan(inc: Incoming) -> float:
 			run_t = Battle.travel_seconds(move.run_base * agi_f, a, t)
 		if not is_dig:  # D-1196: the Dig timeline is the HTML's, whatever the character
 			run_t += a.travel_extra  # D-341: slow character, only the run to the target
+		if move != null and move.run_offset != 0.0:
+			run_t = maxf(run_t + move.run_offset, 0.0)  # D-1208: same run as a plain Tackle, shifted by the sheet's seconds
 		var hop_dist := stand.distance_to(a_home)
 		inc.motion = "melee"
 		inc.stand = stand
@@ -97,6 +99,8 @@ func plan(inc: Incoming) -> float:
 		if is_dig or (move != null and move.strike_time > 0.0 and move.strike_time <= 0.20):
 			inc.antic = 0.0  # the jab lands straight on arrival
 		inc.hold = move.hold if move != null and move.hold >= 0.0 else BattleSpace.RETURN_HOLD_DEFAULT  # D-281
+		if Battle.fast_combat_test:
+			inc.hold = minf(inc.hold, 0.25)  # fast-combat: the post-strike idle does not stall the return
 		inc.hop_t = clampf(hop_dist / 70.0, 0.22, 0.4)
 		if move != null and move.hop_time >= 0.0:
 			inc.hop_t = move.hop_time  # D-1196

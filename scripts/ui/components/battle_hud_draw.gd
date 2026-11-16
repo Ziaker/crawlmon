@@ -222,6 +222,68 @@ static func draw_flames(ci: CanvasItem, rect: Rect2, now: int, power: float) -> 
 		ci.draw_colored_polygon(PackedVector2Array([Vector2(x - w, base_y), Vector2(x + sway, base_y - h), Vector2(x + w, base_y)]), Color(1.0, 0.42, 0.08, 0.9))
 		ci.draw_colored_polygon(PackedVector2Array([Vector2(x - w * 0.55, base_y), Vector2(x + sway * 0.7, base_y - h * 0.62), Vector2(x + w * 0.55, base_y)]), Color(1.0, 0.85, 0.3, 0.95))
 
+## PROTOTYPE (BOOST visual, D-1229): three placeholder looks of low-opacity magic flames on the enemy card, for the
+## creator to choose from. Colours, shapes and motion are NOT decided. HUD only: no game state, no stat change.
+## Drawn right after the card background, so the portrait, name, bars and badges stay on top (nothing is hidden).
+const BOOST_VARIANTS := 3
+
+static func boost_badge_colors(variant: int) -> Array:
+	match variant:
+		2:
+			return [Color("0b6b7a"), Color("d4fbff")]
+		3:
+			return [Color("7a4a00"), Color("ffe9a8")]
+		4:  # D-1243: light-blue BOOST badge
+			return [Color("1d5fa8"), Color("d6ecff")]
+	return [Color("5b2a9e"), Color("f0d6ff")]
+
+
+static func boost_perimeter_point(box: Rect2, s: float) -> Vector2:
+	var w := box.size.x
+	var h := box.size.y
+	if s < w:
+		return box.position + Vector2(s, 0.0)
+	s -= w
+	if s < h:
+		return box.position + Vector2(w, s)
+	s -= h
+	if s < w:
+		return box.position + Vector2(w - s, h)
+	s -= w
+	return box.position + Vector2(0.0, h - s)
+
+
+static func draw_boost_card(ci: CanvasItem, box: Rect2, variant: int, now: int) -> void:
+	var t := now / 1000.0
+	match variant:
+		2:  # 2: light comets run around the card's outline
+			var per := 2.0 * (box.size.x + box.size.y)
+			for c in 3:
+				var head := fposmod(t * 90.0 + float(c) * per / 3.0, per)
+				for q in 14:
+					var p := boost_perimeter_point(box, fposmod(head - float(q) * 3.0, per))
+					ci.draw_circle(p, 3.2 - float(q) * 0.18, Color(0.45, 0.95, 1.0, 0.5 * (1.0 - float(q) / 14.0)))
+		3:  # 3: a soft glow climbs from the bottom and embers rise across the face
+			for b in 6:
+				var hh := box.size.y / 6.0
+				ci.draw_rect(Rect2(box.position.x + 3.0, box.end.y - float(b + 1) * hh, box.size.x - 6.0, hh), Color(1.0, 0.7, 0.2, 0.2 * (1.0 - float(b) / 6.0)))
+			for j in 12:
+				var ex := box.position.x + 4.0 + fposmod(float(j) * 37.3, box.size.x - 8.0)
+				var ey := box.end.y - fposmod(t * (12.0 + float(j % 3) * 4.0) + float(j) * 11.0, box.size.y)
+				ci.draw_circle(Vector2(ex, ey), 1.1, Color(1.0, 0.85, 0.4, 0.55))
+		_:  # 1: tongues of violet flame along the bottom edge
+			var n := 16
+			var by := box.end.y
+			for j in n:
+				var ph := t * 5.0 + float(j) * 1.7
+				var h := 9.0 + 5.0 * sin(ph) + 2.0 * sin(ph * 2.3)
+				var x := box.position.x + (float(j) + 0.5) * box.size.x / float(n)
+				var w := box.size.x / float(n) * 0.8
+				var sway := sin(ph * 0.8) * 2.0
+				ci.draw_colored_polygon(PackedVector2Array([Vector2(x - w, by), Vector2(x + sway, by - h), Vector2(x + w, by)]), Color(0.62, 0.25, 1.0, 0.3))
+				ci.draw_colored_polygon(PackedVector2Array([Vector2(x - w * 0.5, by), Vector2(x + sway * 0.7, by - h * 0.6), Vector2(x + w * 0.5, by)]), Color(0.95, 0.7, 1.0, 0.3))
+
+
 static func element_icon(e: Element.Type) -> Texture2D:
 	var names := {Element.Type.FISICO: "neutral", Element.Type.FOGO: "fire", Element.Type.AGUA_GELO: "water_ice", Element.Type.RAIO: "electric", Element.Type.PSIQUICO: "psychic", Element.Type.VENENO: "nature", Element.Type.SOM: "sound", Element.Type.TERRA: "earth", Element.Type.VENTO: "wind", Element.Type.LUZ: "light", Element.Type.TREVAS: "dark"}
 	var key: String = names.get(e, "neutral")

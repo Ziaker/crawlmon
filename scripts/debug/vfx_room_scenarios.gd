@@ -11,6 +11,8 @@ const SCENARIOS := [
 	# --- Choque (D-279) ---
 	{"id": "choque", "g": "Choque", "label": "Frente a frente (Tackle × Tackle)", "atk": [["A1", "Tackle", "E1", 0.0], ["E1", "Tackle", "A1", 0.0]]},
 	{"id": "choque_atraso", "g": "Choque", "label": "Defasado em 0,5 s", "atk": [["A1", "Tackle", "E1", 0.0], ["E1", "Tackle", "A1", 0.5]]},
+	{"id": "karate_holo", "g": "Moves", "label": "Karate Chop com mão holograma branca (D-1209)", "atk": [["A1", "Karate Chop", "E1", 0.0]]},
+	{"id": "karate_holo_esp", "g": "Moves", "label": "Espelhado: Karate Chop do inimigo no aliado (D-1209)", "atk": [["E1", "Karate Chop", "A1", 0.0]]},
 	{"id": "choque_mach", "g": "Choque", "label": "Mach Punch (rápido) × Tackle (lento)", "atk": [["E1", "Tackle", "A1", 0.0], ["A1", "Mach Punch", "E1", 1.5]]},
 	{"id": "choque_brick", "g": "Choque", "label": "Brick Break × Tackle", "atk": [["A1", "Brick Break", "E1", 0.0], ["E1", "Tackle", "A1", 0.0]]},
 	{"id": "cruzamento", "g": "Choque", "label": "Cruzamento (alvos distintos): cancelam", "atk": [["A1", "Tackle", "E1", 0.0], ["E1", "Tackle", "A2", 0.0]]},

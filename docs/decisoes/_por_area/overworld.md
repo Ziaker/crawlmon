@@ -109,3 +109,4 @@
 - D-388-pancham-mesma-velocidade-do-jogador
 - D-389-dqt-orc-3d-no-overworld-lab
 - D-991-modelos-3d-overworld-lab-e-shader
+- D-1238-hub-3d-mais-escuro-detalhado-e-npcs-no-portal

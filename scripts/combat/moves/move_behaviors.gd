@@ -386,7 +386,7 @@ class WarCry extends MoveBehavior:
 				})
 		if interrupted > 0:
 			var burst_before := inc.attacker.burst
-			inc.attacker.burst = mini(inc.attacker.burst + 1, Combatant.BURST_MAX)
+			inc.attacker.gain_burst(1)
 			var burst_gained := inc.attacker.burst > burst_before
 			if burst_gained:
 				battle.grant_burst(inc.attacker, interrupted_at, true)

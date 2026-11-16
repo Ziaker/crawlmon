@@ -178,6 +178,11 @@ var _pending_card: Control
 func _ready() -> void:
 	# D-1086: o Slime deste lab é o protótipo Medroso (D-310/D-315).
 	enable_threat_demo = true
+	# D-1208: the expedition party decides who the lab controls.
+	if GameState.active_campaign_started and GameState.party.size() > 0:
+		player_species = GameState.species_key(GameState.party[0])
+		start_party = GameState.party.size() > 1
+
 	super()
 	# D-1063: os NPCs são sólidos para o jogador (layer 16), mas o raio da
 	# câmera usa a máscara 1 e continua ignorando os NPCs (D-1023).
@@ -1182,11 +1187,11 @@ func _build_room() -> void:
 	_box(Vector3(8.5, FOREST_WALL_HEIGHT, 0.5), Vector3(0.0, FOREST_WALL_HEIGHT * 0.5, 6.25), wall_mats[0])
 	_box(Vector3(0.5, FOREST_WALL_HEIGHT, 20.0), Vector3(-4.25, FOREST_WALL_HEIGHT * 0.5, -4.0), wall_mats[1])
 	_box(Vector3(0.5, FOREST_WALL_HEIGHT, 12.0), Vector3(4.25, FOREST_WALL_HEIGHT * 0.5, 0.0), wall_mats[2])
-	# Parede sul (z=-14,25) com três portas de 2 m: x -1..1, 6..8 e 13..15.
-	_box(Vector3(3.25, FOREST_WALL_HEIGHT, 0.5), Vector3(-2.625, FOREST_WALL_HEIGHT * 0.5, -14.25), wall_mats[3])
-	_box(Vector3(5.0, FOREST_WALL_HEIGHT, 0.5), Vector3(3.5, FOREST_WALL_HEIGHT * 0.5, -14.25), wall_mats[3])
-	_box(Vector3(5.0, FOREST_WALL_HEIGHT, 0.5), Vector3(10.5, FOREST_WALL_HEIGHT * 0.5, -14.25), wall_mats[3])
-	_box(Vector3(3.25, FOREST_WALL_HEIGHT, 0.5), Vector3(16.625, FOREST_WALL_HEIGHT * 0.5, -14.25), wall_mats[3])
+	# Parede sul (z=-14,25) com três portas de 3 m: x -1.5..1.5, 5.5..8.5 e 12.5..15.5.
+	_box(Vector3(2.75, FOREST_WALL_HEIGHT, 0.5), Vector3(-2.875, FOREST_WALL_HEIGHT * 0.5, -14.25), wall_mats[3])
+	_box(Vector3(4.0, FOREST_WALL_HEIGHT, 0.5), Vector3(3.5, FOREST_WALL_HEIGHT * 0.5, -14.25), wall_mats[3])
+	_box(Vector3(4.0, FOREST_WALL_HEIGHT, 0.5), Vector3(10.5, FOREST_WALL_HEIGHT * 0.5, -14.25), wall_mats[3])
+	_box(Vector3(2.75, FOREST_WALL_HEIGHT, 0.5), Vector3(16.875, FOREST_WALL_HEIGHT * 0.5, -14.25), wall_mats[3])
 	# Parede interna dividida: porta de 3 m em x 8..11, para o cômodo novo.
 	_box(Vector3(4.25, FOREST_WALL_HEIGHT, 0.5), Vector3(5.875, FOREST_WALL_HEIGHT * 0.5, -5.75), wall_mats[4])
 	_box(Vector3(7.25, FOREST_WALL_HEIGHT, 0.5), Vector3(14.625, FOREST_WALL_HEIGHT * 0.5, -5.75), wall_mats[4])
@@ -1199,10 +1204,10 @@ func _build_room() -> void:
 	_box(Vector3(22.5, FOREST_WALL_HEIGHT, 0.5), Vector3(7.0, FOREST_WALL_HEIGHT * 0.5, -22.25), wall_mats[3])
 	_box(Vector3(0.5, FOREST_WALL_HEIGHT, 8.0), Vector3(-4.25, FOREST_WALL_HEIGHT * 0.5, -18.0), wall_mats[1])
 	_box(Vector3(0.5, FOREST_WALL_HEIGHT, 8.0), Vector3(18.25, FOREST_WALL_HEIGHT * 0.5, -18.0), wall_mats[5])
-	# Divisórias com porta de 2 m em z -19..-17.
+	# Divisórias com porta de 3 m em z -19.5..-16.5.
 	for x in [4.25, 10.25]:
-		_box(Vector3(0.5, FOREST_WALL_HEIGHT, 3.0), Vector3(x, FOREST_WALL_HEIGHT * 0.5, -20.5), wall_mats[2])
-		_box(Vector3(0.5, FOREST_WALL_HEIGHT, 3.0), Vector3(x, FOREST_WALL_HEIGHT * 0.5, -15.5), wall_mats[2])
+		_box(Vector3(0.5, FOREST_WALL_HEIGHT, 2.5), Vector3(x, FOREST_WALL_HEIGHT * 0.5, -20.75), wall_mats[2])
+		_box(Vector3(0.5, FOREST_WALL_HEIGHT, 2.5), Vector3(x, FOREST_WALL_HEIGHT * 0.5, -15.25), wall_mats[2])
 	# Pilares: colisão igual, visual de tronco.
 	for p in [
 		Vector2(-3.0, -2.0), Vector2(3.0, -7.0),
@@ -1732,7 +1737,7 @@ func _build_exit() -> void:
 		_foliage(Vector3(17.55, _rng.randf_range(1.0, 3.2), -10.0 + side * _rng.randf_range(0.9, 1.7)),
 			_rng.randf_range(0.22, 0.38), _leaf_color(), 1 << 8)
 	var tag := Label3D.new()
-	tag.text = "SAÍDA"
+	tag.text = "RETURN TO HUB"
 	tag.font_size = 46
 	tag.modulate = Color(0.55, 1.0, 0.62)
 	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
@@ -2572,10 +2577,10 @@ func _build_minimap_map() -> void:
 		[Vector3(8.5, FOREST_WALL_HEIGHT, 0.5), Vector3(0.0, FOREST_WALL_HEIGHT * 0.5, 6.25)],
 		[Vector3(0.5, FOREST_WALL_HEIGHT, 20.0), Vector3(-4.25, FOREST_WALL_HEIGHT * 0.5, -4.0)],
 		[Vector3(0.5, FOREST_WALL_HEIGHT, 12.0), Vector3(4.25, FOREST_WALL_HEIGHT * 0.5, 0.0)],
-		[Vector3(3.25, FOREST_WALL_HEIGHT, 0.5), Vector3(-2.625, FOREST_WALL_HEIGHT * 0.5, -14.25)],
-		[Vector3(5.0, FOREST_WALL_HEIGHT, 0.5), Vector3(3.5, FOREST_WALL_HEIGHT * 0.5, -14.25)],
-		[Vector3(5.0, FOREST_WALL_HEIGHT, 0.5), Vector3(10.5, FOREST_WALL_HEIGHT * 0.5, -14.25)],
-		[Vector3(3.25, FOREST_WALL_HEIGHT, 0.5), Vector3(16.625, FOREST_WALL_HEIGHT * 0.5, -14.25)],
+		[Vector3(2.75, FOREST_WALL_HEIGHT, 0.5), Vector3(-2.875, FOREST_WALL_HEIGHT * 0.5, -14.25)],
+		[Vector3(4.0, FOREST_WALL_HEIGHT, 0.5), Vector3(3.5, FOREST_WALL_HEIGHT * 0.5, -14.25)],
+		[Vector3(4.0, FOREST_WALL_HEIGHT, 0.5), Vector3(10.5, FOREST_WALL_HEIGHT * 0.5, -14.25)],
+		[Vector3(2.75, FOREST_WALL_HEIGHT, 0.5), Vector3(16.875, FOREST_WALL_HEIGHT * 0.5, -14.25)],
 		[Vector3(4.25, FOREST_WALL_HEIGHT, 0.5), Vector3(5.875, FOREST_WALL_HEIGHT * 0.5, -5.75)],
 		[Vector3(7.25, FOREST_WALL_HEIGHT, 0.5), Vector3(14.625, FOREST_WALL_HEIGHT * 0.5, -5.75)],
 		[Vector3(0.5, FOREST_WALL_HEIGHT, 8.0), Vector3(18.25, FOREST_WALL_HEIGHT * 0.5, -10.0)],
@@ -2584,10 +2589,10 @@ func _build_minimap_map() -> void:
 		[Vector3(22.5, FOREST_WALL_HEIGHT, 0.5), Vector3(7.0, FOREST_WALL_HEIGHT * 0.5, -22.25)],
 		[Vector3(0.5, FOREST_WALL_HEIGHT, 8.0), Vector3(-4.25, FOREST_WALL_HEIGHT * 0.5, -18.0)],
 		[Vector3(0.5, FOREST_WALL_HEIGHT, 8.0), Vector3(18.25, FOREST_WALL_HEIGHT * 0.5, -18.0)],
-		[Vector3(0.5, FOREST_WALL_HEIGHT, 3.0), Vector3(4.25, FOREST_WALL_HEIGHT * 0.5, -20.5)],
-		[Vector3(0.5, FOREST_WALL_HEIGHT, 3.0), Vector3(4.25, FOREST_WALL_HEIGHT * 0.5, -15.5)],
-		[Vector3(0.5, FOREST_WALL_HEIGHT, 3.0), Vector3(10.25, FOREST_WALL_HEIGHT * 0.5, -20.5)],
-		[Vector3(0.5, FOREST_WALL_HEIGHT, 3.0), Vector3(10.25, FOREST_WALL_HEIGHT * 0.5, -15.5)],
+		[Vector3(0.5, FOREST_WALL_HEIGHT, 2.5), Vector3(4.25, FOREST_WALL_HEIGHT * 0.5, -20.75)],
+		[Vector3(0.5, FOREST_WALL_HEIGHT, 2.5), Vector3(4.25, FOREST_WALL_HEIGHT * 0.5, -15.25)],
+		[Vector3(0.5, FOREST_WALL_HEIGHT, 2.5), Vector3(10.25, FOREST_WALL_HEIGHT * 0.5, -20.75)],
+		[Vector3(0.5, FOREST_WALL_HEIGHT, 2.5), Vector3(10.25, FOREST_WALL_HEIGHT * 0.5, -15.25)],
 	]:
 		_minimap_box(data[0], data[1], wall_col)
 	for p in [

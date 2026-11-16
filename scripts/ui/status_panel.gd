@@ -153,8 +153,7 @@ func _draw_unit(c: Combatant, r: Rect2) -> void:
 	var held := c.get_held_item()
 	_section_row(x, right, y, "ITEM", held.display_name if held != null else "—", fg, LIME if fg.v > 0.5 else Color("1b7f95"))
 	y += 18.0
-	var moves: Array[Skill] = [Skill.basic()]
-	moves.append_array(c.skills)
+	var moves: Array[Skill] = Skill.combatant_moves(c)
 	_section(r, x, right, y, "MOVES | EFFECT (%d)" % moves.size(), fg)
 	y += 20.0
 	var cap := mini(moves.size(), 14 if is_leader else 9)  # allies still show Tactics below

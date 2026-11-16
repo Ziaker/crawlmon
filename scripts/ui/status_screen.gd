@@ -267,9 +267,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _moves(c: Combatant) -> Array[Skill]:
-	var list: Array[Skill] = [Skill.basic()]
-	list.append_array(c.skills)
-	return list
+	return Skill.combatant_moves(c)
 
 
 func _art(c: Combatant) -> Texture2D:
@@ -278,7 +276,14 @@ func _art(c: Combatant) -> Texture2D:
 		var path := ART_DIR + key + ".png"
 		if not ResourceLoader.exists(path):
 			path = DQT_ART.get(key, "")  # sem arte Sugimori: arte DQT (mesmas da matriz, D-1183)
-		_art_cache[key] = load(path) if path != "" and ResourceLoader.exists(path) else null
+		var tex: Texture2D = null
+		if path != "" and ResourceLoader.exists(path):
+			tex = load(path) as Texture2D
+		elif path != "" and FileAccess.file_exists(path):
+			var img := Image.load_from_file(ProjectSettings.globalize_path(path))
+			if img != null and not img.is_empty():
+				tex = ImageTexture.create_from_image(img)
+		_art_cache[key] = tex
 	return _art_cache[key]
 
 

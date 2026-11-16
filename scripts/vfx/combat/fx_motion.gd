@@ -235,11 +235,7 @@ func _drive_travel_move(inc, data: Dictionary, model: Node3D, phase_time: float)
 					var ghost_color := Color("d6fa66") if i == 0 else Color("63d9ec")
 					VfxLib.spawn_ghost_snapshot(fx, model, ghost_color, 0.20)
 		"golpe_carate":
-			var jump_k := clampf((k - 0.42) / 0.58, 0.0, 1.0)
-			model.position.y += sin(jump_k * PI) * 1.8
-			if jump_k >= 0.38 and not data.get("karate_hand_flash", false):
-				data["karate_hand_flash"] = true
-				VfxLib.flash_star(fx, model.position + (data["dir"] as Vector3) * 0.45 + Vector3(0, 1.25, 0), Color("d6fa66"), 1.4, 0.24)
+			pass  # D-1209: the hop is drawn in the STRIKE (at the target), not during the run
 		"quebra_telha":
 			model.position.y += sin(k * PI) * 3.2
 		"garra_dragao":
@@ -283,6 +279,9 @@ func _drive_travel_move(inc, data: Dictionary, model: Node3D, phase_time: float)
 
 func _drive_strike_move(_inc, _data: Dictionary, _model: Node3D, _phase_time: float) -> void:
 	match String(_data.get("move_id", "")):
+		"golpe_carate":
+			# D-1209: the hop happens at the target: up through the prelude, landing on the contact (end of the STRIKE)
+			_model.position.y = _karate_hop_y(_inc, _phase_time)
 		"investida_escavadora":
 			_model.visible = true  # D-1196: the pose is FxDig's
 		"investida_subterranea":
@@ -290,6 +289,13 @@ func _drive_strike_move(_inc, _data: Dictionary, _model: Node3D, _phase_time: fl
 			var hit_dur: float = maxf(float(_data.get("hit", 0.35)), 0.05)
 			var k := clampf(_phase_time / hit_dur, 0.0, 1.0)
 			_model.position.y = sin(k * PI) * 1.85
+
+
+## D-1209: the Karate Chop hop is ONE arc over the whole blow: it rises in the prelude, the cut lands while the body is
+## still in the air, and it touches the ground only in the post-impact (end of the hold). `t` = seconds since the STRIKE began.
+func _karate_hop_y(inc, t: float) -> float:
+	var total := maxf(float(inc.antic) + float(inc.hit) + float(inc.hold), 0.05)
+	return sin(clampf(t / total, 0.0, 1.0) * PI) * 1.8
 
 
 ## Golpe A2: two co-planar curved blades plus a short tangential spark burst.
@@ -577,6 +583,8 @@ func drive() -> void:
 				m.rotation.y = d["yaw_out"]
 				var hold: float = inc.hold
 				m.position = Vector3(body.x, float(d.get("y0", 0.0)) * (1.0 - clampf(e / 0.11, 0.0, 1.0)) if e < hold else 0.0, body.z)
+				if String(d.get("move_id", "")) == "golpe_carate" and e < hold:
+					m.position.y = _karate_hop_y(inc, maxf(float(inc.antic) + float(inc.hit), 0.05) + e)  # D-1209: still in the air after the hit; lands at the end of the hold
 				if e >= hold:
 					if not d.get("hopped", false):
 						d["hopped"] = true

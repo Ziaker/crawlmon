@@ -15,7 +15,7 @@ func _init(p_battle: Battle) -> void:
 ## Evade cost (D-006 / D-027): 2 ATB while its own melee attack is running at a target,
 ## 3 ATB otherwise (standing still, or preparing/casting).
 func cost(actor: Combatant) -> float:
-	return Battle.EVADE_ON_RUN if own_run(actor) != null else Battle.EVADE_STILL
+	return Battle.evade_on_run_cost() if own_run(actor) != null else Battle.evade_still_cost()
 
 
 ## Its own melee attack while it is still running (the trajectory), or null.
@@ -90,7 +90,7 @@ func try_evade(actor: Combatant, inc: Incoming) -> bool:
 	inc.evade_tried = true
 	inc.dodged = true
 	var burst_before := actor.burst
-	actor.burst = mini(actor.burst + 1, Combatant.BURST_MAX)
+	actor.gain_burst(1)
 	if actor.burst > burst_before:
 		b.grant_burst(actor, actor)
 	if is_perfect:

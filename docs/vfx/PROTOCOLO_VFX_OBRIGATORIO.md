@@ -1,3 +1,5 @@
+> **MOVE = 3D, NUNCA 2D (D-1222).** Todo Move, efeito, mão, trajetória e protótipo é visualmente 3D de verdade (curvas em x, y e z, rotação de pulso/lâmina, volume, luz). É PROIBIDO tratá-lo como 2D (plano único, peça rígida deslizando, câmera 3D com movimento 2D) a não ser que o criador mande EXPLICITAMENTE, Move a Move. Referência de movimento: trajetória 3D real dos ossos dos ataques do Abra/Pancham.
+
 <!-- DEBUG-OBRIGATORIO-D1204 -->
 > **DEBUG = OBRIGAÇÃO EXTREMA (D-1204).** O debug existe para testar QUALQUER milésimo do jogo: combate, Moves, VFX, overworld, UI, itens, IA, save, áudio.
 > **NENHUM teste pode levar mais de 1 minuto** do pedido ao resultado; mire em menos de 10 s (`--scenario=<id> --stdout-trace --quit`).
@@ -39,7 +41,7 @@ O **Motion Composer é auxiliar e opcional** (D-1030). O VFX de Move/elemento em
 
 1. Rodar **na batalha real** (`scenes/debug/vfx_room.tscn`), **vista normal E espelhada**, com a câmera do jogo.
 2. Olhar **quadros em tamanho real** (nunca só miniaturas ou colagens) **nos instantes de cada item do checklist**, nas duas vistas. Para cada linha do checklist: ✔ ou ✘ com o quadro que prova.
-3. Medir com dados, não com impressão: quantidade de elementos por pincel/camada em cada instante, tempos reais das fases, sobras depois do fim (nada pode ficar na tela). **Usar obrigatoriamente as ferramentas de análise de VFX da sala (`D-1042` / `D-1044`):**
+3. Medir com dados, não com impressão: quantidade de elementos por pincel/camada em cada instante, tempos reais das fases, sobras depois do fim (nada pode ficar na tela). **Obrigatório (D-1220):** antes de olhar quadros ou gravar vídeo, criar/atualizar `tests/vfx/specs/<move_slug>.json` e aprovar `python tools/vfx/score_vfx.py --move="<Nome>"` (PASS 100/100 em Normal + Espelhado, cinemática do arquétipo, `vfx_frame`, `leaks=0`, `pops=0`, `screen_px` legível). **Usar também as ferramentas de análise de VFX da sala (`D-1042` / `D-1044`):**
    - `--audit-leaks` para comprovar `[vfx_audit] leaks=0` (nenhum nó residual, partícula acesa ou luz órfã após o retorno);
    - `--envelope-graph` para garantir dissolução suave sem `[POP_DETECTED]`;
    - `--scale-overlay` e `--bg=gray|black|white` para validar tamanho em tela (px) a 30–37 m, teto de altura (1,2 m D-1013 / 2,5 m D-1033) e leitura de silhueta/contraste;

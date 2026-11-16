@@ -64,13 +64,19 @@ func _test_enemy_xp_drop() -> bool:
 
 
 func _test_stat_points_per_level() -> bool:
-	print("  -> Testando concessao de pontos regulares e em marcos (D-394)...")
-	# 1 ponto regular, 3 pontos nos marcos a cada 10 niveis (10, 20, 30...)
+	print("  -> Testando concessao de pontos regulares e em marcos (D-1225)...")
+	# 1 ponto regular, 3 pontos nos marcos a cada 5 niveis (5, 10, 15, 20...)
 	if not _assert_test(CrawlmonAttributeMath.get_stat_points_for_level(2) == 1, "Nivel 2 deve conceder 1 ponto"):
+		return false
+	if not _assert_test(CrawlmonAttributeMath.get_stat_points_for_level(4) == 1, "Nivel 4 deve conceder 1 ponto"):
 		return false
 	if not _assert_test(CrawlmonAttributeMath.get_stat_points_for_level(9) == 1, "Nivel 9 deve conceder 1 ponto"):
 		return false
+	if not _assert_test(CrawlmonAttributeMath.get_stat_points_for_level(5) == 3, "Marco do Nivel 5 deve conceder 3 pontos"):
+		return false
 	if not _assert_test(CrawlmonAttributeMath.get_stat_points_for_level(10) == 3, "Marco do Nivel 10 deve conceder 3 pontos"):
+		return false
+	if not _assert_test(CrawlmonAttributeMath.get_stat_points_for_level(15) == 3, "Marco do Nivel 15 deve conceder 3 pontos"):
 		return false
 	if not _assert_test(CrawlmonAttributeMath.get_stat_points_for_level(20) == 3, "Marco do Nivel 20 deve conceder 3 pontos"):
 		return false
@@ -154,7 +160,7 @@ func _test_milestone_level_up_and_hp() -> bool:
 
 	if not _assert_test(c.level == 10, "Nivel deve ser 10"):
 		return false
-	if not _assert_test(res["points_gained"] == 3, "Marco de nivel 10 deve conceder 3 pontos de atributo (D-394)"):
+	if not _assert_test(res["points_gained"] == 3, "Marco de nivel 10 deve conceder 3 pontos de atributo (D-1225)"):
 		return false
 	if not _assert_test(c.distributable_points == 3, "Lider deve receber 3 pontos distribuiveis"):
 		return false

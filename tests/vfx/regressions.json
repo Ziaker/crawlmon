@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "tiny_at_37m",
+      "description": "Efeito feito em metros fixos que fica invisível na câmera real de 30-37 m (PROTOCOLO §6).",
+      "metric": "screen_readability",
+      "threshold": "max_px >= 20.0 (recomendado >= 35 px para projéteis principais)"
+    },
+    {
+      "id": "opaque_pop",
+      "description": "Nó desaparece seco (alpha cai > 0.55 em 1 quadro ou visible=false com alpha > 0.15).",
+      "metric": "no_pops",
+      "threshold": "envelope_pops == 0"
+    },
+    {
+      "id": "gp_particles_leak",
+      "description": "Nós ou luzes esquecidos após o retorno da batalha.",
+      "metric": "leaks",
+      "threshold": "leaks_detected == 0"
+    },
+    {
+      "id": "underground_clipping",
+      "description": "Trajetória ou mão afunda abaixo do chão (y < -0.15 m) enquanto visível.",
+      "metric": "no_underground",
+      "threshold": "violations == 0"
+    },
+    {
+      "id": "mirrored_asymmetry",
+      "description": "Efeito quebra, some ou encolhe drasticamente na vista espelhada D-235.",
+      "metric": "d235.screen_symmetry",
+      "threshold": "min(px_norm, px_mirr) / max >= 0.25 e ambos os lados passam nas invariantes"
+    },
+    {
+      "id": "robotic_or_stalled_motion",
+      "description": "Projétil trava no ar (>4 quadros parados) ou volta para trás; golpe corpo a corpo sem pico de velocidade.",
+      "metric": "proj_no_mid_stall / melee_peak_speed",
+      "threshold": "stalls <= 4 quadros; peak >= 2.0 m/s"
+    },
+    {
+      "id": "contact_desync",
+      "description": "Pico de movimento do golpe fora da janela do contato real (hit).",
+      "metric": "melee_contact_sync",
+      "threshold": "|contact_delta_s| <= 0.25 s"
+    },
+    {
+      "id": "flat_2d_motion",
+      "description": "D-1222: Move/efeito deslizando em plano 2D rígido sem rotação 3D nem curva nos 3 eixos.",
+      "metric": "d1222_3d_motion",
+      "threshold": "ang_speed >= 15 deg/s OU (lateral_span >= 0.15m e vertical_span >= 0.10m)"
+    }
+  ]
+}

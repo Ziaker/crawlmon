@@ -46,8 +46,12 @@ static func grant_xp(party: Array, total_xp: int) -> Array[Dictionary]:
 				"current_xp": c.xp,
 				"xp_required": CrawlmonAttributeMath.get_xp_for_level_transition(c.level),
 				"transitions": [],
+				"auto_alloc": {},
+				"auto_reason": "",
 			}
 
+		summary["auto_alloc"] = summary.get("auto_alloc", {})
+		summary["auto_reason"] = String(summary.get("auto_reason", ""))
 		summary["combatant"] = c
 		summary["is_leader"] = is_leader
 		summary["old_max_hp"] = old_max_hp

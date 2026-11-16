@@ -38,7 +38,7 @@ func reset() -> void:
 
 func run(delta: float) -> void:
 	for c in b.party + b.enemies:
-		if c == b.party[0] or not c.is_alive():
+		if c == b.menu_owner() or not c.is_alive():  # D-1244: the menu owner plays by the menu, not by AI.
 			continue
 		if c.tactic_pos != c.pos_step and b.step(c, signi(c.tactic_pos - c.pos_step)):
 			continue
@@ -120,9 +120,9 @@ func _affordable_knock_out(c: Combatant, target: Combatant) -> Skill:
 
 
 func _moves_of(c: Combatant) -> Array[Skill]:
-	var moves: Array[Skill] = [Skill.basic()]
 	if c.act_policy == Combatant.Act.SKILL:
-		moves.append_array(c.skills)
+		return Skill.combatant_moves(c)
+	var moves: Array[Skill] = [Skill.basic_for(c)]
 	return moves
 
 
@@ -213,8 +213,8 @@ func _reserve(c: Combatant) -> float:
 		if inc.target != c or inc.dodged or inc.is_friendly or inc.kind == Skill.Kind.STATUS:
 			continue
 		var eta: float = inc.eta() if inc.resolved else inc.time_left + UNRESOLVED_ETA
-		if c.blocks() + c.speed * eta >= Battle.EVADE_STILL:
-			return clampf(Battle.EVADE_STILL + nature_bias, 0.0, Combatant.BLOCKS)
+		if c.blocks() + c.speed * eta >= Battle.evade_still_cost():
+			return clampf(Battle.evade_still_cost() + nature_bias, 0.0, Combatant.BLOCKS)
 	return clampf(IDLE_RESERVE + nature_bias, 0.0, Combatant.BLOCKS)
 
 
@@ -277,7 +277,7 @@ func _damage_to(c: Combatant, skill: Skill, foe: Combatant) -> int:
 
 ## Will this hit land while the target is still winding up its own attack?
 func _would_interrupt(c: Combatant, skill: Skill, target: Combatant) -> bool:
-	var own_windup := skill.windup if skill.windup >= 0.0 else Battle.WINDUP
+	var own_windup := skill.windup if skill.windup >= 0.0 else Battle.base_windup()
 	if c.counter_ready:
 		own_windup = 0.0
 	var arrival := own_windup + AttackPlanner.preview_travel(c, target, skill.kind)

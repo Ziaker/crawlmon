@@ -1,5 +1,5 @@
 window.MOVE_FORGE_DATA = {
- "generated": "2026-11-13T10:10:30",
+ "generated": "2026-11-15T18:03:38",
  "elements": [
   {
    "id": 0,
@@ -114,7 +114,7 @@ window.MOVE_FORGE_DATA = {
    "damage_type": 0,
    "power": 1.2,
    "atb_cost": 2,
-   "mp_cost": 4,
+   "mp_cost": 0,
    "windup": 1.5,
    "is_aoe": false,
    "is_friendly": false,
@@ -703,39 +703,41 @@ window.MOVE_FORGE_DATA = {
    "target_mode": 0,
    "magic_flat": 0,
    "tags": [
-    "armor_worthy"
+    "armor_worthy",
+    "no_screen_post"
    ],
    "vfx_key": "generic",
    "vfx_family": "generic",
    "has_behavior": false,
    "has_vfx_script": false,
    "texts": {
-    "effect_line": "150% ATK physical damage | Direct strike | 2 ATB",
-    "short_effect": "150% physical",
-    "description": "A sharp, direct strike with solid damage for 2 ATB.",
-    "mechanics": "Heavy directional martial strike with a sharp cutting edge and elevated critical hit chance.",
-    "visual": "Bright red momentum trails trailing the striking limb, culminating in a sharp directional slash and impact sparks.",
-    "motion": "Forward melee sprint. Attacker closes the distance rapidly, delivers a vertical downward chop, and recovers.",
-    "windup": "1.00s wind-up. Sharp martial stance with rapid execution.",
-    "tactical": "Direct martial chop with elevated critical strike chance. Single Target."
+    "effect_line": "150% ATK physical damage | 30% chance: -1 SPD on the target | 2 ATB",
+    "short_effect": "150% | 30%: -1 SPD",
+    "description": "A shuto chop for 150% ATK damage, with a 30% chance to lower the target's speed by 1 stage.",
+    "mechanics": "Melee strike. On contact there is a 30% chance to lower the target's speed by 1 stage (down to -5).",
+    "visual": "A white holographic hand forms beside the attacker, cocks back and whips a diagonal knife-hand cut across the target, leaving a white crescent, a thin cross, sparks and chips.",
+    "motion": "Forward melee run: the hand rides with the body, then cuts diagonally at the contact while the attacker lunges in.",
+    "windup": "1.00s wind-up. The white hand materializes at the shoulder and cocks back.",
+    "tactical": "Direct martial chop with a 30% chance of -1 SPD on the target. Single Target."
    },
    "phase_visuals": {
-    "impact": "Contato direto no ponto zero do alvo com hit-stop, flash e reação: Bright red momentum trails trailing the striking limb, culminating in a sharp directional slash and impact sparks.",
-    "release": "Partida física contínua a partir da carga rumo ao alvo: Forward melee sprint. Attacker closes the distance rapidly, delivers a vertical downward chop, and recovers.",
-    "return": "Salto/corrida de recuo de volta à posição de origem e retomada de idle.",
-    "strike": "Prelúdio de golpe e arco de swing/arma com aviso Dread na janela de Evade (D-986/D-992).",
-    "travel": "Corrida pelo eixo atacante->alvo com trilha no chão (D-1013): Forward melee sprint. Attacker closes the distance rapidly, delivers a vertical downward chop, and recovers.",
-    "windup": "Preparo em posição base com loop contínuo de carga (D-163): 1.00s wind-up. Sharp martial stance with rapid execution."
+    "impact": "Contato no ponto do alvo com hit-stop, flash branco pequeno, crescente branco no corte de -38°, cruz fina, faíscas e lascas geométricas brancas.",
+    "release": "Fim da carga: a mão holograma branca já está formada e recuada no saque, e o atacante parte para o alvo.",
+    "return": "A mão termina o corte e se dissolve em lascas em 0,2 s; o atacante volta à origem e retoma o idle.",
+    "strike": "A mão recua no preparo e corta na diagonal (-38°) em curva de chicote, passando pelo centro do alvo exatamente no contato.",
+    "travel": "Corrida pelo eixo atacante->alvo com trilha no chão (D-1013); a mão acompanha o corpo no saque, deixando uma pós-imagem a cada ~0,18 s.",
+    "windup": "Anel branco de foco; a mão holograma se materializa no ombro (pulso aos dedos) e vai ao saque, com tremor mínimo no fim (1,0 s)."
    },
    "extra": {
     "stand_gap": 2.6,
-    "run_base": 0.45,
+    "run_offset": -0.15,
     "strike_time": 0.45,
     "hold": 0.2,
     "plan_profile": "melee",
     "hit_stop_duration": 0.095,
     "bw_pulse": true,
-    "visual_motion_text": "Forward melee sprint with a sharp red-trailed vertical slash."
+    "camera_still_on_hit": true,
+    "visual_motion_text": "White hologram knife-hand cutting diagonally across the target."
    },
    "in_catalog": true
   },
@@ -900,12 +902,13 @@ window.MOVE_FORGE_DATA = {
     "knockup_wind": true,
     "knockup_landing_dust": 1.0,
     "knockup_landing_shake": 0.6,
-    "target_push": 2.5,
-    "attacker_push": 1.5,
+    "target_push": 3.5,
+    "attacker_push": 2.0,
     "push_return_at": 1.38,
     "push_return_time": 0.57,
     "impact_fov_boost": 15.0,
     "camera_still_on_hit": true,
+    "card_style": "trapdoor_slam",
     "plan_profile": "dig",
     "hit_stop_duration": 0.12,
     "bw_pulse": true,
@@ -966,7 +969,7 @@ window.MOVE_FORGE_DATA = {
   {
    "id": "mabufula",
    "name": "Mabufula",
-   "kind": 1,
+   "kind": 2,
    "element": 2,
    "damage_type": 0,
    "power": 1.35,
@@ -1002,13 +1005,14 @@ window.MOVE_FORGE_DATA = {
     "release": "Transição contínua da carga para o disparo sem sumiço brusco (D-308 Fase 2): Stationary ground slam. Caster channels frost into the ground, erupting ice pillars at each enemy location.",
     "return": "Dissipação completa de partículas/malhas (zero restos) e retorno do lançador ao idle.",
     "strike": "Janela final de aproximação (últimos 0,25 s) antes do contato.",
-    "travel": "Voo do projétil/feixe ao longo do eixo atacante->alvo mantendo leitura de tela (D-308 Fase 3): Stationary ground slam. Caster channels frost into the ground, erupting ice pillars at each enemy location.",
+    "travel": "Onda de gelo em área: a nevasca avança e as geleiras emergem em sequência na região dos alvos.",
     "windup": "Carga elemental contínua à frente do lançador (D-308 Fase 1): 1.50s wind-up. Heavy glacial gathering channeling."
    },
    "extra": {
+    "visual_push": 0,
     "stand_gap": 2.6,
     "hold": 0.2,
-    "plan_profile": "projectile",
+    "plan_profile": "cast_strike_travel",
     "visual_motion_text": "Stationary ground slam erupting jagged glacial spires."
    },
    "in_catalog": true
@@ -1299,7 +1303,8 @@ window.MOVE_FORGE_DATA = {
    "target_mode": 0,
    "magic_flat": 0,
    "tags": [
-    "guard_break"
+    "guard_break",
+    "no_screen_post"
    ],
    "vfx_key": "brick_break",
    "vfx_family": "brick_break",
@@ -1325,12 +1330,13 @@ window.MOVE_FORGE_DATA = {
    },
    "extra": {
     "stand_gap": 2.6,
-    "run_base": 0.24,
+    "run_offset": -0.15,
     "strike_time": 0.45,
     "hold": 0.7,
     "plan_profile": "melee",
     "hit_stop_duration": 0.11,
     "bw_pulse": true,
+    "camera_still_on_hit": true,
     "visual_motion_text": "Leaping hammer fist with golden aura and crystalline fracture VFX."
    },
    "in_catalog": true
@@ -1551,7 +1557,7 @@ window.MOVE_FORGE_DATA = {
    "damage_type": 0,
    "power": 1.3,
    "atb_cost": 2,
-   "mp_cost": 3,
+   "mp_cost": 0,
    "windup": 1.2,
    "is_aoe": false,
    "is_friendly": false,
@@ -2166,6 +2172,7 @@ window.MOVE_FORGE_DATA = {
    "assets/vfx/elements/EL_fire_flame.glb",
    "assets/vfx/elements/EL_water_splash.glb",
    "assets/vfx/fire_hand.glb",
+   "assets/vfx/martial_hand.glb",
    "assets/vfx/ribbon_trail.glb",
    "assets/vfx/shock_cone.glb",
    "assets/vfx/slash_arc.glb"
@@ -2191,7 +2198,9 @@ window.MOVE_FORGE_DATA = {
    "shaders/dust_cloud.gdshader",
    "shaders/dust_crater.gdshader",
    "shaders/dust_crown_shell.gdshader",
+   "shaders/dust_slash.gdshader",
    "shaders/dust_veil.gdshader",
+   "shaders/dust_wind_strip.gdshader",
    "shaders/el_flame.gdshader",
    "shaders/el_line.gdshader",
    "shaders/el_particle.gdshader",
@@ -2210,6 +2219,8 @@ window.MOVE_FORGE_DATA = {
    "shaders/flipbook.gdshader",
    "shaders/fog_smooth.gdshader",
    "shaders/ghost.gdshader",
+   "shaders/holo_hand.gdshader",
+   "shaders/holo_hand_outline.gdshader",
    "shaders/impact_post.gdshader",
    "shaders/item_relic_bubble.gdshader",
    "shaders/lib_electric_beam.gdshader",

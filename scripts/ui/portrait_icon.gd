@@ -5,6 +5,8 @@ extends RefCounted
 
 const SUGIMORI_DIR := "res://sugimori/por_nome/"
 const FALLBACK_DIR := "res://personagens/portraits/"
+## Ícones enviados pela matriz (D-1163/D-1179): sobrescrevem inclusive o FACE_CROP.
+const CUSTOM_DIR := "res://personagens/portraits_custom/"
 ## Recortes em pixels da arte Sugimori (iguais aos de post_combat_screen.gd / D-1093).
 const FACE_CROP := {
 	"abra": Rect2(300, 120, 320, 360),
@@ -52,18 +54,27 @@ static func _with_bg(art: Texture2D, region: Rect2) -> Texture2D:
 	return ImageTexture.create_from_image(out)
 
 
+## PNG recém-salvo pela matriz ainda sem reimport do editor: lê direto do disco.
+static func _load_texture(path: String) -> Texture2D:
+	if ResourceLoader.exists(path):
+		return load(path) as Texture2D
+	if FileAccess.file_exists(path):
+		var img := Image.load_from_file(ProjectSettings.globalize_path(path))
+		if img != null and not img.is_empty():
+			return ImageTexture.create_from_image(img)
+	return null
+
+
 static func get_icon(character_name: String) -> Texture2D:
 	var key := character_name.to_lower()
 	if _cache.has(key):
 		return _cache[key]
-	var tex: Texture2D = null
-	if FACE_CROP.has(key):
-		var full_path := SUGIMORI_DIR + key + ".png"
-		if ResourceLoader.exists(full_path):
-			tex = _with_bg(load(full_path) as Texture2D, FACE_CROP[key])
+	var tex := _load_texture(CUSTOM_DIR + key + ".png")
+	if tex == null and FACE_CROP.has(key):
+		var face := _load_texture(SUGIMORI_DIR + key + ".png")
+		if face != null:
+			tex = _with_bg(face, FACE_CROP[key])
 	if tex == null:
-		var path := FALLBACK_DIR + key + ".png"
-		if ResourceLoader.exists(path):
-			tex = load(path)
+		tex = _load_texture(FALLBACK_DIR + key + ".png")
 	_cache[key] = tex
 	return tex

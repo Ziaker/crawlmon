@@ -130,7 +130,11 @@ static func para(r: Rect2, k: float) -> PackedVector2Array:
 static func fill_para(ci: CanvasItem, r: Rect2, k: float, col: Color) -> void:
 	if col.a <= 0.0 or r.size.x <= 0.0 or r.size.y <= 0.0:
 		return
-	ci.draw_colored_polygon(para(r, minf(k, r.size.x * 0.5)), col)
+	var pts := para(r, minf(k, r.size.x * 0.5))
+	ci.draw_colored_polygon(pts, col)
+	if col.a >= 0.99 and pts.size() == 4:
+		var ring := PackedVector2Array([pts[0], pts[1], pts[2], pts[3], pts[0]])
+		ci.draw_polyline(ring, col, 1.15, true)
 
 
 ## Paralelogramo cortado por um retângulo (barra de XP com overflow:hidden).
@@ -221,14 +225,41 @@ static func letters(ci: CanvasItem, font: Font, parts: Array, x: float, top: flo
 			if q <= 0.0:
 				cx += adv
 				continue
-			var e := bezier(0.2, 1.4, 0.4, 1.0, q)
-			var sc := 1.7 + (1.0 - 1.7) * e
-			var center := Vector2(cx + adv * 0.5, mid_y - 0.5 * s * (1.0 - e))
-			ci.draw_set_transform(center, 0.0, Vector2(sc, sc))
-			ci.draw_char(font, Vector2(-adv * 0.5, base - mid_y), ch, s, Color(col, col.a * clampf(e, 0.0, 1.0)))
+			var e := bezier(0.18, 1.35, 0.32, 1.0, q)
+			var y_off := (1.0 - e) * 18.0
+			var sx := lerpf(0.55, 1.0, clampf(e, 0.0, 1.15))
+			var sy := lerpf(1.38, 1.0, clampf(e, 0.0, 1.15))
+			var center := Vector2(cx + adv * 0.5, mid_y + y_off)
+			var cut_col := CORAL if col.get_luminance() < 0.4 else AQUA
+			if q >= 0.32:
+				cut_col = Color(col, col.a * clampf(q * 4.0, 0.0, 1.0))
+			ci.draw_set_transform(center, 0.0, Vector2(sx, sy))
+			ci.draw_char(font, Vector2(-adv * 0.5, base - mid_y), ch, s, cut_col)
 			cx += adv
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	return total
+
+
+## D-1224: rolagem vertical estilo odômetro entre número antigo e novo para p em 0..1.
+static func odometer_number(ci: CanvasItem, f: Font, old_txt: String, new_txt: String, x: float, y: float,
+		sz: int, col: Color, p: float, align := 0, box_h := 0.0) -> void:
+	var lh := box_h if box_h > 0.0 else -1.0
+	if p <= 0.001:
+		line(ci, f, old_txt, x, y, sz, col, 160.0, align, lh)
+		return
+	if p >= 0.999 or old_txt == new_txt:
+		line(ci, f, new_txt, x, y, sz, col, 160.0, align, lh)
+		return
+	var e := bezier(0.2, 1.18, 0.32, 1.0, p)
+	var shift := float(sz) * 0.48
+	var y_old := y - e * shift
+	var y_new := y + (1.0 - e) * shift
+	var a_old := clampf(1.0 - p * 1.8, 0.0, 1.0) * col.a
+	var a_new := clampf(p * 1.8, 0.0, 1.0) * col.a
+	if a_old > 0.01:
+		line(ci, f, old_txt, x, y_old, sz, Color(col, a_old), 160.0, align, lh)
+	if a_new > 0.01:
+		line(ci, f, new_txt, x, y_new, sz, Color(col, a_new), 160.0, align, lh)
 
 
 ## Quebra segmentos coloridos ({text, color}) em linhas de largura w.

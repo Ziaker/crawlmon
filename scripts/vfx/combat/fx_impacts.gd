@@ -252,50 +252,260 @@ func _quick_punch_impact(pos: Vector3, dir: Vector3, big: bool) -> Array[Node3D]
 	return nodes
 
 
+## D-1209: the Karate Chop contact, built from the HTML "option A" (shuto, -38 deg stroke). The white holo
+## hand (FxMartial) makes the cut; this is what the cut leaves in the air at the target: a brown crescent along
+## the stroke, a localised flash, a thin brown cross, four-point sparks and the chips of the dissipating hand.
+const TONE := Color(1.0, 1.0, 1.0)  ## D-1209: the attack effect and the hand are WHITE (the creator went back from brown to white)
+const TONE_LIGHT := Color(1.0, 1.0, 1.0)
+const TONE_DARK := Color(0.80, 0.82, 0.86)  ## core and edge of the cut: keeps the brown reading as a blade, not a smear
+
+
+## Centre of the body that is being hit: the model nearest to the contact point (XZ), by its real world box.
+func _karate_body_center(pos: Vector3) -> Vector3:
+	var best: Node3D = null
+	var best_d := 3.0
+	for c in fx._models.keys():
+		var m: Node3D = fx._models[c]
+		if not is_instance_valid(m):
+			continue
+		var d := Vector2(m.global_position.x - pos.x, m.global_position.z - pos.z).length()
+		if d < best_d:
+			best_d = d
+			best = m
+	if best != null and fx.fx_armor != null:
+		var box: AABB = fx.fx_armor.body_box_of(best)
+		if box.size.y > 0.1:
+			return box.get_center()
+	return pos
+
+
 func _karate_impact(pos: Vector3, dir: Vector3, big: bool) -> Array[Node3D]:
-	var k := 1.2 if big else 1.0
-	var slash := VfxLib.mesh_slash(fx, pos + Vector3.UP * 0.45, dir, Color.WHITE, 90.0, 1.55 * k, 0.30, "slash_arc", 3.7)
-	slash.name = "KarateGuillotine"
-	var column_mesh := CylinderMesh.new()
-	column_mesh.top_radius = 0.12
-	column_mesh.bottom_radius = 0.62
-	column_mesh.height = 5.2 * k
-	column_mesh.radial_segments = 12
-	var column := MeshInstance3D.new()
-	column.name = "KarateLightColumn"
-	column.mesh = column_mesh
-	column.position = pos + Vector3.UP * 1.6
-	column.material_override = _tackle_material(Color("ff624f", 0.70), 3.4)
-	column.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	column.scale = Vector3(0.22, 0.15, 0.22)
-	fx.add_child(column)
-	var column_mat := column.material_override as StandardMaterial3D
-	var column_tw := column.create_tween().set_parallel(true)
-	column_tw.tween_property(column, "scale", Vector3.ONE, 0.18).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
-	column_tw.tween_property(column_mat, "albedo_color:a", 0.0, 0.20).set_delay(0.10)
-	column_tw.chain().tween_callback(column.queue_free)
-	VfxLib.flipbook(fx, pos, "impact", Color.WHITE, 4.8 * k, 0.28, 0.0, 3.6)
-	VfxLib.flipbook(fx, pos, "impact", Color("d6fa66"), 5.8 * k, 0.34, 55.0, 3.3)
-	var cracks := Node3D.new()
-	cracks.name = "KarateFloorCrack"
-	cracks.position = Vector3(pos.x, 0.055, pos.z)
-	fx.add_child(cracks)
-	for i in 5:
-		var crack_cyl := CylinderMesh.new()
-		crack_cyl.top_radius = 0.025
-		crack_cyl.bottom_radius = 0.025
-		crack_cyl.height = 1.1 + i * 0.18
-		crack_cyl.radial_segments = 4
-		var line := fx._node(crack_cyl, Color("ff624f", 0.82), Vector3.ZERO)
-		line.rotate_object_local(Vector3.RIGHT, deg_to_rad(90))
-		fx.remove_child(line)
-		line.rotation.y = float(i) * TAU / 5.0
-		line.position = Vector3(sin(line.rotation.y), 0, cos(line.rotation.y)) * 0.55
-		cracks.add_child(line)
-	var crack_tw := cracks.create_tween()
-	crack_tw.tween_interval(0.38)
-	crack_tw.tween_callback(cracks.queue_free)
-	var nodes: Array[Node3D] = [slash, column, cracks]
+	var flat := Vector3(dir.x, 0.0, dir.z)
+	flat = flat.normalized() if flat.length_squared() > 1e-6 else Vector3.FORWARD
+	var right := Vector3.UP.cross(flat).normalized()
+	var cut_dir := (right * cos(-0.66) + Vector3.UP * sin(-0.66)).normalized()  # -38 deg stroke, from dir only (D-235)
+	var k := (1.2 if big else 1.0) * minf(clampf(fx.vfx_scale_at(pos), 1.0, 2.2), 1.6)  # grows with the camera distance (it was a speck far away)
+	# D-1033: nothing may stand above 2.5 m. The cross is what reaches highest: about 1.27 m over the contact.
+	if pos.y + 1.27 * k > 2.5:
+		k = maxf((2.5 - pos.y) / 1.27, 0.45)
+	# The cut is drawn 0.20 m off the target, on the attacker's side: visible, never buried in the body.
+	var center := _karate_body_center(pos)  # D-1209: exactly the centre of the target body
+	# Cut basis: X is the plane normal (dir), Y the -38 deg stroke, Z the in-plane perpendicular.
+	var cut_basis := Basis(flat, cut_dir, flat.cross(cut_dir).normalized())
+
+	# Self-lit flat materials, never additive: an additive brown clips to white/yellow, and D-1209 wants brown
+	# only. Unshaded already reads as emissive without an extra emission multiplier that would wash the hue out.
+	var make_mat := func(color: Color, additive: bool) -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD if additive else BaseMaterial3D.BLEND_MODE_MIX
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
+		m.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+		m.no_depth_test = true  # never hidden behind a body (the creator could not see the move)
+		m.albedo_color = color
+		return m
+
+	# 1. AIR CRESCENT (HTML `createCrescentClawBladeMesh`): a ribbon of 29 rings, radius 1.48 m, 0.16 m max
+	#    width, 147.6 deg arc, tapering to nothing at both tips with `sin(u*PI)`. The repo's `slash_arc` mesh
+	#    is a different shape, so the ribbon is built here: a crescent, not a ring.
+	var radius := 1.48 * k
+	var max_width := 0.16 * k
+	var segs := 28
+	var arc := PI * 0.82
+	var inner_pts: Array[Vector3] = []
+	var outer_pts: Array[Vector3] = []
+	for i in segs + 1:
+		var u := float(i) / float(segs)
+		var taper := sin(u * PI)
+		var r_in := radius - 0.45 * max_width * taper
+		var r_out := radius + 0.55 * max_width * taper
+		var y_curve := sin((u - 0.5) * arc)
+		var z_curve := cos((u - 0.5) * PI)
+		inner_pts.append(Vector3(0.0, y_curve * r_in, z_curve * r_in))
+		outer_pts.append(Vector3(0.0, y_curve * r_out, z_curve * r_out))
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	st.set_normal(Vector3.RIGHT)  # the ribbon faces out of its own plane (local X)
+	for i in segs:
+		var u0 := float(i) / float(segs)
+		var u1 := float(i + 1) / float(segs)
+		st.set_uv(Vector2(u0, 0.0))
+		st.add_vertex(inner_pts[i])
+		st.set_uv(Vector2(u1, 0.0))
+		st.add_vertex(inner_pts[i + 1])
+		st.set_uv(Vector2(u1, 1.0))
+		st.add_vertex(outer_pts[i + 1])
+		st.set_uv(Vector2(u0, 0.0))
+		st.add_vertex(inner_pts[i])
+		st.set_uv(Vector2(u1, 1.0))
+		st.add_vertex(outer_pts[i + 1])
+		st.set_uv(Vector2(u0, 1.0))
+		st.add_vertex(outer_pts[i])
+	var crescent := Node3D.new()
+	crescent.name = "KarateAirCrescent"
+	crescent.transform = Transform3D(cut_basis, center)
+	fx.add_child(crescent)
+	var blade := MeshInstance3D.new()
+	blade.name = "KarateCrescentBlade"
+	blade.mesh = st.commit()
+	blade.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	blade.rotation.x = -0.65  # -37.2 deg, the HTML start of the spin
+	crescent.add_child(blade)
+	var blade_shader := Shader.new()
+	blade_shader.code = """
+shader_type spatial;
+render_mode unshaded, blend_mix, cull_disabled, depth_draw_never, depth_test_disabled, shadows_disabled;
+
+uniform vec4 tint : source_color = vec4(0.71, 0.48, 0.27, 1.0);
+uniform vec4 dark : source_color = vec4(0.29, 0.18, 0.09, 1.0);
+uniform float alpha = 1.0;
+uniform float dissolve = 0.0;
+uniform float open = 0.0;
+uniform float opacity = 0.874;
+
+varying vec3 lp;
+varying vec2 luv;
+
+// Stable cell hash in local space: the ribbon breaks into crumbs instead of a soft noise mask.
+float cell_hash(vec3 p) {
+    vec3 q = fract(p * 0.3183099 + vec3(0.71, 0.113, 0.419));
+    q *= 17.0;
+    return fract(q.x * q.y * q.z * (q.x + q.y + q.z));
+}
+
+void vertex() {
+    lp = VERTEX;
+    luv = UV;
+    float lobe = max(0.0, cos(UV.x * 21.991148));  // 7 lobes, like the HTML crown shell
+    VERTEX.x += smoothstep(0.10, 0.95, UV.x) * lobe * 0.28 * open;
+}
+
+void fragment() {
+    float cell = cell_hash(floor(lp * 9.0));
+    float body = step(dissolve, cell);
+    float lip = body * (1.0 - smoothstep(0.0, 0.09, cell - dissolve));
+    float tips = smoothstep(0.0, 0.14, luv.x) * (1.0 - smoothstep(0.86, 1.0, luv.x));
+    ALBEDO = mix(dark.rgb, tint.rgb, smoothstep(0.0, 0.55, luv.y));
+    ALPHA = clamp((opacity * alpha * body + 0.35 * lip) * tips, 0.0, 1.0);
+}
+"""
+	var blade_mat := ShaderMaterial.new()
+	blade_mat.shader = blade_shader
+	blade_mat.set_shader_parameter("tint", TONE)
+	blade_mat.set_shader_parameter("dark", TONE_DARK)
+	blade_mat.set_shader_parameter("opacity", 0.874)
+	blade.material_override = blade_mat
+	var blade_tw := blade.create_tween().set_parallel(true)
+	blade_tw.tween_property(blade, "rotation:x", 0.80, 0.24)  # -37.2 deg -> +45.9 deg
+	blade_tw.tween_method(func(p: float) -> void:
+		blade_mat.set_shader_parameter("open", minf(1.0, p * 4.53))  # fully open at 52.8 ms of the 240 ms
+		blade_mat.set_shader_parameter("dissolve", p * 0.95)
+		blade_mat.set_shader_parameter("alpha", 1.0 - pow(p, 1.35)),
+		0.0, 1.0, 0.24)
+	blade_tw.chain().tween_callback(crescent.queue_free)
+
+	# 2. LOCALISED 3D FLASH: 0.96 m sphere, 0.45 -> 1.60 in 0.14 s, 0.66 alpha decaying. Never a screen flash.
+	var flash := MeshInstance3D.new()
+	flash.name = "KarateContactFlash"
+	flash.mesh = fx._sphere(0.48 * k)
+	var flash_mat := make_mat.call(Color(TONE_LIGHT, 0.66), false) as StandardMaterial3D
+	flash.material_override = flash_mat
+	flash.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	flash.position = center
+	flash.scale = Vector3.ONE * 0.45
+	fx.add_child(flash)
+	var flash_tw := flash.create_tween().set_parallel(true)
+	flash_tw.tween_property(flash, "scale", Vector3.ONE * 1.60, 0.14).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	flash_tw.tween_property(flash_mat, "albedo_color:a", 0.0, 0.14)
+	flash_tw.chain().tween_callback(flash.queue_free)
+
+	# 3. IMPACT CROSS: a 3.276 m bar on the -38 deg diagonal plus a 1.093 m perpendicular one, boxes, never
+	#    `mesh_slash`. Stretch 0.45 -> 1.50 in 50 ms -> 1.7625; thin = max(0.02, 1 - p^0.85); alpha 0.92 * thin.
+	var cross := Node3D.new()
+	cross.name = "KarateImpactCross"
+	cross.transform = Transform3D(cut_basis, center)
+	fx.add_child(cross)
+	var main_bar := MeshInstance3D.new()
+	main_bar.name = "KarateCrossMain"
+	main_bar.mesh = fx._box(Vector3(0.046 * k, 3.276 * k, 0.098 * k))
+	var main_mat := make_mat.call(Color(TONE_LIGHT, 0.92), false) as StandardMaterial3D
+	main_bar.material_override = main_mat
+	main_bar.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	main_bar.scale = Vector3(1.0, 0.45 * 0.72, 1.0)
+	cross.add_child(main_bar)
+	var side_bar := MeshInstance3D.new()
+	side_bar.name = "KarateCrossSide"
+	side_bar.mesh = fx._box(Vector3(0.046 * k, 0.063 * k, 1.093 * k))
+	var side_mat := make_mat.call(Color(TONE_DARK, 0.92), false) as StandardMaterial3D
+	side_bar.material_override = side_mat
+	side_bar.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	side_bar.scale = Vector3(1.0, 1.0, 0.45 * 0.72)
+	cross.add_child(side_bar)
+	var cross_tw := cross.create_tween()
+	cross_tw.tween_method(func(p: float) -> void:
+		var stretch := (0.45 + 1.05 * (p / 0.25)) if p < 0.25 else (1.50 + (p - 0.25) * 0.35)
+		var thin := maxf(0.02, 1.0 - pow(p, 0.85))
+		main_bar.scale = Vector3(thin, stretch * 0.72, thin)
+		side_bar.scale = Vector3(thin, thin, stretch * 0.72)
+		main_mat.albedo_color = Color(TONE_LIGHT, 0.92 * thin)
+		side_mat.albedo_color = Color(TONE_DARK, 0.92 * thin),
+		0.0, 1.0, 0.20)
+	cross_tw.tween_callback(cross.queue_free)
+
+	# 4. SPARKS: 14 four-point stars, 3.6-6.5 m/s, gravity (0,-4,0), brown light -> brown -> transparent.
+	#    Additive here only: the stars are meant to read as light, not as surface.
+	var sparks := VfxLib.burst(fx, center, {
+		"tex": VfxLib.star_tex(), "additive": true, "amount": 14, "life": 0.28,
+		"speed": Vector2(3.6, 6.5), "dir": Vector3.UP, "spread": 180.0,
+		"gravity": Vector3(0, -4.0, 0), "radius": 0.10,
+		"size": Vector2.ONE, "end_scale": 1.0,
+		"ramp": VfxLib.ramp([Color(TONE_LIGHT, 0.92), Color(TONE, 0.782), Color(TONE, 0.0)], [0.0, 0.45, 1.0])})
+	sparks.lifetime_randomness = 0.357  # 0.18 - 0.28 s, the HTML range
+	var spark_curve := Curve.new()
+	spark_curve.add_point(Vector2(0.0, 0.24 * k))
+	spark_curve.add_point(Vector2(0.40, 0.15 * k))
+	spark_curve.add_point(Vector2(1.0, 0.02 * k))
+	sparks.scale_amount_curve = spark_curve
+	sparks.scale_amount_min = 1.0
+	sparks.scale_amount_max = 1.0
+
+	# 5. CHIPS: 7 boxes leaving the final tip of the blade, no gravity, 0.42 s. Randomness is a hash of the
+	#    index (never `randf()`), so the same hit always breaks the same way, like the HTML.
+	var reach := clampf(0.9 * k, 0.0, 1.25)  # the target height is not passed in: see NOTES
+	var chips := Node3D.new()
+	chips.name = "KarateChips"
+	chips.position = pos + cut_dir * reach
+	fx.add_child(chips)
+	for i in 7:
+		var h := PackedFloat32Array()
+		for s in 9:
+			h.append(fposmod(sin(float(i) * 12.9898 + float(s) * 78.233) * 43758.5453, 1.0))
+		var chip := MeshInstance3D.new()
+		chip.name = "KarateChip%d" % i
+		chip.mesh = fx._box(Vector3(
+			(0.18 + float(i % 3) * 0.08) * 0.85 * k,
+			0.05 * 0.85 * k,
+			(0.09 + float(i % 2) * 0.06) * 0.85 * k))
+		var chip_mat := make_mat.call(TONE, false) as StandardMaterial3D
+		chip.material_override = chip_mat
+		chip.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		chip.position = Vector3((h[0] - 0.5) * 0.45, (h[1] - 0.5) * 0.35, (h[2] - 0.5) * 0.45)
+		chips.add_child(chip)
+		var ang := h[3] * TAU
+		var speed := 2.2 + h[4] * 2.2
+		var vel := Vector3(cos(ang) * speed, 0.8 + h[5] * 2.0, sin(ang) * speed)
+		var spin := Vector3((h[6] - 0.5) * 12.0, (h[7] - 0.5) * 12.0, (h[8] - 0.5) * 12.0)  # up to 6 rad/s
+		var chip_tw := chip.create_tween().set_parallel(true)
+		chip_tw.tween_property(chip, "position", chip.position + vel * 0.42, 0.42)
+		chip_tw.tween_property(chip, "rotation", spin * 0.42, 0.42)
+		chip_tw.tween_property(chip, "scale", Vector3.ONE * 0.15, 0.42)
+		chip_tw.tween_property(chip_mat, "albedo_color:a", 0.0, 0.42)
+	var chips_tw := chips.create_tween()
+	chips_tw.tween_interval(0.44)
+	chips_tw.tween_callback(chips.queue_free)
+
+	var nodes: Array[Node3D] = [crescent, flash, cross, chips]
 	return nodes
 
 
