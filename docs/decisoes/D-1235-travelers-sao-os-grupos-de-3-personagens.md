@@ -10,7 +10,7 @@
 
 **Data:** 2026-11-15  
 **Área:** narrativa, progressão, recrutamento  
-**Estado:** **registrada; nada implementado.** Só documento (D-061).  
+**Estado:** **parcial: `RespectState` (em memória) já trata o Respeito como do grupo; `level_traveler` (nível do líder) continua em aberto.**  
 **Relacionadas:** D-1230 (`level_traveler`), D-1231 (Respeito "do Traveler individual"), D-1233 (3 ativos), D-1210 (equipe rival).
 
 ## Frase literal do criador

@@ -10,7 +10,7 @@
 
 **Data:** 2026-11-15  
 **Área:** combate, UI/HUD  
-**Estado:** **registrada; nada implementado.** Só documento (D-061).  
+**Estado:** **implementada na Fase 8 (D-1244, D-1249, D-1254); o item 1 (custo de 2 ATB) foi SUPERADO pela D-1254**, em que o criador disse "remova o custo de atb, o intervalo de 4s e o bastante, nao e mais necessario este custo para invocacao". Os itens 2 a 4 continuam valendo.  
 **Origem:** briefing "IMPLEMENTAÇÃO FASEADA DE EMPLOY, SUMMON E RESPEITO" colado pelo criador.  
 **Relacionadas:** D-1229, D-1233, D-033, D-107, D-235, D-1011, D-161, D-162.
 

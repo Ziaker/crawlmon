@@ -10,7 +10,7 @@
 
 **Data:** 2026-11-16
 **Área:** combate, Summon
-**Estado:** respondida; implementação da Fase 8 depois da auditoria das Fases 1 a 7.
+**Estado:** respondida e implementada na Fase 8. **As respostas sobre quem paga os 2 ATB ficaram sem efeito: a D-1254 removeu o custo de ATB do Summon.** As demais valem.
 **Relacionadas:** D-1232, D-1233, D-1229, D-1239, D-021, D-161.
 
 ## Respostas literais do criador

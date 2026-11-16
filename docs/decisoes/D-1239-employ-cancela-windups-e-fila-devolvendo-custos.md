@@ -6,7 +6,9 @@
 > Passou de 1 minuto = o debug está incompleto: melhore a ferramenta primeiro. Ver `docs/decisoes/D-1204-*.md` e `docs/TELEMETRIA.md`.
 <!-- /DEBUG-OBRIGATORIO-D1204 -->
 
-# D-1239 — Employ: ninguém em wind-up; Moves iniciados e a iniciar são cancelados, com os custos devolvidos
+# D-1239 — Employ: ninguém em wind-up; Moves iniciados e a iniciar são cancelados, com os custos devolvidos (revista: congelar e retomar)
+
+> **Leia a seção "Revisão" abaixo antes de usar esta decisão:** a frase original (cancelar tudo) foi trocada por congelar e retomar; só os Moves do recrutado são cancelados, e só no sucesso.
 
 **Data:** 2026-11-16  
 **Área:** combate, recrutamento  

@@ -49,7 +49,7 @@
 
 ## Conflitos e pendências achados na auditoria (perguntar)
 
-- **SPI × WIS:** a D-391 renomeou Spirit para **WIS**; o briefing escreve SPI. No código `spi` é alias de `wis` (`combatant.gd:39-43`).
+- **SPI × WIS (resolvido em 2026-11-16):** a D-391 renomeou Spirit para **WIS**; o briefing escreve SPI; no código `spi` é alias de `wis` (`combatant.gd:39-43`). O criador disse: "isso já devia ser irrelevante, spi é WIS e WIS é o nome certo". Não é mais conflito.
 - **Burst:** `Combatant.pay()` gasta 1 Burst no lugar do custo inteiro (D-033, `combatant.gd:661-670`). Employ/Summon terão de usar `spend()` direto, como Guard/Evade/Passos.
 - **BOOST por atributo não existe no código:** só há estágios `atk_buff/def_buff/speed_buff` (−5..+5, sem duração, D-159). Um buff temporário de seis atributos é mecânica nova; a D-1026 exige que a duração pause junto com as pausas.
 - **Burst cheio:** `BURST_MAX = 5`; hoje o ganho é bloqueado ("Burst já cheio").
