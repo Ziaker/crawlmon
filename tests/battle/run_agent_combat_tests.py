@@ -137,7 +137,9 @@ SCENARIO_TESTS = [
     ("Fase 5 Employ: fracasso (espelhado)", ["--employ=fail", "--mirror", "--quit"], "employ mode=fail view=mirror result=ok", None),
     ("Fase 5 Employ: congelado com ataque em voo", ["--employ=fail:flight", "--quit"], "employ mode=fail_flight view=normal result=ok", None),
     ("Fase 5 Employ: congelado com ataque em voo (espelhado)", ["--employ=fail:flight", "--mirror", "--quit"], "employ mode=fail_flight view=mirror result=ok", None),
-    ("Fase 5 Employ: sucesso registra uma vez, fora de campo", ["--employ=success", "--quit"], "employ mode=success view=normal result=ok", None),
+    ("Fase 6 Employ D-1257: minigame na cena (mix)", ["--employ=rhythm:mix", "--quit"], "employ mode=rhythm view=normal result=ok", None),
+    ("Fase 6 Employ D-1257: minigame na cena (espelhado)", ["--employ=rhythm:perfect", "--mirror", "--quit"], "employ mode=rhythm view=mirror result=ok", None),
+    ("Fase 5 Employ: sucesso registra uma vez, fora de campo",["--employ=success", "--quit"], "employ mode=success view=normal result=ok", None),
     ("Fase 5 Employ: sucesso (espelhado)", ["--employ=success", "--mirror", "--quit"], "employ mode=success view=mirror result=ok", None),
     ("Fase 5 Employ: ultimo inimigo recrutado (so observado)", ["--employ=last", "--quit"], "employ mode=last view=normal result=ok", None),
     ("Fase 5 Employ: ultimo inimigo recrutado (espelhado)", ["--employ=last", "--mirror", "--quit"], "employ mode=last view=mirror result=ok", None),
@@ -231,6 +233,8 @@ SCRIPT_TESTS = [
      "EMPLOY_MATH_AND_RESPECT_TEST_PASS"),
     ("Fase 3 Respeito: ciclo de expedição (D-1231, D-1235)", "res://tests/combat/test_respect_expedition_cycle.gd",
      "RESPECT_EXPEDITION_CYCLE_TEST_PASS"),
+    ("Fase 6 Employ D-1257: minigame rítmico (janelas, MISS, bônus)", "res://tests/combat/test_employ_rhythm.gd",
+     "EMPLOY_RHYTHM_TEST_PASS"),
 ]
 
 

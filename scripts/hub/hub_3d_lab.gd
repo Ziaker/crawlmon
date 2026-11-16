@@ -311,6 +311,7 @@ func _ready() -> void:
 		start_party = true
 	_resolve_player_species()
 	super()
+	_sync_followers_to_party()
 	if _camera != null:
 		_camera.cull_mask = 0xFFFFFFFF & ~MINIMAP_MASK
 	_build_npcs()
@@ -326,6 +327,8 @@ func _ready() -> void:
 	_sync_hud_visibility()
 	set_process_unhandled_input(true)
 	_start_arrival_cutscene()
+	if _arrival == null:
+		_maybe_open_ally_choice()  # D-1260: no arrival cutscene (e.g. --hub): offer right away
 	if _scenario != "" or _view != "" or _args.has("quit"):
 		_run_async()
 
@@ -2682,6 +2685,9 @@ func _start_arrival_cutscene() -> void:
 	_cam_yaw = player_yaw
 	_cam_smooth_ready = false
 	_arrival = HubArrivalCutscene.attach(self, transition)
+	await _arrival.warm_up()  # still under the loading screen: no hitch after it
+	if not is_instance_valid(transition):
+		return
 	transition.notify_hub_ready(self)
 	_sync_hud_visibility()
 
@@ -2689,6 +2695,60 @@ func _start_arrival_cutscene() -> void:
 func _end_arrival() -> void:
 	_arrival = null
 	_sync_hud_visibility()
+	_maybe_open_ally_choice()  # D-1260
+
+
+## D-1260: opens the ally choice once, right after arriving in the Hub on a new campaign. The
+## offer lives in GameState (`ally_choice_pending`), so re-entering the Hub never reopens it.
+## The choice screen itself (visual) is pending the creator's approval: until it exists this only
+## reports the offer; `apply_ally_choice` is the single entry point the screen will call.
+func _maybe_open_ally_choice() -> void:
+	if not GameState.ally_choice_pending:
+		return
+	if "--stdout-trace" in OS.get_cmdline_user_args():
+		print("ALLY_OFFER_JSON: " + JSON.stringify({"offered": GameState.ally_choice_candidates}))
+
+
+## D-1260: confirms the ally in GameState and makes it a visible Hub follower (any species, D-235).
+func apply_ally_choice(species: String) -> bool:
+	if not GameState.choose_ally(species):
+		return false
+	_sync_followers_to_party()
+	_party_for_status = GameState.party
+	return true
+
+
+## D-1260: Hub followers mirror GameState.party[1..] (none for a leader-only party). Without a
+## campaign party (debug lab) the lab's own demo followers stay untouched.
+func _sync_followers_to_party() -> void:
+	if GameState.party.is_empty():
+		return
+	for f in _followers:
+		if is_instance_valid(f["node"]):
+			(f["node"] as Node).queue_free()
+	_followers.clear()
+	if _marker_root != null:
+		for i in range(_minimap_markers.size() - 1, -1, -1):
+			if _minimap_markers[i]["kind"] == "ally":
+				(_minimap_markers[i]["rect"] as Node).queue_free()
+				_minimap_markers.remove_at(i)
+	var slot := 0
+	for i in range(1, GameState.party.size()):
+		var sid := GameState.species_key(GameState.party[i])
+		if not HEIGHTS.has(sid):
+			continue
+		var side := -0.9 if slot % 2 == 0 else 1.7
+		_add_follower(sid, side, 1.3 + 0.7 * slot, Vector3(side, 0.0, 1.3 + 0.7 * slot))
+		_apply_toon_to_actor(_followers[-1]["node"])
+		if _marker_root != null:
+			_add_minimap_marker(_followers[-1]["node"], Color(0.45, 0.78, 1.0, 1.0), "ally")
+		slot += 1
+	if GameState.active_campaign_started and not _followers.is_empty():
+		# A real campaign's ally accompanies the leader in the Hub (D-1260).
+		_party_visible = true
+		_cam_pitch = PARTY_CAM_PITCH
+		for f in _followers:
+			(f["node"] as Node3D).visible = true
 
 
 func _build_ui() -> void:
@@ -3583,6 +3643,8 @@ func _run_async() -> void:
 			await _scenario_portal_cycle()
 		"HUB_ATMOSPHERE":
 			await _scenario_atmosphere()
+		"HUB_ALLY_CHOICE":
+			await _scenario_ally_choice()
 		_:
 			_check("scenario_known", false, "unknown scenario '%s'" % _scenario)
 	_finish()
@@ -3678,6 +3740,34 @@ func _scenario_boot() -> void:
 	_check("party_flag", _party_visible == _args.has("party"),
 		"visible=%s" % str(_party_visible))
 	_check("lighting_mode_valid", LIGHTING_PRESETS.has(lighting_mode), lighting_mode)
+
+
+## D-1260: new campaign = leader only; 3 distinct candidates (never the leader); choosing one makes a
+## 2-member party and one Hub follower; the offer never reopens. Runs for all 6 leaders (D-235).
+func _scenario_ally_choice() -> void:
+	for leader in PLAYABLE_LEADERS:
+		GameState.start_new_campaign(leader)
+		var tag := str(leader)
+		_check("%s_party_is_leader_only" % tag, GameState.party.size() == 1 and GameState.species_key(GameState.party[0]) == leader,
+			"party=%d" % GameState.party.size())
+		var cands: Array[String] = GameState.ally_choice_candidates
+		var distinct := true
+		for c in cands:
+			if c == leader or cands.count(c) != 1 or not PLAYABLE_LEADERS.has(c):
+				distinct = false
+		_check("%s_three_distinct_candidates" % tag, GameState.ally_choice_pending and cands.size() == 3 and distinct, str(cands))
+		_set_player_species(leader)
+		_sync_followers_to_party()
+		_check("%s_no_follower_before_choice" % tag, _followers.is_empty(), "%d" % _followers.size())
+		_check("%s_reject_not_offered" % tag, not apply_ally_choice(leader), "leader refused")
+		var pick: String = cands[_rng.randi_range(0, cands.size() - 1)]
+		_check("%s_choose_ok" % tag, apply_ally_choice(pick), pick)
+		await _frames(1)
+		_check("%s_party_of_two" % tag, GameState.party.size() == 2 and GameState.species_key(GameState.party[1]) == pick)
+		_check("%s_one_hub_follower" % tag, _followers.size() == 1 and str(_followers[0]["model_id"]) == pick and _party_visible)
+		_check("%s_no_reopen" % tag, not GameState.ally_choice_pending and not apply_ally_choice(cands[0]))
+		_sync_followers_to_party()  # re-entering the Hub keeps the ally and does not offer again
+		_check("%s_reentry_keeps_ally" % tag, _followers.size() == 1 and not GameState.ally_choice_pending)
 
 
 func _scenario_navigation() -> void:

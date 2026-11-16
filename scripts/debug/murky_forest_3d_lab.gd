@@ -174,6 +174,35 @@ var _ally_notification: Control
 var _pickup_orb
 var _pending_card: Control
 
+## Modo de captura (headless/janela). A câmera fica travada numa posição fixa
+## para fotos e vídeos do percurso real, nas duas vistas (D-235).
+##
+## `yaw`/`pitch` são ângulos da própria câmera, em graus: yaw 0 olha para -Z
+## (frente padrão da Camera3D). As posições são pontos de vista derivados da
+## geometria real deste lab (D-1027/D-1133/D-1143); nunca são posições de ator.
+const CAPTURE_POINTS := {
+	"entrada": {"pos": Vector3(0.0, 1.6, 4.0), "yaw": 0.0, "pitch": 22.0},
+	"curva": {"pos": Vector3(0.0, 1.6, -8.0), "yaw": 0.0, "pitch": 20.0},
+	"gible": {"pos": Vector3(10.0, 1.6, -2.0), "yaw": 0.0, "pitch": 20.0},
+	"cyclops": {"pos": Vector3(0.0, 1.6, -15.2), "yaw": 0.0, "pitch": 18.0},
+	"pocao": {"pos": Vector3(7.0, 1.6, -15.2), "yaw": 0.0, "pitch": 18.0},
+	"orc": {"pos": Vector3(14.0, 1.6, -15.2), "yaw": 0.0, "pitch": 18.0},
+	"arco_ida": {"pos": Vector3(17.5, 1.6, -13.5), "yaw": 180.0, "pitch": 16.0},
+	"arco_volta": {"pos": Vector3(17.5, 1.6, -6.5), "yaw": 0.0, "pitch": 16.0},
+	# D-1256: vista principal das pranchas — corredor leste com o arco ao fundo.
+	"prancha": {"pos": Vector3(13.5, 2.0, -10.0), "yaw": 90.0, "pitch": 6.0},
+}
+
+## Estado do modo de captura. `_capture_lock` impede que `_update_camera` desta
+## classe (que herda a câmera de perseguição) sobrescreva o enquadramento fixo.
+var _capture_lock := false
+var _capture_point := ""
+var _capture_pos := Vector3.ZERO
+var _capture_yaw := 0.0
+var _capture_pitch := 0.0
+var _capture_mirror := false
+var _capture_pass_yaw := 0.0
+
 
 func _ready() -> void:
 	# D-1086: o Slime deste lab é o protótipo Medroso (D-310/D-315).
@@ -213,6 +242,7 @@ func _ready() -> void:
 			_add_minimap_marker(body, Color(1.0, 0.22, 0.18, 1.0), "enemy")
 	_build_hud_badges()
 	_build_npc_dialogue_ui()
+	_capture_begin()
 
 
 ## D-1100: when the battle came from this lab, A's GameState keeps the exact
@@ -1070,12 +1100,14 @@ func _build_environment() -> void:
 	env.background_color = Color(0.018, 0.012, 0.030)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.38, 0.32, 0.50)
-	env.ambient_light_energy = 0.95
+	# D-1256: as pranchas revisadas pedem mais leitura do fundo de mata.
+	# D-1083 queria mais escuro, mas D-1256 é posterior — registro a divergência.
+	env.ambient_light_energy = 1.10
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	env.tonemap_exposure = 0.88
+	env.tonemap_exposure = 1.02
 	env.fog_enabled = true
-	env.fog_light_color = Color(0.055, 0.035, 0.085)
-	env.fog_density = 0.022
+	env.fog_light_color = Color(0.065, 0.045, 0.095)
+	env.fog_density = 0.017
 	env.glow_enabled = true
 	env.glow_intensity = 0.22
 	env.glow_bloom = 0.02
@@ -1218,6 +1250,10 @@ func _build_room() -> void:
 
 	_build_canopy()
 	_build_foliage()
+	# D-1256: profundidade de mata e arco de pedra das três pranchas revisadas.
+	_build_backdrop_forest()
+	_build_stone_arch()
+	_build_foreground_trunks()
 	_build_forest_lights()
 	_build_minimap_map()
 
@@ -1366,6 +1402,139 @@ func _build_vertical_foliage() -> void:
 		var z := _rng.randf_range(-5.2, 5.0)
 		_foliage(Vector3(x, _rng.randf_range(2.5, 3.5), z),
 			_rng.randf_range(0.25, 0.42), _leaf_color(), 1 << 8)
+
+
+## D-1256 — fundo de mata das três pranchas: troncos e copas além da paliçada,
+## na camada 9 (fora do mini-mapa), sem colisão e som desligado. Só dá profundidade.
+func _build_backdrop_forest() -> void:
+	# D-1256 prancha 3: desnível cenográfico. Uma faixa de mata mais baixa
+	# além da paliçada, com copas baixas e troncos curtos. É só fundo (camada 9):
+	# o piso jogável continua em y=0 e nada disso entra na navegação.
+	var low_floor := _box(Vector3(34.0, 0.25, 9.0), Vector3(7.0, -1.55, -19.5),
+		_toon_mat(Color(0.075, 0.055, 0.11)), false)
+	low_floor.layers = 1 << 9
+	low_floor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	for i in 14:
+		var lx := _rng.randf_range(-4.0, 18.0)
+		var lz := _rng.randf_range(-23.5, -15.5)
+		var lh := _rng.randf_range(1.4, 2.8)
+		var lt := MeshInstance3D.new()
+		var lcyl := CylinderMesh.new()
+		lcyl.top_radius = 0.12
+		lcyl.bottom_radius = 0.2
+		lcyl.height = lh
+		lcyl.radial_segments = 5
+		lt.mesh = lcyl
+		lt.position = Vector3(lx, -1.4 + lh * 0.5, lz)
+		lt.material_override = _toon_mat(Color(0.09, 0.06, 0.10))
+		lt.layers = 1 << 9
+		lt.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(lt)
+		_backdrop_crown(Vector3(lx, -1.4 + lh + 0.3, lz), _rng.randf_range(0.7, 1.3),
+			_toon_mat(Color(0.14, 0.23, 0.19)))
+	var trunk := _toon_mat(Color(0.085, 0.055, 0.105))
+	var crowns := [
+		_toon_mat(Color(0.16, 0.29, 0.20)),
+		_toon_mat(Color(0.23, 0.16, 0.34)),
+		_toon_mat(Color(0.13, 0.22, 0.24)),
+	]
+	# Duas fileiras de troncos atrás das paredes norte e sul do corredor.
+	var rows := [
+		{"z": -17.5, "xs": [-3.0, 1.0, 5.0, 9.0, 13.0, 17.0]},
+		{"z": 8.5, "xs": [-2.0, 2.0, 6.0, 10.0, 14.0, 18.0]},
+	]
+	for row in rows:
+		for x in row["xs"]:
+			var z := float(row["z"]) + _rng.randf_range(-0.8, 0.8)
+			var h := _rng.randf_range(5.5, 8.5)
+			var cm := MeshInstance3D.new()
+			var cyl := CylinderMesh.new()
+			cyl.top_radius = 0.16
+			cyl.bottom_radius = 0.26
+			cyl.height = h
+			cyl.radial_segments = 6
+			cm.mesh = cyl
+			cm.position = Vector3(x + _rng.randf_range(-0.5, 0.5), h * 0.5, z)
+			cm.material_override = trunk
+			cm.layers = 1 << 9
+			cm.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			add_child(cm)
+			for k in 3:
+				var cp := Vector3(cm.position.x + _rng.randf_range(-1.1, 1.1),
+					h - _rng.randf_range(-0.3, 1.4), z + _rng.randf_range(-1.1, 1.1))
+				_backdrop_crown(cp, _rng.randf_range(1.1, 2.0), crowns[k % crowns.size()])
+
+
+func _backdrop_crown(pos: Vector3, radius: float, mat: Material) -> void:
+	var mi := MeshInstance3D.new()
+	var ico := SphereMesh.new()
+	ico.radius = radius
+	ico.height = radius * 1.2
+	ico.radial_segments = 5
+	ico.rings = 3
+	mi.mesh = ico
+	mi.position = pos
+	mi.material_override = mat
+	mi.layers = 1 << 9
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mi)
+
+
+## D-1247/D-1256 — arco de pedra no fim do corredor (marco de revisita das
+## três pranchas). Duas colunas, imposta e pedras salientes; sem colisão, na
+## camada 9, para não virar parede jogável.
+func _build_stone_arch() -> void:
+	var stone := _toon_mat(Color(0.42, 0.36, 0.44))
+	var stone_dark := _toon_mat(Color(0.30, 0.25, 0.33))
+	# D-1256: no início do corredor leste (x 6.5), longe do portão verde da
+	# saída (x 17.7). Assim a vista de volta tem a mata da curva ao fundo e o
+	# arco fica isolado, como nas pranchas. Atravessa o corredor: colunas no
+	# eixo Z, imposta no plano YZ.
+	var cx := 6.5
+	var z := -10.0
+	var y_col := 1.55
+	for dz in [-1.45, 1.45]:
+		var col := _box(Vector3(0.55, 3.1, 0.55), Vector3(cx, y_col, z + dz), stone, false)
+		col.layers = 1 << 9
+		col.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		# Faixas de pedra para quebrar a coluna lisa.
+		for k in 4:
+			var band := _box(Vector3(0.62, 0.10, 0.62),
+				Vector3(cx, 0.35 + float(k) * 0.75, z + dz), stone_dark, false)
+			band.layers = 1 << 9
+			band.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# Imposta superior em arco: 7 blocos ao longo de uma curva no plano YZ.
+	for i in 7:
+		var t := float(i) / 6.0
+		var ang := PI * t
+		var pz := z - cos(ang) * 1.45
+		var py := 3.1 + sin(ang) * 0.95
+		var block := _box(Vector3(0.62, 0.42, 0.62), Vector3(cx, py, pz), stone, false)
+		block.layers = 1 << 9
+		block.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+
+## D-1256 — troncos grossos em primeiro plano nas laterais (prancha 2),
+## enquadrando a vista sem bloquear o caminho. Camada 9, sem colisão.
+func _build_foreground_trunks() -> void:
+	var bark := _toon_mat(Color(0.11, 0.075, 0.06))
+	var spots := [
+		Vector3(-5.6, 4.0, 3.5), Vector3(5.6, 4.0, 2.0),
+		Vector3(19.8, 4.0, -11.0), Vector3(19.8, 4.0, -6.0),
+	]
+	for pos in spots:
+		var mi := MeshInstance3D.new()
+		var cyl := CylinderMesh.new()
+		cyl.top_radius = 0.42
+		cyl.bottom_radius = 0.62
+		cyl.height = 8.0
+		cyl.radial_segments = 7
+		mi.mesh = cyl
+		mi.position = pos
+		mi.material_override = bark
+		mi.layers = 1 << 9
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(mi)
 
 
 func _vine(top: Vector3, length: float) -> void:
@@ -1718,7 +1887,9 @@ func _root(pos: Vector3, rot: float, length: float) -> void:
 # --- Exit --------------------------------------------------------------------
 
 func _build_exit() -> void:
-	var gate_mat := _toon_mat(Color(0.10, 0.55, 0.28), Color(0.15, 0.85, 0.35), 1.1)
+	# D-1256: portão mais discreto para o arco de pedra ser a âncora da vista.
+	# A saída continua funcional e visível (Z/E), só perde o neon competing.
+	var gate_mat := _toon_mat(Color(0.10, 0.42, 0.24), Color(0.12, 0.55, 0.28), 0.28)
 	var gate_a := _box(Vector3(0.3, 3.4, 0.3), Vector3(17.7, 1.7, -11.4), gate_mat, false)
 	var gate_b := _box(Vector3(0.3, 3.4, 0.3), Vector3(17.7, 1.7, -8.6), gate_mat, false)
 	var gate_top := _box(Vector3(0.3, 0.3, 3.2), Vector3(17.7, 3.4, -10.0), gate_mat, false)
@@ -1727,9 +1898,9 @@ func _build_exit() -> void:
 		mi.layers = 1 << 8
 	var exit_light := OmniLight3D.new()
 	exit_light.position = Vector3(17.2, 1.8, -10.0)
-	exit_light.light_color = Color(0.35, 1.0, 0.55)
-	exit_light.light_energy = 0.45
-	exit_light.omni_range = 4.5
+	exit_light.light_color = Color(0.35, 0.9, 0.5)
+	exit_light.light_energy = 0.25
+	exit_light.omni_range = 3.5
 	add_child(exit_light)
 	# Trepadeiras Verdes no portal.
 	for i in 8:
@@ -3048,3 +3219,138 @@ func _set_layers(root: Node, layer: int) -> void:
 		(particles as CPUParticles3D).layers = layer
 	for label in root.find_children("*", "Label3D", true, false):
 		(label as Label3D).layers = layer
+
+# --- Captura (fotos e vídeo com câmera fixa) ---------------------------------
+
+## Lê um argumento de linha de comando no formato `--nome=valor`.
+func _cli_args() -> PackedStringArray:
+	var args := PackedStringArray()
+	args.append_array(OS.get_cmdline_args())
+	args.append_array(OS.get_cmdline_user_args())
+	return args
+
+
+func _cli_has(flag: String) -> bool:
+	for a in _cli_args():
+		if a == flag:
+			return true
+	return false
+
+
+func _cli_value(name: String) -> String:
+	var prefix := name + "="
+	for a in _cli_args():
+		if a.begins_with(prefix):
+			return a.substr(prefix.length())
+	return ""
+
+
+## Aplica o enquadramento fixo. `extra_yaw` é a passagem lateral do vídeo.
+func _apply_capture_transform(extra_yaw: float) -> void:
+	if _camera == null:
+		return
+	var basis := Basis.from_euler(Vector3(
+		-deg_to_rad(_capture_pitch), deg_to_rad(_capture_yaw + extra_yaw), 0.0))
+	_camera.global_transform = Transform3D(basis, _capture_pos)
+
+
+## D-235: com a câmera travada, a perseguição da base nunca roda. Fora do modo
+## de captura, o comportamento herdado fica intacto.
+func _update_camera(delta: float) -> void:
+	if _capture_lock:
+		_apply_capture_transform(_capture_pass_yaw)
+		return
+	super._update_camera(delta)
+
+
+func _ensure_parent_dir(path: String) -> void:
+	var dir := path.get_base_dir()
+	if dir != "" and not DirAccess.dir_exists_absolute(dir):
+		DirAccess.make_dir_recursive_absolute(dir)
+
+
+func _capture_begin() -> void:
+	var point_id := _cli_value("--capture")
+	print("CAPTURE_BEGIN: point=", point_id)
+	if point_id == "":
+		return
+	if not CAPTURE_POINTS.has(point_id):
+		print("SHOT_JSON: {\"error\":\"unknown_point\",\"point\":\"", point_id, "\"}")
+		return
+	var point: Dictionary = CAPTURE_POINTS[point_id]
+	_capture_point = point_id
+	_capture_mirror = _cli_has("--mirror")
+	_capture_pos = point["pos"]
+	_capture_yaw = float(point["yaw"])
+	_capture_pitch = float(point["pitch"])
+	var yaw_arg := _cli_value("--capture-yaw")
+	if yaw_arg != "":
+		_capture_yaw = float(yaw_arg)
+	var pitch_arg := _cli_value("--capture-pitch")
+	if pitch_arg != "":
+		_capture_pitch = float(pitch_arg)
+	# D-235: a vista espelhada gira 180°, sem exceção por personagem ou lado.
+	if _capture_mirror:
+		_capture_yaw += 180.0
+	_capture_lock = true
+	_apply_capture_transform(0.0)
+
+	var shot := _cli_value("--shot")
+	var record := _cli_value("--record")
+	if shot != "" or record != "":
+		var timer := Timer.new()
+		timer.wait_time = 0.4
+		timer.one_shot = true
+		timer.process_mode = Node.PROCESS_MODE_ALWAYS
+		print("SHOT_SCHEDULED: ", shot)
+		timer.timeout.connect(func():
+			_apply_capture_transform(0.0)
+			if shot != "":
+				_save_capture_shot(shot)
+			if record != "":
+				_record_capture(maxf(0.0, float(record)))
+			get_tree().quit(0))
+		add_child(timer)
+		timer.start()
+
+
+func _save_capture_shot(path: String) -> void:
+	_ensure_parent_dir(path)
+	var img := get_viewport().get_texture().get_image()
+	var err := img.save_png(path)
+	print("SHOT_JSON: {\"point\":\"", _capture_point,
+		"\",\"mirror\":", _capture_mirror,
+		",\"path\":\"", path,
+		"\",\"pos\":[", _capture_pos.x, ",", _capture_pos.y, ",", _capture_pos.z,
+		"],\"yaw\":", _capture_yaw, ",\"pitch\":", _capture_pitch,
+		",\"error\":", err, "}")
+
+
+## Passagem lateral de ±8° de yaw, sem mover o jogador. Grava `frame_%04d.png`
+## a 30 quadros por segundo (D-1042/D-235).
+func _record_capture(seconds: float) -> void:
+	if seconds <= 0.0:
+		return
+	var dir := _cli_value("--out")
+	if dir == "":
+		dir = "user://capture_frames"
+	if not DirAccess.dir_exists_absolute(dir):
+		DirAccess.make_dir_recursive_absolute(dir)
+	var fps := 30
+	var total := maxi(1, int(round(seconds * float(fps))))
+	var previous_fps := Engine.max_fps
+	Engine.max_fps = fps
+	for i in total:
+		var t := float(i) / float(maxi(total - 1, 1))
+		_capture_pass_yaw = sin(t * TAU) * 8.0
+		_apply_capture_transform(_capture_pass_yaw)
+		await get_tree().process_frame
+		var img := get_viewport().get_texture().get_image()
+		img.save_png("%s/frame_%04d.png" % [dir, i])
+	_capture_pass_yaw = 0.0
+	_apply_capture_transform(0.0)
+	Engine.max_fps = previous_fps
+	print("RECORD_JSON: {\"point\":\"", _capture_point,
+		"\",\"mirror\":", _capture_mirror,
+		",\"frames\":", total, ",\"fps\":", fps,
+		",\"dir\":\"", dir, "\"}")

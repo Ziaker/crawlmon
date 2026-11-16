@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/debug/shell_pickup_lab.gd" id="1_shell"]
+
+[node name="ShellPickupLab" type="Node3D"]
+script = ExtResource("1_shell")

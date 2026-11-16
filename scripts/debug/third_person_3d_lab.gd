@@ -629,6 +629,10 @@ func _make_model(model_id: String, target_height: float) -> Node3D:
 		glb.scale = Vector3.ONE * (target_height / box.size.y)
 		box = _aabb_in_parent(glb)
 	glb.position.y -= box.position.y
+	# Centre the body on the origin horizontally too, so the model stands exactly on
+	# the pivot (summon circle, collisions) whatever the species' mesh origin was.
+	glb.position.x -= box.position.x + box.size.x * 0.5
+	glb.position.z -= box.position.z + box.size.z * 0.5
 
 	const DQT_EYES := preload("res://scripts/combat/dqt_eyes.gd")
 	var ap := _find_anim_player(glb)

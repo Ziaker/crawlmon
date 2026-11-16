@@ -23,6 +23,8 @@
 2. As moedas aparecem como peças tridimensionais no ambiente, em ângulos diferentes. Podem aparecer separadas ou empilhadas.
 3. A coleta deve ter feedback visual satisfatório. O [estudo de disposição e coleta](../referencias/exploracao/3d/shells-disposicao-e-coleta-estudo.png) propõe brilho breve, moedas que giram em arcos até o coletor e um brilho de confirmação. A sequência é um estudo para aprovação.
 
+Os [prompts visuais dos Cascos](../plans/PROMPTS_VISUAIS_DOS_CASCOS.md) reúnem as instruções para a prancha de ícones e modelos, o storyboard e a implementação visual.
+
 ## Pendências
 
 - Escala no mapa, ângulos, quantidade de peças por grupo e relação entre representação e valor.

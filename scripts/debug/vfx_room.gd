@@ -25,7 +25,7 @@ const DrainSpearMove = preload("res://scripts/data/drain_spear_move.gd")
 ##   --hud=status|victory [--hud-member=N] --shot=arquivo.png (HUD de tela cheia com o grupo da sala, captura e sai)
 ##   --boost=<1|2|3|all> --shot=arquivo.png (PROTÓTIPO do BOOST no cartão do inimigo, D-1229)
 ##   --command-tab=<atb>[:subs][:down] --shot=arquivo.png (D-1236: leque lateral EMPLOY/SUMMON de TACTICS)
-##   --employ=cancel|noatb|fail|success|last|moves[:flight][:burst][:mp][:win]|returning|status|lastblock|chance|roll[:win|:zero]|boost [--mirror] (D-1229: fluxo do Employ pelo menu real; imprime EMPLOY_JSON)
+##   --employ=cancel|noatb|fail|success|last|moves[:flight][:burst][:mp][:win]|returning|status|lastblock|chance|roll[:win|:zero]|boost|rhythm[:perfect|:good|:miss|:mix] [--mirror] (D-1229: fluxo do Employ pelo menu real; imprime EMPLOY_JSON)
 ##   --picker=<move_id> [--mirror] --shot=arquivo.png (D-1200: Fight do líder + menu S.TARGET do Move, imprime os alvos oferecidos)
 ##   --hide=linhas,particulas,shaders,sprites,malhas --record=SEGUNDOS --step=SEGUNDOS --out=pasta
 ##   --log=arquivo.txt --quit
@@ -764,7 +764,7 @@ func _run_employ(spec: String) -> void:
 	var mp_mode := "mp" in parts  # D-1239: Move que gasta MP (Bubble Shot): MP e timer de regeneração voltam
 	var zero := "zero" in parts  # D-1240: modo roll com P = 0 (nenhum sorteio)
 	var mode_with_flight := mode + ("_zero" if zero else "") + ("_flight" if flight else "") + ("_burst" if by_burst else "") + ("_mp" if mp_mode else "") + ("_win" if win else "")
-	if not (mode in ["cancel", "noatb", "fail", "success", "last", "moves", "returning", "status", "lastblock", "chance", "roll", "boost"]):
+	if not (mode in ["cancel", "noatb", "fail", "success", "last", "moves", "returning", "status", "lastblock", "chance", "roll", "boost", "rhythm"]):
 		print("[vfx_room] employ mode=%s result=fail reason=unknown_mode" % mode_with_flight)
 		_quit(1)
 		return
@@ -813,6 +813,45 @@ func _run_employ(spec: String) -> void:
 			and not begin_ok and String(out["reason"]) == "need_atb" \
 			and float(out["blocks_after"]) >= 3.999 and float(out["blocks_after"]) < 5.0 \
 			and leader.burst == 1 and not bool(out["active"])
+	elif mode == "rhythm":
+		# D-1257: the real minigame node plays by itself (set_auto) and its bonuses reach the real roll.
+		var plans := {"perfect": ["perfect", "perfect", "perfect"], "good": ["good", "good", "good"],
+			"miss": ["", "", ""], "mix": ["perfect", "good", ""]}
+		var plan_key := "mix"
+		for k in plans:
+			if k in parts:
+				plan_key = k
+		_employ_set_atb(leader, 5.0)
+		var picker := _employ_open_picker()
+		_bs._on_chosen(0)
+		await get_tree().process_frame
+		var mg = _bs._employ_minigame
+		var opened: bool = mg.is_open()
+		var notes: int = mg.note_times().size()
+		mg.set_auto(plans[plan_key])
+		var guard := 0
+		while mg.is_open() and guard < 1000:
+			mg.step(10.0)  # fine steps: the auto GOOD press lands 95 ms after the note
+			guard += 1
+		await get_tree().process_frame
+		var rhythm_row := {}
+		var ended_row := {}
+		for r in rows:
+			if String(r.get("stage", "")) == "rhythm":
+				rhythm_row = r
+			elif String(r.get("stage", "")) == "ended":
+				ended_row = r
+		var want := {"perfect": 10.0, "good": 5.0, "miss": 0.0}
+		var expect_pp := 0.0
+		for i in mini(notes, 3):
+			var g: String = plans[plan_key][i]
+			expect_pp += want.get(g if g != "" else "miss", 0.0)
+		out = {"plan": plan_key, "picker": picker, "opened": opened, "notes": notes, "steps": guard,
+			"closed": not mg.is_open(), "rhythm_row": rhythm_row, "ended": not ended_row.is_empty(),
+			"expect_pp": expect_pp, "resumed": _bs.state == _bs.S.MAIN and not get_tree().paused}
+		ok = picker and opened and notes >= 1 and bool(out["closed"]) and not rhythm_row.is_empty() \
+			and bool(out["ended"]) and bool(out["resumed"]) \
+			and absf(float(rhythm_row.get("total_pp", -1.0)) - expect_pp) < 0.001
 	elif mode == "fail":
 		# Um substituto no elenco, como no --command-tab=...:subs (o SUMMON fica disponível).
 		var roster = GameState.get_roster()
@@ -1444,7 +1483,7 @@ func _employ_attempt(target_index: int, success: bool, real_roll := false) -> Di
 	out["state_employ"] = _bs.state == _bs.S.EMPLOY
 	out["tree_paused"] = get_tree().paused
 	out["active"] = _battle.is_employ_active()
-	out["marker"] = _bs._employ_marker.visible
+	out["marker"] = _bs._employ_marker.visible or _bs._employ_minigame.is_open()  # D-1257: the minigame replaces the marker
 	out["menu_hidden"] = not _bs._menu.visible
 	out["spent"] = blocks_before - leader.blocks()
 	out["burst_after_pay"] = leader.burst
@@ -1471,7 +1510,7 @@ func _employ_attempt(target_index: int, success: bool, real_roll := false) -> Di
 		_bs._finish_employ(success)
 	await get_tree().process_frame
 	out["resumed"] = _bs.state == _bs.S.MAIN and not get_tree().paused \
-		and not _battle.is_employ_active() and not _bs._employ_marker.visible
+		and not _battle.is_employ_active() and not _bs._employ_marker.visible and not _bs._employ_minigame.is_open()
 	out["target"] = target
 	return out
 

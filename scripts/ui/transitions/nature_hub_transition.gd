@@ -46,6 +46,7 @@ var target_scene: String = ""
 var _opts: Dictionary = {}
 var _view: Control = null
 var _visited: Array[Dictionary] = []
+var _frame_stats: Dictionary = {}  ## state -> {max_ms, slow} (frames over 40 ms), --nht-summary
 var _errors: Array[String] = []
 var _load_ms: float = 0.0
 var _scene_change_ms: float = -1.0
@@ -141,7 +142,13 @@ func _build_view() -> void:
 
 
 func _process(delta: float) -> void:
-	var dt: float = minf(delta * 1000.0, 100.0)
+	var raw_ms: float = delta * 1000.0
+	var st: Dictionary = _frame_stats.get(state, {"max_ms": 0.0, "slow": 0})
+	st["max_ms"] = snappedf(maxf(float(st["max_ms"]), raw_ms), 0.1)
+	if raw_ms > 40.0:
+		st["slow"] = int(st["slow"]) + 1
+	_frame_stats[state] = st
+	var dt: float = minf(raw_ms, 100.0)
 	total_ms += dt
 	state_ms += dt
 	_tick_state()
@@ -263,6 +270,7 @@ func _print_summary() -> void:
 		"states": _visited,
 		"load_ms": int(_load_ms),
 		"errors": _errors,
+		"frames": _frame_stats,
 	}
 	print("NHT_SUMMARY " + JSON.stringify(data))
 

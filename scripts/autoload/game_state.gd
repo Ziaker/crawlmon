@@ -139,9 +139,18 @@ func _change_scene_deferred(path: String) -> void:
 	get_tree().change_scene_to_file.call_deferred(path)
 
 
-## D-1208 (NEW GAME): fresh campaign with the chosen protagonist as party[0] plus
-## one complementary ally (Pancham, or Abra when the leader is Pancham), so the
-## duo stays calibrated (D-1207 C1). The leader shares the party inventory.
+## Playable species (leader or ally). The ally offer is drawn from these minus the leader (D-1260).
+const PLAYABLE_SPECIES: Array[String] = ["abra", "pancham", "gible", "dqt_slime", "dqt_orc", "dqt_cyclops"]
+const ALLY_OFFER_COUNT := 3
+
+## D-1260: the new campaign's ally is chosen once in the Hub among ALLY_OFFER_COUNT drawn species.
+var ally_choice_pending := false
+var ally_choice_candidates: Array[String] = []
+
+
+## D-1260 (supersedes the starting duo of D-1208/D-1207 C1): fresh campaign with ONLY the leader
+## in the party. The 3 ally candidates are drawn now (never the leader); the Hub offers them once.
+## The leader shares the party inventory.
 func start_new_campaign(leader_species: String) -> void:
 	leader_species = leader_species.to_lower()
 	if leader_species == "":
@@ -153,14 +162,9 @@ func start_new_campaign(leader_species: String) -> void:
 		"rng": rng,
 		"inventory": inventory,
 	})
-	var ally_id := "pancham" if leader_species != "pancham" else "abra"
-	var ally := CharacterFactory.create(ally_id, {
-		"is_player": true,
-		"rng": rng,
-		"act_policy": Combatant.Act.SKILL,
-		"react_policy": Combatant.React.EVADE,
-	})
-	party.assign([leader, ally])
+	party.assign([leader])
+	ally_choice_candidates = roll_ally_candidates(leader_species, rng)
+	ally_choice_pending = not ally_choice_candidates.is_empty()
 	active_campaign_started = true
 	last_expedition_nature_id = ""
 	expedition_origin_scene = ""
@@ -168,6 +172,41 @@ func start_new_campaign(leader_species: String) -> void:
 	respect = RespectStateClass.new()  # D-1231: a new campaign starts at 50.
 	respect_log.clear()
 	reset_expedition_inventory()
+
+
+## D-1260: draws ALLY_OFFER_COUNT distinct playable species, never the leader.
+func roll_ally_candidates(leader_species: String, rng: RandomNumberGenerator = null) -> Array[String]:
+	if rng == null:
+		rng = RandomNumberGenerator.new()
+		rng.randomize()
+	var pool: Array[String] = []
+	for sid in PLAYABLE_SPECIES:
+		if sid != leader_species.to_lower():
+			pool.append(sid)
+	var picked: Array[String] = []
+	while picked.size() < ALLY_OFFER_COUNT and not pool.is_empty():
+		var i := rng.randi_range(0, pool.size() - 1)
+		picked.append(pool[i])
+		pool.remove_at(i)
+	return picked
+
+
+## D-1260: confirms the chosen ally (one of the offered candidates). Joins the party as ally and
+## closes the offer for good. Returns false if nothing is pending or the species was not offered.
+func choose_ally(species: String) -> bool:
+	species = species.to_lower()
+	if not ally_choice_pending or not ally_choice_candidates.has(species) or party.is_empty():
+		return false
+	var ally := CharacterFactory.create(species, {
+		"is_player": true,
+		"act_policy": Combatant.Act.SKILL,  # Allies use their moves and dodge (D-168).
+		"react_policy": Combatant.React.EVADE,
+	})
+	party.append(ally)
+	ally_choice_pending = false
+	if "--stdout-trace" in OS.get_cmdline_user_args():
+		print("ALLY_CHOICE_JSON: " + JSON.stringify({"leader": species_key(party[0]), "offered": ally_choice_candidates, "chosen": species}))
+	return true
 
 
 ## D-1231: applies one Respect event to the group and returns the delta really applied.

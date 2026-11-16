@@ -1559,8 +1559,9 @@ func _employ_pair(c: Combatant) -> Array:
 
 ## D-1230/D-1240: the deterministic Employ chance (no roll, no side effect) with every intermediate.
 ## Participants: the living members of the actor's team. level_traveler: the level of the team leader (first
-## member). Respect: neutral 50 until a real source exists (D-1231). Rhythm bonus: 0 until the minigame exists.
-func employ_chance(actor: Combatant, target: Combatant) -> Dictionary:
+## member). Respect: neutral 50 until a real source exists (D-1231). Rhythm bonus: D-1257 note_bonuses,
+## empty until the minigame feeds it.
+func employ_chance(actor: Combatant, target: Combatant, note_bonuses: Array = []) -> Dictionary:
 	var members: Array = []
 	var side := team_of(actor)
 	for c in side:
@@ -1568,21 +1569,24 @@ func employ_chance(actor: Combatant, target: Combatant) -> Dictionary:
 			members.append(_employ_pair(c))
 	var foe := _employ_pair(target)
 	var leader_level: int = side[0].level if not side.is_empty() else actor.level
-	var info := EmployMath.breakdown(members, foe[0], foe[1], leader_level, target.level, EmployMath.RESPECT_NEUTRAL, [])
+	var info := EmployMath.breakdown(members, foe[0], foe[1], leader_level, target.level, EmployMath.RESPECT_NEUTRAL, note_bonuses)
 	info["members"] = members.size()
 	info["level_traveler"] = leader_level
 	info["level_enemy"] = target.level
 	info["respect"] = EmployMath.RESPECT_NEUTRAL
+	info["note_bonuses"] = note_bonuses
+	info["rhythm_pp"] = EmployMath.rhythm_bonus(note_bonuses)
 	return info
 
 
 ## D-1240: ends the open attempt by the real chance. No roll is made when P is 0 or 100 (D-1230); otherwise
 ## roll = randf() * 100 (the global RNG, so --seed rules it) and it succeeds when roll < P. Returns the chance
 ## breakdown plus "rolled", "roll" (-1 when none) and "success"; {} when no attempt is open.
-func resolve_employ() -> Dictionary:
+## D-1257: note_bonuses feed the rhythm bonus B of the chance.
+func resolve_employ(note_bonuses: Array = []) -> Dictionary:
 	if _employ.is_empty():
 		return {}
-	var info := employ_chance(_employ["actor"], _employ["target"])
+	var info := employ_chance(_employ["actor"], _employ["target"], note_bonuses)
 	var p := float(info["P"])
 	var rolled := EmployMath.needs_roll(p)
 	var roll := -1.0
@@ -1649,6 +1653,14 @@ func _employ_row(stage: String, actor: Combatant, target: Combatant, extra := {}
 	}
 	row.merge(extra)
 	return row
+
+
+## D-1257: telemetry of the rhythm minigame, emitted as its own "rhythm" stage with the summary
+## (grades, bonuses, total_pp) merged into the row. Uses the open attempt's actor/target when there is one.
+func note_employ_rhythm(summary: Dictionary) -> void:
+	var actor: Combatant = _employ.get("actor", null)
+	var target: Combatant = _employ.get("target", null)
+	employ_changed.emit("rhythm", _employ_row("rhythm", actor, target, summary))
 
 
 # --- Summon (D-1232/D-1244, Phase 8: the mechanical swap only) ---------------

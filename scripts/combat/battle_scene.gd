@@ -29,6 +29,7 @@ const VictoryPanelScript = preload("res://scripts/ui/victory_panel.gd")
 const LevelUpModalScript = preload("res://scripts/ui/level_up_modal.gd")
 const EnemyFactory = preload("res://scripts/combat/enemy_factory.gd")
 const EmployMarker = preload("res://scripts/ui/employ_marker.gd")
+const EmployMinigame = preload("res://scripts/ui/employ_minigame.gd")
 
 @onready var battle: Battle = $Battle
 @onready var ui: CanvasLayer = $UI
@@ -70,6 +71,7 @@ var _saved_anim: Dictionary = {}  ## AnimationPlayer -> [name, position]
 
 var _menu: FanMenu
 var _employ_marker: EmployMarker  ## D-1229 (Phase 5): placeholder shown while an Employ attempt freezes the battle.
+var _employ_minigame: EmployMinigame  ## D-1257: the rhythm minigame of the attempt (provisional look).
 var _last_main := 0  ## Last command picked on the main menu (it reopens there).
 var _fight_target: Combatant  ## The opponent highlighted while the move list is open.
 var _last_skill := ""  ## Last Fight skill and target, by name.
@@ -160,6 +162,9 @@ func _ready() -> void:
 	ui.add_child(_employ_marker)
 	_employ_marker.decided.connect(_finish_employ)
 	_employ_marker.roll_requested.connect(_roll_employ)
+	_employ_minigame = EmployMinigame.new()
+	ui.add_child(_employ_minigame)
+	_employ_minigame.finished.connect(_on_employ_rhythm_done)
 	battle.state_changed.connect(_refresh)
 	battle.summon_changed.connect(_on_summon_changed)  # D-1244 (Phase 8): the swap of a unit on the field
 	battle.battle_ended.connect(_on_battle_ended)
@@ -1243,7 +1248,18 @@ func _confirm_employ(target: Combatant) -> void:
 	_pick_seq += 1  # Keeps _on_chosen from reopening the main menu over the attempt.
 	_set_state(S.EMPLOY)
 	_menu.hide()
-	_employ_marker.open(leader.name, target.name)
+	var notes: int = int(battle.employ_chance(leader, target).get("members", 1))
+	var anchor := get_viewport().get_visible_rect().size * 0.5
+	var spread := 220.0
+	var model: Node3D = models.get(target)
+	if model != null:
+		var cam: Camera3D = $Camera3D
+		var h := _model_height(model)
+		var base: Vector2 = cam.unproject_position(model.global_position)
+		var top: Vector2 = cam.unproject_position(model.global_position + Vector3(0, h, 0))
+		anchor = (base + top) * 0.5
+		spread = absf(base.y - top.y)
+	_employ_minigame.open(anchor, notes, spread)
 
 
 ## Phase 5: the result is forced (marker keys or debug); the dialogue, the minigame and the real
@@ -1253,17 +1269,28 @@ func _finish_employ(success: bool) -> void:
 		return
 	var target: Combatant = battle._employ.get("target")
 	_employ_marker.close()
+	_employ_minigame.close()
 	battle.finish_employ(success, true)
 	_after_employ(target, success)
 
 
+## D-1257: the minigame ended; its note bonuses (pp) feed the chance, then the real roll decides.
+func _on_employ_rhythm_done(bonuses: Array) -> void:
+	if state != S.EMPLOY:
+		return
+	if battle.has_method("note_employ_rhythm"):
+		battle.note_employ_rhythm(_employ_minigame.summary())
+	_roll_employ(bonuses)
+
+
 ## D-1240: the real Employ chance decides (Battle rolls it); the rest is the same as a forced result.
-func _roll_employ() -> void:
+func _roll_employ(note_bonuses: Array = []) -> void:
 	if state != S.EMPLOY:
 		return
 	var target: Combatant = battle._employ.get("target")
 	_employ_marker.close()
-	var r := battle.resolve_employ()
+	_employ_minigame.close()
+	var r := battle.resolve_employ(note_bonuses)
 	_after_employ(target, bool(r.get("success", false)))
 
 

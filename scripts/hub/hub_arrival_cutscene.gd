@@ -48,6 +48,7 @@ var _peak_shake := 0.0
 var _finished := false
 var _print_summary := false
 var _fx: HubSummonFx = null
+var _warming := false
 
 
 static func attach(hub_node: Node, transition_node: Node) -> HubArrivalCutscene:
@@ -111,8 +112,40 @@ func _floor_y_at() -> float:
 	return float(hit["position"].y)
 
 
+## Renders every shot of the cutscene once while the loading screen still covers the
+## hub, so shaders, particles and meshes are already compiled when REVEAL starts and
+## the game does not hitch after the loading (the loading exists for this).
+## Cheap: about 8 frames. The hub calls it before notify_hub_ready.
+func warm_up() -> void:
+	if _fx == null or _camera == null or _player == null or _finished:
+		return
+	_warming = true
+	var t := 0.0
+	var shots: Array = [
+		["REVEAL", 0.5, _reveal_pos(), _reveal_look(), false],
+		["FALL", 0.6, _reveal_pos().lerp(_fall_cam_end(), 0.3), _fall_look(), false],
+		["LAND", 0.1, _fall_cam_end(), _fall_look(), true],
+		["LAND", 0.8, _final_cam.origin, _final_look, true],
+	]
+	for shot in shots:
+		var state_name: String = shot[0]
+		var p: float = shot[1]
+		var body_y := _ground_y if state_name == "LAND" else _ground_y + _fall_height() * 0.5
+		_fx.pose(state_name, p, t, body_y)
+		_place_camera(shot[2], shot[3])
+		_set_player_visible(bool(shot[4]))
+		_player.global_position = Vector3(0.0, _ground_y, 0.0) if bool(shot[4]) else Vector3(0.0, _ground_y + _fall_height(), 0.0)
+		t += 0.1
+		await get_tree().process_frame
+		await get_tree().process_frame
+	_fx.pose("EXIT", 0.0, 0.0, _ground_y + _fall_height())
+	_set_player_visible(false)
+	_player.global_position = Vector3(0.0, _ground_y + _fall_height(), 0.0)
+	_warming = false
+
+
 func apply(_delta: float) -> void:
-	if _finished:
+	if _finished or _warming:
 		return
 	if _transition == null or not is_instance_valid(_transition):
 		_finish()
@@ -308,7 +341,9 @@ func _print_summary_line(cam_jump: float) -> void:
 		visible_now = _player.visible
 	if _hub != null and is_instance_valid(_hub):
 		leader = str(_hub.get("player_model_id"))
+	var off := _model_centre_offset_xz()
 	var payload := {
+		"model_off_xz": [off.x, off.y],
 		"fall_start_y": _ground_y + _fall_height(),
 		"land_y": _ground_y,
 		"land_xz": [land_x, land_z],
@@ -318,6 +353,28 @@ func _print_summary_line(cam_jump: float) -> void:
 		"leader": leader,
 	}
 	print("NHT_HUB ", JSON.stringify(payload))
+
+
+## Horizontal offset (m) of the model's visual centre from the body origin, measured
+## from the real meshes (D-235: no per-species numbers). 0,0 means centred.
+func _model_centre_offset_xz() -> Vector2:
+	if _player_model == null or not is_instance_valid(_player_model) or _player == null:
+		return Vector2.ZERO
+	var lo := Vector2(INF, INF)
+	var hi := Vector2(-INF, -INF)
+	for child in _player_model.find_children("*", "MeshInstance3D", true, false):
+		var mi := child as MeshInstance3D
+		if mi == null or mi.mesh == null or not mi.visible:
+			continue
+		var box := mi.mesh.get_aabb()
+		for i in 8:
+			var p: Vector3 = mi.global_transform * box.get_endpoint(i)
+			lo = Vector2(minf(lo.x, p.x), minf(lo.y, p.z))
+			hi = Vector2(maxf(hi.x, p.x), maxf(hi.y, p.z))
+	if lo.x == INF:
+		return Vector2.ZERO
+	var c := (lo + hi) * 0.5
+	return c - Vector2(_player.global_position.x, _player.global_position.z)
 
 
 func _has_user_arg(flag: String) -> bool:

@@ -8,6 +8,10 @@
 
 # Crawlmon — Regras do jogo (consolidado)
 
+## Decisão D-1258 — Loja do Hub, opção A de balcão aberto de madeira (2026-11-16)
+
+- **Visual aprovado** — Balcão aberto de madeira, toldo baixo, placa com silhueta de poção e lanterna âmbar sobre os suprimentos. A localização do balcão continua em aberto. Ver [D-1258](decisoes/D-1258-hub-loja-opcao-a-balcao-de-madeira.md).
+
 ## Decisão D-1256 — Murky Forest autoral com as três referências visuais (2026-11-16)
 
 - **Mapa** — Uma única Murky Forest 3D autoral, construída do zero e sem geração procedural. O mapa novo usa em conjunto aberturas na copa, vistas laterais e desnível cenográfico, conforme as três pranchas revisadas. O arco é o marco de revisita. Ver [D-1256](decisoes/D-1256-murky-forest-mapa-autoral-tres-referencias.md).
