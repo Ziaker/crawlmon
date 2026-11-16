@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FENDA DAS FAIXAS</title>
+<style>
+:root{
+  --cell-h:96px; --reel-w:196px; --reel-gap:12px; --skew:-9deg;
+  --bg:#051322; --slab:#092133; --slab-2:#143343; --panel:#0a1929; --reel-bg:#07131e;
+  --ink:#080e18; --payline:#f0c57e; --text:#f4eee1; --text-dim:#8ea7b0;
+  --accent:#d6fa66; --pos:#d6fa66; --neg:#ff746c; --none:#8ea7b0; --pure:#63d9ec;
+  --display:Impact,"Haettenschweiler","Arial Narrow Bold","Arial Black",sans-serif;
+  --mono:Consolas,"Cascadia Mono","Courier New",monospace;
+  --fit:1;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#020a12;color:var(--text);font-family:var(--mono)}
+#viewport{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{position:relative;flex:0 0 auto;width:1280px;height:720px;overflow:hidden;background:var(--bg);transform:scale(var(--fit));transform-origin:center center}
+#view{position:absolute;left:0;top:0;width:1280px;height:720px;display:block;z-index:1}
+#backdrop{position:absolute;inset:0;z-index:2;background:var(--bg)}
+/* Roulette locked on SETTLED: same palette, fonts and geometry as nature_slot.html. */
+#slot{position:absolute;inset:0;z-index:3;color:var(--text)}
+#slot .slot-stage{position:absolute;inset:0;overflow:hidden;background:transparent}
+#slot .slot-stage > *{z-index:2}
+#slot .slot-stage::before{content:"";position:absolute;left:-260px;top:150px;width:1800px;height:360px;background:var(--slab);transform:rotate(-8deg);z-index:0}
+#slot .slot-stage::after{content:"";position:absolute;left:-260px;top:548px;width:1800px;height:30px;background:repeating-linear-gradient(90deg,var(--slab-2) 0 44px,var(--slab) 44px 88px);transform:rotate(-8deg);z-index:0}
+#slot .slot-head{position:absolute;left:78px;top:34px;margin:0;text-align:left;transform:rotate(-3deg) skewX(var(--skew));transform-origin:left top}
+#slot .slot-kicker{display:inline-block;padding:5px 14px;background:var(--payline);color:var(--ink);font-size:15px;font-weight:700;letter-spacing:0.2em}
+#slot .slot-headline{margin-top:10px;font-family:var(--display);font-size:66px;font-weight:400;line-height:1;letter-spacing:0.02em;color:var(--accent)}
+#slot .slot-machine{position:absolute;left:70px;top:226px;padding:44px 26px;background:var(--panel);transform:rotate(-3deg) skewX(var(--skew));box-shadow:16px 16px 0 #000}
+#slot .slot-bulbs{position:absolute;left:26px;right:26px;height:16px;display:flex;justify-content:space-between}
+#slot .slot-bulbs.top{top:14px}
+#slot .slot-bulbs.bottom{bottom:14px}
+#slot .slot-bulbs i{display:block;width:30px;height:16px;background:var(--accent)}
+#slot .slot-reels{position:relative;display:flex;gap:var(--reel-gap);transform:none}
+#slot .slot-reel{position:relative;width:var(--reel-w);height:calc(var(--cell-h) * 3);overflow:hidden;background:var(--reel-bg)}
+#slot .slot-reel::before,#slot .slot-reel::after{content:"";position:absolute;left:0;right:0;height:var(--cell-h);z-index:2;background:rgba(5,19,34,0.66);pointer-events:none}
+#slot .slot-reel::before{top:0}
+#slot .slot-reel::after{bottom:0}
+#slot .slot-strip{position:absolute;left:0;top:0;width:100%}
+#slot .slot-cell{height:var(--cell-h);display:flex;gap:10px;align-items:baseline;justify-content:center;padding-top:22px;font-family:var(--mono);transform:skewX(calc(var(--skew) * -1))}
+#slot .slot-cell .s{font-size:23px;font-weight:700;letter-spacing:0.08em}
+#slot .slot-cell .v{font-family:var(--display);font-size:50px;font-weight:400;line-height:1;letter-spacing:0.01em}
+#slot .slot-cell.is-pos{color:var(--pos)}
+#slot .slot-cell.is-neg{color:var(--neg)}
+#slot .slot-cell.is-none{color:var(--none)}
+#slot .slot-cell.is-none .v{font-size:40px;letter-spacing:0.08em}
+#slot .slot-cell.is-win{background:var(--payline);color:var(--ink)}
+#slot .slot-payline{position:absolute;left:0;right:0;top:var(--cell-h);height:var(--cell-h);pointer-events:none}
+#slot .slot-payline::before,#slot .slot-payline::after{content:"";position:absolute;left:auto;right:auto;top:calc(50% - 20px);bottom:auto;width:20px;height:40px;background:var(--payline)}
+#slot .slot-payline::before{left:-23px;clip-path:polygon(0 0,100% 50%,0 100%)}
+#slot .slot-payline::after{right:-23px;clip-path:polygon(100% 0,0 50%,100% 100%)}
+#slot .slot-result{position:absolute;left:796px;top:196px;width:470px;margin:0}
+#slot .slot-result-name{font-family:var(--display);font-size:108px;font-weight:400;line-height:0.9;letter-spacing:0.01em;text-transform:uppercase;color:var(--text);transform:rotate(-5deg) skewX(var(--skew));transform-origin:left bottom}
+#slot .slot-stamp{display:inline-block;margin:18px 0 0 150px;padding:9px 18px;background:var(--payline);color:var(--ink);font-size:19px;font-weight:700;letter-spacing:0.16em;transform:rotate(6deg)}
+#slot .slot-desc{margin-top:40px;max-width:440px;font-size:20px;line-height:1.4;color:var(--text);transform:skewX(var(--skew))}
+#slot .slot-actions{position:absolute;left:0;top:372px;margin:0;display:flex;gap:10px;transform:skewX(var(--skew))}
+#slot .slot-actions button{padding:13px 16px;border:0;cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:0.06em;white-space:nowrap;background:var(--slab-2);color:var(--text)}
+#slot .slot-actions .slot-enter{background:var(--accent);color:var(--ink);font-size:16px}
+/* Exit wipe: the two flat slabs of the roulette exit, skewed. */
+#slabs{position:absolute;inset:0;z-index:9;display:none;pointer-events:none}
+#slabs.on{display:block}
+#slabs .slab{position:absolute;left:-30%;right:-30%;top:-10%;bottom:-10%;transform:translateX(-135%) skewX(var(--skew));will-change:transform}
+#slabs .slab.a{background:var(--accent)}
+#slabs .slab.b{background:var(--bg)}
+/* The same slabs become the two jaws of the slit. */
+#jaws{position:absolute;inset:0;z-index:10;display:none;pointer-events:none}
+#jaws.on{display:block}
+#jaws .jaw{position:absolute;inset:0;background:var(--bg)}
+#jaws .rim{position:absolute;inset:0;background:var(--accent)}
+/* Discreet loading sign: one small element of the roulette, no text, no bar. */
+#loader{position:absolute;left:50%;top:360px;z-index:12;opacity:0;pointer-events:none;transform:translate(-50%,-50%) rotate(-3deg);display:flex;align-items:center;justify-content:center}
+#loader .ld{display:none}
+#loader[data-kind="bulbs"] .ld-bulbs{display:flex;gap:8px}
+#loader[data-kind="payline"] .ld-pay{display:flex;gap:22px;align-items:center}
+#loader .ld-bulbs i{display:block;width:14px;height:8px;background:#1d3a4d}
+#loader .ld-pay b{display:block;width:12px;height:18px;background:var(--payline)}
+#loader .ld-pay b.l{clip-path:polygon(0 0,100% 50%,0 100%)}
+#loader .ld-pay b.r{clip-path:polygon(100% 0,0 50%,100% 100%)}
+#error{position:absolute;left:70px;bottom:60px;z-index:40;max-width:760px;padding:12px 16px;background:var(--panel);color:var(--payline);font-size:13px;line-height:1.4}
+/* Debug panel, outside the 1280x720 look. */
+#panel{position:fixed;left:14px;top:14px;z-index:50;width:272px;max-height:calc(100vh - 28px);overflow:auto;background:var(--panel);border:1px solid var(--slab-2);padding:10px;font-size:11px;line-height:1.35;color:var(--text)}
+#panel.is-min .p-body{display:none}
+#panel .p-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+#panel .p-head span{font-weight:700;letter-spacing:0.08em}
+#panel button{border:0;padding:4px 7px;background:var(--slab-2);color:var(--text);font-family:var(--mono);font-size:11px;cursor:pointer}
+#panel button.is-on{background:var(--accent);color:var(--ink);font-weight:700}
+#panel .row{display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+#panel .dim{color:var(--text-dim)}
+#panel input[type="range"]{width:118px;accent-color:#d6fa66}
+#panel details{margin-top:8px;border-top:1px solid var(--slab-2);padding-top:6px}
+#panel summary{cursor:pointer;color:var(--payline);font-weight:700}
+#panel ol{margin:6px 0 0 16px;padding:0;color:var(--text-dim);font-size:10px;line-height:1.45}
+#panel ol li{margin-bottom:4px}
+#panel .tip{margin-top:8px;font-size:10px;color:var(--text-dim)}
+</style>
+</head>
+<body>
+<div id="panel">
+  <div class="p-head">
+    <span>FENDA DAS FAIXAS</span>
+    <button id="fold" type="button">fechar</button>
+  </div>
+  <div class="p-body">
+    <div class="row">
+      <button id="replay" type="button">Replay</button>
+      <span class="dim" id="pState">SETTLED</span>
+      <span class="dim" id="pMs">0 ms</span>
+    </div>
+    <div class="row">
+      <span>load</span>
+      <input id="pLoad" type="range" min="0" max="6000" step="100" value="1800">
+      <span class="dim" id="pLoadV">1800 ms</span>
+    </div>
+    <div class="row">
+      <span>speed</span>
+      <button class="sp" data-sp="0.25" type="button">0.25x</button>
+      <button class="sp" data-sp="0.5" type="button">0.5x</button>
+      <button class="sp is-on" data-sp="1" type="button">1x</button>
+    </div>
+    <div class="row">
+      <span>indicador</span>
+      <button class="ind is-on" data-ind="bulbs" type="button">bulbs</button>
+      <button class="ind" data-ind="payline" type="button">payline</button>
+    </div>
+    <details>
+      <summary>PENDENTE (proposta, criador decide)</summary>
+      <ol>
+        <li>Tempos: EXIT 900 ms (varredura 620 + fenda 280), REVEAL 900 ms, FALL 1000 ms, LAND 620 ms.</li>
+        <li>A fenda inclina 3 graus e o labio lima tem ate 4 px.</li>
+        <li>Camera do loading alta (y 27) olhando a praca, com deriva periodica de 2400 ms.</li>
+        <li>No REVEAL a camera sobe para o ceu, acompanha a queda e fecha atras do personagem.</li>
+        <li>Queda de 24 unidades em 1480 ms com aceleracao quadratica, iniciando 420 ms depois do fim do loading, com giro lento de 157 graus no ar.</li>
+        <li>Pouso com esmagamento 0.66, repique 1.06 e anel de poeira lima de raio 1 para 4.2.</li>
+        <li>Boneco provisorio: tronco lima, cabeca creme, membros azul escuro, terminando de costas para a camera.</li>
+        <li>Indicador: 5 lampadas ou 2 setas, ciclo de 1.4 s, atraso de 90 ms por lampada, sem texto e sem barra.</li>
+        <li>A roleta fica parada e sem som enquanto espera o Enter.</li>
+        <li>O unico quadro de cor cheia e a faixa azul escuro no fim da varredura, que pertence a roleta: sem piscada e sem estrobo.</li>
+        <li>Passo fixo de 16.67 ms para os testes deterministicos.</li>
+        <li>Os dois botoes da roleta iniciam a transicao, porque neste prototipo nao existe hub anterior.</li>
+      </ol>
+    </details>
+    <div class="tip">Enter ou clique no palco. Parametros: ?auto=1 ?load=1800 ?indicator=bulbs ?t=1200</div>
+  </div>
+</div>
+<div id="viewport">
+  <div id="stage">
+    <canvas id="view"></canvas>
+    <div id="backdrop"></div>
+    <div id="slot" data-state="SETTLED">
+      <div class="slot-stage">
+        <header class="slot-head">
+          <div class="slot-kicker">NATURE ROLL</div>
+          <div class="slot-headline">BRAVE LOCKED</div>
+        </header>
+        <div class="slot-machine">
+          <div class="slot-bulbs top" aria-hidden="true"></div>
+          <div class="slot-bulbs bottom" aria-hidden="true"></div>
+          <div class="slot-reels">
+            <div class="slot-reel" data-reel="0"><div class="slot-strip"></div></div>
+            <div class="slot-reel" data-reel="1"><div class="slot-strip"></div></div>
+            <div class="slot-reel" data-reel="2"><div class="slot-strip"></div></div>
+            <div class="slot-payline" aria-hidden="true"></div>
+          </div>
+        </div>
+        <div class="slot-result">
+          <div class="slot-result-name">Brave</div>
+          <div class="slot-stamp">STAMPED: BRAVE</div>
+          <div class="slot-desc">Frontline brawl posture favoring heavy Strength and durability over speed.</div>
+          <div class="slot-actions">
+            <button class="slot-enter" type="button">ENTER 3D EXPEDITION [ENTER]</button>
+            <button class="slot-back" type="button">BACK TO HUB [X]</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="slabs" aria-hidden="true">
+      <div class="slab a"></div>
+      <div class="slab b"></div>
+    </div>
+    <div id="jaws" aria-hidden="true">
+      <div class="jaw top"></div>
+      <div class="jaw bottom"></div>
+      <div class="rim top"></div>
+      <div class="rim bottom"></div>
+    </div>
+    <div id="loader" data-kind="bulbs" aria-hidden="true">
+      <div class="ld ld-bulbs"><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="ld ld-pay"><b class="l"></b><b class="r"></b></div>
+    </div>
+  </div>
+</div>
+<script type="module">
+/* Sample nature (Brave). Strings read from the approved roulette. */
+const STAT_ORDER = ['STR', 'MAG', 'VIT', 'WIS', 'AGI', 'LUK'];
+const BRAVE = {
+  name: 'Brave',
+  mods: { STR: 2, MAG: 0, VIT: 1, WIS: 0, AGI: -3, LUK: 0 },
+  desc: 'Frontline brawl posture favoring heavy Strength and durability over speed.'
+};
+function symbolsFor(nature) {
+  const entries = [];
+  for (let i = 0; i < STAT_ORDER.length; i++) {
+    const stat = STAT_ORDER[i];
+    const value = nature.mods[stat] || 0;
+    if (value !== 0) entries.push({ stat: stat, value: value, order: i });
+  }
+  entries.sort((a, b) => (b.value !== a.value ? b.value - a.value : a.order - b.order));
+  return entries.slice(0, 3).map((e) => e.stat + ' ' + (e.value > 0 ? '+' : '-') + Math.abs(e.value));
+}
+/* Neighbour symbol for the dimmed rows above and below the payline. */
+function neighborSymbol(symbol, dir) {
+  const parts = symbol.split(' ');
+  const stat = parts[0];
+  const value = parseInt(parts[1], 10);
+  const next = value + dir;
+  if (next !== 0 && Math.abs(next) <= 3) return stat + ' ' + (next > 0 ? '+' + next : '-' + Math.abs(next));
+  const index = STAT_ORDER.indexOf(stat);
+  const fallback = STAT_ORDER[(index + (dir > 0 ? 1 : STAT_ORDER.length - 1)) % STAT_ORDER.length];
+  const edge = dir > 0 ? 3 : -3;
+  return fallback + ' ' + (edge > 0 ? '+' + edge : '-' + edge);
+}
+function cellEl(symbol) {
+  const cell = document.createElement('div');
+  if (symbol === 'NONE') {
+    cell.className = 'slot-cell is-none';
+    const none = document.createElement('span');
+    none.className = 'v';
+    none.textContent = symbol;
+    cell.appendChild(none);
+    return cell;
+  }
+  cell.className = 'slot-cell ' + (symbol.indexOf('+') !== -1 ? 'is-pos' : 'is-neg');
+  const stat = document.createElement('span');
+  stat.className = 's';
+  stat.textContent = symbol.split(' ')[0];
+  const value = document.createElement('span');
+  value.className = 'v';
+  value.textContent = symbol.split(' ')[1];
+  cell.appendChild(stat);
+  cell.appendChild(value);
+  return cell;
+}
+function buildSlot() {
+  const rows = document.querySelectorAll('#slot .slot-bulbs');
+  for (let r = 0; r < rows.length; r++) {
+    for (let i = 0; i < 13; i++) rows[r].appendChild(document.createElement('i'));
+  }
+  const wins = symbolsFor(BRAVE);
+  for (let i = 0; i < wins.length; i++) {
+    const strip = document.querySelector('#slot .slot-reel[data-reel="' + i + '"] .slot-strip');
+    strip.appendChild(cellEl(neighborSymbol(wins[i], -1)));
+    const win = cellEl(wins[i]);
+    win.classList.add('is-win');
+    strip.appendChild(win);
+    strip.appendChild(cellEl(neighborSymbol(wins[i], 1)));
+  }
+}
+/* Math helpers. */
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const mix3 = (A, B, t) => [lerp(A[0], B[0], t), lerp(A[1], B[1], t), lerp(A[2], B[2], t)];
+function smoothstep(t) {
+  t = clamp(t, 0, 1);
+  return t * t * (3 - 2 * t);
+}
+function easeInOutCubic(t) {
+  t = clamp(t, 0, 1);
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+function cubicBezier(x1, y1, x2, y2) {
+  const bx = (t) => 3 * (1 - t) * (1 - t) * t * x1 + 3 * (1 - t) * t * t * x2 + t * t * t;
+  const by = (t) => 3 * (1 - t) * (1 - t) * t * y1 + 3 * (1 - t) * t * t * y2 + t * t * t;
+  return function (x) {
+    x = clamp(x, 0, 1);
+    let lo = 0;
+    let hi = 1;
+    for (let i = 0; i < 20; i++) {
+      const mid = (lo + hi) / 2;
+      if (bx(mid) < x) lo = mid;
+      else hi = mid;
+    }
+    return by((lo + hi) / 2);
+  };
+}
+const wipeEase = cubicBezier(0.7, 0, 0.2, 1);
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+/* Parameters and timeline. */
+const Q = new URLSearchParams(location.search);
+function numParam(name, fallback) {
+  if (!Q.has(name)) return fallback;
+  const v = parseFloat(Q.get(name));
+  return isNaN(v) ? fallback : v;
+}
+const NAMES = ['SETTLED', 'EXIT', 'LOADING_LOOP', 'REVEAL', 'FALL', 'LAND', 'CONTROL'];
+const LOOP_MS = 2400;
+const STEP = 1000 / 60;
+let LOAD_MS = clamp(Math.round(numParam('load', 1800)), 0, 6000);
+let SPEED = numParam('speed', 1);
+const T_PARAM = Q.has('t') ? Math.max(0, Math.round(numParam('t', 0))) : null;
+let indicator = Q.get('indicator') === 'payline' ? 'payline' : 'bulbs';
+const AUTO = Q.get('auto') === '1';
+let TL = null;
+let LOOP_START_POSE = null;
+let LOOP_END_POSE = null;
+let SKY_TGT = [0, 14.5, 0];
+const SKY_POS = [11.5, 13.5, 15.5];
+const FALL_END_POS = [6.4, 5.4, 10.4];
+const CTRL_POS = [0.2, 3.05, 8.6];
+const CTRL_TGT = [0, 1.55, 0];
+const FALL_HEIGHT = 24;
+function loopPose(P) {
+  const d = (1 - Math.cos(2 * Math.PI * P)) / 2;
+  const s = Math.sin(2 * Math.PI * P);
+  return { pos: [9 + 1.8 * d, 27 + 0.9 * s, 15 - 1.3 * d], tgt: [0, 0.4 + 0.9 * d, 0] };
+}
+function rebuildTimeline() {
+  const exitEnd = 900;
+  const sweepEnd = 620;
+  const openEnd = 900;
+  const loopEnd = exitEnd + LOAD_MS;
+  const revealEnd = loopEnd + 900;
+  const fallEnd = revealEnd + 1000;
+  const landEnd = fallEnd + 620;
+  const fallStart = loopEnd + 420;
+  TL = { exitEnd: exitEnd, sweepEnd: sweepEnd, openEnd: openEnd, loopEnd: loopEnd, revealEnd: revealEnd, fallEnd: fallEnd, landEnd: landEnd, fallStart: fallStart };
+  const u0 = clamp((revealEnd - fallStart) / (fallEnd - fallStart), 0, 1);
+  SKY_TGT = [0, 1.2 + FALL_HEIGHT * (1 - u0 * u0) * 0.62, 0];
+  LOOP_START_POSE = loopPose(0);
+  LOOP_END_POSE = loopPose((loopEnd - exitEnd) / LOOP_MS);
+}
+function stateAt(T) {
+  if (T < TL.exitEnd) return 'EXIT';
+  if (T < TL.loopEnd) return 'LOADING_LOOP';
+  if (T < TL.revealEnd) return 'REVEAL';
+  if (T < TL.fallEnd) return 'FALL';
+  if (T < TL.landEnd) return 'LAND';
+  return 'CONTROL';
+}
+function charHeightAt(T) {
+  if (T < TL.fallStart) return FALL_HEIGHT;
+  const u = clamp((T - TL.fallStart) / (TL.fallEnd - TL.fallStart), 0, 1);
+  return FALL_HEIGHT * (1 - u * u);
+}
+function apertureAt(T) {
+  if (T < TL.sweepEnd) return -1;
+  if (T < TL.openEnd) return lerp(-1, 34, smoothstep((T - TL.sweepEnd) / (TL.openEnd - TL.sweepEnd)));
+  if (T < TL.loopEnd) {
+    const d = (1 - Math.cos(2 * Math.PI * (T - TL.exitEnd) / LOOP_MS)) / 2;
+    return 34 + 2.2 * d;
+  }
+  if (T < TL.revealEnd) {
+    const dEnd = (1 - Math.cos(2 * Math.PI * (TL.loopEnd - TL.exitEnd) / LOOP_MS)) / 2;
+    return lerp(34 + 2.2 * dEnd, 830, easeInOutCubic((T - TL.loopEnd) / (TL.revealEnd - TL.loopEnd)));
+  }
+  return 830;
+}
+/* DOM references. */
+const stageEl = document.getElementById('stage');
+const slotEl = document.getElementById('slot');
+const backdropEl = document.getElementById('backdrop');
+const slabsEl = document.getElementById('slabs');
+const slabA = slabsEl.querySelector('.slab.a');
+const slabB = slabsEl.querySelector('.slab.b');
+const jawsEl = document.getElementById('jaws');
+const jawTop = jawsEl.querySelector('.jaw.top');
+const jawBottom = jawsEl.querySelector('.jaw.bottom');
+const rimTop = jawsEl.querySelector('.rim.top');
+const rimBottom = jawsEl.querySelector('.rim.bottom');
+const loaderEl = document.getElementById('loader');
+const lamps = Array.from(loaderEl.querySelectorAll('.ld-bulbs i'));
+const chevL = loaderEl.querySelector('.ld-pay .l');
+const chevR = loaderEl.querySelector('.ld-pay .r');
+const pState = document.getElementById('pState');
+const pMs = document.getElementById('pMs');
+/* One slanted seam through the centre, both lips parallel. */
+const SEAM_MID = 360;
+const SEAM_TAN = Math.tan(-3 * Math.PI / 180);
+const SEAM_LEFT = SEAM_MID + SEAM_TAN * (0 - 640);
+const SEAM_RIGHT = SEAM_MID + SEAM_TAN * (1280 - 640);
+function setJaws(a, rim) {
+  const yl = SEAM_LEFT;
+  const yr = SEAM_RIGHT;
+  jawTop.style.clipPath = 'polygon(0px 0px, 1280px 0px, 1280px ' + (yr - a).toFixed(2) + 'px, 0px ' + (yl - a).toFixed(2) + 'px)';
+  jawBottom.style.clipPath = 'polygon(0px ' + (yl + a).toFixed(2) + 'px, 1280px ' + (yr + a).toFixed(2) + 'px, 1280px 720px, 0px 720px)';
+  rimTop.style.clipPath = 'polygon(0px ' + (yl - a - rim).toFixed(2) + 'px, 1280px ' + (yr - a - rim).toFixed(2) + 'px, 1280px ' + (yr - a).toFixed(2) + 'px, 0px ' + (yl - a).toFixed(2) + 'px)';
+  rimBottom.style.clipPath = 'polygon(0px ' + (yl + a).toFixed(2) + 'px, 1280px ' + (yr + a).toFixed(2) + 'px, 1280px ' + (yr + a + rim).toFixed(2) + 'px, 0px ' + (yl + a + rim).toFixed(2) + 'px)';
+  rimTop.style.display = rim > 0.05 ? 'block' : 'none';
+  rimBottom.style.display = rim > 0.05 ? 'block' : 'none';
+}
+/* Loading indicator, driven by simulated time and never by CSS clocks. */
+function paintLoader(T) {
+  let alpha = 0;
+  if (T >= TL.sweepEnd) {
+    alpha = smoothstep((T - TL.sweepEnd) / Math.max(1, TL.openEnd - TL.sweepEnd));
+    if (T >= TL.loopEnd) alpha = 1 - smoothstep((T - TL.loopEnd) / 220);
+  }
+  alpha = clamp(alpha, 0, 1);
+  loaderEl.style.opacity = alpha.toFixed(3);
+  loaderEl.style.display = alpha > 0.002 ? 'flex' : 'none';
+  if (indicator === 'bulbs') {
+    for (let i = 0; i < lamps.length; i++) {
+      let p = (T / 1400 - i * 0.064) % 1;
+      if (p < 0) p += 1;
+      const on = p < 0.34;
+      lamps[i].style.background = on ? 'var(--payline)' : '#1d3a4d';
+      lamps[i].style.opacity = on ? '1' : '0.7';
+    }
+  } else {
+    let p = (T / 1200) % 1;
+    if (p < 0) p += 1;
+    const s = (1 - Math.cos(2 * Math.PI * p)) / 2;
+    chevL.style.opacity = (0.3 + 0.7 * s).toFixed(3);
+    chevR.style.opacity = (0.3 + 0.7 * s).toFixed(3);
+    chevL.style.transform = 'translateX(' + (s * 5).toFixed(2) + 'px)';
+    chevR.style.transform = 'translateX(-' + (s * 5).toFixed(2) + 'px)';
+  }
+}
+/* 3D world: ground, plaza, volumes, light, fog, placeholder figure. */
+let THREE = null;
+let renderer = null;
+let scene = null;
+let camera = null;
+let fig = null;
+let blob = null;
+let dust = null;
+function buildWorld() {
+  renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('view'), antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(1280, 720, false);
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x051322);
+  scene.fog = new THREE.Fog(0x051322, 26, 78);
+  camera = new THREE.PerspectiveCamera(50, 1280 / 720, 0.1, 320);
+  scene.add(new THREE.HemisphereLight(0x8ea7b0, 0x051322, 0.95));
+  const keyLight = new THREE.DirectionalLight(0xf0c57e, 1.1);
+  keyLight.position.set(16, 28, 12);
+  scene.add(keyLight);
+  const rimLight = new THREE.DirectionalLight(0x63d9ec, 0.5);
+  rimLight.position.set(-18, 12, -14);
+  scene.add(rimLight);
+  const plazaLight = new THREE.PointLight(0xd6fa66, 1.0, 34, 2);
+  plazaLight.position.set(0, 4, 0);
+  scene.add(plazaLight);
+  const flat = (color) => new THREE.MeshLambertMaterial({ color: color });
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(260, 260), flat(0x0a2028));
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -0.02;
+  scene.add(ground);
+  const grid = new THREE.GridHelper(240, 24, 0x143343, 0x102a3a);
+  grid.position.y = 0.005;
+  grid.material.transparent = true;
+  grid.material.opacity = 0.55;
+  scene.add(grid);
+  const plaza = new THREE.Mesh(new THREE.CylinderGeometry(7, 7.4, 0.42, 48), flat(0x1b4356));
+  plaza.position.y = 0.21;
+  scene.add(plaza);
+  const deck = new THREE.Mesh(new THREE.CylinderGeometry(4.4, 4.4, 0.03, 48), flat(0x235466));
+  deck.position.y = 0.43;
+  scene.add(deck);
+  const plazaRing = new THREE.Mesh(new THREE.RingGeometry(6.55, 7.05, 64), new THREE.MeshBasicMaterial({ color: 0xd6fa66, side: THREE.DoubleSide }));
+  plazaRing.rotation.x = -Math.PI / 2;
+  plazaRing.position.y = 0.44;
+  scene.add(plazaRing);
+  for (let i = 0; i < 8; i++) {
+    const ang = (i / 8) * Math.PI * 2 + Math.PI / 8;
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.5, 0.5), flat(0x143343));
+    post.position.set(Math.cos(ang) * 7.7, 0.75, Math.sin(ang) * 7.7);
+    post.rotation.y = -ang;
+    scene.add(post);
+    const cap = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.12, 0.56), flat(0xd6fa66));
+    cap.position.set(Math.cos(ang) * 7.7, 1.56, Math.sin(ang) * 7.7);
+    cap.rotation.y = -ang;
+    scene.add(cap);
+  }
+  const palette = [0x092133, 0x0f2a3a, 0x143343, 0x1b3b4d];
+  const rnd = mulberry32(0x1a2b3c);
+  for (let i = 0; i < 15; i++) {
+    const ang = (i / 15) * Math.PI * 2 + (rnd() - 0.5) * 0.22;
+    const rad = 16 + rnd() * 11;
+    const w = 3.2 + rnd() * 3.2;
+    const d = 3.2 + rnd() * 3.2;
+    const h = 4 + rnd() * 11;
+    const box = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), flat(palette[Math.floor(rnd() * palette.length)]));
+    box.position.set(Math.cos(ang) * rad, h / 2, Math.sin(ang) * rad);
+    box.rotation.y = -ang + 0.2 + rnd() * 0.3;
+    scene.add(box);
+    if (rnd() > 0.5) {
+      const top = new THREE.Mesh(new THREE.BoxGeometry(w * 1.02, 0.26, d * 1.02), flat(0xd6fa66));
+      top.position.set(box.position.x, h + 0.13, box.position.z);
+      top.rotation.y = box.rotation.y;
+      scene.add(top);
+    }
+  }
+  for (let i = 0; i < 3; i++) {
+    const ang = (i / 3) * Math.PI * 2 + 0.5;
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(9, 1.1, 1.1), flat(0x0f2a3a));
+    wall.position.set(Math.cos(ang) * 11.6, 0.55, Math.sin(ang) * 11.6);
+    wall.rotation.y = -ang;
+    scene.add(wall);
+  }
+  const mBody = new THREE.MeshLambertMaterial({ color: 0xd6fa66 });
+  const mHead = new THREE.MeshLambertMaterial({ color: 0xf4eee1 });
+  const mLimb = new THREE.MeshLambertMaterial({ color: 0x143343 });
+  fig = new THREE.Group();
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.86, 1.12, 0.52), mBody);
+  torso.position.y = 1.46;
+  const head = new THREE.Mesh(new THREE.IcosahedronGeometry(0.34, 0), mHead);
+  head.position.y = 2.24;
+  const armL = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.82, 0.22), mLimb);
+  armL.position.set(-0.58, 1.55, 0);
+  const armR = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.82, 0.22), mLimb);
+  armR.position.set(0.58, 1.55, 0);
+  const legL = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.9, 0.28), mLimb);
+  legL.position.set(-0.22, 0.45, 0);
+  const legR = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.9, 0.28), mLimb);
+  legR.position.set(0.22, 0.45, 0);
+  fig.add(torso, head, armL, armR, legL, legR);
+  fig.visible = false;
+  scene.add(fig);
+  blob = new THREE.Mesh(new THREE.CircleGeometry(0.9, 24), new THREE.MeshBasicMaterial({ color: 0x04101b, transparent: true, opacity: 0.34 }));
+  blob.rotation.x = -Math.PI / 2;
+  blob.position.y = 0.46;
+  blob.visible = false;
+  scene.add(blob);
+  dust = new THREE.Mesh(new THREE.RingGeometry(0.55, 1.0, 40), new THREE.MeshBasicMaterial({ color: 0xd6fa66, transparent: true, opacity: 0, side: THREE.DoubleSide }));
+  dust.rotation.x = -Math.PI / 2;
+  dust.position.y = 0.47;
+  dust.visible = false;
+  scene.add(dust);
+}
+function cameraAt(T) {
+  if (T < TL.exitEnd) return LOOP_START_POSE;
+  if (T < TL.loopEnd) return loopPose((T - TL.exitEnd) / LOOP_MS);
+  if (T < TL.revealEnd) {
+    const u = easeInOutCubic((T - TL.loopEnd) / (TL.revealEnd - TL.loopEnd));
+    return { pos: mix3(LOOP_END_POSE.pos, SKY_POS, u), tgt: mix3(LOOP_END_POSE.tgt, SKY_TGT, u) };
+  }
+  if (T < TL.fallEnd) {
+    const u = smoothstep((T - TL.revealEnd) / (TL.fallEnd - TL.revealEnd));
+    return { pos: mix3(SKY_POS, FALL_END_POS, u), tgt: [0, 1.2 + charHeightAt(T) * 0.62, 0] };
+  }
+  if (T < TL.landEnd) {
+    const u = smoothstep((T - TL.fallEnd) / (TL.landEnd - TL.fallEnd));
+    const shake = 0.16 * Math.exp(-u * 6) * Math.sin(u * 26);
+    const pos = mix3(FALL_END_POS, CTRL_POS, u);
+    pos[0] += shake * 0.6;
+    pos[1] += shake;
+    return { pos: pos, tgt: mix3([0, 1.2, 0], CTRL_TGT, u) };
+  }
+  return { pos: CTRL_POS, tgt: CTRL_TGT };
+}
+function updateWorld(T, state) {
+  if (!renderer) return;
+  const SURF = 0.44;
+  const height = state === 'SETTLED' ? FALL_HEIGHT : charHeightAt(T);
+  const visible = T >= TL.fallStart;
+  fig.visible = visible;
+  fig.position.set(0, SURF + height, 0);
+  const uFall = T >= TL.fallStart ? clamp((T - TL.fallStart) / (TL.fallEnd - TL.fallStart), 0, 1) : 0;
+  fig.rotation.y = 0.4 + (Math.PI - 0.4) * smoothstep(uFall);
+  fig.rotation.z = 0.18 * Math.sin(uFall * Math.PI * 2) * (1 - uFall);
+  fig.rotation.x = -0.12 * (1 - uFall);
+  let sy = 1;
+  if (T >= TL.fallEnd) {
+    const u = clamp((T - TL.fallEnd) / (TL.landEnd - TL.fallEnd), 0, 1);
+    if (u < 0.18) sy = lerp(1, 0.66, u / 0.18);
+    else if (u < 0.55) sy = lerp(0.66, 1.06, (u - 0.18) / 0.37);
+    else sy = lerp(1.06, 1, (u - 0.55) / 0.45);
+  } else if (visible) {
+    sy = 1.04;
+  }
+  const wide = 1 / Math.sqrt(Math.max(0.2, sy));
+  fig.scale.set(wide, sy, wide);
+  blob.visible = visible;
+  const blobScale = clamp(1.5 / (1 + height * 0.22), 0.22, 1.4);
+  blob.scale.set(blobScale, blobScale, 1);
+  blob.material.opacity = 0.34 * clamp(1 - height / 40, 0.12, 1);
+  if (T >= TL.fallEnd && T < TL.landEnd) {
+    const u = clamp((T - TL.fallEnd) / (TL.landEnd - TL.fallEnd), 0, 1);
+    dust.visible = true;
+    dust.material.opacity = 0.7 * (1 - u);
+    const ds = 0.7 + 3.5 * u;
+    dust.scale.set(ds, ds, 1);
+  } else {
+    dust.visible = false;
+  }
+  const pose = cameraAt(T);
+  camera.position.set(pose.pos[0], pose.pos[1], pose.pos[2]);
+  camera.lookAt(pose.tgt[0], pose.tgt[1], pose.tgt[2]);
+  renderer.render(scene, camera);
+}
+/* Frame application, a pure function of the simulated time. */
+let started = false;
+let frozen = false;
+let T = 0;
+let acc = 0;
+let lastWall = 0;
+const proto = { state: 'SETTLED', t: 0, loadDone: false, states: NAMES.slice() };
+window.__proto = proto;
+function apply() {
+  if (!TL) return;
+  const inTransition = started && T >= TL.sweepEnd;
+  const state = started ? stateAt(T) : 'SETTLED';
+  slotEl.style.display = inTransition ? 'none' : 'block';
+  backdropEl.style.display = inTransition ? 'none' : 'block';
+  if (!started || T >= TL.sweepEnd) {
+    slabsEl.classList.remove('on');
+  } else {
+    slabsEl.classList.add('on');
+    const ua = clamp(T / 460, 0, 1);
+    const ub = clamp((T - 160) / 460, 0, 1);
+    slabA.style.transform = 'translateX(' + (-135 * (1 - wipeEase(ua))).toFixed(3) + '%) skewX(-9deg)';
+    slabB.style.transform = 'translateX(' + (-135 * (1 - wipeEase(ub))).toFixed(3) + '%) skewX(-9deg)';
+  }
+  jawsEl.classList.toggle('on', inTransition);
+  const aperture = started ? apertureAt(T) : -1;
+  setJaws(aperture, clamp((aperture + 1) * 0.18, 0, 4));
+  paintLoader(started ? T : -1000);
+  updateWorld(T, state);
+  pState.textContent = state;
+  pMs.textContent = Math.round(T) + ' ms';
+  proto.state = state;
+  proto.t = Math.round(T);
+  proto.loadDone = started && T >= TL.loopEnd;
+}
+function start() {
+  if (started && T < TL.landEnd) return;
+  started = true;
+  frozen = false;
+  T = 0;
+  acc = 0;
+  lastWall = 0;
+  apply();
+}
+function replay() {
+  started = true;
+  frozen = false;
+  T = 0;
+  acc = 0;
+  lastWall = 0;
+  apply();
+}
+function tick(ts) {
+  requestAnimationFrame(tick);
+  if (!started || frozen) return;
+  const dt = lastWall ? Math.min(100, ts - lastWall) : STEP;
+  lastWall = ts;
+  acc += dt * SPEED;
+  let guard = 0;
+  while (acc >= STEP && guard < 8) {
+    acc -= STEP;
+    guard++;
+    T += STEP;
+    if (T >= TL.landEnd) {
+      T = TL.landEnd;
+      acc = 0;
+      break;
+    }
+  }
+  apply();
+}
+function wireUI() {
+  document.getElementById('fold').addEventListener('click', () => {
+    const panel = document.getElementById('panel');
+    panel.classList.toggle('is-min');
+    document.getElementById('fold').textContent = panel.classList.contains('is-min') ? 'abrir' : 'fechar';
+  });
+  document.getElementById('replay').addEventListener('click', replay);
+  const loadSlider = document.getElementById('pLoad');
+  loadSlider.value = String(LOAD_MS);
+  document.getElementById('pLoadV').textContent = LOAD_MS + ' ms';
+  loadSlider.addEventListener('input', () => {
+    LOAD_MS = clamp(parseInt(loadSlider.value, 10) || 0, 0, 6000);
+    document.getElementById('pLoadV').textContent = LOAD_MS + ' ms';
+    rebuildTimeline();
+    if (started && !frozen) T = Math.min(T, TL.landEnd);
+    apply();
+  });
+  const speedButtons = Array.from(document.querySelectorAll('#panel .sp'));
+  speedButtons.forEach((btn) => {
+    btn.classList.toggle('is-on', parseFloat(btn.dataset.sp) === SPEED);
+    btn.addEventListener('click', () => {
+      SPEED = parseFloat(btn.dataset.sp) || 1;
+      speedButtons.forEach((b) => b.classList.toggle('is-on', b === btn));
+    });
+  });
+  const indButtons = Array.from(document.querySelectorAll('#panel .ind'));
+  indButtons.forEach((btn) => {
+    btn.classList.toggle('is-on', btn.dataset.ind === indicator);
+    btn.addEventListener('click', () => {
+      indicator = btn.dataset.ind === 'payline' ? 'payline' : 'bulbs';
+      indButtons.forEach((b) => b.classList.toggle('is-on', b === btn));
+      loaderEl.dataset.kind = indicator;
+      apply();
+    });
+  });
+  loaderEl.dataset.kind = indicator;
+  stageEl.addEventListener('click', start);
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') start();
+  });
+  window.addEventListener('resize', fitStage);
+}
+function fitStage() {
+  const f = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+  document.documentElement.style.setProperty('--fit', String(f));
+}
+function showError(err) {
+  const box = document.createElement('div');
+  box.id = 'error';
+  box.textContent = 'Could not load ../vendor/three.module.min.js (' + (err && err.message ? err.message : 'error') + '). Serve over a local server, not file://.';
+  stageEl.appendChild(box);
+}
+/* Boot. */
+buildSlot();
+wireUI();
+fitStage();
+rebuildTimeline();
+try {
+  THREE = await import('../vendor/three.module.min.js');
+} catch (err) {
+  THREE = null;
+  showError(err);
+}
+if (THREE) {
+  buildWorld();
+  rebuildTimeline();
+  if (T_PARAM !== null) {
+    started = true;
+    frozen = true;
+    T = clamp(T_PARAM, 0, TL.landEnd);
+  } else if (AUTO) {
+    started = true;
+  }
+  apply();
+  requestAnimationFrame(tick);
+}
+</script>
+</body>
+</html>

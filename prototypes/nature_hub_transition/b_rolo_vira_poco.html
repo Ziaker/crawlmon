@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NATURE ROLL TO HUB - ROLO VIRA POCO</title>
+<style>
+:root{
+  --cell-h: 96px;
+  --reel-w: 196px;
+  --reel-gap: 12px;
+  --skew: -9deg;
+  --bg: #051322;
+  --slab: #092133;
+  --slab-2: #143343;
+  --panel: #0a1929;
+  --reel-bg: #07131e;
+  --ink: #080e18;
+  --payline: #f0c57e;
+  --text: #f4eee1;
+  --text-dim: #8ea7b0;
+  --accent: #d6fa66;
+  --pos: #d6fa66;
+  --neg: #ff746c;
+  --none: #8ea7b0;
+  --lamp-off: #1d3a4d;
+  --display: Impact, "Haettenschweiler", "Arial Narrow Bold", "Arial Black", sans-serif;
+  --mono: Consolas, "Cascadia Mono", "Courier New", monospace;
+  --fit: 1;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);overflow:hidden}
+
+/* stage: fixed 1280x720, scaled to the window */
+#stage{
+  position:absolute;left:50%;top:50%;width:1280px;height:720px;
+  transform-origin:center center;transform:translate(-50%,-50%) scale(var(--fit));
+  overflow:hidden;background:var(--bg);cursor:pointer;
+}
+#gl{position:absolute;left:0;top:0;width:1280px;height:720px;display:block;z-index:0}
+
+/* roulette, the approved locked look */
+.slot-root{
+  position:absolute;inset:0;background:var(--bg);color:var(--text);overflow:hidden;
+  z-index:2;will-change:transform,opacity,filter;font-family:var(--mono);
+}
+.slot-stage{position:absolute;inset:0}
+.slot-stage::before{
+  content:"";position:absolute;left:-260px;top:150px;width:1800px;height:360px;
+  background:var(--slab);transform:rotate(-8deg);z-index:0;
+}
+.slot-stage::after{
+  content:"";position:absolute;left:-260px;top:548px;width:1800px;height:30px;z-index:0;
+  background:repeating-linear-gradient(90deg,var(--slab-2) 0 44px,var(--slab) 44px 88px);
+  transform:rotate(-8deg);
+}
+.slot-stage > *{z-index:2}
+
+.slot-head{
+  position:absolute;left:78px;top:34px;margin:0;text-align:left;
+  transform:rotate(-3deg) skewX(var(--skew));transform-origin:left top;
+}
+.slot-kicker{
+  display:inline-block;padding:5px 14px;background:var(--payline);color:var(--ink);
+  font-size:15px;font-weight:700;letter-spacing:0.2em;
+}
+.slot-headline{
+  margin-top:10px;font-family:var(--display);font-size:66px;font-weight:400;
+  line-height:1;letter-spacing:0.02em;color:var(--accent);
+}
+
+.slot-machine{
+  position:absolute;left:70px;top:226px;padding:44px 26px 44px;background:var(--panel);
+  transform:rotate(-3deg) skewX(var(--skew));box-shadow:16px 16px 0 #000;
+}
+.slot-reels{position:relative;display:flex;gap:var(--reel-gap)}
+.slot-reel{
+  position:relative;width:var(--reel-w);height:calc(var(--cell-h) * 3);
+  overflow:hidden;background:var(--reel-bg);
+}
+.slot-reel::before,.slot-reel::after{
+  content:"";position:absolute;left:0;right:0;height:var(--cell-h);z-index:2;
+  background:rgba(5,19,34,0.66);pointer-events:none;
+}
+.slot-reel::before{top:0}
+.slot-reel::after{bottom:0}
+.slot-strip{position:absolute;left:0;top:0;width:100%;will-change:transform}
+
+.slot-cell{
+  height:var(--cell-h);display:flex;gap:10px;align-items:baseline;justify-content:center;
+  padding-top:22px;color:var(--text);transform:skewX(calc(var(--skew) * -1));
+}
+.slot-cell .s{font-size:23px;font-weight:700;letter-spacing:0.08em}
+.slot-cell .v{font-family:var(--display);font-size:50px;font-weight:400;line-height:1;letter-spacing:0.01em}
+.slot-cell.is-none .v{font-size:40px;letter-spacing:0.08em}
+.slot-cell.is-pos{color:var(--pos)}
+.slot-cell.is-neg{color:var(--neg)}
+.slot-cell.is-none{color:var(--none)}
+.slot-cell.is-win.is-pos{background:var(--pos);color:var(--ink)}
+.slot-cell.is-win.is-neg{background:var(--neg);color:var(--ink)}
+.slot-cell.is-win.is-none{background:var(--text);color:var(--ink)}
+
+.slot-payline{position:absolute;left:0;right:0;top:var(--cell-h);height:var(--cell-h);pointer-events:none}
+.slot-payline::before,.slot-payline::after{
+  content:"";position:absolute;left:auto;right:auto;top:calc(50% - 20px);bottom:auto;
+  width:20px;height:40px;background:var(--payline);
+}
+.slot-payline::before{left:-23px;clip-path:polygon(0 0,100% 50%,0 100%)}
+.slot-payline::after{right:-23px;clip-path:polygon(100% 0,0 50%,100% 100%)}
+
+.slot-bulbs{position:absolute;left:26px;right:26px;height:16px;display:flex;justify-content:space-between}
+.slot-bulbs.top{top:14px}
+.slot-bulbs.bottom{bottom:14px}
+.slot-bulbs i{display:block;width:30px;height:16px;background:var(--accent)}
+
+.slot-result{
+  position:absolute;left:796px;top:196px;width:470px;margin:0;
+  display:flex;flex-direction:column;align-items:flex-start;text-align:left;
+}
+.slot-result-name{
+  font-family:var(--display);font-size:108px;font-weight:400;line-height:0.9;
+  letter-spacing:0.01em;text-transform:uppercase;color:var(--text);
+  transform:rotate(-5deg) skewX(var(--skew));transform-origin:left bottom;
+}
+.slot-stamp{
+  margin:18px 0 0 150px;padding:9px 18px;background:var(--payline);color:var(--ink);
+  font-size:19px;font-weight:700;letter-spacing:0.16em;transform:rotate(6deg);
+}
+.slot-desc{
+  margin-top:40px;max-width:440px;font-size:20px;line-height:1.4;color:var(--text);
+  transform:skewX(var(--skew));
+}
+.slot-actions{
+  position:absolute;left:0;top:372px;margin:0;display:flex;gap:10px;
+  transform:skewX(var(--skew));
+}
+.slot-actions button{
+  padding:13px 16px;border:0;cursor:pointer;font-family:var(--mono);font-size:14px;
+  font-weight:700;letter-spacing:0.06em;white-space:nowrap;
+  background:var(--slab-2);color:var(--text);
+}
+.slot-actions .slot-enter{background:var(--accent);color:var(--ink);font-size:16px}
+
+/* the only loading sign: small pieces of the roulette */
+#loadInd{
+  position:absolute;left:50%;bottom:54px;z-index:4;opacity:0;pointer-events:none;
+  transform:translateX(-50%) skewX(var(--skew));display:flex;align-items:center;justify-content:center;
+}
+#loadInd .ind{display:none}
+#loadInd[data-ind="bulbs"] .ind-bulbs{display:flex}
+#loadInd[data-ind="payline"] .ind-payline{display:block}
+.ind-bulbs i{display:block;width:20px;height:11px;margin-right:5px;background:var(--lamp-off)}
+.ind-bulbs i.on{background:var(--accent)}
+.ind-payline{position:relative;width:264px;height:11px}
+.ind-payline::before,.ind-payline::after{
+  content:"";position:absolute;top:0;width:11px;height:11px;background:var(--payline);
+}
+.ind-payline::before{left:0;clip-path:polygon(0 0,100% 50%,0 100%)}
+.ind-payline::after{right:0;clip-path:polygon(100% 0,0 50%,100% 100%)}
+.ind-payline span{position:absolute;left:14px;right:14px;top:4px;height:3px;background:var(--payline)}
+
+/* debug panel, outside the stage look */
+#panel{
+  position:fixed;left:12px;top:12px;z-index:50;width:302px;background:#161a1f;color:#c9d4da;
+  border:1px solid #2b343c;border-radius:3px;font-family:Consolas,monospace;font-size:11px;line-height:1.4;
+}
+#panel .p-head{
+  display:flex;justify-content:space-between;width:100%;padding:7px 9px;border:0;cursor:pointer;
+  background:#1f262d;color:#e6eef2;font:inherit;font-weight:700;letter-spacing:0.14em;
+}
+#panel .p-head span{color:#7d8b94;font-weight:400;letter-spacing:0}
+#panel .p-body{display:block;padding:8px 9px 10px}
+#panel.is-closed .p-body{display:none}
+#panel .row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+#panel .row > span{min-width:64px;color:#8697a2}
+#panel button{font:inherit;padding:4px 7px;border:1px solid #2b343c;background:#1f262d;color:#dbe6ec;
+  cursor:pointer;border-radius:2px}
+#panel button.is-on{background:#d6fa66;color:#080e18;border-color:#d6fa66}
+#panel input[type="range"]{flex:1;min-width:0;accent-color:#d6fa66}
+#panel b{color:#f0c57e;font-weight:700}
+#panel details{margin-top:8px;border-top:1px solid #2b343c;padding-top:6px}
+#panel summary{cursor:pointer;color:#f0c57e;font-weight:700}
+#panel ol{margin:6px 0 0 0;padding-left:16px;color:#98a8b2}
+#panel ol li{margin-bottom:3px}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <canvas id="gl"></canvas>
+
+  <div class="slot-root" id="slotLayer">
+    <div class="slot-stage">
+      <header class="slot-head">
+        <div class="slot-kicker">NATURE ROLL</div>
+        <div class="slot-headline">BRAVE LOCKED</div>
+      </header>
+
+      <div class="slot-machine">
+        <div class="slot-bulbs top" aria-hidden="true"></div>
+        <div class="slot-bulbs bottom" aria-hidden="true"></div>
+        <div class="slot-reels">
+          <div class="slot-reel" data-reel="0"><div class="slot-strip"></div></div>
+          <div class="slot-reel" data-reel="1"><div class="slot-strip"></div></div>
+          <div class="slot-reel" data-reel="2"><div class="slot-strip"></div></div>
+          <div class="slot-payline" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <div class="slot-result">
+        <div class="slot-result-name">Brave</div>
+        <div class="slot-stamp">STAMPED: BRAVE</div>
+        <div class="slot-desc">Frontline brawl posture favoring heavy Strength and durability over speed.</div>
+        <div class="slot-actions">
+          <button class="slot-enter" type="button">ENTER 3D EXPEDITION [ENTER]</button>
+          <button class="slot-back" type="button">BACK TO HUB [X]</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="loadInd" data-ind="bulbs" aria-hidden="true">
+    <div class="ind ind-bulbs"></div>
+    <div class="ind ind-payline"><span></span></div>
+  </div>
+</div>
+
+<div id="panel">
+  <button class="p-head" id="panelToggle" type="button">DEBUG <span>hide</span></button>
+  <div class="p-body">
+    <div class="row"><button id="btnReplay" type="button">Replay</button></div>
+    <div class="row">
+      <span>Load (ms)</span>
+      <input id="slLoad" type="range" min="0" max="6000" step="50" value="1800">
+      <b id="loadVal">1800</b>
+    </div>
+    <div class="row">
+      <span>Velocidade</span>
+      <button class="sp" data-speed="0.25" type="button">0.25x</button>
+      <button class="sp" data-speed="0.5" type="button">0.5x</button>
+      <button class="sp is-on" data-speed="1" type="button">1x</button>
+    </div>
+    <div class="row">
+      <span>Indicador</span>
+      <button class="ind" data-ind="bulbs" type="button">bulbs</button>
+      <button class="ind" data-ind="payline" type="button">payline</button>
+    </div>
+    <div class="row"><span>Estado</span><b id="stState">SETTLED</b></div>
+    <div class="row"><span>t</span><b id="stTime">0 ms</b></div>
+    <details>
+      <summary>PENDENTE (proposta, criador decide)</summary>
+      <ol>
+        <li>Mergulho: zoom rigido no rolo do meio ate 8.6x com desfoque progressivo, e a roleta sai por opacidade no fim do zoom, sem corte.</li>
+        <li>Poco: 13 aneis a cada 4 m, 12 placas por anel, raio 7.4 m. As 3 placas vencedoras (STR +2, VIT +1, AGI -3) tem moldura cor de payline.</li>
+        <li>Marcas verticais do poco: aneis de payline a cada 12 m e faixas listradas atras das placas.</li>
+        <li>O poco termina numa iris escura que abre para o Hub. Isso nao esta nas palavras do criador.</li>
+        <li>O personagem sai de dentro do poco a 15.2 m e cai 1.25 s com aceleracao (na gravidade real seriam 1.7 s).</li>
+        <li>Pouso: esmagamento com ressalto, 10 estilhacos flat e um anel que expande. Sem tremor de tela.</li>
+        <li>Camera depois do pouso: grua do alto ate atras do personagem em 1.4 s, fov de 58 para 52.</li>
+        <li>Paleta do Hub: slabs do mar da roleta, aro dourado na praca, marca accent no centro, nevoa de 34 a 150.</li>
+        <li>Volumes do Hub: 10 blocos simples e 3 barras accent, sem detalhe.</li>
+        <li>Personagem placeholder: capsula, cabeca, viseira accent, bracos e pernas. Sem identidade de personagem.</li>
+        <li>Sombra: circulo flat falso no chao, sem shadow map.</li>
+        <li>Poco em MeshBasic (sem luz, cor flat igual ao CSS) e Hub em Lambert com luz.</li>
+        <li>Indicador bulbs: receita da roleta, 1.3 s por lampada, no maximo 1 mudanca por 1.3 s por lampada.</li>
+        <li>Indicador payline: respiracao suave de 0.35 a 0.85 em 1.6 s.</li>
+        <li>Tempos: saida 1150 ms, ciclo do loop 900 ms, revelacao 1500 ms, queda 1250 ms, pouso 620 ms, assentamento 1400 ms.</li>
+        <li>Clique em qualquer ponto do palco tambem inicia, alem de Enter.</li>
+        <li>Fov 74 dentro do poco, de 74 para 56 na revelacao (olho de peixe de proposito).</li>
+        <li>O botao BACK TO HUB [X] nao faz nada, mantido so pela fidelidade visual.</li>
+      </ol>
+    </details>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from '../vendor/three.module.min.js';
+
+/* helpers */
+const clamp = (v, a, b) => (v < a ? a : (v > b ? b : v));
+const lerp = (a, b, u) => a + (b - a) * u;
+const frac = (v) => v - Math.floor(v);
+const smooth = (u) => { u = clamp(u, 0, 1); return u * u * (3 - 2 * u); };
+const easeInOut = (u) => { u = clamp(u, 0, 1); return u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2; };
+
+/* url params */
+const Q = new URLSearchParams(location.search);
+const FREEZE = Q.has('t') ? Math.max(0, Number(Q.get('t')) || 0) : null;
+const AUTO = Q.get('auto') === '1';
+let loadMs = Q.has('load') ? clamp(Number(Q.get('load')) || 0, 0, 6000) : 1800;
+let indicator = Q.get('indicator') === 'payline' ? 'payline' : 'bulbs';
+let speed = 1;
+let started = AUTO || FREEZE !== null;
+let tSim = 0;
+let acc = 0;
+
+/* timeline in simulated ms */
+const T = { exit: 1150, minLoop: 250, reveal: 1500, fall: 1250, land: 620, ctrl: 1400, loop: 900, gap: 4 };
+const MOUTH_Y = 14;
+const RING_R = 7.4;
+const PLATE_W = 2.35;
+const PLATE_H = 1.45;
+const LAND_FOOT = 0.3;
+const FALL_FROM = 15.2;
+const STEP = 8;
+const STATES = ['SETTLED', 'EXIT', 'LOADING_LOOP', 'REVEAL', 'FALL', 'LAND', 'CONTROL'];
+
+function timeline() {
+  const loadDoneAt = Math.max(loadMs, T.exit + T.minLoop);
+  return {
+    loadDoneAt,
+    revealEnd: loadDoneAt + T.reveal,
+    fallEnd: loadDoneAt + T.reveal + T.fall,
+    landEnd: loadDoneAt + T.reveal + T.fall + T.land
+  };
+}
+
+function stateNow(tl) {
+  if (!started || tSim <= 0) return 'SETTLED';
+  if (tSim < T.exit) return 'EXIT';
+  if (tSim < tl.loadDoneAt) return 'LOADING_LOOP';
+  if (tSim < tl.revealEnd) return 'REVEAL';
+  if (tSim < tl.fallEnd) return 'FALL';
+  if (tSim < tl.landEnd) return 'LAND';
+  return 'CONTROL';
+}
+
+/* roulette symbols, same set as the approved slot */
+const REEL_SYMBOLS = [
+  'STR +2', 'MAG +3', 'VIT +1', 'WIS +2', 'AGI +3', 'LUK +1', 'NONE',
+  'STR -3', 'MAG -2', 'VIT -2', 'AGI -3', 'WIS -3', 'LUK -1'
+];
+const WIN_SYMBOLS = ['STR +2', 'VIT +1', 'AGI -3'];
+const CELL = 96;
+const COPIES = 2;
+const kindOf = (sym) => (sym === 'NONE' ? 'is-none' : (sym.indexOf('+') !== -1 ? 'is-pos' : 'is-neg'));
+
+/* DOM */
+const stageEl = document.getElementById('stage');
+const slotLayer = document.getElementById('slotLayer');
+const indEl = document.getElementById('loadInd');
+const bulbWrap = indEl.querySelector('.ind-bulbs');
+const payEl = indEl.querySelector('.ind-payline');
+
+/* three reels, locked on Brave */
+const reelEls = Array.prototype.slice.call(document.querySelectorAll('.slot-reel'));
+const strips = [];
+const baseOffsets = [];
+
+function makeCell(sym) {
+  const cell = document.createElement('div');
+  cell.className = 'slot-cell ' + kindOf(sym);
+  const parts = sym.split(' ');
+  if (parts.length === 2) {
+    const s = document.createElement('span');
+    s.className = 's';
+    s.textContent = parts[0];
+    const v = document.createElement('span');
+    v.className = 'v';
+    v.textContent = parts[1];
+    cell.appendChild(s);
+    cell.appendChild(document.createTextNode(' '));
+    cell.appendChild(v);
+  } else {
+    const v = document.createElement('span');
+    v.className = 'v';
+    v.textContent = sym;
+    cell.appendChild(v);
+  }
+  return cell;
+}
+
+for (let r = 0; r < 3; r++) {
+  const strip = reelEls[r].querySelector('.slot-strip');
+  for (let c = 0; c < COPIES; c++) {
+    for (let i = 0; i < REEL_SYMBOLS.length; i++) strip.appendChild(makeCell(REEL_SYMBOLS[i]));
+  }
+  let idx = REEL_SYMBOLS.indexOf(WIN_SYMBOLS[r]);
+  if (idx === 0) idx += REEL_SYMBOLS.length;
+  const winCell = strip.children[idx];
+  if (winCell) winCell.classList.add('is-win');
+  strips.push(strip);
+  baseOffsets.push((idx - 1) * CELL);
+}
+strips[0].style.transform = 'translateY(' + (-baseOffsets[0]) + 'px)';
+strips[1].style.transform = 'translateY(' + (-baseOffsets[1]) + 'px)';
+strips[2].style.transform = 'translateY(' + (-baseOffsets[2]) + 'px)';
+
+/* 13 lamps per row, the roulette count */
+for (const row of document.querySelectorAll('.slot-bulbs')) {
+  for (let i = 0; i < 13; i++) row.appendChild(document.createElement('i'));
+}
+
+/* the indicator uses the same lamp recipe */
+const lampEls = [];
+for (let i = 0; i < 9; i++) {
+  const lamp = document.createElement('i');
+  bulbWrap.appendChild(lamp);
+  lampEls.push(lamp);
+}
+
+/* exit zoom origin: middle reel center, measured once */
+let zoomOriginX = 402;
+let zoomOriginY = 414;
+let fitScale = 1;
+
+function measureZoomOrigin() {
+  const stageRect = stageEl.getBoundingClientRect();
+  const reelRect = reelEls[1].getBoundingClientRect();
+  if (!stageRect.width || !stageRect.height) return;
+  fitScale = stageRect.width / 1280;
+  zoomOriginX = (reelRect.left + reelRect.width / 2 - stageRect.left) / fitScale;
+  zoomOriginY = (reelRect.top + reelRect.height / 2 - stageRect.top) / fitScale;
+  slotLayer.style.transformOrigin = zoomOriginX.toFixed(2) + 'px ' + zoomOriginY.toFixed(2) + 'px';
+}
+
+function fitStage() {
+  const fit = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+  document.documentElement.style.setProperty('--fit', String(fit));
+  fitScale = fit;
+}
+
+/* renderer, scene, camera */
+const canvas = document.getElementById('gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setSize(1280, 720, false);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.NoToneMapping;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x051322);
+scene.fog = new THREE.Fog(0x051322, 34, 150);
+
+const cam = new THREE.PerspectiveCamera(74, 1280 / 720, 0.1, 420);
+
+/* tunnel: the reel symbols become the walls of the well */
+const TUNNEL_SYMBOLS = [
+  'STR +2', 'VIT +1', 'AGI -3', 'MAG +3', 'WIS +2', 'LUK +1',
+  'NONE', 'STR -3', 'MAG -2', 'VIT -2', 'AGI +3', 'WIS -3', 'LUK -1'
+];
+
+function plateTexture(label, kindName, hot) {
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 160;
+  const g = c.getContext('2d');
+  const color = kindName === 'is-pos' ? '#d6fa66' : (kindName === 'is-none' ? '#8ea7b0' : '#ff746c');
+  g.beginPath();
+  g.moveTo(26, 12);
+  g.lineTo(244, 30);
+  g.lineTo(230, 148);
+  g.lineTo(12, 130);
+  g.closePath();
+  g.fillStyle = hot ? '#13303f' : '#08151f';
+  g.fill();
+  g.lineWidth = hot ? 7 : 4;
+  g.strokeStyle = hot ? '#f0c57e' : '#2a4a5c';
+  g.stroke();
+  g.save();
+  g.translate(128, 82);
+  g.rotate(-0.055);
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.font = label.length > 4 ? '700 50px Consolas, monospace' : '700 54px Consolas, monospace';
+  g.fillStyle = color;
+  g.fillText(label, 0, 2);
+  g.restore();
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+const PLATE_GEO = new THREE.PlaneGeometry(PLATE_W, PLATE_H);
+const PLATE_MATS = {};
+for (const sym of TUNNEL_SYMBOLS) {
+  PLATE_MATS[sym] = new THREE.MeshBasicMaterial({
+    map: plateTexture(sym, kindOf(sym), WIN_SYMBOLS.indexOf(sym) !== -1),
+    transparent: true,
+    alphaTest: 0.4,
+    side: THREE.DoubleSide
+  });
+}
+
+const tunnelGroup = new THREE.Group();
+scene.add(tunnelGroup);
+
+const RING_COUNT = 13;
+const PLATES_PER_RING = 12;
+for (let k = 0; k < RING_COUNT; k++) {
+  const y = MOUTH_Y + k * T.gap;
+  for (let j = 0; j < PLATES_PER_RING; j++) {
+    const th = (j / PLATES_PER_RING) * Math.PI * 2;
+    const mesh = new THREE.Mesh(PLATE_GEO, PLATE_MATS[TUNNEL_SYMBOLS[j % TUNNEL_SYMBOLS.length]]);
+    mesh.position.set(Math.cos(th) * RING_R, y, Math.sin(th) * RING_R);
+    mesh.rotation.y = Math.atan2(-Math.cos(th), -Math.sin(th));
+    mesh.rotation.z = ((j % 3) - 1) * 0.09;
+    tunnelGroup.add(mesh);
+  }
+}
+
+/* striped slabs: one texture period equals one loop gap, so the loop is exact */
+const bandTexture = (() => {
+  const c = document.createElement('canvas');
+  c.width = 8;
+  c.height = 128;
+  const g = c.getContext('2d');
+  g.fillStyle = '#092133';
+  g.fillRect(0, 0, 8, 128);
+  g.fillStyle = '#143343';
+  g.fillRect(0, 0, 8, 64);
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(1, 13);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+})();
+const BAND_GEO = new THREE.PlaneGeometry(4.7, 52);
+const BAND_MAT = new THREE.MeshBasicMaterial({ map: bandTexture, side: THREE.DoubleSide });
+for (let j = 0; j < 8; j++) {
+  const th = (j / 8) * Math.PI * 2;
+  const band = new THREE.Mesh(BAND_GEO, BAND_MAT);
+  band.position.set(Math.cos(th) * 8.25, MOUTH_Y + 26, Math.sin(th) * 8.25);
+  band.rotation.y = Math.atan2(-Math.cos(th), -Math.sin(th));
+  tunnelGroup.add(band);
+}
+
+/* vertical accent rails */
+const RAIL_GEO = new THREE.BoxGeometry(0.09, 52, 0.09);
+const RAIL_MAT = new THREE.MeshBasicMaterial({ color: 0xd6fa66, transparent: true, opacity: 0.5 });
+for (let j = 0; j < 4; j++) {
+  const th = (j / 4) * Math.PI * 2 + 0.13;
+  const rail = new THREE.Mesh(RAIL_GEO, RAIL_MAT);
+  rail.position.set(Math.cos(th) * 7.95, MOUTH_Y + 26, Math.sin(th) * 7.95);
+  tunnelGroup.add(rail);
+}
+
+/* payline rings every 12 m, a multiple of the gap */
+const PAY_RING_GEO = new THREE.RingGeometry(7.55, 7.7, 56);
+for (let i = 0; i < 4; i++) {
+  const ring = new THREE.Mesh(PAY_RING_GEO, new THREE.MeshBasicMaterial({
+    color: 0xf0c57e,
+    transparent: true,
+    opacity: 0.35,
+    side: THREE.DoubleSide
+  }));
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = MOUTH_Y + 4 + i * 12;
+  tunnelGroup.add(ring);
+}
+
+/* the well ends in a dark iris, closed while loading */
+const iris = new THREE.Mesh(new THREE.CircleGeometry(8.7, 48), new THREE.MeshBasicMaterial({ color: 0x07131e }));
+iris.rotation.x = -Math.PI / 2;
+iris.position.y = MOUTH_Y;
+scene.add(iris);
+
+const rimMat = new THREE.MeshBasicMaterial({ color: 0xf0c57e, transparent: true, opacity: 0.9, side: THREE.DoubleSide });
+const rim = new THREE.Mesh(new THREE.RingGeometry(7.9, 8.8, 56), rimMat);
+rim.rotation.x = -Math.PI / 2;
+rim.position.y = MOUTH_Y + 0.02;
+scene.add(rim);
+
+/* the Hub: flat teal volumes around a gold rimmed plaza */
+const hub = new THREE.Group();
+scene.add(hub);
+
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(260, 260), new THREE.MeshLambertMaterial({ color: 0x0a1e2a }));
+ground.rotation.x = -Math.PI / 2;
+hub.add(ground);
+
+const plaza = new THREE.Mesh(new THREE.CylinderGeometry(9, 9, 0.3, 56), new THREE.MeshLambertMaterial({ color: 0x16323f }));
+plaza.position.y = 0.15;
+hub.add(plaza);
+
+const plazaRim = new THREE.Mesh(new THREE.RingGeometry(8.55, 9, 64), new THREE.MeshBasicMaterial({ color: 0xf0c57e }));
+plazaRim.rotation.x = -Math.PI / 2;
+plazaRim.position.y = 0.315;
+hub.add(plazaRim);
+
+const markMat = new THREE.MeshBasicMaterial({ color: 0xd6fa66, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
+const mark = new THREE.Mesh(new THREE.RingGeometry(1.05, 1.3, 40), markMat);
+mark.rotation.x = -Math.PI / 2;
+mark.position.y = 0.32;
+hub.add(mark);
+
+const BLOCKS = [
+  [0, -26, 14, 6, 5, 0x143343, true],
+  [-11, -16, 5, 10, 5, 0x092133, true],
+  [12, -18, 6, 8, 6, 0x0f2a37, true],
+  [-20, -8, 6, 7, 6, 0x143343, false],
+  [20, -9, 5, 9, 5, 0x092133, false],
+  [24, 6, 7, 5, 7, 0x143343, false],
+  [-24, 4, 5, 6, 5, 0x0f2a37, false],
+  [9, 21, 6, 5, 6, 0x092133, false],
+  [-9, 23, 5, 4, 5, 0x143343, false],
+  [0, 31, 18, 7, 4, 0x092133, false]
+];
+const blockMatA = new THREE.MeshLambertMaterial({ color: 0x143343 });
+const blockMatB = new THREE.MeshLambertMaterial({ color: 0x092133 });
+const blockMatC = new THREE.MeshLambertMaterial({ color: 0x0f2a37 });
+const accentMat = new THREE.MeshBasicMaterial({ color: 0xd6fa66 });
+for (const block of BLOCKS) {
+  const x = block[0], z = block[1], w = block[2], h = block[3], d = block[4], color = block[5];
+  const mat = color === 0x143343 ? blockMatA : (color === 0x092133 ? blockMatB : blockMatC);
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  mesh.position.set(x, h / 2, z);
+  hub.add(mesh);
+  if (block[6]) {
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(w * 0.26, h * 0.5, 0.12), accentMat);
+    bar.position.set(x, h * 0.56, z + d / 2 + 0.07);
+    hub.add(bar);
+  }
+}
+
+hub.add(new THREE.HemisphereLight(0x3d6a7a, 0x05121a, 1.05));
+const sun = new THREE.DirectionalLight(0xffe2b0, 1.35);
+sun.position.set(18, 30, 14);
+hub.add(sun);
+const glow = new THREE.PointLight(0xd6fa66, 0.75, 42);
+glow.position.set(0, 2.4, 0);
+hub.add(glow);
+
+/* neutral placeholder figure, no character identity */
+const actor = new THREE.Group();
+scene.add(actor);
+
+const matBody = new THREE.MeshLambertMaterial({ color: 0xf4eee1 });
+const matDark = new THREE.MeshLambertMaterial({ color: 0x143343 });
+const matAccent = new THREE.MeshBasicMaterial({ color: 0xd6fa66 });
+
+const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.36, 0.62, 6, 16), matBody);
+torso.position.y = 1.05;
+actor.add(torso);
+
+const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 18, 14), matBody);
+head.position.y = 1.86;
+actor.add(head);
+
+const visor = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.1, 0.1), matAccent);
+visor.position.set(0, 1.88, -0.25);
+actor.add(visor);
+
+const chest = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.2, 0.1), matAccent);
+chest.position.set(0, 1.2, -0.35);
+actor.add(chest);
+
+for (const side of [-1, 1]) {
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.56, 0.14), matDark);
+  arm.position.set(side * 0.44, 1.1, 0);
+  arm.rotation.z = side * -0.1;
+  actor.add(arm);
+  const leg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.64, 0.18), matDark);
+  leg.position.set(side * 0.19, 0.32, 0);
+  actor.add(leg);
+}
+actor.visible = false;
+
+const shadowMat = new THREE.MeshBasicMaterial({ color: 0x03080d, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.85, 28), shadowMat);
+shadow.rotation.x = -Math.PI / 2;
+shadow.position.y = LAND_FOOT + 0.03;
+shadow.visible = false;
+scene.add(shadow);
+
+/* landing fx: flat shards and one expanding payline ring */
+const shardGeo = new THREE.BoxGeometry(0.24, 0.1, 0.36);
+const shardMatA = new THREE.MeshBasicMaterial({ color: 0xd6fa66, transparent: true, opacity: 1 });
+const shardMatB = new THREE.MeshBasicMaterial({ color: 0xf0c57e, transparent: true, opacity: 1 });
+const shards = [];
+for (let i = 0; i < 10; i++) {
+  const s = new THREE.Mesh(shardGeo, i % 2 === 0 ? shardMatA : shardMatB);
+  s.userData.a = (i / 10) * Math.PI * 2 + 0.21;
+  s.userData.sp = 0.75 + (i % 3) * 0.22;
+  s.userData.vy = 3.4 + (i % 4) * 0.5;
+  s.visible = false;
+  scene.add(s);
+  shards.push(s);
+}
+
+const burstMat = new THREE.MeshBasicMaterial({ color: 0xf0c57e, transparent: true, opacity: 0, side: THREE.DoubleSide });
+const burst = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.12, 44), burstMat);
+burst.rotation.x = -Math.PI / 2;
+burst.position.y = LAND_FOOT + 0.04;
+burst.visible = false;
+scene.add(burst);
+
+/* one continuous 3D camera move */
+function loopPos(t) {
+  const a = frac((t - T.exit) / T.loop) * Math.PI * 2;
+  return [0.75 * Math.sin(a) + 0.25, 52, 0.75 * Math.cos(a)];
+}
+
+function cameraFor(t, tl) {
+  if (t < T.exit) {
+    const u = clamp(t / T.exit, 0, 1);
+    return { p: [lerp(0, 0.25, u), lerp(56, 52, u), lerp(0, 0.75, u)], l: [0, 44, -2.5], fov: 74 };
+  }
+  if (t < tl.loadDoneAt) {
+    const a = frac((t - T.exit) / T.loop) * Math.PI * 2;
+    return { p: [0.75 * Math.sin(a) + 0.25, 52, 0.75 * Math.cos(a)], l: [0, 44, -2.5], fov: 74 };
+  }
+
+  const p0 = loopPos(tl.loadDoneAt);
+
+  if (t < tl.revealEnd) {
+    const u = clamp((t - tl.loadDoneAt) / T.reveal, 0, 1);
+    const DIVE = 0.72;
+    const da = smooth(clamp(u / DIVE, 0, 1));
+    const db = smooth(clamp((u - DIVE) / (1 - DIVE), 0, 1));
+    const px = lerp(lerp(p0[0], 0, da), 0, db);
+    const py = lerp(lerp(p0[1], 10.5, da), 12.5, db);
+    const pz = lerp(lerp(p0[2], 0, da), 28, db);
+    const hubMix = smooth(clamp((u - 0.78) / 0.22, 0, 1));
+    return {
+      p: [px, py, pz],
+      l: [0, lerp(py - 8, 8.5, hubMix), lerp(-2.5, -2, hubMix)],
+      fov: lerp(74, 56, smooth(u))
+    };
+  }
+
+  if (t < tl.fallEnd) {
+    const u = clamp((t - tl.revealEnd) / T.fall, 0, 1);
+    const e = smooth(u);
+    const k = smooth(clamp(u / 0.26, 0, 1));
+    const ay = actorFoot(t, tl) + 0.95;
+    return {
+      p: [0, lerp(12.5, 10, e), lerp(28, 23, e)],
+      l: [0, lerp(8.5, ay, k), lerp(-2, 0, k)],
+      fov: lerp(56, 60, e)
+    };
+  }
+
+  if (t < tl.landEnd) {
+    const u = clamp((t - tl.fallEnd) / T.land, 0, 1);
+    const e = smooth(u);
+    const dip = 0.3 * Math.sin(Math.PI * clamp(u * 2.2, 0, 1)) * (1 - u);
+    return {
+      p: [0, lerp(10, 8.6, e) - dip, lerp(23, 18.5, e)],
+      l: [0, 1.3, 0],
+      fov: lerp(60, 58, e)
+    };
+  }
+
+  const u = clamp((t - tl.landEnd) / T.ctrl, 0, 1);
+  const e = easeInOut(u);
+  return {
+    p: [0, lerp(8.6, 2.9, e), lerp(18.5, 6.2, e)],
+    l: [0, lerp(1.3, 1.35, e), 0],
+    fov: lerp(58, 52, e)
+  };
+}
+
+/* closed form fall, so any time can be frozen */
+function actorFoot(t, tl) {
+  const u = clamp((t - tl.revealEnd) / T.fall, 0, 1);
+  return FALL_FROM + (LAND_FOOT - FALL_FROM) * (u * u);
+}
+
+function updateActor(t, tl) {
+  actor.visible = t >= tl.revealEnd;
+  if (!actor.visible) {
+    shadow.visible = false;
+    return;
+  }
+  const u = clamp((t - tl.revealEnd) / T.fall, 0, 1);
+  const foot = actorFoot(t, tl);
+  actor.position.set(0, foot, 0);
+  actor.rotation.y = t < tl.fallEnd ? lerp(-0.55, 0, smooth(u)) : 0;
+  if (t < tl.fallEnd) {
+    actor.scale.set(1 - 0.035 * u, 1 + 0.07 * u, 1 - 0.035 * u);
+  } else {
+    const lu = clamp((t - tl.fallEnd) / T.land, 0, 1);
+    const sq = 1 - 0.34 * Math.exp(-6.5 * lu) * Math.cos(lu * 20);
+    actor.scale.set(1 + (1 - sq) * 0.55, sq, 1 + (1 - sq) * 0.55);
+  }
+  shadow.visible = true;
+  const k = clamp(1 - Math.max(0, foot - LAND_FOOT) / 18, 0, 1);
+  const sc = 0.45 + 0.55 * k;
+  shadow.scale.set(sc, sc, 1);
+  shadow.material.opacity = 0.12 + 0.34 * k;
+}
+
+function updateFx(t, tl) {
+  const on = t >= tl.fallEnd && t < tl.landEnd;
+  const lu = clamp((t - tl.fallEnd) / T.land, 0, 1);
+  const fade = 1 - smooth((lu - 0.3) / 0.7);
+  shardMatA.opacity = fade;
+  shardMatB.opacity = fade;
+  for (let i = 0; i < shards.length; i++) {
+    const s = shards[i];
+    s.visible = on && fade > 0.02;
+    if (!s.visible) continue;
+    const tau = lu * 0.62;
+    const r = s.userData.sp * tau * 3.4;
+    const y = 0.36 + s.userData.vy * tau - 15 * tau * tau;
+    s.position.set(Math.cos(s.userData.a) * r, Math.max(0.34, y), Math.sin(s.userData.a) * r);
+    s.rotation.set(tau * 9 + i, tau * 7, tau * 5);
+  }
+  burst.visible = on;
+  if (on) {
+    const r = 1 + 5.5 * lu;
+    burst.scale.set(r, r, 1);
+    burstMat.opacity = 0.75 * (1 - lu) * (1 - lu);
+  }
+  mark.visible = t < tl.fallEnd;
+}
+
+function updateTunnel(t, tl) {
+  const tau = Math.max(0, Math.min(t, tl.loadDoneAt) - T.exit);
+  tunnelGroup.position.y = -T.gap * frac(tau / T.loop);
+  const rev = t - tl.loadDoneAt;
+  const open = rev > 0 ? smooth(clamp(rev / (T.reveal * 0.5), 0, 1)) : 0;
+  const s = 1 - open;
+  iris.visible = s > 0.012;
+  iris.scale.set(s, s, 1);
+  const rimFade = smooth(clamp((rev - T.reveal * 0.55) / (T.reveal * 0.45), 0, 1));
+  rimMat.opacity = 0.9 * (1 - rimFade);
+  rim.visible = t < tl.revealEnd + 200;
+}
+
+/* roulette layer: locked, then the dive into the middle reel */
+function applySlot(t) {
+  if (!started || t <= 0) {
+    slotLayer.style.visibility = 'visible';
+    slotLayer.style.opacity = '1';
+    slotLayer.style.filter = 'none';
+    slotLayer.style.transform = 'scale(1)';
+    strips[0].style.transform = 'translateY(' + (-baseOffsets[0]) + 'px)';
+    strips[1].style.transform = 'translateY(' + (-baseOffsets[1]) + 'px)';
+    strips[2].style.transform = 'translateY(' + (-baseOffsets[2]) + 'px)';
+    return;
+  }
+  if (t >= T.exit) {
+    slotLayer.style.visibility = 'hidden';
+    return;
+  }
+  slotLayer.style.visibility = 'visible';
+  const u = clamp(t / T.exit, 0, 1);
+  const scale = 1 + 7.6 * u * u;
+  const blur = 13 * u * u * u;
+  const fadeStart = T.exit * 0.62;
+  const op = t < fadeStart ? 1 : clamp(1 - (t - fadeStart) / (T.exit * 0.34), 0, 1);
+  slotLayer.style.transform = 'scale(' + scale.toFixed(4) + ')';
+  slotLayer.style.filter = blur > 0.05 ? 'blur(' + blur.toFixed(2) + 'px)' : 'none';
+  slotLayer.style.opacity = op.toFixed(3);
+  const scroll = 640 * Math.pow(u, 2.4);
+  strips[0].style.transform = 'translateY(' + (-(baseOffsets[0] + scroll * 0.55)).toFixed(2) + 'px)';
+  strips[1].style.transform = 'translateY(' + (-(baseOffsets[1] + scroll)).toFixed(2) + 'px)';
+  strips[2].style.transform = 'translateY(' + (-(baseOffsets[2] + scroll * 0.75)).toFixed(2) + 'px)';
+}
+
+/* the only loading sign: a small piece of the roulette */
+function updateIndicator(t, tl, state) {
+  let op = 0;
+  if (state === 'LOADING_LOOP') {
+    const tau = t - T.exit;
+    const total = tl.loadDoneAt - T.exit;
+    op = smooth(clamp(tau / 240, 0, 1)) * smooth(clamp((total - tau) / 200, 0, 1));
+  }
+  indEl.style.opacity = op.toFixed(3);
+  indEl.setAttribute('data-ind', indicator);
+  for (let i = 0; i < lampEls.length; i++) {
+    const ph = frac((t - i * 130) / 1300);
+    lampEls[i].classList.toggle('on', ph < 0.3);
+  }
+  const pulse = 0.42 + 0.3 * (0.5 + 0.5 * Math.sin((t / 1600) * Math.PI * 2));
+  payEl.style.opacity = pulse.toFixed(3);
+}
+
+/* panel */
+const panelEl = document.getElementById('panel');
+const stStateEl = document.getElementById('stState');
+const stTimeEl = document.getElementById('stTime');
+const loadValEl = document.getElementById('loadVal');
+const slLoadEl = document.getElementById('slLoad');
+const spButtons = Array.prototype.slice.call(document.querySelectorAll('#panel .sp'));
+const indButtons = Array.prototype.slice.call(document.querySelectorAll('#panel .ind'));
+let lastState = '';
+let lastT = -1;
+
+function syncPanel() {
+  slLoadEl.value = String(loadMs);
+  loadValEl.textContent = String(Math.round(loadMs));
+  for (const b of spButtons) b.classList.toggle('is-on', Number(b.dataset.speed) === speed);
+  for (const b of indButtons) b.classList.toggle('is-on', b.dataset.ind === indicator);
+}
+
+document.getElementById('panelToggle').addEventListener('click', () => {
+  panelEl.classList.toggle('is-closed');
+  document.querySelector('#panelToggle span').textContent = panelEl.classList.contains('is-closed') ? 'show' : 'hide';
+});
+
+document.getElementById('btnReplay').addEventListener('click', () => {
+  tSim = 0;
+  acc = 0;
+  started = AUTO || FREEZE !== null;
+  lastState = '';
+  lastT = -1;
+});
+
+slLoadEl.addEventListener('input', () => {
+  loadMs = clamp(Number(slLoadEl.value) || 0, 0, 6000);
+  loadValEl.textContent = String(Math.round(loadMs));
+});
+
+for (const b of spButtons) {
+  b.addEventListener('click', () => { speed = Number(b.dataset.speed) || 1; syncPanel(); });
+}
+for (const b of indButtons) {
+  b.addEventListener('click', () => { indicator = b.dataset.ind === 'payline' ? 'payline' : 'bulbs'; syncPanel(); });
+}
+
+/* start input: Enter or a click inside the stage */
+function begin() {
+  if (started) return;
+  started = true;
+  tSim = 0;
+  acc = 0;
+}
+
+stageEl.addEventListener('pointerdown', (e) => {
+  if (e.target.closest && e.target.closest('.slot-back')) return;
+  begin();
+});
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    begin();
+  }
+});
+
+window.__proto = { state: 'SETTLED', t: 0, loadDone: false, states: STATES.slice() };
+
+/* fixed-step simulated clock */
+let lastFrame = performance.now();
+
+function advanceClock(now) {
+  const dt = Math.min(120, Math.max(0, now - lastFrame));
+  lastFrame = now;
+  if (FREEZE !== null) {
+    tSim = FREEZE;
+    started = true;
+    return;
+  }
+  if (!started) return;
+  acc += dt * speed;
+  let guard = 0;
+  while (acc >= STEP && guard < 60) {
+    acc -= STEP;
+    tSim += STEP;
+    guard++;
+  }
+}
+
+function renderFrame() {
+  const tl = timeline();
+  const state = stateNow(tl);
+  applySlot(tSim);
+  updateTunnel(tSim, tl);
+  updateActor(tSim, tl);
+  updateFx(tSim, tl);
+  updateIndicator(tSim, tl, state);
+  const c = cameraFor(tSim, tl);
+  cam.position.set(c.p[0], c.p[1], c.p[2]);
+  if (Math.abs(cam.fov - c.fov) > 0.001) {
+    cam.fov = c.fov;
+    cam.updateProjectionMatrix();
+  }
+  cam.lookAt(c.l[0], c.l[1], c.l[2]);
+  renderer.render(scene, cam);
+  if (state !== lastState) {
+    lastState = state;
+    stStateEl.textContent = state;
+  }
+  const r = Math.round(tSim);
+  if (r !== lastT) {
+    lastT = r;
+    stTimeEl.textContent = r + ' ms';
+  }
+  window.__proto.state = state;
+  window.__proto.t = r;
+  window.__proto.loadDone = tSim >= tl.loadDoneAt;
+}
+
+function tick(now) {
+  advanceClock(now);
+  renderFrame();
+  requestAnimationFrame(tick);
+}
+
+fitStage();
+measureZoomOrigin();
+syncPanel();
+stStateEl.textContent = 'SETTLED';
+requestAnimationFrame(tick);
+
+window.addEventListener('resize', () => {
+  fitStage();
+  measureZoomOrigin();
+});
+</script>
+</body>
+</html>

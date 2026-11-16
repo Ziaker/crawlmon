@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CARIMBO RECORTADO - NATURE TO HUB</title>
+<style>
+:root{
+  --cell-h: 96px;
+  --reel-w: 196px;
+  --reel-gap: 12px;
+  --skew: -9deg;
+  --bg: #051322;
+  --slab: #092133;
+  --slab-2: #143343;
+  --panel: #0a1929;
+  --reel-bg: #07131e;
+  --ink: #080e18;
+  --payline: #f0c57e;
+  --text: #f4eee1;
+  --text-dim: #8ea7b0;
+  --accent: #d6fa66;
+  --pos: #d6fa66;
+  --neg: #ff746c;
+  --none: #8ea7b0;
+  --display: Impact, "Haettenschweiler", "Arial Narrow Bold", "Arial Black", sans-serif;
+  --mono: Consolas, "Cascadia Mono", "Courier New", monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#02090f}
+body{font-family:var(--mono);color:var(--text)}
+#fit{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+
+/* Stage: fixed 1280x720, scaled by script. Every visual layer lives inside it. */
+#stage{
+  position:relative;width:1280px;height:720px;flex:0 0 auto;overflow:hidden;
+  background:var(--bg);transform-origin:center center;
+}
+
+/* The two flat slabs behind the cabinet, same as the approved roulette. */
+.slab-a{
+  position:absolute;left:-260px;top:150px;width:1800px;height:360px;z-index:1;
+  background:var(--slab);transform:rotate(-8deg);
+}
+.slab-b{
+  position:absolute;left:-260px;top:548px;width:1800px;height:30px;z-index:1;
+  background:repeating-linear-gradient(90deg,var(--slab-2) 0 44px,var(--slab) 44px 88px);
+  transform:rotate(-8deg);
+}
+
+#hub{position:absolute;left:0;top:0;width:1280px;height:720px;z-index:2;opacity:0;pointer-events:none}
+#cutout{position:absolute;left:0;top:0;width:1280px;height:720px;z-index:10;pointer-events:none}
+
+/* Header */
+.slot-head{
+  position:absolute;left:78px;top:34px;margin:0;text-align:left;z-index:4;
+  transform:rotate(-3deg) skewX(var(--skew));transform-origin:left top;
+}
+.slot-kicker{display:inline-block;padding:5px 14px;background:var(--payline);color:var(--ink);font-size:15px;font-weight:700;letter-spacing:0.2em}
+.slot-headline{margin-top:10px;font-family:var(--display);font-size:66px;font-weight:400;line-height:1;letter-spacing:0.02em;color:var(--text)}
+#stage[data-state="SETTLED"] .slot-headline,
+#stage[data-state="REVEAL"] .slot-headline,
+#stage[data-state="EXIT"] .slot-headline{color:var(--accent)}
+
+/* Cabinet */
+.slot-machine{
+  position:absolute;left:70px;top:226px;padding:44px 26px 44px;background:var(--panel);z-index:4;
+  transform:rotate(-3deg) skewX(var(--skew));transform-origin:50% 40%;box-shadow:16px 16px 0 #000;
+}
+.slot-reels{position:relative;display:flex;gap:var(--reel-gap);transform:skewX(var(--skew))}
+.slot-reel{position:relative;width:var(--reel-w);height:calc(var(--cell-h) * 3);overflow:hidden;background:var(--reel-bg)}
+.slot-reel::before,.slot-reel::after{
+  content:"";position:absolute;left:0;right:0;height:var(--cell-h);z-index:2;
+  background:rgba(5,19,34,0.66);pointer-events:none;
+}
+.slot-reel::before{top:0}
+.slot-reel::after{bottom:0}
+
+.slot-cell{
+  position:relative;height:var(--cell-h);display:flex;align-items:baseline;justify-content:center;gap:10px;
+  padding-top:22px;transform:skewX(calc(var(--skew) * -1));font-family:var(--mono);color:var(--text);
+}
+.slot-cell .s{font-size:23px;font-weight:700;letter-spacing:0.08em}
+.slot-cell .v{font-family:var(--display);font-size:50px;font-weight:400;line-height:1;letter-spacing:0.01em}
+.slot-cell.is-pos{color:var(--pos)}
+.slot-cell.is-neg{color:var(--neg)}
+.slot-cell.is-none{color:var(--none)}
+.slot-cell.is-win.is-pos{background:var(--pos);color:var(--ink)}
+.slot-cell.is-win.is-neg{background:var(--neg);color:var(--ink)}
+.slot-cell.is-win.is-none{background:var(--text);color:var(--ink)}
+
+/* Payline: two flat arrowheads instead of lines. */
+.slot-payline{position:absolute;left:0;right:0;top:var(--cell-h);height:var(--cell-h);pointer-events:none;z-index:3}
+.slot-payline::before,.slot-payline::after{
+  content:"";position:absolute;top:calc(50% - 20px);width:20px;height:40px;background:var(--payline);
+}
+.slot-payline::before{left:-23px;clip-path:polygon(0 0,100% 50%,0 100%)}
+.slot-payline::after{right:-23px;clip-path:polygon(100% 0,0 50%,100% 100%)}
+
+/* Chase lamps around the reels. */
+.slot-bulbs{position:absolute;left:26px;right:26px;height:16px;display:flex;justify-content:space-between}
+.slot-bulbs.top{top:14px}
+.slot-bulbs.bottom{bottom:14px}
+.slot-bulbs i{display:block;width:30px;height:16px;background:#1d3a4d}
+#stage[data-state="SETTLED"] .slot-bulbs i,
+#stage[data-state="EXIT"] .slot-bulbs i{background:var(--accent)}
+
+/* Result column */
+.slot-result{position:absolute;left:796px;top:196px;width:470px;margin:0;z-index:5}
+.slot-result-name{
+  font-family:var(--display);font-size:108px;font-weight:400;line-height:0.9;letter-spacing:0.01em;
+  text-transform:uppercase;color:var(--text);
+  transform:rotate(-5deg) skewX(var(--skew));transform-origin:left bottom;
+}
+.slot-stamp{
+  display:inline-block;margin:18px 0 0 150px;padding:9px 18px;background:var(--payline);color:var(--ink);
+  font-size:19px;font-weight:700;letter-spacing:0.16em;transform:rotate(6deg);
+}
+.slot-desc{margin-top:40px;max-width:440px;font-size:20px;line-height:1.4;color:var(--text);transform:skewX(var(--skew))}
+.slot-actions{position:absolute;left:0;top:372px;margin:0;display:flex;gap:10px;transform:skewX(var(--skew))}
+.slot-actions button{
+  padding:13px 16px;border:0;font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:0.06em;
+  white-space:nowrap;background:var(--slab-2);color:var(--text);cursor:pointer;
+}
+.slot-actions .slot-enter{background:var(--accent);color:var(--ink);font-size:16px}
+
+.slot-skip{
+  position:absolute;right:54px;bottom:34px;padding:8px 16px;background:var(--slab-2);color:var(--text);
+  font-weight:700;transform:skewX(var(--skew));z-index:4;visibility:hidden;
+}
+
+/* Roulette exit slabs. They sweep behind the stamped word. */
+.wipe{
+  position:absolute;left:-30%;right:-30%;top:-10%;bottom:-10%;z-index:9;pointer-events:none;
+  transform:translateX(-135%) skewX(var(--skew));
+}
+.wipe.a{background:var(--accent)}
+.wipe.b{background:var(--bg)}
+
+/* Discreet loading indicator: one roulette element, no text, no bar. */
+#ind-bulbs{
+  position:absolute;left:50%;top:636px;transform:translateX(-50%);z-index:11;opacity:0;
+  display:flex;gap:11px;pointer-events:none;
+}
+#ind-bulbs i{display:block;width:26px;height:14px;background:#1d3a4d}
+#ind-pay{position:absolute;left:50%;top:50%;width:0;height:0;z-index:11;opacity:0;pointer-events:none}
+#ind-pay i{position:absolute;top:-22px;width:22px;height:44px;background:var(--payline)}
+#ind-pay i:first-child{left:-104px;clip-path:polygon(0 0,100% 50%,0 100%)}
+#ind-pay i:last-child{left:82px;clip-path:polygon(100% 0,0 50%,100% 100%)}
+
+#ctrl-chip{
+  position:absolute;left:78px;bottom:44px;z-index:12;padding:8px 16px;background:var(--payline);color:var(--ink);
+  font-size:14px;font-weight:700;letter-spacing:0.18em;transform:skewX(var(--skew));opacity:0;
+}
+
+/* Debug panel, outside the 1280x720 look. */
+#panel{
+  position:fixed;left:12px;top:12px;width:316px;z-index:50;background:#0a1929;color:#f4eee1;
+  font-size:12px;box-shadow:8px 8px 0 rgba(0,0,0,0.55);
+}
+#panel .p-head{display:flex;align-items:center;background:#143343;padding:8px 10px}
+#panel .p-head button{
+  flex:1;text-align:left;border:0;background:none;padding:0;cursor:pointer;
+  color:#d6fa66;font:700 12px var(--mono);letter-spacing:0.12em;
+}
+#panel .p-body{padding:10px;display:flex;flex-direction:column;gap:9px}
+#panel.is-collapsed .p-body{display:none}
+.p-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.p-row > .lbl{color:#8ea7b0}
+#panel button.act{
+  border:0;padding:7px 14px;background:#143343;color:#f4eee1;cursor:pointer;
+  font:700 12px var(--mono);letter-spacing:0.08em;
+}
+#panel button.act:hover{background:#1b4256}
+#panel input[type="range"]{width:126px;accent-color:#d6fa66}
+#panel select{background:#143343;color:#f4eee1;border:0;padding:4px 6px;font:12px var(--mono)}
+.p-read{justify-content:space-between;padding-top:6px;border-top:1px solid #143343}
+.p-read b{color:#d6fa66;font-weight:700}
+.p-read span{color:#8ea7b0}
+.p-pending{background:#092133;padding:7px 9px}
+.p-pending summary{cursor:pointer;color:#f0c57e;font-weight:700;letter-spacing:0.05em}
+.p-pending ul{margin:7px 0 0;padding-left:16px;line-height:1.45;color:#c9d8dd}
+.p-pending li{margin-bottom:4px}
+</style>
+</head>
+<body>
+<div id="fit">
+  <div id="stage" data-state="SETTLED">
+    <div class="slab-a"></div>
+    <div class="slab-b"></div>
+
+    <canvas id="hub" width="1280" height="720"></canvas>
+
+    <svg id="cutout" viewBox="0 0 1280 720" aria-hidden="true">
+      <defs>
+        <mask id="stampMask" maskUnits="userSpaceOnUse" x="0" y="0" width="1280" height="720">
+          <rect x="0" y="0" width="1280" height="720" fill="#ffffff"></rect>
+          <text id="maskText" x="0" y="0" text-anchor="middle" dominant-baseline="central"
+                font-family="Impact, Haettenschweiler, 'Arial Narrow Bold', 'Arial Black', sans-serif"
+                font-size="200" fill="#000000">BRAVE</text>
+        </mask>
+      </defs>
+      <rect id="cutoutPlate" x="0" y="0" width="1280" height="720" fill="#051322" mask="url(#stampMask)" opacity="0"></rect>
+      <text id="inkText" x="0" y="0" text-anchor="middle" dominant-baseline="central"
+            font-family="Impact, Haettenschweiler, 'Arial Narrow Bold', 'Arial Black', sans-serif"
+            font-size="200" fill="#f4eee1" opacity="0">BRAVE</text>
+      <g id="shards"></g>
+    </svg>
+
+    <header class="slot-head">
+      <div class="slot-kicker">NATURE ROLL</div>
+      <div class="slot-headline">BRAVE LOCKED</div>
+    </header>
+
+    <div class="slot-machine">
+      <div class="slot-bulbs top" aria-hidden="true">
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      </div>
+      <div class="slot-reels">
+        <div class="slot-reel">
+          <div class="slot-cell is-neg"><span class="s">WIS</span><span class="v">-1</span></div>
+          <div class="slot-cell is-pos is-win"><span class="s">STR</span><span class="v">+2</span></div>
+          <div class="slot-cell is-pos"><span class="s">MAG</span><span class="v">+3</span></div>
+        </div>
+        <div class="slot-reel">
+          <div class="slot-cell is-pos"><span class="s">AGI</span><span class="v">+2</span></div>
+          <div class="slot-cell is-pos is-win"><span class="s">VIT</span><span class="v">+1</span></div>
+          <div class="slot-cell is-neg"><span class="s">LUK</span><span class="v">-1</span></div>
+        </div>
+        <div class="slot-reel">
+          <div class="slot-cell is-pos"><span class="s">VIT</span><span class="v">+2</span></div>
+          <div class="slot-cell is-neg is-win"><span class="s">AGI</span><span class="v">-3</span></div>
+          <div class="slot-cell is-neg"><span class="s">STR</span><span class="v">-2</span></div>
+        </div>
+        <div class="slot-payline" aria-hidden="true"></div>
+      </div>
+      <div class="slot-bulbs bottom" aria-hidden="true">
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      </div>
+    </div>
+
+    <div class="slot-result">
+      <div class="slot-result-name">Brave</div>
+      <div class="slot-stamp">STAMPED: BRAVE</div>
+      <div class="slot-desc">Frontline brawl posture favoring heavy Strength and durability over speed.</div>
+      <div class="slot-actions">
+        <button class="slot-enter" type="button">ENTER 3D EXPEDITION [ENTER]</button>
+        <button class="slot-back" type="button">BACK TO HUB [X]</button>
+      </div>
+    </div>
+
+    <div class="slot-skip">SKIP [SPACE]</div>
+
+    <div id="ind-bulbs" aria-hidden="true">
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+    <div id="ind-pay" aria-hidden="true"><i></i><i></i></div>
+
+    <div id="ctrl-chip">CONTROL</div>
+
+    <div class="wipe a" aria-hidden="true"></div>
+    <div class="wipe b" aria-hidden="true"></div>
+  </div>
+</div>
+
+<div id="panel">
+  <div class="p-head"><button id="p-toggle" type="button">CARIMBO RECORTADO</button></div>
+  <div class="p-body">
+    <div class="p-row"><button id="p-replay" class="act" type="button">REPLAY</button></div>
+    <div class="p-row">
+      <span class="lbl">load</span>
+      <input id="p-load" type="range" min="0" max="6000" step="100" value="1800">
+      <span id="p-load-v">1800 ms</span>
+    </div>
+    <div class="p-row">
+      <span class="lbl">speed</span>
+      <select id="p-speed">
+        <option value="0.25">0.25x</option>
+        <option value="0.5">0.5x</option>
+        <option value="1" selected>1x</option>
+      </select>
+      <span></span>
+    </div>
+    <div class="p-row">
+      <span class="lbl">indicator</span>
+      <select id="p-ind">
+        <option value="bulbs" selected>bulbs</option>
+        <option value="payline">payline</option>
+      </select>
+      <span></span>
+    </div>
+    <div class="p-row p-read"><b id="p-state">SETTLED</b><span id="p-time">0 ms</span></div>
+    <details class="p-pending">
+      <summary>PENDENTE (proposta, criador decide)</summary>
+      <ul>
+        <li>Ponto de pouso: centro exato da praca do Hub, com a camera enquadrando esse ponto.</li>
+        <li>Camera: dolly de reveal de (12,44,38) para (0,30,26); descida acompanhando a queda ate (0,7,15); assentamento atras em (0,3.5,7.8). FOV 46.</li>
+        <li>A palavra e esticada na vertical (escala nao uniforme) para cobrir 1280x720.</li>
+        <li>Durante o crescimento a palavra e tinta clara; no loading ela vira o recorte; na revelacao volta como tinta accent.</li>
+        <li>Na queda a palavra fica semitransparente (0.3) e estoura em estilhacos flat no pouso.</li>
+        <li>Anel marcador no chao antes do impacto e anel de poeira expandindo no pouso.</li>
+        <li>Achatamento do corpo no pouso e respiracao parada no CONTROL.</li>
+        <li>Tempos: EXIT 1250, REVEAL 950, FALL 1150, LAND 430, CONTROL 1000 ms.</li>
+        <li>Indicador: bulbs no rodape central ou payline em chevrons no centro, pulso de 1500 ms.</li>
+        <li>Chip CONTROL aparecendo embaixo a esquerda ao ganhar controle.</li>
+        <li>WASD move o manequim no CONTROL e a camera acompanha.</li>
+        <li>Altura inicial da queda (22 unidades) e entrada do personagem so no inicio da queda.</li>
+        <li>Sem audio neste prototipo.</li>
+      </ul>
+    </details>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from '../vendor/three.module.min.js';
+
+/* ------------------------------------------------------------------ *
+ * Deterministic helpers. Every visual reads simT, never the wall clock.
+ * ------------------------------------------------------------------ */
+const STATES = ['SETTLED', 'EXIT', 'LOADING_LOOP', 'REVEAL', 'FALL', 'LAND', 'CONTROL'];
+const LOOP_MS = 1500;
+const STEP = 1000 / 60;
+const FALL_FROM = 22;
+const EXIT_MS = 1250;
+const REVEAL_MS = 950;
+const FALL_MS = 1150;
+const LAND_MS = 430;
+const CONTROL_MS = 1000;
+
+function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+function lerp(a, b, p) { return a + (b - a) * p; }
+function smooth(p) { p = clamp(p, 0, 1); return p * p * (3 - 2 * p); }
+function easeOutCubic(p) { p = clamp(p, 0, 1); return 1 - Math.pow(1 - p, 3); }
+function easeInCubic(p) { p = clamp(p, 0, 1); return p * p * p; }
+
+function mulberry32(a) {
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function mixHex(a, b, p) {
+  const pa = parseInt(a.slice(1), 16);
+  const pb = parseInt(b.slice(1), 16);
+  const r = Math.round(lerp((pa >> 16) & 255, (pb >> 16) & 255, p));
+  const g = Math.round(lerp((pa >> 8) & 255, (pb >> 8) & 255, p));
+  const bl = Math.round(lerp(pa & 255, pb & 255, p));
+  return 'rgb(' + r + ',' + g + ',' + bl + ')';
+}
+
+/* ------------------------------------------------------------------ *
+ * URL parameters, debug state and the simulated clock.
+ * ------------------------------------------------------------------ */
+const Q = new URLSearchParams(location.search);
+function numParam(raw, fallback) {
+  const n = parseFloat(raw);
+  return isFinite(n) ? n : fallback;
+}
+
+let loadMs = clamp(numParam(Q.get('load'), 1800), 0, 6000);
+let indicator = Q.get('indicator') === 'payline' ? 'payline' : 'bulbs';
+let speed = 1;
+
+const AUTO = Q.get('auto') === '1';
+const JUMP = Q.has('t') ? clamp(numParam(Q.get('t'), 0), 0, 1200000) : null;
+
+let started = AUTO || JUMP !== null;
+const frozen = JUMP !== null;
+let simT = JUMP !== null ? JUMP : 0;
+let acc = 0;
+let lastWall = 0;
+let currentState = 'SETTLED';
+
+/* Timeline: loadMs moves the whole tail of the sequence. */
+function timeline() {
+  const loadEnd = EXIT_MS + loadMs;
+  const revealEnd = loadEnd + REVEAL_MS;
+  const fallEnd = revealEnd + FALL_MS;
+  const landEnd = fallEnd + LAND_MS;
+  return { loadEnd, revealEnd, fallEnd, landEnd, controlEnd: landEnd + CONTROL_MS };
+}
+
+function stateFor(t, TL) {
+  if (!started) return 'SETTLED';
+  if (t < EXIT_MS) return 'EXIT';
+  if (t < TL.loadEnd) return 'LOADING_LOOP';
+  if (t < TL.revealEnd) return 'REVEAL';
+  if (t < TL.fallEnd) return 'FALL';
+  if (t < TL.landEnd) return 'LAND';
+  return 'CONTROL';
+}
+
+function charYAt(t, TL) {
+  if (t < TL.revealEnd) return FALL_FROM;
+  if (t < TL.fallEnd) {
+    const p = (t - TL.revealEnd) / FALL_MS;
+    return FALL_FROM * (1 - Math.pow(clamp(p, 0, 1), 1.5));
+  }
+  return 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * DOM references.
+ * ------------------------------------------------------------------ */
+const stage = document.getElementById('stage');
+const headEl = stage.querySelector('.slot-head');
+const machineEl = stage.querySelector('.slot-machine');
+const resultEl = stage.querySelector('.slot-result');
+const nameEl = stage.querySelector('.slot-result-name');
+const stampEl = stage.querySelector('.slot-stamp');
+const descEl = stage.querySelector('.slot-desc');
+const actionsEl = stage.querySelector('.slot-actions');
+const skipEl = stage.querySelector('.slot-skip');
+const wipeA = stage.querySelector('.wipe.a');
+const wipeB = stage.querySelector('.wipe.b');
+const plateEl = document.getElementById('cutoutPlate');
+const maskText = document.getElementById('maskText');
+const inkText = document.getElementById('inkText');
+const shardLayer = document.getElementById('shards');
+const indBulbs = document.getElementById('ind-bulbs');
+const indPay = document.getElementById('ind-pay');
+const ctrlChip = document.getElementById('ctrl-chip');
+const hubCanvas = document.getElementById('hub');
+const bulbLamps = Array.from(indBulbs.querySelectorAll('i'));
+const payArms = Array.from(indPay.querySelectorAll('i'));
+
+/* Stage scaling keeps the 1280x720 frame intact. */
+function fitStage() {
+  const s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+  stage.style.transform = 'scale(' + s.toFixed(4) + ')';
+}
+window.addEventListener('resize', fitStage);
+fitStage();
+
+/* ------------------------------------------------------------------ *
+ * The stamped word: one text for the mask hole, one for the ink.
+ * ------------------------------------------------------------------ */
+const FULL_W = 1460;
+const FULL_H = 790;
+let wordW = 560;
+let wordH = 150;
+let fullSX = FULL_W / wordW;
+let fullSY = FULL_H / wordH;
+
+function measureWord() {
+  try {
+    const bb = inkText.getBBox();
+    if (bb && bb.width > 20 && bb.height > 20) {
+      wordW = bb.width;
+      wordH = bb.height;
+    }
+  } catch (err) {
+    /* keep the fallback proportions */
+  }
+  fullSX = FULL_W / wordW;
+  fullSY = FULL_H / wordH;
+}
+measureWord();
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(measureWord);
+}
+
+function setWord(cx, cy, sx, sy, rot, skew) {
+  const tr = 'translate(' + cx.toFixed(2) + ' ' + cy.toFixed(2) + ') rotate(' + rot.toFixed(2) +
+    ') skewX(' + skew.toFixed(2) + ') scale(' + sx.toFixed(4) + ' ' + sy.toFixed(4) + ')';
+  maskText.setAttribute('transform', tr);
+  inkText.setAttribute('transform', tr);
+}
+
+/* ------------------------------------------------------------------ *
+ * Flat shards for the dissolve at the landing.
+ * ------------------------------------------------------------------ */
+const shards = [];
+(function buildShards() {
+  const rnd = mulberry32(20261115);
+  const colors = ['#d6fa66', '#f0c57e', '#f4eee1'];
+  for (let i = 0; i < 44; i++) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    el.setAttribute('width', (12 + rnd() * 26).toFixed(1));
+    el.setAttribute('height', (7 + rnd() * 15).toFixed(1));
+    el.setAttribute('fill', colors[i % colors.length]);
+    el.setAttribute('opacity', '0');
+    shardLayer.appendChild(el);
+    shards.push({
+      el: el,
+      x: 170 + rnd() * 940,
+      y: 150 + rnd() * 430,
+      vx: (rnd() - 0.5) * 560,
+      vy: -170 - rnd() * 320,
+      rot: (rnd() - 0.5) * 760,
+      delay: rnd() * 0.14
+    });
+  }
+})();
+
+/* ------------------------------------------------------------------ *
+ * Hub stand-in: ground, central plaza, volumes, light and fog.
+ * ------------------------------------------------------------------ */
+const renderer = new THREE.WebGLRenderer({ canvas: hubCanvas, antialias: true });
+renderer.setPixelRatio(1);
+renderer.setSize(1280, 720, false);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x051322);
+scene.fog = new THREE.Fog(0x0a2233, 34, 108);
+
+const camera = new THREE.PerspectiveCamera(46, 1280 / 720, 0.1, 400);
+
+scene.add(new THREE.HemisphereLight(0x8fc7e8, 0x0a1a22, 0.9));
+const keyLight = new THREE.DirectionalLight(0xffe3b0, 1.2);
+keyLight.position.set(14, 26, 12);
+scene.add(keyLight);
+const rimLight = new THREE.DirectionalLight(0xd6fa66, 0.4);
+rimLight.position.set(-16, 9, -15);
+scene.add(rimLight);
+
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x081b26, roughness: 1 });
+const plazaMat = new THREE.MeshStandardMaterial({ color: 0x143343, roughness: 0.95 });
+const plazaInnerMat = new THREE.MeshStandardMaterial({ color: 0x0b2433, roughness: 0.95 });
+const pillarMat = new THREE.MeshStandardMaterial({ color: 0x092133, roughness: 0.95 });
+const wallMat = new THREE.MeshStandardMaterial({ color: 0x0b2433, roughness: 0.95 });
+const accentMat = new THREE.MeshStandardMaterial({
+  color: 0xd6fa66, roughness: 0.7, emissive: 0x2a3d0d, emissiveIntensity: 0.8
+});
+
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(220, 220), groundMat);
+ground.rotation.x = -Math.PI / 2;
+scene.add(ground);
+
+const plaza = new THREE.Mesh(new THREE.CylinderGeometry(9.5, 9.9, 0.3, 48), plazaMat);
+plaza.position.y = 0.15;
+scene.add(plaza);
+
+const plazaInner = new THREE.Mesh(new THREE.CylinderGeometry(4.7, 4.7, 0.34, 40), plazaInnerMat);
+plazaInner.position.y = 0.17;
+scene.add(plazaInner);
+
+const plazaRim = new THREE.Mesh(new THREE.CylinderGeometry(4.95, 4.95, 0.06, 40), accentMat);
+plazaRim.position.y = 0.36;
+scene.add(plazaRim);
+
+const GROUND_Y = 0.34;
+
+for (let i = 0; i < 8; i++) {
+  const a = (i / 8) * Math.PI * 2;
+  const pillar = new THREE.Mesh(new THREE.BoxGeometry(1.1, 4.8, 1.1), pillarMat);
+  pillar.position.set(Math.cos(a) * 12.4, 2.4, Math.sin(a) * 12.4);
+  pillar.rotation.y = -a;
+  scene.add(pillar);
+
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(1.26, 0.18, 1.26), accentMat);
+  cap.position.set(pillar.position.x, 4.88, pillar.position.z);
+  cap.rotation.y = -a;
+  scene.add(cap);
+}
+
+for (let i = 0; i < 4; i++) {
+  const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
+  const wall = new THREE.Mesh(new THREE.BoxGeometry(24, 9, 1.4), wallMat);
+  wall.position.set(Math.cos(a) * 27, 4.5, Math.sin(a) * 27);
+  wall.rotation.y = -a + Math.PI / 2;
+  scene.add(wall);
+}
+
+(function buildCrates() {
+  const rnd = mulberry32(77123);
+  for (let i = 0; i < 12; i++) {
+    const a = rnd() * Math.PI * 2;
+    const r = 7.5 + rnd() * 11;
+    const w = 1.1 + rnd() * 1.5;
+    const h = 0.8 + rnd() * 2.2;
+    const box = new THREE.Mesh(new THREE.BoxGeometry(w, h, w * (0.7 + rnd() * 0.6)), pillarMat);
+    box.position.set(Math.cos(a) * r, h / 2, Math.sin(a) * r);
+    box.rotation.y = rnd() * Math.PI;
+    scene.add(box);
+  }
+})();
+
+/* Neutral placeholder figure: nothing here depends on a character. */
+function makeFigure() {
+  const g = new THREE.Group();
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0xf4eee1, roughness: 0.9 });
+  const limbMat = new THREE.MeshStandardMaterial({ color: 0x143343, roughness: 0.95 });
+
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.42, 1.0, 10, 1), bodyMat);
+  torso.position.y = 1.12;
+  g.add(torso);
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.31, 18, 14), bodyMat);
+  head.position.y = 1.87;
+  g.add(head);
+
+  const hip = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.26, 0.34), limbMat);
+  hip.position.y = 0.62;
+  g.add(hip);
+
+  const legGeo = new THREE.BoxGeometry(0.2, 0.62, 0.22);
+  for (let i = 0; i < 2; i++) {
+    const leg = new THREE.Mesh(legGeo, limbMat);
+    leg.position.set(i ? 0.15 : -0.15, 0.31, 0);
+    g.add(leg);
+  }
+
+  const armGeo = new THREE.BoxGeometry(0.15, 0.62, 0.17);
+  for (let i = 0; i < 2; i++) {
+    const arm = new THREE.Mesh(armGeo, bodyMat);
+    arm.position.set(i ? 0.46 : -0.46, 1.14, 0);
+    g.add(arm);
+  }
+
+  const badge = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.3, 0.06), accentMat);
+  badge.position.set(0, 1.18, 0.34);
+  g.add(badge);
+
+  return g;
+}
+
+const figure = makeFigure();
+scene.add(figure);
+
+const shadowDisc = new THREE.Mesh(
+  new THREE.CircleGeometry(1.15, 32),
+  new THREE.MeshBasicMaterial({ color: 0x03101a, transparent: true, opacity: 0.45 })
+);
+shadowDisc.rotation.x = -Math.PI / 2;
+shadowDisc.position.y = GROUND_Y + 0.012;
+scene.add(shadowDisc);
+
+const markerRing = new THREE.Mesh(
+  new THREE.RingGeometry(2.0, 2.38, 56),
+  new THREE.MeshBasicMaterial({ color: 0xd6fa66, transparent: true, opacity: 0 })
+);
+markerRing.rotation.x = -Math.PI / 2;
+markerRing.position.y = GROUND_Y + 0.02;
+scene.add(markerRing);
+
+const dustRing = new THREE.Mesh(
+  new THREE.RingGeometry(0.9, 1.3, 56),
+  new THREE.MeshBasicMaterial({ color: 0xf0c57e, transparent: true, opacity: 0 })
+);
+dustRing.rotation.x = -Math.PI / 2;
+dustRing.position.y = GROUND_Y + 0.03;
+scene.add(dustRing);
+
+const player = { x: 0, z: 0 };
+const keys = Object.create(null);
+
+/* ------------------------------------------------------------------ *
+ * Visual updates. All of them are pure functions of t.
+ * ------------------------------------------------------------------ */
+function updateRoulette(t) {
+  const leave = smooth(clamp(t / 500, 0, 1));
+
+  headEl.style.opacity = String(1 - smooth(clamp((t - 60) / 340, 0, 1)));
+  headEl.style.transform =
+    'translate(' + (-320 * leave).toFixed(1) + 'px,' + (-190 * leave).toFixed(1) + 'px) ' +
+    'rotate(' + (-3 - 9 * leave).toFixed(2) + 'deg) skewX(-9deg)';
+
+  machineEl.style.opacity = String(1 - smooth(clamp((t - 120) / 380, 0, 1)));
+  machineEl.style.transform =
+    'translate(' + (-520 * leave).toFixed(1) + 'px,' + (300 * leave).toFixed(1) + 'px) ' +
+    'rotate(' + (-3 - 7 * leave).toFixed(2) + 'deg) skewX(-9deg)';
+
+  const resOut = smooth(clamp(t / 420, 0, 1));
+  resultEl.style.opacity = String(1 - resOut);
+  resultEl.style.transform =
+    'translate(' + (150 * resOut).toFixed(1) + 'px,' + (-40 * resOut).toFixed(1) + 'px)';
+  resultEl.style.pointerEvents = started && t > 60 ? 'none' : 'auto';
+
+  nameEl.style.opacity = String(1 - clamp(t / 120, 0, 1));
+  stampEl.style.opacity = String(1 - clamp(t / 240, 0, 1));
+  descEl.style.opacity = String(1 - clamp(t / 220, 0, 1));
+  actionsEl.style.opacity = String(1 - clamp(t / 200, 0, 1));
+  skipEl.style.opacity = '0';
+
+  /* Exit slabs: the accent one crosses and leaves, the dark one parks and
+     only fades after the cutout plate is already opaque (same colour). */
+  const inA = easeOutCubic(clamp(t / 430, 0, 1));
+  const outA = easeInCubic(clamp((t - 400) / 380, 0, 1));
+  const inB = easeOutCubic(clamp((t - 120) / 440, 0, 1));
+
+  wipeA.style.transform = 'translateX(' + (-135 + 135 * inA + 135 * outA).toFixed(2) + '%) skewX(-9deg)';
+  wipeB.style.transform = 'translateX(' + (-135 + 135 * inB).toFixed(2) + '%) skewX(-9deg)';
+  wipeB.style.opacity = String(1 - clamp((t - 700) / 190, 0, 1));
+
+  hubCanvas.style.opacity = String(smooth(clamp((t - 380) / 320, 0, 1)));
+}
+
+function updateWord(t, TL) {
+  const grow = Math.pow(clamp((t - 20) / 1180, 0, 1), 1.85);
+  let cx = lerp(966, 640, grow);
+  let cy = lerp(242, 358, grow);
+  let sx = lerp(0.54, fullSX, grow);
+  let sy = lerp(0.54, fullSY, grow);
+  let rot = -5;
+  let skew = -9;
+  let plate = 0;
+  let ink = 0;
+  let fill = '#f4eee1';
+
+  if (started && t < EXIT_MS) {
+    /* The result name hands its place to the same word, which keeps growing. */
+    ink = smooth(clamp(t / 90, 0, 1)) * (1 - smooth(clamp((t - 600) / 220, 0, 1)));
+    plate = smooth(clamp((t - 520) / 180, 0, 1));
+  } else if (started && t < TL.loadEnd) {
+    /* Loading loop: the word fills the stage and the hole is the window. */
+    plate = 1;
+    const lp = ((t - EXIT_MS) % LOOP_MS) / LOOP_MS;
+    const breathe = 1 + 0.012 * Math.sin(lp * Math.PI * 2);
+    sx *= breathe;
+    sy *= breathe;
+    cx += 2.0 * Math.sin(lp * Math.PI * 2);
+    cy += 1.2 * Math.cos(lp * Math.PI * 2);
+  } else if (started && t < TL.revealEnd) {
+    const p = clamp((t - TL.loadEnd) / REVEAL_MS, 0, 1);
+    plate = 1 - smooth(clamp(p / 0.55, 0, 1));
+    ink = smooth(clamp((p - 0.1) / 0.55, 0, 1));
+    fill = '#d6fa66';
+    const s = 1 - 0.06 * smooth(p);
+    sx *= s;
+    sy *= s;
+    rot = -5 - 3 * smooth(p);
+    skew = -9 - 5 * smooth(p);
+    cy -= 8 * smooth(p);
+  } else if (started && t < TL.fallEnd) {
+    const p = clamp((t - TL.revealEnd) / FALL_MS, 0, 1);
+    fill = '#d6fa66';
+    ink = 1 - 0.7 * smooth(clamp(p / 0.35, 0, 1));
+    const s = 0.94 - 0.05 * p;
+    sx *= s;
+    sy *= s;
+    rot = -8 - 2 * p;
+    skew = -14 - 3 * p;
+    cy -= 10 * p;
+  } else if (started && t < TL.landEnd) {
+    const p = clamp((t - TL.fallEnd) / LAND_MS, 0, 1);
+    fill = '#d6fa66';
+    ink = 0.3 * (1 - smooth(clamp(p / 0.85, 0, 1)));
+    const s = 0.89 + 0.07 * smooth(p);
+    sx *= s;
+    sy *= s;
+    skew = -17 - 4 * p;
+  }
+
+  setWord(cx, cy, sx, sy, rot, skew);
+  plateEl.setAttribute('opacity', plate.toFixed(3));
+  inkText.setAttribute('fill', fill);
+  inkText.setAttribute('opacity', ink.toFixed(3));
+}
+
+function updateIndicator(t, TL) {
+  const inRange = started && t >= EXIT_MS && t < TL.loadEnd;
+  const fadeIn = smooth(clamp((t - EXIT_MS) / 300, 0, 1));
+  const fadeOut = 1 - smooth(clamp((t - (TL.loadEnd - 240)) / 240, 0, 1));
+  const vis = inRange ? fadeIn * fadeOut : 0;
+
+  indBulbs.style.opacity = String(indicator === 'bulbs' ? vis : 0);
+  indPay.style.opacity = String(indicator === 'payline' ? vis : 0);
+  if (vis <= 0.001) return;
+
+  const lp = ((t - EXIT_MS) % LOOP_MS) / LOOP_MS;
+  const phase = lp * Math.PI * 2;
+
+  for (let i = 0; i < bulbLamps.length; i++) {
+    const v = 0.5 + 0.5 * Math.sin(phase + i * 0.34);
+    bulbLamps[i].style.background = mixHex('#1d3a4d', '#f0c57e', v);
+  }
+
+  const pulse = 0.5 + 0.5 * Math.sin(phase);
+  payArms[0].style.transform = 'translateX(' + (-7 * pulse).toFixed(2) + 'px)';
+  payArms[1].style.transform = 'translateX(' + (7 * pulse).toFixed(2) + 'px)';
+  indPay.style.opacity = String(vis * (0.62 + 0.38 * pulse));
+}
+
+function updateShards(t, TL) {
+  const since = started ? t - TL.fallEnd : -1;
+  if (since < 0 || since > 900) {
+    for (let i = 0; i < shards.length; i++) shards[i].el.setAttribute('opacity', '0');
+    return;
+  }
+  const p = clamp(since / 900, 0, 1);
+  for (let i = 0; i < shards.length; i++) {
+    const s = shards[i];
+    const q = clamp((p - s.delay) / Math.max(0.01, 1 - s.delay), 0, 1);
+    const e = easeOutCubic(q);
+    const x = s.x + s.vx * e;
+    const y = s.y + s.vy * e + 640 * e * e;
+    const op = 1 - smooth(clamp((q - 0.4) / 0.6, 0, 1));
+    s.el.setAttribute('x', x.toFixed(1));
+    s.el.setAttribute('y', y.toFixed(1));
+    s.el.setAttribute('transform',
+      'rotate(' + (s.rot * e).toFixed(1) + ' ' + x.toFixed(1) + ' ' + y.toFixed(1) + ')');
+    s.el.setAttribute('opacity', op.toFixed(3));
+  }
+}
+
+const camPos = new THREE.Vector3(12, 44, 38);
+const camLook = new THREE.Vector3(0, 1, 0);
+
+function updateScene(t, TL) {
+  const cy = charYAt(t, TL);
+
+  const visible = started && t >= TL.revealEnd - 40;
+  figure.visible = visible;
+  shadowDisc.visible = visible;
+  figure.position.set(player.x, GROUND_Y + cy, player.z);
+
+  let squash = 1;
+  if (started && t >= TL.fallEnd && t < TL.landEnd) {
+    const lp = clamp((t - TL.fallEnd) / LAND_MS, 0, 1);
+    squash = 1 - 0.22 * Math.sin(Math.PI * clamp(lp * 1.5, 0, 1));
+  }
+  if (currentState === 'CONTROL') {
+    figure.position.y += 0.03 * Math.sin(t * 0.004);
+  }
+  figure.scale.set(1 / Math.sqrt(squash), squash, 1 / Math.sqrt(squash));
+
+  const drop = clamp(cy / FALL_FROM, 0, 1);
+  shadowDisc.position.set(player.x, GROUND_Y + 0.012, player.z);
+  shadowDisc.scale.setScalar(1 - 0.45 * drop);
+  shadowDisc.material.opacity = visible ? 0.45 * (1 - 0.75 * drop) : 0;
+
+  /* Marker ring shows where the fall will land, then hands over to the dust. */
+  if (started && t >= TL.revealEnd && t < TL.landEnd) {
+    const bp = (t - TL.revealEnd) / 1000;
+    markerRing.material.opacity =
+      0.42 * (1 - smooth(clamp((t - TL.fallEnd) / 260, 0, 1)));
+    markerRing.scale.setScalar(1 + 0.1 * Math.sin(bp * Math.PI * 2));
+  } else {
+    markerRing.material.opacity = 0;
+  }
+
+  if (started && t >= TL.fallEnd && t < TL.landEnd + 420) {
+    const dp = clamp((t - TL.fallEnd) / 700, 0, 1);
+    dustRing.material.opacity = 0.55 * (1 - smooth(dp));
+    dustRing.scale.setScalar(1 + 6.5 * easeOutCubic(dp));
+  } else {
+    dustRing.material.opacity = 0;
+  }
+
+  if (!started || t < TL.revealEnd) {
+    const p = smooth(clamp(t / Math.max(1, TL.revealEnd), 0, 1));
+    camPos.set(lerp(12, 0, p), lerp(44, 30, p), lerp(38, 26, p));
+    camLook.set(0, lerp(1, 14, p), 0);
+  } else if (t < TL.fallEnd) {
+    const p = clamp((t - TL.revealEnd) / FALL_MS, 0, 1);
+    const e = smooth(p);
+    camPos.set(0, lerp(30, 7.0, e), lerp(26, 15, e));
+    const track = smooth(clamp(p / 0.55, 0, 1));
+    camLook.set(0, lerp(14, cy * 0.78 + 1.1, track), 0);
+  } else if (t < TL.landEnd) {
+    const p = clamp((t - TL.fallEnd) / LAND_MS, 0, 1);
+    const e = smooth(p);
+    camPos.set(
+      0.1 * Math.sin(p * 37) * (1 - p),
+      lerp(7.0, 5.6, e) + 0.16 * Math.sin(p * 42) * (1 - p),
+      lerp(15, 11.6, e)
+    );
+    camLook.set(0, 1.2, 0);
+  } else {
+    const p = smooth(clamp((t - TL.landEnd) / CONTROL_MS, 0, 1));
+    camPos.set(0, lerp(5.6, 3.5, p), lerp(11.6, 7.8, p));
+    camLook.set(0, 1.35, 0);
+  }
+
+  /* Third person: the rig follows the placeholder, never covers it. */
+  if (currentState === 'CONTROL') {
+    camPos.x += player.x;
+    camPos.z += player.z;
+    camLook.x += player.x;
+    camLook.z += player.z;
+  }
+
+  camera.position.copy(camPos);
+  camera.lookAt(camLook);
+
+  ctrlChip.style.opacity = String(
+    started ? smooth(clamp((t - TL.landEnd) / 520, 0, 1)) * 0.96 : 0
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Frame: fixed-step clock, then one deterministic apply().
+ * ------------------------------------------------------------------ */
+const proto = { state: 'SETTLED', t: 0, loadDone: false, states: STATES.slice() };
+Object.defineProperty(window, '__proto', {
+  value: proto, writable: true, configurable: true, enumerable: true
+});
+
+function apply() {
+  const TL = timeline();
+  const t = started ? simT : 0;
+  const st = stateFor(t, TL);
+  currentState = st;
+  stage.setAttribute('data-state', st);
+
+  updateRoulette(t);
+  updateWord(t, TL);
+  updateIndicator(t, TL);
+  updateShards(t, TL);
+  updateScene(t, TL);
+
+  renderer.render(scene, camera);
+
+  proto.state = st;
+  proto.t = t;
+  proto.loadDone = started && t >= TL.loadEnd;
+  proto.states = STATES;
+
+  pStateEl.textContent = st;
+  pTimeEl.textContent = Math.round(t) + ' ms';
+}
+
+function raf(now) {
+  const dt = lastWall ? Math.min(120, now - lastWall) : 1000 / 60;
+  lastWall = now;
+
+  if (started && !frozen) {
+    acc += dt * speed;
+    let guard = 0;
+    while (acc >= STEP && guard < 10) {
+      simT += STEP;
+      acc -= STEP;
+      guard++;
+    }
+    if (guard >= 10) acc = 0;
+  }
+
+  apply();
+  requestAnimationFrame(raf);
+}
+
+/* ------------------------------------------------------------------ *
+ * Input and debug panel.
+ * ------------------------------------------------------------------ */
+function start() {
+  if (started) return;
+  started = true;
+  simT = 0;
+  acc = 0;
+}
+
+stage.addEventListener('pointerdown', start);
+
+window.addEventListener('keydown', function (e) {
+  const tag = e.target && e.target.tagName ? e.target.tagName.toLowerCase() : '';
+  if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    start();
+  }
+});
+
+const pStateEl = document.getElementById('p-state');
+const pTimeEl = document.getElementById('p-time');
+const pLoadEl = document.getElementById('p-load');
+const pLoadVEl = document.getElementById('p-load-v');
+const pSpeedEl = document.getElementById('p-speed');
+const pIndEl = document.getElementById('p-ind');
+const pReplayEl = document.getElementById('p-replay');
+const pToggleEl = document.getElementById('p-toggle');
+const panelEl = document.getElementById('panel');
+
+pLoadEl.value = String(loadMs);
+pLoadVEl.textContent = Math.round(loadMs) + ' ms';
+pIndEl.value = indicator;
+
+pLoadEl.addEventListener('input', function () {
+  loadMs = clamp(parseFloat(pLoadEl.value) || 0, 0, 6000);
+  pLoadVEl.textContent = Math.round(loadMs) + ' ms';
+});
+
+pSpeedEl.addEventListener('change', function () {
+  speed = parseFloat(pSpeedEl.value) || 1;
+});
+
+pIndEl.addEventListener('change', function () {
+  indicator = pIndEl.value === 'payline' ? 'payline' : 'bulbs';
+});
+
+pReplayEl.addEventListener('click', function () {
+  started = true;
+  simT = 0;
+  acc = 0;
+});
+
+pToggleEl.addEventListener('click', function () {
+  panelEl.classList.toggle('is-collapsed');
+});
+
+/* WASD moves the placeholder once control is granted. */
+window.addEventListener('keydown', function (e) {
+  keys[e.key.toLowerCase()] = true;
+});
+window.addEventListener('keyup', function (e) {
+  keys[e.key.toLowerCase()] = false;
+});
+
+setInterval(function () {
+  if (currentState !== 'CONTROL' || frozen) return;
+  const f = (keys.w ? 1 : 0) - (keys.s ? 1 : 0);
+  const s = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
+  if (!f && !s) return;
+  player.z = clamp(player.z - f * 0.12, -8, 8);
+  player.x = clamp(player.x + s * 0.12, -8, 8);
+}, 16);
+
+/* Boot. */
+apply();
+requestAnimationFrame(function (now) {
+  lastWall = now;
+  requestAnimationFrame(raf);
+});
+</script>
+</body>
+</html>
