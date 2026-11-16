@@ -8,6 +8,64 @@
 
 # Crawlmon — Regras do jogo (consolidado)
 
+## Decisão D-1256 — Murky Forest autoral com as três referências visuais (2026-11-16)
+
+- **Mapa** — Uma única Murky Forest 3D autoral, construída do zero e sem geração procedural. O mapa novo usa em conjunto aberturas na copa, vistas laterais e desnível cenográfico, conforme as três pranchas revisadas. O arco é o marco de revisita. Ver [D-1256](decisoes/D-1256-murky-forest-mapa-autoral-tres-referencias.md).
+
+## Decisão D-1255 — Visual dos Cascos cunhados no mapa (2026-11-16)
+
+- **Ícones e modelos** — Opção 2, moedas cunhadas com relevos de conchas. No mapa, são peças em 3D com ângulos variados, separadas ou empilhadas.
+- **Coleta** — Feedback visual satisfatório. A sequência e os detalhes ficam para aprovação. Ver [D-1255](decisoes/D-1255-visual-dos-cascos-cunhados.md).
+
+## Decisão D-1253 — Saldo comum e balanceamento dos Cascos (2026-11-16)
+
+- **Saldo comum** — Bronze, prata e ouro são denominações de um saldo na loja, com equivalências fixas e transparentes. O saldo consolidado é protegido. O destino dos ganhos da expedição em derrota ou retirada segue pendente.
+- **Rendimento** — Explorar deve render mais que repetir lutas fáceis. A primeira compra é viável sem drop de prata. O valor do ouro deve manter relevantes as compras nas próximas saídas.
+- **Partida** — A mochila preparada no Hub chega à próxima expedição com as compras. Equivalências numéricas, preços, condições dos drops e reposição do kit inicial seguem em aberto. Ver [D-1253](decisoes/D-1253-saldo-comum-e-balanceamento-dos-cascos.md).
+
+## Decisão D-1252 — Cascos de bronze, prata e ouro (2026-11-16)
+
+- **Bronze Shell** — Cascos de bronze que caem de inimigos normais.
+- **Silver Shell** — Cascos de prata que caem mais raramente de inimigos.
+- **Golden shells** — Cascos de ouro exclusivos de recompensas e de valor muito superior. Valores numéricos e taxas seguem em aberto. Ver [D-1252](decisoes/D-1252-cascos-de-bronze-prata-e-ouro.md).
+
+## Decisão D-1251 — Moedas pela exploração e economia inicial difícil (2026-11-16)
+
+- **Fontes de moedas** — Recompensas e segredos nos mapas são a fonte principal. Inimigos também deixam moedas em quantidades muito pequenas.
+- **Economia inicial** — Densa e difícil. Valores, frequência dos drops, distribuição de recompensas, preços e saldo inicial seguem em aberto. Ver [D-1251](decisoes/D-1251-moedas-exploracao-e-economia-inicial.md).
+
+## Decisão D-1250 — Loja de suprimentos e economia de expedição no Hub (2026-11-16)
+
+- **Loja e moedas** — O Hub terá uma loja simples de consumíveis com estoque básico previsível. O primeiro recorte é encontrar moedas explorando o mapa (D-1251), comprar no Hub e levar o item à próxima expedição.
+- **Pendências** — Local, comerciante, catálogo, preços, saldo inicial, regras de ganho e perda de moedas e reposição do kit de partida. Ver [D-1250](decisoes/D-1250-hub-loja-e-economia-de-expedicao.md).
+
+## Decisão D-1246 — Murky Forest como destino recorrente (2026-11-16)
+
+- **Novas expedições** — O Hub oferece motivos para retornar à Murky Forest. Eventos diferentes dão ao jogador objetivos ou descobertas em lugares reconhecíveis. O primeiro recorte de validação prevê duas expedições ligadas pelo Hub.
+- **Volta na mesma expedição** — O layout, os itens já coletados e os eventos concluídos conservam seu estado conforme GDD R9-Q2 e R36-Q3.
+- **Pendências** — Gatilhos, ordem e conteúdo concreto dos eventos, recompensas, persistência entre expedições e geometria nova. Áudio fora do escopo por ora. Ver [D-1246](decisoes/D-1246-murky-forest-destino-recorrente.md).
+
+## Decisão D-1247 — Murky Forest: arco como marco e sem persistência entre expedições (2026-11-16)
+
+- **Primeiro recorte de revisita** — O arco de pedra é o marco visual. A D-1256 autoriza construir o mapa novo do zero. Passagem jogável em nível inferior e posto de vigia ficam para fase 2, após medição de câmera (D-1023) e navmesh.
+- **Persistência:** **nenhuma entre expedições** — pendente conforme GDD R30-Q2/R36-Q3. Vale só o estado dentro da mesma expedição (R36-Q3).
+- **Recompensa da volta:** **nenhuma nova — só descoberta** (alcançar lugar antes inacessível). Sem novo sistema de itens/recrutamento neste recorte.
+- **Gatilho e ordem:** definidos em D-1248 (fala curta no Hub + marca no cenário; 1ª aprender, 2ª novidade, sem tranca). Ver [D-1247](decisoes/D-1247-murky-forest-arco-e-persistencia.md) e o plano `docs/plans/2026-11-16-murky-forest-level-design.md`.
+
+## Decisão D-1248 — Murky Forest: gatilho de revisita e ordem das visitas (2026-11-16)
+
+- **Gatilho:** **fala curta no Hub + marca no cenário** — solução diegética, sem quadro/UI novo.
+- **Ordem:** **1ª expedição aprender, 2ª trazer novidade**, **sem tranca nem pré-requisito**; evento é opcional para o chefe (R36-Q2) e não muda progressão (R34-Q2).
+- **Não decidido:** conteúdo da marca, texto da fala e quantidade de eventos. Ver [D-1248](decisoes/D-1248-murky-forest-gatilho-e-ordem.md).
+
+## Decisão D-1245 — Level design da Murky Forest: portas, descanso, gating e áudio (2026-11-16)
+
+- **Portas:** medir a largura livre necessária ao triângulo de seguidores (D-1023) frente às portas de 2 m da D-1151 e **alargar se a medição mostrar que não cabe**; número final vem da medição.
+- **Descanso:** os pontos da D-316 **ficam pendentes** no andar 3D; não implantar sem decisão nova (GDD R31-Q5/R32-Q2 valem como requisito, não como implementação).
+- **Gating:** **suave** — visibilidade, ameaça e recompensa. Não existe sistema de chave/habilidade decidido.
+- **Áudio:** **fora do escopo por ora**.
+- A aprovação da direção de revisitas foi registrada em D-1246. Ver [D-1245](decisoes/D-1245-murky-forest-level-design-medicao-e-gating.md) e o plano `docs/plans/2026-11-16-murky-forest-level-design.md` para as decisões sobre portas, descanso e gating.
+
 ## Decisão D-1208 — Integração completa no Godot: Pré-Jogo v3 → Hub 3D → Murky Forest 3D ↔ Combate 3D (2026-11-14)
 
 - **Entrada principal (`project.godot`):** `run/main_scene` passa para `res://scenes/pre_game.tscn` (com atalhos CLI `--hub`, `--forest`, `--battle` e `--scenario=...` para `< 10 s`, `D-1204`). `F10` abre `res://scenes/hub_3d_lab.tscn`; cenas 2D (`exploration.tscn`, `hub_test.tscn`) permanecem preservadas (`D-1181`).
@@ -18,7 +76,7 @@
 - **Seleção de Protagonista (`C1–C2`, `C4–C6`):** Todos os 6 protagonistas (`Abra`, `Pancham`, `Gible`, `Slime`, `Orc`, `Cyclops`) são jogáveis e selecionáveis desde o início. A tela de seleção exibe retrato (`D-1093`), altura (`m`), elementos inatos (`Neutral` com ícone `Diamond Core` D-440, `Water`, `Nature` D-397), base de 15 pontos (`STR..LUK`, D-390) e Moves iniciais (`Basic Action: Tackle` + 2 Moves distintos da espécie; `Slime` inicia com `Bubble Shot` + `Heal`), **sem HP/MP (nem HP base)** e **sem Nature predeterminada**. `HP Base`, `MP Base`, `ATB Base` e afinidades detalhadas ficam na **Advanced View** (`[A]` / `[Tab]` + botão `ADVANCED DOSSIER`, preservando `[Shift]` para `MATH OVERRIDE`). Comparações entre espécies/inimigos aplicam máscara `[ ? ] UNKNOWN (D-981)` fora do toggle debug.
 - **Roleta de Nature (`C7`, D-1215, D-1216, D-1217, D-1219):** Máquina caça-níquel de 3 rolos (rótulo `NATURE ROLL`) que gira sozinha; os rolos mostram os 3 status que a Nature modifica (`Hardy`/`Docile` mostram `NONE` x3 e o carimbo `PURE DISCIPLINE`). 18 Natures com a mesma chance, `maxi(1, b + o + n)` e a tabela de 108 combinações `(Espécie × Nature)`. Aparece só depois da seleção de personagem e antes da transição ao mundo (que espera o Enter). A Nature e os offsets ficam com o personagem até o game over; personagem que já tem Nature pula a roleta; depois do game over a roleta roda de novo. Resultado travado antes da animação (SKIP e `reduce motion` dão o mesmo resultado). Sem piscada de tela (D-418).
 - **Transição Nature → Hub (D-1237):** o Enter da roleta de Nature leva ao **Hub** (não mais à floresta; muda a D-1208 neste ponto) com a transição "Carimbo recortado" e a invocação no centro da praça (círculo com pentagrama neon verde-limão, anéis e pilar; o líder desce do céu num raio e só aparece no impacto), com faixas pretas (D-1214) e carregamento sem texto nem barra. Quem pula a roleta (personagem que já tem Nature) ainda vai à floresta (pendente). Ver [D-1237](decisoes/D-1237-transicao-nature-hub-variante-carimbo-e-invocacao.md).
-- **Contratos de fluxo e Hub 3D (`C3`, `C8`, `H1–H6`):** Separação explícita entre `NEW GAME`, `CONTINUE` e `NEW EXPEDITION (HUB GATE)`. Hub 3D em praça murada (`~28m × 26m`) com `Warm Dusk Sanctuary` + `F7` (`dusk/day/night`, D-418), troca de líder entre os 6 protagonistas (`F6`), início Solo (`1`/`--party`), elenco completo (`Guild Clerk` Pikachu, `Gate Warden` Squirtle, Bulbasaur, Charmander, Eevee, Heal Slime + `overworld_state_icon`), minimapa `SubViewport` (`D-1064`), `StatusScreen` em `CanvasLayer` isolado fora de `"overworld_hud"` (`D-1165`), modais neo-brutalistas do Portão e Guild Hall e cenários headless `HUB_*` (`< 10 s`, D-1204). Ver [D-1207](decisoes/D-1207-pre-jogo-v3-ciclo-campanha-e-hub-3d.md).
+- **Contratos de fluxo e Hub 3D (`C3`, `C8`, `H1–H6`, D-1238):** Separação explícita entre `NEW GAME`, `CONTINUE` e `NEW EXPEDITION (HUB GATE)`. Hub 3D em praça murada (`~28m × 26m`) com `Warm Dusk Sanctuary` calibrado mais escuro (`exposure = 0.86`, `ambient_e = 0.28`, `dir_e = 0.20`, vinheta sutil D-1238) + `F7` (`dusk/day/night`, D-418), troca de líder entre os 6 protagonistas (`F6`), início Solo (`1`/`--party`), elenco de 12 NPCs (`Guild Clerk` Pikachu, `Gate Warden` Squirtle, Bulbasaur, Charmander, Eevee, Heal Slime, 4 DQT da D-1063 + 2 Travelers dinâmicos não-ativos) com anéis brancos no chão (`D-1086`), `overworld_state_icon` e ciclo de expedição entrando/sumindo/retornando pelo `Expedition Gate`, minimapa `SubViewport` (`D-1064`), `StatusScreen` em `CanvasLayer` isolado fora de `"overworld_hud"` (`D-1165`), modais neo-brutalistas do Portão e Guild Hall e cenários headless `HUB_*` + `HUB_PORTAL_CYCLE` (`< 10 s`, D-1204). Ver [D-1207](decisoes/D-1207-pre-jogo-v3-ciclo-campanha-e-hub-3d.md) e [D-1238](decisoes/D-1238-hub-3d-mais-escuro-detalhado-e-npcs-no-portal.md).
 
 ## Decisão D-1191 — Mabufula: acabamento de gelo no Godot (2026-11-12)
 
@@ -381,7 +439,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 
 ### 14.4 Recrutamento
 - **[GDD R23-Q4, R24-Q2, R35-Q2]** Exige **interação voluntária explícita** (nunca automático por aproximação). Pokémon **especiais** exigem uma tarefa/evento antes (R32-Q5). Hostis normais seguem iniciando combate. Candidatos especiais são identificados no mapa (R26-Q2).
-- **[D-1229 a D-1234] Employ, Summon e Respeito — registradas, nada implementado.** **Employ:** recrutamento em combate, **5 ATB e 0 MP** (Burst não substitui), aba alternativa aberta com "direita" sobre TACTICS; diálogo do alvo, minigame de 1/2/3 notas (GOOD +5 pp, PERFECT +10 pp), demonstração sem dano; fracasso dá **BOOST** ao alvo por 10 s (+1 nos seis atributos, +1 Burst, +2 ATB) e bloqueia Employ no resto do combate. **Chance:** `P = clamp(45·A/(A+E) + clamp(2·Δnível, −20, 20) + 0,16·(respeito−50) + notas, 0, 100)`, base inicial de calibração, sem LUK e sem teto de atributos. **Respeito:** 0–100, inicial 50, do Traveler; encontro desafiador +2 (máx. 3 por expedição), 1ª vitória contra chefe importante +6, desafio tático especial +3, derrota definitiva −2; recrutar não altera. **Summon:** **2 ATB** pagos pelo protagonista; troca aliado saudável ou em K.O., sem entrada automática e sem cura; recrutado só entra no combate atual por Convocação. **Equipe:** 3 ativos + 2 substitutos acompanhantes; excedentes estacionados na dungeon; todos voltam à guilda ao fim da expedição. **EXP Share:** substituto acompanhante recebe 50% do XP integral, sem reduzir o dos ativos. **[CONFLITOS EM ABERTO]** SPI×WIS (D-391); reservas sem XP (§14.5) × EXP Share; recrutado entra direto na equipe (§14.3) × só por Convocação; D-316 × retorno à guilda; D-105 × último inimigo recrutado. Ver `docs/AUDITORIA_EMPLOY_SUMMON_RESPEITO_FASE0.md`.
+- **[D-1229 a D-1244] Employ, Summon e Respeito — Employ (fluxo, chance real, BOOST) implementado; diálogo, minigame, cutscene e Summon ainda não.** **Employ:** recrutamento em combate, **5 ATB e 0 MP** (Burst não substitui), aba alternativa aberta com "direita" sobre TACTICS; diálogo do alvo, minigame de 1/2/3 notas (GOOD +5 pp, PERFECT +10 pp), demonstração sem dano; fracasso dá **BOOST** ao alvo por 10 s (+1 nos seis atributos, +1 Burst, +2 ATB) e bloqueia Employ no resto do combate. **Chance:** `P = clamp(45·A/(A+E) + clamp(2·Δnível, −20, 20) + 0,16·(respeito−50) + notas, 0, 100)`, base inicial de calibração, sem LUK e sem teto de atributos. **Respeito:** 0–100, inicial 50, do Traveler; encontro desafiador +2 (máx. 3 por expedição), 1ª vitória contra chefe importante +6, desafio tático especial +3, derrota definitiva −2; recrutar não altera. **Summon:** **2 ATB** pagos pelo protagonista; troca aliado saudável ou em K.O., sem entrada automática e sem cura; recrutado só entra no combate atual por Convocação. **Equipe:** 3 ativos + 2 substitutos acompanhantes; excedentes estacionados na dungeon; todos voltam à guilda ao fim da expedição. **EXP Share:** substituto acompanhante recebe 50% do XP integral, sem reduzir o dos ativos. **[CONFLITOS EM ABERTO]** SPI×WIS (D-391); reservas sem XP (§14.5) × EXP Share; recrutado entra direto na equipe (§14.3) × só por Convocação; D-316 × retorno à guilda; D-105 × último inimigo recrutado. Ver `docs/AUDITORIA_EMPLOY_SUMMON_RESPEITO_FASE0.md`.
 
 ### 14.5 Progressão, XP e economia
 - **[GDD R26-Q3, R31-Q3]** Todos os **ativos que participaram** de uma batalha vencida recebem XP, mesmo sem dar o golpe final; reservas **não** recebem XP das vitórias, mas podem progredir por treinamento/serviços fora das expedições (R33-Q2).

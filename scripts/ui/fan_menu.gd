@@ -9,6 +9,8 @@ signal chosen(index: int)
 signal cancelled
 signal moved(index: int)
 signal side(direction: int)  ## Left (-1) / right (+1) on the highlighted row.
+signal side_chosen(index: int)  ## D-1236: Z on a row of the side fan (EMPLOY / SUMMON).
+signal side_closed  ## D-1236: the side fan was closed with left or X.
 
 enum Style { FAN, DRAWER }
 
@@ -39,6 +41,18 @@ var _enabled: Array[bool] = []
 var _accents: Array[Color] = []  ## Row text color when not highlighted (alpha 0 = default)
 var _hilite: Array[Color] = []  ## Highlight color of the row (alpha 0 = the default green).
 var _shield: Array[bool] = []  ## The row draws a shield icon instead of the diamond (D-272).
+## D-1236: side fan. A second stack of slanted blocks born to the right of one row of the main fan
+## (the alternative tab of TACTICS). While it is open the main fan stays visible, dimmed, and the
+## side fan takes the input. Navigating and closing it never spends anything.
+const SIDE_GAP := 16.0  ## Distance between the main fan and the side fan.
+const SIDE_TEXT_GAP := 18.0  ## Minimum room between the title of a block and its detail text.
+const SIDE_DIM := 0.45  ## Opacity of the main fan while the side fan is open.
+var side_open := false
+var side_index := 0
+var _side_anchor := 0  ## Row of the main fan the side fan was opened from.
+var _side_texts: Array[String] = []
+var _side_details: Array[String] = []
+var _side_enabled: Array[bool] = []
 static var _title_font: Font
 static var _body_font: Font
 var _skills: Array = []
@@ -103,6 +117,7 @@ func set_entries(entries: Array, keep_index := false) -> void:
 			_hilite.append(Color(0, 0, 0, 0))
 			_shield.append(false)
 			_skills.append(null)
+	side_open = false  # D-1236: new entries always start with the side fan closed.
 	index = clampi(index if keep_index else 0, 0, maxi(_texts.size() - 1, 0))
 	queue_redraw()
 	moved.emit(index)
@@ -130,8 +145,75 @@ func set_enabled(i: int, value: bool) -> void:
 		queue_redraw()
 
 
+## D-1236: opens the side fan next to the highlighted row. Entries are {"text", "detail", "enabled"}.
+func open_side(entries: Array) -> void:
+	_side_texts.clear()
+	_side_details.clear()
+	_side_enabled.clear()
+	for e in entries:
+		_side_texts.append(String(e["text"]))
+		_side_details.append(String(e.get("detail", "")))
+		_side_enabled.append(bool(e.get("enabled", true)))
+	if _side_texts.is_empty():
+		return
+	_side_anchor = index
+	side_index = 0
+	side_open = true
+	queue_redraw()
+
+
+func close_side() -> void:
+	if side_open:
+		side_open = false
+		queue_redraw()
+
+
+func set_side_enabled(i: int, value: bool) -> void:
+	if i < _side_enabled.size() and _side_enabled[i] != value:
+		_side_enabled[i] = value
+		queue_redraw()
+
+
+func set_side_detail(i: int, text: String) -> void:
+	if i < _side_details.size() and _side_details[i] != text:
+		_side_details[i] = text
+		queue_redraw()
+
+
+## Width of the side blocks: the longest "title + gap + detail", the same for every block, so the
+## detail text never touches the title whatever it says (D-1236).
+func side_width() -> float:
+	var w := 0.0
+	for i in _side_texts.size():
+		var tw := title_font().get_string_size(_side_texts[i].to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 25).x
+		var dw := body_font().get_string_size(_side_details[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x
+		w = maxf(w, 44.0 + tw + SIDE_TEXT_GAP + dw + 18.0)
+	return ceilf(w)
+
+
+func _side_input(event: InputEvent) -> void:
+	if event.is_action_pressed("menu") or event.is_action_pressed("ui_left"):
+		close_side()
+		side_closed.emit()
+	elif event.is_action_pressed("ui_down"):
+		side_index = posmod(side_index + 1, _side_texts.size())
+		queue_redraw()
+	elif event.is_action_pressed("ui_up"):
+		side_index = posmod(side_index - 1, _side_texts.size())
+		queue_redraw()
+	elif event.is_action_pressed("confirm"):
+		if _side_enabled[side_index]:
+			side_chosen.emit(side_index)
+	elif not event.is_action_pressed("ui_right"):
+		return
+	get_viewport().set_input_as_handled()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_visible_in_tree():
+		return
+	if side_open and style == Style.FAN:
+		_side_input(event)
 		return
 	if event.is_action_pressed("menu"):
 		cancelled.emit()
@@ -175,15 +257,18 @@ func _draw() -> void:
 func _draw_fan() -> void:
 	var small := body_font()
 	draw_string(small, Vector2(6, 12), header, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, LIME)
+	var dim := SIDE_DIM if side_open else 1.0  # D-1236: the main fan steps back while the side fan is open.
 	for i in _texts.size():
 		var active := i == index
 		var x := i * 8.0 + (9.0 if active else 0.0)
 		var r := Rect2(x, 22 + i * FAN_STEP, FAN_W, FAN_H)
-		_slant(Rect2(r.position + Vector2(5, 5), r.size), 8.0, Color(0, 0, 0, 0.45))
+		_slant(Rect2(r.position + Vector2(5, 5), r.size), 8.0, Color(0, 0, 0, 0.45 * dim))
 		var blue: bool = _hilite[i].a > 0.0
-		_slant(r, 8.0, (_hilite[i] if blue else LIME) if active else Color(INK, 0.92))
+		var body: Color = (_hilite[i] if blue else LIME) if active else Color(INK, 0.92)
+		body.a *= dim
+		_slant(r, 8.0, body)
 		var fg := (Color.WHITE if blue else INK) if active else Color("e4e9e4")
-		var alpha := 1.0 if _enabled[i] else 0.4
+		var alpha := (1.0 if _enabled[i] else 0.4) * dim
 		var cy := r.position.y + r.size.y * 0.5
 		if _shield[i]:
 			var sx := r.position.x + 24
@@ -197,6 +282,31 @@ func _draw_fan() -> void:
 		draw_string(title_font(), Vector2(r.position.x + 44, cy + 9), _texts[i].to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color(fg, alpha))
 		if _details[i] != "":
 			BattleHud.text_right(self, small, r.end.x - 18, cy + 4, _details[i], 10, Color(fg, 0.75 * alpha))
+	if side_open:
+		_draw_side()
+
+
+## D-1236: the side fan. Same block as the main fan (slant, shadow, diamond, title, detail), born to
+## the right of the anchor row and centred on it.
+func _draw_side() -> void:
+	var small := body_font()
+	var w := side_width()
+	var ax := _side_anchor * 8.0 + 9.0 + FAN_W + SIDE_GAP
+	var ay := 22.0 + _side_anchor * FAN_STEP - (_side_texts.size() - 1) * FAN_STEP * 0.5
+	for i in _side_texts.size():
+		var active := i == side_index
+		var r := Rect2(ax + i * 8.0 + (9.0 if active else 0.0), ay + i * FAN_STEP, w, FAN_H)
+		_slant(Rect2(r.position + Vector2(5, 5), r.size), 8.0, Color(0, 0, 0, 0.45))
+		_slant(r, 8.0, LIME if active else Color(INK, 0.92))
+		var fg := INK if active else Color("e4e9e4")
+		var alpha := 1.0 if _side_enabled[i] else 0.4
+		var cy := r.position.y + r.size.y * 0.5
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(r.position.x + 24, cy - 8), Vector2(r.position.x + 32, cy),
+			Vector2(r.position.x + 24, cy + 8), Vector2(r.position.x + 16, cy)]), Color(INK if active else CORAL, alpha))
+		draw_string(title_font(), Vector2(r.position.x + 44, cy + 9), _side_texts[i].to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color(fg, alpha))
+		if _side_details[i] != "":
+			BattleHud.text_right(self, small, r.end.x - 18, cy + 4, _side_details[i], 10, Color(fg, 0.75 * alpha))
 
 
 func _draw_drawer() -> void:

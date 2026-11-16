@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Employ / Summon — aba alternativa de TACTICS (protótipo, Fase 4)</title>
+<style>
+  :root{
+    /* cores reais do FanMenu (scripts/ui/fan_menu.gd) — nenhuma cor nova */
+    --lime:#d7fd6a; --coral:#ff624f; --gold:#f7cb78; --ink:#080e18; --cream:#f0eedf; --navy:#0a1929; --guard:#1f6fd6;
+    --S:1.6; /* escala do protótipo (o jogo desenha em 1x) */
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#05080d;color:var(--cream);font-family:Arial,"Segoe UI",sans-serif;font-weight:800}
+  .wrap{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;padding:16px;min-height:100vh}
+  @media (max-width:900px){.wrap{grid-template-columns:1fr}}
+  .stage{position:relative;height:calc(420px*var(--S));min-height:520px;overflow:hidden;border:1px solid #23303d;
+    background:radial-gradient(120% 90% at 70% 35%,#35506a 0%,#1a2a3a 45%,#0b131c 100%)}
+  .stage::after{content:"";position:absolute;left:0;right:0;bottom:0;height:38%;
+    background:linear-gradient(#0000,#0a1017 70%)}
+  .stage .paused{position:absolute;inset:0;background:#02060acc;opacity:0;transition:opacity .12s;pointer-events:none}
+  .stage.is-paused .paused{opacity:.35}
+  #menu{position:absolute;left:calc(28px*var(--S));top:calc(120px*var(--S));transform:scale(var(--S));transform-origin:0 0;width:560px;height:300px}
+  .bar,.shadow{position:absolute;height:38px;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)}
+  .shadow{background:#00000073}
+  .bar{cursor:pointer}
+  .bar .mk{position:absolute;left:16px;top:11px;width:16px;height:16px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+  .bar .t{position:absolute;left:44px;top:3px;font-family:Impact,Haettenschweiler,"Arial Black",sans-serif;font-weight:400;font-size:25px;line-height:32px;letter-spacing:.2px;white-space:nowrap}
+  .bar .d{position:absolute;right:18px;top:13px;font-size:10px;line-height:12px;white-space:nowrap}
+  .bar .hint{position:absolute;right:5px;top:9px;font-size:18px;line-height:18px;font-family:Impact,"Arial Black",sans-serif;font-weight:400}
+  .off{opacity:.4}
+  .drawer{position:absolute;background:var(--navy);outline:1px solid #7c8b87;box-shadow:8px 8px 0 #00000073}
+  .drawer::before{content:"";position:absolute;left:0;top:0;right:0;height:5px;background:var(--lime)}
+  .drawer .back{position:absolute;left:12px;top:14px;width:86px;height:20px;background:var(--lime);color:var(--ink);font-size:10px;line-height:20px;padding-left:10px;clip-path:polygon(5px 0,100% 0,calc(100% - 5px) 100%,0 100%)}
+  .drawer .hd{position:absolute;left:110px;top:19px;font-size:10px;color:var(--lime);white-space:nowrap}
+  .row{position:absolute;left:8px;right:8px;height:33px;cursor:pointer;border-bottom:1px solid #354758}
+  .row .n{position:absolute;left:8px;top:3px;font-size:13px}
+  .row .s{position:absolute;left:8px;top:19px;font-size:9px}
+  .row.on{background:var(--lime);color:var(--ink);border-bottom-color:transparent}
+  .row .n,.row .s{white-space:nowrap}
+  .crumb{position:absolute;left:6px;top:2px;font-size:11px;color:var(--lime);white-space:nowrap}
+  .toast{position:absolute;left:calc(28px*var(--S));bottom:18px;z-index:3;background:#0a1929f0;border-left:5px solid var(--gold);padding:10px 14px;font-size:13px;max-width:70%;opacity:0;transition:opacity .15s}
+  .toast.show{opacity:1}
+  .keys{position:absolute;right:14px;top:12px;z-index:3;font-size:11px;color:#b9c6c2;text-align:right;line-height:1.7}
+  .keys b{background:#0a1929;border:1px solid #3b4a58;padding:1px 6px;color:var(--cream)}
+  aside{background:#0a1118;border:1px solid #23303d;padding:14px;font-weight:400;font-size:13px;line-height:1.45}
+  aside h1{font-size:15px;margin:0 0 4px;color:var(--lime)}
+  aside h2{font-size:12px;margin:16px 0 6px;color:var(--gold);text-transform:uppercase;letter-spacing:.5px}
+  aside p{margin:0 0 8px;color:#c9d2cf}
+  .seg{display:flex;gap:6px;flex-wrap:wrap}
+  button{font:inherit;font-weight:800;font-size:12px;padding:7px 10px;background:#101b26;color:var(--cream);border:1px solid #3b4a58;cursor:pointer}
+  button[aria-pressed="true"]{background:var(--lime);color:var(--ink);border-color:var(--lime)}
+  label.ck{display:flex;gap:8px;align-items:center;margin:6px 0;cursor:pointer}
+  input[type=range]{width:100%}
+  .atb{display:flex;gap:4px;margin:6px 0 2px}
+  .atb i{width:26px;height:12px;background:#22303c;display:block}
+  .atb i.f{background:var(--lime)}
+  ul{margin:0;padding-left:18px;color:#c9d2cf}
+  li{margin-bottom:5px}
+  code{background:#101b26;padding:0 4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="stage" id="stage" tabindex="0" aria-label="Menu de batalha (protótipo)">
+    <div class="paused"></div>
+    <div class="keys"><b>↑</b> <b>↓</b> mover &nbsp; <b>→</b> abrir aba em TACTICS &nbsp; <b>←</b> / <b>X</b> voltar &nbsp; <b>Z</b> confirmar</div>
+    <div id="menu"></div>
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <aside>
+    <h1>Aba alternativa de TACTICS</h1>
+    <p>Protótipo da Fase 4 (D-1229, D-1232). Usa só formas, fontes e cores que o menu de batalha já tem. Clique no palco e use o teclado, ou clique nos blocos.</p>
+
+    <h2>Variante</h2>
+    <div class="seg" id="variants">
+      <button data-v="A" aria-pressed="true">A · Leque lateral</button>
+      <button data-v="B" aria-pressed="false">B · Gaveta</button>
+      <button data-v="C" aria-pressed="false">C · Troca de página</button>
+    </div>
+    <p id="vdesc" style="margin-top:8px"></p>
+
+    <h2>Estado do líder</h2>
+    <div>ATB do líder: <span id="atbv"></span></div>
+    <div class="atb" id="atbbar"></div>
+    <input type="range" id="atb" min="0" max="5" step="1" value="5" aria-label="ATB do líder">
+    <label class="ck"><input type="checkbox" id="failed"> Employ já falhou nesta batalha</label>
+    <label class="ck"><input type="checkbox" id="nosubs"> Sem substitutos para convocar</label>
+    <label class="ck"><input type="checkbox" id="hint" checked> Mostrar a dica <code>›</code> no bloco TACTICS</label>
+
+    <h2>O que está fixado pelas suas decisões</h2>
+    <ul>
+      <li>"Direita" sobre TACTICS abre a aba; ela contém EMPLOY e SUMMON.</li>
+      <li>EMPLOY custa 5 ATB e 0 MP; SUMMON custa 2 ATB. Burst não paga.</li>
+      <li>Depois de um fracasso, EMPLOY fica bloqueado; SUMMON continua.</li>
+      <li>Navegar e fechar não gasta nada.</li>
+    </ul>
+
+    <h2>Propostas minhas (precisam do seu sim)</h2>
+    <ul>
+      <li>Qual variante (A, B ou C).</li>
+      <li>A dica <code>›</code> no bloco TACTICS.</li>
+      <li>Os textos de motivo: <code>NEED 5 ATB</code>, <code>REFUSED</code>, <code>NO RESERVES</code>.</li>
+      <li>Se abrir a aba pausa o jogo (TACTICS hoje pausa). Aqui o palco não escurece na aba; escurece só em TACTICS.</li>
+    </ul>
+  </aside>
+</div>
+
+<script>
+(function(){
+  var MAIN = [
+    {text:'FIGHT', detail:'2 ATB'},
+    {text:'ITEMS', detail:'1 ATB'},
+    {text:'EVADE', detail:'3 ATB'},
+    {text:'TACTICS', detail:'PAUSE', tab:true},
+    {text:'STATUS', detail:'PAUSE'}
+  ];
+  var st = {variant:'A', index:3, open:false, sub:0, atb:5, failed:false, nosubs:false, hint:true};
+  var DESC = {
+    A:'Um segundo leque nasce à direita do bloco TACTICS, com a mesma inclinação e as mesmas cores. O leque principal continua visível e esmaecido.',
+    B:'Abre uma gaveta igual à de FIGHT/ITEMS, com duas linhas e o motivo em texto pequeno.',
+    C:'O leque inteiro troca de página: os cinco blocos dão lugar a EMPLOY e SUMMON, com o caminho escrito acima. Mesmo gesto do Evade ↔ Guard (D-272), aplicado ao leque.'
+  };
+  var menu = document.getElementById('menu'), stage = document.getElementById('stage'), toast = document.getElementById('toast');
+  var toastTimer = 0;
+  var TITLE_FONT = '25px Impact, Haettenschweiler, "Arial Black", sans-serif';
+  var DETAIL_FONT = '800 10px Arial, "Segoe UI", sans-serif';
+  var GAP = 18;       // folga mínima entre o título e o detalhe
+  var SIDE_GAP = 16;  // distância entre o leque principal e o lateral
+  var mctx = document.createElement('canvas').getContext('2d');
+  function textW(text, font){ mctx.font = font; return mctx.measureText(text).width; }
+
+  function subs(){
+    var e = {text:'EMPLOY', cost:5, detail:'5 ATB', ok:true, why:'Recruit a foe mid-battle'};
+    if (st.failed){ e.ok = false; e.detail = 'REFUSED'; e.why = 'Blocked for this battle'; }
+    else if (st.atb < 5){ e.ok = false; e.detail = 'NEED 5 ATB'; e.why = 'Not enough ATB'; }
+    var s = {text:'SUMMON', cost:2, detail:'2 ATB', ok:true, why:'Swap an ally in or out'};
+    if (st.nosubs){ s.ok = false; s.detail = 'NO RESERVES'; s.why = 'Nobody to call'; }
+    else if (st.atb < 2){ s.ok = false; s.detail = 'NEED 2 ATB'; s.why = 'Not enough ATB'; }
+    return [e, s];
+  }
+  function el(cls, css, html){
+    var d = document.createElement('div'); d.className = cls;
+    for (var k in css) d.style[k] = css[k];
+    if (html != null) d.innerHTML = html;
+    return d;
+  }
+  // um bloco do leque, com as medidas reais: 232x38, passo 42, recuo 8 por linha, +9 no ativo
+  function bar(x, y, w, o){
+    menu.appendChild(el('shadow', {left:(x+5)+'px', top:(y+5)+'px', width:w+'px', opacity:o.dim ? .5 : 1}));
+    var b = el('bar' + (o.ok === false ? ' off' : ''), {left:x+'px', top:y+'px', width:w+'px',
+      background: o.active ? 'var(--lime)' : 'rgba(8,14,24,.92)', color: o.active ? 'var(--ink)' : '#e4e9e4'});
+    if (o.dim) b.style.opacity = .45;
+    b.appendChild(el('mk', {background: o.active ? 'var(--ink)' : 'var(--coral)'}));
+    b.appendChild(el('t', {}, o.text));
+    b.appendChild(el('d', {opacity:.75, right: o.hint ? '26px' : '18px'}, o.detail || ''));
+    if (o.hint) b.appendChild(el('hint', {color: o.active ? 'var(--ink)' : 'var(--lime)'}, '›'));
+    if (o.click) b.addEventListener('click', o.click);
+    menu.appendChild(b);
+  }
+  function render(){
+    menu.innerHTML = '';
+    var S = subs(), i;
+    stage.classList.toggle('is-paused', false);
+    if (st.open && st.variant === 'C'){
+      menu.appendChild(el('crumb', {}, 'TACTICS  ›  COMMAND'));
+      for (i = 0; i < S.length; i++) (function(i){
+        var a = i === st.sub;
+        bar(i*8 + (a ? 9 : 0), 22 + i*42, 232, {text:S[i].text, detail:S[i].detail, active:a, ok:S[i].ok, click:function(){ st.sub = i; confirm(); }});
+      })(i);
+      var bk = el('bar', {left:'16px', top:(22 + 2*42 + 8)+'px', width:'118px', height:'24px', background:'rgba(8,14,24,.92)', color:'#e4e9e4'});
+      bk.appendChild(el('d', {left:'16px', right:'auto', top:'6px', opacity:.85}, '‹ BACK (X)'));
+      bk.addEventListener('click', function(){ st.open = false; render(); });
+      menu.appendChild(bk);
+      return;
+    }
+    for (i = 0; i < MAIN.length; i++) (function(i){
+      var a = i === st.index;
+      bar(i*8 + (a ? 9 : 0), 22 + i*42, 232, {text:MAIN[i].text, detail:MAIN[i].detail, active:a,
+        dim: st.open, hint: MAIN[i].tab && st.hint && !st.open,
+        click:function(){ st.index = i; st.open = false; if (MAIN[i].tab) st.open = true, st.sub = 0; render(); }});
+    })(i);
+    if (!st.open) return;
+    var ty = 22 + 3*42, tx = 3*8 + 9 + 232;
+    if (st.variant === 'A'){
+      // largura do leque lateral = a do texto mais longo (título + folga + detalhe), igual nos dois blocos:
+      // o detalhe nunca encosta no título, qualquer que seja o motivo exibido.
+      var sw = 0;
+      for (i = 0; i < S.length; i++) sw = Math.max(sw, 44 + textW(S[i].text, TITLE_FONT) + GAP + textW(S[i].detail, DETAIL_FONT) + 18);
+      sw = Math.ceil(sw);
+      for (i = 0; i < S.length; i++) (function(i){
+        var a = i === st.sub;
+        bar(tx + SIDE_GAP + i*8 + (a ? 9 : 0), ty - 21 + i*42, sw, {text:S[i].text, detail:S[i].detail, active:a, ok:S[i].ok, click:function(){ st.sub = i; confirm(); }});
+      })(i);
+    } else {
+      var h = 56 + 2*36 + 10;
+      var d = el('drawer', {left:(tx + 14)+'px', top:(ty - 60)+'px', width:'262px', height:h+'px'});
+      d.appendChild(el('back', {}, '‹ BACK (X)'));
+      d.appendChild(el('hd', {}, 'TACTICS // COMMAND'));
+      for (i = 0; i < S.length; i++) (function(i){
+        var a = i === st.sub;
+        var r = el('row' + (a ? ' on' : '') + (S[i].ok ? '' : ' off'), {top:(48 + i*36)+'px'});
+        r.appendChild(el('n', {color: a ? 'var(--ink)' : 'var(--cream)'}, S[i].text));
+        r.appendChild(el('s', {color: a ? 'var(--ink)' : 'var(--gold)'}, S[i].detail + '  ·  ' + S[i].why));
+        r.addEventListener('click', function(){ st.sub = i; confirm(); });
+        d.appendChild(r);
+      })(i);
+      menu.appendChild(d);
+    }
+  }
+  function say(msg){
+    toast.textContent = msg; toast.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function(){ toast.classList.remove('show'); }, 2600);
+  }
+  function confirm(){
+    render();
+    if (!st.open){
+      if (MAIN[st.index].tab) say('TACTICS abre o painel de IA dos aliados, como hoje (pausa o jogo). Nada mudou aqui.');
+      else say(MAIN[st.index].text + ': comportamento atual, sem mudança.');
+      return;
+    }
+    var s = subs()[st.sub];
+    if (!s.ok){ say(s.text + ' indisponível: ' + s.why + '. Nenhum ATB gasto.'); return; }
+    say(s.text + ': abriria a escolha de alvo. O custo de ' + s.cost + ' ATB só é cobrado depois (momento exato ainda pendente).');
+  }
+  function key(e){
+    var k = e.key.toLowerCase(), used = true;
+    if (!st.open){
+      if (k === 'arrowdown') st.index = (st.index + 1) % MAIN.length;
+      else if (k === 'arrowup') st.index = (st.index + MAIN.length - 1) % MAIN.length;
+      else if (k === 'arrowright' && MAIN[st.index].tab){ st.open = true; st.sub = 0; }
+      else if (k === 'z' || k === 'enter'){ confirm(); e.preventDefault(); return; }
+      else used = false;
+    } else {
+      if (k === 'arrowdown' || k === 'arrowup') st.sub = 1 - st.sub;
+      else if (k === 'arrowleft' || k === 'x' || k === 'escape') st.open = false;
+      else if (k === 'z' || k === 'enter'){ confirm(); e.preventDefault(); return; }
+      else used = false;
+    }
+    if (used){ e.preventDefault(); render(); }
+  }
+  stage.addEventListener('keydown', key);
+  stage.addEventListener('click', function(){ stage.focus(); });
+
+  function sync(){
+    var bar = document.getElementById('atbbar'); bar.innerHTML = '';
+    for (var i = 0; i < 5; i++){ var b = document.createElement('i'); if (i < st.atb) b.className = 'f'; bar.appendChild(b); }
+    document.getElementById('atbv').textContent = st.atb + ' / 5';
+    document.getElementById('vdesc').textContent = DESC[st.variant];
+    var bs = document.querySelectorAll('#variants button');
+    for (var j = 0; j < bs.length; j++) bs[j].setAttribute('aria-pressed', bs[j].getAttribute('data-v') === st.variant ? 'true' : 'false');
+    render();
+  }
+  document.getElementById('variants').addEventListener('click', function(e){
+    var v = e.target.getAttribute && e.target.getAttribute('data-v'); if (!v) return;
+    st.variant = v; st.index = 3; st.open = true; st.sub = 0; sync(); stage.focus();
+  });
+  document.getElementById('atb').addEventListener('input', function(e){ st.atb = +e.target.value; sync(); });
+  document.getElementById('failed').addEventListener('change', function(e){ st.failed = e.target.checked; sync(); });
+  document.getElementById('nosubs').addEventListener('change', function(e){ st.nosubs = e.target.checked; sync(); });
+  document.getElementById('hint').addEventListener('change', function(e){ st.hint = e.target.checked; sync(); });
+  // a escala do palco acompanha a largura, para a variante mais larga (gaveta) nunca ser cortada
+  function fit(){ stage.style.setProperty('--S', Math.max(0.7, Math.min(1.6, stage.clientWidth / 640)).toFixed(3)); }
+  window.addEventListener('resize', fit);
+  fit();
+  sync();
+})();
+</script>
+</body>
+</html>

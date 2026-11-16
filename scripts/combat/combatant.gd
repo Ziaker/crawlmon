@@ -5,6 +5,7 @@ extends RefCounted
 
 signal damaged(combatant: Combatant, amount: int)
 signal died(combatant: Combatant)
+signal boost_changed(combatant: Combatant, active: bool)  ## D-1242: BOOST started (true) or ended (false)
 signal buff_changed(combatant: Combatant, stat: String, new_val: int)  ## Visual and physical buff updates (D-158)
 signal guard_ended(combatant: Combatant, reason: String)  ## D-272: "expired", "hit" or "broken".
 signal shield_ended(combatant: Combatant, reason: String)  ## "expired", "broken", "hit" or "battle_end".
@@ -20,9 +21,13 @@ enum React { NONE, EVADE }  ## Tactics: how an AI ally reacts to incoming attack
 const BLOCKS := 5.0
 const BURST_MAX := 5
 const ATB_PACE_MULT := 1.0
+## D-1223: canonical stat order for ally auto-allocation tie-breaks.
+const AUTO_STAT_ORDER: Array[String] = ["STR", "MAG", "VIT", "WIS", "AGI", "LUK"]
 
 var name: String
 var species_id := ""  ## Overworld sprite id (e.g. "abra"); empty for enemies without one.
+## D-1233/D-1234: individual identity given by ExpeditionRoster. "" = not in the player's roster. Never derived from species, slot or side.
+var uid := ""
 var max_hp: int
 var hp: int
 var base_attack: int
@@ -51,6 +56,8 @@ var nature_id: String = "hardy"
 var individual_offsets: Dictionary = {}
 var innate_stats: Dictionary = {"STR": 1, "MAG": 1, "VIT": 1, "WIS": 1, "AGI": 1, "LUK": 1}
 var progression_points: Dictionary = {"STR": 0, "MAG": 0, "VIT": 0, "WIS": 0, "AGI": 0, "LUK": 0}
+## D-1223: persistent per-stat proficiency accumulated from real combat actions.
+var proficiency_points: Dictionary = {"STR": 0, "MAG": 0, "VIT": 0, "WIS": 0, "AGI": 0, "LUK": 0}
 var action_counts: Dictionary = {"PHYSICAL": 0, "MAGIC": 0, "GUARD": 0, "EVADE": 0}
 
 ## Progression fields (R13-Q4/R14-Q4/R26-Q3). XP/level-up rules (D-394, D-399, D-401, D-402).
@@ -136,20 +143,25 @@ var blind_timer := 0.0        ## Cegueira em segundos: 35% de chance de errar a�
 var taunted_by: Combatant = null  ## Alvo único forçado pelo Taunt.
 var taunt_atk_bonus := false  ## Bônus de +1 estágio de ATK exclusivo para a ação provocada.
 var guard_timer := 0.0        ## D-272: segundos restantes de Guard. Enquanto > 0: sem outras ações e ATB pausado.
+var boost_timer := 0.0        ## D-1242: seconds left of the BOOST (+1 to the six attributes, +1 Burst, +2 ATB at the start).
+var _boost_applied := false
 var armor_timer := 0.0        ## D-1026: segundos restantes da badge ARMOR (absorve o primeiro contato de Move sem interrupção).
 var burn_ticks_left := 0      ## D-238: ticks de Burn que faltam (4 ao aplicar; 2 HP fixos cada).
 var burn_clock := 0.0         ## D-238: segundos até o próximo tick (o primeiro vem 1 s depois da aplicação).
 
 var attack: int:
 	get:
-		var extra_stage := 1 if taunt_atk_bonus else 0
-		var total_stage := mini(atk_buff + extra_stage, 5)  # Never past the +5 limit (D-167).
-		var mult: float
-		if total_stage >= 0:
-			mult = 1.0 + float(total_stage) * 0.25
-		else:
-			mult = 1.0 / (1.0 + float(abs(total_stage)) * 0.25)
-		return maxi(1, roundi(float(base_attack) * mult))
+		return maxi(1, roundi(float(base_attack) * atk_stage_mult()))
+
+
+## Multiplier of the current ATK stage (D-159/D-167): 1 + 0.25 per positive stage, 1 / (1 + 0.25 per negative stage).
+## Used by `attack` and by the Employ chance (D-1240).
+func atk_stage_mult() -> float:
+	var extra_stage := 1 if taunt_atk_bonus else 0
+	var total_stage := mini(atk_buff + extra_stage, 5)  # Never past the +5 limit (D-167).
+	if total_stage >= 0:
+		return 1.0 + float(total_stage) * 0.25
+	return 1.0 / (1.0 + float(abs(total_stage)) * 0.25)
 
 var speed: float:
 	get:
@@ -280,6 +292,64 @@ func end_armor(reason: String) -> void:
 
 
 ## It keeps counting down during a Guard (D-1026). Called from the battle clock, which does not run while a status pause holds the engine.
+func is_boosted() -> bool:
+	return _boost_applied
+
+
+## D-1242 (BOOST): +1 STR/MAG/VIT/WIS/AGI/LUK for `seconds`, +1 Burst (no cap while it lasts) and +2 ATB once.
+## Starting it again only refreshes the clock. The attributes go back when it ends, and the Burst above the
+## normal limit with them; the ATB and the Burst granted stay.
+func start_boost(seconds: float) -> void:
+	if not is_alive():
+		return
+	boost_timer = seconds
+	if _boost_applied:
+		return
+	_boost_applied = true
+	str += 1
+	mag += 1
+	vit += 1
+	wis += 1
+	agi += 1
+	luk += 1
+	if uses_effective_strength:
+		base_attack += 1
+	burst += 1
+	add_atb(2.0)
+	boost_changed.emit(self, true)
+
+
+func end_boost() -> void:
+	if not _boost_applied:
+		return
+	_boost_applied = false
+	boost_timer = 0.0
+	str -= 1
+	mag -= 1
+	vit -= 1
+	wis -= 1
+	agi -= 1
+	luk -= 1
+	if uses_effective_strength:
+		base_attack -= 1
+	burst = mini(burst, BURST_MAX)
+	boost_changed.emit(self, false)
+
+
+## Counts the BOOST down; Battle only calls it while the battle runs, so every pause stops it too (D-1242).
+func tick_boost(delta: float) -> void:
+	if boost_timer <= 0.0:
+		return
+	boost_timer = maxf(boost_timer - delta, 0.0)
+	if boost_timer <= 0.0:
+		end_boost()
+
+
+## Burst gain: never above BURST_MAX by itself and never lowers a value that a BOOST pushed past it.
+func gain_burst(n: int) -> void:
+	burst = maxi(burst, mini(burst + n, BURST_MAX))
+
+
 func tick_armor(delta: float) -> void:
 	if armor_timer <= 0.0:
 		return
@@ -319,7 +389,7 @@ func get_effective_stat(stat: String) -> int:
 	var s := stat.to_upper()
 	if s == "SPI":
 		s = "WIS"
-	return int(innate_stats.get(s, 1)) + int(progression_points.get(s, 0))
+	return int(innate_stats.get(s, 1)) + int(progression_points.get(s, 0)) + (1 if _boost_applied else 0)  # D-1242
 
 
 ## Sincroniza as variaveis diretas com os status efetivos e atualiza a velocidade base de ATB.
@@ -333,6 +403,100 @@ func sync_effective_stats() -> void:
 	if uses_effective_strength:
 		base_attack = str  # D-1143: STR allocated on level-up must reach the physical damage.
 	base_speed = CrawlmonAttributeMath.natural_atb_increment(1.0, float(agi))
+
+
+## D-1223: accumulates real-combat proficiency for one attribute (agnostic to character/side).
+func record_proficiency(stat: String, amount: int) -> void:
+	var s := stat.to_upper()
+	if s == "SPI":
+		s = "WIS"
+	if amount <= 0 or not proficiency_points.has(s):
+		return
+	proficiency_points[s] = int(proficiency_points.get(s, 0)) + amount
+
+
+## D-1223: Nature weight per attribute: +2 per positive modifier point; with no positive
+## modifier, +2 on the highest innate stat (tie broken by AUTO_STAT_ORDER).
+func _nature_bonus_map() -> Dictionary:
+	var out: Dictionary = {}
+	var mods: Dictionary = NatureData.get_nature(nature_id).get("mods", {})
+	var any_positive := false
+	for stat in AUTO_STAT_ORDER:
+		var mod := int(mods.get(stat, 0))
+		if mod > 0:
+			out[stat] = 2 * mod
+			any_positive = true
+		else:
+			out[stat] = 0
+	if not any_positive:
+		var best := AUTO_STAT_ORDER[0]
+		var best_val := int(innate_stats.get(best, 0))
+		for stat in AUTO_STAT_ORDER:
+			var value := int(innate_stats.get(stat, 0))
+			if value > best_val:
+				best_val = value
+				best = stat
+		out[best] = 2
+	return out
+
+
+## D-1223: Tactics weight per attribute (Act.ATTACK -> STR, Act.SKILL -> MAG, Act.HOLD -> WIS;
+## React.EVADE -> AGI).
+func _tactics_bonus_map() -> Dictionary:
+	var out: Dictionary = {"STR": 0, "MAG": 0, "VIT": 0, "WIS": 0, "AGI": 0, "LUK": 0}
+	match act_policy:
+		Act.ATTACK:
+			out["STR"] = 1
+		Act.SKILL:
+			out["MAG"] = 1
+		Act.HOLD:
+			out["WIS"] = 1
+	if react_policy == React.EVADE:
+		out["AGI"] = 1
+	return out
+
+
+## D-1223: spends `pts` level-up points for a non-leader ally, one point per iteration.
+## Returns {"alloc": {stat: count}, "reason": PT-BR summary}. Only the winning attribute's
+## proficiency is reset; the other five keep accumulating.
+func _auto_allocate_level_points(pts: int) -> Dictionary:
+	var alloc: Dictionary = {}
+	var reason := ""
+	var nature_bonus := _nature_bonus_map()
+	var tactics_bonus := _tactics_bonus_map()
+	for _i in maxi(pts, 0):
+		var winner := ""
+		var best_score := -2147483648
+		var best_innate := -2147483648
+		for stat in AUTO_STAT_ORDER:
+			var score := int(proficiency_points.get(stat, 0)) + int(nature_bonus.get(stat, 0)) + int(tactics_bonus.get(stat, 0))
+			var innate := int(innate_stats.get(stat, 0))
+			if score > best_score or (score == best_score and innate > best_innate):
+				best_score = score
+				best_innate = innate
+				winner = stat
+		if winner == "":
+			winner = AUTO_STAT_ORDER[0]
+		if reason == "":
+			reason = _auto_point_reason(winner, nature_bonus, tactics_bonus)
+		progression_points[winner] = int(progression_points.get(winner, 0)) + 1
+		proficiency_points[winner] = 0
+		alloc[winner] = int(alloc.get(winner, 0)) + 1
+		sync_effective_stats()
+	return {"alloc": alloc, "reason": reason}
+
+
+## D-1223: PT-BR summary of what drove one automatic point (proficiency, Tactics or Nature).
+func _auto_point_reason(winner: String, nature_bonus: Dictionary, tactics_bonus: Dictionary) -> String:
+	var prof := int(proficiency_points.get(winner, 0))
+	var nat := int(nature_bonus.get(winner, 0))
+	var tac := int(tactics_bonus.get(winner, 0))
+	var nature_name := String(NatureData.get_nature(nature_id).get("name", "Hardy"))
+	if prof > 0 and prof >= nat and prof >= tac:
+		return "Ações em combate · %s" % nature_name
+	if tac > 0 and tac >= nat:
+		return "Táticas · %s" % nature_name
+	return "Nature %s" % nature_name
 
 
 ## Identifica se este combatente e o lider ativo da equipe com guarda estrita contra party vazia.
@@ -355,6 +519,8 @@ func add_experience(amount: int) -> Dictionary:
 	var old_level: int = level
 	var old_xp: int = xp
 	var current_req: int = CrawlmonAttributeMath.get_xp_for_level_transition(level)
+	var auto_alloc: Dictionary = {}
+	var auto_reason := ""
 
 	if amount <= 0:
 		return {
@@ -365,7 +531,9 @@ func add_experience(amount: int) -> Dictionary:
 			"old_xp": old_xp,
 			"current_xp": xp,
 			"xp_required": current_req,
-			"transitions": []
+			"transitions": [],
+			"auto_alloc": auto_alloc,
+			"auto_reason": auto_reason
 		}
 
 	xp += amount
@@ -383,6 +551,13 @@ func add_experience(amount: int) -> Dictionary:
 			total_points += pts
 			if is_party_leader():
 				distributable_points += pts
+			else:
+				var auto_result := _auto_allocate_level_points(pts)
+				var gained: Dictionary = auto_result.get("alloc", {})
+				for stat in gained:
+					auto_alloc[stat] = int(auto_alloc.get(stat, 0)) + int(gained[stat])
+				if auto_reason == "":
+					auto_reason = String(auto_result.get("reason", ""))
 			update_resource_maximums()
 			transitions.append({"level": level, "points": pts, "xp_required": req})
 			level_up_occurred.emit(level, pts)
@@ -398,7 +573,9 @@ func add_experience(amount: int) -> Dictionary:
 		"old_xp": old_xp,
 		"current_xp": xp,
 		"xp_required": CrawlmonAttributeMath.get_xp_for_level_transition(level),
-		"transitions": transitions
+		"transitions": transitions,
+		"auto_alloc": auto_alloc,
+		"auto_reason": auto_reason
 	}
 
 
@@ -672,6 +849,7 @@ func shown_burst() -> int:
 
 
 func clear_pending() -> void:
+	end_boost()
 	pending_atb = 0
 	pending_extra = 0
 	pending_burst = 0
@@ -757,7 +935,8 @@ func save_state() -> Dictionary:
 		"shield_hp": shield_hp, "shield_max": shield_max, "shield_timer": shield_timer, "shield_seconds": shield_seconds,
 		"magic_immune_timer": magic_immune_timer, "magic_immune_seconds": magic_immune_seconds,
 		"is_invulnerable": is_invulnerable, "stun_timer": stun_timer, "stun_kind": stun_kind, "blind_timer": blind_timer,
-		"guard_timer": guard_timer, "armor_timer": armor_timer,
+		"guard_timer": guard_timer, "armor_timer": armor_timer, "boost_timer": boost_timer, "boost_applied": _boost_applied,
+		"attrs": {"str": str, "mag": mag, "vit": vit, "wis": wis, "agi": agi, "luk": luk, "base_attack": base_attack},  # D-1242: the BOOST bonus lives in them
 		"burn_ticks_left": burn_ticks_left, "burn_clock": burn_clock,
 		"taunt_atk_bonus": taunt_atk_bonus,
 		"queued_skill": queued_skill, "queued_target": queued_target, "queued_target2": queued_target2,  # D-1146 / D-1042 / D-1200
@@ -800,6 +979,17 @@ func restore_state(s: Dictionary) -> void:
 	blind_timer = float(s.get("blind_timer", blind_timer))
 	guard_timer = float(s.get("guard_timer", guard_timer))
 	armor_timer = float(s.get("armor_timer", armor_timer))
+	boost_timer = float(s.get("boost_timer", boost_timer))
+	_boost_applied = bool(s.get("boost_applied", _boost_applied))
+	var attrs: Dictionary = s.get("attrs", {})
+	if not attrs.is_empty():
+		str = int(attrs.get("str", str))
+		mag = int(attrs.get("mag", mag))
+		vit = int(attrs.get("vit", vit))
+		wis = int(attrs.get("wis", wis))
+		agi = int(attrs.get("agi", agi))
+		luk = int(attrs.get("luk", luk))
+		base_attack = int(attrs.get("base_attack", base_attack))
 	burn_ticks_left = int(s.get("burn_ticks_left", burn_ticks_left))
 	burn_clock = float(s.get("burn_clock", burn_clock))
 	taunt_atk_bonus = bool(s.get("taunt_atk_bonus", taunt_atk_bonus))
