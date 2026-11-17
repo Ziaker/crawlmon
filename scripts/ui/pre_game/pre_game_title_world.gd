@@ -5,6 +5,17 @@ extends SubViewportContainer
 
 const PreGameCatalog = preload("res://scripts/ui/pre_game/pre_game_catalog.gd")
 const CharacterModelLoader = preload("res://scripts/combat/character_model_loader.gd")
+## Models of the hub NPCs (HUB_NPC_SPECS in hub_3d_lab.gd): also part of the random title pool.
+const NPC_IDS: Array[String] = ["bulbasaur", "pikachu", "squirtle", "charmander", "eevee",
+	"dqt_healslime", "dqt_dracky", "dqt_sabrecub", "dqt_platypunk", "dqt_fungi"]
+## Overworld heights in metres (copied from HUB_HEIGHTS in scripts/hub/hub_3d_lab.gd: lab values, D-1023).
+const OVERWORLD_HEIGHTS := {
+	"abra": 1.0, "pancham": 0.7, "gible": 0.85, "dqt_slime": 0.90, "dqt_orc": 2.1, "dqt_cyclops": 2.2,
+	"bulbasaur": 0.78, "pikachu": 0.72, "squirtle": 0.72, "charmander": 0.78, "eevee": 0.62,
+	"dqt_healslime": 1.15, "dqt_dracky": 0.95, "dqt_sabrecub": 0.85, "dqt_platypunk": 0.95, "dqt_fungi": 0.95,
+}
+## One fixed framing for everybody (so relative sizes are real): altar and camera do not follow the model.
+const REF_RADIUS := 1.2
 const HubAltarScript = preload("res://scripts/hub/hub_altar.gd")
 const HubSummonFxScript = preload("res://scripts/hub/hub_summon_fx.gd")
 
@@ -57,6 +68,10 @@ var _fx: Node3D
 var _leader: Node3D
 var _ui: Control
 var _H := 1.0
+var _gen := 0
+var _leader_id := ""
+var _model_k := 1.0
+var _live_lo := 0.0  ## live lowest point of the leader with its pivot at y=0
 var _top := 0.0  ## altar top height (the leader and the circle stand on it)
 var _R := 2.0
 var _t := 0.0
@@ -83,12 +98,14 @@ func _ready() -> void:
 	_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS if active else SubViewport.UPDATE_DISABLED
 	add_child(_vp)
 	# Creator: the leader is random each time the title opens (unless set_leader() chose one).
-	var first := _leader_idx if _leader_idx >= 0 else randi() % maxi(PreGameCatalog.build_protagonist_list().size(), 1)
+	var first := _leader_idx if _leader_idx >= 0 else randi() % (PreGameCatalog.build_protagonist_list().size() + NPC_IDS.size())
 	_leader_idx = -1
 	set_leader(first)
 
 
 ## Rebuilds the world for another leader (all sizes derive from its measured height, D-235).
+## The height and the floor level are measured LIVE on the idle pose (skinned vertices), because the
+## bind-pose bounds are wrong for some rigs (huge Bulbasaur) and flyers hover while idling.
 func set_leader(idx: int) -> void:
 	if _vp == null:
 		_leader_idx = idx
@@ -96,6 +113,8 @@ func set_leader(idx: int) -> void:
 	if idx == _leader_idx and _fx != null:
 		return
 	_leader_idx = idx
+	_gen += 1
+	var gen := _gen
 	for c in _vp.get_children():
 		c.queue_free()
 	_slabs.clear()
@@ -103,14 +122,130 @@ func set_leader(idx: int) -> void:
 	_cam = null
 	_leader = null
 	_build_leader(idx)
+	if _leader != null:
+		# Measure a whole idle loop (seek through it): the floor is the LOWEST point of the loop
+		# (a hopping Slime or a hovering flyer then touches the altar at its lowest), the height
+		# is the mean body height.
+		await get_tree().process_frame
+		await get_tree().process_frame
+		if gen != _gen or _leader == null:
+			return
+		var ap: AnimationPlayer = null
+		for node in _leader.find_children("*", "AnimationPlayer", true, false):
+			ap = node as AnimationPlayer
+			break
+		var length := 0.0
+		if ap != null and ap.current_animation != "":
+			length = ap.current_animation_length
+		var lo := 1e9
+		var hsum := 0.0
+		var n := 0
+		var steps := 12 if length > 0.0 else 1
+		for k in steps:
+			if length > 0.0:
+				ap.seek(length * float(k) / float(steps), true)
+			var e := _live_extent(_leader)
+			if e.y > e.x:
+				lo = minf(lo, e.x)
+				hsum += e.y - e.x
+				n += 1
+		if length > 0.0:
+			ap.seek(0.0, true)
+		var body_h := _H  # static bounds unless the live measure is sane
+		if n > 0:
+			var live_h := hsum / float(n)
+			# Rigs with absurd skinned extents keep the static bounds.
+			if live_h > _H * 0.4 and live_h < _H * 2.5:
+				_live_lo = lo
+				body_h = maxf(0.05, live_h)
+		# Creator: real overworld heights (HUB_HEIGHTS), so big characters stay big and small ones small.
+		var target := float(OVERWORLD_HEIGHTS.get(_leader_id, body_h))
+		_model_k = target / body_h
+		_leader.scale = Vector3.ONE * _model_k
+		_H = target
+		_R = REF_RADIUS
+	if gen != _gen:
+		return
 	_build_world()
 	_build_lights()
 	_build_motes()
+	# UX: no pop when the world appears (the leader is measured first).
+	var capturing := false
+	for a in OS.get_cmdline_args() + OS.get_cmdline_user_args():
+		if str(a).begins_with("--shot="):
+			capturing = true
+	if capturing:
+		return
+	modulate.a = 0.0
+	create_tween().tween_property(self, "modulate:a", 1.0, 0.7)
+
+
+## Lowest and highest world y of the skinned mesh in the current pose (x = low, y = high).
+func _live_extent(root_node: Node3D) -> Vector2:
+	var lo := 1e9
+	var hi := -1e9
+	for node in root_node.find_children("*", "MeshInstance3D", true, false):
+		var mi := node as MeshInstance3D
+		if mi == null or mi.mesh == null or not mi.is_visible_in_tree():
+			continue
+		var sk: Skeleton3D = null
+		if mi.skeleton != NodePath():
+			sk = mi.get_node_or_null(mi.skeleton) as Skeleton3D
+		var skin: Skin = mi.skin
+		var bind_xf: Array[Transform3D] = []
+		if sk != null and skin != null:
+			for i in skin.get_bind_count():
+				var bi := skin.get_bind_bone(i)
+				if bi < 0:
+					bi = sk.find_bone(skin.get_bind_name(i))
+				bind_xf.append(sk.get_bone_global_pose(bi) * skin.get_bind_pose(i) if bi >= 0 else Transform3D.IDENTITY)
+		for si in mi.mesh.get_surface_count():
+			var arr := mi.mesh.surface_get_arrays(si)
+			var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			if verts.is_empty():
+				continue
+			var bones: PackedInt32Array = PackedInt32Array()
+			var weights: PackedFloat32Array = PackedFloat32Array()
+			if arr[Mesh.ARRAY_BONES] != null and arr[Mesh.ARRAY_WEIGHTS] != null:
+				bones = arr[Mesh.ARRAY_BONES]
+				weights = arr[Mesh.ARRAY_WEIGHTS]
+			var stride := bones.size() / verts.size() if not bones.is_empty() else 0
+			var skinned := stride > 0 and not bind_xf.is_empty()
+			for v in verts.size():
+				var wp: Vector3
+				if skinned:
+					var acc := Vector3.ZERO
+					var wsum := 0.0
+					for k in stride:
+						var w := weights[v * stride + k]
+						if w <= 0.0:
+							continue
+						var bi2 := bones[v * stride + k]
+						if bi2 < 0 or bi2 >= bind_xf.size():
+							continue
+						acc += w * (bind_xf[bi2] * verts[v])
+						wsum += w
+					if wsum <= 0.0:
+						continue
+					wp = sk.global_transform * (acc / wsum)
+				else:
+					wp = mi.global_transform * verts[v]
+				lo = minf(lo, wp.y)
+				hi = maxf(hi, wp.y)
+	return Vector2(lo, hi)
 
 
 func _build_leader(idx: int) -> void:
-	var spec := PreGameCatalog.get_protagonist_by_index(idx)
-	var combatant := PreGameCatalog.build_combatant_for_3d(spec)
+	var protos := PreGameCatalog.build_protagonist_list()
+	var combatant: Combatant = null
+	if idx < protos.size():
+		combatant = PreGameCatalog.build_combatant_for_3d(protos[idx])
+	else:
+		# Creator: the hub NPC models are also valid title stars. Model comes from species_id only.
+		var npc_id: String = NPC_IDS[clampi(idx - protos.size(), 0, NPC_IDS.size() - 1)]
+		combatant = Combatant.new(npc_id, 1, 1, 1.0, false)
+		combatant.species_id = npc_id
+	_leader_id = str(combatant.species_id).to_lower() if combatant != null else ""
 	var model := CharacterModelLoader.create_character_model(combatant) if combatant != null else null
 	if model == null:
 		push_warning("title_v2: no leader model")
@@ -182,9 +317,9 @@ func _build_world() -> void:
 	altar.scale = Vector3.ONE * sc
 	_vp.add_child(altar)
 	_top = altar.top_y * sc
-	_fx.position.y = _top
+	_fx.position.y = _top - 0.16 + 0.012  # the glyph meshes sit 0.16 m above their origin (hub medallion): lay them on the stone
 	if _leader != null:
-		_leader.position.y = _top
+		_leader.position.y = _top - _live_lo * _model_k + 0.01 * _H
 	# Beam: draw only the far wall so it glows behind the leader instead of over it.
 	var bs := Shader.new()
 	bs.code = _fx._pillar_mat.shader.code.replace("cull_disabled", "cull_front")
@@ -319,7 +454,7 @@ func _process(delta: float) -> void:
 	var mir := -1.0 if mirror else 1.0
 	# Slow orbital drift + dolly, low camera looking slightly up (hero angle). Subject sits right.
 	var yaw := deg_to_rad(sin(_t * 0.31) * 5.0 + 6.0) * mir
-	var dist := _R * 3.95 - sin(_t * 0.22) * _R * 0.12
+	var dist := _R * 3.95 * maxf(1.0, _H / 1.3) - sin(_t * 0.22) * _R * 0.12
 	var cam_y := _top + _H * 0.42 + sin(_t * 0.27) * _H * 0.03
 	_cam.global_position = Vector3(sin(yaw) * dist, cam_y, cos(yaw) * dist)
 	_cam.look_at(Vector3(0.0, _top + _H * 0.62, 0.0), Vector3.UP)

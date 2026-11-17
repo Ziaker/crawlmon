@@ -42,6 +42,13 @@ static func draw_backdrop_gradient(ci: CanvasItem, size: Vector2) -> void:
 	var z := Color(0.02, 0.05, 0.09, 0.0)
 	ci.draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(gw, 0), Vector2(gw * 0.8, size.y), Vector2(0, size.y)]),
 		PackedColorArray([c, z, z, c]))
+	# UX: bottom shade grounds the footer/hint/context card, top shade calms the rail area.
+	var b0 := Color(0.01, 0.03, 0.06, 0.0)
+	var b1 := Color(0.01, 0.03, 0.06, 0.62)
+	ci.draw_polygon(PackedVector2Array([Vector2(0, size.y * 0.72), Vector2(size.x, size.y * 0.72), Vector2(size.x, size.y), Vector2(0, size.y)]),
+		PackedColorArray([b0, b0, b1, b1]))
+	ci.draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(size.x, 0), Vector2(size.x, size.y * 0.14), Vector2(0, size.y * 0.14)]),
+		PackedColorArray([Color(b1, 0.45), Color(b1, 0.45), b0, b0]))
 
 
 ## Title art + kicker plate. `t` = seconds since the title appeared.
@@ -77,7 +84,7 @@ static func draw_plates(ci: CanvasItem, size: Vector2, mt: float, menu_index: in
 		var focused := idx == menu_index
 		var pa := ease_out((mt - 0.05 - idx * 0.09) / 0.45)
 		var h := (54.0 if focused else 46.0) * s
-		var fill := Color(0.031, 0.055, 0.094, 0.94)
+		var fill := Color(0.075, 0.12, 0.175, 0.94)  # UX: lighter than the scene so idle plates read as buttons
 		if focused:
 			fill = PreGameDraw.CORAL if str(item.get("id", "")) == "quit" else PreGameDraw.LIME_FAN
 		var cx := 28.0 * s + plate_w * 0.5 + (float(idx) * 16.0 + (22.0 if focused else 0.0)) * s \
@@ -100,7 +107,7 @@ static func draw_plates(ci: CanvasItem, size: Vector2, mt: float, menu_index: in
 		var tbase := (mono.get_ascent(tsz) - mono.get_descent(tsz)) * 0.5
 		ci.draw_string(mono, Vector2(-psize.x * 0.5, tbase), str(item.get("tag", "")),
 			HORIZONTAL_ALIGNMENT_RIGHT, psize.x - 22.0 * s, tsz,
-			Color(PreGameDraw.INK, 0.72) if focused else PreGameDraw.TEXT_MUTED)
+			Color(PreGameDraw.INK, 0.72) if focused else PreGameDraw.TEXT_SUB)
 		PreGameDraw.pop_xform(ci)
 
 
@@ -108,15 +115,16 @@ static func draw_plates(ci: CanvasItem, size: Vector2, mt: float, menu_index: in
 static func draw_enter_hint(ci: CanvasItem, size: Vector2, t: float, hover: bool) -> Array:
 	var s := minf(size.x / 1280.0, size.y / 720.0)
 	var display := PreGameDraw.title_font()
-	var blink := 1.0 if hover else 0.75 + 0.25 * sin(t * 3.0)
-	var psize := Vector2(380.0 * s, 32.0 * s)
-	var hx := PreGameDraw.draw_card(ci, Vector2(size.x - 230.0 * s, size.y - 34.0 * s), psize, -2.0, -8.0,
+	var blink := 1.0 if hover else 0.8 + 0.2 * sin(t * 3.0)
+	# UX: the single call to action sits bottom-left, under the logo's column, clear of the character.
+	var psize := Vector2(520.0 * s, 44.0 * s)
+	var hx := PreGameDraw.draw_card(ci, Vector2(40.0 * s + psize.x * 0.5, size.y - 52.0 * s), psize, -1.6, -8.0,
 		Color(PreGameDraw.LIME if hover else PreGameDraw.PAPER, blink), Color.BLACK, 2.0,
-		Vector2(6, 6) * s, Color(0, 0, 0, 0.9), [],
-		PackedVector2Array([Vector2(0, 0), Vector2(0.96, 0), Vector2(1, 1), Vector2(0.04, 1)]))
+		Vector2(7, 7) * s, Color(0, 0, 0, 0.9), [],
+		PackedVector2Array([Vector2(0, 0), Vector2(0.97, 0), Vector2(1, 1), Vector2(0.03, 1)]))
 	PreGameDraw.push_counter_skew(ci, hx, -8.0)
-	ci.draw_string(display, Vector2(-psize.x * 0.5 + 14.0 * s, 7.0 * s), "CLICK OR PRESS ANY KEY // ENTER LABYRINTH",
-		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(16.0, s), PreGameDraw.INK)
+	ci.draw_string(display, Vector2(-psize.x * 0.5 + 18.0 * s, 8.0 * s), "CLICK OR PRESS ANY KEY // ENTER LABYRINTH",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(21.0, s), PreGameDraw.INK)
 	PreGameDraw.pop_xform(ci)
 	return [hx, psize]
 
@@ -222,7 +230,7 @@ static func _draw_save_stats(ci: CanvasItem, xf: Transform2D, csize: Vector2, s:
 	for i in cells.size():
 		var x := left + float(i) * cell_w
 		ci.draw_string(mono, Vector2(x, -10.0 * s), str(cells[i][0]), HORIZONTAL_ALIGNMENT_LEFT, -1,
-			_fs(9.5, s), Color(PreGameDraw.INK, 0.62))
+			_fs(11.0, s), Color(PreGameDraw.INK, 0.7))
 		ci.draw_string(display, Vector2(x, 20.0 * s), str(cells[i][1]), HORIZONTAL_ALIGNMENT_LEFT, -1,
 			_fs(25.0, s), PreGameDraw.INK)
 	PreGameDraw.pop_xform(ci)

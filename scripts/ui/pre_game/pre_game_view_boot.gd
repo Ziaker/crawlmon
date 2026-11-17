@@ -581,14 +581,14 @@ func _draw_context_card(sx: float, sy: float, s: float) -> void:
 
 
 func _draw_footer(sx: float, sy: float, s: float) -> void:
-	var xform := PreGameDraw.draw_card(self, Vector2(198.0 * sx, 696.0 * sy),
-		Vector2(340.0 * s, 26.0 * s), -1.0, 0.0, Color(0.012, 0.047, 0.086, 0.95),
+	var xform := PreGameDraw.draw_card(self, Vector2(238.0 * sx, 696.0 * sy),
+		Vector2(400.0 * s, 28.0 * s), -1.0, 0.0, Color(0.012, 0.047, 0.086, 0.95),
 		Color.BLACK, 0.0, Vector2.ZERO, Color(0, 0, 0, 0.0),
 		_accents("top", 1.0, Color("365365")))
 	draw_set_transform_matrix(xform)
-	var pill_font := _fs(9.0, s)
+	var pill_font := _fs(10.5, s)
 	var pill_h := float(pill_font + 8)
-	var px := -340.0 * s * 0.5 + 8.0 * s
+	var px := -400.0 * s * 0.5 + 8.0 * s
 	var py := -pill_h * 0.5
 	var first_w := PreGameDraw.draw_kbd_pill(self, Vector2(px, py), "MOUSE",
 		"HOVER / CLICK / R-CLICK BACK", pill_font)
