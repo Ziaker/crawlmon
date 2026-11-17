@@ -31,3 +31,9 @@ Implementado como cor: enquanto BLIND/hit, a malha `Eye_Model_a` do Orc recebe u
 Frases literais do criador: "volta atrás e desenha a palpebra como shader"; depois "tá grande demais".
 
 Substitui o disco liso: enquanto BLIND/hit o Orc troca a malha do adesivo de olho por uma cópia com cada olho ampliado 1,2x em torno do próprio centro, desenhada por shader (`DqtEyes.LID_SHADER`: amêndoa de cor de pele, linha de cílios curva e leve sombra acima; fora da amêndoa é descartado). Valores técnicos meus e pendentes: 1,2x (1,5x e 2,4x ficaram grandes demais), cor `eye_cover_color`, forma da amêndoa e da linha. Aberto, a malha e o material originais voltam intactos.
+
+### Orc: pálpebra pintada na textura da cabeça (2026-11-17)
+
+Frase literal do criador: "tá péssimo ainda, acha um outro jeito"
+
+Substitui o shader sobre o adesivo (que aparecia como remendo): o olho branco do Orc está na textura da cabeça, então `DqtEyes` acha, por olho, o branco ao redor da pupila (vértices da cabeça mais próximos, UV, preenchimento do branco), repinta com a cor de pele medida num anel ao redor e traça uma linha de cílios curva. Uma cópia do material da cabeça com essa textura entra só enquanto BLIND/hit; a pupila fica escondida. Aberto, tudo volta ao original. Valores técnicos meus e pendentes: arco da linha (0,2 da altura), espessura (3 px), limiar de "branco".

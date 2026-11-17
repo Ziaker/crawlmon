@@ -39,97 +39,153 @@ static func attach(model_root: Node3D, glb_root: Node, ap: AnimationPlayer, slee
 ## Sabrecub) hold the pose their own Sleep clip gives those bones at t=0 while BLIND / hit.
 var _lids: Array = []  ## [{skeleton, bone, pos, rot, scl}] (null where the clip has no track of that kind)
 var _eye_meshes: Array[MeshInstance3D] = []
-var hide_eye_mesh_on_close := false  ## profile flag: draw a skin-colored lid over the eye while closed (Orc)
-const COVER_SCALE := 1.2  ## the sticker is enlarged this much (around each eye's center) so the lid covers the whole eye white
+var hide_eye_mesh_on_close := false  ## profile flag: paint the closed eye in the head texture while closed (Orc)
+var cover_color := Color(0.62, 0.51, 0.39)  ## fallback skin tone when none can be measured around the eye
 var _glb: Node
-var _cover_mat: ShaderMaterial
-var _orig_mesh: Mesh  ## the sticker mesh as imported (open eye, untouched)
-var _baked_mesh: Mesh  ## copy with UV2 (closed-lid shader), swapped in only while closed
-static var _lid_shader: Shader
-## Closed eye drawn as a shader on the eye-sticker mesh (UV 0..1 = the sticker): almond of skin color,
-## a curved lash line and a soft shade above it. Fragments outside the almond are discarded, so the open
-## eye white of the head texture shows around it only where the almond does not reach.
-const LID_SHADER := """
-shader_type spatial;
-render_mode unshaded, cull_disabled;
-uniform vec3 skin : source_color = vec3(0.7, 0.55, 0.4);
-void fragment() {
-	vec2 p = UV2;  // -1..1 over ONE eye of the sticker (baked into the mesh copy, y positive = down)
-	float arch = 1.0 - p.x * p.x;
-	if (abs(p.y) > 0.78 * pow(max(arch, 0.0), 0.8) + 0.04) { discard; }
-	float line_y = 0.20 * arch - 0.10;
-	float lash = 1.0 - smoothstep(0.025, 0.075, abs(p.y - line_y));
-	float shade = smoothstep(0.0, 0.5, line_y - p.y) * 0.12;
-	vec3 c = skin * (1.0 - shade);
-	c = mix(c, skin * 0.25, lash);
-	ALBEDO = c;
-}
-"""
-var cover_color := Color(0.62, 0.51, 0.39)
-var _eye_bones: Array = []  ## [{skeleton, bone}] eye bones (names with "eye", not "mabuta")
+var _paint_ready := false
+var _head_mi: MeshInstance3D
+var _head_surface := 0
+var _closed_mat: Material  ## copy of the head material whose albedo texture has the eye whites painted over
 
 
-## Lid color: `cover_color` from the model profile (`eye_cover_color`, the lit skin tone around the eye, unshaded).
+## Closed eye for models whose eye white lives in the head texture and whose lids do not cover it (Orc):
+## for each eye, the pupil sticker's center is matched to the nearest head vertices, their UVs give a texel
+## in the head texture, the near-white blob (the sclera) around it is flood-filled and repainted with the skin
+## color measured in a ring around it, and a curved lash line is drawn across it. The painted copy of the head
+## material replaces the original only while the eye is closed; the pupil sticker is hidden meanwhile.
 func _cover_init() -> void:
-	if _cover_mat != null or _eye_meshes.is_empty():
+	if _paint_ready:
 		return
-	if _lid_shader == null:
-		_lid_shader = Shader.new()
-		_lid_shader.code = LID_SHADER
-	_cover_mat = ShaderMaterial.new()
-	_cover_mat.shader = _lid_shader
-	_cover_mat.set_shader_parameter("skin", Vector3(cover_color.r, cover_color.g, cover_color.b))
-	_bake_local_coords(_eye_meshes[0])
-	for s in _glb.find_children("*", "Skeleton3D", true, false):
-		var sk := s as Skeleton3D
-		for b in sk.get_bone_count():
-			var nm := sk.get_bone_name(b).to_lower()
-			if nm.contains("eye") and not nm.contains("mabuta") and not nm.contains("translate"):
-				_eye_bones.append({"skeleton": sk, "bone": b})
-
-
-## Copy of the sticker mesh for the closed lid: each eye (the vertices on one side of x = 0) is enlarged by
-## COVER_SCALE around its own center, in rest pose, so it covers the eye white; UV2 = position inside that
-## eye (-1..1, y positive = down) for the lid shader. Skin/weights arrays are kept as they are.
-func _bake_local_coords(mi: MeshInstance3D) -> void:
-	var src := mi.mesh
-	var arr := src.surface_get_arrays(0)
-	var vs: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
-	var out_v := PackedVector3Array()
-	var uv2 := PackedVector2Array()
-	out_v.resize(vs.size())
-	uv2.resize(vs.size())
+	_paint_ready = true
+	if _eye_meshes.is_empty():
+		return
+	var best_mat: BaseMaterial3D
+	for n in _glb.find_children("*", "MeshInstance3D", true, false):
+		var mi := n as MeshInstance3D
+		if mi.mesh == null or mi.name.begins_with("Eye_Model") or mi.name.begins_with("WModel"):
+			continue
+		for s in mi.mesh.get_surface_count():
+			var mat := mi.mesh.surface_get_material(s) as BaseMaterial3D
+			if mat != null and mat.albedo_texture != null:
+				_head_mi = mi
+				_head_surface = s
+				best_mat = mat
+	if _head_mi == null:
+		return
+	var src_img: Image = preload("res://scripts/common/eye_blink.gd")._image_of(best_mat.albedo_texture)
+	if src_img == null:
+		return
+	var img := src_img.duplicate() as Image
+	var head := _head_mi.mesh.surface_get_arrays(_head_surface)
+	var hv: PackedVector3Array = head[Mesh.ARRAY_VERTEX]
+	var huv: PackedVector2Array = head[Mesh.ARRAY_TEX_UV]
+	var sv: PackedVector3Array = _eye_meshes[0].mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var painted := 0
 	for side in [-1.0, 1.0]:
 		var lo := Vector3(1e9, 1e9, 1e9)
 		var hi := Vector3(-1e9, -1e9, -1e9)
-		for v in vs:
+		for v in sv:
 			if v.x * side >= 0.0:
 				lo = lo.min(v)
 				hi = hi.max(v)
+		if lo.x > hi.x:
+			continue
 		var c := (lo + hi) * 0.5
-		var h := (hi - lo) * 0.5 * COVER_SCALE
-		for i in vs.size():
-			if vs[i].x * side >= 0.0:
-				var nv := c + (vs[i] - c) * COVER_SCALE
-				out_v[i] = nv
-				uv2[i] = Vector2((nv.x - c.x) / maxf(h.x, 0.0001), -(nv.y - c.y) / maxf(h.y, 0.0001))
-	arr[Mesh.ARRAY_VERTEX] = out_v
-	arr[Mesh.ARRAY_TEX_UV2] = uv2
-	var m := ArrayMesh.new()
-	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
-	m.surface_set_material(0, src.surface_get_material(0))
-	m.custom_aabb = src.get_aabb().grow(0.1)
-	_orig_mesh = src
-	_baked_mesh = m
+		var near: Array = []
+		for i in hv.size():
+			near.append([hv[i].distance_squared_to(c), i])
+		near.sort_custom(func(x, y): return x[0] < y[0])
+		var seed := Vector2i(-1, -1)
+		var seed_score := -1.0
+		for k in mini(near.size(), 12):
+			var uv: Vector2 = huv[near[k][1]]
+			var cx := int(uv.x * img.get_width())
+			var cy := int(uv.y * img.get_height())
+			for dy in range(-24, 25, 2):
+				for dx in range(-24, 25, 2):
+					var px := Vector2i(clampi(cx + dx, 0, img.get_width() - 1), clampi(cy + dy, 0, img.get_height() - 1))
+					var col := img.get_pixelv(px)
+					if _is_white(col) and col.v > seed_score:
+						seed_score = col.v
+						seed = px
+		if seed.x < 0:
+			continue
+		painted += _paint_eye(img, seed)
+	if painted == 0:
+		return
+	var mat2 := best_mat.duplicate() as BaseMaterial3D
+	mat2.albedo_texture = ImageTexture.create_from_image(img)
+	_closed_mat = mat2
+
+
+static func _is_white(c: Color) -> bool:
+	return c.v > 0.55 and (maxf(c.r, maxf(c.g, c.b)) - minf(c.r, minf(c.g, c.b))) < 0.2
+
+
+## Flood-fills the white blob from `seed`, repaints it with the surrounding skin color and draws the lash line.
+func _paint_eye(img: Image, seed: Vector2i) -> int:
+	var w := img.get_width()
+	var h := img.get_height()
+	var mask := PackedByteArray()
+	mask.resize(w * h)
+	var stack: Array[Vector2i] = [seed]
+	var pts: Array[Vector2i] = []
+	mask[seed.y * w + seed.x] = 1
+	while not stack.is_empty() and pts.size() < 9000:
+		var p: Vector2i = stack.pop_back()
+		pts.append(p)
+		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var q: Vector2i = p + d
+			if q.x < 0 or q.y < 0 or q.x >= w or q.y >= h or mask[q.y * w + q.x] == 1:
+				continue
+			if _is_white(img.get_pixelv(q)):
+				mask[q.y * w + q.x] = 1
+				stack.append(q)
+	if pts.size() < 12 or pts.size() >= 9000:
+		return 0
+	var lo := Vector2i(w, h)
+	var hi := Vector2i(-1, -1)
+	for p in pts:
+		lo = Vector2i(mini(lo.x, p.x), mini(lo.y, p.y))
+		hi = Vector2i(maxi(hi.x, p.x), maxi(hi.y, p.y))
+	var sum := Color(0, 0, 0, 1)
+	var n := 0
+	for y in range(maxi(lo.y - 5, 0), mini(hi.y + 6, h)):
+		for x in range(maxi(lo.x - 5, 0), mini(hi.x + 6, w)):
+			if mask[y * w + x] == 1:
+				continue
+			var col := img.get_pixel(x, y)
+			if col.v > 0.4 and col.s > 0.1:
+				sum.r += col.r
+				sum.g += col.g
+				sum.b += col.b
+				n += 1
+	var skin := Color(sum.r / n, sum.g / n, sum.b / n, 1.0) if n > 8 else cover_color
+	for p in pts:
+		img.set_pixelv(p, skin)
+	# Lash line: an arch bowing down across the blob (closed-eye curve), only on the repainted pixels.
+	var cxm := (lo.x + hi.x) * 0.5
+	var cym := (lo.y + hi.y) * 0.5
+	var hw := maxf((hi.x - lo.x) * 0.5, 1.0)
+	var hh := maxf((hi.y - lo.y) * 0.5, 1.0)
+	var ink := Color(0.10, 0.07, 0.05, 1.0)
+	for x in range(lo.x, hi.x + 1):
+		var tt := (x - cxm) / hw
+		var yy := int(cym + 0.2 * hh * (1.0 - tt * tt))
+		for dy in range(-1, 2):
+			var px := Vector2i(x, yy + dy)
+			if px.y >= 0 and px.y < h and mask[px.y * w + px.x] == 1:
+				img.set_pixelv(px, ink)
+	return pts.size()
 
 
 func _cover(on: bool) -> void:
 	_cover_init()
 	for m in _eye_meshes:
 		if is_instance_valid(m):
-			m.set_surface_override_material(0, _cover_mat if on else null)
-			if _baked_mesh != null:
-				m.mesh = _baked_mesh if on else _orig_mesh
+			m.visible = not on  # the pupil sticker goes away while the eye is closed
+	if _head_mi != null and _closed_mat != null and is_instance_valid(_head_mi):
+		_head_mi.set_surface_override_material(_head_surface, _closed_mat if on else null)
 
 
 func _bind_lids(glb_root: Node, ap: AnimationPlayer, sleep_clip: String) -> void:
