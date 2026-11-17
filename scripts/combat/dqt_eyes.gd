@@ -40,9 +40,31 @@ static func attach(model_root: Node3D, glb_root: Node, ap: AnimationPlayer, slee
 var _lids: Array = []  ## [{skeleton, bone, pos, rot, scl}] (null where the clip has no track of that kind)
 var _eye_meshes: Array[MeshInstance3D] = []
 var hide_eye_mesh_on_close := false  ## profile flag: draw a skin-colored lid over the eye while closed (Orc)
-const COVER_SCALE := 2.7  ## the pupil mesh is enlarged this much (its eye bone) so the skin color covers the whole eye white
+const COVER_SCALE := 1.2  ## the sticker is enlarged this much (around each eye's center) so the lid covers the whole eye white
 var _glb: Node
-var _cover_mat: StandardMaterial3D
+var _cover_mat: ShaderMaterial
+var _orig_mesh: Mesh  ## the sticker mesh as imported (open eye, untouched)
+var _baked_mesh: Mesh  ## copy with UV2 (closed-lid shader), swapped in only while closed
+static var _lid_shader: Shader
+## Closed eye drawn as a shader on the eye-sticker mesh (UV 0..1 = the sticker): almond of skin color,
+## a curved lash line and a soft shade above it. Fragments outside the almond are discarded, so the open
+## eye white of the head texture shows around it only where the almond does not reach.
+const LID_SHADER := """
+shader_type spatial;
+render_mode unshaded, cull_disabled;
+uniform vec3 skin : source_color = vec3(0.7, 0.55, 0.4);
+void fragment() {
+	vec2 p = UV2;  // -1..1 over ONE eye of the sticker (baked into the mesh copy, y positive = down)
+	float arch = 1.0 - p.x * p.x;
+	if (abs(p.y) > 0.78 * pow(max(arch, 0.0), 0.8) + 0.04) { discard; }
+	float line_y = 0.20 * arch - 0.10;
+	float lash = 1.0 - smoothstep(0.025, 0.075, abs(p.y - line_y));
+	float shade = smoothstep(0.0, 0.5, line_y - p.y) * 0.12;
+	vec3 c = skin * (1.0 - shade);
+	c = mix(c, skin * 0.25, lash);
+	ALBEDO = c;
+}
+"""
 var cover_color := Color(0.62, 0.51, 0.39)
 var _eye_bones: Array = []  ## [{skeleton, bone}] eye bones (names with "eye", not "mabuta")
 
@@ -51,9 +73,13 @@ var _eye_bones: Array = []  ## [{skeleton, bone}] eye bones (names with "eye", n
 func _cover_init() -> void:
 	if _cover_mat != null or _eye_meshes.is_empty():
 		return
-	_cover_mat = StandardMaterial3D.new()
-	_cover_mat.albedo_color = cover_color
-	_cover_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	if _lid_shader == null:
+		_lid_shader = Shader.new()
+		_lid_shader.code = LID_SHADER
+	_cover_mat = ShaderMaterial.new()
+	_cover_mat.shader = _lid_shader
+	_cover_mat.set_shader_parameter("skin", Vector3(cover_color.r, cover_color.g, cover_color.b))
+	_bake_local_coords(_eye_meshes[0])
 	for s in _glb.find_children("*", "Skeleton3D", true, false):
 		var sk := s as Skeleton3D
 		for b in sk.get_bone_count():
@@ -62,15 +88,48 @@ func _cover_init() -> void:
 				_eye_bones.append({"skeleton": sk, "bone": b})
 
 
+## Copy of the sticker mesh for the closed lid: each eye (the vertices on one side of x = 0) is enlarged by
+## COVER_SCALE around its own center, in rest pose, so it covers the eye white; UV2 = position inside that
+## eye (-1..1, y positive = down) for the lid shader. Skin/weights arrays are kept as they are.
+func _bake_local_coords(mi: MeshInstance3D) -> void:
+	var src := mi.mesh
+	var arr := src.surface_get_arrays(0)
+	var vs: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+	var out_v := PackedVector3Array()
+	var uv2 := PackedVector2Array()
+	out_v.resize(vs.size())
+	uv2.resize(vs.size())
+	for side in [-1.0, 1.0]:
+		var lo := Vector3(1e9, 1e9, 1e9)
+		var hi := Vector3(-1e9, -1e9, -1e9)
+		for v in vs:
+			if v.x * side >= 0.0:
+				lo = lo.min(v)
+				hi = hi.max(v)
+		var c := (lo + hi) * 0.5
+		var h := (hi - lo) * 0.5 * COVER_SCALE
+		for i in vs.size():
+			if vs[i].x * side >= 0.0:
+				var nv := c + (vs[i] - c) * COVER_SCALE
+				out_v[i] = nv
+				uv2[i] = Vector2((nv.x - c.x) / maxf(h.x, 0.0001), -(nv.y - c.y) / maxf(h.y, 0.0001))
+	arr[Mesh.ARRAY_VERTEX] = out_v
+	arr[Mesh.ARRAY_TEX_UV2] = uv2
+	var m := ArrayMesh.new()
+	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+	m.surface_set_material(0, src.surface_get_material(0))
+	m.custom_aabb = src.get_aabb().grow(0.1)
+	_orig_mesh = src
+	_baked_mesh = m
+
+
 func _cover(on: bool) -> void:
 	_cover_init()
 	for m in _eye_meshes:
 		if is_instance_valid(m):
 			m.set_surface_override_material(0, _cover_mat if on else null)
-	if on:
-		for e in _eye_bones:
-			var sk: Skeleton3D = e["skeleton"]
-			sk.set_bone_pose_scale(e["bone"], sk.get_bone_pose_scale(e["bone"]) * COVER_SCALE)
+			if _baked_mesh != null:
+				m.mesh = _baked_mesh if on else _orig_mesh
 
 
 func _bind_lids(glb_root: Node, ap: AnimationPlayer, sleep_clip: String) -> void:

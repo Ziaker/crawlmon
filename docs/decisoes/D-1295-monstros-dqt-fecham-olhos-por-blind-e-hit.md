@@ -25,3 +25,9 @@ O ponto é a malha `Eye_Model_a` (pupila). Perfil do Orc (`content/characters/dq
 Frase literal do criador: "pode ser desenhar então, é só uma mudança de cor no geral não?"
 
 Implementado como cor: enquanto BLIND/hit, a malha `Eye_Model_a` do Orc recebe um material liso (cor de pele iluminada, `eye_cover_color` no perfil, sem sombreamento) e o osso do olho é ampliado 2,7x para cobrir o olho branco. Valores 2,7x e cor [0,70, 0,55, 0,40] são meus e pendentes de aprovação do criador; o resultado é um disco liso sem contorno de sobrancelha/pálpebra.
+
+### Orc: pálpebra como shader (2026-11-17)
+
+Frases literais do criador: "volta atrás e desenha a palpebra como shader"; depois "tá grande demais".
+
+Substitui o disco liso: enquanto BLIND/hit o Orc troca a malha do adesivo de olho por uma cópia com cada olho ampliado 1,2x em torno do próprio centro, desenhada por shader (`DqtEyes.LID_SHADER`: amêndoa de cor de pele, linha de cílios curva e leve sombra acima; fora da amêndoa é descartado). Valores técnicos meus e pendentes: 1,2x (1,5x e 2,4x ficaram grandes demais), cor `eye_cover_color`, forma da amêndoa e da linha. Aberto, a malha e o material originais voltam intactos.
