@@ -6,7 +6,8 @@ extends RefCounted
 ## that was not exported. Without it the eyes read as black voids (criador: "olhos pretos").
 ## Generic fix, by data and not by species: any surface whose material is named `*_eye`
 ## and whose albedo texture is uniform gets the same dark base plus a painted catchlight.
-## Eyes that already have painted art (Charmander, Bulbasaur, Gible) are untouched.
+## Eyes that already have painted art (Charmander, Bulbasaur, Gible) are untouched by the highlight;
+## `apply` then attaches EyeBlink (scripts/common/eye_blink.gd) to every model with `*_eye` surfaces.
 
 const SIZE := 128
 const META := "eye_shine_done"

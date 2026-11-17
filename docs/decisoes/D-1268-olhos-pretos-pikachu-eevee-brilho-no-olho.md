@@ -28,3 +28,8 @@ Diagnóstico: `tests/overworld/diag_eye_materials.gd`, `diag_eye_uv.gd`.
 - Testes de combate (`run_agent_combat_tests.py`): 124/126. As 2 falhas (Employ D-1239 "returning" e Javelin Throw D-235) emitem `material_get_instance_shader_parameters: Parameter "material" is null` (renderer dummy do headless); o erro aparece IGUAL com o piscar desligado, então não vem do piscar; causa não investigada.
 - Cor da pele: multiplicador 0,89 sobre a média medida; em Eevee/Charmander o remendo ainda difere levemente da pele ao redor.
 - Não verificado: Murky Forest e batalha real com captura própria (usam `_make_model`/`CharacterModelLoader` já testados); câmera de jogo do hub mostra o olho com poucos pixels, então o piscar ali é pouco legível; modelos DQT (olhos próprios, D-340) não usam este código.
+
+## Auditoria final (2026-11-17)
+- Custo de spawn: sem cache a medição da cor de pele custava 8-34 ms por instância (engasgo de quadro); agora há cache por modelo (`EyeBlink._eye_cache`): ~0,1 ms nas instâncias seguintes, 13-21 ms só na primeira de cada espécie (`diag_eye_blink_cost.gd`).
+- `EyeShine` altera o Material compartilhado do GLB em memória (guardado por meta, idempotente); `EyeBlink` usa materiais de override por instância, então cada boneco pisca independente.
+- Caveats conhecidos: o remendo da pálpebra difere levemente da pele em Eevee/Charmander; monstros DQT (D-340) não usam este código; cache de imagens (`_img_cache`) e de olhos fica na memória até o fim do processo.

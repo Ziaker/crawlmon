@@ -83,6 +83,8 @@ func _connect_events() -> void:
 	var b := battle
 	b.log_message.connect(func(text: String) -> void: _event("log", {"text": text}))
 	fx.eyes_hold_changed.connect(func(c: Combatant, closed: bool, hit: bool) -> void: _event("eyes", {"actor": c.name, "closed": closed, "blind": c.is_blind(), "hit": hit}))
+	fx.eyes_blinked.connect(func(c: Combatant, n: int) -> void: _event("eyes_blink", {"actor": c.name, "count": n}))
+	fx.eyes_lid.connect(func(c: Combatant, k: float) -> void: _event("eyes_lid", {"actor": c.name, "k": k}))
 	b.attack_telegraphed.connect(func(inc) -> void: _event("telegraphed", _inc(inc)))
 	b.attack_resolved.connect(func(inc) -> void: _event("resolved", _inc(inc)))
 	b.attack_cancelled.connect(func(inc) -> void: _event("cancelled", _inc(inc, {"queued": _queued_of(inc.attacker)})))

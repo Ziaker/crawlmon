@@ -1838,3 +1838,9 @@ Registro de autoria no Blender — D-1132: a caminhada da Coruja deve incluir os
 ## Decisão D-1228 — Orc e Cyclops sem Tackle genérico; ataque básico próprio sem custo de MP (2026-11-15)
 
 - **D-1228 (Moves/Orc e Cyclops):** personagens que possuem Move com tag `basic_variant` (`Orc` com `Spear Thrust`, `Cyclops` com `Boulder Smash`) não recebem o `Tackle` genérico (`Skill.basic()`) no menu Fight, IA, cálculo de custo mínimo nem Status; seus ataques básicos próprios passam a ter **`mp_cost = 0`** (D-998, D-1005, D-235). Detalhes em `docs/decisoes/D-1228-orc-e-cyclops-sem-tackle-e-basico-proprio-sem-mp.md`.
+
+## Decisão D-1268/D-1271/D-1272 — Olhos dos modelos: brilho, cegueira e dano (2026-11-17)
+
+- **D-1268 (visual dos olhos):** os GLBs de Pikachu e Eevee têm textura de olho chapada (preta); o jogo pinta o brilho no olho por dado (`EyeShine`) e todo modelo com superfície `*_eye` pisca sozinho (`EyeBlink`, cor de pele medida no modelo, sem regra por espécie). Ritmo do piscar e posição dos brilhos são valores técnicos pendentes de aprovação do criador.
+- **D-1271 (cegueira):** enquanto o personagem estiver BLIND, as pálpebras ficam fechadas (modelos com olhos piscáveis). Não altera os 35% de erro, duração nem dano.
+- **D-1272 (dano/impacto):** cada reação de hit fecha as pálpebras por 0,5 s (fecha em 0,12 s, abre em 0,22 s, valores técnicos pendentes). Golpe totalmente absorvido por escudo não fecha. Detalhes e telemetria: `docs/TELEMETRIA.md` (seção "Olhos").

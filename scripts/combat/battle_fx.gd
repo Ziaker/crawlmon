@@ -1,6 +1,9 @@
 class_name BattleFx
 extends Node3D
 
+signal eyes_blinked(c: Combatant, count: int)  ## random blink started (telemetry `eyes_blink`)
+signal eyes_lid(c: Combatant, k: float)  ## eyelid closure 0..1, only when eyes_lid_trace (telemetry `eyes_lid`)
+var eyes_lid_trace := false  ## --eyes-trace: per-frame lid sampling (off by default: it floods the trace)
 signal eyes_hold_changed(c: Combatant, closed: bool, hit: bool)  ## BLIND or hit/impact: eyelids shut/open (telemetry `eyes`)
 ## Battle visuals combining 3D curved slash/shock/ribbon meshes, 16-frame animated
 ## flipbook sprite sheets, screen-space impact post-processing, and weight/hit-stop
@@ -530,11 +533,40 @@ func _sync_blind_eyes(c: Combatant, m: Node3D) -> void:
 	var eb: Node = _eye_blink_of(m)
 	if eb != null:
 		var hit := float(eb.get("squeeze_left")) > 0.0
-		var want := (c.is_blind() and c.is_alive()) or hit
-		eb.set("hold_closed", c.is_blind() and c.is_alive())
+		var want := (c.is_blind() and c.is_alive()) or hit or _eyes_forced.has(c)
+		eb.set("hold_closed", (c.is_blind() and c.is_alive()) or _eyes_forced.has(c))
 		if bool(m.get_meta("_eyes_shut", false)) != want:
 			m.set_meta("_eyes_shut", want)
 			eyes_hold_changed.emit(c, want, hit)
+		var nb := int(eb.get("blinks"))
+		if nb != int(m.get_meta("_eyes_blinks", 0)):
+			m.set_meta("_eyes_blinks", nb)
+			eyes_blinked.emit(c, nb)
+		if eyes_lid_trace:
+			var k := snappedf(float(eb.get("lid_k")), 0.01)
+			if not is_equal_approx(k, float(m.get_meta("_eyes_lid", -1.0))):
+				m.set_meta("_eyes_lid", k)
+				eyes_lid.emit(c, k)
+
+
+var _eyes_forced := {}  ## debug: Combatant -> true while "olhos fechados" is forced (vfx_room)
+
+
+## Debug (vfx_room, D-1268): `close` holds the lids shut, `open` releases, `blink` blinks now, `hit` = D-1272 squeeze.
+## Returns false when the unit has no blinkable eyes (e.g. DQT models).
+func debug_eyes(c: Combatant, kind: String) -> bool:
+	if not _models.has(c) or _eye_blink_of(_models[c]) == null:
+		return false
+	match kind:
+		"close":
+			_eyes_forced[c] = true
+		"open":
+			_eyes_forced.erase(c)
+		"blink":
+			(_eye_blink_of(_models[c]) as Node).call("blink_now")
+		"hit":
+			_squeeze_eyes(c)
+	return true
 
 
 func _eye_blink_of(m: Node3D) -> Node:

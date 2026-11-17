@@ -1661,6 +1661,8 @@ func _load_battle(mirror: bool) -> void:
 	_apply_distance(_dist.value)
 	_connect_events()
 	var ui := _bs.get_node_or_null("UI") as CanvasLayer
+	if _bs.fx != null:
+		_bs.fx.eyes_lid_trace = _args.has("eyes-trace")  # D-1268: vale para cada batalha recarregada
 	if ui != null and _hud != null:
 		ui.visible = not _hud.button_pressed
 	_status.text = "Pronto (%s). Clique num move ou use 1..9." % ("times espelhados" if mirror else "times normais")
@@ -1832,6 +1834,8 @@ func _run_cli() -> void:
 	if _args.has("vfx-trace"):
 		_envelope_graph_on = true
 		_audit_leaks_on = true
+	if _args.has("eyes-trace") and _bs != null:
+		_bs.fx.eyes_lid_trace = true  # D-1268: evento `eyes_lid` por quadro (fração de pálpebra)
 	if _args.has("bg"):
 		_apply_bg_mode(String(_args["bg"]).to_lower())
 	if _args.has("solo-node"):
@@ -2835,7 +2839,7 @@ func _build_panel() -> void:
 	var srow := GridContainer.new()
 	srow.columns = 3
 	box.add_child(srow)
-	for sd in [["Queimar", "burn"], ["Atordoar 2s", "stun"], ["Cegar 3s", "blind"], ["Guard", "guard"], ["Escudo 18", "shield"], ["Imun. Mágica 10s", "magic_immune"], ["ATB +1", "atb_add"], ["ATB -1", "atb_sub"], ["ATB cheio", "atb_full"], ["ATB zerado", "atb_zero"], ["Limpar", "clear"]]:
+	for sd in [["Queimar", "burn"], ["Atordoar 2s", "stun"], ["Cegar 3s", "blind"], ["Guard", "guard"], ["Escudo 18", "shield"], ["Imun. Mágica 10s", "magic_immune"], ["ATB +1", "atb_add"], ["ATB -1", "atb_sub"], ["ATB cheio", "atb_full"], ["ATB zerado", "atb_zero"], ["Olhos: piscar", "eyes_blink"], ["Olhos: fechar", "eyes_close"], ["Olhos: abrir", "eyes_open"], ["Olhos: hit", "eyes_hit"], ["Limpar", "clear"]]:
 		var sbt := Button.new()
 		sbt.text = sd[0]
 		sbt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -3871,6 +3875,9 @@ func _schedule_manual() -> void:
 	var who := "#%d" % _act_unit.selected
 	var act: Array = []
 	match _act_kind.selected:
+		"eyes_close", "eyes_open", "eyes_blink", "eyes_hit":  # D-1268 debug de olhos (piscar/fechar/hit sem esperar o relógio)
+			if not _bs.fx.debug_eyes(u, kind.substr(5)):
+				print("[vfx_room] eyes: %s sem olhos piscáveis (EyeBlink)" % u.name)
 		0: act = [at, "guard", who]
 		1: act = [at, "evade", who]
 		2: act = [at, "evade_once", who]

@@ -278,3 +278,14 @@ Atalho da sala (`scripts/debug/vfx_room.gd`) que percorre o caminho real do menu
 .\Godot_v4.7.2-stable_win64_console.exe --headless --path . res://scenes/debug/vfx_room.tscn -- --employ=fail --stdout-trace --quit
 .\Godot_v4.7.2-stable_win64_console.exe --headless --path . res://scenes/debug/vfx_room.tscn -- --employ=success --mirror --quit
 ```
+
+## Olhos: piscar, cegueira e dano (D-1268, D-1271, D-1272)
+
+- **Evento `eyes`** (tabela da seção 3): `{actor, closed, blind, hit}`; `closed=true` quando as pálpebras fecham por BLIND ou por reação de hit (0,5 s), `closed=false` quando reabrem. Só modelos com olhos piscáveis (`EyeBlink`) emitem; o piscar aleatório tem eventos próprios (`eyes_blink`, `eyes_lid`, abaixo).
+- **Cenários (<10 s):** `--scenario=st_blind_olhos --stdout-trace --quit` (Pancham cego por ~3 s) e `--scenario=dano_olhos --stdout-trace --quit` (Pancham leva Tackle; olhos fecham ~0,52 s). Com `--mirror` o mesmo acontece no Gible, do lado do inimigo (D-235).
+- **Ferramentas:** `tests/overworld/diag_blind_eyes_shot.gd` (aberto/fechado por espécie), `diag_blink_solver.gd` (aberto/fechado pelo `set_closed`), `diag_blink_clips.gd` (olho fechado durante damage/attack/victory), `diag_blink_timing.gd` (conta piscadas em 8 s), `diag_combat_model_eyes.gd` (loader de combate), `diag_eye_shine.gd` / `diag_eye_blink_species.gd` / `diag_eye_blink_cost.gd` (quais espécies são afetadas e custo de spawn), `diag_eyelid_*.gd` (investigação dos ossos de pálpebra). Hub: `--view=npc_eyes|npc_eyes_close --npc=<id> [--blink=0|1] --shot=arq.png`.
+- **Custo:** a medição da cor de pele roda uma vez por modelo (cache); spawn seguinte ~0,1 ms; primeira vez de cada espécie ~13-21 ms.
+- **Evento `eyes_blink`** `{actor, count}`: uma piscada aleatória (ou forçada) começou; `count` é o total de piscadas do modelo. Cosmético, sem regra.
+- **Evento `eyes_lid`** `{actor, k}` (só com `--eyes-trace`, arredondado a 0,01): fração de pálpebra fechada 0..1 (máximo entre a piscada e a rampa de BLIND/hit). Uma linha por mudança; pode ser longo, use com `--quit` curto.
+- **Controles de debug (sala de VFX):** botões da grade de status "Olhos: piscar / fechar / abrir / hit", ou `--status=<PAPEL>:eyes_blink|eyes_close|eyes_open|eyes_hit` (ex. `--status=A1:eyes_close`); `--units=a,b/c,d` escolhe os modelos (antes da `/` aliados A1,A2; depois inimigos E1,E2; espécie fora do catálogo, como pikachu/eevee/charmander/bulbasaur/squirtle, usa o corpo do Gible só para aparecer em combate). `eyes_close` mantém a pálpebra fechada até `eyes_open`.
+- **Lacuna:** só modelos com `EyeBlink` respondem; os DQT (`DqtEyes`, D-340) não emitem nenhum dos eventos acima.

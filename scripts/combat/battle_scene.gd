@@ -124,6 +124,15 @@ func _ready() -> void:
 				lead.react_policy = Combatant.React.EVADE
 				var one: Array[Combatant] = [lead]
 				party = one
+	if has_meta("vfx_room"):  # D-1268 debug: --units=a,b/c,d escolhe os modelos (antes da "/" = aliados A1,A2; depois = inimigos E1,E2).
+		for ua2 in OS.get_cmdline_user_args():
+			if String(ua2).begins_with("--units="):
+				var sides := String(ua2).substr(8).split("/")
+				var ally_ids := String(sides[0]).split(",", false)
+				if not ally_ids.is_empty():
+					party = _debug_units(ally_ids, true)
+				if sides.size() > 1 and not String(sides[1]).is_empty():
+					enemies = _debug_units(String(sides[1]).split(",", false), false)
 	for e in enemies:  # Same Tactics the allies have: cast skills and evade when able.
 		e.act_policy = Combatant.Act.SKILL
 		e.react_policy = Combatant.React.EVADE
@@ -407,6 +416,24 @@ func _debug_enemies() -> Array[Combatant]:
 	var out: Array[Combatant] = []
 	for sp in ids.split(",", false):
 		out.append(EnemyFactory.create_enemy(sp.strip_edges(), rng))
+	return out
+
+
+## `--units=`: espécie do catálogo vira Combatant real; modelo fora do catálogo (pikachu, eevee, ...) usa o corpo do
+## Gible com nome/species_id trocados, só para o modelo e os olhos aparecerem em combate (mesmos Moves, D-235).
+func _debug_units(ids: PackedStringArray, ally: bool) -> Array[Combatant]:
+	var out: Array[Combatant] = []
+	for sp in ids:
+		var id := sp.strip_edges().to_lower()
+		var c: Combatant
+		if CharacterCatalog.get_character(StringName(id)) != null:
+			c = CharacterFactory.create(id, {"is_player": ally})
+		else:
+			c = CharacterFactory.create("gible", {"is_player": ally})
+			c.name = id.capitalize()
+			c.species_id = id
+		c.is_player = ally
+		out.append(c)
 	return out
 
 

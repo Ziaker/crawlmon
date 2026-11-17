@@ -1,5 +1,5 @@
 extends SceneTree
-## Renders eyes open vs closed (EyelidSolver prototype) for the given species. Args: --ids=a,b --out=dir
+## Renders eyes open vs closed (EyeBlink.set_closed 0/1, files squash_<id>_0|1.png) for the given species. Args: --ids=a,b --out=dir
 func _init() -> void:
 	call_deferred("_run")
 func _run() -> void:

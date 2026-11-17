@@ -36,6 +36,7 @@ const OPEN_T := 0.09
 
 static var _shader: Shader
 static var _img_cache := {}
+static var _eye_cache := {}  ## eye Material -> {skin, v_range}: measured once per model (spawn must not hitch)
 
 var _mats: Array[ShaderMaterial] = []
 var _t := 0.0
@@ -69,12 +70,16 @@ static func attach(root: Node) -> Node:
 	blink.name = "EyeBlink"
 	for e in surfaces:
 		var mi: MeshInstance3D = e[0]
-		var c := _centroid(mi.mesh, e[1])
+		var key = e[2]
+		var tex: Texture2D = (e[2] as BaseMaterial3D).albedo_texture
+		if not _eye_cache.has(key) or _eye_cache[key]["tex"] != tex:
+			var c := _centroid(mi.mesh, e[1])
+			_eye_cache[key] = {"tex": tex, "v_range": _v_range(mi.mesh, e[1]), "skin": _skin_near(c, bodies) * 0.89}
 		var sm := ShaderMaterial.new()
 		sm.shader = _shader
-		sm.set_shader_parameter("tex", (e[2] as BaseMaterial3D).albedo_texture)
-		sm.set_shader_parameter("v_range", _v_range(mi.mesh, e[1]))
-		sm.set_shader_parameter("skin", _skin_near(c, bodies) * 0.89)
+		sm.set_shader_parameter("tex", tex)
+		sm.set_shader_parameter("v_range", _eye_cache[key]["v_range"])
+		sm.set_shader_parameter("skin", _eye_cache[key]["skin"])
 		mi.set_surface_override_material(e[1], sm)
 		blink._mats.append(sm)
 	blink._next = randf_range(0.5, OPEN_MAX)
@@ -156,6 +161,13 @@ var hold_closed := false
 var squeeze_left := 0.0  ## hit/impact: eyes shut for this many more seconds
 var _hold_k := 0.0
 var _last := -1.0
+var lid_k := 0.0   ## debug/telemetry: current eyelid closure 0..1 (max of random blink and hold ramp)
+var blinks := 0    ## debug/telemetry: random blinks started so far
+var _was_blinking := false
+
+## Debug (vfx_room `--eyes=blink`): start a random-style blink right now.
+func blink_now() -> void:
+	_next = _t
 const HOLD_IN := 0.12
 const HOLD_OUT := 0.22
 
@@ -182,6 +194,11 @@ func _process(delta: float) -> void:
 	var shut := hold_closed or squeeze_left > 0.0
 	_hold_k = move_toward(_hold_k, 1.0 if shut else 0.0, delta / (HOLD_IN if shut else HOLD_OUT))
 	var v := maxf(b, _hold_k)
+	var blinking := _t >= _next
+	if blinking and not _was_blinking:
+		blinks += 1
+	_was_blinking = blinking
+	lid_k = v
 	if not is_equal_approx(v, _last):
 		_last = v
 		set_closed(v)
