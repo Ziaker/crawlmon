@@ -88,7 +88,23 @@ func has_closed_eye() -> bool:
 	return _closed != null
 
 
+## D-1295: same interface as EyeBlink (BattleFx drives BLIND and hit through it). Closed = the decal is shown.
+var hold_closed := false  ## BLIND
+var squeeze_left := 0.0   ## hit/impact: closed for this many more seconds
+var lid_k := 0.0          ## 0 open / 1 closed (decal on)
+var blinks := 0           ## own blinks started so far
+
+
+func squeeze(seconds: float) -> void:
+	squeeze_left = maxf(squeeze_left, seconds)
+
+
+func blink_now() -> void:
+	_until_blink = 0.0
+
+
 func _process(delta: float) -> void:
+	squeeze_left = maxf(squeeze_left - delta, 0.0)
 	var closed_by_clip := false
 	for e in _pairs:
 		var shown := _scale_of(e) > CUTOFF
@@ -97,17 +113,27 @@ func _process(delta: float) -> void:
 			closed_by_clip = true
 	if _closed == null:
 		return
+	if hold_closed or squeeze_left > 0.0:
+		_blink_left = 0.0
+		lid_k = 1.0
+		_show_closed()
+		return
 	if closed_by_clip:
 		_blink_left = 0.0  # the clip already shows closed eyes: no blink
+		lid_k = 1.0
 		return
+	lid_k = 0.0
 	if _blink_left > 0.0:
 		_blink_left -= delta
+		lid_k = 1.0
 		_show_closed()
 		return
 	_until_blink -= delta
 	if _until_blink <= 0.0:
 		_blink_left = BLINK_TIME
+		blinks += 1
 		_until_blink = _rng.randf_range(BLINK_MIN, BLINK_MAX)
+		lid_k = 1.0
 		_show_closed()
 
 

@@ -571,7 +571,12 @@ func debug_eyes(c: Combatant, kind: String) -> bool:
 
 func _eye_blink_of(m: Node3D) -> Node:
 	if not m.has_meta("_eye_blink"):
-		m.set_meta("_eye_blink", m.find_child("EyeBlink", true, false))  # null cached too: no per-frame search
+		var found := m.find_child("EyeBlink", true, false)
+		if found == null:
+			found = m.find_child("DqtEyes", true, false)  # D-1295: DQT models with a closed-eye decal
+			if found != null and not bool(found.call("has_closed_eye")):
+				found = null
+		m.set_meta("_eye_blink", found)  # null cached too: no per-frame search
 	var eb = m.get_meta("_eye_blink")
 	return eb if eb != null and is_instance_valid(eb) else null
 

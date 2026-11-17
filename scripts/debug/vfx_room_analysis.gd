@@ -380,7 +380,8 @@ func _update_macro_cam() -> void:
 	var side := Vector3(-axis.z, 0.0, axis.x)
 	cam.current = true
 	cam.fov = 15.0
-	var contact := t.global_position + Vector3(0, 1.2, 0)
+	var focus_y := float(room._args.get("cam-height", 1.2))  # `--cam-height=<m>`: altura do ponto de foco (olhos de modelos baixos, ex. Slime)
+	var contact := t.global_position + Vector3(0, focus_y, 0)
 	cam.global_position = contact - axis * 6.5 + side * 2.2 + Vector3(0, 0.4, 0)
 	cam.look_at(contact)
 
