@@ -50,8 +50,8 @@
 
 ## Pendências (não implementar)
 
-- Taxa de Bronze: a recomendação 50% (normal) e 70% (elite) não aparece em nenhum documento do repositório; falta confirmar a aprovação e definir o que é "elite".
-- Se moedas diferentes podem cair juntas; instante do sorteio e da concessão; elegibilidade de vitória, fuga, recrutamento, chefes e líder incapacitado ou trocado.
+- ~~Taxa de Bronze~~ e ~~moedas diferentes caírem juntas~~: respondidas na [D-1286](D-1286-cascos-bronze-drop-simultaneo-e-knock-up-visivel.md) (Bronze 50% sem elite; drops simultâneos; fuga, recrutamento e derrota não geram drop).
+- Ainda pendentes: instante do sorteio e da concessão; elegibilidade de chefes e de líder incapacitado ou trocado.
 - Preços e disponibilidade de todos os itens; contrato mecânico dos itens sem efeito implementado.
 - Destino dos ganhos em derrota/retirada, instante de consolidação, arredondamento de perda parcial.
 - Destino do `GameState.shell_balance` (saldo único já existente) frente aos saldos separados.

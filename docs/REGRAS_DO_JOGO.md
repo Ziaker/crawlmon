@@ -20,7 +20,7 @@
 - **Saldos** — Bronze, Silver e Golden têm saldos separados, iniciando em 0, sem conversão automática. Substitui o saldo comum da D-1253. Saldo consolidado é protegido.
 - **Drops por inimigo derrotado** — Prata `7 + LUK_do_líder` %; ouro `3 + LUK_do_líder / 2` %; sem arredondamento. Ouro de combate permitido.
 - **Classificação comercial** — Bronze: HP/MP/ATB/buffs básicos. Silver: atributos flat e itens de dois efeitos. Golden: equipamentos de efeito único e itens de três efeitos.
-- **Pendente** — Bronze, preços, elegibilidade, instante de concessão e destino em derrota/retirada. Ver [D-1285](decisoes/D-1285-cascos-economia-moedas-separadas-e-chances-de-drop.md).
+- **Pendente** — Preços, instante de concessão, chefes/líder incapacitado e destino em derrota/retirada (Bronze e elegibilidade negativa: ver D-1286). Ver [D-1285](decisoes/D-1285-cascos-economia-moedas-separadas-e-chances-de-drop.md).
 
 ## Decisão D-1258 — Loja do Hub, opção A de balcão aberto de madeira (2026-11-16)
 
