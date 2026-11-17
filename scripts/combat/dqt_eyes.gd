@@ -35,6 +35,34 @@ static func attach(model_root: Node3D, glb_root: Node, ap: AnimationPlayer, slee
 	return eyes
 
 
+## D-1295 (lids by bone): models without a closed-eye decal but with eyelid bones (`*mabuta*`: Orc, Cyclops,
+## Sabrecub) hold the pose their own Sleep clip gives those bones at t=0 while BLIND / hit.
+var _lids: Array = []  ## [{skeleton, bone, pos, rot, scl}] (null where the clip has no track of that kind)
+
+
+func _bind_lids(glb_root: Node, ap: AnimationPlayer, sleep_clip: String) -> void:
+	if ap == null or not ap.has_animation(sleep_clip):
+		return
+	var anim := ap.get_animation(sleep_clip)
+	for s in glb_root.find_children("*", "Skeleton3D", true, false):
+		var sk := s as Skeleton3D
+		for b in sk.get_bone_count():
+			if not sk.get_bone_name(b).to_lower().contains("mabuta"):
+				continue
+			var e := {"skeleton": sk, "bone": b, "pos": null, "rot": null, "scl": null}
+			for i in anim.get_track_count():
+				if String(anim.track_get_path(i).get_concatenated_subnames()) != sk.get_bone_name(b):
+					continue
+				match anim.track_get_type(i):
+					Animation.TYPE_POSITION_3D:
+						e["pos"] = anim.position_track_interpolate(i, 0.0)
+					Animation.TYPE_ROTATION_3D:
+						e["rot"] = anim.rotation_track_interpolate(i, 0.0)
+					Animation.TYPE_SCALE_3D:
+						e["scl"] = anim.scale_track_interpolate(i, 0.0)
+			_lids.append(e)
+
+
 func _bind(glb_root: Node, ap: AnimationPlayer, sleep_clip: String) -> bool:
 	var skeletons := glb_root.find_children("*", "Skeleton3D", true, false)
 	for node in glb_root.find_children("*", "MeshInstance3D", true, false):
@@ -52,7 +80,11 @@ func _bind(glb_root: Node, ap: AnimationPlayer, sleep_clip: String) -> bool:
 		if int(entry["bone"]) >= 0 or entry["node"] != null:
 			_pairs.append(entry)
 	if _pairs.is_empty():
-		return false
+		_bind_lids(glb_root, ap, sleep_clip)
+		if _lids.is_empty():
+			return false
+		process_priority = 100
+		return true
 	if ap != null and ap.has_animation(sleep_clip):
 		var anim := ap.get_animation(sleep_clip)
 		for e in _pairs:
@@ -85,7 +117,19 @@ func _scale_of(e: Dictionary) -> float:
 
 
 func has_closed_eye() -> bool:
-	return _closed != null
+	return _closed != null or not _lids.is_empty()
+
+
+func _hold_lids() -> void:
+	for e in _lids:
+		var sk: Skeleton3D = e["skeleton"]
+		var b: int = e["bone"]
+		if e["pos"] != null:
+			sk.set_bone_pose_position(b, e["pos"])
+		if e["rot"] != null:
+			sk.set_bone_pose_rotation(b, e["rot"])
+		if e["scl"] != null:
+			sk.set_bone_pose_scale(b, e["scl"])
 
 
 ## D-1295: same interface as EyeBlink (BattleFx drives BLIND and hit through it). Closed = the decal is shown.
@@ -105,6 +149,11 @@ func blink_now() -> void:
 
 func _process(delta: float) -> void:
 	squeeze_left = maxf(squeeze_left - delta, 0.0)
+	if not _lids.is_empty():  # lids by bone: only BLIND / hit (no own random blink; the Sabrecub clip already blinks)
+		lid_k = 1.0 if (hold_closed or squeeze_left > 0.0) else 0.0
+		if lid_k > 0.0:
+			_hold_lids()
+		return
 	var closed_by_clip := false
 	for e in _pairs:
 		var shown := _scale_of(e) > CUTOFF
