@@ -688,6 +688,16 @@ func _on_attack_impact(pos: Vector3, direction: Vector3, advantage: int, contact
 		cam_dist = _camera.global_position.distance_to(pos)
 	var factor := clampf(cam_dist / BattleFx.VFX_REF_DISTANCE, 0.25, 1.0) * 1.6
 	host.global_position = pos
+	# D-1262: the controller reads the weapon reach from the character's real Moves.
+	player.set_meta("species_id", player_model_id)
+	if _enemy_body != null:
+		_enemy_body.set_meta("species_id", "dqt_slime")
+	if _second_enemy_body != null:
+		_second_enemy_body.set_meta("species_id", SECOND_ENEMY_ID)
+	for room_data in ROOM_ENEMY_DATA:
+		var room_node := get_node_or_null("RoomEnemy_%s" % str(room_data["id"]))
+		if room_node != null:
+			room_node.set_meta("species_id", str(room_data["id"]))
 	for child in host.get_children():
 		if child is Node3D:
 			var node := child as Node3D
@@ -807,6 +817,23 @@ func _hold_follower(actor: Node3D) -> Dictionary:
 
 func _release_follower(held: Dictionary) -> void:
 	if held.is_empty():
+	# D-1262: "HIT" at the instant of the impact, before the battle transition. Same
+	# style as the combat's floating texts (CRÍTICO!): yellow, size 48, rises and fades.
+	var text_host := BattleFx.new()  # unscaled: the text keeps its size whatever the impact scale
+	text_host.name = "AttackHitTextHost"
+	add_child(text_host)
+	var hit_label := text_host.float_text(pos + Vector3(0.0, 0.9, 0.0), "HIT", Color(1.0, 0.9, 0.2), 48)
+	hit_label.name = "AttackHitText"
+	# Screen-constant size (same as the combat's damage numbers): world-space text shrank to a few
+	# pixels with the far overworld camera and hid under the impact flash.
+	hit_label.fixed_size = true
+	hit_label.pixel_size = 0.0034
+	hit_label.font_size = 64
+	hit_label.outline_size = 26
+	hit_label.render_priority = 20
+	hit_label.outline_render_priority = 19
+	hit_label.outline_modulate = Color(0.05, 0.03, 0.02, 0.95)
+	get_tree().create_timer(1.4).timeout.connect(text_host.queue_free)
 		return
 	var follower: Dictionary = held.get("follower", {})
 	if follower.is_empty():

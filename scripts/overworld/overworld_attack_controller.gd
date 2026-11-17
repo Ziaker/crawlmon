@@ -56,7 +56,17 @@ const PLAYER_DASH_MAX := 4.4
 const ENEMY_DASH_MAX := 2.0
 
 ## Extra reach beyond the two measured bodies for the end-of-advance hit test.
+## D-1262: only the ENEMY advance still uses this slack; the player's advance is
+## deterministic (it hits when it reaches the target's body edge, HIT_EDGE_EPS).
 const HIT_REACH := 0.55
+## D-1262: "the advance reached the edge of the body" (metres). The braking tail of the
+## advance (D-1189) crawls the last centimetres; the impact fires at first touch, not after the crawl.
+const HIT_EDGE_EPS := 0.12
+## D-1262: how far the player's advance may start from the target's body EDGE.
+## 3.8 m = the old 4.5 m centre-to-centre range between two 0.35 m bodies, now
+## measured edge to edge so a big body does not shrink or stretch the range (D-235).
+## A weapon that extends the reach in the combat adds its extra reach on top.
+const ATTACK_GAP := 3.8
 const DEFAULT_BODY_RADIUS := 0.35
 ## D-1120: the 0.18 s is the maximum; a very close target must still feel like a
 ## dash, not a slow crawl. Below this speed the movement finishes at contact.
@@ -112,6 +122,10 @@ var _player_attack_origin_valid := false
 var _player_hit_origin := Vector3.ZERO
 var _player_hit_origin_yaw := 0.0
 var _player_hit_origin_valid := false
+## D-1262: measured body radius per actor (node instance id) and weapon bonus per
+## character id; both are read from real data once, never hard-coded per species.
+var _radius_cache: Dictionary = {}
+var _bonus_cache: Dictionary = {}
 
 
 ## The lab calls this once after the player and camera exist. `vfx` is optional:
@@ -280,13 +294,25 @@ func get_attack_target() -> Node3D:
 	return _nearest_reachable_enemy()
 
 
-## Comic overhaul: only acquire a target the 2.0 m advance can actually reach.
+## D-1262: acquires the enemy whose body EDGE is nearest, if it is inside the
+## player's reach (ATTACK_GAP + weapon bonus). Acquired == the advance reaches it.
 ## A far target makes Z a free attack instead of a whiff that gifts the enemy.
 func _nearest_reachable_enemy() -> Node3D:
-	var target := nearest_enemy(ATTACK_RANGE)
-	if target == null:
+	if _player == null or not is_instance_valid(_player):
 		return null
-	return target if can_player_reach(target) else null
+	var best: Node3D = null
+	var best_gap := INF
+	for entry in _enemies:
+		var enemy: Node3D = entry.get("node")
+		if enemy == null or not is_instance_valid(enemy) or not enemy.is_inside_tree():
+			continue
+		if not can_player_reach(enemy):
+			continue
+		var gap := _edge_gap(_player, enemy)
+		if gap < best_gap:
+			best = enemy
+			best_gap = gap
+	return best
 
 
 func get_prompt_text() -> String:
@@ -310,15 +336,54 @@ func get_player_cooldown_ratio() -> float:
 	return clampf(_player_cooldown / PLAYER_COOLDOWN, 0.0, 1.0)
 
 
-## Read-only: can the 2.0 m advance actually reach this target? Used by the HUD
-## and the acquisition so Z does not start a targeted attack that cannot hit.
+## Read-only: is this target inside the player's reach? D-1262: the reach is
+## measured edge to edge (real body radii) and a weapon that extends the combat
+## reach extends it here too; inside it the advance always arrives and hits.
 func can_player_reach(target: Node3D, margin := 0.0) -> bool:
 	if target == null or _player == null or not is_instance_valid(target):
 		return false
 	if not target.is_inside_tree():
 		return false
-	var reach := PLAYER_DASH_MAX + HIT_REACH + _contact_distance(_player, target) - maxf(0.0, margin)
-	return _flat_distance(_player.global_position, target.global_position) <= reach
+	var reach := ATTACK_GAP + _weapon_reach_bonus(_player) - maxf(0.0, margin)
+	return _edge_gap(_player, target) <= reach and _line_clear(_player, target)
+
+
+## Debug/test (D-1204): reach data of the player against `target`, read-only.
+func reach_info(target: Node3D) -> Dictionary:
+	var bonus := _weapon_reach_bonus(_player)
+	return {
+		"max_gap": ATTACK_GAP + bonus,
+		"weapon_bonus": bonus,
+		"edge_gap": _edge_gap(_player, target) if target != null else -1.0,
+		"player_radius": _body_radius(_player),
+		"target_radius": _body_radius(target) if target != null else 0.0,
+	}
+
+
+## Debug/test (D-1204): back to idle between scripted attacks. Not used by the game.
+func reset_attack_state() -> void:
+	_cancel_player_dash()
+	_battle_requested = false
+	_impact_hold = 0.0
+	_pending_advantage = EncounterRules.Advantage.NORMAL
+	_player_cooldown = 0.0
+	_player_hit_frame = -1
+	_enemy_hit_frame = -1
+	_player_hit_target = null
+	_enemy_hit_target = null
+	_contact_grace = 0.0
+	_player_attack_origin_valid = false
+	_player_hit_origin_valid = false
+	for entry in _enemies:
+		entry["phase"] = Phase.NONE
+		entry["telegraph"] = 0.0
+		entry["pre_dash"] = 0.0
+		entry["dash_left"] = 0.0
+		entry["endlag_left"] = 0.0
+		entry["attack_elapsed"] = 0.0
+		entry["cooldown"] = 0.0
+		entry["chase_announced"] = false
+		entry["state"] = ""
 
 
 ## D-1138: planned duration of the current player dash (0 when idle).
@@ -461,7 +526,7 @@ func _tick_player(delta: float) -> void:
 		_player_endlag_left = maxf(0.0, _player_endlag_left - delta)
 		if _player_hit_frame < 0 and _player_active_left > 0.0 and _player_active_target != null:
 			_player_active_left = maxf(0.0, _player_active_left - delta)
-			if is_instance_valid(_player_active_target) and _hit_landed(_player, _player_active_target):
+			if is_instance_valid(_player_active_target) and _hit_landed(_player, _player_active_target, HIT_EDGE_EPS):
 				_player_hit_frame = Engine.get_physics_frames()
 				_player_hit_target = _player_active_target
 				_player_active_left = 0.0
@@ -472,14 +537,20 @@ func _tick_player(delta: float) -> void:
 	if _player_phase != Phase.DASH:
 		return
 	var has_target := _player_target != null
+	var remaining := INF
 	if has_target:
 		if not is_instance_valid(_player_target):
 			_begin_player_endlag(false)
 			return
-		if _flat_distance(_player.global_position, _player_target.global_position) <= _contact_distance(_player, _player_target):
+		remaining = _edge_gap(_player, _player_target)
+		if remaining <= HIT_EDGE_EPS:
 			_begin_player_endlag(true)
 			return
-	_advance(_player, _player_dir, _friction_speed(_player_fric, _player_dash_speed, delta))
+	var speed := _friction_speed(_player_fric, _player_dash_speed, delta)
+	if has_target and delta > 0.0:
+		# D-1262: the advance stops AT the edge of the target's body, never through it.
+		speed = minf(speed, remaining / delta)
+	_advance(_player, _player_dir, speed)
 	_vfx_tick(_player, delta)
 	_player_dash_left -= delta
 	if _player_dash_left <= 0.0:
@@ -568,10 +639,9 @@ func _start_player_dash() -> void:
 			dir = Vector3.FORWARD
 	dir = dir.normalized()
 	_player_dir = dir
-	var contact := _contact_distance(_player, _player_target)
-	var travel := minf(
-		maxf(0.0, _flat_distance(from, _player_target.global_position) - contact),
-		PLAYER_DASH_MAX)
+	# D-1262: no fixed cap. The acquired target is inside the reach, so the advance
+	# goes all the way to the edge of its body.
+	var travel := maxf(0.0, _edge_gap(_player, _player_target))
 	var plan := _player_dash_plan(travel)
 	_player_fric = _friction_plan(travel, float(plan["time"]))
 	_player_dash_speed = float(plan["speed"])
@@ -623,7 +693,7 @@ func _start_free_dash() -> void:
 ## lab plays the clip fast enough to fill wind-up + dash + recovery (0.62 s).
 func _begin_player_endlag(test_hit: bool) -> void:
 	var target := _player_target
-	var hit := test_hit and target != null and is_instance_valid(target) and _hit_landed(_player, target)
+	var hit := test_hit and target != null and is_instance_valid(target) and _hit_landed(_player, target, HIT_EDGE_EPS)
 	_player_phase = Phase.ENDLAG
 	_player_target = null
 	_player_active_target = null
@@ -773,6 +843,12 @@ func _resolve_pending_hits() -> void:
 	var enemy_hit := _enemy_hit_frame >= 0
 	_player_hit_frame = -1
 	_enemy_hit_frame = -1
+	# D-1267: while an attack is active (the attacker is still moving) it is hittable. When
+	# both attacks are active and touching, the advantage goes to the one that started
+	# first (the longer time since its attack began), not to whoever the frame order favours.
+	var duel := _duel_advantage(player_hit, enemy_hit)
+	player_hit = bool(duel["player_hit"])
+	enemy_hit = bool(duel["enemy_hit"])
 	var advantage := EncounterRules.resolve(true, player_hit, true, enemy_hit)
 	var contact := _impact_contact(player_hit, enemy_hit)
 	var reactions := _impact_reactions(player_hit, enemy_hit)
@@ -781,6 +857,38 @@ func _resolve_pending_hits() -> void:
 	# The transition starts after the real-time hit window; it cuts any enemy
 	# endlag instead of waiting for the animation to finish.
 	impact_requested.emit(contact["pos"], contact["dir"], advantage, reactions)
+
+
+## D-1267: resolves a clash of two ACTIVE attacks (both advances moving and touching).
+## A hit by one side counts as mutual when the other side's attack is still in its
+## advance (DASH) and touching the same body (edge within HIT_REACH). Mutual hits are
+## decided by attack age: the side whose attack started earlier wins; equal ages (within
+## one physics frame) stay a normal contact. Returns the final {player_hit, enemy_hit}.
+func _duel_advantage(player_hit: bool, enemy_hit: bool) -> Dictionary:
+	var result := {"player_hit": player_hit, "enemy_hit": enemy_hit}
+	if _player == null or not is_instance_valid(_player):
+		return result
+	if player_hit and not enemy_hit and _player_hit_target != null and is_instance_valid(_player_hit_target):
+		var entry := _find_enemy(_player_hit_target)
+		if not entry.is_empty() and int(entry["phase"]) == Phase.DASH \
+				and _edge_gap(_player, _player_hit_target) <= HIT_REACH:
+			_enemy_hit_target = _player_hit_target
+			enemy_hit = true
+	elif enemy_hit and not player_hit and _enemy_hit_target != null and is_instance_valid(_enemy_hit_target):
+		if _player_phase == Phase.DASH and _edge_gap(_player, _enemy_hit_target) <= HIT_REACH:
+			_player_hit_target = _enemy_hit_target
+			player_hit = true
+	if player_hit and enemy_hit:
+		var entry := _find_enemy(_enemy_hit_target)
+		var enemy_age := float(entry.get("attack_elapsed", 0.0)) if not entry.is_empty() else 0.0
+		var diff := _player_attack_elapsed - enemy_age
+		if diff > 1.0 / 120.0:
+			enemy_hit = false  # the player's attack started first: only the player connects
+		elif diff < -1.0 / 120.0:
+			player_hit = false
+	result["player_hit"] = player_hit
+	result["enemy_hit"] = enemy_hit
+	return result
 
 
 ## D-235/D-1045: the real victims of the two advances, never a proximity guess.
@@ -908,7 +1016,7 @@ func _cancel_player_dash(invalidate_origin := true) -> void:
 
 ## End-of-advance hit test: measured bodies + HIT_REACH, then line of sight
 ## against the real world geometry. No fixed positions or character assumptions.
-func _hit_landed(attacker: Node3D, target: Node3D) -> bool:
+func _hit_landed(attacker: Node3D, target: Node3D, slack := HIT_REACH) -> bool:
 	if attacker == null or target == null:
 		return false
 	if not is_instance_valid(attacker) or not is_instance_valid(target):
@@ -916,8 +1024,15 @@ func _hit_landed(attacker: Node3D, target: Node3D) -> bool:
 	if not attacker.is_inside_tree() or not target.is_inside_tree():
 		return false
 	var flat := _flat_distance(attacker.global_position, target.global_position)
-	if flat > _contact_distance(attacker, target) + HIT_REACH:
+	if flat > _contact_distance(attacker, target) + slack:
 		return false
+	return _line_clear(attacker, target)
+
+
+## D-1262: no wall or solid body between the two real bodies (probe at the middle of each).
+## Used by the hit test AND by the target acquisition, so a long weapon reach never locks
+## onto an enemy behind a wall or in another room.
+func _line_clear(attacker: Node3D, target: Node3D) -> bool:
 	var world := attacker.get_world_3d()
 	if world == null:
 		return true
@@ -965,11 +1080,20 @@ func _body_height(node: Node3D) -> float:
 	return 1.0
 
 
-## Reads the real collision shape. Characters without a shape fall back to a
-## neutral radius instead of assuming a species/model.
+## D-1262/D-235: real body radius = the larger of the collision capsule and the
+## radius measured on the visible model (see `_measure_model_radius`). A big model
+## inside a small capsule (Orc, Cyclops) is no longer treated as a small body.
+## Characters without a shape or a skinned mesh fall back to the capsule/neutral radius.
 func _body_radius(node: Node3D) -> float:
 	if node == null or not is_instance_valid(node):
 		return DEFAULT_BODY_RADIUS
+	var key := node.get_instance_id()
+	if not _radius_cache.has(key):
+		_radius_cache[key] = _measure_model_radius(node)
+	return maxf(_capsule_radius(node), float(_radius_cache[key]))
+
+
+func _capsule_radius(node: Node3D) -> float:
 	for child in node.find_children("*", "CollisionShape3D", true, false):
 		var shape_node := child as CollisionShape3D
 		if shape_node == null or shape_node.shape == null:
@@ -985,6 +1109,117 @@ func _body_radius(node: Node3D) -> float:
 			var size := (shape as BoxShape3D).size
 			return maxf(size.x, size.z) * 0.5
 	return DEFAULT_BODY_RADIUS
+
+
+## Median horizontal distance, from the torso centroid, of the skinned vertices of the
+## biggest skinned mesh (the body; weapons and eyes are smaller meshes) in the 15%-65%
+## height band, in the CURRENT pose (arms down, so a T-pose does not inflate it).
+## Returns 0.0 when there is no skinned mesh. Measured once per actor.
+func _measure_model_radius(node: Node3D) -> float:
+	var best: MeshInstance3D = null
+	var best_verts := 0
+	for child in node.find_children("*", "MeshInstance3D", true, false):
+		var mi := child as MeshInstance3D
+		if mi == null or mi.mesh == null or not mi.visible or mi.skeleton.is_empty() or mi.skin == null:
+			continue
+		var verts := 0
+		for s in mi.mesh.get_surface_count():
+			verts += mi.mesh.surface_get_array_len(s)
+		if verts > best_verts:
+			best_verts = verts
+			best = mi
+	if best == null:
+		return 0.0
+	var skel := best.get_node_or_null(best.skeleton) as Skeleton3D
+	if skel == null:
+		return 0.0
+	var skin := best.skin
+	var to_node := node.global_transform.affine_inverse()
+	var skel_to_node := to_node * skel.global_transform
+	var bone_xf: Array[Transform3D] = []
+	for i in skin.get_bind_count():
+		var bone := skin.get_bind_bone(i)
+		if bone < 0:
+			bone = skel.find_bone(skin.get_bind_name(i))
+		bone_xf.append(skel_to_node * skel.get_bone_global_pose(maxi(bone, 0)) * skin.get_bind_pose(i))
+	var mesh_to_node := to_node * best.global_transform
+	var pts := PackedVector3Array()
+	for s in best.mesh.get_surface_count():
+		var arr := best.mesh.surface_get_arrays(s)
+		var vs: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+		var bs = arr[Mesh.ARRAY_BONES]
+		var ws = arr[Mesh.ARRAY_WEIGHTS]
+		var per := 0
+		if vs.size() > 0 and bs != null and bs.size() > 0:
+			per = int(bs.size() / vs.size())
+		for vi in vs.size():
+			var acc := Vector3.ZERO
+			var wsum := 0.0
+			for j in per:
+				var w: float = ws[vi * per + j]
+				var bi: int = bs[vi * per + j]
+				if w <= 0.0 or bi >= bone_xf.size():
+					continue
+				acc += (bone_xf[bi] * vs[vi]) * w
+				wsum += w
+			pts.append(acc / wsum if wsum > 0.0 else mesh_to_node * vs[vi])
+	if pts.is_empty():
+		return 0.0
+	var min_y := INF
+	var max_y := -INF
+	for p in pts:
+		min_y = minf(min_y, p.y)
+		max_y = maxf(max_y, p.y)
+	var height := max_y - min_y
+	var band: Array[Vector2] = []
+	var cx := 0.0
+	var cz := 0.0
+	for p in pts:
+		if p.y >= min_y + 0.15 * height and p.y <= min_y + 0.65 * height:
+			band.append(Vector2(p.x, p.z))
+			cx += p.x
+			cz += p.z
+	if band.is_empty():
+		return 0.0
+	cx /= band.size()
+	cz /= band.size()
+	var dist: Array[float] = []
+	for q in band:
+		dist.append(Vector2(q.x - cx, q.y - cz).length())
+	dist.sort()
+	return dist[dist.size() / 2]
+
+
+## D-1262: extra melee reach the character's weapon gives in the combat, read from the
+## same data the combat uses: the character's Moves (CharacterData loadout) and their
+## MoveData.stand_gap. A running melee Move that stops farther than the default melee
+## gap (Spear Thrust: 7.0 vs 2.6) extends the reach by the difference. The Drain Spear
+## (badge_steal, a projected spear that is not the weapon's reach) is not counted.
+## Keyed by the actor's "species_id" meta (set by the lab), never by a name check.
+func _weapon_reach_bonus(actor: Node3D) -> float:
+	if actor == null or not is_instance_valid(actor):
+		return 0.0
+	var id := str(actor.get_meta("species_id", ""))
+	if id == "":
+		return 0.0
+	if _bonus_cache.has(id):
+		return float(_bonus_cache[id])
+	var bonus := 0.0
+	var data := CharacterCatalog.get_character(StringName(id))
+	if data != null:
+		for move_id in data.skill_ids():
+			var move := MoveCatalog.get_move(move_id)
+			if move == null or move.kind != 0 or move.has_tag(&"badge_steal"):
+				continue
+			if move.stand_gap > BattleSpace.STAND_GAP:
+				bonus = maxf(bonus, move.stand_gap - BattleSpace.STAND_GAP)
+	_bonus_cache[id] = bonus
+	return bonus
+
+
+## Distance between the two body EDGES on the floor plane (negative = overlapping).
+func _edge_gap(a: Node3D, b: Node3D) -> float:
+	return _flat_distance(a.global_position, b.global_position) - _contact_distance(a, b)
 
 
 func _advance(actor: CharacterBody3D, dir: Vector3, speed: float) -> void:
