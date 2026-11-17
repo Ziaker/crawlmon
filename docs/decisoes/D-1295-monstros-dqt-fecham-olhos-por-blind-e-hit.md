@@ -19,3 +19,9 @@
 Frase literal do criador: "o ponto do olho do orc não tá sumindo quando ele fecha os olhos".
 
 O ponto é a malha `Eye_Model_a` (pupila). Perfil do Orc (`content/characters/dqt_orc/model_profile.tres`, chave `hide_eye_mesh_on_close`) esconde essa malha enquanto BLIND/hit; o Sabrecub e o Cyclops não (lá a pálpebra já cobre; esconder deixou o olho branco). **Limite do dado:** o clipe Sleep do Orc quase não mexe nos ossos de pálpebra (só variações pequenas); sem a pupila, o olho fica como um branco liso, que não é um olho fechado. Fechar de verdade pediria um adesivo/pálpebra que o modelo não tem (decisão do criador).
+
+### Orc: pálpebra desenhada (2026-11-17)
+
+Frase literal do criador: "pode ser desenhar então, é só uma mudança de cor no geral não?"
+
+Implementado como cor: enquanto BLIND/hit, a malha `Eye_Model_a` do Orc recebe um material liso (cor de pele iluminada, `eye_cover_color` no perfil, sem sombreamento) e o osso do olho é ampliado 2,7x para cobrir o olho branco. Valores 2,7x e cor [0,70, 0,55, 0,40] são meus e pendentes de aprovação do criador; o resultado é um disco liso sem contorno de sobrancelha/pálpebra.

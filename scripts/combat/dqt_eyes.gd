@@ -39,12 +39,44 @@ static func attach(model_root: Node3D, glb_root: Node, ap: AnimationPlayer, slee
 ## Sabrecub) hold the pose their own Sleep clip gives those bones at t=0 while BLIND / hit.
 var _lids: Array = []  ## [{skeleton, bone, pos, rot, scl}] (null where the clip has no track of that kind)
 var _eye_meshes: Array[MeshInstance3D] = []
-var hide_eye_mesh_on_close := false
+var hide_eye_mesh_on_close := false  ## profile flag: draw a skin-colored lid over the eye while closed (Orc)
+const COVER_SCALE := 2.7  ## the pupil mesh is enlarged this much (its eye bone) so the skin color covers the whole eye white
+var _glb: Node
+var _cover_mat: StandardMaterial3D
+var cover_color := Color(0.62, 0.51, 0.39)
+var _eye_bones: Array = []  ## [{skeleton, bone}] eye bones (names with "eye", not "mabuta")
+
+
+## Lid color: `cover_color` from the model profile (`eye_cover_color`, the lit skin tone around the eye, unshaded).
+func _cover_init() -> void:
+	if _cover_mat != null or _eye_meshes.is_empty():
+		return
+	_cover_mat = StandardMaterial3D.new()
+	_cover_mat.albedo_color = cover_color
+	_cover_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	for s in _glb.find_children("*", "Skeleton3D", true, false):
+		var sk := s as Skeleton3D
+		for b in sk.get_bone_count():
+			var nm := sk.get_bone_name(b).to_lower()
+			if nm.contains("eye") and not nm.contains("mabuta") and not nm.contains("translate"):
+				_eye_bones.append({"skeleton": sk, "bone": b})
+
+
+func _cover(on: bool) -> void:
+	_cover_init()
+	for m in _eye_meshes:
+		if is_instance_valid(m):
+			m.set_surface_override_material(0, _cover_mat if on else null)
+	if on:
+		for e in _eye_bones:
+			var sk: Skeleton3D = e["skeleton"]
+			sk.set_bone_pose_scale(e["bone"], sk.get_bone_pose_scale(e["bone"]) * COVER_SCALE)
 
 
 func _bind_lids(glb_root: Node, ap: AnimationPlayer, sleep_clip: String) -> void:
 	if ap == null or not ap.has_animation(sleep_clip):
 		return
+	_glb = glb_root
 	var anim := ap.get_animation(sleep_clip)
 	for n in glb_root.find_children("Eye_Model*", "MeshInstance3D", true, false):
 		_eye_meshes.append(n as MeshInstance3D)
@@ -157,10 +189,8 @@ func _process(delta: float) -> void:
 		lid_k = 1.0 if (hold_closed or squeeze_left > 0.0) else 0.0
 		if lid_k > 0.0:
 			_hold_lids()
-		if hide_eye_mesh_on_close:  # profile flag (Orc: the Eye_Model_a pupil dot is not covered by the lid pose)
-			for m in _eye_meshes:
-				if is_instance_valid(m):
-					m.visible = lid_k <= 0.0
+		if hide_eye_mesh_on_close:  # profile flag (Orc: the lid pose does not cover the eye)
+			_cover(lid_k > 0.0)
 		return
 	var closed_by_clip := false
 	for e in _pairs:

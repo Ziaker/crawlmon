@@ -11,6 +11,7 @@ profile = {
 "guard_clip": "32",
 "guard_range": [0.5, 1.25],
 "hide_eye_mesh_on_close": true,
+"eye_cover_color": [0.70, 0.55, 0.40],
 "idle_full": false,
 "idle_source": "00",
 "idle_speed": 0.5,
