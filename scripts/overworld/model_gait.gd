@@ -56,6 +56,8 @@ static func analyze(model: Node3D, ap: AnimationPlayer, height: float, cache_key
 	for b in feet:
 		rest_low = minf(rest_low, _local_pos(skel, model, b).y)
 	var low_verts := _collect_low_vertices(skel, model, height)
+	model.set_meta("_low_verts", low_verts)
+	model.set_meta("_gait_skel", skel)
 	var rest_sole := _sole_y(skel, model, low_verts)
 	var saved := ap.current_animation
 	var saved_pos := ap.current_animation_position
@@ -185,3 +187,22 @@ static func _sole_y(skel: Skeleton3D, model: Node3D, low_verts: Array) -> float:
 		var p := _skin_vertex(skel, e[1], e[2], e[3], e[4], e[5], e[6], e[7])
 		lo = minf(lo, (inv * (skel.global_transform * p)).y)
 	return lo
+
+
+## Lowest skinned vertex in WORLD y for the CURRENT pose (cached low band). Cheap: reuses the cache.
+static func lowest_point_y(skel: Skeleton3D, low_verts: Array) -> float:
+	var lo := 1e9
+	for e in low_verts:
+		lo = minf(lo, (skel.global_transform * _skin_vertex(skel, e[1], e[2], e[3], e[4], e[5], e[6], e[7])).y)
+	return lo
+
+## Lowest skinned vertex in WORLD space for the CURRENT pose (cached low band). Used to find the foot contact point.
+static func lowest_point(skel: Skeleton3D, low_verts: Array) -> Vector3:
+	var best := Vector3.ZERO
+	var lo := 1e9
+	for e in low_verts:
+		var p := skel.global_transform * _skin_vertex(skel, e[1], e[2], e[3], e[4], e[5], e[6], e[7])
+		if p.y < lo:
+			lo = p.y
+			best = p
+	return best

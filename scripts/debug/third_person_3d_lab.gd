@@ -276,6 +276,7 @@ func _physics_process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
+	_update_floor_tilt(delta)  # D-1270: after the gait lift, which rewrites model.position.y
 		if _dialogue_focus != null:
 			return
 		if Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
@@ -801,6 +802,53 @@ func _play_idle(ap: AnimationPlayer) -> void:
 
 # --- Enemy and exit ----------------------------------------------------------
 
+	model.set_meta("_lift", model.position.y)
+
+
+## D-1270: the model rides the slope it stands on: it tilts to the floor normal (smoothed) and
+## drops by how far the rounded capsule bottom sits above an inclined floor, so the feet touch it.
+## `radius` 0 = tilt only (used by NPCs, whose model height is driven elsewhere). Nothing per species.
+func _tilt_model_to_floor(body: Node3D, model: Node3D, normal: Vector3, radius: float, delta: float) -> void:
+	if body == null or model == null or not model.is_inside_tree():
+		return
+	if not model.has_meta("_slope_base"):
+		model.set_meta("_slope_base", model.basis)
+		model.set_meta("_slope_q", Quaternion.IDENTITY)
+	var n_local := (body.global_transform.basis.orthonormalized().inverse() * normal).normalized()
+	var target := Quaternion(Vector3.UP, n_local) if n_local.y > 0.5 else Quaternion.IDENTITY
+	var q: Quaternion = model.get_meta("_slope_q")
+	q = q.slerp(target, clampf(delta * 12.0, 0.0, 1.0))
+	model.set_meta("_slope_q", q)
+	model.basis = Basis(q) * (model.get_meta("_slope_base") as Basis)
+	if radius > 0.0:
+		# The rounded capsule bottom rests on slopes and ridges up to `radius` above the true floor under
+		# the feet: measure that floor and sink the model onto it (no float, never below the floor).
+		var from := body.global_position + Vector3(0.0137, 0.5, 0.0091)
+		var hit := body.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(from, from + Vector3(0.0, -1.5, 0.0), 1))
+		var want := 0.0
+		if not hit.is_empty():
+			want = clampf(body.global_position.y - float((hit["position"] as Vector3).y), 0.0, radius * 1.2)
+		var drop: float = lerpf(float(model.get_meta("_slope_drop", 0.0)), want, clampf(delta * 20.0, 0.0, 1.0))
+		model.set_meta("_slope_drop", drop)
+		model.position.y = float(model.get_meta("_lift", 0.0)) - drop
+
+
+func _capsule_radius_of(body: Node) -> float:
+	for c in body.get_children():
+		if c is CollisionShape3D and (c as CollisionShape3D).shape is CapsuleShape3D:
+			return ((c as CollisionShape3D).shape as CapsuleShape3D).radius
+	return 0.0
+
+
+## D-1270: leader and followers align to the floor under them every physics frame.
+func _update_floor_tilt(delta: float) -> void:
+	if player != null and player_model != null and player is CharacterBody3D:
+		var pb := player as CharacterBody3D
+		_tilt_model_to_floor(pb, player_model, pb.get_floor_normal() if pb.is_on_floor() else Vector3.UP, _capsule_radius_of(pb), delta)
+	for f in _followers:
+		var fb := f.get("node") as CharacterBody3D
+		if fb != null and f.get("model") is Node3D:
+			_tilt_model_to_floor(fb, f["model"] as Node3D, fb.get_floor_normal() if fb.is_on_floor() else Vector3.UP, _capsule_radius_of(fb), delta)
 func _build_enemy() -> void:
 	var body := CharacterBody3D.new()
 	body.name = "SlimeEnemy"
