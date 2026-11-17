@@ -8,6 +8,20 @@
 
 # Crawlmon — Regras do jogo (consolidado)
 
+## Decisão D-1286 — Cascos: Bronze, drops simultâneos e apresentação (2026-11-17)
+
+- **Bronze** — 50% por inimigo derrotado, sem categoria de elite.
+- **Simultâneo** — Bronze, prata e ouro podem cair juntos, com sorteios independentes.
+- **Elegibilidade** — Fuga, recrutamento e derrota não geram drops.
+- **Apresentação** — No knock-up os shells voam e caem no chão, e o brilho bronze, prata ou dourado diz o tipo. Instante do crédito e destino do `shell_balance` seguem pendentes. Ver [D-1286](decisoes/D-1286-cascos-bronze-drop-simultaneo-e-knock-up-visivel.md).
+
+## Decisão D-1285 — Cascos: moedas separadas e chances de drop (2026-11-17)
+
+- **Saldos** — Bronze, Silver e Golden têm saldos separados, iniciando em 0, sem conversão automática. Substitui o saldo comum da D-1253. Saldo consolidado é protegido.
+- **Drops por inimigo derrotado** — Prata `7 + LUK_do_líder` %; ouro `3 + LUK_do_líder / 2` %; sem arredondamento. Ouro de combate permitido.
+- **Classificação comercial** — Bronze: HP/MP/ATB/buffs básicos. Silver: atributos flat e itens de dois efeitos. Golden: equipamentos de efeito único e itens de três efeitos.
+- **Pendente** — Bronze, preços, elegibilidade, instante de concessão e destino em derrota/retirada. Ver [D-1285](decisoes/D-1285-cascos-economia-moedas-separadas-e-chances-de-drop.md).
+
 ## Decisão D-1258 — Loja do Hub, opção A de balcão aberto de madeira (2026-11-16)
 
 - **Visual aprovado** — Balcão aberto de madeira, toldo baixo, placa com silhueta de poção e lanterna âmbar sobre os suprimentos. A localização do balcão continua em aberto. Ver [D-1258](decisoes/D-1258-hub-loja-opcao-a-balcao-de-madeira.md).
