@@ -1,4 +1,13 @@
+<!-- REASONING-MAX-OBRIGATORIO -->
+> **REASONING EFFORT = MÁXIMO, SEMPRE (determinação do criador, 2026-11-16).** NUNCA use `low`, `medium` nem qualquer redução de reasoning effort no DeepSeek/Command Code. `ds-run.mjs` tem default `high` e `ds-compliance.mjs` também. A mensagem "Reasoning effort set to ..." é ruído e está **suprimida** — não a reintroduza. Se qualquer comando seu passar `--effort low|medium`, está errado. Sem exceção e sem justificativa de custo ou velocidade: o criador determinou o máximo.
+<!-- /REASONING-MAX-OBRIGATORIO -->
+
+<!-- PERSISTENCIA-DEEPSEEK-OBRIGATORIA -->
+> **DEEPSEEK TENTA ATÉ CONSEGUIR (determinação do criador, 2026-11-16).** Se uma delegação falhar, travar, devolver patch corrompido, alucinar ou esvaziar: NÃO pare, NÃO pergunte ao criador, NÃO diga "não consegui" e NÃO faça você mesmo para economizar tempo. Encontre uma solução e reenvie ao DeepSeek até ele entregar: reformule o briefing (snippet curto sem diff, pergunta binária, arquivo menor), aumente o timeout, divida a tarefa, corrija a ferramenta. Qualquer regra antiga que diga "se falhar duas vezes, faça você mesmo" está **REVOGADA** por esta.
+<!-- /PERSISTENCIA-DEEPSEEK-OBRIGATORIA -->
+
 <!-- DEBUG-OBRIGATORIO-D1204 -->
+> **NUNCA MATAR O DEEPSEEK POR TEMPO (determinação do criador, 2026-11-17).** O `ds-run.mjs` tinha um timeout padrão de 55 s que matava o processo no meio do trabalho: era a causa das "falhas". Agora o padrão é SEM timeout (`DS_TIMEOUT_MS` só se definido de propósito). Rode o `ds-run.mjs` em segundo plano e CHECAR até ele terminar de verdade (saída `.out`, `.err`, `~/.commandcode/ds-live`, `ds-usage.csv`). Se ele parar ou falhar, CHECAR a causa, corrigir a ferramenta/briefing e reenviar. É PROIBIDO matar, abandonar ou declarar falha por demora, e PROIBIDO passar `DS_TIMEOUT_MS` baixo. A regra de 1 min da D-1204 vale para testes do jogo, NÃO para o DeepSeek.
 > **DEBUG = OBRIGAÇÃO EXTREMA (D-1204).** O debug existe para testar QUALQUER milésimo do jogo: combate, Moves, VFX, overworld, UI, itens, IA, save, áudio.
 > **NENHUM teste pode levar mais de 1 minuto** do pedido ao resultado; mire em menos de 10 s (`--scenario=<id> --stdout-trace --quit`).
 > Sem caminho pronto no debug? **CRIE o cenário/controle** antes de testar. Nunca peça ao criador para clicar, ajustar slider ou montar nada.

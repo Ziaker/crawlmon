@@ -6,6 +6,15 @@ signal menu_action(action_id: String)
 
 const PreGameCatalog = preload("res://scripts/ui/pre_game/pre_game_catalog.gd")
 const PreGameDraw = preload("res://scripts/ui/pre_game/pre_game_draw.gd")
+const TitleV2Draw = preload("res://scripts/ui/pre_game/pre_game_title_v2_draw.gd")
+
+## D-1265: title/menu use the v2 look (3D world is a separate node behind this view).
+var use_v2: bool = true
+## D-1265: leader species of the save (icon stamped on the save card); empty = no card.
+var save_leader_id: String = ""
+var save_info: Dictionary = {}  # level, respect, cascos, play_seconds
+var _t: float = 0.0
+var _menu_t: float = 0.0
 
 const MENU_COUNT: int = 4
 const PLAY_COUNT: int = 3
@@ -38,6 +47,12 @@ func _ready() -> void:
 	if gs != null:
 		_reduce_motion = bool(gs.get_meta("reduce_camera_motion", false))
 	_drawer_t = 1.0 if play_drawer_open else 0.0
+	# D-1204: a capture (--shot=) must not catch the intro animation mid-slide.
+	for a in OS.get_cmdline_args() + OS.get_cmdline_user_args():
+		if str(a).begins_with("--shot="):
+			_reduce_motion = true
+			_t = 10.0
+			_menu_t = 10.0
 
 
 func _notification(what: int) -> void:
@@ -49,6 +64,10 @@ func _notification(what: int) -> void:
 
 
 func _process(delta: float) -> void:
+	if use_v2 and view_mode in ["title", "menu", "quit_modal"]:
+		_t += delta
+		_menu_t += delta
+		queue_redraw()
 	if view_mode == "loading":
 		queue_redraw()
 	var target: float = 1.0 if (play_drawer_open and view_mode == "menu") else 0.0
@@ -70,6 +89,10 @@ func _gui_input(event: InputEvent) -> void:
 func set_state(p_mode: String, p_menu_idx: int, p_drawer_open: bool, p_play_idx: int,
 		p_save_available: bool) -> void:
 	if p_mode in ["title", "menu", "loading", "quit_modal"]:
+		if p_mode == "menu" and view_mode != "menu" and view_mode != "quit_modal":
+			_menu_t = -0.4 if not _reduce_motion else 10.0
+		if p_mode == "title" and view_mode != "title":
+			_t = 0.0 if not _reduce_motion else 10.0
 		view_mode = p_mode
 	menu_index = clampi(p_menu_idx, 0, MENU_COUNT - 1)
 	play_drawer_open = p_drawer_open
@@ -352,7 +375,13 @@ func _draw() -> void:
 	var sy := size.y / 720.0
 	var s := minf(sx, sy)
 
-	if view_mode == "title":
+	if use_v2 and view_mode == "title":
+		_draw_title_v2()
+	elif use_v2 and view_mode in ["menu", "quit_modal"]:
+		_draw_menu_v2(sx, sy, s)
+		if view_mode == "quit_modal":
+			_draw_quit_modal(sx, sy, s)
+	elif view_mode == "title":
 		_draw_title(sx, sy, s)
 	elif view_mode == "loading":
 		_draw_loading(sx, sy, s)
@@ -362,6 +391,24 @@ func _draw() -> void:
 			_draw_quit_modal(sx, sy, s)
 
 	PreGameDraw.draw_top_edge_rail(self, size.x)
+
+
+func _draw_title_v2() -> void:
+	TitleV2Draw.draw_backdrop_gradient(self, size)
+	TitleV2Draw.draw_title(self, size, _t)
+	var hint: Array = TitleV2Draw.draw_enter_hint(self, size, _t, _hover_id == "title_press")
+	_add_hit("title_press", hint[0], hint[1])
+
+
+func _draw_menu_v2(sx: float, sy: float, s: float) -> void:
+	TitleV2Draw.draw_backdrop_gradient(self, size)
+	TitleV2Draw.draw_title(self, size, maxf(_t, 3.0))
+	TitleV2Draw.draw_plates(self, size, _menu_t, menu_index, _add_hit)
+	if save_available:
+		TitleV2Draw.draw_save_card(self, size, PreGameCatalog.species_portrait(save_leader_id) if save_leader_id != "" else null, save_info)
+	_draw_context_card(sx, sy, s)
+	_draw_footer(sx, sy, s)
+	_draw_drawer(sx, sy, s)
 
 
 func _draw_title(sx: float, sy: float, s: float) -> void:
@@ -558,6 +605,8 @@ func _draw_drawer(sx: float, sy: float, s: float) -> void:
 	var t := clampf(_drawer_t, 0.0, 1.0)
 	var card_size := Vector2(296.0 * s, 218.0 * s)
 	var center := Vector2(715.0 * sx + (1.0 - t) * 36.0 * s, 338.0 * sy)
+	if use_v2:  # D-1265: beside the plates, clear of the leader
+		center = Vector2(572.0 * sx + (1.0 - t) * 36.0 * s, 335.0 * sy)
 	var xform := PreGameDraw.draw_card(self, center, card_size, 1.8, -7.0, PreGameDraw.NAVY,
 		PreGameDraw.BORDER_MUTED, 1.5, Vector2(9, 9) * s, Color(0, 0, 0, 0.82),
 		_accents("top", 6.0 * s, PreGameDraw.LIME_FAN))

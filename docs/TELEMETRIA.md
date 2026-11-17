@@ -65,6 +65,7 @@ Eventos de combate:
 |---|---|---|
 | `battle_trace_started` | início do trace | `seed_args` |
 | `log` | qualquer log do `Battle` | `text` |
+| `eyes` | pálpebras do modelo (EyeBlink) fecharam/abriram por BLIND (D-1271) ou por dano/impacto, 0,5 s (D-1272); só modelos com olhos piscáveis emitem | `actor`, `closed`, `blind`, `hit` |
 | `telegraphed` | ataque declarado | `attacker`, `target`, `label`, `kind`, `phase`, `progress` |
 | `resolved` | wind-up terminou e o plano começou | o mesmo + `instant`, `dodged`, `auto_dodged`, `interrupted`, `interruption_feedback` |
 | `phase` | ataque entrou numa fase | o mesmo + `to` |
@@ -111,7 +112,7 @@ O `info` do evento `hit` carrega:
 
 - `affinity`: `Affinity.Type` do elemento do Move contra o alvo (Neutral/Weak/Resist/Null/Repel/Drain).
 - `affinity_mult`: multiplicador aplicado (1.5 Weak, 0.5 Resist, 1.0 nos demais nesta fase).
-- `affinity_applied`: `false` no Drain Spear, que usa `5 + MAG - SPI` e ignora a tabela.
+- `affinity_applied`: `false` no Drain Spear, que usa `5 + MAG - WIS` e ignora a tabela (D-391).
 
 Use esses campos para provar RESIST no `--stdout-trace`; não crie um evento novo para isso.
 
@@ -230,6 +231,10 @@ Além dos campos antigos (dano, HP, fases, leaks, VFX), a sala inclui:
 - **Vários instantes numa folha (debug, ~10 s por foto):** `python tools/room_seq.py <cenario> --phase <fase> --delays 0,0.3,0.6,0.9 --out <saida.png> [--cols N] [--crop x0,y0,x1,y1] [--scale S] [-- flags da sala]` roda até 3 Godot em paralelo (~10 s cada) e monta uma folha de contato rotulada de vários instantes do cenário.
 - Cada atraso de `--delays` é escrito em amarelo no canto de cada tile; os flags da sala vão **depois do `--`**, como no `room_shot.sh`.
 - Execução que falha (exit diferente de 0, timeout de 100 s ou png ausente) não derruba a folha: vira um tile vermelho `FAIL t=...`, e o motivo com as últimas linhas do stderr é impresso no fim (`FAILED RUNS: n`).
+
+## Recrutar por conversa e equipe da expedição: `RECRUIT_JSON` (D-1261)
+
+Com `--stdout-trace`, `GameState.recruit_character()` imprime `RECRUIT_JSON: {"species":"gible","uid":"...","source":"hub_talk"}`. Cenário: `--scenario=HUB_ALLY_CHOICE --quit` no `scenes/debug/hub_3d_prototype.tscn` (recruta, equipe de 3, remoção; 6 líderes, ~1,4 s).
 
 ## Respeito do grupo de Travelers: `RESPECT_JSON` (D-1231, D-1235)
 

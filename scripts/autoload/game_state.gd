@@ -139,17 +139,9 @@ func _change_scene_deferred(path: String) -> void:
 	get_tree().change_scene_to_file.call_deferred(path)
 
 
-## Playable species (leader or ally). The ally offer is drawn from these minus the leader (D-1260).
-const PLAYABLE_SPECIES: Array[String] = ["abra", "pancham", "gible", "dqt_slime", "dqt_orc", "dqt_cyclops"]
-const ALLY_OFFER_COUNT := 3
-
-## D-1260: the new campaign's ally is chosen once in the Hub among ALLY_OFFER_COUNT drawn species.
-var ally_choice_pending := false
-var ally_choice_candidates: Array[String] = []
-
-
-## D-1260 (supersedes the starting duo of D-1208/D-1207 C1): fresh campaign with ONLY the leader
-## in the party. The 3 ally candidates are drawn now (never the leader); the Hub offers them once.
+## D-1261 (supersedes the starting duo of D-1208/D-1207 C1): fresh campaign with ONLY the leader
+## in the party and an EMPTY roster of recruits. Allies are recruited later (Employ in battle,
+## D-1229, or by talking to a Hub NPC) and picked for the expedition team at the Gate HUD.
 ## The leader shares the party inventory.
 func start_new_campaign(leader_species: String) -> void:
 	leader_species = leader_species.to_lower()
@@ -163,8 +155,7 @@ func start_new_campaign(leader_species: String) -> void:
 		"inventory": inventory,
 	})
 	party.assign([leader])
-	ally_choice_candidates = roll_ally_candidates(leader_species, rng)
-	ally_choice_pending = not ally_choice_candidates.is_empty()
+	roster = ExpeditionRosterClass.new()  # D-1261: nobody recruited yet
 	active_campaign_started = true
 	last_expedition_nature_id = ""
 	expedition_origin_scene = ""
@@ -174,39 +165,74 @@ func start_new_campaign(leader_species: String) -> void:
 	reset_expedition_inventory()
 
 
-## D-1260: draws ALLY_OFFER_COUNT distinct playable species, never the leader.
-func roll_ally_candidates(leader_species: String, rng: RandomNumberGenerator = null) -> Array[String]:
-	if rng == null:
-		rng = RandomNumberGenerator.new()
-		rng.randomize()
-	var pool: Array[String] = []
-	for sid in PLAYABLE_SPECIES:
-		if sid != leader_species.to_lower():
-			pool.append(sid)
-	var picked: Array[String] = []
-	while picked.size() < ALLY_OFFER_COUNT and not pool.is_empty():
-		var i := rng.randi_range(0, pool.size() - 1)
-		picked.append(pool[i])
-		pool.remove_at(i)
-	return picked
-
-
-## D-1260: confirms the chosen ally (one of the offered candidates). Joins the party as ally and
-## closes the offer for good. Returns false if nothing is pending or the species was not offered.
-func choose_ally(species: String) -> bool:
+## D-1261: recruits a character by talking to a Hub NPC (direct: no chance, no minigame). Only
+## species with a ready sheet in CharacterCatalog qualify. One recruit per species and never the
+## leader. Returns the new member's uid, or "" when refused.
+func recruit_character(species: String) -> String:
 	species = species.to_lower()
-	if not ally_choice_pending or not ally_choice_candidates.has(species) or party.is_empty():
-		return false
-	var ally := CharacterFactory.create(species, {
+	if party.is_empty() or species == "" or species == species_key(party[0]) or _roster_has_species(species):
+		return ""
+	if CharacterCatalog.get_character(StringName(species)) == null:
+		return ""
+	var c := CharacterFactory.create(species, {
 		"is_player": true,
 		"act_policy": Combatant.Act.SKILL,  # Allies use their moves and dodge (D-168).
 		"react_policy": Combatant.React.EVADE,
 	})
-	party.append(ally)
-	ally_choice_pending = false
+	if c == null:
+		return ""
+	var uid := get_roster().register(c, ExpeditionRosterClass.Place.SUBSTITUTE)  # D-1229 item 3 rule
+	if uid == "":
+		uid = roster.register(c, ExpeditionRosterClass.Place.STATIONED)
 	if "--stdout-trace" in OS.get_cmdline_user_args():
-		print("ALLY_CHOICE_JSON: " + JSON.stringify({"leader": species_key(party[0]), "offered": ally_choice_candidates, "chosen": species}))
+		print("RECRUIT_JSON: " + JSON.stringify({"species": species, "uid": uid, "source": "hub_talk"}))
+	return uid
+
+
+## D-1261: recruited characters NOT on the expedition team, in roster order (the Gate list).
+func recruited_available() -> Array[Combatant]:
+	var out: Array[Combatant] = []
+	var r := get_roster()
+	for place in [ExpeditionRosterClass.Place.SUBSTITUTE, ExpeditionRosterClass.Place.STATIONED]:
+		out.append_array(r.members(place))
+	return out
+
+
+## D-1261: puts a recruited member on the expedition team (party). The team holds MAX_ACTIVE
+## (3) with the leader. Returns false when unknown, already on the team or the team is full.
+func team_assign(uid: String) -> bool:
+	var r := get_roster()
+	var c := r.member(uid)
+	if c == null or party.has(c) or party.size() >= ExpeditionRosterClass.MAX_ACTIVE:
+		return false
+	# An Employ recruit (D-1229) was an enemy: on the team it is a player-side ally (D-168 policies).
+	c.is_player = true
+	c.engaged_with = null
+	c.act_policy = Combatant.Act.SKILL
+	c.react_policy = Combatant.React.EVADE
+	party.append(c)
+	r.sync_active(party)
 	return true
+
+
+## D-1261: takes an ally off the team (never the leader); the member returns to the recruits list.
+func team_unassign(uid: String) -> bool:
+	var r := get_roster()
+	var c := r.member(uid)
+	if c == null or not party.has(c) or party[0] == c:
+		return false
+	party.erase(c)
+	r.sync_active(party)
+	return true
+
+
+func _roster_has_species(species: String) -> bool:
+	for c in get_roster().members(ExpeditionRosterClass.Place.ACTIVE) \
+			+ get_roster().members(ExpeditionRosterClass.Place.SUBSTITUTE) \
+			+ get_roster().members(ExpeditionRosterClass.Place.STATIONED):
+		if species_key(c) == species:
+			return true
+	return false
 
 
 ## D-1231: applies one Respect event to the group and returns the delta really applied.

@@ -39,10 +39,10 @@ const NATURE_DESCRIPTIONS: Dictionary = {
 	"docile": "Measured discipline that conserves an extra ATB margin before committing.",
 	"brave": "Frontline brawl posture favoring heavy Strength and durability over speed.",
 	"timid": "Skirmisher instinct maximizing ATB rhythm, luck checks, and spacing.",
-	"modest": "Arcane specialization channeling power (+3 MAG) from physical strength.",
-	"calm": "Defensive focus boosting MP pool (+2 WIS) and magical mitigation.",
+	"modest": "Arcane specialization that grows magic at the expense of physical strength.",
+	"calm": "Defensive focus that grows the MP pool and magical mitigation, acting with patience.",
 	"jolly": "High-tempo physical flanker prioritizing ATB velocity and crit/dodge odds.",
-	"adamant": "Pure kinetic striker (+3 STR / -2 MAG / -1 LUK) designed to crush single targets.",
+	"adamant": "Pure kinetic striker that grows raw strength at the cost of magic and luck, committed to crushing single targets.",
 	"bold": "Holds the line and outlasts the enemy.",
 	"impish": "Takes the hit on purpose and grins about it.",
 	"relaxed": "Never rushes; acts late and stays standing.",
@@ -858,7 +858,7 @@ static func calc_atb_speed(agi: int) -> float:
 	return CrawlmonAttributeMath.natural_atb_increment(1.0, float(maxi(agi, 1)))
 
 
-## D-394: +3 points at every 10th level, +1 at every other level-up.
+## D-1225: +3 points at every 5th level, +1 at every other level-up.
 static func total_bonus_points_at_level(level: int) -> int:
 	var total := 0
 	for reached in range(2, maxi(level, 1) + 1):

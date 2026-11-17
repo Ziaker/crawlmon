@@ -109,7 +109,7 @@ Respostas às perguntas do assistente:
 - **A IA usa o Guard**, aliados e inimigos (simetria, D-021).
 - O **valor provisório** da redução de dano é escolhido pelo assistente, deixado como constante fácil de trocar e mostrado ao criador antes de seguir.
 - **Visual atual (2026-11-04), substitui a barreira/cúpula:** um **escudo de verdade** (brasão com topo reto e ponta embaixo), **branco com opacidade reduzida**, **chapado (flat), sem bordas e sem degradê**, **em pé na frente do personagem, voltado para o oponente** (do jogador, do aliado ou do oponente), com a ponta tocando o chão, **da mesma forma que a barreira ficava** (não sobre o personagem). **Animação de surgimento:** o escudo se constrói (pedaços em cunha deslizam de fora e se montam, em ~0,4 s). **Detalhes mantidos das melhorias (2026-11-05):** (3) ao contato, **flash branco de 0,08 s e quebra nas fatias de pizza**; (4) em vez de sumir gradualmente, o escudo **racha**: rachaduras **em linhas retas, sem bifurcações, estilo pizza**: 8 linhas saindo do centro até a borda (o criador pediu para voltar às 8 fatias depois de testar 16), aparecem e crescem ao longo dos 2 s do Guard e, quando o tempo acaba, ele **quebra nas mesmas fatias** (8 pedaços triangulares, cortados exatamente sobre as rachaduras) (só o fade acontece no fim da batalha). **Desfeitos a pedido:** o emblema interno e o giro de 35° para a câmera. Versões descartadas: cúpula (guardada, D-273), cápsula, parede em C, cocho em U, casca hexagonal, escudo com borda, escudo sobre o personagem, emblema interno, escudo girado, drenagem.
-- Ao receber contato, o Guard **reduz o dano em uma porcentagem, arredondada para cima**, baseada no **atributo de status referente ao dano causado** (VIT para físico, SPI para mágico, D-130/D-138).
+- Ao receber contato, o Guard **reduz o dano em uma porcentagem, arredondada para cima**, baseada no **atributo de status referente ao dano causado** (VIT para físico, WIS para mágico, D-138) (atualizado: D-391).
 - **Brick Break** quebra o Guard, causa o **dano normal** do ataque (sem redução) e dá **1 ATB** a quem o usa, quando quebra com sucesso. O **Brick Break é o Move que ganha essa trait**.
 - **Mold Break** é uma **habilidade futura**; fica apenas registrada, sem implementação nem efeito agora.
 - **Hit stun:** a duração do **recuo/cambaleio do alvo** ao receber um golpe aumenta em **0,30 s, globalmente** (todos os golpes, todos os personagens).
@@ -132,7 +132,7 @@ Respostas às perguntas do assistente:
 Implementado (2026-11-04): `Battle.use_guard` / `can_guard` / `guard_block_reason`, `Combatant.guard_timer` / `is_guarding`, dano em `Battle._hit`, hotkey `guard` (Shift) em `GameState`, bloco azul em `FanMenu`/`battle_scene.gd`, badge `🛡 GUARD` em `battle_hud.gd`, domo em `scripts/combat/fx/fx_guard.gd`, hit stun `AttackMotion.HIT_STUN_EXTRA = 0.30`. Teste: `tests/battle/test_d272_guard.gd`.
 
 Escolhas do assistente que o criador deve confirmar:
-- **Redução provisória de 50%** (`Battle.GUARD_REDUCTION`), igual para dano físico e mágico até VIT/SPI existirem.
+- **Redução provisória de 50%** (`Battle.GUARD_REDUCTION`), igual para dano físico e mágico (VIT e WIS existem, D-391).
 - "Arredondamento para cima" aplicado ao **dano final**: `ceil(dano × (1 − redução))`, mínimo 1.
 - O Brick Break é identificado pelo id `quebra_telha` (`Battle.GUARD_BREAKERS`).
 - Efeitos secundários de contato (Karate Chop −1 VEL, Mordida atordoa) **continuam como antes** quando o alvo está em Guard.

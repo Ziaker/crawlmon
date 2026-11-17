@@ -83,7 +83,7 @@ const SUMMON_PENTAGRAM_SECONDS := 4.0
 const SUMMON_FALL_SECONDS := 0.95
 const SUMMON_ARRIVAL_SECONDS := SUMMON_EXIT_SECONDS + SUMMON_GAP_SECONDS + SUMMON_PENTAGRAM_SECONDS + SUMMON_FALL_SECONDS
 const GUARD_SECONDS := 2.0  ## D-272: no cancelling; ends by time, contact or Brick Break.
-const GUARD_REDUCTION := DamageMath.GUARD_REDUCTION  ## D-1153: single source in DamageMath; D-272 provisional until VIT/SPI exist.
+const GUARD_REDUCTION := DamageMath.GUARD_REDUCTION  ## D-1153: single source in DamageMath; D-272 (VIT/WIS already exist, D-391).
 const AI_GUARD_CHANCE := 0.25  ## D-272/D-116: chance an AI target guards when an attack is declared on it.
 
 
@@ -1207,7 +1207,7 @@ func _hit(attacker: Combatant, target: Combatant, power: float, element: Element
 	info["affinity_mult"] = affinity_mult
 	info["affinity_applied"] = magic_flat < 0
 	if magic_flat >= 0:
-		# Drain Spear: 5 + MAG - SPI, minimum 1. No weakness, crit or position multiplier.
+		# Drain Spear: 5 + MAG - WIS, minimum 1. No weakness, crit or position multiplier.
 		dmg = DamageMath.drain(magic_flat, attacker.mag, target.spi)
 		info["magic"] = true
 	else:

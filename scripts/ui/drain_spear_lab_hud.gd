@@ -78,7 +78,7 @@ func _draw_distance() -> void:
 	var mag := int(_state.get("mag", 10))
 	var spi := int(_state.get("spi", 3))
 	var base := 5 + mag
-	draw_string(_font, Vector2(18, 138), "DANO: 5 + %d MAG = %d  ·  SPI %d (simulação local)" % [mag, base, spi], HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(0.62, 0.78, 0.88))
+	draw_string(_font, Vector2(18, 138), "DANO: 5 + %d MAG = %d  ·  WIS %d (simulação local)" % [mag, base, spi], HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(0.62, 0.78, 0.88))
 
 
 func _draw_log() -> void:

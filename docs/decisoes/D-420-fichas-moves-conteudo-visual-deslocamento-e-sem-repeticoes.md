@@ -38,7 +38,7 @@
 3. **Ficha Padrão (Card Inferior da Status Screen):**
    - **Linha 1 (Mecânica & Alvo):** Ação tática principal e entrega espacial (ex.: "Disruptive telekinetic pressure. Single Target burst.").
    - **Linha 2 (Visual & Deslocamento):** Descrição condensada do efeito visual e movimentação (ex.: "Stationary channel; launches swirling violet distortion orbs that detonate on contact.").
-   - **Linha 3 (Escala & Timing):** Atributo de escala e wind-up (ex.: "Wind-up: 1.50s (interruptible) · Scales with MAG · +4 MP / 8s cycle").
+   - **Linha 3 (Escala & Timing):** Atributo de escala e wind-up (ex.: "Wind-up: 1.50s (interruptible) · Scales with MAG · 10 + MAG/5 MP per pulse").
    - **Shift Mode:** Mantém a quebra matemática analítica com fórmulas base, bônus de Nature e cronômetro de recarga de MP.
 
 4. **Visão Expandida (Modal Z):**

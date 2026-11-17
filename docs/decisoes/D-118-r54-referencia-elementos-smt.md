@@ -20,7 +20,7 @@
 
 - O **sistema de elementos do Crawlmon se baseia mais em Shin Megami Tensei do que em Pokémon**. A referência principal para construir/avaliar os elementos e sua identidade é SMT; Pokémon não deve ser imposto como modelo principal de tipos, conversões ou fraquezas.
 - A declaração **não** ordena cópia literal de uma tabela específica de SMT, **não** define nova tabela de fraquezas, resistências, imunidades ou afinidades por espécie e **não** renomeia nem remove categorias existentes.
-- Preservar o `Element.Type` atual (`FISICO`, `FOGO`, `AGUA_GELO`, `RAIO`, `PSIQUICO`, `VENENO`, `SOM`, `TERRA`, `VENTO`, `LUZ`, `TREVAS`) e as fraquezas já cadastradas até receber definição específica que autorize alterá-las.
+- Preservar os ids internos de `Element.Type` (`FISICO`, `FOGO`, `AGUA_GELO`, `RAIO`, `PSIQUICO`, `VENENO`, `SOM`, `TERRA`, `VENTO`, `LUZ`, `TREVAS`) e as fraquezas já cadastradas até receber definição específica que autorize alterá-las; os nomes de exibição passaram a ser exclusivamente em inglês e o catálogo fechou em 12 elementos: Neutral (antigo Físico), Fire, Water (antigo Água/Gelo), Electric, Wind, Psychic, Light, Dark, Nature (antigo Poison/Veneno), Sound, Earth, Mystic (atualizado: D-396, D-397, D-398).
 - **Rodada 54, pergunta 9:** a recomendação anterior, que usava tipos Pokémon como referência para gerar fraquezas, **deixa de representar corretamente a direção do criador**. A questão de como elaborar as fichas de afinidades por espécie continua em aberto, com SMT como referência principal.
 
 ## Estado verificado do código

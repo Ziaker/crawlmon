@@ -179,6 +179,7 @@ func _build() -> void:
 	var model: Node3D
 	if ResourceLoader.exists(glb_path):
 		model = (load(glb_path) as PackedScene).instantiate() as Node3D
+		preload("res://scripts/common/eye_shine.gd").apply(model)
 	else:
 		push_error("3D model not found: " + glb_path)
 		model = _fallback_model()

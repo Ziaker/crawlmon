@@ -58,7 +58,7 @@
 2. Os projéteis são **genéricos** e também podem ser usados em **múltiplos alvos**, como placeholder.
 3. **Fases visuais obrigatórias da biblioteca:** Start → Wind-up → Release → Trajectory → Impact → Post-impact.
 4. A fase atual é **só pesquisa e referência**, e ela define o escopo.
-5. Elementos cobertos: os 11 de `Element.Type`: Físico, Fogo, Água/Gelo, Raio, Psíquico, Veneno, Som, Terra, Vento, Luz, Trevas (D-118 preservada).
+5. Elementos cobertos: os 12 de `Element.Type`, com nomes exclusivamente em inglês: Neutral, Fire, Water, Electric, Wind, Psychic, Light, Dark, Nature, Sound, Earth, Mystic (atualizado: D-397 e D-398; ids internos do enum preservados, D-118).
 
 ## Relações e conflitos a confirmar (nada resolvido por conta própria)
 
@@ -76,7 +76,7 @@
 - O que significa "Start" em relação a "Wind-up".
 - O que "Post-impact" inclui e quanto tempo pode durar.
 - Como é o uso em múltiplos alvos.
-- Se Água/Gelo é um conjunto ou dois.
+- Se Água/Gelo é um conjunto ou dois — **resolvido: só existe Water**; Ice/Gelo foi acoplado a Water (atualizado: D-397).
 - Se Veneno e Som (sem Moves hoje) entram na primeira leva.
 
 ## Estado no código

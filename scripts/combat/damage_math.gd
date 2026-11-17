@@ -32,7 +32,7 @@ static func affinity_multiplier(affinity_kind: int) -> float:
 	return Affinity.damage_multiplier(affinity_kind)
 
 
-## Drain Spear: 5 + MAG - SPI, sem fraqueza/crítico/passos/WIS.
+## Drain Spear: 5 + MAG - WIS, sem fraqueza/crítico/passos (o parâmetro `spi` é o alias legado de WIS, D-391).
 static func drain(flat: int, mag: int, spi: int) -> int:
 	return maxi(MIN_DAMAGE, flat + mag - spi)
 

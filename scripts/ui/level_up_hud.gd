@@ -86,7 +86,7 @@ const AFFINITIES_LIST = [
 	{"id": "WIND",     "name": "WND", "bg": Color("#4ff7ba"), "fg": Color.BLACK, "icon": "res://assets/ui/icons/elements/wind.svg"},
 	{"id": "EARTH",    "name": "ERT", "bg": Color("#78350f"), "fg": Color.WHITE, "icon": "res://assets/ui/icons/elements/earth.svg"},
 	{"id": "NATURE",   "name": "NAT", "bg": Color("#22c55e"), "fg": Color.WHITE, "icon": "res://assets/ui/icons/elements/nature.svg"},
-	{"id": "ICE",      "name": "ICE", "bg": Color("#06b6d4"), "fg": Color.BLACK, "icon": "res://assets/ui/icons/elements/water_ice.svg"},
+	{"id": "SOUND",    "name": "SND", "bg": Color("#06b6d4"), "fg": Color.BLACK, "icon": "res://assets/ui/icons/elements/sound.svg"},
 	{"id": "PSYCHIC",  "name": "PSY", "bg": Color("#ec4899"), "fg": Color.WHITE, "icon": "res://assets/ui/icons/elements/psychic.svg"},
 	{"id": "DARK",     "name": "DRK", "bg": Color("#1e293b"), "fg": Color.WHITE, "icon": "res://assets/ui/icons/elements/dark.svg"},
 	{"id": "LIGHT",    "name": "LGT", "bg": Color("#fbbf24"), "fg": Color.BLACK, "icon": "res://assets/ui/icons/elements/light.svg"},
@@ -98,11 +98,11 @@ const AFFINITY_ELEMENT_BY_ID = {
 	"NEUTRAL": Element.Type.FISICO,
 	"FIRE": Element.Type.FOGO,
 	"WATER": Element.Type.AGUA_GELO,
-	"ICE": Element.Type.AGUA_GELO,
 	"ELECTRIC": Element.Type.RAIO,
 	"WIND": Element.Type.VENTO,
 	"EARTH": Element.Type.TERRA,
 	"NATURE": Element.Type.VENENO,
+	"SOUND": Element.Type.SOM,
 	"PSYCHIC": Element.Type.PSIQUICO,
 	"DARK": Element.Type.TREVAS,
 	"LIGHT": Element.Type.LUZ,
@@ -291,8 +291,8 @@ func _sync_hero_view(index: int, is_initial: bool = false) -> void:
 	mp_bar.max_value = hero.max_mp
 	mp_bar.value = hero.mp
 	mp_label.text = "%d / %d" % [hero.mp, hero.max_mp]
-	var regen_rate = 4
-	mp_regen_label.text = "REGEN: +%d MP / 8s • FLOOR: 20 MP" % regen_rate
+	var regen_rate = hero.mp_regen_amount()
+	mp_regen_label.text = "REGEN: +%d MP / 8s (10 + MAG/5; ATB full 1.75x) • FLOOR: 20 MP" % regen_rate
 
 	# 4. Affinities Strip
 	_render_affinities_strip(hero)

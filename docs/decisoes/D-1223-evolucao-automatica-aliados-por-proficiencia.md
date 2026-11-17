@@ -39,14 +39,14 @@ Fecha os critérios pendentes da **D-394** e **D-1192** para a evolução autom�
      - Esquiva válida (`EVADE` manual ou `auto_dodged`): `+3 AGI`
      - Acertar crítico: `+2 LUK`
 2. **Escolha do stat ao subir de nível (Nature + Tactics + desempate):**
-   - Para cada ponto concedido ao aliado (`1` em nível comum, `3` em marcos a cada 10 níveis), calcula-se o score efetivo de cada atributo:
+   - Para cada ponto concedido ao aliado (`1` em nível comum, `3` em marcos a cada 5 níveis, atualizado: D-1225), calcula-se o score efetivo de cada atributo:
      `score[stat] = proficiency_points[stat] + nature_bonus[stat] + tactics_bonus[stat]`
    - `nature_bonus`: `+2` por ponto positivo em `NatureData.mods` (se a Nature não tiver modificador positivo, como *Hardy*/*Docile*, `+2` no maior `innate_stat` da espécie).
    - `tactics_bonus`: `+1` no stat correspondente à postura (`Act.ATTACK` → `STR`, `Act.SKILL` → `MAG`, `Act.HOLD` → `WIS`; `React.EVADE` → `+1 AGI`).
    - **Desempate determinístico:** maior `innate_stat` da espécie; persistindo o empate, ordem canônica fixa `STR → MAG → VIT → WIS → AGI → LUK`.
 3. **Gasto sem efeito mono-stat:**
    - O stat vencedor recebe `+1` em `progression_points`, e **apenas `proficiency_points[vencedor]` é zerado**; os outros 5 stats mantêm seus pontos acumulados para os próximos níveis.
-   - Em marcos de 10 níveis (`+3` pontos) ou múltiplos níveis ganhos de uma vez, a escolha e o zeramento ocorrem **1 ponto por vez**.
+   - Em marcos a cada 5 níveis (`+3` pontos, atualizado: D-1225) ou múltiplos níveis ganhos de uma vez, a escolha e o zeramento ocorrem **1 ponto por vez**.
    - A alocação ocorre dentro de `Combatant.add_experience()` **antes** de `update_resource_maximums()`, garantindo que `max_hp` (`+2/VIT`) e `max_mp` (`WIS`) já atualizem no mesmo nível.
 4. **Exibição na tela de Level Up (`PostCombatScreen`):**
    - O painel da direita (`ATTRIBUTES / AUTOMÁTICO`) exibe a base anterior (`old_stats`) + `+N` verde-lima e destaque dourado na(s) linha(s) que receberam ponto, evitando soma dupla com `c.get_effective_stat()`.

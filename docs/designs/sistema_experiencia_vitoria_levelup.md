@@ -26,7 +26,7 @@ No protótipo atual, quando o último oponente tem seu HP reduzido a zero, a cen
 Com a conclusão do sistema biológico de 15 pontos, Natures e marcos de HP ([D-390](../decisoes/D-390-orcamento-15-pontos-base-nivel-1.md) a [D-394](../decisoes/D-394-progressao-pontos-nivel-jogador-e-aliados.md)), os combatentes possuem infraestrutura de atributos mas permanecem estáticos no nível 1:
 1. Derrotar inimigos não gera experiência nem progressão de nível;
 2. Não há tela de vitória para exibir o resultado do combate e o avanço da equipe;
-3. O líder não dispõe de interface para alocar o 1 ponto concedido por nível (ou 3 nos marcos de nível 10, 20...), violando a exigência de alocação obrigatória na hora ([D-135](../decisoes/D-135-r55-q5-seis-atributos-no-teto-sem-distribuicao.md), [D-401](../decisoes/D-401-modal-obrigatorio-alocacao-pontos-lider.md));
+3. O líder não dispõe de interface para alocar o 1 ponto concedido por nível (ou 3 nos marcos a cada 5 níveis: 5, 10, 15, 20...) (D-1225), violando a exigência de alocação obrigatória na hora ([D-135](../decisoes/D-135-r55-q5-seis-atributos-no-teto-sem-distribuicao.md), [D-401](../decisoes/D-401-modal-obrigatorio-alocacao-pontos-lider.md));
 4. Caso a concessão fosse aplicada indiscriminadamente, combatentes nocauteados receberiam experiência indevida.
 
 A aprovação de [D-399](../decisoes/D-399-curva-de-xp-e-recompensa-inimigos.md) a [D-402](../decisoes/D-402-xp-apenas-para-combatentes-sobreviventes.md) fecha esse ciclo com:
@@ -158,9 +158,9 @@ static func get_xp_for_level_transition(current_level: int) -> int:
 static func get_enemy_xp_drop(base_exp: int, level: int) -> int:
 	return maxi(1, base_exp) * maxi(1, level)
 
-## Retorna os pontos de atributo distribuidos ao alcancar determinado nivel (D-394).
+## Retorna os pontos de atributo distribuidos ao alcancar determinado nivel (D-1225).
 static func get_stat_points_for_level(new_level: int) -> int:
-	return 3 if new_level % 10 == 0 else 1
+	return 3 if new_level % 5 == 0 else 1
 ```
 
 ### 2. Modificações em `Combatant` (`scripts/combat/combatant.gd`)

@@ -38,9 +38,9 @@
 
 ## Estado no código
 
-- `Skill.type_icon_name()` centraliza a classificação visual: `magical`, `physical`, `guard`, `dodge` ou vazio para status puro.
+- `Skill.type_icon_name()` centraliza a classificação visual: `magical`, `physical`, `guard`, `dodge`, `field` e `status` (atualizado: D-1190).
 - Os cinco Moves do Abra: Confusion/Psybeam/Shock Wave/Megido = `magical`; Teleport = `dodge` (D-396).
-- Status puro (Media, Sukunda etc.) não exibe ícone de tipo nem de alcance nas telas corrigidas.
+- Status puro (Media, Sukunda etc.) exibe o ícone de tipo `status` (badge branco) e continua sem ícone de alcance nas telas corrigidas (atualizado: D-1190).
 - Telas alinhadas: `status_screen.gd`, `skill_info_panel.gd`, `move_card.gd`, `move_inspection_modal.gd`, `battle_hud.gd` e `fan_menu.gd`.
 - Teste dedicado `tests/battle/test_d1145_move_type_icons.gd` — **D1145_PASS**.
 - Próximo: revisar os demais Moves (Slime, Orc, Cyclops, Gible etc.) e as fichas antigas, um por um.

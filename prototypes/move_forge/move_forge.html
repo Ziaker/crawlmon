@@ -195,7 +195,7 @@ kbd { font:700 9px var(--fm); background:#0a1a27; border:1px solid var(--line); 
 const D = window.MOVE_FORGE_DATA || { moves: [], vfx: { families: [], flipbooks: [], shaders: [], meshes: [], motion_behaviors: [] }, elements: [] };
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const EL = { 0: ['Físico', '#cbd5e1'], 1: ['Fogo', '#f97316'], 2: ['Água/Gelo', '#0284c7'], 3: ['Raio', '#fde047'], 4: ['Psíquico', '#ec4899'], 5: ['Veneno', '#84cc16'], 6: ['Som', '#06b6d4'], 7: ['Terra', '#b45309'], 8: ['Vento', '#4ff7ba'], 9: ['Luz', '#fef08a'], 10: ['Trevas', '#6b21a8'], 11: ['Místico', '#65b5b3'] };
+const EL = { 0: ['Neutral', '#cbd5e1'], 1: ['Fire', '#f97316'], 2: ['Water', '#0284c7'], 3: ['Electric', '#fde047'], 4: ['Psychic', '#ec4899'], 5: ['Nature', '#84cc16'], 6: ['Sound', '#06b6d4'], 7: ['Earth', '#b45309'], 8: ['Wind', '#4ff7ba'], 9: ['Light', '#fef08a'], 10: ['Dark', '#6b21a8'], 11: ['Mystic', '#65b5b3'] };
 const ICON = '../../assets/ui/icons/';
 const EL_ICON = { 0: 'neutral', 1: 'fire', 2: 'water_ice', 3: 'electric', 4: 'psychic', 5: 'nature', 6: 'sound', 7: 'earth', 8: 'wind', 9: 'light', 10: 'dark', 11: 'mystic' };
 const CAT = { physical: ['Físico', '#e2e8f0'], magical: ['Mágico', '#a78bfa'], status: ['Status', '#fb923c'], field: ['Field', '#22c55e'], guard: ['Guard', '#38bdf8'], dodge: ['Dodge', '#f7cb78'] };
@@ -224,7 +224,7 @@ const txt = (k, label, def) => ({ k, label, type: 'text', def: def || '' });
 const vfxList = (k, label, arr) => ({ k, label, type: 'select', opts: Object.fromEntries((arr.length ? arr : ['(rode tools/build_move_forge_data.py)']).map(v => [v, v])), def: arr[0] || '' });
 // engine: ok = existe hoje · part = existe só em casos fixos · gap = precisa ser criado no motor
 const B = {
-  damage: { cat: 'effect', label: 'Dano', engine: 'ok', p: [num('base', 'Base fixa', 0), sel('stat', 'Escala com', { STR: 'STR (físico)', MAG: 'MAG (mágico)', none: 'nada' }, 'STR'), num('mult', 'Multiplicador', 1, .05), num('frac', 'Fração por alvo', 1, .05), sel('def', 'Defesa', { normal: 'normal', bypass: 'ignora DEF', flat: 'fixo: base+MAG−SPI' }, 'normal')], s: p => `Dano ${p.base ? p.base + ' + ' : ''}${p.stat === 'none' ? '' : p.stat + ' × ' + p.mult}${p.frac != 1 ? ' (×' + p.frac + ' por alvo)' : ''}${p.def !== 'normal' ? ' · ' + p.def : ''}` },
+  damage: { cat: 'effect', label: 'Dano', engine: 'ok', p: [num('base', 'Base fixa', 0), sel('stat', 'Escala com', { STR: 'STR (físico)', MAG: 'MAG (mágico)', none: 'nada' }, 'STR'), num('mult', 'Multiplicador', 1, .05), num('frac', 'Fração por alvo', 1, .05), sel('def', 'Defesa', { normal: 'normal', bypass: 'ignora DEF', flat: 'fixo: base+MAG−WIS' }, 'normal')], s: p => `Dano ${p.base ? p.base + ' + ' : ''}${p.stat === 'none' ? '' : p.stat + ' × ' + p.mult}${p.frac != 1 ? ' (×' + p.frac + ' por alvo)' : ''}${p.def !== 'normal' ? ' · ' + p.def : ''}` },
   heal: { cat: 'effect', label: 'Cura', engine: 'ok', p: [num('base', 'Base', 10), sel('stat', 'Escala com', { MAG: 'MAG', none: 'nada' }, 'MAG'), sel('who', 'Quem', { ally: 'um aliado', team: 'time', user: 'usuário' }, 'ally')], s: p => `Cura ${p.base}${p.stat === 'none' ? '' : ' + ' + p.stat} · ${p.who === 'ally' ? 'um aliado' : WHO[p.who]}` },
   stage: { cat: 'effect', label: 'Buff / debuff de estágio', engine: 'ok', p: [sel('stat', 'Atributo', { atk: 'ATK', def: 'DEF', speed: 'SPD' }, 'atk'), num('delta', 'Estágios (±)', 1), sel('who', 'Quem', WHO, 'target')], s: p => `${p.stat.toUpperCase()} ${p.delta > 0 ? '+' : ''}${p.delta} · ${WHO[p.who]}` },
   status: { cat: 'effect', label: 'Aplicar status', engine: 'ok', p: [sel('status', 'Status', STATUS, 'burn'), num('dur', 'Duração (s)', 4, .1), sel('who', 'Quem', WHO, 'target')], s: p => `${STATUS[p.status]} ${p.dur}s · ${WHO[p.who]}` },
@@ -542,7 +542,7 @@ const EN_WHO = { target: 'the target', user: 'the user', team: 'all allies', ene
 function phrase(n) {
   const p = n.params, k = n.key, S = v => String(v).toUpperCase();
   switch (k) {
-    case 'damage': return p.def === 'flat' ? `Deals fixed damage (${p.base} + MAG − SPI)` : `Deals ${p.stat === 'MAG' ? 'magical' : 'physical'} damage (${p.base ? p.base + ' + ' : ''}${p.stat === 'none' ? '' : p.stat + ' ×' + p.mult})${p.frac != 1 ? ' at ×' + p.frac + ' per target' : ''}${p.def === 'bypass' ? ', ignoring DEF' : ''}`;
+    case 'damage': return p.def === 'flat' ? `Deals fixed damage (${p.base} + MAG − WIS)` : `Deals ${p.stat === 'MAG' ? 'magical' : 'physical'} damage (${p.base ? p.base + ' + ' : ''}${p.stat === 'none' ? '' : p.stat + ' ×' + p.mult})${p.frac != 1 ? ' at ×' + p.frac + ' per target' : ''}${p.def === 'bypass' ? ', ignoring DEF' : ''}`;
     case 'heal': return `Restores ${p.base}${p.stat === 'MAG' ? ' + MAG' : ''} HP to ${EN_WHO[p.who]}`;
     case 'stage': return `${p.delta > 0 ? 'Raises' : 'Lowers'} ${S(p.stat === 'speed' ? 'SPD' : p.stat)} of ${EN_WHO[p.who]} by ${Math.abs(p.delta)}`;
     case 'status': return `Inflicts ${S(p.status)}${p.dur ? ' for ' + p.dur + 's' : ''} on ${EN_WHO[p.who]}`;

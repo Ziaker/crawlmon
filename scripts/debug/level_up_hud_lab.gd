@@ -106,5 +106,5 @@ func _on_replay_pressed() -> void:
 
 func _on_milestone_pressed() -> void:
 	_is_milestone = not _is_milestone
-	milestone_btn.text = "MILESTONE MODE: %s (D-394)" % ("ON (3 PTS)" if _is_milestone else "OFF (1 PT)")
+	milestone_btn.text = "MILESTONE MODE: %s (D-1225)" % ("ON (3 PTS)" if _is_milestone else "OFF (1 PT)")
 	_setup_mock_party()

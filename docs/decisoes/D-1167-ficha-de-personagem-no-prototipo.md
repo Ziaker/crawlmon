@@ -25,7 +25,7 @@ Escopo escolhido pelo criador: **afinidades + atributos + nature**.
 2. A ficha mostra, para um personagem por vez, em **duas colunas**:
    - **ÍCONE** — dois assets separados: **ícone** (256 px) e **render** (1024 px), ambos com upload; o ícone pode receber o fundo ciano→verde dos Pokémon;
    - **ELEMENTS** — os 12 elementos, até **2** marcados;
-   - **NATURE** — as 8 natures do jogo com os modificadores;
+   - **NATURE** — as 18 Natures do jogo com os modificadores (atualizado: D-1216);
    - **ATTRIBUTES** — os 6 atributos, base de nível 1, orçamento de **15 pontos**;
    - **AFFINITIES** — os 12 elementos em 6×2;
    - **MOVES** — os moves que já existem no jogo, até **8** marcados, com filtro.

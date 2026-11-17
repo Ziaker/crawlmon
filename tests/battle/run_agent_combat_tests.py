@@ -196,6 +196,16 @@ SCENARIO_TESTS = [
     ("Fase 8 Summon D-1244: estacionado nao entra", ["--summon=notsub", "--quit"], "summon mode=notsub view=normal result=ok", None),
     ("Fase 8 Summon D-1244: estacionado nao entra (espelhado)", ["--summon=notsub", "--mirror", "--quit"], "summon mode=notsub view=mirror result=ok", None),
 
+    # 4b. D-1261: novo jogo só com o líder, recrutar (conversa/Employ), equipe no Gate (6 líderes cada).
+    ("D-1261 Hub: só o líder, recrutas e equipe", ["--scene=res://scenes/debug/hub_3d_prototype.tscn", "--scenario=HUB_ALLY_CHOICE", "--quit"], '"ok":true', None),
+    ("D-1261 Hub: recrutar falando (Z) e Employ", ["--scene=res://scenes/debug/hub_3d_prototype.tscn", "--scenario=HUB_RECRUIT_TALK", "--quit"], '"ok":true', None),
+    ("D-1261 Hub: badges e arrasto do Gate", ["--scene=res://scenes/debug/hub_3d_prototype.tscn", "--scenario=HUB_GATE_TEAM", "--quit"], '"ok":true', None),
+    ("D-1261 Hub: debug da equipe (F8 e --gate-team)", ["--scene=res://scenes/debug/hub_3d_prototype.tscn", "--scenario=HUB_GATE_DEBUG", "--quit"], '"ok":true', None),
+    ("D-1273 Hub: portal baixo, abre sem forçar e entrada sincronizada", ["--scene=res://scenes/debug/hub_3d_prototype.tscn", "--scenario=HUB_GATE_PORTAL", "--quit"], '"ok":true', None),
+    ("D-1273 Hub: Gate/boot/portal dos NPCs seguem ok", ["--scene=res://scenes/debug/hub_3d_prototype.tscn", "--scenario=HUB_GATE", "--quit"], '"ok":true', None),
+    ("D-1273 Hub: ciclo de NPCs no portal", ["--scene=res://scenes/debug/hub_3d_prototype.tscn", "--scenario=HUB_PORTAL_CYCLE", "--quit"], '"ok":true', None),
+    ("D-1261 Pré-jogo: campanha só com o líder", ["--scene=res://scenes/pre_game.tscn", "--scenario=PREGAME_CAMPAIGN", "--quit"], '"ok":true', None),
+
     # 5. Simetria D-235 Automatizada (Normal + Espelhado)
     ("Runner D-235 Automatizado", ["--move=Tackle", "--test-d235", "--quit"], "d235_result: pass", None),
 
@@ -251,7 +261,14 @@ def extract_summary_json(out: str) -> dict:
 
 
 def run_test(args, timeout=60):
-    cmd = [GODOT, "--headless", "--path", ROOT, SCENE, "--"] + args
+    # D-1261: "--scene=res://..." escolhe outra cena (Hub 3D, pré-jogo) em vez da sala de VFX.
+    scene = SCENE
+    args = list(args)
+    for a in list(args):
+        if a.startswith("--scene="):
+            scene = a.split("=", 1)[1]
+            args.remove(a)
+    cmd = [GODOT, "--headless", "--path", ROOT, scene, "--"] + args
     start = time.time()
     try:
         proc = subprocess.run(

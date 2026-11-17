@@ -10,7 +10,7 @@
 
 - **Data:** 2026-11-15
 - **Área:** Personagens / progressão
-- **Relacionadas:** D-394 (regra anterior de pontos de nível), D-392 (marcos de HP/MP a cada 10 níveis — inalterada), D-1223 (distribuição automática em aliados), D-235.
+- **Relacionadas:** D-394 (regra anterior de pontos de nível), D-392 (marcos de +25 HP a cada 10 níveis — inalterada; MP não tem marco: `10 + 2×WIS + nível`, D-391), D-1223 (distribuição automática em aliados), D-235.
 - **Status:** **implementada e verificada.**
 
 ## O que o criador disse (literal)
@@ -20,4 +20,4 @@
 ## Decisão
 
 1. **Pontos de atributo por nível:** ao atingir um nível múltiplo de **5** (`5, 10, 15, 20, 25...`), o personagem (líder e aliado, D-235) ganha **3 pontos** de atributo (`new_level % 5 == 0`), substituindo o marco anterior de 10 em 10 níveis da **D-394**. Nos demais níveis, continua ganhando **1 ponto**.
-2. **Escopo preservado:** os saltos de HP/MP máximo da **D-392** (`+25 HP` / `+10 MP` a cada 10 níveis) não foram alterados por esta decisão.
+2. **Escopo preservado:** o salto de HP máximo da **D-392** (`+25 HP` adicional nos marcos a cada 10 níveis) não foi alterado por esta decisão. O MP máximo não tem salto por marco: é `10 + 2×WIS + nível` (D-391; `crawlmon_attribute_math.calculate_max_mp`).

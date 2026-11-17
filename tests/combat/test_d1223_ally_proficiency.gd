@@ -1,6 +1,6 @@
 extends SceneTree
 ## Headless verification for D-1223: automatic ally stat progression by combat proficiency,
-## Nature, Tactics, 10-level milestones, max HP/MP recalculation, PostCombatFlow summaries,
+## Nature, Tactics, 5-level milestones (D-1225), max HP/MP recalculation, PostCombatFlow summaries,
 ## and D-235 symmetry.
 
 var _failures: int = 0

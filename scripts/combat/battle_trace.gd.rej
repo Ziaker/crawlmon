@@ -1,0 +1,14 @@
+--- scripts/combat/battle_trace.gd
++++ scripts/combat/battle_trace.gd
+@@ -269,7 +269,11 @@
+ 	_write({
+ 		"t": snappedf(_t, 0.001), "f": _frame, "dt": snappedf(real_dt, 0.0001),
+ 		"ts": Engine.time_scale, "paused": get_tree().paused, "freeze_left": snappedf(battle._freeze_left, 0.001),
+ 		"status_pause": battle.is_status_paused(),
+ 		"status_move": battle._status_pause.label if battle._status_pause != null else "",
+ 		"c": rows,
+ 	})
++	var martial: Variant = fx.fx_martial
++	if martial != null:
++		for s in martial.telemetry():
++			_event("martial_hand", s)  # D-1218: one row per live hand, every frame

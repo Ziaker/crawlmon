@@ -16,7 +16,7 @@
 
 ## Overview
 
-Este documento estabelece a especificação técnica formal para a camada de atributos, cálculo de HP/MP, sistema de 8 Natures táticas e progressão por nível no Crawlmon. O objetivo é substituir os valores fixos do protótipo por um modelo determinístico de conversão proporcional a partir dos status originais das espécies (Pokémon e Dragon Quest Tact), aplicando uma curva de HP escalonada para mitigar mortes em um golpe (*one-hit kills*) desde o nível 1.
+Este documento estabelece a especificação técnica formal para a camada de atributos, cálculo de HP/MP, sistema de 18 Natures táticas e progressão por nível no Crawlmon. O objetivo é substituir os valores fixos do protótipo por um modelo determinístico de conversão proporcional a partir dos status originais das espécies (Pokémon e Dragon Quest Tact), aplicando uma curva de HP escalonada para mitigar mortes em um golpe (*one-hit kills*) desde o nível 1.
 
 ## Problem Statement
 
@@ -29,7 +29,7 @@ A solução aprovada em [D-390](../../docs/decisoes/D-390-orcamento-15-pontos-ba
 * Orçamento total de 15 pontos distribuídos proporcionalmente aos status originais no nível 1 via algoritmo determinístico de maiores restos.
 * Curva de HP com +10 por nível, saltos de marco de +25 a cada 10 níveis e +2 por ponto de VIT.
 * Renomeação do atributo defensivo mágico de SPI (*Spirit*) para WIS (*Wisdom*) com dado de MP na ficha de atributos (+2 MP por WIS).
-* 8 Natures iniciais com modificadores *flat* (−3 a +3 somando 0) e impacto direto no comportamento de combate da IA, com precedência da Tactic sobre a Nature.
+* 18 Natures (as 8 iniciais) com modificadores *flat* (−3 a +3 somando 0) e impacto direto no comportamento de combate da IA, com precedência da Tactic sobre a Nature (D-1216).
 * Progressão diferenciada: alocação manual para o líder (`party[0]`) e crescimento por proficiência de ações em combate para os aliados.
 
 ## Goals
@@ -37,7 +37,7 @@ A solução aprovada em [D-390](../../docs/decisoes/D-390-orcamento-15-pontos-ba
 *   **G1 (Fidelidade Biológica com 15 Pontos):** Converter os status oficiais das espécies em 15 pontos inteiros de atributos no nível 1 ([D-390](../../docs/decisoes/D-390-orcamento-15-pontos-base-nivel-1.md), [D-270](../../docs/decisoes/D-270-status-base-e-progressao-por-nivel.md), [D-120](../../docs/decisoes/D-120-regras-de-atributos.md)) utilizando o método determinístico dos maiores restos (Hare-Niemeyer).
 *   **G2 (Combate Anti-Hitkill e Marcos de HP):** Implementar a fórmula de HP garantindo 39–43 HP como referência típica no nível 1 (VIT 2–4) e saltos de marco de +25 HP a cada 10 níveis ([D-392](../../docs/decisoes/D-392-escala-hp-anti-hitkill-e-marcos.md)), evitando mortes em 1 golpe.
 *   **G3 (Wisdom e MP na Ficha):** Renomear SPI para WIS e estruturar o cálculo de MP máximo vinculado a WIS e nível ([D-391](../../docs/decisoes/D-391-renomeacao-spi-para-wis-e-scaling-mp.md)) como dado numérico estático de ficha.
-*   **G4 (Catálogo Canônico de 8 Natures de Soma Zero):** Implementar as 8 Natures iniciais (Hardy, Docile, Brave, Timid, Modest, Calm, Jolly, Adamant) atuando nos atributos e nos pesos de IA ([D-393](../../docs/decisoes/D-393-escopo-8-natures-iniciais-e-tatica-ia.md), [D-271](../../docs/decisoes/D-271-sem-porcentagens-valores-flat-e-adiar-natures.md)).
+*   **G4 (Catálogo Canônico de 18 Natures de Soma Zero):** Implementar as 18 Natures (as 8 iniciais: Hardy, Docile, Brave, Timid, Modest, Calm, Jolly, Adamant) atuando nos atributos e nos pesos de IA ([D-1216](../../docs/decisoes/D-1216-dez-novas-natures.md), [D-393](../../docs/decisoes/D-393-escopo-8-natures-iniciais-e-tatica-ia.md), [D-271](../../docs/decisoes/D-271-sem-porcentagens-valores-flat-e-adiar-natures.md)).
 *   **G5 (Consolidação de Piso Inato):** Garantir que o piso 1 seja consolidado na base inata do nível 1, assegurando que todo ponto de progressão futuro produza monotonicamente +1 de status real.
 *   **G6 (Progressão Diferenciada por Papel):** Habilitar ganho de 1 ponto/nível (3 nos marcos) para o líder da equipe (`party[0]`) e progressão automática baseada em proficiência acumulada de ações em combate para os aliados ([D-394](../../docs/decisoes/D-394-progressao-pontos-nivel-jogador-e-aliados.md)), onde a postura do menu Tactics possui precedência sobre a Nature.
 *   **G7 (Atualização de Recursos):** Assegurar que alterações no HP máximo atualizem o valor corrente por $\Delta = \text{NovoMáx} - \text{AntigoMáx}$, preservando o estado de K.O. ($\text{HP} = 0 \implies \text{permanece } 0$).
@@ -48,7 +48,7 @@ A solução aprovada em [D-390](../../docs/decisoes/D-390-orcamento-15-pontos-ba
 *   **NG2:** Natures não afetam sob nenhuma hipótese as taxas de crescimento por nível ([D-271](../../docs/decisoes/D-271-sem-porcentagens-valores-flat-e-adiar-natures.md)).
 *   **NG3:** Não impor teto máximo artificial de 100 permanente para atributos ([D-139](../../docs/decisoes/D-139-sem-teto-maximo-artificial.md)).
 *   **NG4:** Não alterar a velocidade base de enchimento do ATB dos personagens iniciais, adotando fórmula afim universal sem fatores multiplicativos por espécie.
-*   **NG5:** Não alterar a UI de combate (`battle_hud.gd`) com barras de MP neste momento (o combate opera estritamente por blocos de ATB).
+*   **NG5:** A barra de MP e a regeneração por pulso já existem no HUD de combate (`battle_hud.gd`, D-413/D-1062); este documento não redefine esses valores.
 *   **NG6:** Não definir fórmulas de mitigação percentual de dano por defesa sem aprovação prévia do criador ([D-125](../../docs/decisoes/D-125-calculo-de-dano.md), [D-138](../../docs/decisoes/D-138-mitigacao-de-dano.md)).
 
 ## Open Questions
@@ -172,7 +172,7 @@ Para converter qualquer conjunto de status oficiais mantendo a proporcionalidade
     *Calibração Nível 1:*
     * Abra (WIS 2): $10 + 4 + 1 = 15$ MP.
     * Conjuradores focados com Nature/Offset (WIS 4): $10 + 8 + 1 = 19$ MP.
-    *(Permanece estritamente na ficha de dados; nenhuma barra de MP é inserida no HUD de batalha).*
+    *(A ficha de dados usa esta fórmula; a barra de MP e a regeneração por pulso já existem no HUD de batalha — D-413, D-1062).*
 
 #### B. Proteção Anti-Hitkill no Nível 1
 A mitigação de mortes em 1 golpe decorre da relação entre o patamar de HP calibrado de nível 1 (39–43 HP típico) e os valores de dano inicial:
@@ -187,20 +187,20 @@ $$\Delta\text{ATB} = \text{delta} \times \left(0.35 + \max(\text{agi}, 1.0) \tim
 * **Abra (AGI 4):** $0.35 + 4 \times 0.0375 = \mathbf{0.500}$ blocos/s.
 * **Monstros Ultra-Ágeis (AGI 6):** $0.35 + 6 \times 0.0375 = \mathbf{0.575}$ blocos/s.
 
-#### D. Catálogo Canônico das 8 Natures ([D-393](../../docs/decisoes/D-393-escopo-8-natures-iniciais-e-tatica-ia.md))
+#### D. Catálogo Canônico das 18 Natures ([D-1216](../../docs/decisoes/D-1216-dez-novas-natures.md), [D-393](../../docs/decisoes/D-393-escopo-8-natures-iniciais-e-tatica-ia.md))
 
-Todas as 8 Natures iniciais possuem modificadores inteiros *flat* com soma estrita igual a zero, além de moduladores paramétricos de IA:
+Todas as 18 Natures (as 8 iniciais e as 10 de D-1216) possuem modificadores inteiros *flat* com soma estrita igual a zero, além de moduladores paramétricos de IA. A tabela abaixo lista as 8 iniciais; as 10 de D-1216 estão na própria decisão:
 
 | Nature | Perfil Conceitual | STR | MAG | VIT | WIS | AGI | LUK | Soma | ATB Reserve Bias | Aggression Mult |
 |---|---|---|---|---|---|---|---|---|---|---|
 | **Hardy** | Neutra Equilibrada | 0 | 0 | 0 | 0 | 0 | 0 | **0** | `0.0` | `1.0` |
 | **Docile** | Neutra Pacífica / Cautelosa | 0 | 0 | 0 | 0 | 0 | 0 | **0** | `+0.5` | `0.8` |
-| **Brave** | Foco Físico / Ofensiva Pesada | +2 | 0 | +1 | −1 | −2 | 0 | **0** | `−1.0` | `1.3` |
-| **Timid** | Evasiva / Ágil de Longa Distância | −2 | 0 | −1 | 0 | +2 | +1 | **0** | `+1.0` | `0.7` |
+| **Brave** | Foco Físico / Ofensiva Pesada | +2 | 0 | +1 | 0 | −3 | 0 | **0** | `−1.0` | `1.3` |
+| **Timid** | Evasiva / Ágil de Longa Distância | −3 | 0 | 0 | 0 | +2 | +1 | **0** | `+1.0` | `0.7` |
 | **Modest** | Foco Mágico / Conjuradora | −2 | +3 | 0 | 0 | −1 | 0 | **0** | `0.0` | `1.0` |
-| **Calm** | Suporte Resistente Mágico | −2 | 0 | +1 | +2 | 0 | −1 | **0** | `+0.5` | `0.8` |
+| **Calm** | Suporte Resistente Mágico | −3 | 0 | +1 | +2 | 0 | 0 | **0** | `+0.5` | `0.8` |
 | **Jolly** | Ágil / Foco em Iniciativa | 0 | −3 | 0 | 0 | +2 | +1 | **0** | `0.0` | `1.1` |
-| **Adamant** | Ataque Físico Máximo | +3 | −3 | 0 | 0 | 0 | 0 | **0** | `−0.5` | `1.4` |
+| **Adamant** | Ataque Físico Máximo | +3 | −2 | 0 | 0 | 0 | −1 | **0** | `−0.5` | `1.4` |
 
 *Regra de Precedência:* As diretrizes do menu **Tactics** (`act_policy` e `react_policy`) sobrepõem-se hierarquicamente ao viés da Nature ([D-001](../../docs/decisoes/D-001-foco-no-combate-e-regras-do-jogo.md)).
 
@@ -411,7 +411,7 @@ Para manter a simplicidade arquitetural e evitar complexidade prematura (YAGNI):
     *   Executa rotinas de asserção no `_init()` e finaliza com `quit(0)` em caso de sucesso ou `quit(1)` em falha.
     *   Valida:
         1. Conservação exata de 15 pontos em 100 espécies com valores aleatórios via Hare-Niemeyer.
-        2. Soma zero nominal em todas as 8 Natures iterativamente (`sum(mods) == 0`).
+        2. Soma zero nominal em todas as 18 Natures iterativamente (`sum(mods) == 0`).
         3. Linearidade da progressão (nenhuma absorção por clamping prévio).
         4. Saltos de marco de +35 HP nos níveis 10, 20, 30 e calibração de MP (+2 por WIS).
         5. Pacing de ATB exato via função afim (0,500 blocos/s para Abra e 0,425 para Pancham).

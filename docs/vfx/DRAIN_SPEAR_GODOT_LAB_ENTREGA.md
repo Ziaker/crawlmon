@@ -122,7 +122,7 @@ Godot_v4.7.2-stable_win64_console.exe --path. --resolution 1280x720 res://scenes
 - Todos os controles da HUD de forma interativa.
 - Áudio, gamepad, foco de UI e acessibilidade.
 - Integração da Drain Spear como Move real, IA, Evade/contra-ataque e fichas definitivas.
-- Fórmula real de dano/mitigação: a HUD mostra `5 + MAG` e o SPI como **simulação local**.
+- Fórmula real de dano/mitigação: a HUD mostra `5 + MAG` e o WIS como **simulação local** (D-391).
 - Aprovação artística e aprovação do criador.
 - **Falha pré-existente de outra sessão:** `tests/motion_composer/test_v11_tubos_e_receitas.gd` falha no efeito de fogo. Não é o teste da Drain Spear; não alterei o fogo.
 

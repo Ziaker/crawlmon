@@ -57,24 +57,25 @@ const SECOND_ENEMY_PATROL := [
 	Vector3(6.0, 0.0, -4.0),
 ]
 ## D-1143: sala do Cyclops (oeste) e sala do Orc (leste), na ala sul.
+## D-1143: Cyclops na baia sul oeste (x -16..-2, z -40..-28) e Orc na baia sul leste (x 2..16, z -40..-28).
 const ROOM_ENEMY_DATA := [
 	{
 		"id": "dqt_cyclops", "name": "CYCLOPS", "height": 2.2,
-		"spawn": Vector3(-0.5, 0.0, -18.0),
-		"patrol": [Vector3(-2.0, 0.0, -16.0), Vector3(-2.0, 0.0, -20.0),
-			Vector3(2.0, 0.0, -20.0), Vector3(2.0, 0.0, -16.0)],
+		"spawn": Vector3(-9.0, 0.0, -34.0),
+		"patrol": [Vector3(-13.0, 0.0, -31.0), Vector3(-13.0, 0.0, -37.0),
+			Vector3(-5.0, 0.0, -37.0), Vector3(-5.0, 0.0, -31.0)],
 	},
 	{
 		"id": "dqt_orc", "name": "ORC", "height": 2.1,
-		"spawn": Vector3(14.0, 0.0, -18.0),
-		"patrol": [Vector3(12.0, 0.0, -16.0), Vector3(16.0, 0.0, -16.0),
-			Vector3(16.0, 0.0, -20.0), Vector3(12.0, 0.0, -20.0)],
+		"spawn": Vector3(9.0, 0.0, -34.0),
+		"patrol": [Vector3(5.0, 0.0, -31.0), Vector3(13.0, 0.0, -31.0),
+			Vector3(13.0, 0.0, -37.0), Vector3(5.0, 0.0, -37.0)],
 	},
 ]
-## Itens da ala sul: amuleto na sala do Cyclops, poção na sala do meio.
+## D-1143/D-1151: amuleto na baia do Cyclops; pocao no vao central sul.
 const ROOM_ITEMS := [
-	{"id": "amulet", "pos": Vector3(2.4, 0.8, -16.2)},
-	{"id": "super_potion", "pos": Vector3(7.0, 0.8, -18.0)},
+	{"id": "amulet", "pos": Vector3(-9.0, 0.8, -33.0)},
+	{"id": "super_potion", "pos": Vector3(0.0, 0.8, -36.0)},
 ]
 ## D-1112: attack clip speed during the short advance.
 const ATTACK_ANIM_SPEED := 2.0
@@ -102,9 +103,9 @@ const NPC_POOL: Array[Dictionary] = [
 
 ## 3 posições laterais no corredor em L (não obstruem o caminho nem a patrulha).
 const NPC_SLOTS: Array[Dictionary] = [
-	{"pos": Vector3(-2.6, 0.0, -4.2), "yaw": PI * 0.35},
-	{"pos": Vector3(2.5, 0.0, -9.8), "yaw": -PI * 0.35},
-	{"pos": Vector3(8.2, 0.0, -7.2), "yaw": 0.0},
+	{"pos": Vector3(-9.0, 0.0, -4.0), "yaw": PI * 0.35},
+	{"pos": Vector3(9.0, 0.0, -4.0), "yaw": -PI * 0.35},
+	{"pos": Vector3(-9.0, 0.0, -22.0), "yaw": 0.0},
 ]
 
 ## D-1096: estilo das placas de nome na linguagem dos cards/HUDs.
@@ -112,6 +113,7 @@ const NPC_SLOTS: Array[Dictionary] = [
 @export_enum("unit_card", "move_strip", "expedition") var name_style := "unit_card"
 
 var _rng := RandomNumberGenerator.new()
+var _arrival: HubArrivalCutscene = null
 var _foliage_fade: Array[Dictionary] = []
 var _marker_rings: Array[Dictionary] = []
 var _state_icons: Array[Dictionary] = []
@@ -123,6 +125,7 @@ var _slowmo_token := 0
 var _hit_shake_left := 0.0
 var _hit_shake_time := 0.25
 var _hit_shake_amp := 0.06
+var _game_feel: MfGameFeel = null
 var _damage_locks: Dictionary = {}
 ## D-235: actor instance id -> seconds left of the hit push. Gates every lab
 ## movement/animation owner so the real position tween is not fought.
@@ -181,17 +184,49 @@ var _pending_card: Control
 ## (frente padrão da Camera3D). As posições são pontos de vista derivados da
 ## geometria real deste lab (D-1027/D-1133/D-1143); nunca são posições de ator.
 const CAPTURE_POINTS := {
-	"entrada": {"pos": Vector3(0.0, 1.6, 4.0), "yaw": 0.0, "pitch": 22.0},
-	"curva": {"pos": Vector3(0.0, 1.6, -8.0), "yaw": 0.0, "pitch": 20.0},
-	"gible": {"pos": Vector3(10.0, 1.6, -2.0), "yaw": 0.0, "pitch": 20.0},
-	"cyclops": {"pos": Vector3(0.0, 1.6, -15.2), "yaw": 0.0, "pitch": 18.0},
-	"pocao": {"pos": Vector3(7.0, 1.6, -15.2), "yaw": 0.0, "pitch": 18.0},
-	"orc": {"pos": Vector3(14.0, 1.6, -15.2), "yaw": 0.0, "pitch": 18.0},
-	"arco_ida": {"pos": Vector3(17.5, 1.6, -13.5), "yaw": 180.0, "pitch": 16.0},
-	"arco_volta": {"pos": Vector3(17.5, 1.6, -6.5), "yaw": 0.0, "pitch": 16.0},
-	# D-1256: vista principal das pranchas — corredor leste com o arco ao fundo.
-	"prancha": {"pos": Vector3(13.5, 2.0, -10.0), "yaw": 90.0, "pitch": 6.0},
+	# D-1256: clareira ampla, câmera olha -Z para o arco ao fundo.
+	"entrada": {"pos": Vector3(0.0, 1.6, 4.0), "yaw": 0.0, "pitch": 14.0},
+	"curva": {"pos": Vector3(0.0, 1.6, -12.0), "yaw": 0.0, "pitch": 12.0},
+	"gible": {"pos": Vector3(-16.0, 1.6, -4.0), "yaw": -90.0, "pitch": 14.0},
+	"cyclops": {"pos": Vector3(-9.0, 1.6, -30.0), "yaw": 0.0, "pitch": 12.0},
+	"pocao": {"pos": Vector3(0.0, 1.6, -34.0), "yaw": 0.0, "pitch": 12.0},
+	"orc": {"pos": Vector3(9.0, 1.6, -30.0), "yaw": 0.0, "pitch": 12.0},
+	# D-1256: vista principal das pranchas — corredor largo com o arco ao fundo.
+	"prancha": {"pos": Vector3(0.0, 2.0, -8.0), "yaw": 0.0, "pitch": 8.0},
+	# D-1256: ramal opcional — vista de dentro do nicho.
+	"nicho": {"pos": Vector3(-22.0, 1.8, -14.0), "yaw": 90.0, "pitch": 8.0},
+	# Task 5: marco do arco (z=-28) a 9 m, para medir legibilidade nas duas vistas.
+	"marco_9m": {"pos": Vector3(0.0, 1.8, -19.0), "yaw": 0.0, "pitch": 6.0},
+	# Task 5/D-235: o mesmo marco visto do lado oposto (9 m depois do arco).
+	"marco_9m_oposto": {"pos": Vector3(6.0, 1.8, -37.0), "yaw": 180.0, "pitch": 6.0},
 }
+
+# D-1248/Task 4: ocupação como dado sobre geometria estável — a geometria não
+# muda entre visitas; muda só o que o jogador encontra (sem tranca, sem item novo).
+const BEATS: Array[Dictionary] = [
+	{"room": "entrada", "type": "teach", "intensity": 0.1},
+	{"room": "corredor_arco", "type": "combat", "intensity": 0.4},
+	{"room": "dossel", "type": "rest", "intensity": 0.15},
+	{"room": "abrigo", "type": "rest", "intensity": 0.15},
+	{"room": "cyclops_amuleto", "type": "combat", "intensity": 0.7},
+	{"room": "orc", "type": "climax", "intensity": 0.9},
+	{"room": "saida", "type": "rest", "intensity": 0.1},
+]
+
+const VISIT_DATA := {
+	"first": {"label": "aprender", "mark": false, "novelty": false},
+	"return": {"label": "novidade", "mark": true, "novelty": true},
+}
+
+func layout_beat_report(visit: String) -> Dictionary:
+	var data: Dictionary = VISIT_DATA.get(visit, VISIT_DATA["first"])
+	return {
+		"visit": visit,
+		"label": data["label"],
+		"mark": data["mark"],
+		"novelty": data["novelty"],
+		"beats": BEATS,
+	}
 
 ## Estado do modo de captura. `_capture_lock` impede que `_update_camera` desta
 ## classe (que herda a câmera de perseguição) sobrescreva o enquadramento fixo.
@@ -242,7 +277,82 @@ func _ready() -> void:
 			_add_minimap_marker(body, Color(1.0, 0.22, 0.18, 1.0), "enemy")
 	_build_hud_badges()
 	_build_npc_dialogue_ui()
+	_game_feel = MfGameFeel.new()
+	_game_feel.name = "GameFeel"
+	_game_feel.camera = _camera
+	add_child(_game_feel)
 	_capture_begin()
+	_run_layout_scenario()
+	_build_arrival_altar()  # D-1266
+	_start_arrival_cutscene()
+
+
+## D-1204/Task 6: cenário de debug do mapa autoral, sem `await` (trava em headless).
+func _run_layout_scenario() -> void:
+	var scenario := _cli_value("--scenario")
+	if scenario == "":
+		return
+	if scenario == "MF_LAYOUT_WALK":
+		var audit := {"navmesh_polygons": 0, "navmesh_vertices": 0}
+		if _nav_region != null and _nav_region.navigation_mesh != null:
+			audit.navmesh_polygons = _nav_region.navigation_mesh.get_polygon_count()
+			audit.navmesh_vertices = _nav_region.navigation_mesh.get_vertices().size()
+		var report := {
+			"rooms": ["entrada", "corredor_arco", "dossel", "nicho_opcional", "abrigo", "cyclops_amuleto", "orc", "saida"],
+			"doors": [
+				{"id": "sul_1", "clear_m": 3.0},
+				{"id": "sul_2", "clear_m": 3.0},
+				{"id": "sul_3", "clear_m": 3.0},
+				{"id": "nicho", "clear_m": 3.0},
+			],
+			"metrics": {"wall_height_m": FOREST_WALL_HEIGHT, "corridor_m": 6.0, "cell_m": 3.0, "door_clear_m": 3.0},
+			"beats": BEATS,
+			"visits": {
+				"first": layout_beat_report("first"),
+				"return": layout_beat_report("return"),
+			},
+			"audit": audit,
+		}
+		print("LAYOUT_JSON: " + JSON.stringify(report))
+		get_tree().quit(0)
+	elif scenario != "MF_LAYOUT_SHOT":
+		print("LAYOUT_JSON: {\"error\":\"unknown_scenario\",\"scenario\":\"", scenario, "\"}")
+		get_tree().quit(1)
+
+
+## D-1266: grey stone altar at the expedition spawn (entrance/exit), same model as the hub's.
+func _build_arrival_altar() -> void:
+	var altar := HubAltar.new()
+	altar.name = "ArrivalAltar"
+	altar.tone = 0.5
+	altar.forest_details = true  # moss, roots, cracks and rubble
+	altar.position = Vector3(0.0, 0.0, 0.0)
+	add_child(altar)
+
+
+func _start_arrival_cutscene() -> void:
+	var transition := get_tree().get_first_node_in_group("nature_hub_transition")
+	if transition == null or not transition.has_method("notify_hub_ready"):
+		return
+	if player == null:
+		return
+	player.velocity = Vector3.ZERO
+	player.rotation.y = player_yaw
+	_cam_yaw = player_yaw
+	_cam_smooth_ready = false
+	get_tree().set_group("overworld_hud", "visible", false)  # D-1260: clean cutscene frame
+	if _game_feel != null:
+		_game_feel.impulse("large")
+	_arrival = HubArrivalCutscene.attach(self, transition)
+	await _arrival.warm_up()
+	if not is_instance_valid(transition):
+		return
+	transition.notify_hub_ready(self)
+
+
+func _end_arrival() -> void:
+	_arrival = null
+	get_tree().set_group("overworld_hud", "visible", true)
 
 
 ## D-1100: when the battle came from this lab, A's GameState keeps the exact
@@ -498,6 +608,8 @@ func _build_room_items() -> void:
 
 
 func _on_item_collected(item_id: String, collector: Node3D, pickup: Node3D) -> void:
+	if _game_feel != null:
+		_game_feel.impulse("medium")
 	if _item_notification == null or _ally_notification == null:
 		return
 	var cam := get_viewport().get_camera_3d()
@@ -527,6 +639,8 @@ func _on_item_collected(item_id: String, collector: Node3D, pickup: Node3D) -> v
 
 
 func _on_orb_arrived() -> void:
+	if _game_feel != null:
+		_game_feel.impulse("small")
 	if _pending_card != null:
 		_pending_card.call("reveal_from_impact")
 		_pending_card = null
@@ -585,6 +699,16 @@ func _build_attack_controller() -> void:
 	_attack_controller.name = "OverworldAttackController"
 	add_child(_attack_controller)
 	_attack_controller.setup(player, _camera, _attack_vfx_root)
+	# D-1262: the controller reads the weapon reach from the character's real Moves.
+	player.set_meta("species_id", player_model_id)
+	if _enemy_body != null:
+		_enemy_body.set_meta("species_id", "dqt_slime")
+	if _second_enemy_body != null:
+		_second_enemy_body.set_meta("species_id", SECOND_ENEMY_ID)
+	for room_data in ROOM_ENEMY_DATA:
+		var room_node := get_node_or_null("RoomEnemy_%s" % str(room_data["id"]))
+		if room_node != null:
+			room_node.set_meta("species_id", str(room_data["id"]))
 	if player_ap != null and player_ap.has_animation("attack"):
 		_attack_controller.set_player_attack_length(player_ap.get_animation("attack").length)
 	_attack_controller.bind_dash_vfx(player, player_vfx, _player_dust)
@@ -688,16 +812,6 @@ func _on_attack_impact(pos: Vector3, direction: Vector3, advantage: int, contact
 		cam_dist = _camera.global_position.distance_to(pos)
 	var factor := clampf(cam_dist / BattleFx.VFX_REF_DISTANCE, 0.25, 1.0) * 1.6
 	host.global_position = pos
-	# D-1262: the controller reads the weapon reach from the character's real Moves.
-	player.set_meta("species_id", player_model_id)
-	if _enemy_body != null:
-		_enemy_body.set_meta("species_id", "dqt_slime")
-	if _second_enemy_body != null:
-		_second_enemy_body.set_meta("species_id", SECOND_ENEMY_ID)
-	for room_data in ROOM_ENEMY_DATA:
-		var room_node := get_node_or_null("RoomEnemy_%s" % str(room_data["id"]))
-		if room_node != null:
-			room_node.set_meta("species_id", str(room_data["id"]))
 	for child in host.get_children():
 		if child is Node3D:
 			var node := child as Node3D
@@ -714,6 +828,23 @@ func _on_attack_impact(pos: Vector3, direction: Vector3, advantage: int, contact
 			(child as MeshInstance3D).visible = false
 			break
 	host.scale = Vector3.ONE * factor
+	# D-1262: "HIT" at the instant of the impact, before the battle transition. Same
+	# style as the combat's floating texts (CRÍTICO!): yellow, size 48, rises and fades.
+	var text_host := BattleFx.new()  # unscaled: the text keeps its size whatever the impact scale
+	text_host.name = "AttackHitTextHost"
+	add_child(text_host)
+	var hit_label := text_host.float_text(pos + Vector3(0.0, 0.9, 0.0), "HIT", Color(1.0, 0.9, 0.2), 48)
+	hit_label.name = "AttackHitText"
+	# Screen-constant size (same as the combat's damage numbers): world-space text shrank to a few
+	# pixels with the far overworld camera and hid under the impact flash.
+	hit_label.fixed_size = true
+	hit_label.pixel_size = 0.0034
+	hit_label.font_size = 64
+	hit_label.outline_size = 26
+	hit_label.render_priority = 20
+	hit_label.outline_render_priority = 19
+	hit_label.outline_modulate = Color(0.05, 0.03, 0.02, 0.95)
+	get_tree().create_timer(1.4).timeout.connect(text_host.queue_free)
 	var timer := Timer.new()
 	timer.wait_time = 0.60
 	timer.one_shot = true
@@ -817,23 +948,6 @@ func _hold_follower(actor: Node3D) -> Dictionary:
 
 func _release_follower(held: Dictionary) -> void:
 	if held.is_empty():
-	# D-1262: "HIT" at the instant of the impact, before the battle transition. Same
-	# style as the combat's floating texts (CRÍTICO!): yellow, size 48, rises and fades.
-	var text_host := BattleFx.new()  # unscaled: the text keeps its size whatever the impact scale
-	text_host.name = "AttackHitTextHost"
-	add_child(text_host)
-	var hit_label := text_host.float_text(pos + Vector3(0.0, 0.9, 0.0), "HIT", Color(1.0, 0.9, 0.2), 48)
-	hit_label.name = "AttackHitText"
-	# Screen-constant size (same as the combat's damage numbers): world-space text shrank to a few
-	# pixels with the far overworld camera and hid under the impact flash.
-	hit_label.fixed_size = true
-	hit_label.pixel_size = 0.0034
-	hit_label.font_size = 64
-	hit_label.outline_size = 26
-	hit_label.render_priority = 20
-	hit_label.outline_render_priority = 19
-	hit_label.outline_modulate = Color(0.05, 0.03, 0.02, 0.95)
-	get_tree().create_timer(1.4).timeout.connect(text_host.queue_free)
 		return
 	var follower: Dictionary = held.get("follower", {})
 	if follower.is_empty():
@@ -1033,6 +1147,8 @@ func _process(delta: float) -> void:
 	_update_hud_badges()
 	_update_attack_hud()
 	_update_hit_shake(delta)
+	if _game_feel != null:
+		_game_feel.step(delta)
 	_tick_damage_locks(delta)
 	_tick_hit_move_locks(delta)
 
@@ -1085,6 +1201,10 @@ func _update_hit_shake(delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if _arrival != null and is_instance_valid(_arrival):  # D-1260: arrival cutscene owns the frame
+		_arrival.apply(delta)
+		_play_move(player_ap, false)
+		return
 	var was_player_anim := _player_attack_anim_active
 	if _attack_controller != null:
 		_player_attack_anim_active = _attack_controller.is_player_attacking()
@@ -1124,20 +1244,21 @@ func _unhandled_input(event: InputEvent) -> void:
 func _build_environment() -> void:
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.018, 0.012, 0.030)
+	# D-1256/pranchas: fundo roxo com névoa, não preto — a mata continua além da cerca.
+	env.background_color = Color(0.10, 0.06, 0.16)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.38, 0.32, 0.50)
+	env.ambient_light_color = Color(0.52, 0.45, 0.62)
 	# D-1256: as pranchas revisadas pedem mais leitura do fundo de mata.
 	# D-1083 queria mais escuro, mas D-1256 é posterior — registro a divergência.
-	env.ambient_light_energy = 1.10
+	env.ambient_light_energy = 1.35
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	env.tonemap_exposure = 1.02
+	env.tonemap_exposure = 1.18
 	env.fog_enabled = true
-	env.fog_light_color = Color(0.065, 0.045, 0.095)
-	env.fog_density = 0.017
+	env.fog_light_color = Color(0.16, 0.11, 0.24)
+	env.fog_density = 0.028
 	env.glow_enabled = true
-	env.glow_intensity = 0.22
-	env.glow_bloom = 0.02
+	env.glow_intensity = 0.45
+	env.glow_bloom = 0.12
 	# D-1083: menos contraste/saturação no 3D, sem mexer no HUD.
 	env.adjustment_enabled = true
 	env.adjustment_brightness = 0.98
@@ -1229,7 +1350,8 @@ func _wall_material(index: int, texs: Array[Texture2D]) -> ShaderMaterial:
 	mat.set_shader_parameter("corner_width", 2.0)
 	mat.set_shader_parameter("tile", 0.20)
 	mat.set_shader_parameter("strength", 0.40)
-	mat.set_shader_parameter("base_color", Color(0.075, 0.145, 0.135, 1.0))
+	# D-1256/pranchas: paliçada verde-texturizada mais clara, não quase preta.
+	mat.set_shader_parameter("base_color", Color(0.13, 0.24, 0.19, 1.0))
 	return mat
 
 
@@ -1238,164 +1360,227 @@ func _build_room() -> void:
 	var wall_mats := _wall_materials()
 	var trunk_mat := _toon_mat(Color(0.10, 0.065, 0.055))
 
-	# Piso em L + novo cômodo a leste (D-1133).
-	_box(Vector3(8.0, 0.4, 20.0), Vector3(0.0, -0.2, -4.0), floor_mat)
-	_box(Vector3(22.0, 0.4, 8.0), Vector3(7.0, -0.2, -10.0), floor_mat)
-	_box(Vector3(14.0, 0.4, 12.0), Vector3(11.0, -0.2, 0.0), floor_mat)
-	# Paredes externas do L + cômodo novo, com 4,2 m.
-	_box(Vector3(8.5, FOREST_WALL_HEIGHT, 0.5), Vector3(0.0, FOREST_WALL_HEIGHT * 0.5, 6.25), wall_mats[0])
-	_box(Vector3(0.5, FOREST_WALL_HEIGHT, 20.0), Vector3(-4.25, FOREST_WALL_HEIGHT * 0.5, -4.0), wall_mats[1])
-	_box(Vector3(0.5, FOREST_WALL_HEIGHT, 12.0), Vector3(4.25, FOREST_WALL_HEIGHT * 0.5, 0.0), wall_mats[2])
-	# Parede sul (z=-14,25) com três portas de 3 m: x -1.5..1.5, 5.5..8.5 e 12.5..15.5.
-	_box(Vector3(2.75, FOREST_WALL_HEIGHT, 0.5), Vector3(-2.875, FOREST_WALL_HEIGHT * 0.5, -14.25), wall_mats[3])
-	_box(Vector3(4.0, FOREST_WALL_HEIGHT, 0.5), Vector3(3.5, FOREST_WALL_HEIGHT * 0.5, -14.25), wall_mats[3])
-	_box(Vector3(4.0, FOREST_WALL_HEIGHT, 0.5), Vector3(10.5, FOREST_WALL_HEIGHT * 0.5, -14.25), wall_mats[3])
-	_box(Vector3(2.75, FOREST_WALL_HEIGHT, 0.5), Vector3(16.875, FOREST_WALL_HEIGHT * 0.5, -14.25), wall_mats[3])
-	# Parede interna dividida: porta de 3 m em x 8..11, para o cômodo novo.
-	_box(Vector3(4.25, FOREST_WALL_HEIGHT, 0.5), Vector3(5.875, FOREST_WALL_HEIGHT * 0.5, -5.75), wall_mats[4])
-	_box(Vector3(7.25, FOREST_WALL_HEIGHT, 0.5), Vector3(14.625, FOREST_WALL_HEIGHT * 0.5, -5.75), wall_mats[4])
-	_box(Vector3(0.5, FOREST_WALL_HEIGHT, 8.0), Vector3(18.25, FOREST_WALL_HEIGHT * 0.5, -10.0), wall_mats[5])
-	# Paredes externas do cômodo novo.
-	_box(Vector3(14.0, FOREST_WALL_HEIGHT, 0.5), Vector3(11.25, FOREST_WALL_HEIGHT * 0.5, 6.25), wall_mats[0])
-	_box(Vector3(0.5, FOREST_WALL_HEIGHT, 12.0), Vector3(18.25, FOREST_WALL_HEIGHT * 0.5, 0.0), wall_mats[5])
-	# Ala sul (D-1143): três salas x -4..4, 4..10 e 10..18, z -14..-22.
-	_box(Vector3(22.0, 0.4, 8.0), Vector3(7.0, -0.2, -18.0), floor_mat)
-	_box(Vector3(22.5, FOREST_WALL_HEIGHT, 0.5), Vector3(7.0, FOREST_WALL_HEIGHT * 0.5, -22.25), wall_mats[3])
-	_box(Vector3(0.5, FOREST_WALL_HEIGHT, 8.0), Vector3(-4.25, FOREST_WALL_HEIGHT * 0.5, -18.0), wall_mats[1])
-	_box(Vector3(0.5, FOREST_WALL_HEIGHT, 8.0), Vector3(18.25, FOREST_WALL_HEIGHT * 0.5, -18.0), wall_mats[5])
-	# Divisórias com porta de 3 m em z -19.5..-16.5.
-	for x in [4.25, 10.25]:
-		_box(Vector3(0.5, FOREST_WALL_HEIGHT, 2.5), Vector3(x, FOREST_WALL_HEIGHT * 0.5, -20.75), wall_mats[2])
-		_box(Vector3(0.5, FOREST_WALL_HEIGHT, 2.5), Vector3(x, FOREST_WALL_HEIGHT * 0.5, -15.25), wall_mats[2])
-	# Pilares: colisão igual, visual de tronco.
-	for p in [
-		Vector2(-3.0, -2.0), Vector2(3.0, -7.0),
-		Vector2(7.0, -13.0), Vector2(13.0, -7.0),
-	]:
-		_box(Vector3(0.55, FOREST_WALL_HEIGHT, 0.55),
-			Vector3(p.x, FOREST_WALL_HEIGHT * 0.5, p.y), trunk_mat)
+	# D-1256: piso, paredes e pilares vêm da planta autoral em dados, sem
+	# geração procedural e sem posição fixa de personagem/time/lado (D-235).
+	var layout := MurkyForestLayout.new()
+	layout.name = "AuthoredLayout"
+	add_child(layout)
+	layout.build(floor_mat, wall_mats, trunk_mat)
 
 	_build_canopy()
 	_build_foliage()
 	# D-1256: profundidade de mata e arco de pedra das três pranchas revisadas.
 	_build_backdrop_forest()
 	_build_stone_arch()
+	# D-1248: marca diegética da visita de retorno. Só aparece com --visit=return
+	# no debug; não é persistência entre expedições nem UI nova (D-1247).
+	if _cli_value("--visit") == "return":
+		_build_revisit_mark()
 	_build_foreground_trunks()
 	_build_forest_lights()
 	_build_minimap_map()
 
 
-## D-1133: acrescenta o polígono do novo cômodo à navmesh do L.
+## D-1256: a navmesh vem da planta autoral. O NavigationRegion3D é criado
+## aqui quando o lab base não o criou, senão a navmesh não tem onde ser publicada.
 func _build_navigation() -> void:
-	super()
-	if _nav_region == null or _nav_region.navigation_mesh == null:
-		return
-	var nav := _nav_region.navigation_mesh
-	var verts := nav.get_vertices()
-	if verts.size() < 8:
-		return
-	verts.append(Vector3(17.7, NAV_Y, 5.7))
-	nav.set_vertices(verts)
-	nav.add_polygon(PackedInt32Array([1, 8, 4, 2]))
+	var layout := MurkyForestLayout.new()
+	var mesh: NavigationMesh = layout.build_navmesh()
+	if _nav_region == null:
+		_nav_region = NavigationRegion3D.new()
+		_nav_region.name = "Navigation"
+		add_child(_nav_region)
+	_nav_region.navigation_mesh = mesh
 
 
 func _build_canopy() -> void:
 	# Copa escura; fica na camada 10, fora do mini-mapa, e não projeta sombra.
 	var dark := _toon_mat(Color(0.045, 0.035, 0.075))
-	var canopy := _box(Vector3(30.0, 0.3, 38.0), Vector3(7.0, 5.6, -8.0), dark, false)
+	var canopy := _box(Vector3(54.0, 0.3, 56.0), Vector3(0.0, 5.6, -15.5), dark, false)
 	canopy.layers = 1 << 9
 	canopy.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	# Aglomerados de folhas penduradas na copa.
-	for i in 26:
-		var x := _rng.randf_range(-3.5, 17.5)
-		var z := _rng.randf_range(-13.5, 5.5)
+	# D-1256/pranchas: TETO DENSO de copas grandes (raio 2-4 m), verde/purpura,
+	# sobrepostas — é o que dá a sensacao de mata fechada acima da clareira.
+	var canopy_big := [
+		_toon_mat(Color(0.13, 0.30, 0.22)),
+		_toon_mat(Color(0.20, 0.14, 0.38)),
+		_toon_mat(Color(0.11, 0.25, 0.20)),
+	]
+	for i in 90:
+		var x := _rng.randf_range(-26.0, 26.0)
+		var z := _rng.randf_range(-41.0, 11.0)
+		var y := _rng.randf_range(5.4, 7.4)
+		_backdrop_crown(Vector3(x, y, z), _rng.randf_range(2.0, 4.0),
+			canopy_big[i % canopy_big.size()])
+	# Aglomerados menores pendurados, abaixo do teto denso.
+	for i in 55:
+		var x := _rng.randf_range(-24.0, 24.0)
+		var z := _rng.randf_range(-39.0, 9.0)
 		var pos := Vector3(x, _rng.randf_range(4.55, 5.15), z)
 		_foliage(pos, _rng.randf_range(0.55, 1.05), _leaf_color(), 1 << 9)
+	# D-1256 prancha 1: aberturas na copa com feixes de luz até o piso.
+	# Camada 9, sem colisão e sem sombra — só leitura visual do respiro.
+	for hole in [Vector2(0.0, -4.0), Vector2(0.0, -26.0), Vector2(-16.0, -2.0)]:
+		_canopy_opening(hole)
+		_light_shaft(Vector3(hole.x, 5.35, hole.y))
+		_light_pool(hole, _rng.randf_range(2.6, 3.6))
+		var sun := SpotLight3D.new()
+		sun.position = Vector3(hole.x, 5.15, hole.y)
+		sun.light_color = Color(0.82, 0.94, 0.64)
+		sun.light_energy = 4.0
+		sun.spot_angle = 30.0
+		sun.spot_attenuation = 1.2
+		sun.spot_range = 12.0
+		sun.shadow_enabled = false
+		add_child(sun)
+	# Manchas de luz espalhadas pela clareira (prancha 1), fora das aberturas.
+	for i in 16:
+		var p := Vector2(_rng.randf_range(-22.0, 22.0), _rng.randf_range(-38.0, 8.0))
+		_light_pool(p, _rng.randf_range(1.4, 2.8))
+
+
+## D-1256/prancha 1: poça de luz no piso — disco aditivo translucido, sem colisao.
+func _light_pool(p: Vector2, radius: float) -> void:
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mat.albedo_color = Color(0.42, 0.58, 0.30, 0.16)
+	mat.emission_enabled = true
+	mat.emission = Color(0.55, 0.72, 0.42)
+	mat.emission_energy_multiplier = 0.55
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	var disc := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = radius
+	cyl.bottom_radius = radius
+	cyl.height = 0.02
+	cyl.radial_segments = 14
+	disc.mesh = cyl
+	disc.position = Vector3(p.x, 0.03, p.y)
+	disc.material_override = mat
+	disc.layers = 1 << 9
+	disc.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(disc)
+
+
+## D-1256 — abertura na copa: disco emissivo visto de baixo, com folhas em volta.
+func _canopy_opening(p: Vector2) -> void:
+	var hole := _toon_mat(Color(0.72, 0.82, 0.58), Color(0.85, 0.95, 0.70), 0.9)
+	var disc := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.55
+	cyl.bottom_radius = 0.55
+	cyl.height = 0.06
+	cyl.radial_segments = 10
+	disc.mesh = cyl
+	disc.position = Vector3(p.x, 5.44, p.y)
+	disc.material_override = hole
+	disc.layers = 1 << 9
+	disc.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(disc)
+	for k in 5:
+		var a := float(k) / 5.0 * TAU
+		_foliage(Vector3(p.x + cos(a) * 0.78, 5.28, p.y + sin(a) * 0.78),
+			0.32, _leaf_color(), 1 << 9)
+
+
+## D-1256 — feixe de luz da abertura da copa ao piso (cone aditivo, sem sombra).
+func _light_shaft(from: Vector3) -> void:
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mat.albedo_color = Color(0.48, 0.62, 0.38, 0.20)
+	mat.emission_enabled = true
+	mat.emission = Color(0.58, 0.74, 0.44)
+	mat.emission_energy_multiplier = 0.85
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	var shaft := MeshInstance3D.new()
+	var cone := CylinderMesh.new()
+	cone.top_radius = 0.38
+	cone.bottom_radius = 1.55
+	cone.height = from.y - 0.45
+	cone.radial_segments = 12
+	shaft.mesh = cone
+	shaft.position = Vector3(from.x, (from.y + 0.45) * 0.5, from.z)
+	shaft.material_override = mat
+	shaft.layers = 1 << 9
+	shaft.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(shaft)
 
 
 func _build_foliage() -> void:
-	# Parede oeste e leste da sala norte.
-	for z in range(-5, 7, 2):
+	# D-1256: clareira ampla no estilo das pranchas (KH). A folhagem de altura
+	# fica nas BORDAS perimetrais (x ~ +-26, z ~ 10 e z ~ -41); o miolo da
+	# clareira fica limpo para andar. Nada depende de personagem/time/lado (D-235).
+	var border_west := -25.7
+	var border_east := 25.7
+	var border_south := -41.0
+	var border_north := 10.0
+	# Borda oeste e leste do perimetro, de z=-40 a z=10.
+	for z in range(-40, 11, 2):
 		for side in [-1, 1]:
-			var x: float = side * 3.98
+			var x: float = float(side) * (border_east if side > 0 else absf(border_west))
 			for k in 2:
-				var pos := Vector3(x + side * 0.14,
-					_rng.randf_range(0.8, 3.4) + k * 0.5,
-					z + _rng.randf_range(-0.45, 0.45))
-				_foliage(pos, _rng.randf_range(0.35, 0.65), _leaf_color(), 1 << 8)
-	# Parede norte da sala.
-	for x in range(-3, 4, 2):
-		_foliage(Vector3(x + _rng.randf_range(-0.3, 0.3),
-			_rng.randf_range(1.0, 3.3), 5.92), _rng.randf_range(0.45, 0.75), _leaf_color(), 1 << 8)
-	# Paredes do corredor leste-oeste.
-	for x in range(4, 18, 2):
-		for z in [-5.95, -14.05]:
-			var sign_z := 1.0 if z > -6.5 else -1.0
-			_foliage(Vector3(x + _rng.randf_range(-0.4, 0.4),
-				_rng.randf_range(0.9, 3.5), z + sign_z * 0.12),
-				_rng.randf_range(0.4, 0.7), _leaf_color(), 1 << 8)
-	# Topo das paredes: arbustos grandes.
-	for i in 34:
-		var on_north_room := i % 3 == 0
+				var pos := Vector3(x - float(side) * _rng.randf_range(0.05, 0.40),
+					_rng.randf_range(0.8, 3.5) + float(k) * 0.55,
+					float(z) + _rng.randf_range(-0.7, 0.7))
+				_foliage(pos, _rng.randf_range(0.35, 0.70), _leaf_color(), 1 << 8)
+	# Borda norte (z ~ 10), de x=-24 a x=24.
+	for x in range(-24, 25, 2):
+		for k in 2:
+			_foliage(Vector3(float(x) + _rng.randf_range(-0.5, 0.5),
+				_rng.randf_range(0.9, 3.4) + float(k) * 0.5,
+				border_north - _rng.randf_range(0.10, 0.45)),
+				_rng.randf_range(0.40, 0.75), _leaf_color(), 1 << 8)
+	# Borda sul (z ~ -41), de x=-24 a x=24.
+	for x in range(-24, 25, 2):
+		for k in 2:
+			_foliage(Vector3(float(x) + _rng.randf_range(-0.5, 0.5),
+				_rng.randf_range(0.9, 3.4) + float(k) * 0.5,
+				border_south + _rng.randf_range(0.10, 0.45)),
+				_rng.randf_range(0.40, 0.75), _leaf_color(), 1 << 8)
+	# Topo das bordas: arbustos grandes fechando a silhueta da mata.
+	for i in 40:
 		var pos: Vector3
-		if on_north_room:
-			var side := -1.0 if i % 2 == 0 else 1.0
-			pos = Vector3(side * 4.0, _rng.randf_range(3.9, 4.45), _rng.randf_range(-5.5, 5.5))
+		var lane := i % 4
+		if lane == 0:
+			pos = Vector3(_rng.randf_range(-25.6, 25.6), _rng.randf_range(3.9, 4.45),
+				_rng.randf_range(9.55, 9.95))
+		elif lane == 1:
+			pos = Vector3(_rng.randf_range(-25.6, 25.6), _rng.randf_range(3.9, 4.45),
+				_rng.randf_range(-40.95, -40.55))
 		else:
-			var z := -5.95 if i % 2 == 0 else -14.05
-			pos = Vector3(_rng.randf_range(4.0, 17.5), _rng.randf_range(3.9, 4.45), z)
+			var side := -1.0 if lane == 2 else 1.0
+			pos = Vector3(side * _rng.randf_range(25.35, 25.75), _rng.randf_range(3.9, 4.45),
+				_rng.randf_range(-40.5, 9.5))
 		_foliage(pos, _rng.randf_range(0.5, 0.9), _leaf_color(), 1 << 9)
-	# Folhas no chão (não bloqueiam o caminho).
-	for i in 120:
-		var x := _rng.randf_range(-3.6, 3.6)
-		var z := _rng.randf_range(-5.8, 5.5)
-		if i % 2 == 1:
-			x = _rng.randf_range(4.0, 17.3)
-			z = _rng.randf_range(-13.4, -6.6)
+	# Folhas no chao espalhadas pela clareira ampla (camada 8, sem colisao).
+	for i in 220:
+		var x := _rng.randf_range(-24.0, 24.0)
+		var z := _rng.randf_range(-40.0, 8.0)
 		_leaf_patch(Vector3(x, 0.02, z), _rng.randf_range(0.0, TAU), _ground_color())
-	# Cômodo novo (D-1133): folhas e samambaias no piso, sem collisão.
-	for i in 30:
-		_leaf_patch(Vector3(_rng.randf_range(4.5, 17.5), 0.02,
-			_rng.randf_range(-5.5, 5.5)), _rng.randf_range(0.0, TAU), _ground_color())
-	for i in 10:
-		_fern(Vector3(_rng.randf_range(5.0, 17.0), 0.0,
-			_rng.randf_range(-5.0, 5.0)), _rng.randf_range(0.5, 0.9), _fern_color())
-	for i in 5:
-		_mushroom(Vector3(_rng.randf_range(5.0, 17.0), 0.0,
-			_rng.randf_range(-5.0, 5.0)), _mushroom_color(), _glow_color(), i % 5 == 0)
-	# Ala sul (D-1143): folhas e samambaias nas três salas.
-	for i in 36:
-		_leaf_patch(Vector3(_rng.randf_range(-3.5, 17.5), 0.02,
-			_rng.randf_range(-21.5, -14.5)), _rng.randf_range(0.0, TAU), _ground_color())
-	for i in 12:
-		_fern(Vector3(_rng.randf_range(-3.0, 17.0), 0.0,
-			_rng.randf_range(-21.0, -15.0)), _rng.randf_range(0.5, 0.9), _fern_color())
-	# Pedras, cogumelos, samambaias e raízes, longe do caminho do jogador.
-	for i in 12:
-		var pos := Vector3(_rng.randf_range(-2.8, 2.8), 0.08, _rng.randf_range(-5.0, 4.5))
-		if i % 2 == 1:
-			pos = Vector3(_rng.randf_range(5.0, 16.5), 0.08, _rng.randf_range(-12.5, -7.5))
+	# Pedras, cogumelos, samambaias e raizes pela clareira ampla, fora do caminho.
+	for i in 22:
+		var pos := Vector3(_rng.randf_range(-24.0, 24.0), 0.08, _rng.randf_range(-40.0, 8.0))
 		if _near_path(pos):
 			continue
 		_stone(pos, _rng.randf_range(0.22, 0.50))
-	for i in 20:
-		var pos := Vector3(_rng.randf_range(-3.4, 3.4), 0.0, _rng.randf_range(-5.2, 5.2))
-		if i % 2 == 1:
-			pos = Vector3(_rng.randf_range(4.5, 17.0), 0.0, _rng.randf_range(-12.8, -7.0))
+	for i in 30:
+		var pos := Vector3(_rng.randf_range(-24.0, 24.0), 0.0, _rng.randf_range(-40.0, 8.0))
 		if _near_path(pos):
 			continue
-		_mushroom(pos, _mushroom_color(), _glow_color(), i % 5 == 0)
-	for i in 26:
-		var pos := Vector3(_rng.randf_range(-3.5, 3.5), 0.0, _rng.randf_range(-5.4, 5.4))
-		if i % 2 == 1:
-			pos = Vector3(_rng.randf_range(4.2, 17.2), 0.0, _rng.randf_range(-13.2, -6.8))
+		_mushroom(pos, _mushroom_color(), _glow_color(), i % 6 == 0)
+	for i in 40:
+		var pos := Vector3(_rng.randf_range(-24.0, 24.0), 0.0, _rng.randf_range(-40.0, 8.0))
 		if _near_path(pos):
 			continue
 		_fern(pos, _rng.randf_range(0.5, 0.9), _fern_color())
-	for i in 14:
-		var pos := Vector3(_rng.randf_range(-3.6, 3.6), 0.0, _rng.randf_range(-5.6, 5.4))
-		if i % 2 == 1:
-			pos = Vector3(_rng.randf_range(4.2, 17.2), 0.0, _rng.randf_range(-13.3, -6.7))
+	for i in 18:
+		var pos := Vector3(_rng.randf_range(-24.0, 24.0), 0.0, _rng.randf_range(-40.0, 8.0))
 		if _near_path(pos):
 			continue
 		_root(pos, _rng.randf_range(0.0, TAU), _rng.randf_range(0.8, 1.6))
@@ -1404,31 +1589,58 @@ func _build_foliage() -> void:
 
 
 ## D-1077: vinhas, galhos e clumps médios ancorados nas paredes/árvores.
+## D-1077/D-1256: vinhas, galhos e clumps medios ancorados nos troncos-pilar e
+## nas bordas do perimetro. Nunca no meio do caminho (D-235: nada fixo de lado).
 func _build_vertical_foliage() -> void:
-	var vine_tops := [
-		Vector3(-3.95, 4.5, -4.0), Vector3(3.95, 4.5, 1.5),
-		Vector3(-3.95, 4.5, 3.0), Vector3(3.95, 4.5, -5.0),
-		Vector3(6.0, 4.5, -5.9), Vector3(10.0, 4.5, -5.9),
-		Vector3(14.0, 4.5, -5.9), Vector3(7.0, 4.5, -14.1),
-		Vector3(11.0, 4.5, -14.1), Vector3(15.0, 4.5, -14.1),
+	var pillars := [
+		Vector2(-6.0, -6.0), Vector2(6.0, -6.0),
+		Vector2(-6.0, -18.0), Vector2(6.0, -18.0),
+		Vector2(-12.0, -2.0), Vector2(12.0, -2.0),
+		Vector2(-3.0, -30.0), Vector2(3.0, -30.0),
 	]
-	for i in vine_tops.size():
-		_vine(vine_tops[i], 1.6 + float(i % 3) * 0.35)
-	var branches := [
-		{"pos": Vector3(-3.0, 3.2, -2.0), "dir": Vector3(1.0, 0.0, 0.0), "len": 1.3},
-		{"pos": Vector3(3.0, 3.0, -7.0), "dir": Vector3(-1.0, 0.0, 0.0), "len": 1.2},
-		{"pos": Vector3(7.0, 3.1, -13.0), "dir": Vector3(0.0, 0.0, 1.0), "len": 1.4},
-		{"pos": Vector3(13.0, 3.0, -7.0), "dir": Vector3(0.0, 0.0, -1.0), "len": 1.3},
+	var pillar_half := 0.36
+	# Vinhas: duas por pilar, presas na face do tronco, alturas diferentes.
+	for i in pillars.size():
+		var p: Vector2 = pillars[i]
+		for k in 2:
+			var face_z: float = p.y + (pillar_half if k == 0 else -pillar_half)
+			var top := Vector3(p.x, _rng.randf_range(3.5, 4.0), face_z)
+			_vine(top, 1.3 + float((i + k) % 3) * 0.35)
+	# Galhos: um por pilar, saindo da face, apontando para fora do miolo.
+	var hub := Vector2(0.0, -16.0)
+	for i in pillars.size():
+		var p: Vector2 = pillars[i]
+		var out := p - hub
+		var dir := Vector3(signf(out.x), 0.0, 0.0)
+		if absf(out.y) > absf(out.x):
+			dir = Vector3(0.0, 0.0, signf(out.y))
+		if dir == Vector3.ZERO:
+			dir = Vector3(1.0, 0.0, 0.0)
+		var base := Vector3(p.x, _rng.randf_range(2.9, 3.3), p.y) + dir * pillar_half
+		_branch(base, dir, _rng.randf_range(1.1, 1.5))
+	# Vinhas nas bordas perimetrais (oeste, leste, norte e sul).
+	var border_vines := [
+		Vector3(-25.85, 4.35, -6.0), Vector3(-25.85, 4.35, -22.0),
+		Vector3(-25.85, 4.35, -36.0), Vector3(25.85, 4.35, -4.0),
+		Vector3(25.85, 4.35, -20.0), Vector3(25.85, 4.35, -34.0),
+		Vector3(-18.0, 4.35, 9.85), Vector3(0.0, 4.35, 9.85),
+		Vector3(18.0, 4.35, 9.85), Vector3(-20.0, 4.35, -40.85),
+		Vector3(20.0, 4.35, -40.85),
 	]
-	for b in branches:
-		_branch(b["pos"], b["dir"], float(b["len"]))
-	# Clumps médios nas paredes, menores, preenchendo a altura.
-	for i in 12:
-		var side := -1.0 if i % 2 == 0 else 1.0
-		var x := side * 3.98
-		var z := _rng.randf_range(-5.2, 5.0)
-		_foliage(Vector3(x, _rng.randf_range(2.5, 3.5), z),
+	for i in border_vines.size():
+		_vine(border_vines[i], 1.5 + float(i % 3) * 0.35)
+	# Clumps medios nos pilares, menores, preenchendo a altura.
+	for i in 16:
+		var p: Vector2 = pillars[i % pillars.size()]
+		_foliage(Vector3(p.x, _rng.randf_range(2.2, 3.2), p.y),
 			_rng.randf_range(0.25, 0.42), _leaf_color(), 1 << 8)
+	# Clumps medios nas bordas, entre 1.8 m e 3.4 m.
+	for i in 14:
+		var side := -1.0 if i % 2 == 0 else 1.0
+		var x: float = side * _rng.randf_range(25.35, 25.75)
+		var z := _rng.randf_range(-40.0, 8.0)
+		_foliage(Vector3(x, _rng.randf_range(1.8, 3.4), z),
+			_rng.randf_range(0.25, 0.45), _leaf_color(), 1 << 8)
 
 
 ## D-1256 — fundo de mata das três pranchas: troncos e copas além da paliçada,
@@ -1437,13 +1649,13 @@ func _build_backdrop_forest() -> void:
 	# D-1256 prancha 3: desnível cenográfico. Uma faixa de mata mais baixa
 	# além da paliçada, com copas baixas e troncos curtos. É só fundo (camada 9):
 	# o piso jogável continua em y=0 e nada disso entra na navegação.
-	var low_floor := _box(Vector3(34.0, 0.25, 9.0), Vector3(7.0, -1.55, -19.5),
+	var low_floor := _box(Vector3(56.0, 0.25, 9.0), Vector3(0.0, -1.55, -45.5),
 		_toon_mat(Color(0.075, 0.055, 0.11)), false)
 	low_floor.layers = 1 << 9
 	low_floor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	for i in 14:
-		var lx := _rng.randf_range(-4.0, 18.0)
-		var lz := _rng.randf_range(-23.5, -15.5)
+	for i in 22:
+		var lx := _rng.randf_range(-26.0, 26.0)
+		var lz := _rng.randf_range(-49.5, -41.5)
 		var lh := _rng.randf_range(1.4, 2.8)
 		var lt := MeshInstance3D.new()
 		var lcyl := CylinderMesh.new()
@@ -1465,31 +1677,38 @@ func _build_backdrop_forest() -> void:
 		_toon_mat(Color(0.23, 0.16, 0.34)),
 		_toon_mat(Color(0.13, 0.22, 0.24)),
 	]
-	# Duas fileiras de troncos atrás das paredes norte e sul do corredor.
+	# Quatro fileiras de TRONCOS GROSSOS além das bordas — mata densa ao redor.
 	var rows := [
-		{"z": -17.5, "xs": [-3.0, 1.0, 5.0, 9.0, 13.0, 17.0]},
-		{"z": 8.5, "xs": [-2.0, 2.0, 6.0, 10.0, 14.0, 18.0]},
+		{"z": 13.5, "xs": [-24.0, -16.0, -8.0, 0.0, 8.0, 16.0, 24.0]},
+		{"z": -44.5, "xs": [-24.0, -16.0, -8.0, 0.0, 8.0, 16.0, 24.0]},
+		{"z": -8.0, "xs": [-30.0, -30.0, -30.0, -30.0]},
+		{"z": -26.0, "xs": [30.0, 30.0, 30.0, 30.0]},
 	]
 	for row in rows:
 		for x in row["xs"]:
-			var z := float(row["z"]) + _rng.randf_range(-0.8, 0.8)
-			var h := _rng.randf_range(5.5, 8.5)
+			var z := float(row["z"]) + _rng.randf_range(-1.2, 1.2)
+			var h := _rng.randf_range(8.0, 13.0)
 			var cm := MeshInstance3D.new()
 			var cyl := CylinderMesh.new()
-			cyl.top_radius = 0.16
-			cyl.bottom_radius = 0.26
+			cyl.top_radius = 0.42
+			cyl.bottom_radius = 0.78
 			cyl.height = h
-			cyl.radial_segments = 6
+			cyl.radial_segments = 7
 			cm.mesh = cyl
-			cm.position = Vector3(x + _rng.randf_range(-0.5, 0.5), h * 0.5, z)
+			var cx: float = float(x) + _rng.randf_range(-0.8, 0.8)
+			if x == -30.0:
+				cx = -30.0 + _rng.randf_range(-6.0, 6.0)
+			elif x == 30.0:
+				cx = 30.0 + _rng.randf_range(-6.0, 6.0)
+			cm.position = Vector3(cx, h * 0.5, z)
 			cm.material_override = trunk
 			cm.layers = 1 << 9
 			cm.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			add_child(cm)
-			for k in 3:
-				var cp := Vector3(cm.position.x + _rng.randf_range(-1.1, 1.1),
-					h - _rng.randf_range(-0.3, 1.4), z + _rng.randf_range(-1.1, 1.1))
-				_backdrop_crown(cp, _rng.randf_range(1.1, 2.0), crowns[k % crowns.size()])
+			for k in 4:
+				var cp := Vector3(cm.position.x + _rng.randf_range(-1.6, 1.6),
+					h - _rng.randf_range(-0.4, 2.0), z + _rng.randf_range(-1.6, 1.6))
+				_backdrop_crown(cp, _rng.randf_range(2.0, 3.6), crowns[k % crowns.size()])
 
 
 func _backdrop_crown(pos: Vector3, radius: float, mat: Material) -> void:
@@ -1513,55 +1732,88 @@ func _backdrop_crown(pos: Vector3, radius: float, mat: Material) -> void:
 func _build_stone_arch() -> void:
 	var stone := _toon_mat(Color(0.42, 0.36, 0.44))
 	var stone_dark := _toon_mat(Color(0.30, 0.25, 0.33))
-	# D-1256: no início do corredor leste (x 6.5), longe do portão verde da
-	# saída (x 17.7). Assim a vista de volta tem a mata da curva ao fundo e o
-	# arco fica isolado, como nas pranchas. Atravessa o corredor: colunas no
-	# eixo Z, imposta no plano YZ.
-	var cx := 6.5
-	var z := -10.0
+	# D-1256: no fim do corredor ao norte (z=-28), atravessando o corredor no
+	# eixo X: colunas em x=-1.45 e x=+1.45, imposta no plano XY. Fica de frente
+	# para quem vem da clareira de entrada (câmera olhando para -Z).
+	var cx := 0.0
+	var z := -28.0
 	var y_col := 1.55
-	for dz in [-1.45, 1.45]:
-		var col := _box(Vector3(0.55, 3.1, 0.55), Vector3(cx, y_col, z + dz), stone, false)
+	for dx in [-1.45, 1.45]:
+		var col := _box(Vector3(0.55, 3.1, 0.55), Vector3(cx + dx, y_col, z), stone, false)
 		col.layers = 1 << 9
 		col.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		# Faixas de pedra para quebrar a coluna lisa.
 		for k in 4:
 			var band := _box(Vector3(0.62, 0.10, 0.62),
-				Vector3(cx, 0.35 + float(k) * 0.75, z + dz), stone_dark, false)
+				Vector3(cx + dx, 0.35 + float(k) * 0.75, z), stone_dark, false)
 			band.layers = 1 << 9
 			band.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	# Imposta superior em arco: 7 blocos ao longo de uma curva no plano YZ.
+	# Imposta superior em arco: 7 blocos ao longo de uma curva no plano XY.
 	for i in 7:
 		var t := float(i) / 6.0
 		var ang := PI * t
-		var pz := z - cos(ang) * 1.45
+		var px := cx - cos(ang) * 1.45
 		var py := 3.1 + sin(ang) * 0.95
-		var block := _box(Vector3(0.62, 0.42, 0.62), Vector3(cx, py, pz), stone, false)
+		var block := _box(Vector3(0.62, 0.42, 0.62), Vector3(px, py, z), stone, false)
 		block.layers = 1 << 9
 		block.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+
+## D-1248 — marca cenográfica da revisita: pequeno monte de pedras junto ao arco.
+## Diegético, sem UI nova e sem colisão (camada 9). Controlado por --visit=return
+## apenas no debug — o gatilho de jogo (fala curta no Hub) fica na Task 4 da cena do Hub.
+func _build_revisit_mark() -> void:
+	var stone := _toon_mat(Color(0.46, 0.40, 0.50))
+	var accent := _toon_mat(Color(0.55, 0.78, 0.46), Color(0.45, 0.80, 0.38), 0.55)
+	var base := Vector3(5.1, 0.0, -8.4)
+	for i in 3:
+		var w := 0.52 - float(i) * 0.09
+		var rock := _box(Vector3(w, 0.13, w * 0.8),
+			base + Vector3(float(i) * 0.04, 0.07 + float(i) * 0.13, float(i) * 0.03), stone, false)
+		rock.layers = 1 << 9
+		rock.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var rune := MeshInstance3D.new()
+	var sph := SphereMesh.new()
+	sph.radius = 0.10
+	sph.height = 0.12
+	sph.radial_segments = 6
+	rune.mesh = sph
+	rune.position = base + Vector3(0.08, 0.50, 0.06)
+	rune.material_override = accent
+	rune.layers = 1 << 9
+	rune.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(rune)
 
 
 ## D-1256 — troncos grossos em primeiro plano nas laterais (prancha 2),
 ## enquadrando a vista sem bloquear o caminho. Camada 9, sem colisão.
 func _build_foreground_trunks() -> void:
-	var bark := _toon_mat(Color(0.11, 0.075, 0.06))
+	var bark := _toon_mat(Color(0.13, 0.085, 0.075))
+	# Pranchas 1/2: TRONCOS GIGANTES que emolduram a clareira e dao profundidade.
+	# Camada 9, sem colisao: sao cenario, nao parede jogavel (D-1256).
 	var spots := [
-		Vector3(-5.6, 4.0, 3.5), Vector3(5.6, 4.0, 2.0),
-		Vector3(19.8, 4.0, -11.0), Vector3(19.8, 4.0, -6.0),
+		Vector3(-21.0, 7.0, 6.0), Vector3(21.0, 7.0, 6.0),
+		Vector3(-21.0, 7.0, -16.0), Vector3(21.0, 7.0, -16.0),
+		Vector3(-14.0, 7.0, -34.0), Vector3(14.0, 7.0, -34.0),
+		Vector3(-28.0, 8.0, -4.0), Vector3(28.0, 8.0, -4.0),
+		Vector3(-28.0, 8.0, -24.0), Vector3(28.0, 8.0, -24.0),
 	]
 	for pos in spots:
 		var mi := MeshInstance3D.new()
 		var cyl := CylinderMesh.new()
-		cyl.top_radius = 0.42
-		cyl.bottom_radius = 0.62
-		cyl.height = 8.0
-		cyl.radial_segments = 7
+		cyl.top_radius = 0.85
+		cyl.bottom_radius = 1.35
+		cyl.height = 14.0
+		cyl.radial_segments = 8
 		mi.mesh = cyl
 		mi.position = pos
 		mi.material_override = bark
 		mi.layers = 1 << 9
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(mi)
+		# Copa grande no topo de cada tronco gigante.
+		_backdrop_crown(Vector3(pos.x, 13.0, pos.z), _rng.randf_range(2.5, 4.0),
+			_toon_mat(_leaf_color()))
 
 
 func _vine(top: Vector3, length: float) -> void:
@@ -1917,14 +2169,15 @@ func _build_exit() -> void:
 	# D-1256: portão mais discreto para o arco de pedra ser a âncora da vista.
 	# A saída continua funcional e visível (Z/E), só perde o neon competing.
 	var gate_mat := _toon_mat(Color(0.10, 0.42, 0.24), Color(0.12, 0.55, 0.28), 0.28)
-	var gate_a := _box(Vector3(0.3, 3.4, 0.3), Vector3(17.7, 1.7, -11.4), gate_mat, false)
-	var gate_b := _box(Vector3(0.3, 3.4, 0.3), Vector3(17.7, 1.7, -8.6), gate_mat, false)
-	var gate_top := _box(Vector3(0.3, 0.3, 3.2), Vector3(17.7, 3.4, -10.0), gate_mat, false)
-	var dark := _box(Vector3(0.15, 2.8, 2.6), Vector3(17.85, 1.4, -10.0), _toon_mat(Color(0.01, 0.02, 0.015)), false)
+	# D-1256: saída no vão central sul (x 0, z -36), ainda visível (Z/E).
+	var gate_a := _box(Vector3(0.3, 3.4, 0.3), Vector3(-1.4, 1.7, -36.0), gate_mat, false)
+	var gate_b := _box(Vector3(0.3, 3.4, 0.3), Vector3(1.4, 1.7, -36.0), gate_mat, false)
+	var gate_top := _box(Vector3(3.2, 0.3, 0.3), Vector3(0.0, 3.4, -36.0), gate_mat, false)
+	var dark := _box(Vector3(2.6, 2.8, 0.15), Vector3(0.0, 1.4, -35.85), _toon_mat(Color(0.01, 0.02, 0.015)), false)
 	for mi in [gate_a, gate_b, gate_top, dark]:
 		mi.layers = 1 << 8
 	var exit_light := OmniLight3D.new()
-	exit_light.position = Vector3(17.2, 1.8, -10.0)
+	exit_light.position = Vector3(0.0, 1.8, -36.0)
 	exit_light.light_color = Color(0.35, 0.9, 0.5)
 	exit_light.light_energy = 0.25
 	exit_light.omni_range = 3.5
@@ -1932,14 +2185,14 @@ func _build_exit() -> void:
 	# Trepadeiras Verdes no portal.
 	for i in 8:
 		var side := -1.0 if i % 2 == 0 else 1.0
-		_foliage(Vector3(17.55, _rng.randf_range(1.0, 3.2), -10.0 + side * _rng.randf_range(0.9, 1.7)),
+		_foliage(Vector3(side * _rng.randf_range(0.9, 1.7), _rng.randf_range(1.0, 3.2), -35.85),
 			_rng.randf_range(0.22, 0.38), _leaf_color(), 1 << 8)
 	var tag := Label3D.new()
 	tag.text = "RETURN TO HUB"
 	tag.font_size = 46
 	tag.modulate = Color(0.55, 1.0, 0.62)
 	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	tag.position = Vector3(17.5, 3.9, -10.0)
+	tag.position = Vector3(0.0, 3.9, -36.0)
 	tag.no_depth_test = false
 	tag.layers = 1 << 8
 	add_child(tag)
@@ -2763,44 +3016,45 @@ func _update_npcs(delta: float) -> void:
 # --- Minimap -----------------------------------------------------------------
 
 func _build_minimap_map() -> void:
-	# Cópias chapadas do piso/paredes/pilares na camada 5: só o mini-mapa vê.
+	# Copias chapadas do piso/paredes/pilares na camada 5: so o mini-mapa ve.
 	var floor_col := Color(0.42, 0.27, 0.50)
 	var wall_col := Color(0.10, 0.26, 0.23)
 	var trunk_col := Color(0.16, 0.12, 0.18)
-	_minimap_box(Vector3(8.0, 0.4, 20.0), Vector3(0.0, -0.2, -4.0), floor_col)
-	_minimap_box(Vector3(22.0, 0.4, 8.0), Vector3(7.0, -0.2, -10.0), floor_col)
-	_minimap_box(Vector3(14.0, 0.4, 12.0), Vector3(11.0, -0.2, 0.0), floor_col)
-	_minimap_box(Vector3(22.0, 0.4, 8.0), Vector3(7.0, -0.2, -18.0), floor_col)
+	# Pisos da planta autoral (D-1256): clareira, corredor, alas e baias.
+	_minimap_box(Vector3(26.0, 0.4, 24.0), Vector3(0.0, -0.2, -2.0), floor_col)
+	_minimap_box(Vector3(26.0, 0.4, 16.0), Vector3(0.0, -0.2, -26.0), floor_col)
+	for side in [-1.0, 1.0]:
+		var sx := float(side)
+		_minimap_box(Vector3(12.0, 0.4, 24.0), Vector3(sx * 16.0, -0.2, -2.0), floor_col)
+		_minimap_box(Vector3(14.0, 0.4, 12.0), Vector3(sx * 9.0, -0.2, -34.0), floor_col)
+	# Oito paredes: perimetro e divisorias curtas das baias.
 	for data in [
-		[Vector3(8.5, FOREST_WALL_HEIGHT, 0.5), Vector3(0.0, FOREST_WALL_HEIGHT * 0.5, 6.25)],
-		[Vector3(0.5, FOREST_WALL_HEIGHT, 20.0), Vector3(-4.25, FOREST_WALL_HEIGHT * 0.5, -4.0)],
-		[Vector3(0.5, FOREST_WALL_HEIGHT, 12.0), Vector3(4.25, FOREST_WALL_HEIGHT * 0.5, 0.0)],
-		[Vector3(2.75, FOREST_WALL_HEIGHT, 0.5), Vector3(-2.875, FOREST_WALL_HEIGHT * 0.5, -14.25)],
-		[Vector3(4.0, FOREST_WALL_HEIGHT, 0.5), Vector3(3.5, FOREST_WALL_HEIGHT * 0.5, -14.25)],
-		[Vector3(4.0, FOREST_WALL_HEIGHT, 0.5), Vector3(10.5, FOREST_WALL_HEIGHT * 0.5, -14.25)],
-		[Vector3(2.75, FOREST_WALL_HEIGHT, 0.5), Vector3(16.875, FOREST_WALL_HEIGHT * 0.5, -14.25)],
-		[Vector3(4.25, FOREST_WALL_HEIGHT, 0.5), Vector3(5.875, FOREST_WALL_HEIGHT * 0.5, -5.75)],
-		[Vector3(7.25, FOREST_WALL_HEIGHT, 0.5), Vector3(14.625, FOREST_WALL_HEIGHT * 0.5, -5.75)],
-		[Vector3(0.5, FOREST_WALL_HEIGHT, 8.0), Vector3(18.25, FOREST_WALL_HEIGHT * 0.5, -10.0)],
-		[Vector3(14.0, FOREST_WALL_HEIGHT, 0.5), Vector3(11.25, FOREST_WALL_HEIGHT * 0.5, 6.25)],
-		[Vector3(0.5, FOREST_WALL_HEIGHT, 12.0), Vector3(18.25, FOREST_WALL_HEIGHT * 0.5, 0.0)],
-		[Vector3(22.5, FOREST_WALL_HEIGHT, 0.5), Vector3(7.0, FOREST_WALL_HEIGHT * 0.5, -22.25)],
-		[Vector3(0.5, FOREST_WALL_HEIGHT, 8.0), Vector3(-4.25, FOREST_WALL_HEIGHT * 0.5, -18.0)],
-		[Vector3(0.5, FOREST_WALL_HEIGHT, 8.0), Vector3(18.25, FOREST_WALL_HEIGHT * 0.5, -18.0)],
-		[Vector3(0.5, FOREST_WALL_HEIGHT, 2.5), Vector3(4.25, FOREST_WALL_HEIGHT * 0.5, -20.75)],
-		[Vector3(0.5, FOREST_WALL_HEIGHT, 2.5), Vector3(4.25, FOREST_WALL_HEIGHT * 0.5, -15.25)],
-		[Vector3(0.5, FOREST_WALL_HEIGHT, 2.5), Vector3(10.25, FOREST_WALL_HEIGHT * 0.5, -20.75)],
-		[Vector3(0.5, FOREST_WALL_HEIGHT, 2.5), Vector3(10.25, FOREST_WALL_HEIGHT * 0.5, -15.25)],
+		[Vector3(26.0, FOREST_WALL_HEIGHT, 0.5), Vector3(0.0, FOREST_WALL_HEIGHT * 0.5, 10.25)],
+		[Vector3(0.5, FOREST_WALL_HEIGHT, 50.0), Vector3(-26.25, FOREST_WALL_HEIGHT * 0.5, -15.0)],
+		[Vector3(0.5, FOREST_WALL_HEIGHT, 50.0), Vector3(26.25, FOREST_WALL_HEIGHT * 0.5, -15.0)],
+		[Vector3(26.0, FOREST_WALL_HEIGHT, 0.5), Vector3(0.0, FOREST_WALL_HEIGHT * 0.5, -41.25)],
+		[Vector3(10.0, FOREST_WALL_HEIGHT, 0.5), Vector3(-21.0, FOREST_WALL_HEIGHT * 0.5, -34.25)],
+		[Vector3(10.0, FOREST_WALL_HEIGHT, 0.5), Vector3(21.0, FOREST_WALL_HEIGHT * 0.5, -34.25)],
+		[Vector3(0.5, FOREST_WALL_HEIGHT, 8.0), Vector3(-16.0, FOREST_WALL_HEIGHT * 0.5, -26.0)],
+		[Vector3(0.5, FOREST_WALL_HEIGHT, 8.0), Vector3(16.0, FOREST_WALL_HEIGHT * 0.5, -26.0)],
 	]:
 		_minimap_box(data[0], data[1], wall_col)
+	# Oito troncos-pilar.
 	for p in [
-		Vector2(-3.0, -2.0), Vector2(3.0, -7.0),
-		Vector2(7.0, -13.0), Vector2(13.0, -7.0),
+		Vector2(-6.0, -6.0), Vector2(6.0, -6.0),
+		Vector2(-6.0, -18.0), Vector2(6.0, -18.0),
+		Vector2(-12.0, -2.0), Vector2(12.0, -2.0),
+		Vector2(-3.0, -30.0), Vector2(3.0, -30.0),
 	]:
 		_minimap_box(Vector3(0.55, FOREST_WALL_HEIGHT, 0.55),
 			Vector3(p.x, FOREST_WALL_HEIGHT * 0.5, p.y), trunk_col)
-	# Saída verde no mapa.
-	_minimap_box(Vector3(0.7, 0.2, 3.0), Vector3(17.7, 0.1, -10.0), Color(0.25, 1.0, 0.45))
+	# Arco de pedra em (0,-28): duas colunas e a imposta superior.
+	for dx in [-1.45, 1.45]:
+		_minimap_box(Vector3(0.5, FOREST_WALL_HEIGHT, 0.5),
+			Vector3(float(dx), FOREST_WALL_HEIGHT * 0.5, -28.0), wall_col)
+	_minimap_box(Vector3(3.4, 0.6, 0.5), Vector3(0.0, 3.1, -28.0), wall_col)
+	# Saida verde no vao central das baias.
+	_minimap_box(Vector3(1.4, 0.2, 1.4), Vector3(0.0, 0.1, -34.0), Color(0.25, 1.0, 0.45))
 
 
 func _minimap_box(size: Vector3, pos: Vector3, color: Color) -> void:
@@ -3320,6 +3574,12 @@ func _capture_begin() -> void:
 	if _capture_mirror:
 		_capture_yaw += 180.0
 	_capture_lock = true
+	# D-1256: placas de nome são artefato do enquadramento da foto, não do
+	# visual da mata. Ocultar SÓ na captura — o jogo continua igual (D-1074/D-1105).
+	for entry in _name_labels:
+		var tag := entry.get("node") as Node3D
+		if tag != null and is_instance_valid(tag):
+			tag.visible = false
 	_apply_capture_transform(0.0)
 
 	var shot := _cli_value("--shot")

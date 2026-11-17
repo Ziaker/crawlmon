@@ -44,7 +44,7 @@
 
 1. **Nomes dos Elementos Obrigatoriamente em Inglês:**
    - Nenhum nome em português para elementos.
-   - Lista fechada dos 11 elementos oficiais do Crawlmon:
+   - Lista fechada dos 12 elementos oficiais do Crawlmon:
      1. **Neutral** (substitui o antigo *Physical/Físico* nos elementos)
      2. **Fire**
      3. **Water** (substitui em definitivo *Ice/Gelo*; apenas Water, sem ter ambos)
@@ -56,9 +56,10 @@
      9. **Nature** (D-396)
      10. **Sound**
      11. **Earth**
+     12. **Mystic** (atualizado: D-398)
 
 2. **Re-design dos Glifos dos Elementos:**
-   - **Neutral:** apenas um **círculo completamente preenchido (`●`)**. Cor base: Slate/Prata (`#cbd5e1`).
+   - **Neutral:** glifo **Diamond Core** (losango facetado chanfrado com anel geométrico e núcleo sólido central), substituindo o círculo preenchido (atualizado: D-440). Cor base: Slate/Prata (`#cbd5e1`).
    - **Water:** gota d'água fluida e nítida com reflexo/onda interna (substitui o floco de gelo).
    - **Wind:** lâminas curvas aerodinâmicas de vento cortante em rajada (*gust/swoosh*).
    - **Psychic:** terceiro olho arcano com anéis de ressonância psicocinética refinados.

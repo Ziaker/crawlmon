@@ -760,7 +760,7 @@ func _draw_confirm_char(s: float, center: Vector2) -> void:
 	for e_val in spec.get("elements", []):
 		var einfo := PreGameDraw.elem_info(int(e_val))
 		elem_names.append(str(einfo.get("name", "")).capitalize())
-	var elem_str := " / ".join(elem_names) if not elem_names.is_empty() else "Physical"
+	var elem_str := " / ".join(elem_names) if not elem_names.is_empty() else "Neutral"
 	draw_string(mono, Vector2(text_x, top + 84.0 * s),
 		"Height: %.2fm | Innate: %s" % [float(spec.get("height", 0.0)), elem_str],
 		HORIZONTAL_ALIGNMENT_LEFT, -1.0, maxi(6, int(round(8.5 * s))), PreGameDraw.TEXT_SUB)

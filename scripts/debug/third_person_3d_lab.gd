@@ -11,8 +11,10 @@ extends Node3D
 const DQT_PROFILES := preload("res://scripts/combat/dqt_model_profiles.gd")
 const VIGNETTE_SHADER := preload("res://shaders/vignette.gdshader")
 const MODEL_GAIT := preload("res://scripts/overworld/model_gait.gd")
-const GAIT_SCALE_MIN := 0.5
-const GAIT_SCALE_MAX := 3.0
+## The creator never asked for sped-up clips (the 3x was a side effect of the sync): animations play
+## at their natural speed. Any other range is the creator's decision.
+const GAIT_SCALE_MIN := 1.0
+const GAIT_SCALE_MAX := 1.0
 const WALK_DUST_SCRIPT := preload("res://scripts/overworld/vfx/overworld_walk_dust.gd")
 
 const WALL_HEIGHT := 4.6
@@ -165,6 +167,8 @@ func _ready() -> void:
 	_build_exit()
 	_build_vignette()
 	_build_hud()
+	# D-1269: no model enters another model, in any overworld scene.
+	load("res://scripts/overworld/body_separation.gd").attach(self)
 
 
 func _process(delta: float) -> void:
@@ -272,11 +276,11 @@ func _physics_process(delta: float) -> void:
 		elif player_ap != null:
 			player_ap.speed_scale = 1.0
 			_apply_ground_lift(player_ap, player_model, "idle")
+	_update_floor_tilt(delta)  # D-1270: after the gait lift, which rewrites model.position.y
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
-	_update_floor_tilt(delta)  # D-1270: after the gait lift, which rewrites model.position.y
 		if _dialogue_focus != null:
 			return
 		if Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
@@ -622,6 +626,7 @@ func _make_model(model_id: String, target_height: float) -> Node3D:
 		return root
 
 	var glb := (load(path) as PackedScene).instantiate() as Node3D
+	preload("res://scripts/common/eye_shine.gd").apply(glb)  # olhos pretos sem brilho (Pikachu/Eevee)
 	var dqt := DQT_PROFILES.get_profile(model_id)
 	var parent: Node3D = root
 	if dqt.is_empty():
@@ -740,6 +745,10 @@ func _play(ap: AnimationPlayer, name: String) -> void:
 func _play_move(ap: AnimationPlayer, moving: bool) -> void:
 	if ap == null:
 		return
+	if moving and ap.has_meta("gait_clip"):
+		# D-1264: _apply_gait (called right after) owns walk/run while moving. Playing "walk"
+		# here and "run" there every frame restarted the clip at 0 and froze the animation.
+		return
 	if moving and ap.has_animation("walk"):
 		_play(ap, "walk")
 	elif not moving and ap.has_animation("idle"):
@@ -793,15 +802,6 @@ func _apply_ground_lift(ap: AnimationPlayer, model: Node3D, clip: String) -> voi
 		return
 	var gait := _gait_of(ap, model)
 	model.position.y = float(gait[clip]["sink"]) if gait.has(clip) else 0.0
-
-
-func _play_idle(ap: AnimationPlayer) -> void:
-	if ap != null and ap.has_animation("idle"):
-		_play(ap, "idle")
-
-
-# --- Enemy and exit ----------------------------------------------------------
-
 	model.set_meta("_lift", model.position.y)
 
 
@@ -849,6 +849,15 @@ func _update_floor_tilt(delta: float) -> void:
 		var fb := f.get("node") as CharacterBody3D
 		if fb != null and f.get("model") is Node3D:
 			_tilt_model_to_floor(fb, f["model"] as Node3D, fb.get_floor_normal() if fb.is_on_floor() else Vector3.UP, _capsule_radius_of(fb), delta)
+
+
+func _play_idle(ap: AnimationPlayer) -> void:
+	if ap != null and ap.has_animation("idle"):
+		_play(ap, "idle")
+
+
+# --- Enemy and exit ----------------------------------------------------------
+
 func _build_enemy() -> void:
 	var body := CharacterBody3D.new()
 	body.name = "SlimeEnemy"
@@ -1674,7 +1683,7 @@ func _update_door_prompt() -> void:
 	var near := false
 	if not hit.is_empty():
 		var point: Vector3 = hit["position"]
-		near = point.distance_to(Vector3(17.7, 0.9, -10.0)) < 1.5
+		near = point.distance_to(Vector3(0.0, 0.9, -36.0)) < 1.5
 	_door_near = near
 	if _door_used:
 		_door_prompt.visible = near

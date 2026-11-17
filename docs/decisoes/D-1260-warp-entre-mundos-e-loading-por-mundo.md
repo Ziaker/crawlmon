@@ -16,8 +16,20 @@ Estado: **respondida em parte; visual pendente.** Relacionadas: D-1214, D-1219, 
 1. Só a Murky Forest no gate; linhas LOCKED removidas. Estrutura em dados por mundo (nome + paleta), nada hardcoded.
 2. Mecânica de nature/expedição inalterada (D-1219).
 
+## Respostas da 2ª rodada (frases literais)
+- Ondas: "cada uma surge a cada segundo e se separam em forma meio funil pra indicar o raio que vai surgir do céu".
+- Loading indo ao Hub: manter as cores atuais (#051322, #d6fa66, #f0c57e) — "perfeito".
+- Escolha do lugar: painel só como escolha, fecha ao confirmar — "sim".
+- Portal: "mas é JUSTO ESSE, por que seria outro???" (é o próprio Expedition Gate, mudando para a cor do mundo) e "adicione uma cutscene com faixas pretas quando o jogador confirmar pra vermos o portal surgindo em forma procedural de espiral".
+- Placa: "similar da forma que é feita as caixas de dialogo, badges dos icones dos personagens (as redondas obviamente das caixas de dialogo) são estampadas no lado inferior direito extremo, tendo uma para cada personagem presente no grupo) em uma animação com entrada e impacto".
+- Paleta do loading: aceita a extraída (verde #298c59, roxo #472e6b, verde escuro #144d42) — resposta implícita à pergunta 1, a confirmar.
+
 ## Pendente (perguntar antes de implementar)
 - Como o portal surge (animação, onde, forma, mesmo Gate mudando de cor ou novo) e como se escolhe o lugar.
 - Quantas ondas; cores do loading ao ir para o Hub.
 - Placa: tamanho, posição, tipografia, cores, animação.
 - Paleta de cada mundo: valores extraídos da cena (a confirmar pelo criador).
+
+## Estado da implementação (2026-11-16)
+Feito: `scripts/world/world_defs.gd` (nome+paleta por mundo), gate só com Murky Forest, portal do próprio gate abrindo em espiral com as cores do mundo sob faixas pretas, caminhada para dentro, loading com ondas por segundo em funil (cores do mundo, sem pontinhos) e placa com badges, gancho de chegada na Murky Forest. Debug: `--warp=murky_forest [--party] [--nht-load-min=ms] --nht-shots=<dir> --nht-summary --nht-quit`.
+Fechado nesta sessão: câmera top-down até o pouso (hub e mundos) com o que cobre a personagem ficando transparente; loading com as ondas do próprio carimbo em funil de perspectiva; placa no estilo da DialogueBox (card C, sem nameplate) com badges carimbados (opção A) metade dentro, metade fora na ponta inferior direita. O criador aprovou o resultado.

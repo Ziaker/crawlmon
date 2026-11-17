@@ -1,5 +1,5 @@
 window.MOVE_FORGE_DATA = {
- "generated": "2026-11-15T18:03:38",
+ "generated": "2026-11-17T07:20:42",
  "elements": [
   {
    "id": 0,
@@ -80,7 +80,7 @@ window.MOVE_FORGE_DATA = {
    "has_behavior": false,
    "has_vfx_script": false,
    "texts": {
-    "effect_line": "ARMOR for 8 s: the first Move that hits is taken without interruption, contact effects or knockback (not K.O.); the badge breaks | Poison and Burn do not break it | 1 ATB | 10 MP",
+    "effect_line": "ARMOR for 8 s: the first Move that hits is taken without interruption, contact effects or knockback (not K.O.); the badge breaks | Nature and Burn do not break it | 1 ATB | 10 MP",
     "short_effect": "ARMOR 8 s | self",
     "description": "The user flexes until the muscles turn to metal and gains ARMOR.",
     "mechanics": "Self status move: the user's body hardens into metal and gains the ARMOR badge for 8 seconds.",
@@ -338,9 +338,9 @@ window.MOVE_FORGE_DATA = {
    "has_behavior": false,
    "has_vfx_script": false,
    "texts": {
-    "effect_line": "5 + MAG magic damage (mitigated by SPI) | Steals positive buffs, shield and magic immunity before damage | 16.3u range | 2 ATB",
+    "effect_line": "5 + MAG magic damage (mitigated by WIS) | Steals positive buffs, shield and magic immunity before damage | 16.3u range | 2 ATB",
     "short_effect": "5+MAG | steals badges",
-    "description": "A magic spear rises from the ground and strikes at 16.3 units. On contact it steals positive buffs, shield and magic immunity before dealing 5 + MAG magic damage, mitigated by SPI.",
+    "description": "A magic spear rises from the ground and strikes at 16.3 units. On contact it steals positive buffs, shield and magic immunity before dealing 5 + MAG magic damage, mitigated by WIS.",
     "mechanics": "Siphons protective shields, positive buffs, and invulnerabilities from the target before inflicting piercing magical damage.",
     "visual": "Translucent spectral spear with reverse cyan siphon vortex swirling backward along the shaft toward the user.",
     "motion": "Stationary extended thrust. Caster projects an elongated ethereal spearhead across 16.3 units.",
@@ -1941,9 +1941,9 @@ window.MOVE_FORGE_DATA = {
    "has_behavior": false,
    "has_vfx_script": false,
    "texts": {
-    "effect_line": "Water/Ice damage x1.0 ATK | projectile | 2 ATB",
-    "short_effect": "x1.0 Water/Ice",
-    "description": "A water/ice projectile move. Deals x1.0 ATK damage.",
+    "effect_line": "Water damage x1.0 ATK | projectile | 2 ATB",
+    "short_effect": "x1.0 Water",
+    "description": "A water projectile move. Deals x1.0 ATK damage.",
     "mechanics": "Fires a continuous water jet at one enemy for 100% Water magical damage. On a successful hit, the jet bounces to the nearest living enemy measured from the last target for 75% damage after 0.3s, then to the next nearest for 50% after 0.6s. Each bounce is a normal hit with weakness, critical and evasion (manual and automatic); if a bounce is evaded, the chain stops. A target that dies before the jet reaches it stops the chain; a target that dies from this move's hit still lets it continue. Each enemy is hit once, with at most two bounces; with only one enemy alive there is no bounce. The bounces grant no extra ATB or Burst: the whole chain is one 2 ATB + 5 MP move.",
     "visual": "A blue water ogive with a pale cyan core charges in front of the caster, spinning and compressing while the strike is held; on release it stretches into a continuous, slightly curved jet with a white-cyan core, a blue sheath, a helical water ribbon and a trail of droplets, which crosses the field to the target; on contact the jet erupts into a radial water explosion with a foam flash, a sphere of water sheets and droplets and a thin ground ring; the jet then leaps from the last target to the next enemy with the same water body, up to two bounces, and each impact folds back into falling droplets and mist that fade completely.",
     "motion": "Stationary. The caster stays in place; the jet leaves from the charge in front of the body, crosses to the target and, on a hit, bounces from the last target to the next enemy.",
@@ -2183,6 +2183,7 @@ window.MOVE_FORGE_DATA = {
    "shaders/abra_hexagon.gdshader",
    "shaders/abra_lightning.gdshader",
    "shaders/armor_chrome.gdshader",
+   "shaders/boost_card_aura.gdshader",
    "shaders/bubble_shield_facets.gdshader",
    "shaders/bubble_shield_paper.gdshader",
    "shaders/bubble_shield_shell.gdshader",
@@ -2270,6 +2271,8 @@ window.MOVE_FORGE_DATA = {
    "shaders/proto/shield_panel.gdshader",
    "shaders/proto/shield_ring.gdshader",
    "shaders/ring.gdshader",
+   "shaders/shell_ground_glow.gdshader",
+   "shaders/shell_shine.gdshader",
    "shaders/slash.gdshader",
    "shaders/smt_sigil.gdshader",
    "shaders/smt_stage_vfx.gdshader",

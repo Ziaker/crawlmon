@@ -27,6 +27,12 @@
 - **Rendimento** — Explorar deve render mais que repetir lutas fáceis. A primeira compra é viável sem drop de prata. O valor do ouro deve manter relevantes as compras nas próximas saídas.
 - **Partida** — A mochila preparada no Hub chega à próxima expedição com as compras. Equivalências numéricas, preços, condições dos drops e reposição do kit inicial seguem em aberto. Ver [D-1253](decisoes/D-1253-saldo-comum-e-balanceamento-dos-cascos.md).
 
+## Decisão D-1261 — Novo jogo só com o líder; recrutas escolhidos no Gate (2026-11-16)
+
+- **Party inicial** — Só o líder, sem aliado (substitui o "aliado inicial complementar" da D-1207 C1 / D-1208).
+- **Recrutar** — Employ em combate (D-1229) ou conversando com NPC do hub (direto, sem chance nem minigame; só espécies com ficha pronta).
+- **Equipe da expedição** — Líder + 2 vagas, montada no HUD do Gate: 3 badges, lista de recrutados com o nível no canto superior direito, arrastar da lista para vaga vazia. O aliado anda até o jogador; ao sair da equipe volta ao ponto de origem. Ver [D-1261](decisoes/D-1261-aliado-escolhido-no-hub-novo-jogo-so-o-lider.md).
+
 ## Decisão D-1252 — Cascos de bronze, prata e ouro (2026-11-16)
 
 - **Bronze Shell** — Cascos de bronze que caem de inimigos normais.
@@ -284,10 +290,10 @@ Hierarquia usada para *ler*, não para decidir: o que o criador disse por últim
 - **Buffs/debuffs [GDD R10-Q4]:** por **estágios discretos**, não percentuais arbitrários. **[CÓDIGO]** estágios −2..+2 para ataque, defesa e velocidade, **25% por estágio** (ataque ×0,4 mín., velocidade ×0,3 mín.), zerados no fim da batalha. **[PENDENTE]** duração, acumulação e demais atributos.
 - **Atributos [GDD R10–R11 / D-269 / D-390 / D-391]:** Seis atributos oficiais (**STR, MAG, VIT, WIS, AGI, LUK**). O atributo Spirit foi oficialmente renomeado para **WIS** (*Wisdom*) (D-391). Sem escala 1–100 (D-269). No nível 1, cada espécie possui um orçamento exato de **15 pontos base** distribuídos entre os seis atributos proporcionalmente aos jogos de origem (D-390).
 - **Escala de HP e MP [D-391 / D-392]:** O HP aumenta com a Vitality (VIT) e o MP aumenta com a Wisdom (WIS) (D-391). Fórmula fechada de HP anti-hitkill: $\text{HP} = 25 + 10 \times \text{Nível} + 25 \times \lfloor\frac{\text{Nível}}{10}\rfloor + 2 \times \text{VIT}$ (+10 HP/nível, +25 de bônus adicional nos marcos 1, 10, 20, 30... e +2 HP por ponto de VIT) (D-392).
-- **Regeneração de MP e Custos [D-413]:** Recuperação de **+4 MP a cada 8,0 segundos** em combate ativo (até o teto de MP máximo). O temporizador de regeneração é individual para cada personagem (aliados e inimigos) e é zerado imediatamente toda vez que o combatente gasta MP executando um move. O Abra possui piso mínimo obrigatório de **20 MP** ($\\text{MP} \\ge 20$). Todos os moves possuem custos calibrados de MP (0 MP para básico Tackle, 2–3 MP leves, 4–6 MP médios, 7–9 MP fortes/AoE). Uma HUD visual indica o progresso do temporizador individual de recarga.
-- **Progressão e Alocação de Nível [D-394 / D-1223 / D-1224]:** O líder (jogador) ganha **1 ponto livre** para alocar por nível comum e **3 pontos livres** nos marcos a cada 10 níveis (10, 20, 30...). Aliados (IA) não possuem distribuição manual: acumulam `proficiency_points` por ações reais em combate (+3 STR físico, +3 MAG mágico, +3 WIS status/cura, +3 VIT Guard / +1 VIT golpe sofrido, +3 AGI Evade, +2 LUK crítico; 1× por execução, sem contar `step()`), modulados por Nature (+2 por mod positivo) e Tactics (+1 por postura), escolhendo 1 ponto por vez (zerando apenas o stat vencedor antes de recalcular HP/MP máximos) e exibindo os ganhos na tela de Level Up (D-394, D-1223). A etapa `LV` de `PostCombatScreen` aplica coreografia estrutural simétrica para líder e aliados (desdobramento diagonal dos cartões, extrusão das barras, tipografia com corte sólido de cor, odômetro vertical nos números, inundação da aba colorida + golpe lateral físico nas linhas e pílulas sólidas verde-lima `+N`, sem anéis/faíscas superficiais nem flash de tela) (D-1224).
-- **Natures Iniciais e IA [D-271 / D-393]:** Catálogo inicial de **8 Natures** (Hardy, Docile, Brave, Timid, Modest, Calm, Jolly, Adamant) com modificadores *flat* de −3 a +3 somando sempre exatamente zero. Natures não alteram taxas de crescimento por nível (D-271). Influenciam o comportamento da IA (reserva de ATB e agressividade), com precedência integral da postura do menu Tactics (D-001 / D-393).
-- **Identificação dos Moves — Três Ícones e Conteúdo Técnico [D-395 / D-396 / D-397 / D-398 / D-403 / D-404 / D-406 / D-407 / D-408 / D-409 / D-410 / D-411 / D-412 / D-414 / D-415 / D-416 / D-417 / D-419 / D-420]:** Cada Move exibe até 3 ícones: (1) **Tipo de Move** (Physical [Starburst vermelho], Magical [Sparkle 4 pontas azul], Guard [Escudo sólido preenchido cor Neutral], Dodge [Sidestep Swerve << em âmbar #fcb900, distinto de Electric], ou nenhum para puro status); (2) **Alcance / Entrega** (Seta ↑ para Melee, Traço — para Mid Range, Seta ↓ para Long Range, Círculo aberto grande ○ sem preenchimento para Efeito em Área sem trajeto [como Media], ou nenhum para status — todas obrigatoriamente com **fundo branco** [D-396/D-403/D-404]); (3) **Elemento** (glifo vetorial com apoio visual nítido e nome em inglês [D-397/D-398/D-403/D-404/D-406/D-407/D-408/D-409/D-410/D-411/D-412/D-414], com Neutral sendo círculo preenchido, Water substituindo Ice, Electric com amarelo elétrico luminoso [#fde047], Wind [fundo #4ff7ba, vórtice em espiral monolítico em preto sólido com canal esculpido em negativo ratificado em D-414], Mystic [Bannō Sigil de 8 pontas em fundo #65B5B3, 12º elemento Almighty], Sound sem arcos, Psychic com espiral hipnótica P5). Todos os 12 elementos do sistema estão 100% oficializados e congelados. Conforme D-415/D-416/D-419, os fundos dos ícones utilizam cores vibrantes e limpas em blocos flat (sem bordas/outlines). Na hotbar inferior e nos elementos à frente do nome no painel direito, os blocos adotam formato de paralelogramo inclinado para a direita (`/ /`). Na ficha de inspeção do move, o nome é movido para o topo e os ícones de tipo e alcance ficam posicionados em linha ao seu lado direito na mesma altura da fonte (inclusive os blocos de ATB, MP e POWER), liberando a área inferior para ficha técnica detalhada. Conforme **D-417**, todas as fichas e cards de moves em todas as HUDs do jogo (`hud_post_combat.html`, `status_screen.gd`, `battle_hud.gd`, `skill_info_panel.gd`) passam a adotar o padrão oficial consagrado: fundo flat na cor sólida do elemento, glifo do elemento estampado em marca d'água translúcida em segundo plano atrás do nome, tipografia Teko bold ampliada, trio de badges e indicação explícita dos custos de ATB e MP. Conforme **D-420**, é estritamente proibido repetir em textos informativos dados que já estão evidentes na interface (custos de ATB/MP, Power e Elemento); o espaço deve detalhar: (1) O que o move faz (efeito/mecânica real), (2) Seu visual (VFX, iluminação e estética 3D), (3) Seu deslocamento (cinemática de avanço, recuo, feixe ou projétil) e (4) Wind-up (tempo em segundos e risco de interrupção). A visão expandida (Modal Z) organiza essas informações em um dossiê técnico estruturado em seções dedicadas (Mechanics, Visuals, Motion, Wind-up e Tactical Synergy), sem vincular o move a espécies específicas (D-235).
+- **Regeneração de MP e Custos [D-413]:** Recuperação de **10 + bônus de MAG por pulso** — `MAG/5` (máximo +5) até MAG 25, depois +1 a cada 10 MAG — **a cada 8,0 segundos** em combate ativo (até o teto de MP máximo); com o **ATB cheio** o relógio do pulso corre **1,75×** (~4,57 s) (atualizado: D-1062, D-1070). O temporizador de regeneração é individual para cada personagem (aliados e inimigos) e é zerado imediatamente toda vez que o combatente gasta MP executando um move. O Abra possui piso mínimo obrigatório de **20 MP** ($\\text{MP} \\ge 20$). Todos os moves possuem custos calibrados de MP (0 MP para básico Tackle, 2–3 MP leves, 4–6 MP médios, 7–9 MP fortes/AoE). Uma HUD visual indica o progresso do temporizador individual de recarga.
+- **Progressão e Alocação de Nível [D-394 / D-1223 / D-1224]:** O líder (jogador) ganha **1 ponto livre** para alocar por nível comum e **3 pontos livres** nos marcos a cada 5 níveis (5, 10, 15, 20...) (atualizado: D-1225). Aliados (IA) não possuem distribuição manual: acumulam `proficiency_points` por ações reais em combate (+3 STR físico, +3 MAG mágico, +3 WIS status/cura, +3 VIT Guard / +1 VIT golpe sofrido, +3 AGI Evade, +2 LUK crítico; 1× por execução, sem contar `step()`), modulados por Nature (+2 por mod positivo) e Tactics (+1 por postura), escolhendo 1 ponto por vez (zerando apenas o stat vencedor antes de recalcular HP/MP máximos) e exibindo os ganhos na tela de Level Up (D-394, D-1223). A etapa `LV` de `PostCombatScreen` aplica coreografia estrutural simétrica para líder e aliados (desdobramento diagonal dos cartões, extrusão das barras, tipografia com corte sólido de cor, odômetro vertical nos números, inundação da aba colorida + golpe lateral físico nas linhas e pílulas sólidas verde-lima `+N`, sem anéis/faíscas superficiais nem flash de tela) (D-1224).
+- **Natures Iniciais e IA [D-271 / D-393]:** Catálogo de **18 Natures** (as 8 iniciais: Hardy, Docile, Brave, Timid, Modest, Calm, Jolly, Adamant) com modificadores *flat* de −3 a +3 somando sempre exatamente zero (atualizado: D-1216). Natures não alteram taxas de crescimento por nível (D-271). Influenciam o comportamento da IA (reserva de ATB e agressividade), com precedência integral da postura do menu Tactics (D-001 / D-393).
+- **Identificação dos Moves — Três Ícones e Conteúdo Técnico [D-395 / D-396 / D-397 / D-398 / D-403 / D-404 / D-406 / D-407 / D-408 / D-409 / D-410 / D-411 / D-412 / D-414 / D-415 / D-416 / D-417 / D-419 / D-420]:** Cada Move exibe até 3 ícones: (1) **Tipo de Move** (Physical [Starburst vermelho], Magical [Sparkle 4 pontas azul], Guard [Escudo sólido preenchido cor Neutral], Dodge [Sidestep Swerve << em âmbar #fcb900, distinto de Electric], ou nenhum para puro status); (2) **Alcance / Entrega** (Seta ↑ para Melee, Traço — para Mid Range, Seta ↓ para Long Range, Círculo aberto grande ○ sem preenchimento para Efeito em Área sem trajeto [como Media], ou nenhum para status — todas obrigatoriamente com **fundo branco** [D-396/D-403/D-404]); (3) **Elemento** (glifo vetorial com apoio visual nítido e nome em inglês [D-397/D-398/D-403/D-404/D-406/D-407/D-408/D-409/D-410/D-411/D-412/D-414], com Neutral sendo **Diamond Core** (atualizado: D-440), Water substituindo Ice, Electric com amarelo elétrico luminoso [#fde047], Wind [fundo #4ff7ba, vórtice em espiral monolítico em preto sólido com canal esculpido em negativo ratificado em D-414], Mystic [Bannō Sigil de 8 pontas em fundo #65B5B3, 12º elemento Almighty], Sound sem arcos, Psychic com espiral hipnótica P5). Todos os 12 elementos do sistema estão 100% oficializados e congelados. Conforme D-415/D-416/D-419, os fundos dos ícones utilizam cores vibrantes e limpas em blocos flat (sem bordas/outlines). Na hotbar inferior e nos elementos à frente do nome no painel direito, os blocos adotam formato de paralelogramo inclinado para a direita (`/ /`). Na ficha de inspeção do move, o nome é movido para o topo e os ícones de tipo e alcance ficam posicionados em linha ao seu lado direito na mesma altura da fonte (inclusive os blocos de ATB, MP e POWER), liberando a área inferior para ficha técnica detalhada. Conforme **D-417**, todas as fichas e cards de moves em todas as HUDs do jogo (`hud_post_combat.html`, `status_screen.gd`, `battle_hud.gd`, `skill_info_panel.gd`) passam a adotar o padrão oficial consagrado: fundo flat na cor sólida do elemento, glifo do elemento estampado em marca d'água translúcida em segundo plano atrás do nome, tipografia Teko bold ampliada, trio de badges e indicação explícita dos custos de ATB e MP. Conforme **D-420**, é estritamente proibido repetir em textos informativos dados que já estão evidentes na interface (custos de ATB/MP, Power e Elemento); o espaço deve detalhar: (1) O que o move faz (efeito/mecânica real), (2) Seu visual (VFX, iluminação e estética 3D), (3) Seu deslocamento (cinemática de avanço, recuo, feixe ou projétil) e (4) Wind-up (tempo em segundos e risco de interrupção). A visão expandida (Modal Z) organiza essas informações em um dossiê técnico estruturado em seções dedicadas (Mechanics, Visuals, Motion, Wind-up e Tactical Synergy), sem vincular o move a espécies específicas (D-235).
 - **[CONVERSA 2026-11-06] [D-347]** O HP e a barra atualizam **imediatamente** ao receber dano ou cura. O odômetro rolante (D-048) saiu do fluxo ativo e foi guardado em `scripts/legacy/rolling_hp_odometer.gd`, com teste em `tests/legacy/`; o toggle saiu do menu.
 
 - **Painel de Combat Gauges, Atributos e Nature Integrada [D-421]:**
@@ -453,7 +459,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 - **[D-323]** **simisear, simipour, throh, amoonguss, stunfisk e aromatisse** saem da lista usável do manifesto por não terem sprite overworld; continuam no histórico e nenhum asset é apagado. Contagem usável: **297**.
 
 ### 14.6 MP, HP e descanso
-- **[GDD R11-Q3, R12-Q1/Q2/Q3, R13-Q1/Q2/Q3, R14-Q1/Q2/Q3, R15–R17]** Existe **MP** separado: Moves mágicos/especiais gastam MP **além** de ATB/Burst; custo-base comum com exceções; MP máx = Magia + nível; MP e HP **persistem entre combates da mesma dungeon**; MP é restaurado ao máximo no **início de cada exploração** e nos **pontos de descanso** (que também recuperam HP, quantidade pendente — R32-Q2); MP descontado na ativação (R14-Q1).
+- **[GDD R11-Q3, R12-Q1/Q2/Q3, R13-Q1/Q2/Q3, R14-Q1/Q2/Q3, R15–R17]** Existe **MP** separado: Moves mágicos/especiais gastam MP **além** de ATB/Burst; custo-base comum com exceções; MP máx = 10 + 2×WIS + nível (atualizado: D-391); MP e HP **persistem entre combates da mesma dungeon**; MP é restaurado ao máximo no **início de cada exploração** e nos **pontos de descanso** (que também recuperam HP, quantidade pendente — R32-Q2); MP descontado na ativação (R14-Q1).
 - **Recuperação por ATB cheio [GDD R14-Q2, R15, R16, R17-Q5]:** com ATB normal 5/5, **25% do MP máximo a cada 3 s consecutivos**, arredondado para baixo; o contador zera ao sair de 5/5 e fica zerado com MP cheio; **pausa durante o menu Tactic**.
 - **[CÓDIGO]** Hoje o jogo mostra `MP N/D`: MP **não** existe ainda.
 
@@ -486,7 +492,7 @@ Registradas, **ainda não implementadas** (ver §13 para a ordem de trabalho).
 |---|---:|---:|---:|---|---|
 | Abra (líder) | 32 | 12 | 0,50 | Trevas, Som | Confusão 2, Raio Psíquico 3, Onda de Choque 2, Teleporte Rápido 1, Media 2, Sukunda 1, Megido 3 |
 | Pancham | 45 | 10 | 0,45 | Psíquico, Vento | Soco Rápido 2, Golpe de Caratê 2, Quebra de Telha 3, Provocação 1, Tarukaja 2, Hassou Tobi 3 |
-| Gible (inimigo) | 38 | 9 | 0,42 | Água/Gelo | Mordida 1, Tiro de Areia 2, Fúria do Dragão 3, Investida Subterrânea 2, Rakunda 1, Mabufula 2, Titanomachia 3 |
+| Gible (inimigo) | 38 | 9 | 0,42 | Water (atualizado: D-397) | Mordida 1, Tiro de Areia 2, Fúria do Dragão 3, Investida Subterrânea 2, Rakunda 1, Mabufula 2, Titanomachia 3 |
 
 - Fora do combate: modelos `TEAM_DISTANCE = 30` entre as equipes; escala de modelo 2,5 (inimigos ×1,8); posições do grupo fixas na arena.
 - Tipo de golpe: corpo a corpo (corre), projétil (voa; "no chão" rola pelo piso), lançado (acerta de onde está), status (sem dano). Cada golpe tem seu id (`move_id`) para efeitos e tempos próprios.
@@ -1061,9 +1067,9 @@ Três novos arquivos de decisão (D-114, D-115 e D-116); duas notas aditivas em 
 
 ### 31.2 Comparação com as implementações
 
-- **ATB:** `Combatant.tick()` já preenche ATB conforme `speed`, derivada de `base_speed`. Ainda não existe integração dos cinco atributos permanentes.
+- **ATB:** `Combatant.tick()` já preenche ATB conforme `speed`, derivada de `base_speed`. Os seis atributos permanentes (STR, MAG, VIT, WIS, AGI, LUK) estão integrados em `combatant.gd` (atualizado: D-131, D-391).
 - **Trajetos de ataque:** `Battle.travel_seconds()` varia por duração-base e passos táticos (D-018), sem dependência de Agilidade. `AttackMotion.update()` desenha o deslocamento no tempo de `TRAVEL`. D-117 acrescenta uma exigência que **não está implementada**.
-- **Elementos:** `Element.Type` inclui Físico, Fogo, Água/Gelo, Raio, Psíquico, Veneno, Som, Terra, Vento, Luz e Trevas. D-118 muda a **referência de design**, não aprova modificar o catálogo existente ou as fraquezas já cadastradas.
+- **Elementos:** `Element.Type` tem 12 elementos, com nomes exclusivamente em inglês: Neutral, Fire, Water, Electric, Wind, Psychic, Light, Dark, Nature, Sound, Earth e Mystic (atualizado: D-396, D-397, D-398; os ids internos do enum seguem `FISICO`, `AGUA_GELO` e `VENENO`). D-118 muda a **referência de design**; o catálogo foi revisado e fechado nesses 12 elementos (atualizado: D-396, D-397, D-398).
 
 ### 31.3 Pendências e preservação
 
@@ -1118,7 +1124,7 @@ Um registro novo D-119, nota aditiva em D-117, índice e regras consolidadas atu
 ### 33.2 Prevalência e compatibilidade das regras
 
 1. **Referências das espécies versus elementos (D-120/D-128/D-118):** atributos biológicos originais são referência para o perfil de espécie, **não** conversão elementar Pokémon. Afinidades seguem design inspirado principalmente em SMT; os elementos/fraquezas já cadastrados continuam até revisão explícita.
-2. **Identidade e limite permanente (D-121/D-129):** pequenas variações aleatórias de atributos por indivíduo coexistem com Nature/progressão, mas os cinco atributos permanentes permanecem **entre 1 e 100**. Ainda faltam amplitude, distribuição, seed e resolução do teto.
+2. **Identidade e limite permanente (D-121/D-129):** pequenas variações aleatórias de atributos por indivíduo coexistem com Nature/progressão, mas os seis atributos permanentes (STR, MAG, VIT, WIS, AGI, LUK) não têm teto máximo (atualizado: D-131, D-139). Ainda faltam amplitude, distribuição e seed.
 3. **Ofensiva e defesa (D-122 a D-125):** Força fornece dano físico; Magia fornece dano mágico e os efeitos **marcados por Move** como escaláveis. Vitalidade participa de HP máximo com coeficiente por espécie e também da resistência-base, preservando buffs de Defesa e multiplicadores já aprovados. Fórmulas ficam pendentes.
 4. **Agilidade, trajeto e posicionamento (D-126 + D-018/D-117/D-119):** AGI governa preenchimento ATB e reduz o **tempo de deslocamento definido em cada ficha de Move**, inclusive por efeitos que aumentam AGI. Calibrar valores inicialmente contra ritmo atual. Preservar a influência dos passos táticos e o piso da D-018; **a fórmula combinada, os coeficientes, a referência de ATB e o tratamento de limites ainda não foram definidos**.
 5. **Sorte versus esquiva fixa (D-127 × D-005):** a D-005 fixou esquiva automática em **10% por golpe** para todos, valor **ainda implementado**. A decisão posterior D-127 **aprova que Sorte altere essa probabilidade**, além de crítico e chances de aplicação de status. A universalidade da porcentagem fixa passa a ser histórica neste ponto, mas **não se estabelece novo valor/fórmula**. A reação de IA durante trajeto segue outra regra (D-021).
@@ -1127,10 +1133,10 @@ Um registro novo D-119, nota aditiva em D-117, índice e regras consolidadas atu
 
 ### 33.3 Diferenças verificadas no código atual
 
-- `scripts/combat/combatant.gd` ainda usa `base_attack`, `base_speed`, `max_hp`, fraquezas e buffs de ATK/DEF/Velocidade; os cinco atributos permanentes e suas fichas por espécie **não foram integrados**.
+- `scripts/combat/combatant.gd` ainda usa `base_attack`, `base_speed`, `max_hp`, fraquezas e buffs de ATK/DEF/Velocidade; os seis atributos permanentes (`str`, `mag`, `vit`, `wis`, `agi`, `luk`) e suas fichas por espécie já estão integrados (atualizado: D-131, D-391).
 - `scripts/combat/battle.gd` aplica chance fixa de crítico `0.10` e de esquiva automática `0.10`, e `travel_seconds()` considera a duração-base e a posição tática sem AGI; D-126/D-127 ainda não estão implementadas.
 - `scripts/data/skill.gd` não especifica tempo de deslocamento individual em campo de ficha nem escala de efeito mágico por Move; D-119/D-123 são requisitos documentais.
-- `scripts/data/element.gd` contém 11 elementos atuais e não foi modificado.
+- `scripts/data/element.gd` contém 12 elementos atuais (atualizado: D-398).
 
 ### 33.4 Pormenores técnicos ainda não aprovados
 
@@ -1149,7 +1155,7 @@ Dez arquivos individuais de decisões, índice e regras consolidadas atualizados
 
 Referências diretas: [D-130](decisoes/D-130-separacao-vitality-fisico-spirit-magico.md) e [D-131](decisoes/D-131-nomes-atributos-em-ingles.md).
 
-> **2026-11-03.** O criador determinou a separação da defesa física e mágica, pediu um **novo atributo com nome inglês e sigla de três letras** e exigiu nomes de atributos em inglês. O assistente, autorizado a escolher o nome, selecionou **Spirit (SPI)**. A alteração do catálogo foi registrada em D-130 e D-131, sem modificar código. O questionário da Rodada 55 continua com as perguntas remanescentes.
+> **2026-11-03.** O criador determinou a separação da defesa física e mágica, pediu um **novo atributo com nome inglês e sigla de três letras** e exigiu nomes de atributos em inglês. O assistente, autorizado a escolher o nome, selecionou **Spirit (SPI)**, depois renomeado para **WIS** (*Wisdom*) pela D-391. A alteração do catálogo foi registrada em D-130 e D-131, sem modificar código. O questionário da Rodada 55 continua com as perguntas remanescentes.
 
 ### 34.1 Catálogo atualizado — seis atributos permanentes
 
@@ -1158,25 +1164,25 @@ Referências diretas: [D-130](decisoes/D-130-separacao-vitality-fisico-spirit-ma
 | **Strength** | **STR** | Base de dano físico |
 | **Magic** | **MAG** | Base de dano mágico/especial; efeitos escaláveis definidos por Move; MP máximo conforme regra existente |
 | **Vitality** | **VIT** | **Mitigação apenas de dano físico** e HP máximo derivado de Vitality+nível+espécie |
-| **Spirit** | **SPI** | **Mitigação de dano mágico/especial**, analogamente à mitigação física por Vitality |
+| **Wisdom** (antes Spirit) | **WIS** (antes SPI) | **Mitigação de dano mágico/especial**, analogamente à mitigação física por Vitality (atualizado: D-391) |
 | **Agility** | **AGI** | Regeneração ATB e tempo individual de deslocamento dos Moves |
 | **Luck** | **LUK** | Crítico, esquiva automática e chance de aplicação de status |
 
 ### 34.2 Conciliação com histórico e regras previamente aprovadas
 
-1. **D-120, D-125, D-129 e GDD R10-Q1:** o antigo conjunto de **cinco** atributos foi **expressamente ampliado para seis**. A antiga vedação a um segundo atributo de defesa natural dá lugar ao novo **Spirit**, com domínio exclusivo mágico. Preservar redações anteriores como histórico; seguir D-130/D-131 no design atual.
-2. **D-124:** Vitality mantém o cálculo do HP máximo; a restrição 'apenas para dano físico' descreve a **mitigação**, sem aprovar mudança de HP. Spirit **não** recebe função em HP ou MP por analogia.
-3. **D-122/D-123:** Strength e Magic continuam atributos **ofensivos**, distintos de Vitality e Spirit **defensivos**.
-4. **D-125:** os estágios de Defense atuais continuam existindo. A nova divisão VIT/SPI não especifica se os estágios de DEF se aplicam a ambos os tipos de dano, nem sua fórmula, sem decisão ulterior.
-5. **D-129:** faixa permanente **1–100** agora abrange seis atributos; buffs temporários continuam separados. A quantidade de **1 ponto obrigatório por nível** para o protagonista não foi aumentada.
-6. **D-131:** os nomes usados nos atributos da **ficha e UI** devem estar em inglês: STR/MAG/VIT/SPI/AGI/LUK. Não reescrever citações históricas e não presumir renomeação de Moves/efeitos de status fora da ficha.
+1. **D-120, D-125, D-129 e GDD R10-Q1:** o antigo conjunto de **cinco** atributos foi **expressamente ampliado para seis**. A antiga vedação a um segundo atributo de defesa natural dá lugar ao novo **Spirit**, com domínio exclusivo mágico, hoje **WIS** (*Wisdom*) (atualizado: D-391). Preservar redações anteriores como histórico; seguir D-391 no design atual.
+2. **D-124:** Vitality mantém o cálculo do HP máximo; a restrição 'apenas para dano físico' descreve a **mitigação**, sem aprovar mudança de HP. Spirit (**WIS**, D-391) **não** recebe função no HP; o MP máximo passou a ser 10 + 2×WIS + nível (atualizado: D-391).
+3. **D-122/D-123:** Strength e Magic continuam atributos **ofensivos**, distintos de Vitality e Spirit (**WIS**) **defensivos** (atualizado: D-391).
+4. **D-125:** os estágios de Defense atuais continuam existindo. A divisão VIT/WIS (atualizado: D-391) não especifica se os estágios de DEF se aplicam a ambos os tipos de dano, nem sua fórmula, sem decisão ulterior.
+5. **D-129:** a faixa permanente **1–100** foi revogada e os seis atributos não têm teto máximo (atualizado: D-139); buffs temporários continuam separados. A quantidade de **1 ponto obrigatório por nível** para o protagonista não foi aumentada.
+6. **D-131:** os nomes usados nos atributos da **ficha e UI** devem estar em inglês: STR/MAG/VIT/WIS/AGI/LUK (atualizado: D-391). Não reescrever citações históricas e não presumir renomeação de Moves/efeitos de status fora da ficha.
 
 ### 34.3 Pendências expressas
 
-- Fórmula, coeficiente, teto e interação dos estágios de Defesa com mitigação física (VIT) e mágica (SPI).
-- Crescimento/variação individual de Spirit e sua participação na distribuição obrigatória por nível; curva das espécies.
-- Se novos Moves/buffs de Spirit poderão alterar o atributo temporariamente; sem criar novo Move ou status automaticamente.
-- As perguntas da Rodada 55 sobre variação individual, AGI+passos, aplicação probabilística de status e teto da progressão continuam abertas. A antiga pergunta sobre se VIT reduz dano mágico foi respondida pela nova regra: **não**, quem reduz dano mágico é SPI.
+- Fórmula, coeficiente, teto e interação dos estágios de Defesa com mitigação física (VIT) e mágica (WIS) (atualizado: D-391).
+- Crescimento/variação individual de WIS (*Wisdom*) e sua participação na distribuição obrigatória por nível; curva das espécies.
+- Se novos Moves/buffs de WIS poderão alterar o atributo temporariamente; sem criar novo Move ou status automaticamente (atualizado: D-391).
+- As perguntas da Rodada 55 sobre variação individual, AGI+passos, aplicação probabilística de status e teto da progressão continuam abertas. A antiga pergunta sobre se VIT reduz dano mágico foi respondida pela nova regra: **não**, quem reduz dano mágico é WIS (*Wisdom*; antes Spirit/SPI) (atualizado: D-391).
 
 ### 34.4 Escopo
 
@@ -1186,7 +1192,7 @@ Dois documentos novos (D-130/D-131), quatro notas posteriores em decisões hist�
 
 ## 35. Rodada 55 — variação individual, AGI e posicionamento, LUK em status e teto de atributos
 
-> **2026-11-03.** Respostas expressas do criador: **1A, 2A, 3A, 5A**. A antiga questão **4** não foi reapresentada porque o criador já aprovou a separação defensiva: **Vitality (VIT) mitiga apenas dano físico; Spirit (SPI) mitiga dano mágico** (D-130/D-131). As quatro novas escolhas estão documentadas individualmente em D-132 a D-135. Apenas documentação foi atualizada; nenhuma implementação foi autorizada.
+> **2026-11-03.** Respostas expressas do criador: **1A, 2A, 3A, 5A**. A antiga questão **4** não foi reapresentada porque o criador já aprovou a separação defensiva: **Vitality (VIT) mitiga apenas dano físico; Wisdom (WIS, antes Spirit/SPI) mitiga dano mágico** (D-130/D-131; atualizado: D-391). As quatro novas escolhas estão documentadas individualmente em D-132 a D-135. Apenas documentação foi atualizada; nenhuma implementação foi autorizada.
 
 ### 35.1 Matriz de escolhas aprovadas
 
@@ -1199,22 +1205,22 @@ Dois documentos novos (D-130/D-131), quatro notas posteriores em decisões hist�
 
 ### 35.2 Compatibilidade e limites concretos
 
-1. **Variação D-121/D-132:** sortear **uma única vez por indivíduo e persistir** modificadores de **até ±3 pontos por atributo-base**, agora para os seis atributos oficiais STR, MAG, VIT, SPI, AGI, LUK. A faixa final **1–100 (D-129)** permanece; escolha de *clamp* ou novo sorteio nos limites e distribuição de probabilidade não foram aprovadas.
+1. **Variação D-121/D-132:** sortear **uma única vez por indivíduo e persistir** modificadores de **até ±3 pontos por atributo-base**, agora para os seis atributos oficiais STR, MAG, VIT, WIS, AGI, LUK (atualizado: D-391). A faixa final **1–100** da D-129 foi revogada, sem teto máximo (atualizado: D-139); a distribuição de probabilidade foi fixada pela D-144.
 2. **AGI D-018/D-117/D-119/D-126/D-133:** primeiro reduzir **o tempo próprio da ficha de cada Move** pela AGI do Pokémon e pelos efeitos que a aumentam; depois aplicar o ajuste posicional **−0,10 s × (passo do atacante + passo do alvo)** da D-018; finalmente respeitar mínimo **0,25 s**. A curva quantitativa de AGI **não foi definida**; o valor de referência ATB e a calibração continuam pendentes.
 3. **LUK D-012/D-127/D-134:** LUK pode modificar **apenas efeitos de status com chance explicitamente declarada** na ficha. Efeitos garantidos continuam com aplicação garantida, sem nova rolagem por LUK. A decisão **não** elimina a influência de LUK em crítico e esquiva automática; **não** torna debuffs de alvo único esquiváveis.
-4. **Progressão D-129/D-130/D-131/D-135:** a distribuição obrigatória de 1 ponto pelo protagonista ao subir de nível é **dispensada somente quando todos os seis atributos permanentes estão em 100**. O nível continua avançando. Não inventar pontos compensatórios, conversão ou armazenamento dos pontos dispensados; o crescimento automático de aliados permanece conforme decisões anteriores.
-5. **Separação defensiva D-130/D-131 mantida:** VIT para mitigação física e HP máximo; SPI para mitigação mágica. A questão 4 da rodada anterior foi respondida por decisão própria e não recebeu documento repetido nesta rodada.
+4. **Progressão D-129/D-130/D-131/D-135:** a dispensa da D-135 está **superada**: sem teto de 100, o protagonista continua distribuindo **1 ponto obrigatório a cada nível**, mesmo com os seis atributos em 100 (atualizado: D-139). O nível continua avançando. Não inventar pontos compensatórios, conversão ou armazenamento de pontos; o crescimento automático de aliados permanece conforme decisões anteriores.
+5. **Separação defensiva D-130/D-131 mantida:** VIT para mitigação física e HP máximo; WIS para mitigação mágica (atualizado: D-391). A questão 4 da rodada anterior foi respondida por decisão própria e não recebeu documento repetido nesta rodada.
 
 ### 35.3 Diferenças em relação ao código verificado
 
 - `scripts/combat/battle.gd` calcula duração de trajeto considerando tempo-base e passos (`TRAVEL_PER_STEP = 0.10`, `TRAVEL_MIN = 0.25`), **sem primeiro aplicar AGI** como D-133 exige.
 - `scripts/data/skill.gd` ainda não declara explicitamente um campo de tempo de deslocamento próprio de cada Move, nem chance de aplicação por efeito; essas especificações continuam requisitos não implementados.
-- `scripts/combat/combatant.gd` ainda não contém os seis atributos permanentes, suas variações individuais persistentes nem a lógica de progressão do protagonista.
+- `scripts/combat/combatant.gd` já contém os seis atributos permanentes (`str`, `mag`, `vit`, `wis`, `agi`, `luk`); as variações individuais persistentes e a progressão ficam em `crawlmon_attribute_math.gd` (atualizado: D-131, D-391, D-1225).
 - Crítico e esquiva automática ainda usam probabilidades fixas no código de combate (D-127 e D-134 são decisões de design não implementadas).
 
 ### 35.4 Decisões ainda pendentes, sem extrapolação
 
-- Formato da distribuição de probabilidade para ±3 e como preservar 1–100 quando o sorteio excederia o teto/piso; momento exato da geração do indivíduo.
+- Momento exato da geração do indivíduo; a distribuição de ±3 foi fixada pela D-144 e o teto/piso de 100 foi revogado pela D-139 (atualizado).
 - Fórmula da redução do tempo do Move por AGI, valores de referência, arredondamento e interação detalhada com buffs; a **ordem** foi fixada nesta rodada.
 - Probabilidade-base dos efeitos de status não garantidos, contribuição de LUK e definição das fichas de Moves.
 - Tratamento de ganhos automáticos que ultrapassam 100 em aliados, além do caso especial de pontos do protagonista.
@@ -1235,18 +1241,18 @@ Quatro decisões novas (D-132 a D-135), cinco notas aditivas aos documentos anti
 |---|---|---|
 | [D-136](decisoes/D-136-r56-q2-agi-inversamente-proporcional.md) | 2A | Usar proporcionalidade inversa à AGI efetiva, com uma AGI de referência comum a todos os Pokémon. |
 | [D-137](decisoes/D-137-r56-q3-diferenca-luk-aplicador-alvo.md) | 3B | A diferença entre a LUK de quem aplica e a LUK de quem recebe influencia a chance. |
-| [D-138](decisoes/D-138-r56-q4-defense-estagios-fisico-magico.md) | 4A | Manter os estágios atuais de Defense afetando dano físico e mágico, enquanto VIT e SPI fornecem resistências naturais separadas. |
+| [D-138](decisoes/D-138-r56-q4-defense-estagios-fisico-magico.md) | 4A | Manter os estágios atuais de Defense afetando dano físico e mágico, enquanto VIT e WIS (antes SPI) fornecem resistências naturais separadas (atualizado: D-391). |
 
 ### 36.2 Conciliação com decisões anteriores
 
 1. **D-136 / D-117 / D-119 / D-133 / D-018:** tempo individual de Move é reduzido **inversamente à AGI efetiva**, referenciada por um valor comum entre as espécies. Depois, descontar **0,10 s × soma dos passos**, mantendo mínimo **0,25 s**. Não definir numericamente a AGI de referência, arredondamento ou o caso AGI ≤ 0.
 2. **D-137 / D-127 / D-134 / D-012:** a chance de **aplicação de status probabilístico** depende da **diferença entre LUK do aplicador e do alvo**. Apenas efeitos com chance declarada na ficha são afetados; efeitos garantidos continuam garantidos. Não criar Evade para debuffs de alvo único, nem definir fórmula percentual arbitrária.
-3. **D-138 / D-125 / D-130 / D-131:** os estágios existentes de **Defense** atuam tanto sobre dano físico como mágico, mas a resistência **natural** usa **VIT apenas para físico** e **SPI apenas para mágico**. Buffs não são automaticamente divididos em duas categorias.
+3. **D-138 / D-125 / D-130 / D-131:** os estágios existentes de **Defense** atuam tanto sobre dano físico como mágico, mas a resistência **natural** usa **VIT apenas para físico** e **WIS apenas para mágico** (atualizado: D-391). Buffs não são automaticamente divididos em duas categorias.
 
 ### 36.3 Conflito não resolvido — R56-Q1D
 
 - **Mensagem literal:** “1D — O que fazer se a variação de ±3 ultrapassar o limite 1–100? Outra regra.” **Observação:** “n tem problema ultrapassar 100 de status, n precisa se preocupar com isso”.
-- **D-129:** os seis atributos permanentes têm limite de **1–100**. **D-132:** sorteio persistente de até ±3 pontos por atributo. **D-135:** quando todos os seis estão em 100, dispensa-se a distribuição obrigatória na subida de nível. Uma permissão geral para ultrapassar 100 modificaria **D-129 e D-135**; uma exceção somente ao sorteio individual modificaria **D-129/D-132** mas não necessariamente a regra de progressão.
+- **D-129:** os seis atributos permanentes tinham limite de **1–100**, revogado pela D-139 (atualizado). **D-132:** sorteio persistente de até ±3 pontos por atributo. **D-135:** quando todos os seis estão em 100, dispensa-se a distribuição obrigatória na subida de nível — dispensa superada pela D-139 (atualizado). Uma permissão geral para ultrapassar 100 modificaria **D-129 e D-135**; uma exceção somente ao sorteio individual modificaria **D-129/D-132** mas não necessariamente a regra de progressão.
 - **Duas interpretações plausíveis:** (A) apenas a **variação inicial de ±3** pode deixar o atributo temporária ou permanentemente acima de 100, preservando o teto para progressão; (B) o teto 100 deixa de existir como limite geral, inclusive para o crescimento por nível. O criador **não especificou qual alcance**. Nenhuma delas foi selecionada por este registro.
 - **Ação pendente:** perguntar objetivamente qual alcance da ultrapassagem de 100 deve prevalecer; preservar ambas as fontes históricas, sem remendar a D-129 nem a D-135 por suposição.
 
@@ -1254,7 +1260,7 @@ Quatro decisões novas (D-132 a D-135), cinco notas aditivas aos documentos anti
 
 - `scripts/combat/battle.gd`: `travel_seconds()` ainda desconta apenas passos e impõe piso de 0,25 s; não possui redução inversamente proporcional por AGI.
 - `scripts/data/skill.gd`: não há campo formal de tempo individual de Move nem chance de aplicação por efeito.
-- `scripts/combat/combatant.gd`: `def_buff` é aplicado genericamente em `take_damage()`, sem campos de VIT/SPI; não há fórmulas de LUK e progressão ainda integradas.
+- `scripts/combat/combatant.gd`: `def_buff` é aplicado genericamente em `take_damage()`; os campos de VIT e WIS existem (atualizado: D-391) e as fórmulas de LUK e progressão estão em `crawlmon_attribute_math.gd` (atualizado: D-1142, D-1225).
 - **Somente documentação:** 3 novas decisões D-136..D-138, 4 complementos históricos, índice e regras consolidadas. Nenhuma mudança em código, cenas, dados, assets, VFX, testes ou configuração.
 
 ---
@@ -1341,7 +1347,7 @@ Quatro decisões novas (D-132 a D-135), cinco notas aditivas aos documentos anti
 
 1. **D-146 substitui a taxa da D-142:** a D-142 dizia **1 ponto percentual por 10 pontos da diferença LUK**. A escolha expressa 1A desta Rodada 59 substitui essa escala por **1 ponto percentual por ponto de diferença LUK** entre aplicador e alvo. **Exemplo aprovado:** chance-base 50%, LUK 7 e LUK 10 => **50% + 7 pp − 10 pp = 47%**. O conflito apontado na seção 38.3 foi **resolvido nesta rodada**, sem alterar retroativamente o registro do conflito.
 2. **D-134/D-137/D-143 preservadas:** só efeitos de status com chance declarada na ficha do Move sofrem o ajuste por LUK. Efeitos garantidos continuam garantidos; a chance final de aplicação probabilística permanece **limitada a 0–100%**. Status não esquiváveis não ganham Evade por esta regra (D-012).
-3. **D-147 complementa D-132/D-144:** os seis atributos **STR, MAG, VIT, SPI, AGI e LUK** têm sorteios **independentes entre si**, todos com modificadores individuais −3..+3 e pesos triangulares **1:2:3:4:3:2:1**. Cada atributo é sorteado uma única vez por indivíduo e persistido. A variação de outro atributo não altera a probabilidade de um dado resultado.
+3. **D-147 complementa D-132/D-144:** os seis atributos **STR, MAG, VIT, WIS, AGI e LUK** (atualizado: D-391) têm sorteios **independentes entre si**, todos com modificadores individuais −3..+3 e pesos triangulares **1:2:3:4:3:2:1**. Cada atributo é sorteado uma única vez por indivíduo e persistido. A variação de outro atributo não altera a probabilidade de um dado resultado.
 4. **D-148 complementa D-119/D-133/D-136/D-140/D-145:** a duração do trajeto é **calculada ao iniciar o ataque e mantida fixa até o fim do trajeto**. AGI e efeitos aplicáveis entram no cálculo, que mantém o ajuste posicional posterior e o mínimo de **0,25 s**. Mudanças posteriores de AGI durante o trajeto não recalculam sua duração. **Pendente:** determinar qual instante técnico do fluxo WINDUP/TRAVEL significa 'iniciar o ataque', quando essa distinção impactar implementação.
 
 ### 39.3 Pendências restantes (não aprovadas automaticamente)
@@ -1349,7 +1355,7 @@ Quatro decisões novas (D-132 a D-135), cinco notas aditivas aos documentos anti
 - **LUK em crítico e esquiva automática:** D-127 diz que LUK influencia ambas, mas coeficientes e limites próprios não foram aprovados. A escala da D-146 aplica-se especificamente à **chance de status probabilístico**, não é uma tabela automática para todos os eventos.
 - **AGI:** valores numéricos de referência para ATB e trajetos (D-145), tratamento de buffs durante WINDUP antes do travamento do trajeto (D-148) e calibração concreta de velocidade.
 - **Sorteio/persistência:** quais dados persistentes e algoritmo de seed/ordem são necessários para reproduzir resultados (D-147); independência estatística foi definida, mas a implementação não.
-- **Mitigação VIT/SPI:** fórmulas quantitativas continuam por decidir, preservando a aplicação comum dos estágios de Defense (D-138).
+- **Mitigação VIT/WIS:** fórmulas quantitativas continuam por decidir, preservando a aplicação comum dos estágios de Defense (D-138) (atualizado: D-391).
 
 ### 39.4 Estado verificado do código e escopo
 
@@ -1539,15 +1545,15 @@ Para o HTML dos oito Moves, o criador confirmou a entrega com Quarks.js como exc
 - **D-390 (Orçamento de 15 pontos no nível 1):** conversão determinística proporcional aos status originais das espécies (Pokémon e DQT) via Hare-Niemeyer. A soma dos 6 atributos base no nível 1 é rigorosamente 15.
 - **D-391 (Renomeação de SPI para WIS e scaling de MP):** o atributo defensivo mágico é oficialmente WIS (*Wisdom*); MP máximo na ficha é calculado como $10 + 2 \times \text{WIS} + \text{Nível}$.
 - **D-392 (Curva de HP anti-hitkill e marcos):** $+10$ HP por nível regular, bônus de $+25$ HP nos níveis de marco (1, 10, 20, 30...) e $+2$ HP por ponto de VIT. Calibrado em 39–43 HP no nível 1 para prevenir mortes em 1 golpe.
-- **D-393 (Catálogo de 8 Natures iniciais e tática de IA):** Hardy, Docile, Brave, Timid, Modest, Calm, Jolly, Adamant com modificadores *flat* (−3 a +3 somando sempre 0). Não afetam taxas de crescimento por nível. Modulam reserva de ATB e agressividade da IA, sob estrita precedência do menu Tactics.
-- **D-394 (Progressão e proficiência):** protagonista líder (`party[0]`) ganha 1 ponto/nível (3 nos marcos de 10) para alocação manual; companheiros aliados acumulam contadores de ações executadas em batalha para orientar a progressão orgânica automática.
+- **D-393 (Catálogo de Natures e tática de IA):** as 8 Natures iniciais são Hardy, Docile, Brave, Timid, Modest, Calm, Jolly e Adamant, com modificadores *flat* (−3 a +3 somando sempre 0); o catálogo hoje tem 18 Natures e essas 8 seguem como `INITIAL_IDS` (atualizado: D-1216). Brave, Timid, Calm e Adamant foram reajustados para 3 status cada (atualizado: D-1217). Não afetam taxas de crescimento por nível. Modulam reserva de ATB e agressividade da IA, sob estrita precedência do menu Tactics.
+- **D-394 (Progressão e proficiência):** protagonista líder (`party[0]`) ganha 1 ponto/nível (3 nos marcos a cada 5 níveis — atualizado: D-1225) para alocação manual; companheiros aliados acumulam contadores de ações executadas em batalha para orientar a progressão orgânica automática.
 
 
 ## Decisões D-399 a D-402 — Sistema de Experiência (XP), Vitória e Level Up (2026-11-07)
 - **D-399 (Curva de XP e recompensa por inimigo):** XP necessário para o nível $ dado por  \times L^2$. Drop de XP do inimigo derrotado calculado como $\text{base\_exp} \times \text{level}$ (com $\text{base\_exp} = 30$ para inimigos iniciais). O total é concedido integralmente a todos os combatentes sobreviventes ativos na equipe (sem penalização por tamanho do grupo).
 - **D-400 (Tela de vitória e pausa pós-combate):** ao abater o último oponente, a cena desacelera e pausa a cena 3D; exibe painel de vitória com resumo de XP, barras de progresso animadas, alerta visual de LEVEL UP! e espólios (loot); avanço apenas mediante confirmação explícita do jogador (tecla Confirmar).
 - **D-418 (VFX de Celebração de Nível sem Flash):** Proibição total de flashes estroboscópicos de tela inteira (prevenção de fotossensibilidade/epilepsia). A comemoração de level up é sinalizada por um pilar vertical de energia estilo aura boost Dragon Ball com duração de 0,55 s, opacidade intencionalmente baixa (sem obstruir o visual do personagem) e anéis de choque concêntricos que se expandem rapidamente no plano do chão alinhados ao ângulo da câmera.
-- **D-401 (Modal obrigatório de alocação de pontos do líder):** se o líder (party[0]) subir de nível, ao avançar a tela de vitória abre-se imediatamente um modal de distribuição de atributos (1 ponto em nível comum, 3 pontos nos marcos a cada 10 níveis, conforme D-394). A saída para a exploração 2D fica bloqueada até que todos os pontos concedidos sejam alocados (D-135).
+- **D-401 (Modal obrigatório de alocação de pontos do líder):** se o líder (party[0]) subir de nível, ao avançar a tela de vitória abre-se imediatamente um modal de distribuição de atributos (1 ponto em nível comum, 3 pontos nos marcos a cada 5 níveis, conforme D-1225 — atualizado). A saída para a exploração 2D fica bloqueada até que todos os pontos concedidos sejam alocados (D-135).
 - **D-402 (Concessão de XP para sobreviventes):** apenas combatentes vivos ao final da luta (hp > 0) recebem experiência; combatentes nocauteados (K.O.) não ganham XP nem avançam de nível naquela batalha, incentivando suporte e cura tática.
 - **D-433 (Level Up HUD e Transição de Vitória):** a tela unificada pós-combate SMT III passa a se chamar oficialmente Level Up HUD (LevelUpHUD); ela é ativada após a vitória exclusivamente quando há subida de nível de combatente, substituindo a interface anterior (VictoryPanel e LevelUpModal). A tela de pós-combate comum para vitórias sem subida de nível será recriada em outra rodada.
 
@@ -1827,7 +1833,7 @@ Registro de autoria no Blender — D-1132: a caminhada da Coruja deve incluir os
 
 ## Decisão D-1225 — Pontos de atributo: 3 pontos a cada 5 níveis (2026-11-15)
 
-- **D-1225 (personagens/progressão):** substitui o marco de pontos da D-394 — ao atingir um nível múltiplo de **5** (`5, 10, 15, 20...`), o personagem (líder e aliado, D-235) ganha **3 pontos** de atributo (`new_level % 5 == 0`), e **1 ponto** nos demais níveis. Os marcos de HP/MP da D-392 (a cada 10 níveis) permanecem inalterados. Detalhes em `docs/decisoes/D-1225-pontos-atributo-3-a-cada-5-niveis.md`.
+- **D-1225 (personagens/progressão):** substitui o marco de pontos da D-394 — ao atingir um nível múltiplo de **5** (`5, 10, 15, 20...`), o personagem (líder e aliado, D-235) ganha **3 pontos** de atributo (`new_level % 5 == 0`), e **1 ponto** nos demais níveis. Os marcos de HP da D-392 (+25 HP a cada 10 níveis, nos níveis 1, 10, 20...) permanecem inalterados; a D-392 não define salto de MP — o MP máximo é 10 + 2×WIS + nível (atualizado: D-391, D-392). Detalhes em `docs/decisoes/D-1225-pontos-atributo-3-a-cada-5-niveis.md`.
 
 ## Decisão D-1228 — Orc e Cyclops sem Tackle genérico; ataque básico próprio sem custo de MP (2026-11-15)
 

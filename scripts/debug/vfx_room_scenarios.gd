@@ -83,6 +83,7 @@ const SCENARIOS := [
 	{"id": "st_stun_aliado", "g": "Status", "label": "STUN 4 s no aliado (inimigo ataca)", "atk": [["E1", "Tackle", "A1", 1.0]], "acts": [[0.0, "status", "A1", "stun4"]]},
 	{"id": "st_stun_todos", "g": "Status", "label": "STUN 4 s em todos", "enemies": 2, "atk": [["A1", "Tackle", "E1", 4.5]], "acts": [[0.0, "status", "A1", "stun4"], [0.0, "status", "A2", "stun4"], [0.0, "status", "E1", "stun4"], [0.0, "status", "E2", "stun4"]]},
 	{"id": "st_burn", "g": "Status", "label": "Burn no inimigo e no aliado", "atk": [["A1", "Tackle", "E1", 1.0]], "acts": [[0.0, "status", "E1", "burn"], [0.0, "status", "A2", "burn"]]},
+	{"id": "st_blind_olhos", "g": "Status", "label": "Blind: pálpebras fechadas enquanto dura (modelos com olhos piscáveis, Pancham = A2)", "atk": [["A2", "Tackle", "E1", 5.0]], "acts": [[0.0, "status", "A2", "blind"]]},
 	{"id": "st_blind", "g": "Status", "label": "Blind no aliado que ataca", "atk": [["A1", "Tackle", "E1", 0.5]], "acts": [[0.0, "status", "A1", "blind"]]},
 	{"id": "st_stun_burn", "g": "Status", "label": "STUN + Burn juntos no inimigo", "atk": [["A1", "Tackle", "E1", 1.0]], "acts": [[0.0, "status", "E1", "stun4"], [0.0, "status", "E1", "burn"]]},
 	{"id": "st_combo_todos", "g": "Status", "label": "TODOS os status juntos no inimigo e no aliado (D-1204)", "atk": [["A1", "Tackle", "E1", 1.0]], "acts": [[0.0, "status", "E1", "stun4+burn+blind+shield+magic_immune+b:atk:2+b:def:-2+b:spd:3"], [0.0, "status", "A1", "burn+blind+shield+magic_immune+b:atk:-1+b:def:2+b:spd:-3"]]},
@@ -130,6 +131,7 @@ const SCENARIOS := [
 	{"id": "karate_chop", "g": "Especiais", "label": "Karate Chop", "atk": [["A1", "Karate Chop", "E1", 0.0]]},
 	{"id": "bite", "g": "Especiais", "label": "Bite", "atk": [["A1", "Bite", "E1", 0.0]]},
 	# --- Dano e Reação (D-1042) ---
+	{"id": "dano_olhos", "g": "Dano e Reação", "label": "Dano em A2 (Pancham): fecha os olhos por 0,5 s (D-1272)", "atk": [["E1", "Tackle", "A2", 0.5]], "force": 1},
 	{"id": "dano_direto", "g": "Dano e Reação", "label": "Dano neutro direto (reação de hit e texto)", "atk": [["A1", "Tackle", "E1", 0.0]], "force": 1},
 	{"id": "dano_critico", "g": "Dano e Reação", "label": "Dano crítico (CRIT! + tremor)", "atk": [["A1", "Tackle", "E1", 0.0]], "force": 3},
 	{"id": "dano_weak", "g": "Dano e Reação", "label": "Dano de fraqueza elementar (WEAK!)", "atk": [["A1", "Fire Bullet", "E1", 0.0]], "force": 4},

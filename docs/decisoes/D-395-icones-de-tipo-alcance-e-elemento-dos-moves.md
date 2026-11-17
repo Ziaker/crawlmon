@@ -24,7 +24,7 @@ Cada Move exibe até **três ícones indicadores** em sua identificação no HUD
 1. **Ícone 1 — Tipo de Dano (Categoria):**
    - **Físico:** exibe o ícone de dano físico.
    - **Mágico:** exibe o ícone de dano mágico.
-   - **Nenhum (Status / Suporte):** sem ícone presente de tipo de dano para golpes de status, cura ou buffs/debuffs.
+   - **Status / Suporte:** sem ícone de dano, mas exibe o ícone de tipo Status (`+` sobre `−`) em badge branco (atualizado: D-1190).
 
 2. **Ícone 2 — Alcance (Range):**
    - **Melee (Corpo a corpo):** seta para cima (`↑`).
@@ -33,12 +33,12 @@ Cada Move exibe até **três ícones indicadores** em sua identificação no HUD
    - **Status (Pessoal / Sem alvo posicional):** sem ícone presente de alcance (nada).
 
 3. **Ícone 3 — Elemento (SMT-inspired, D-118):**
-   - Exibe o glifo/símbolo do elemento correspondente (ex.: Físico, Fogo, Gelo, Raio, Psíquico, Luz, Trevas, etc.).
+   - Exibe o glifo/símbolo do elemento correspondente (ex.: Neutral, Fire, Water, Electric, Wind, Psychic, Light, Dark, Nature, Sound, Earth, Mystic, etc.) (atualizado: D-396, D-397, D-398).
 
 ## Ambiguidades em aberto (perguntar antes de agir)
 
 - Desenho visual exato dos glifos de "Físico" e "Mágico" (ex.: espada/punho vs. cajado/orbe/estrela mágica).
-- Conjunto fechado dos glifos visuais de cada um dos 11 elementos SMT (D-118).
+- Conjunto fechado dos glifos visuais de cada um dos 12 elementos SMT (D-118) (atualizado: D-398).
 
 ## Estado no código
 

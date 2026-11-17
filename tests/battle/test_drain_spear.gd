@@ -1,6 +1,6 @@
 extends SceneTree
 ## Drain Spear (move_drain_spear): mid-range contact, Badge Steal before the damage, 0.30 s
-## transfer, magic damage 5 + MAG - SPI, evade/auto-dodge cancelling the steal, and the same
+## transfer, magic damage 5 + MAG - WIS, evade/auto-dodge cancelling the steal, and the same
 ## rules with the attacker on the enemy side.
 ##   godot --headless --path . --script res://tests/battle/test_drain_spear.gd
 
@@ -93,12 +93,12 @@ func _test_contract() -> void:
 	_expect(skill.cost == 2, "custa 2 ATB")
 	_expect(is_equal_approx(DrainSpearMove.REACH, 16.3), "alcance de contato 16,3u")
 	_expect(DrainSpearMove.badge_steal(skill), "tem Badge Steal")
-	_expect(DrainSpearMove.magic_flat(skill) == 5, "dano mágico 5 + MAG - SPI")
+	_expect(DrainSpearMove.magic_flat(skill) == 5, "dano mágico 5 + MAG - WIS")
 	var w := _world()
 	var b: Battle = w["b"]
 	var a: Combatant = w["a"]
 	var t: Combatant = w["t"]
-	_expect(Battle.estimate_damage(a, t, skill) == 12, "previsão 5 + 10 MAG - 3 SPI = 12")
+	_expect(Battle.estimate_damage(a, t, skill) == 12, "previsão 5 + 10 MAG - 3 WIS = 12")
 	_expect(b.use_skill(a, skill, t), "a batalha aceita o Move")
 	var inc: Incoming = b.incoming[0]
 	_expect(is_equal_approx(inc.total_windup, 1.0), "wind-up 1,0 s")

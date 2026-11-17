@@ -9,7 +9,7 @@ static func effects() -> Dictionary:
 		"spear_thrust": "130% ATK physical damage | Thrust | 2 ATB",
 		"javelin_throw": "120% ATK physical damage | Crit chance rises as the target's HP falls | 2 ATB",
 		"war_cry": "Interrupts enemies in wind-up | +1 Burst if it interrupts at least one | 3 ATB",
-		"armored_bulk": "ARMOR for 8 s: the first Move that hits is taken without interruption, contact effects or knockback (not K.O.); the badge breaks | Poison and Burn do not break it | 1 ATB | 10 MP",
+		"armored_bulk": "ARMOR for 8 s: the first Move that hits is taken without interruption, contact effects or knockback (not K.O.); the badge breaks | Nature and Burn do not break it | 1 ATB | 10 MP",
 		"boulder_smash": "150% ATK earth damage | Heavy strike | 2 ATB",
 		"rock_throw": "130% ATK earth damage | Ground projectile | 2 ATB",
 		"glare": "Crossover glare | Combat effect not implemented | 1 ATB",
@@ -53,7 +53,7 @@ static func effects() -> Dictionary:
 		"fire_bullet": "100% ATK fire damage | Projectile | Can interrupt a wind-up | 2 ATB",
 		"flame_stream": "100% ATK fire damage | Continuous stream | 2 ATB",
 		"splitter_flames": "100% ATK fire damage | Split flames | 2 ATB",
-		"drain_spear": "5 + MAG magic damage (mitigated by SPI) | Steals positive buffs, shield and magic immunity before damage | 16.3u range | 2 ATB",
+		"drain_spear": "5 + MAG magic damage (mitigated by WIS) | Steals positive buffs, shield and magic immunity before damage | 16.3u range | 2 ATB",
 		"melee_phase": "100% ATK physical damage | Phase Composer debug showcase | 2 ATB",
 	}
 
@@ -107,7 +107,7 @@ static func descriptions() -> Dictionary:
 		"fire_bullet": "A fast fire shot; hitting during a wind-up interrupts the target's action.",
 		"flame_stream": "A continuous jet of flame.",
 		"splitter_flames": "Flames that split into fans across the field.",
-		"drain_spear": "A magic spear rises from the ground and strikes at 16.3 units. On contact it steals positive buffs, shield and magic immunity before dealing 5 + MAG magic damage, mitigated by SPI.",
+		"drain_spear": "A magic spear rises from the ground and strikes at 16.3 units. On contact it steals positive buffs, shield and magic immunity before dealing 5 + MAG magic damage, mitigated by WIS.",
 		"melee_phase": "Debug move that showcases the Phase Composer in real combat.",
 	}
 

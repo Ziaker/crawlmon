@@ -595,7 +595,7 @@ func update_resource_maximums() -> void:
 	elif mp == 0 and old_max_mp == 0:
 		mp = max_mp
 
-## MP Regeneration: 4 points every 8 seconds, individual timer, resets on MP skills (D-413).
+## MP Regeneration: 10 + MAG/5 points every 8 seconds (D-1062), 1.75x faster with the ATB full (D-1070), individual timer, resets on MP skills (D-413).
 var mp_regen_timer: float = 0.0
 const MP_REGEN_INTERVAL := 8.0
 const MP_REGEN_FULL_ATB_MULT := 1.75  ## D-1070: with the ATB full, the MP pulse timer runs this much faster

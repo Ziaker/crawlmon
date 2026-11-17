@@ -1,5 +1,7 @@
 class_name BattleFx
 extends Node3D
+
+signal eyes_hold_changed(c: Combatant, closed: bool, hit: bool)  ## BLIND or hit/impact: eyelids shut/open (telemetry `eyes`)
 ## Battle visuals combining 3D curved slash/shock/ribbon meshes, 16-frame animated
 ## flipbook sprite sheets, screen-space impact post-processing, and weight/hit-stop
 ## choreography (zero camera shake).
@@ -522,6 +524,37 @@ func _busy_for(c: Combatant, seconds: float) -> void:
 	_busy_until[c] = maxf(_busy_until.get(c, 0.0), clock + seconds)
 
 
+## BLIND (negative status): models with blinkable eyes (EyeBlink, scripts/common/eye_blink.gd) keep the
+## eyelids shut while the status lasts. Any model/side; models without such eyes are skipped.
+func _sync_blind_eyes(c: Combatant, m: Node3D) -> void:
+	var eb: Node = _eye_blink_of(m)
+	if eb != null:
+		var hit := float(eb.get("squeeze_left")) > 0.0
+		var want := (c.is_blind() and c.is_alive()) or hit
+		eb.set("hold_closed", c.is_blind() and c.is_alive())
+		if bool(m.get_meta("_eyes_shut", false)) != want:
+			m.set_meta("_eyes_shut", want)
+			eyes_hold_changed.emit(c, want, hit)
+
+
+func _eye_blink_of(m: Node3D) -> Node:
+	if not m.has_meta("_eye_blink"):
+		m.set_meta("_eye_blink", m.find_child("EyeBlink", true, false))  # null cached too: no per-frame search
+	var eb = m.get_meta("_eye_blink")
+	return eb if eb != null and is_instance_valid(eb) else null
+
+
+## Damage / impact (D-1272): the character shuts the eyes for EYES_SHUT_ON_HIT seconds.
+const EYES_SHUT_ON_HIT := 0.5
+
+func _squeeze_eyes(c: Combatant) -> void:
+	if not _models.has(c):
+		return
+	var eb := _eye_blink_of(_models[c])
+	if eb != null:
+		eb.call("squeeze", EYES_SHUT_ON_HIT)
+
+
 ## Idle characters breathe (a slight sway) and step forward with a pulsing floor
 ## ring while they can act. Movement therefore always means something.
 func _process(delta: float) -> void:
@@ -546,6 +579,7 @@ func _process(delta: float) -> void:
 	var t := Time.get_ticks_msec() / 1000.0  # Breathing sway only: cosmetic, not a deadline.
 	for c in _models:
 		var m: Node3D = _models[c]
+		_sync_blind_eyes(c, m)
 		# Fail-safe: never let a vanished model stay invisible past its vanish window.
 		if not m.visible and _vanish_until.has(c) and clock >= float(_vanish_until[c]):
 			m.visible = true
@@ -850,6 +884,7 @@ func dodge(target: Combatant, _text: String, hold := false) -> void:
 
 
 func _hit_react(c: Combatant, slow_time := 0.0) -> void:
+	_squeeze_eyes(c)
 	await fx_motion._hit_react(c, slow_time)
 
 

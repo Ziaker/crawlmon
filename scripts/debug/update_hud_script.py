@@ -266,7 +266,6 @@ func _render_affinities_strip(hero: Combatant) -> void:
 		{"name": "WTR",  "bg": Color("#38bdf8"), "aff": "-"},
 		{"name": "ELEC", "bg": Color("#facc15"), "aff": "-"},
 		{"name": "GRAS", "bg": Color("#22c55e"), "aff": "-"},
-		{"name": "ICE",  "bg": Color("#06b6d4"), "aff": "-"},
 		{"name": "WIND", "bg": Color("#14b8a6"), "aff": "-"},
 		{"name": "ERTH", "bg": Color("#a16207"), "aff": "-"},
 		{"name": "PSYC", "bg": Color("#ec4899"), "aff": "Res" if hero.species_id == "abra" else "-"},

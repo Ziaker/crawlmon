@@ -27,6 +27,8 @@
 
 Ficam aprovadas integralmente as recomendações consolidadas para o **Pré-Jogo v3 (`C1–C8`)** e para o **Hub 3D v1 (`H1–H6`)**, executadas com as skills Godot 4.7 relevantes e fluxo obrigatório de implementação + segunda auditoria pelo DeepSeek V4.1 Flash + auditoria final pelo agente principal:
 
+> **Nota (2026-11-16):** o "aliado inicial complementar" citado por esta decisão e pela D-1208 foi **substituído pela D-1261** (novo jogo só com o líder; aliados recrutados e escolhidos no Gate). O texto abaixo é histórico.
+
 ### Pré-Jogo v3 (`C1–C8`)
 
 - **C1 (Seleção de Protagonista limpa):** Os 6 protagonistas (`Abra`, `Pancham`, `Gible`, `Slime`, `Orc`, `Cyclops`) são jogáveis e selecionáveis desde o início. `CHARACTER_SELECTION` exibe apenas retrato (`D-1093`), nome, altura (`m`), elementos inatos, distribuição base de 15 pontos (`STR..LUK`, `D-390`) e Moves iniciais — **sem HP/MP (nem mesmo HP base)** e **sem Nature predeterminada**. `HP Base`, `MP Base`, `ATB Base` e a grade completa das 12 afinidades elementais ficam exclusivamente na **Advanced View**.

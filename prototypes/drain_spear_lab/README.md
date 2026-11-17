@@ -20,7 +20,7 @@ Abra `drain_spear.html` no navegador. O arquivo incorpora JavaScript, CSS e as d
 - `babylon.quarks` 0.30.0
 - `esbuild` 0.25.5, apenas para empacotar
 
-Os três tratamentos de contato são **alternativas visuais experimentais**, pois a extensão exata da estocada a 16,3 unidades não foi homologada. Modelos são substitutos geométricos. Tempos de wind-up, execução e recuperação são provisórios. O laboratório demonstra os eventos de roubo, mas não calcula MAG/SPI, ATB/MP nem imunidades gerais do jogo.
+Os três tratamentos de contato são **alternativas visuais experimentais**, pois a extensão exata da estocada a 16,3 unidades não foi homologada. Modelos são substitutos geométricos. Tempos de wind-up, execução e recuperação são provisórios. O laboratório demonstra os eventos de roubo, mas não calcula MAG/WIS, ATB/MP nem imunidades gerais do jogo.
 
 ## Limite de validação
 

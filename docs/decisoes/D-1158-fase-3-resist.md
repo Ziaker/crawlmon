@@ -22,7 +22,7 @@
 1. **RESIST = 0,5×.** O multiplicador entra na **mesma expressão única** da ofensa, junto de fraqueza/crítico/passos:
    `round(stat × poder × afinidade × crítico × passos)`, mínimo 1.
 2. **Ordem:** afinidade ofensiva → WIS → Guard → escudo → `def_buff`. É a mesma posição da WEAK.
-3. **Exceções:** Drain Spear (`5 + MAG − SPI`), Burn/dano fixo e status não usam afinidade. `NULL` e `REPEL` ficam reservados e sem uso (D-1161); `DRAIN` não está implementado.
+3. **Exceções:** Drain Spear (`5 + MAG − WIS`) (atualizado: D-391), Burn/dano fixo e status não usam afinidade. `NULL` e `REPEL` ficam reservados e sem uso (D-1161); `DRAIN` não está implementado.
 4. **Semântica explícita:** uma entrada em `affinities` vence, inclusive `NEUTRAL` e `WEAK`. `weaknesses` é o fallback legado para Combatants manuais e dados antigos. O VFX room sincroniza as duas fontes ao forçar/restaurar fraqueza.
 5. **UI:** a ficha de combate mostra `RESIST 0.5×`; a lista de Moves mostra `RESIST`; o `LevelUpHUD` passou a ler `affinity_for()` em vez das siglas hardcoded. As telas de Status/StatusPanel/Menus ainda usam a lista antiga de fraquezas e ficam para a rodada de UI.
 6. **Telemetria:** o `info` do evento `hit` carrega `affinity`, `affinity_mult` e `affinity_applied`; o log mostra `RESISTIU! (x0.5)`. Campos documentados em `docs/TELEMETRIA.md` (D-1154).

@@ -68,6 +68,7 @@ const HIT_EDGE_EPS := 0.12
 ## A weapon that extends the reach in the combat adds its extra reach on top.
 const ATTACK_GAP := 3.8
 const DEFAULT_BODY_RADIUS := 0.35
+const BODY_FOOTPRINT := preload("res://scripts/overworld/body_footprint.gd")
 ## D-1120: the 0.18 s is the maximum; a very close target must still feel like a
 ## dash, not a slow crawl. Below this speed the movement finishes at contact.
 const MIN_DASH_SPEED := 8.0
@@ -593,7 +594,7 @@ func _tick_enemy_dash(enemy: Node3D, entry: Dictionary, delta: float) -> void:
 	if _player == null or not is_instance_valid(_player) or _battle_requested:
 		_begin_enemy_endlag(enemy, entry, false)
 		return
-	if _flat_distance(enemy.global_position, _player.global_position) <= _contact_distance(enemy, _player):
+	if _edge_gap(enemy, _player) <= 0.0:
 		_begin_enemy_endlag(enemy, entry, true)
 		return
 	var fric: Dictionary = entry.get("fric", {})
@@ -778,9 +779,8 @@ func _start_enemy_dash(enemy: Node3D, entry: Dictionary) -> void:
 	dir = dir.normalized()
 	entry["dir"] = dir
 	entry["pre_dash"] = 0.0
-	var contact := _contact_distance(enemy, _player)
 	var travel := minf(
-		maxf(0.0, _flat_distance(from, _player.global_position) - contact),
+		maxf(0.0, _edge_gap(enemy, _player)),
 		ENEMY_DASH_MAX)
 	var plan := _dash_plan(travel)
 	var fric := _friction_plan(travel, float(plan["time"]))
@@ -964,7 +964,7 @@ func _check_contact() -> void:
 		var enemy: Node3D = entry.get("node")
 		if enemy == null or not is_instance_valid(enemy) or not enemy.is_inside_tree():
 			continue
-		if _flat_distance(_player.global_position, enemy.global_position) <= _contact_distance(_player, enemy):
+		if _edge_gap(_player, enemy) <= 0.0:
 			_emit_battle(EncounterRules.resolve(false, false, false, false))
 			return
 
@@ -1023,8 +1023,7 @@ func _hit_landed(attacker: Node3D, target: Node3D, slack := HIT_REACH) -> bool:
 		return false
 	if not attacker.is_inside_tree() or not target.is_inside_tree():
 		return false
-	var flat := _flat_distance(attacker.global_position, target.global_position)
-	if flat > _contact_distance(attacker, target) + slack:
+	if _edge_gap(attacker, target) > slack:
 		return false
 	return _line_clear(attacker, target)
 
@@ -1049,6 +1048,12 @@ func _line_clear(attacker: Node3D, target: Node3D) -> bool:
 	query.collide_with_bodies = true
 	var hit := world.direct_space_state.intersect_ray(query)
 	return hit.is_empty()
+
+
+## D-1269: floor-plane distance between the VISUAL centres of two bodies (the same centres the
+## body separation keeps apart); equals the origin distance for a model centred on its pivot.
+func _body_distance(a: Node3D, b: Node3D) -> float:
+	return BODY_FOOTPRINT.center_distance(a, b)
 
 
 func _contact_distance(attacker: Node3D, target: Node3D) -> float:
@@ -1090,6 +1095,11 @@ func _body_radius(node: Node3D) -> float:
 	var key := node.get_instance_id()
 	if not _radius_cache.has(key):
 		_radius_cache[key] = _measure_model_radius(node)
+	# D-1269: the same measured footprint the body separation keeps apart, so "edge contact"
+	# of the advance is exactly where the separation lets two bodies touch.
+	var fp: Dictionary = BODY_FOOTPRINT.info(node)
+	if bool(fp["measured"]):
+		return float(fp["w"])
 	return maxf(_capsule_radius(node), float(_radius_cache[key]))
 
 
@@ -1219,7 +1229,7 @@ func _weapon_reach_bonus(actor: Node3D) -> float:
 
 ## Distance between the two body EDGES on the floor plane (negative = overlapping).
 func _edge_gap(a: Node3D, b: Node3D) -> float:
-	return _flat_distance(a.global_position, b.global_position) - _contact_distance(a, b)
+	return BODY_FOOTPRINT.gap(a, b)  # D-1269: edge gap between the measured capsules
 
 
 func _advance(actor: CharacterBody3D, dir: Vector3, speed: float) -> void:

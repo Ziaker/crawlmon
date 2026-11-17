@@ -28,6 +28,7 @@ static func create_character_model(combatant: Combatant, color: Color = Color.WH
 		var glb_scene: PackedScene = load(glb_path)
 		if glb_scene:
 			var pokemon_instance := glb_scene.instantiate()
+			preload("res://scripts/common/eye_shine.gd").apply(pokemon_instance)
 			# Pokemon GLBs come out of Blender Z-up: tip them upright and scale up.
 			# DQT GLBs are already Y-up, so they only get the height fit.
 			if dqt_profile.is_empty():

@@ -35,7 +35,7 @@ Regras que a IA seguiu, tiradas das 8 atuais (`scripts/data/nature_data.gd`, D-3
 
 ## Ambiguidades em aberto (nada disto está decidido)
 
-1. Brave, Timid e Calm continuam com 4 status e Adamant com 2: ainda não cabem nos 3 rolos de D-1215.
+1. Brave, Timid, Calm e Adamant ficaram com 3 status cada pela D-1217 (atualizado: D-1217).
 2. Chance de sorteio: as 18 com a mesma chance ou pesos diferentes.
 3. Hardy e Docile continuam as únicas "puras".
 

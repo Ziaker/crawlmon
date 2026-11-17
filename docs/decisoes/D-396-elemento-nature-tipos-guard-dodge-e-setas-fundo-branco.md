@@ -39,18 +39,19 @@
    - O elemento anteriormente denominado **Poison** passa a se chamar **Nature (Natureza)**.
    - Nature já engloba veneno, toxinas naturais, flora, esporos e ácidos vegetais automaticamente.
    - A cor do elemento permanece a mesma: **verde-ácido / tóxico (`#84cc16`)**.
-   - Os 11 elementos recebem **re-design vetorial completo com apoio visual imediato** (silhueta legível em preto e branco sem depender exclusivamente de cor):
-     1. **FÍSICO:** Lâminas cruzadas com rastros de corte nítidos.
-     2. **FOGO:** Labareda com chamas internas e labaredas menores destacadas.
-     3. **GELO:** Floco de neve hexagonal ornamentado com espículas glaciais nítidas.
-     4. **RAIO:** Relâmpago em zigue-zague com farpas de alta voltagem.
-     5. **VENTO:** Ciclone triplo espiral com linhas aerodinâmicas de rajada.
-     6. **PSÍQUICO:** Olho místico do terceiro olho com pupila e anéis concêntricos de telecinese.
-     7. **LUZ:** Cruz estelar sagrada de 8 pontas radiante com halo solar.
-     8. **TREVAS:** Lua mística chanfrada envolvendo crânio espectral/vórtice de sombras.
-     9. **NATURE:** Folha estilizada fundida com gota tóxica ácida de veneno no núcleo.
-     10. **SOM:** Diapasão de frequência acústica emitindo 3 ondas sonoras concêntricas.
-     11. **TERRA:** Pico de montanha triplo e blocos de rocha facetados.
+   - Os 12 elementos recebem **re-design vetorial completo com apoio visual imediato** (silhueta legível em preto e branco sem depender exclusivamente de cor) (atualizado: D-398):
+     1. **Neutral:** Diamond Core — losango facetado chanfrado com anel geométrico e núcleo sólido central (atualizado: D-440).
+     2. **Fire:** Labareda com chamas internas e labaredas menores destacadas.
+     3. **Water:** Gota d'água fluida e nítida com reflexo/onda interna (atualizado: D-397).
+     4. **Electric:** Relâmpago em zigue-zague com farpas de alta voltagem.
+     5. **Wind:** Ciclone triplo espiral com linhas aerodinâmicas de rajada.
+     6. **Psychic:** Olho místico do terceiro olho com pupila e anéis concêntricos de telecinese.
+     7. **Light:** Cruz estelar sagrada de 8 pontas radiante com halo solar.
+     8. **Dark:** Lua mística chanfrada envolvendo crânio espectral/vórtice de sombras.
+     9. **Nature:** Folha estilizada fundida com gota tóxica ácida de veneno no núcleo.
+     10. **Sound:** Diapasão de frequência acústica emitindo 3 ondas sonoras concêntricas.
+     11. **Earth:** Pico de montanha triplo e blocos de rocha facetados.
+     12. **Mystic:** Esfera cósmica facetada radiante com flares estelares e anel orbital místico (atualizado: D-398).
 
 ## Relação com decisões anteriores
 

@@ -6,6 +6,7 @@ const PreGameDraw = preload("res://scripts/ui/pre_game/pre_game_draw.gd")
 const PreGameBackdrop = preload("res://scripts/ui/pre_game/pre_game_backdrop.gd")
 const PreGameStage3D = preload("res://scripts/ui/pre_game/pre_game_stage_3d.gd")
 const PreGameViewBoot = preload("res://scripts/ui/pre_game/pre_game_view_boot.gd")
+const PreGameTitleWorld = preload("res://scripts/ui/pre_game/pre_game_title_world.gd")
 const PreGameViewCharSelect = preload("res://scripts/ui/pre_game/pre_game_view_charselect.gd")
 const PreGameViewSettingsCredits = preload("res://scripts/ui/pre_game/pre_game_view_settings_credits.gd")
 const PreGameViewModals = preload("res://scripts/ui/pre_game/pre_game_view_modals.gd")
@@ -17,6 +18,8 @@ var _gs: Node = null
 var _backdrop: PreGameBackdrop = null
 var _stage_3d: PreGameStage3D = null
 var _view_boot: PreGameViewBoot = null
+var _title_world: PreGameTitleWorld = null
+var _title_v2: bool = true
 var _view_char: PreGameViewCharSelect = null
 var _view_settings: PreGameViewSettingsCredits = null
 var _view_modals: PreGameViewModals = null
@@ -124,7 +127,16 @@ func _build_ui() -> void:
     _stage_3d.backdrop = _backdrop
     _add_overlay(_stage_3d)
 
+    # D-1265: v2 title/menu = 3D world behind the boot view. `--title=v1` restores the old look.
+    _title_v2 = _arg_value("--title=") != "v1"
+    if _title_v2:
+        _title_world = PreGameTitleWorld.new()
+        _add_overlay(_title_world)
+        _title_world.visible = false
+        _title_world.active = false
+
     _view_boot = PreGameViewBoot.new()
+    _view_boot.use_v2 = _title_v2
     _add_overlay(_view_boot)
 
     _view_char = PreGameViewCharSelect.new()
@@ -357,7 +369,13 @@ func _sync_all_views() -> void:
     _view_char.art_only = _art_only
     _backdrop.art_mode = _art_only and _view == "charselect"
     _backdrop.queue_redraw()
-    _stage_3d.set_stage_visible(show_stage and not (_view == "charselect" and _art_only))
+    var world_on: bool = _title_world != null and _view in ["title", "menu"]
+    if _title_world != null:
+        _title_world.visible = world_on
+        _title_world.active = world_on
+        if world_on and not _arg_value("--species=").is_empty():  # otherwise the title leader is random
+            _title_world.set_leader(_char_index)
+    _stage_3d.set_stage_visible(show_stage and not (_view == "charselect" and _art_only) and not world_on)
     _stage_3d.set_species(_char_index)
     _stage_3d.set_model_angle(_model_angle)
     _stage_3d.show_rig_overlay = _show_rig and _view == "charselect" and not _view_modals.is_open()
@@ -369,6 +387,8 @@ func _sync_all_views() -> void:
         _view_boot.concept_label_text = _concept_label()
         _view_boot.loading_label = _loading_label
         _view_boot.loading_progress = _loading_progress
+        _view_boot.save_leader_id = _save_leader_species()
+        _view_boot.save_info = _save_info()
         _view_boot.set_state(boot_mode, _menu_index, _play_drawer_open, _play_index, _is_save_available())
     _view_char.visible = _view == "charselect"
     if _view_char.visible:
@@ -385,7 +405,41 @@ func _sync_all_views() -> void:
         _view_settings.set_mode(_view)
     _view_modals.visible = _view_modals.is_open()
 
+## Save card numbers. Cascos balance and playtime are not recorded by GameState yet (D-1253 pending),
+## so they read `shell_balance` / `play_seconds` when those exist and show 0 otherwise.
+func _save_info() -> Dictionary:
+    if not _arg_value("--fake-save=").is_empty():  # D-1204 debug sample
+        return {"level": 12, "respect": 63, "cascos": 1240, "play_seconds": 12430.0}
+    if _gs == null:
+        return {}
+    var info := {"level": 1, "respect": 0, "cascos": 0, "play_seconds": 0.0}
+    var party_v: Variant = _gs.get("party")
+    if party_v is Array and not (party_v as Array).is_empty() and (party_v as Array)[0] is Combatant:
+        info["level"] = int(((party_v as Array)[0] as Combatant).level)
+    var respect_v: Variant = _gs.get("respect")
+    if respect_v != null:
+        info["respect"] = int(respect_v.value)
+    if "shell_balance" in _gs:
+        info["cascos"] = int(_gs.get("shell_balance"))
+    if "play_seconds" in _gs:
+        info["play_seconds"] = float(_gs.get("play_seconds"))
+    return info
+
+func _save_leader_species() -> String:
+    if not _arg_value("--fake-save=").is_empty():  # D-1204 debug: simulate a save with this leader
+        return _arg_value("--fake-save=")
+    if _gs == null:
+        return ""
+    var party_v: Variant = _gs.get("party")
+    if party_v is Array and not (party_v as Array).is_empty():
+        var lead: Variant = (party_v as Array)[0]
+        if lead is Combatant:
+            return str((lead as Combatant).species_id)
+    return ""
+
 func _is_save_available() -> bool:
+    if not _arg_value("--fake-save=").is_empty():
+        return true
     if _gs == null:
         return false
     var value: Variant = _gs.get("active_campaign_started")
@@ -981,20 +1035,16 @@ func _parse_combo_row(text: String) -> Dictionary:
         "max": int(bounds[1])
     }
 
-## Every Nature copy must cite the exact NatureData modifiers (D-1217).
+## D-1263: no Nature copy may cite numeric values or "+N STAT" (supersedes D-1217's citing rule).
 func _assert_nature_copy(failures: Array[String]) -> void:
     _check(PreGameCatalog.NATURE_ORDER.size() == NatureData.NATURES.size(), "NATURE_ORDER size expected %d, got %d" % [NatureData.NATURES.size(), PreGameCatalog.NATURE_ORDER.size()], failures)
-    var pattern: RegEx = RegEx.new()
-    pattern.compile("([+-]\\d)\\s*(STR|MAG|VIT|WIS|AGI|LUK)")
+    var digits: RegEx = RegEx.new()
+    digits.compile("[0-9]")
     for nature_id in PreGameCatalog.NATURE_ORDER:
         _check(NatureData.NATURES.has(nature_id), "NatureData missing %s" % nature_id, failures)
         var text: String = str(PreGameCatalog.NATURE_DESCRIPTIONS.get(nature_id, ""))
         _check(not text.is_empty(), "NATURE_DESCRIPTIONS missing %s" % nature_id, failures)
-        var mods: Dictionary = NatureData.get_nature(nature_id).get("mods", {})
-        for found in pattern.search_all(text):
-            var cited: int = int(found.get_string(1))
-            var stat: String = found.get_string(2)
-            _check(cited == int(mods.get(stat, 0)), "NATURE_DESCRIPTIONS[%s] cites %+d %s but NatureData has %+d (D-1217)" % [nature_id, cited, stat, int(mods.get(stat, 0))], failures)
+        _check(digits.search(text) == null, "NATURE_DESCRIPTIONS[%s] cites a number (D-1263)" % nature_id, failures)
 
 ## D-1215/D-1219 (D-1204): the 18 Natures show the right reel symbols whether the roll plays out,
 ## is skipped or runs with reduced motion, and the Nature stays with the character until it is erased.
@@ -1188,7 +1238,7 @@ func _scenario_campaign(failures: Array[String], info: Array[String]) -> void:
         if party_value is Array:
             var party: Array = party_value
             party_size = party.size()
-            _check(party_size == 2, "party size expected 2, got %d" % party_size, failures)
+            _check(party_size == 1, "party size expected 1 (leader only, D-1261), got %d" % party_size, failures)
             if party_size > 0:
                 var leader_v: Variant = party[0]
                 if leader_v is Dictionary:

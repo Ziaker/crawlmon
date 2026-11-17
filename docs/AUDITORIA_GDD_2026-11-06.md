@@ -17,7 +17,7 @@
 
 - **Processo / escopo:** D-001 (o GDD é ignorado no combate; vale para exploração, campanha, progressão e economia), D-002, D-003, D-022, D-061, D-235, D-320.
 - **Exploração / overworld:** D-033, D-275, D-276, D-278, D-309, D-310, D-311, D-312, D-313, D-314, D-315, D-316, D-317, D-318, D-319, D-321, D-323, D-324, D-325, D-326, D-329, D-330, D-344, D-345.
-- **Atributos / progressão:** D-117 a D-156 (cluster de AGI, LUK, VIT/SPI, crítico, esquiva e status), D-269, D-270, D-271, D-130, D-131.
+- **Atributos / progressão:** D-117 a D-156 (cluster de AGI, LUK, VIT/WIS, crítico, esquiva e status), D-269, D-270, D-271, D-130, D-131.
 - **Moves / elementos / fichas:** D-118, D-228 a D-230 (citadas pelo GDD; os arquivos locais não existem nesta árvore), D-235, D-244 a D-249.
 - **HUD / combate:** D-048, D-236, D-238, D-239, D-240, D-272, D-273, D-343.
 - **Modelos / DQT:** D-336 a D-342.
@@ -448,22 +448,22 @@
 
 ### 8.1 O que o GDD define
 
-- **Atributos:** cinco atributos inspirados em SMT3 — **Strength, Magic, Vitality, Agility, Luck** — em **escala 1–100**; HP derivado de Vitality + nível; MP derivado de Magic + nível (R10-Q1/Q2, R11-Q1/Q2/Q3).
+- **Atributos:** cinco atributos inspirados em SMT3 — **Strength, Magic, Vitality, Agility, Luck** — em **escala 1–100**; HP derivado de Vitality + nível; MP derivado de Magic + nível (R10-Q1/Q2, R11-Q1/Q2/Q3). [atualizado: seis atributos — STR, MAG, VIT, WIS, AGI, LUK —; sem escala 1–100 (D-131/D-139/D-269); MP = 10 + 2×WIS + nível (D-391)]
 - **Nível/XP:** cada Pokémon tem nível; atributos evoluem com o nível; o protagonista recebe 1 ponto por nível e distribui manualmente; aliados crescem por curvas de espécie (R10-Q3, R11-Q4, R12-Q4/Q5, R13-Q4/Q5).
 - **Natures:** influenciam atributos, crescimento e tendências comportamentais (R14-Q5, R15-Q4, R16-Q4/Q5, R17-Q4, R18-Q4/Q5, R19-Q5, R20-Q5, R21-Q5, R22-Q5).
-- **Dano:** Strength origina dano físico; Magic origina dano mágico/especial; Vitality mitiga dano físico; Spirit mitiga dano mágico; Luck influencia crítico, esquiva automática e status; Agility acelera ATB e reduz trajeto (D-122, D-130, D-127, D-117/D-119).
+- **Dano:** Strength origina dano físico; Magic origina dano mágico/especial; Vitality mitiga dano físico; Spirit mitiga dano mágico; Luck influencia crítico, esquiva automática e status; Agility acelera ATB e reduz trajeto (D-122, D-130, D-127, D-117/D-119). [atualizado: WIS (Wisdom) substitui Spirit/SPI, D-391; DamageMath usa STR/MAG, D-1140/D-1153; mitigação mágica por WIS, D-1142]
 - **Moves:** até 8 utilizáveis, 4 principais; Tackle separado; sem PP; Moves mágicos/especiais gastam MP; custos ATB/Burst anteriores valem; fichas com dano, categoria, escalas, windup, trajeto, velocidade de projétil, alvos e efeitos (D-244 a D-249).
 - **Tooltips:** custos/windup no cabeçalho; descrição em prosa com dano/cura **numéricos**, efeitos, chances, duração e condições; descrição visual só na ficha fora de combate (GDD §12.24–12.25, que cita D-229/D-230).
-- **Elementos:** o sistema é inspirado principalmente em **Shin Megami Tensei**, não em Pokémon; preservar as 11 categorias atuais (`FISICO`, `FOGO`, `AGUA_GELO`, `RAIO`, `PSIQUICO`, `VENENO`, `SOM`, `TERRA`, `VENTO`, `LUZ`, `TREVAS`); afinidades por espécie com SMT como referência; tabela global ainda em aberto (D-118, D-128).
+- **Elementos:** o sistema é inspirado principalmente em **Shin Megami Tensei**, não em Pokémon; preservar as categorias de elemento (hoje 12, em inglês) (`FISICO`, `FOGO`, `AGUA_GELO`, `RAIO`, `PSIQUICO`, `VENENO`, `SOM`, `TERRA`, `VENTO`, `LUZ`, `TREVAS`); afinidades por espécie com SMT como referência; tabela global ainda em aberto (D-118, D-128). [atualizado: 12 elementos em inglês, D-396/D-397/D-398/D-440]
 - **Tipos:** o GDD fala de “tipos” de forma genérica; **não há uma tabela de tipos Pokémon** (Fogo/Água/Planta etc.) nem uma lista de resistências/imunidades. O que existe são **elementos** e **fraquezas** por personagem.
 
 ### 8.2 O que o jogo tem hoje
 
 - **`Combatant`:** `max_hp`, `hp`, `base_attack`, `mag` (provisório, espelha `base_attack`), `base_speed` (blocos/s), `weaknesses`, `held_item_id`, `skills`, buffs `atk_buff`/`def_buff`/`speed_buff` (−5..+5), status (`is_invulnerable`, `stun_timer`, `blind_timer`, `taunted_by`, `guard_timer`, `burn_ticks_left`), ATB/Burst, passos de posição.
-  - **Não há** `STR`, `MAG` (como atributo separado), `VIT`, `SPI`, `AGI`, `LUK`, `level`, `xp`, `max_mp`, `mp`, `nature`, `defense`, `passive`, `resistances` ou `immunities` como dados de personagem.
-- **Dano:** `attack * power * 1.5 (fraqueza) * 2.0 (crítico) * passo (±10%)`, mínimo 1; `def_buff` reduz; Guard reduz 50% provisório (ceil); Burn tira 2 HP fixos por tick. Não usa STR/MAG nem VIT/SPI.
+  - **Não há** `STR`, `MAG` (como atributo separado), `VIT`, `SPI`, `AGI`, `LUK`, `level`, `xp`, `max_mp`, `mp`, `nature`, `defense`, `passive`, `resistances` ou `immunities` como dados de personagem. [atualizado: hoje Combatant tem STR/MAG/VIT/WIS/AGI/LUK, level, xp, max_mp, mp e nature_id, D-131/D-391]
+- **Dano:** `attack * power * 1.5 (fraqueza) * 2.0 (crítico) * passo (±10%)`, mínimo 1; `def_buff` reduz; Guard reduz 50% provisório (ceil); Burn tira 2 HP fixos por tick. Não usa STR/MAG nem VIT/SPI [atualizado: DamageMath usa o atributo-base STR/MAG e a mitigação mágica é por WIS, D-1140/D-1142/D-1153/D-391].
 - **Crítico/esquiva:** 10% fixos; sem LUK. **Fraqueza:** 1.5×. **Passos:** +10% por passo à frente, −10% por passo atrás.
-- **Elementos:** 11 em `scripts/data/element.gd`; cada personagem tem uma lista de **fraquezas** (Abra: Trevas/Som; Pancham: Psíquico/Vento; Gible: Água/Gelo; DQT: Fogo/Raio/Psíquico). **Não há resistências, imunidades, absorção, reflexão ou tabela por espécie.**
+- **Elementos:** 12 em `scripts/data/element.gd`; cada personagem tem uma lista de **fraquezas** (Abra: Trevas/Som; Pancham: Psíquico/Vento; Gible: Water; DQT: Fogo/Raio/Psíquico). **Não há resistências, imunidades, absorção, reflexão ou tabela por espécie.** [atualizado: 12 elementos em inglês, D-396/D-397/D-398/D-440]
 - **Moves:** `Skill` tem `display_name`, `power` (multiplicador), `cost` (ATB), `element`, `kind` (MELEE/PROJECTILE/CAST/STATUS), `ground`, `is_aoe`, `is_friendly`, `windup`, `aoe_on_contact`.
   - **Não tem** custo de MP, categoria físico/mágico, precisão, modo de alvo (Self/One/Two/All), lista de efeitos, chance/duração de status, número de hits, descrição, tooltip ou `move_id` explícito.
   - Moves são listas fixas: Abra 7, Pancham 6, Gible 4, DQT 3. Não há banco de dados nem “lista de conhecidos”.
@@ -471,21 +471,21 @@
 - **Status:** aplicados por `match` no nome do Move em `battle.gd`: Media cura 10 + MAG; Tarukaja +1 ATK; Rakunda −1 DEF; Sukunda −1 SPD; Taunt; Sand Attack cega 4 s; Karate Chop 30% −1 SPD; Bite 30% stun 2 s; Brick Break quebra Guard; Fire Bullet aplica Burn quando interrompe.
 - **UI de informação:** `StatusScreen` mostra HP, ATK, VEL, fraquezas e cartões de Move com **custo ATB, elemento e “Poder ×1,3”**; **Descrição: N/D**, **DEF N/D**, **MP N/D**, **NV. —**, **EXP N/D**, **PASSIVA: SEM HABILIDADE**. No combate, a lista FIGHT mostra nome, custo/elemento e tempo de trajeto, mas **não o dano numérico**.
 - **`CrawlmonAttributeMath`:** implementa fórmulas aprovadas (offsets individuais, crítico por LUK, status por LUK, esquiva automática por LUK, incremento de ATB por AGI), mas o próprio arquivo diz **“Not wired into Combatant, Battle or Skill”**.
-- **`Guard`:** 50% provisório (D-272), sem VIT/SPI. **`travel_extra`:** provisório para Orc/Cyclops (D-341), até a AGI existir.
+- **`Guard`:** 50% provisório (D-272), sem VIT/SPI [atualizado: VIT/WIS já existem, D-391; o valor do Guard continua o 50% fixo provisório]. **`travel_extra`:** provisório para Orc/Cyclops (D-341), até a AGI existir.
 
 ### 8.3 Divergências entre GDD e decisões (o GDD está desatualizado)
 
 | Ponto | GDD | Decisão vigente | Consequência |
 |---|---|---|---|
-| Quantidade de atributos | **5** (STR/MAG/VIT/AGI/LUK) | **6**, com **Spirit (SPI)** (D-130/D-131) | GDD §7.1 e linha 386 precisam de correção |
+| Quantidade de atributos | **5** (STR/MAG/VIT/AGI/LUK) | **6**, com **WIS** (Wisdom; antigo Spirit/SPI) (D-130/D-131/D-391) | GDD §7.1 e linha 386 precisam de correção |
 | Escala | **1–100** | **Sem escala 1–100**; valores crescem com o nível e não há teto 100 (D-269/D-139) | GDD §7.1, R10-Q2 e REGRAS §14.7 estão obsoletos |
 | Nature e crescimento | Nature influencia **crescimento** | Nature afeta **só atributos e formas de agir**; **não** inclina crescimento (D-271) | GDD R14-Q5/R15-Q4/R16 etc. precisam de ressalva |
 | HP/MP | HP = VIT+nível; MP = MAG+nível | Regras gerais mantidas; fórmulas e números pendentes (D-124 etc.) | GDD não deve fingir fórmula pronta |
-| Dano | STR físico / MAG mágico; VIT/SPI mitigam | Aprovado (D-122/D-130) | Código não implementa |
+| Dano | STR físico / MAG mágico; VIT/WIS mitigam [atualizado: WIS, D-391] | Aprovado (D-122/D-130) | Código não implementa |
 | LUK | Crítico/esquiva/status | Aprovado (D-127/D-146/D-150–D-153) | Código usa 10% fixo |
 | Moves | Até 8 + 4 hotkeys | Aprovado (R38-Q5) | Código tem 7+1/6+1/4; sem 4 principais |
 | Tooltip | Texto com dano/cura numéricos | Aprovado (GDD §12.24–12.25; D-229/D-230 citadas) | Código mostra “Poder ×1,3” e “Descrição N/D” |
-| Elementos | SMT, 11 categorias, afinidades por espécie | D-118/D-128 | Código tem 11 elementos, mas só fraquezas, sem resistências/imunidades |
+| Elementos | SMT, 12 categorias, afinidades por espécie | D-118/D-128 | Código tem 12 elementos, mas só fraquezas, sem resistências/imunidades |
 
 ### 8.4 Divergências entre código e documentação (fora do GDD)
 
@@ -506,14 +506,14 @@
 
 **No domínio do combate (D-001: não levar para o GDD; levar para REGRAS/decisões):**
 
-- 11 elementos, 4 formas de trajeto, 7/6/4 Moves, ATB/Burst, fraqueza 1.5×, crítico 2×/10%, esquiva automática 10%, buffs ±5, status (stun/blind/taunt/guard/burn), Guard 50% provisório, Burn 2 HP/tick, dano por passo ±10%, fórmula de dano, Media 10+MAG, `move_id` por nome, números de dano/cura.
+- 12 elementos, 4 formas de trajeto, 7/6/4 Moves, ATB/Burst, fraqueza 1.5×, crítico 2×/10%, esquiva automática 10%, buffs ±5, status (stun/blind/taunt/guard/burn), Guard 50% provisório, Burn 2 HP/tick, dano por passo ±10%, fórmula de dano, Media 10+MAG, `move_id` por nome, números de dano/cura. [atualizado: 12 elementos em inglês, D-396/D-397/D-398/D-440]
 - O **`CrawlmonAttributeMath`** (fórmulas aprovadas, não ligadas).
 - O **`DqtTestParty`**, o **hub test**, a **VFX room** e os atalhos de debug (F9/F10/F11 etc.) — **não são conteúdo de jogo** e não devem entrar no GDD como regra.
 
 ### 8.6 Decisões necessárias
 
-1. **“Tipos”** significa os **11 elementos SMT** ou **tipos Pokémon** (Fogo/Água/Planta...)? Se forem tipos Pokémon, é um sistema novo, com tabela própria; se forem elementos, confirmar os 11 e definir resistências/imunidades/afinidades.
-2. **Atributos:** confirmar os **seis** (STR/MAG/VIT/SPI/AGI/LUK), sem 1–100; definir valores-base/conversão (D-270), HP/MP, nível máximo, XP, pontos por nível, curvas dos aliados e Natures.
+1. **“Tipos”** significa os **12 elementos SMT** ou **tipos Pokémon** (Fogo/Água/Planta...)? Se forem tipos Pokémon, é um sistema novo, com tabela própria; se forem elementos, confirmar os 12 e definir resistências/imunidades/afinidades. [atualizado: 12 elementos em inglês, D-396/D-397/D-398/D-440]
+2. **Atributos:** confirmar os **seis** (STR/MAG/VIT/WIS/AGI/LUK), sem 1–100; definir valores-base/conversão (D-270), HP/MP, nível máximo, XP, pontos por nível, curvas dos aliados e Natures.
 3. **Moves:** definir custo de MP, categoria físico/mágico, precisão, alvos, efeitos, chances, duração, número de hits, descrição/tooltip e `move_id` explícito; definir os 8/4 e a troca.
 4. **Informação:** onde o jogador vê os atributos, os Moves e os elementos (status screen, tooltip de combate, ficha fora de combate); o GDD deve apontar para a decisão, não duplicar números de combate.
 5. **GDD vs REGRAS:** manter D-001 (GDD não normativo no combate) e corrigir o GDD só no que é exploração/progressão/UI? Ou o criador quer um GDD único, com combate incluído? Essa escolha muda o escopo da atualização.
@@ -547,7 +547,7 @@
 | Hub test com Treasure Town | `hub_test.gd` | DEBUG | F10; não é o hub |
 | 297 usáveis, 294 Z-A + 3 Arenamon | `pokedex_manifest.json` | GDD (catálogo) | GDD diz “pendente” |
 | 3 GLBs de Pokémon; 3 DQT | `assets/modelos` | GDD/DEBUG | 297 têm modelo de origem, 3 importados |
-| 11 elementos, 4 kinds, statuses | `element.gd`, `skill.gd`, `battle.gd` | REGRAS | D-001: não levar ao GDD |
+| 12 elementos, 4 kinds, statuses | `element.gd`, `skill.gd`, `battle.gd` | REGRAS | D-001: não levar ao GDD |
 | Fórmulas de LUK/AGI/status | `crawlmon_attribute_math.gd` | REGRAS | Não ligadas |
 | Guard 50%, Burn 2/tick | `battle.gd` | REGRAS | D-272/D-238 |
 | Sem save/load | todo o projeto | GDD (campanha) | Não há persistência entre sessões |
@@ -558,7 +558,7 @@
 
 ### P0 — corrigir contradições com decisões vigentes
 
-1. **Atributos:** trocar “cinco atributos” por **seis** (STR, MAG, VIT, SPI, AGI, LUK), citando D-130/D-131.
+1. **Atributos:** trocar “cinco atributos” por **seis** (STR, MAG, VIT, WIS, AGI, LUK), citando D-130/D-131/D-391.
 2. **Escala:** remover “1–100” e o “limite 1–100”; registrar que a escala foi revogada por D-269 (e D-139) e que os valores crescem com o nível, sem teto 100. Ajustar também `docs/REGRAS_DO_JOGO.md` §14.7.
 3. **Nature:** retirar “Nature influencia crescimento”; D-271 limita a Nature a **atributos e formas de agir**.
 4. **GDD §8:** atualizar ou remover a seção “estado real do repositório” (commit antigo, ATB 0–100, cápsulas).
@@ -609,5 +609,5 @@
 4. **HP/MP:** mostrar **só o líder**, **os três ativos** ou **todos**? **Remover** HP/MP do combate ou só os do jogador? A vida dos inimigos e os números de dano continuam?
 5. **Pós-combate:** qual a ordem das telas e o que cada uma mostra? A derrota usa a mesma tela? O jogo terá **save**?
 6. **Moves:** a troca é no **menu**, no **hub** ou com **mestre**? É livre ou tem custo? Os **4 principais** são escolhidos? Tackle ocupa slot? O Move trocado é esquecido?
-7. **“Tipos”:** são os **11 elementos SMT** ou **tipos Pokémon**? Se forem tipos Pokémon, qual tabela? Se forem elementos, quais resistências/imunidades?
+7. **“Tipos”:** são os **12 elementos SMT** ou **tipos Pokémon**? Se forem tipos Pokémon, qual tabela? Se forem elementos, quais resistências/imunidades? [atualizado: 12 elementos em inglês, D-396/D-397/D-398/D-440]
 8. **NPCs/quests:** quais tipos entram primeiro (mercador, quest, recruta, especial)? Onde (dungeon/hub/campanha)? O que persiste entre expedições?

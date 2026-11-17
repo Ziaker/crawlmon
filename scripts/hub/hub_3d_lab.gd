@@ -90,7 +90,9 @@ const PLAZA_HALF_Z := 13.0
 const PLAZA_WALL_HEIGHT := 3.2
 
 const GATE_POS := Vector3(0.0, 0.0, -11.0)
-const BOARD_POS := Vector3(-3.2, 0.0, -9.5)
+const ALTAR_POS := Vector3(0.0, 0.0, 1.0)  ## D-1266: centre of the plaza slab and medallion
+const BOARD_POS := Vector3(-3.0, 0.0, -6.2)  ## D-1273: out in the open on the way to the gate (was hidden at (-3.2, -9.5))
+const BOARD_YAW := 0.36  ## faces the plaza centre
 const GUILD_POS := Vector3(-10.5, 0.0, -2.0)
 const PLOT_EAST := Vector3(10.5, 0.0, -2.0)
 const PLOT_SOUTHEAST := Vector3(8.0, 0.0, 6.5)
@@ -108,12 +110,6 @@ const MINIMAP_MASK := 1 << 4
 const MINIMAP_SIZE := 124
 const MINIMAP_DISPLAY_SIZE := 124
 const MINIMAP_WORLD_SIZE := 32.0
-
-const GATE_LINES := [
-	"MURKY FOREST — 5 FLOORS (AUTHORIZED)",
-	"LIMESTONE CAVERN — LOCKED — PROTOTYPE",
-	"TEMPORAL SPIRE — LOCKED — PROTOTYPE",
-]
 
 const GUILD_OPTIONS := [
 	"INSPECT ACTIVE PARTY (STATUS SCREEN)",
@@ -244,11 +240,13 @@ var _gate_row_boxes: Array[PanelContainer] = []
 var _gate_row_labels: Array[Label] = []
 var _gate_row_buttons: Array[Button] = []
 var _gate_index := 0
+var _gate_world_id := ""
 var _gate_open := false
 var _gate_leader_name_lbl: Label
 var _gate_leader_portrait: TextureRect
+var _gate_team_slots: HBoxContainer  ## D-1261: the 3 team badges (leader + 2 slots)
+var _gate_team_list: HFlowContainer  ## D-1261: recruited characters not on the team
 var _gate_nature_lbl: Label
-var _gate_brief_lbl: Label
 var _preview_nature_index := 0
 var _guild_panel: Control
 var _guild_row_boxes: Array[PanelContainer] = []
@@ -315,6 +313,7 @@ func _ready() -> void:
 	if _camera != null:
 		_camera.cull_mask = 0xFFFFFFFF & ~MINIMAP_MASK
 	_build_npcs()
+	_build_summon_altar()  # D-1266
 	_apply_toon_to_actor(player)
 	for f in _followers:
 		_apply_toon_to_actor(f["node"])
@@ -326,9 +325,20 @@ func _ready() -> void:
 	_apply_lighting_preset(lighting_mode)
 	_sync_hud_visibility()
 	set_process_unhandled_input(true)
+	if _args.has("gate-team"):  # D-1261 debug: --gate-team [--leader= --recruits= --team= --open-gate]
+		debug_team_setup(str(_args.get("leader", player_species)), int(str(_args.get("recruits", "4"))), int(str(_args.get("team", "1"))))
+		if _args.has("open-gate"):
+			_open_gate.call_deferred()
 	_start_arrival_cutscene()
-	if _arrival == null:
-		_maybe_open_ally_choice()  # D-1260: no arrival cutscene (e.g. --hub): offer right away
+	if _args.has("nht-sheet"):
+		# D-1260 debug: only the loading, one capture per second, then quit (a few seconds total).
+		NatureHubTransition.begin.call_deferred(get_tree(), "res://scenes/hub_3d_lab.tscn", {
+			"world": str(_args["nht-sheet"]) if str(_args["nht-sheet"]) != "true" else "murky_forest",
+			"sheet": str(_args.get("nht-shots", "res://docs/capturas_warp")),
+			"party": [str(player_model_id), "pancham"],
+		})
+	elif _args.has("warp") and _arrival == null:
+		_begin_warp.call_deferred(str(_args["warp"]))
 	if _scenario != "" or _view != "" or _args.has("quit"):
 		_run_async()
 
@@ -577,7 +587,9 @@ void fragment() {
 func _update_portal_fx(delta: float) -> void:
 	if _portal_pulse_val > 0.0:
 		_portal_pulse_val = maxf(0.0, _portal_pulse_val - delta * 1.9)
-		if _portal_quad_mat != null:
+		if _gate != null:
+			_gate.set_pulse(_portal_pulse_val)
+		elif _portal_quad_mat != null:
 			_portal_quad_mat.set_shader_parameter("pulse_boost", _portal_pulse_val)
 	for i in range(_portal_ring_fx.size() - 1, -1, -1):
 		var fx: Dictionary = _portal_ring_fx[i]
@@ -1337,7 +1349,7 @@ func _build_atmosphere_particles() -> void:
 	var banner_mat := _foliage_wind_shader(Color(0.76, 0.28, 0.18), 0.34)
 	var pole_mat := _toon_mat(Color(0.24, 0.18, 0.14))
 	for bpos in [
-		Vector3(-2.6, 0.0, -10.4), Vector3(2.6, 0.0, -10.4),
+		Vector3(-7.2, 0.0, -10.4), Vector3(7.2, 0.0, -10.4),  # outside the 2x gate dais
 		Vector3(-8.8, 0.0, -4.6), Vector3(-8.8, 0.0, 0.6),
 	]:
 		_box(Vector3(0.10, 3.2, 0.10), bpos + Vector3(0.0, 1.6, 0.0), pole_mat, false)
@@ -1478,44 +1490,13 @@ func _build_atmosphere_particles() -> void:
 		add_child(ff)
 
 
-func _gate_portal_shader() -> ShaderMaterial:
-	var sh := Shader.new()
-	sh.code = """shader_type spatial;
-render_mode unshaded, cull_disabled;
-
-uniform float pulse_boost : hint_range(0.0, 2.0) = 0.0;
-
-void fragment() {
-	vec2 uv = UV * 2.0 - 1.0;
-	// Elliptical radial distance fitting the 3.82 x 4.04 archway.
-	float r = length(uv * vec2(1.05, 0.92));
-	float angle = atan(uv.y, uv.x);
-
-	// Dual counter-rotating spiral energy streams.
-	float s1 = sin(r * 12.0 - TIME * 2.4 + angle * 3.0 + sin(TIME * 0.9 + r * 4.0) * 0.8);
-	float s2 = cos(r * 16.0 - TIME * 3.1 - angle * 2.0);
-	float stream = smoothstep(0.15, 0.85, s1 * 0.6 + s2 * 0.4);
-
-	// Glowing inner vortex core + arched frame falloff.
-	float arch_mask = (1.0 - smoothstep(0.72, 1.02, abs(uv.x))) * (1.0 - smoothstep(0.76, 1.02, abs(uv.y)));
-	float core = exp(-r * (2.1 - pulse_boost * 0.55));
-	float ring = exp(-pow((r - 0.58) * 5.2, 2.0));
-
-	vec3 void_col = vec3(0.04, 0.025, 0.035);
-	vec3 amber_mid = vec3(0.72, 0.34, 0.10);
-	vec3 gold_bright = vec3(1.00, 0.78, 0.32);
-
-	vec3 col = mix(void_col, amber_mid, clamp(arch_mask * (0.45 + stream * 0.55 + pulse_boost * 0.25), 0.0, 1.0));
-	col = mix(col, gold_bright, clamp((core * (0.85 + pulse_boost * 0.45) + ring * (0.55 + pulse_boost * 0.50) + stream * 0.35) * arch_mask, 0.0, 1.0));
-	ALBEDO = col;
-	EMISSION = col * (0.88 + pulse_boost * 0.72);
-}
-"""
-	var mat := ShaderMaterial.new()
-	mat.shader = sh
-	mat.set_shader_parameter("pulse_boost", 0.0)
-	_portal_quad_mat = mat
-	return mat
+## D-1266: grey stone altar in the exact star of the summon circle, at the hub centre; the leader
+## is summoned onto it (the arrival cutscene raycasts the floor, so it lands on top).
+func _build_summon_altar() -> void:
+	var altar := HubAltar.new()
+	altar.name = "SummonAltar"
+	altar.position = ALTAR_POS
+	add_child(altar)
 
 
 func _build_exit() -> void:
@@ -1528,26 +1509,17 @@ func _build_exit() -> void:
 	var coal_mat := _toon_mat(Color(0.26, 0.10, 0.05), Color(1.0, 0.44, 0.12), 1.45)
 	var ember_mat := _soft_orb_particle_shader(Color(1.0, 0.58, 0.20, 0.80), true)
 
-	# Stepped stone plinth, carved pillars, rune keystone, and flanking braziers at the north edge.
-	_box(Vector3(7.0, 0.20, 2.2), GATE_POS + Vector3(0.0, 0.10, 0.25), trim_stone, false)
-	_box(Vector3(5.8, 0.14, 1.6), GATE_POS + Vector3(0.0, 0.27, 0.15), stone, false)
-	for x in [-2.4, 2.4]:
-		var pillar := _box(Vector3(0.95, 5.0, 0.95), GATE_POS + Vector3(x, 2.5, 0.0), stone)
-		pillar.name = "GatePillar"
-		_register_fade_mesh(pillar, 0.9)
-		_box(Vector3(1.26, 0.42, 1.26), GATE_POS + Vector3(x, 0.21, 0.0), trim_stone, false)
-		_box(Vector3(1.12, 0.24, 1.12), GATE_POS + Vector3(x, 0.54, 0.0), stone, false)
-		_box(Vector3(1.16, 0.18, 1.16), GATE_POS + Vector3(x, 4.78, 0.0), trim_stone, false)
-		_box(Vector3(1.30, 0.40, 1.30), GATE_POS + Vector3(x, 5.12, 0.0), gold, false)
-		for ry in [1.4, 2.6, 3.8]:
-			_box(Vector3(1.02, 0.12, 1.02), GATE_POS + Vector3(x, ry, 0.0), trim_stone, false)
-	_box(Vector3(6.4, 0.85, 1.05), GATE_POS + Vector3(0.0, 4.7, 0.0), stone)
-	_box(Vector3(6.8, 0.22, 1.24), GATE_POS + Vector3(0.0, 5.16, 0.0), trim_stone, false)
-	_box(Vector3(2.2, 0.55, 1.15), GATE_POS + Vector3(0.0, 5.36, 0.0), gold, false)
-	_box(Vector3(0.75, 0.72, 1.16), GATE_POS + Vector3(0.0, 4.65, 0.02), trim_stone, false)
-	_box(Vector3(0.42, 0.42, 1.18), GATE_POS + Vector3(0.0, 4.65, 0.03), gold, false)
+	# D-1273: Blender-modelled ring portal on a stepped dais (scripts/hub/hub_gate.gd), ~3.7 m tall.
+	_gate = HubGate.new()
+	_gate.name = "GatePortalModel"
+	_gate.position = GATE_POS + Vector3(0.0, 0.0, 0.1)
+	_gate_root.add_child(_gate)
+	_portal_quad_mat = _gate.portal_mat
+	_gate_light = _gate.light
+	_lighting_lamps.append({"light": _gate.light, "base": 0.3})
+	_set_portal_open(0.0)
 
-	for bx in [-3.45, 3.45]:
+	for bx in [-5.7, 5.7]:  # outside the 2x dais
 		var bp := GATE_POS + Vector3(bx, 0.0, 1.15)
 		_box(Vector3(0.68, 0.22, 0.68), bp + Vector3(0.0, 0.11, 0.0), trim_stone, false)
 		_box(Vector3(0.46, 0.62, 0.46), bp + Vector3(0.0, 0.52, 0.0), stone, false)
@@ -1578,39 +1550,12 @@ func _build_exit() -> void:
 		b_emb.mesh = beq
 		add_child(b_emb)
 
-	var portal_quad := MeshInstance3D.new()
-	var pqm := QuadMesh.new()
-	pqm.size = Vector2(3.82, 4.04)
-	portal_quad.mesh = pqm
-	portal_quad.position = GATE_POS + Vector3(0.0, 2.24, 0.05)
-	portal_quad.material_override = _gate_portal_shader()
-	add_child(portal_quad)
-	var gate_light := OmniLight3D.new()
-	gate_light.position = GATE_POS + Vector3(0.0, 2.2, 1.4)
-	gate_light.light_color = Color(1.0, 0.64, 0.28)
-	gate_light.light_energy = 0.78
-	gate_light.omni_range = 6.2
-	add_child(gate_light)
-	_lighting_lamps.append({"light": gate_light, "base": 0.78})
-
-	# Expedition board / totem (detailed frame, pediment, quest slips, and warm sconce).
-	var board := Node3D.new()
+	# D-1273: Expedition Board = Blender waystone kiosk (scripts/hub/hub_board.gd), ~2 m, on the approach to the gate.
+	var board := HubBoard.new()
 	board.name = "ExpeditionBoard"
 	board.position = BOARD_POS
+	board.rotation.y = BOARD_YAW
 	add_child(board)
-	_box(Vector3(0.46, 0.26, 0.46), BOARD_POS + Vector3(0.0, 0.13, 0.0), trim_stone, false)
-	_box(Vector3(0.28, 2.0, 0.28), BOARD_POS + Vector3(0.0, 1.0, 0.0), _toon_mat(Color(0.20, 0.15, 0.12)))
-	_box(Vector3(1.42, 1.18, 0.16), BOARD_POS + Vector3(0.0, 2.05, 0.0), _toon_mat(Color(0.11, 0.12, 0.14)))
-	_box(Vector3(1.56, 0.18, 0.26), BOARD_POS + Vector3(0.0, 2.68, 0.02), _toon_mat(Color(0.26, 0.18, 0.13)), false)
-	_box(Vector3(1.14, 0.90, 0.04), BOARD_POS + Vector3(0.0, 2.04, 0.09),
-		_toon_mat(Color(0.32, 0.23, 0.16)), false)
-	for slip in [
-		[Vector3(-0.30, 2.22, 0.12), Vector2(0.34, 0.36), Color(0.84, 0.76, 0.56)],
-		[Vector3(0.22, 2.16, 0.12), Vector2(0.38, 0.42), Color(0.78, 0.68, 0.48)],
-		[Vector3(-0.14, 1.82, 0.12), Vector2(0.42, 0.28), Color(0.86, 0.78, 0.58)],
-	]:
-		var ssz: Vector2 = slip[1]
-		_box(Vector3(ssz.x, ssz.y, 0.03), BOARD_POS + slip[0], _toon_mat(slip[2]), false)
 	var tag := Label3D.new()
 	tag.name = "BoardTag"
 	tag.text = "EXPEDITION GATE"
@@ -1619,7 +1564,7 @@ func _build_exit() -> void:
 	tag.outline_size = 6
 	tag.outline_modulate = Color(0.04, 0.04, 0.04, 0.92)
 	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	tag.position = BOARD_POS + Vector3(0.0, 3.05, 0.0)
+	tag.position = BOARD_POS + Vector3(0.0, 2.45, 0.0)
 	tag.no_depth_test = false
 	add_child(tag)
 
@@ -2360,6 +2305,7 @@ func _update_npc_life(delta: float) -> void:
 			continue
 		var dir := step.normalized()
 		body.global_position += dir * float(npc.get("walk_speed", 1.25)) * delta
+		_npc_ride_floor(body, model, delta)
 		body.rotation.y = lerp_angle(body.rotation.y, atan2(dir.x, dir.z),
 			clampf(delta * 7.0, 0.0, 1.0))
 		if ap != null and ap.has_animation("walk"):
@@ -2665,7 +2611,7 @@ func _update_minimap() -> void:
 # --- UI & Neo-Brutalist Modals (H4, H5, C8, D-1165) --------------------------
 
 func _sync_hud_visibility() -> void:
-	var show_hud := not (_gate_open or _guild_open or _status_open or _npc_talking)
+	var show_hud := not (_gate_open or _guild_open or _status_open or _npc_talking or _warp_active)
 	if _arrival != null and is_instance_valid(_arrival):
 		show_hud = false
 	get_tree().set_group("overworld_hud", "visible", show_hud)
@@ -2679,7 +2625,7 @@ func _start_arrival_cutscene() -> void:
 		return
 	if player == null:
 		return
-	player.global_position = Vector3(0.0, player.global_position.y, 0.0)
+	player.global_position = Vector3(ALTAR_POS.x, player.global_position.y, ALTAR_POS.z)
 	player.velocity = Vector3.ZERO
 	player.rotation.y = player_yaw
 	_cam_yaw = player_yaw
@@ -2695,30 +2641,88 @@ func _start_arrival_cutscene() -> void:
 func _end_arrival() -> void:
 	_arrival = null
 	_sync_hud_visibility()
-	_maybe_open_ally_choice()  # D-1260
 
 
-## D-1260: opens the ally choice once, right after arriving in the Hub on a new campaign. The
-## offer lives in GameState (`ally_choice_pending`), so re-entering the Hub never reopens it.
-## The choice screen itself (visual) is pending the creator's approval: until it exists this only
-## reports the offer; `apply_ally_choice` is the single entry point the screen will call.
-func _maybe_open_ally_choice() -> void:
-	if not GameState.ally_choice_pending:
-		return
-	if "--stdout-trace" in OS.get_cmdline_user_args():
-		print("ALLY_OFFER_JSON: " + JSON.stringify({"offered": GameState.ally_choice_candidates}))
+## D-1261 DEBUG (team mechanic, easy entry): a fresh campaign with `recruits` recruited characters
+## (levels 3, 7, 11, 15, 19 so the corner tag is readable) and `team` of them already on the team.
+##   CLI:  hub_3d_prototype.tscn -- --gate-team [--leader=orc] [--recruits=0..5] [--team=0..2] [--open-gate]
+##   Keys: F8 cycles 4 states (leader only -> 4 recruits -> 1 on the team -> 2 on the team), even
+##         with the Gate open. Scenario: --scenario=HUB_GATE_DEBUG.
+func debug_team_setup(leader: String, recruits: int, team: int) -> void:
+	leader = leader.to_lower()
+	if not PLAYABLE_LEADERS.has(leader) and PLAYABLE_LEADERS.has("dqt_" + leader):
+		leader = "dqt_" + leader  # --leader=orc is accepted for dqt_orc
+	GameState.start_new_campaign(leader)
+	_set_player_species(leader)
+	_sync_followers_to_party()
+	var uids: Array[String] = []
+	for sid in PLAYABLE_LEADERS:
+		if uids.size() < recruits and str(sid) != leader:
+			uids.append(GameState.recruit_character(str(sid)))
+	for c in GameState.recruited_available():
+		c.level = 3 + uids.find(c.uid) * 4
+	for i in mini(mini(team, uids.size()), ExpeditionRoster.MAX_ACTIVE - 1):
+		team_assign(uids[i])
+	_gate_team_refresh()
+	print("[HUB] debug team: leader=%s recruits=%d team=%d" % [leader, uids.size(), GameState.party.size() - 1])
 
 
-## D-1260: confirms the ally in GameState and makes it a visible Hub follower (any species, D-235).
-func apply_ally_choice(species: String) -> bool:
-	if not GameState.choose_ally(species):
+var _team_debug_step := -1
+
+
+## F8: leader only -> 4 recruits -> 1 on the team -> 2 on the team -> (again).
+func _cycle_team_debug() -> void:
+	_team_debug_step = posmod(_team_debug_step + 1, 4)
+	debug_team_setup(player_model_id, [0, 4, 4, 4][_team_debug_step], [0, 0, 1, 2][_team_debug_step])
+
+
+## D-1261: an NPC can be recruited by talking when its species has a ready sheet (a playable
+## one), is not the leader and is not recruited yet. Direct: no chance, no minigame.
+func _npc_recruitable(npc: Dictionary) -> bool:
+	var sid := str(npc.get("id", ""))
+	if not PLAYABLE_LEADERS.has(sid) or GameState.party.is_empty():
+		return false
+	if sid == GameState.species_key(GameState.party[0]):
+		return false
+	return not GameState._roster_has_species(sid)
+
+
+## D-1261: recruits the talked-to NPC into the roster; returns the new uid or "".
+func recruit_npc(npc: Dictionary) -> String:
+	if not _npc_recruitable(npc):
+		return ""
+	return GameState.recruit_character(str(npc["id"]))
+
+
+## D-1261: puts a recruit on the expedition team (Gate HUD drag) and brings it to the leader.
+func team_assign(uid: String) -> bool:
+	if not GameState.team_assign(uid):
 		return false
 	_sync_followers_to_party()
 	_party_for_status = GameState.party
+	_gate_team_refresh()
 	return true
 
 
-## D-1260: Hub followers mirror GameState.party[1..] (none for a leader-only party). Without a
+## D-1261: takes an ally off the team; it goes back to its origin spot in the Hub.
+func team_unassign(uid: String) -> bool:
+	if not GameState.team_unassign(uid):
+		return false
+	_sync_followers_to_party()
+	_party_for_status = GameState.party
+	_gate_team_refresh()
+	return true
+
+
+## D-1261: the Hub NPC of `species` (its origin), or {}.
+func _npc_of_species(species: String) -> Dictionary:
+	for npc in _npcs:
+		if str(npc.get("id", "")) == species:
+			return npc
+	return {}
+
+
+## D-1261: Hub followers mirror GameState.party[1..] (none for a leader-only party). Without a
 ## campaign party (debug lab) the lab's own demo followers stay untouched.
 func _sync_followers_to_party() -> void:
 	if GameState.party.is_empty():
@@ -2732,19 +2736,28 @@ func _sync_followers_to_party() -> void:
 			if _minimap_markers[i]["kind"] == "ally":
 				(_minimap_markers[i]["rect"] as Node).queue_free()
 				_minimap_markers.remove_at(i)
+	for npc in _npcs:  # everyone not on the team is back at its origin spot
+		if PLAYABLE_LEADERS.has(str(npc.get("id", ""))) and is_instance_valid(npc.get("node")):
+			(npc["node"] as Node3D).visible = true
 	var slot := 0
 	for i in range(1, GameState.party.size()):
 		var sid := GameState.species_key(GameState.party[i])
 		if not HEIGHTS.has(sid):
 			continue
 		var side := -0.9 if slot % 2 == 0 else 1.7
-		_add_follower(sid, side, 1.3 + 0.7 * slot, Vector3(side, 0.0, 1.3 + 0.7 * slot))
+		var start := Vector3(side, 0.0, 1.3 + 0.7 * slot)
+		var origin_npc := _npc_of_species(sid)
+		if not origin_npc.is_empty() and is_instance_valid(origin_npc.get("node")):
+			# The ally walks from where it stood to the leader (follow logic does the walking).
+			start = (origin_npc["node"] as Node3D).global_position
+			(origin_npc["node"] as Node3D).visible = false
+		_add_follower(sid, side, 1.3 + 0.7 * slot, start)
 		_apply_toon_to_actor(_followers[-1]["node"])
 		if _marker_root != null:
 			_add_minimap_marker(_followers[-1]["node"], Color(0.45, 0.78, 1.0, 1.0), "ally")
 		slot += 1
 	if GameState.active_campaign_started and not _followers.is_empty():
-		# A real campaign's ally accompanies the leader in the Hub (D-1260).
+		# A real campaign's ally accompanies the leader in the Hub (D-1261).
 		_party_visible = true
 		_cam_pitch = PARTY_CAM_PITCH
 		for f in _followers:
@@ -2840,12 +2853,12 @@ func _build_hud_help() -> void:
 func _nature_preview_text() -> String:
 	var ids: Array[String] = NATURE_DATA.get_all_nature_ids()
 	if ids.is_empty():
-		return "HARDY · PURE DISCIPLINE (UNALTERED STAT BASELINE)"
+		return "HARDY (no stat changes)"
 	var nid := ids[posmod(_preview_nature_index, ids.size())]
 	var nd: Dictionary = NATURE_DATA.get_nature(nid)
 	var nname := str(nd.get("name", nid)).to_upper()
 	if nid in ["hardy", "docile"]:
-		return "%s · PURE DISCIPLINE (UNALTERED STAT BASELINE)" % nname
+		return "%s (no stat changes)" % nname
 	var mods: Dictionary = nd.get("mods", {})
 	var parts: Array[String] = []
 	for stat_key in ["STR", "MAG", "VIT", "WIS", "AGI", "LUK"]:
@@ -2861,17 +2874,131 @@ func _roll_gate_nature_preview() -> void:
 		return
 	_preview_nature_index = posmod(_preview_nature_index + 1 + _rng.randi_range(0, ids.size() - 2), ids.size())
 	if _gate_nature_lbl != null:
-		_gate_nature_lbl.text = "EXPEDITION NATURE PREVIEW (R18-Q4): %s" % _nature_preview_text()
+		_gate_nature_lbl.text = "NATURE: %s" % _nature_preview_text()
 
 
 func _refresh_gate_leader_strip() -> void:
 	if _gate_leader_name_lbl != null:
-		_gate_leader_name_lbl.text = "ACTIVE LEADER: %s  (HEIGHT %.2fm)" % [
+		_gate_leader_name_lbl.text = "LEADER: %s  ·  %.2f m" % [
 			str(HUB_NAMES.get(player_model_id, player_model_id.to_upper())),
 			float(HUB_HEIGHTS.get(player_model_id, 1.0)),
 		]
 	if _gate_leader_portrait != null:
 		_gate_leader_portrait.texture = _portrait_for_species(player_model_id)
+
+
+## D-1261 (paper rework): the Gate wears the NPC dialogue's look (dialogue_hud_styles "paper"):
+## parchment with the grain shader, dark-green ink border, gold trim, serif type, red wax seals.
+## Team = tilted playing cards (gold-framed art window, green name ribbon, wax-seal level in the
+## TOP-RIGHT corner); recruits sit in a darker parchment ledger on the right.
+const GATE_PAPER_SHADER := preload("res://shaders/dialogue_paper.gdshader")
+const GATE_PAPER := Color(0.88, 0.79, 0.60)
+const GATE_CARD_PAPER := Color(0.93, 0.85, 0.66)
+const GATE_LEDGER_PAPER := Color(0.45, 0.38, 0.26)  ## dark parchment: recruits ledger and empty slots
+const GATE_INK := Color(0.16, 0.25, 0.16)
+const GATE_GOLD := Color(0.85, 0.68, 0.30)
+const GATE_CREAM := Color(0.95, 0.86, 0.62)
+const GATE_BROWN := Color(0.18, 0.12, 0.08)
+const GATE_WAX := Color(0.55, 0.10, 0.10)
+const CARD_TEAM_SIZE := Vector2(196, 280)
+const CARD_RECRUIT_SIZE := Vector2(140, 184)
+const GATE_REST_ROT := -0.0175
+var _gate_serif: SystemFont
+var _gate_recruit_count: Label
+var _gate_holder: Control
+var _gate_card_team := CARD_TEAM_SIZE  ## D-1261: card sizes follow the window (see _build_gate_panel)
+var _gate_card_recruit := CARD_RECRUIT_SIZE
+var _gate_stale := false
+
+
+func _gate_serif_font() -> SystemFont:
+	if _gate_serif == null:
+		_gate_serif = SystemFont.new()
+		_gate_serif.font_names = PackedStringArray(["Cambria", "Times New Roman", "Georgia"])  # lining digits: Georgia's old-style 1 reads as "I"
+		_gate_serif.font_weight = 700
+	return _gate_serif
+
+
+func _gate_label(text_value: String, size: int, color: Color) -> Label:
+	var lbl := Label.new()
+	lbl.text = text_value
+	lbl.add_theme_font_override("font", _gate_serif_font())
+	lbl.add_theme_font_size_override("font_size", size)
+	lbl.add_theme_color_override("font_color", color)
+	return lbl
+
+
+func _gate_box(bg: Color, border: Color, border_w: int, radius: int) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.border_color = border
+	sb.set_border_width_all(border_w)
+	sb.set_corner_radius_all(radius)
+	return sb
+
+
+## Parchment fill using the dialogue's grain shader.
+func _gate_paper(tint: Color) -> ColorRect:
+	var rect := ColorRect.new()
+	var mat := ShaderMaterial.new()
+	mat.shader = GATE_PAPER_SHADER
+	mat.set_shader_parameter("paper", tint)
+	rect.material = mat
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return rect
+
+
+## A ribbon tag (name tab style): green with a gold edge, or gold with dark text.
+func _gate_ribbon(text_value: String, size: int, gold: bool = false) -> Label:
+	var lbl := _gate_label(text_value, size, GATE_INK if gold else GATE_CREAM)
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var sb := _gate_box(GATE_GOLD if gold else Color(0.14, 0.23, 0.15, 0.98), GATE_INK if gold else GATE_GOLD, 2, 2)
+	sb.content_margin_left = 10
+	sb.content_margin_right = 10
+	sb.content_margin_top = 2
+	sb.content_margin_bottom = 2
+	lbl.add_theme_stylebox_override("normal", sb)
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return lbl
+
+
+func _gate_button(text_value: String, size: int = 15, pad: int = 14) -> Button:
+	var btn := Button.new()
+	btn.text = text_value
+	btn.add_theme_font_override("font", _gate_serif_font())
+	btn.add_theme_font_size_override("font_size", size)
+	btn.add_theme_color_override("font_color", GATE_CREAM)
+	btn.add_theme_color_override("font_hover_color", Color(1.0, 0.95, 0.75))
+	btn.add_theme_color_override("font_pressed_color", GATE_GOLD)
+	for state in ["normal", "hover", "pressed", "focus"]:
+		var sb := _gate_box(Color(0.14, 0.23, 0.15) if state != "hover" else Color(0.20, 0.32, 0.21), GATE_GOLD, 2, 3)
+		sb.content_margin_left = pad
+		sb.content_margin_right = pad
+		sb.content_margin_top = 4 if pad > 4 else 2
+		sb.content_margin_bottom = 4 if pad > 4 else 2
+		btn.add_theme_stylebox_override(state, sb)
+	return btn
+
+
+func _gate_section_title(title_text: String, hint_text: String = "") -> VBoxContainer:
+	var wrap := VBoxContainer.new()
+	wrap.add_theme_constant_override("separation", 1)
+	var row := HBoxContainer.new()
+	row.add_child(_gate_label(title_text, 18, GATE_INK))
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(spacer)
+	if hint_text != "":
+		var hint := _gate_label(hint_text, 12, Color(GATE_BROWN, 0.72))
+		hint.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+		row.add_child(hint)
+	wrap.add_child(row)
+	var rule := ColorRect.new()
+	rule.custom_minimum_size = Vector2(0, 2)
+	rule.color = Color(GATE_GOLD, 0.95)
+	wrap.add_child(rule)
+	return wrap
 
 
 func _build_gate_panel() -> void:
@@ -2893,148 +3020,139 @@ func _build_gate_panel() -> void:
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_gate_panel.add_child(center)
 
+	# Fit the window: never wider/taller than the viewport, cards shrink with it.
+	var vp := get_viewport().get_visible_rect().size
+	var panel_size := Vector2(minf(1040.0, vp.x - 24.0), minf(650.0, vp.y - 24.0))
+	var ledger_w := 350.0 if panel_size.x >= 1000.0 else 290.0
+	var card_w := clampf((panel_size.x - 60.0 - 22.0 - ledger_w - 28.0) / 3.0, 118.0, 196.0)
+	var card_h := minf(card_w * 1.43, panel_size.y - 370.0)
+	_gate_card_team = Vector2(card_w, maxf(card_h, 150.0))
+	var rec_w := clampf((ledger_w - 24.0 - 10.0 - 16.0) / 2.0, 96.0, 140.0)
+	_gate_card_recruit = Vector2(rec_w, maxf(_gate_card_team.y * 0.70, 120.0))
+	if not get_viewport().size_changed.is_connected(_on_gate_viewport_changed):
+		get_viewport().size_changed.connect(_on_gate_viewport_changed)
 	var holder := Control.new()
-	holder.custom_minimum_size = Vector2(880, 560)
+	holder.custom_minimum_size = panel_size
+	holder.pivot_offset = panel_size * 0.5
+	holder.rotation = GATE_REST_ROT
 	center.add_child(holder)
+	_gate_holder = holder
 
 	var shadow := ColorRect.new()
-	shadow.position = Vector2(10, 10)
-	shadow.size = Vector2(880, 560)
-	shadow.color = Color(0.0, 0.0, 0.0, 0.82)
+	shadow.position = Vector2(10, 12)
+	shadow.size = panel_size
+	shadow.color = Color(0.0, 0.0, 0.0, 0.70)
 	shadow.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	holder.add_child(shadow)
 
-	var frame := PanelContainer.new()
-	frame.size = Vector2(880, 560)
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.055, 0.095, 0.135, 0.98)
-	style.border_color = Color(0.94, 0.93, 0.88, 0.98)
-	style.set_border_width_all(4)
-	style.content_margin_left = 26
-	style.content_margin_right = 26
-	style.content_margin_top = 18
-	style.content_margin_bottom = 18
-	frame.add_theme_stylebox_override("panel", style)
-	holder.add_child(frame)
+	# Parchment sheet: base + grain + inner ink frame (same recipe as the dialogue box).
+	var sheet := Panel.new()
+	sheet.size = panel_size
+	sheet.add_theme_stylebox_override("panel", _gate_box(GATE_PAPER, GATE_INK, 4, 4))
+	holder.add_child(sheet)
+	var paper := _gate_paper(GATE_PAPER)
+	paper.position = Vector2(4, 4)
+	paper.size = panel_size - Vector2(8, 8)
+	holder.add_child(paper)
+	var inner := Panel.new()
+	inner.position = Vector2(12, 12)
+	inner.size = panel_size - Vector2(24, 24)
+	inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	inner.add_theme_stylebox_override("panel", _gate_box(Color(0, 0, 0, 0), Color(GATE_INK, 0.7), 2, 2))
+	holder.add_child(inner)
 
-	var mono := SystemFont.new()
-	mono.font_names = PackedStringArray(["Consolas", "Courier New"])
-	mono.font_weight = 700
-
+	var margin := MarginContainer.new()
+	margin.size = panel_size
+	margin.add_theme_constant_override("margin_left", 30)
+	margin.add_theme_constant_override("margin_right", 30)
+	margin.add_theme_constant_override("margin_top", 24)
+	margin.add_theme_constant_override("margin_bottom", 22)
+	holder.add_child(margin)
 	var root_box := VBoxContainer.new()
-	root_box.add_theme_constant_override("separation", 8)
-	frame.add_child(root_box)
+	root_box.add_theme_constant_override("separation", 10)
+	margin.add_child(root_box)
 
+	# --- Header: leader medallion, name-tab ribbon, "new expedition" tag ---
 	var header := HBoxContainer.new()
-	header.add_theme_constant_override("separation", 12)
+	header.add_theme_constant_override("separation", 14)
 	root_box.add_child(header)
-
-	var title := Label.new()
-	title.text = "EXPEDITION GATE"
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_override("font", mono)
-	title.add_theme_font_size_override("font_size", 28)
-	title.add_theme_color_override("font_color", Color(0.84, 0.98, 0.40))
-	header.add_child(title)
-
-	var badge := PanelContainer.new()
-	var b_style := StyleBoxFlat.new()
-	b_style.bg_color = Color(0.84, 0.98, 0.40)
-	b_style.content_margin_left = 10
-	b_style.content_margin_right = 10
-	b_style.content_margin_top = 4
-	b_style.content_margin_bottom = 4
-	badge.add_theme_stylebox_override("panel", b_style)
-	var b_lbl := Label.new()
-	b_lbl.text = "NEW EXPEDITION (C8) // PROTOTYPE"
-	b_lbl.add_theme_font_override("font", mono)
-	b_lbl.add_theme_font_size_override("font_size", 13)
-	b_lbl.add_theme_color_override("font_color", Color(0.06, 0.15, 0.22))
-	badge.add_child(b_lbl)
-	header.add_child(badge)
+	var medal := Panel.new()
+	medal.custom_minimum_size = Vector2(66, 66)
+	medal.add_theme_stylebox_override("panel", _gate_box(GATE_GOLD, GATE_INK, 2, 33))
+	header.add_child(medal)
+	_gate_leader_portrait = TextureRect.new()
+	_gate_leader_portrait.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_gate_leader_portrait.offset_left = 7.0
+	_gate_leader_portrait.offset_top = 7.0
+	_gate_leader_portrait.offset_right = -7.0
+	_gate_leader_portrait.offset_bottom = -7.0
+	_gate_leader_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_gate_leader_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_gate_leader_portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var circle_mat := ShaderMaterial.new()  # same circular mask as the dialogue portrait
+	circle_mat.shader = preload("res://shaders/dialogue_portrait_circle.gdshader")
+	_gate_leader_portrait.material = circle_mat
+	medal.add_child(_gate_leader_portrait)
+	var title_box := VBoxContainer.new()
+	title_box.add_theme_constant_override("separation", 3)
+	title_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	header.add_child(title_box)
+	var title_row := HBoxContainer.new()
+	title_box.add_child(title_row)
+	var title := _gate_ribbon("EXPEDITION GATE", 26)
+	title.rotation = deg_to_rad(-2.0)
+	title_row.add_child(title)
+	_gate_leader_name_lbl = _gate_label("", 14, Color(GATE_BROWN, 0.85))
+	title_box.add_child(_gate_leader_name_lbl)
+	var tag := _gate_ribbon("NEW EXPEDITION", 14, true)
+	tag.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	tag.rotation = deg_to_rad(2.0)
+	header.add_child(tag)
+	_refresh_gate_leader_strip()
 
 	var rule := ColorRect.new()
 	rule.custom_minimum_size = Vector2(0, 3)
-	rule.color = Color(0.84, 0.98, 0.40, 0.9)
+	rule.color = Color(GATE_GOLD, 0.95)
 	root_box.add_child(rule)
 
-	var c8_lbl := Label.new()
-	c8_lbl.text = "CONTRACT (C8): Title [NEW GAME / CONTINUE] handle save slots · Hub Gate dispatches [NEW EXPEDITION] only."
-	c8_lbl.add_theme_font_override("font", mono)
-	c8_lbl.add_theme_font_size_override("font_size", 12)
-	c8_lbl.add_theme_color_override("font_color", Color(0.70, 0.84, 0.90))
-	root_box.add_child(c8_lbl)
+	# --- Body: team + destination (left), recruits ledger (right) ---
+	var body := HBoxContainer.new()
+	body.add_theme_constant_override("separation", 22)
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	root_box.add_child(body)
 
-	# Portrait strip (active leader + clickable quick-switch among all 6 leaders).
-	var roster_strip := PanelContainer.new()
-	var rs := StyleBoxFlat.new()
-	rs.bg_color = Color(0.08, 0.13, 0.19, 0.92)
-	rs.border_width_left = 4
-	rs.border_color = Color(0.84, 0.98, 0.40, 0.8)
-	rs.content_margin_left = 10
-	rs.content_margin_right = 10
-	rs.content_margin_top = 6
-	rs.content_margin_bottom = 6
-	roster_strip.add_theme_stylebox_override("panel", rs)
-	root_box.add_child(roster_strip)
+	var left := VBoxContainer.new()
+	left.add_theme_constant_override("separation", 8)
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.add_child(left)
 
-	var rrow := HBoxContainer.new()
-	rrow.add_theme_constant_override("separation", 10)
-	roster_strip.add_child(rrow)
+	left.add_child(_gate_section_title("YOUR TEAM", "drag recruits into the empty slots"))
+	_gate_team_slots = HBoxContainer.new()
+	_gate_team_slots.add_theme_constant_override("separation", 14)
+	_gate_team_slots.custom_minimum_size = Vector2(0, _gate_card_team.y + 10)
+	left.add_child(_gate_team_slots)
 
-	_gate_leader_portrait = TextureRect.new()
-	_gate_leader_portrait.custom_minimum_size = Vector2(46, 46)
-	_gate_leader_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_gate_leader_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	rrow.add_child(_gate_leader_portrait)
-
-	_gate_leader_name_lbl = Label.new()
-	_gate_leader_name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_gate_leader_name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_gate_leader_name_lbl.add_theme_font_override("font", mono)
-	_gate_leader_name_lbl.add_theme_font_size_override("font_size", 15)
-	_gate_leader_name_lbl.add_theme_color_override("font_color", Color(0.95, 0.95, 0.88))
-	rrow.add_child(_gate_leader_name_lbl)
-
-	for sid in PLAYABLE_LEADERS:
-		var chip := Button.new()
-		chip.custom_minimum_size = Vector2(36, 36)
-		chip.tooltip_text = "Switch leader to %s" % str(HUB_NAMES.get(sid, sid.to_upper()))
-		chip.icon = _portrait_for_species(sid)
-		chip.expand_icon = true
-		chip.pressed.connect(_set_player_species.bind(sid))
-		rrow.add_child(chip)
-	_refresh_gate_leader_strip()
-
-	var slot_label := Label.new()
-	slot_label.text = "LOCATION / STATUS"
-	slot_label.add_theme_font_override("font", mono)
-	slot_label.add_theme_font_size_override("font_size", 13)
-	slot_label.add_theme_color_override("font_color", Color(0.64, 0.74, 0.80))
-	root_box.add_child(slot_label)
-
+	left.add_child(_gate_section_title("DESTINATION"))
 	var list_box := VBoxContainer.new()
 	list_box.add_theme_constant_override("separation", 6)
-	list_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	root_box.add_child(list_box)
-
-	for i in GATE_LINES.size():
+	left.add_child(list_box)
+	var gate_lines := _gate_lines()
+	for i in gate_lines.size():
 		var rbox := PanelContainer.new()
-		var rstyle := StyleBoxFlat.new()
-		rstyle.bg_color = Color(0.08, 0.14, 0.20, 0.85)
-		rstyle.border_width_left = 4
-		rstyle.border_color = Color(0.35, 0.42, 0.48, 0.7)
+		var rstyle := _gate_box(Color(0.82, 0.72, 0.52, 0.9), Color(GATE_INK, 0.5), 2, 3)
+		rstyle.border_width_left = 6
 		rstyle.content_margin_left = 10
 		rstyle.content_margin_right = 10
 		rstyle.content_margin_top = 4
 		rstyle.content_margin_bottom = 4
 		rbox.add_theme_stylebox_override("panel", rstyle)
 		var btn := Button.new()
-		btn.text = GATE_LINES[i]
+		btn.text = gate_lines[i]
 		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		btn.flat = true
-		btn.add_theme_font_override("font", mono)
-		btn.add_theme_font_size_override("font_size", 18)
+		btn.add_theme_font_override("font", _gate_serif_font())
+		btn.add_theme_font_size_override("font_size", 20)
 		btn.pressed.connect(func() -> void:
 			_gate_index = i
 			_gate_refresh_rows()
@@ -3045,94 +3163,702 @@ func _build_gate_panel() -> void:
 		_gate_row_boxes.append(rbox)
 		_gate_row_buttons.append(btn)
 
-	# Nature Preview (R18-Q4) + First Expedition Briefing row.
 	var meta_box := HBoxContainer.new()
 	meta_box.add_theme_constant_override("separation", 10)
-	root_box.add_child(meta_box)
-
-	_gate_nature_lbl = Label.new()
+	left.add_child(meta_box)
+	_gate_nature_lbl = _gate_label("NATURE: %s" % _nature_preview_text(), 15, GATE_INK)
 	_gate_nature_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_gate_nature_lbl.text = "EXPEDITION NATURE PREVIEW (R18-Q4): %s" % _nature_preview_text()
-	_gate_nature_lbl.add_theme_font_override("font", mono)
-	_gate_nature_lbl.add_theme_font_size_override("font_size", 13)
-	_gate_nature_lbl.add_theme_color_override("font_color", Color(0.84, 0.98, 0.40))
 	meta_box.add_child(_gate_nature_lbl)
-
-	var roll_btn := Button.new()
-	roll_btn.text = "[R] ROLL NATURE PREVIEW [DEBUG]"
-	roll_btn.add_theme_font_override("font", mono)
-	roll_btn.add_theme_font_size_override("font_size", 12)
+	var roll_btn := _gate_button("[R] ROLL [DEBUG]", 12)
 	roll_btn.pressed.connect(_roll_gate_nature_preview)
 	meta_box.add_child(roll_btn)
 
-	_gate_brief_lbl = Label.new()
-	_gate_brief_lbl.text = "FIRST EXPEDITION BRIEFING: 3D Exploration -> Preemptive Tackle Strike -> ATB Turn Combat."
-	_gate_brief_lbl.add_theme_font_override("font", mono)
-	_gate_brief_lbl.add_theme_font_size_override("font_size", 13)
-	_gate_brief_lbl.add_theme_color_override("font_color", Color(0.82, 0.88, 0.92))
-	root_box.add_child(_gate_brief_lbl)
+	# Recruits ledger: a darker sheet with its own ink frame.
+	var ledger := Control.new()
+	ledger.custom_minimum_size = Vector2(ledger_w, 0)
+	body.add_child(ledger)
+	var lbase := Panel.new()
+	lbase.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	lbase.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lbase.add_theme_stylebox_override("panel", _gate_box(GATE_LEDGER_PAPER, GATE_INK, 3, 4))
+	ledger.add_child(lbase)
+	var lpaper := _gate_paper(GATE_LEDGER_PAPER)
+	lpaper.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	lpaper.offset_left = 3.0
+	lpaper.offset_top = 3.0
+	lpaper.offset_right = -3.0
+	lpaper.offset_bottom = -3.0
+	ledger.add_child(lpaper)
+	var lmargin := MarginContainer.new()
+	lmargin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	lmargin.add_theme_constant_override("margin_left", 12)
+	lmargin.add_theme_constant_override("margin_right", 12)
+	lmargin.add_theme_constant_override("margin_top", 10)
+	lmargin.add_theme_constant_override("margin_bottom", 10)
+	ledger.add_child(lmargin)
+	var dbox := VBoxContainer.new()
+	dbox.add_theme_constant_override("separation", 8)
+	lmargin.add_child(dbox)
+	var dhead := HBoxContainer.new()
+	var rtag := _gate_ribbon("RECRUITS", 16)
+	rtag.rotation = deg_to_rad(-1.5)
+	dhead.add_child(rtag)
+	var dspacer := Control.new()
+	dspacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dhead.add_child(dspacer)
+	_gate_recruit_count = _gate_label("0", 15, GATE_CREAM)
+	dhead.add_child(_gate_recruit_count)
+	dbox.add_child(dhead)
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.set_drag_forwarding(Callable(), _team_can_drop_list, _team_drop_list)
+	dbox.add_child(scroll)
+	_gate_team_list = HFlowContainer.new()
+	_gate_team_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_gate_team_list.add_theme_constant_override("h_separation", 10)
+	_gate_team_list.add_theme_constant_override("v_separation", 14)
+	# Top/right room so the level seals (which overhang the card corner) are not clipped by the scroll.
+	var list_pad := MarginContainer.new()
+	list_pad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list_pad.add_theme_constant_override("margin_top", 14)
+	list_pad.add_theme_constant_override("margin_right", 8)
+	list_pad.add_theme_constant_override("margin_left", 4)
+	scroll.add_child(list_pad)
+	list_pad.add_child(_gate_team_list)
+	var chips := HBoxContainer.new()
+	chips.add_theme_constant_override("separation", 4)
+	chips.add_child(_gate_label("DEBUG LEADER", 11, Color(GATE_CREAM, 0.70)))
+	var chip_spacer := Control.new()
+	chip_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	chips.add_child(chip_spacer)
+	for sid in PLAYABLE_LEADERS:
+		var chip := _gate_button("", 10, 2)
+		chip.custom_minimum_size = Vector2(30, 30)
+		chip.tooltip_text = "Switch leader to %s" % str(HUB_NAMES.get(sid, sid.to_upper()))
+		chip.icon = _portrait_for_species(sid)
+		chip.expand_icon = true
+		chip.pressed.connect(_set_player_species.bind(sid))
+		chips.add_child(chip)
+	dbox.add_child(chips)
 
-	var note := Label.new()
-	note.name = "GateNote"
-	note.text = "Read-only Gate prototype. No expedition is started and GameState is not changed."
-	note.add_theme_font_override("font", mono)
-	note.add_theme_font_size_override("font_size", 13)
-	note.add_theme_color_override("font_color", Color(0.94, 0.77, 0.49))
-	root_box.add_child(note)
-
+	# --- Footer ---
 	var footer_row := HBoxContainer.new()
 	footer_row.add_theme_constant_override("separation", 12)
 	root_box.add_child(footer_row)
-
-	var footer := Label.new()
+	var footer := _gate_label("[UP/DOWN] SELECT    [Z] BRIEF    [R] ROLL    [X] CLOSE", 13, Color(GATE_BROWN, 0.9))
 	footer.name = "GateFooter"
 	footer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	footer.text = "[UP/DOWN] SELECT    [Z] BRIEF    [R] NATURE PREVIEW    [X/ESC] CLOSE"
-	footer.add_theme_font_override("font", mono)
-	footer.add_theme_font_size_override("font_size", 14)
-	footer.add_theme_color_override("font_color", Color(0.84, 0.88, 0.90))
 	footer_row.add_child(footer)
-
-	var brief_btn := Button.new()
-	brief_btn.text = "BRIEF"
+	var brief_btn := _gate_button("BRIEF")
 	brief_btn.pressed.connect(_gate_confirm)
 	footer_row.add_child(brief_btn)
-
-	var close_btn := Button.new()
-	close_btn.text = "CLOSE"
+	var close_btn := _gate_button("CLOSE")
 	close_btn.pressed.connect(_close_gate)
 	footer_row.add_child(close_btn)
+	_gate_team_refresh()
 	_gate_refresh_rows()
 
 
+## Opening animation, same feel as the dialogue box: the sheet settles in with a small back-ease.
+func _gate_play_open_anim() -> void:
+	if _gate_holder == null or not is_inside_tree():
+		return
+	_gate_holder.rotation = 0.06
+	_gate_holder.scale = Vector2(0.95, 0.95)
+	_gate_holder.modulate.a = 0.0
+	var tw := create_tween().set_parallel(true)
+	tw.tween_property(_gate_holder, "rotation", GATE_REST_ROT, 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_gate_holder, "scale", Vector2.ONE, 0.40).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_gate_holder, "modulate:a", 1.0, 0.22)
+
+
+## Rebuilds the 3 team cards (party order) and the recruits ledger from GameState.
+func _gate_team_refresh() -> void:
+	if _gate_team_slots == null or _gate_team_list == null:
+		return
+	for n in _gate_team_slots.get_children():
+		n.queue_free()
+	for n in _gate_team_list.get_children():
+		n.queue_free()
+	GameState.get_roster()  # makes sure every member has its uid
+	var team_tilt := [-1.6, 0.9, 1.5]
+	for i in ExpeditionRoster.MAX_ACTIVE:
+		var c: Combatant = GameState.party[i] if i < GameState.party.size() else null
+		var role := "empty"
+		if c != null:
+			role = "leader" if i == 0 else "ally"
+		var card := _make_team_card(c, role, _gate_card_team)
+		card.rotation = deg_to_rad(float(team_tilt[i]))
+		if role == "ally":
+			card.set_drag_forwarding(_team_drag.bind(c.uid, card, c, "slot"), Callable(), Callable())
+		elif role == "empty":
+			card.set_drag_forwarding(Callable(), _team_can_drop_slot, _team_drop_slot)
+		_gate_team_slots.add_child(card)
+	var recruits := GameState.recruited_available()
+	var k := 0
+	for c in recruits:
+		var rc := _make_team_card(c, "recruit", _gate_card_recruit)
+		rc.rotation = deg_to_rad(-1.2 if k % 2 == 0 else 1.0)
+		rc.set_drag_forwarding(_team_drag.bind(c.uid, rc, c, "list"), _team_can_drop_list, _team_drop_list)
+		_gate_team_list.add_child(rc)
+		k += 1
+	if _gate_recruit_count != null:
+		_gate_recruit_count.text = "%d" % recruits.size()
+	if recruits.is_empty():
+		var none := _gate_label("Nobody recruited yet.\nTalk to travelers in the plaza or use EMPLOY in battle.", 14, Color(GATE_CREAM, 0.85))
+		none.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		none.custom_minimum_size = Vector2(290, 0)
+		_gate_team_list.add_child(none)
+
+
+func _on_gate_viewport_changed() -> void:
+	_gate_stale = true  # rebuilt at the next _open_gate
+
+
+## Rebuilds the panel when the window size changed since it was built.
+func _gate_rebuild_if_stale() -> void:
+	if not _gate_stale:
+		return
+	_gate_stale = false
+	if _gate_panel != null:
+		_gate_panel.name = "GatePanelOld"
+		_gate_panel.queue_free()
+	_gate_row_boxes.clear()
+	_gate_row_buttons.clear()
+	_build_gate_panel()
+
+
+## One playing card. Art window with a gold frame, green name ribbon, element stamps, and a red wax
+## seal with the level in the TOP-RIGHT corner. role: leader | ally | recruit | empty.
+func _make_team_card(c: Combatant, role: String, card_size: Vector2) -> Panel:
+	var big := card_size.y > 210.0
+	var card := Panel.new()
+	card.custom_minimum_size = card_size
+	card.pivot_offset = card_size * 0.5
+	if c == null:
+		card.add_theme_stylebox_override("panel", _gate_box(Color(0.36, 0.30, 0.20, 0.85), Color(GATE_INK, 0.85), 2, 8))
+		var mark := _gate_label("?", 72, Color(GATE_CREAM, 0.30))
+		mark.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		mark.offset_bottom = -26.0
+		mark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		mark.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card.add_child(mark)
+		var cap := _gate_label("EMPTY SLOT", 13, Color(GATE_CREAM, 0.75))
+		cap.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+		cap.offset_top = -34.0
+		cap.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card.add_child(cap)
+		return card
+	var frame_col := GATE_GOLD if role == "leader" else GATE_INK
+	var sb := _gate_box(GATE_CARD_PAPER, frame_col, 4 if role == "leader" else 3, 8)
+	if role == "leader":
+		sb.shadow_color = Color(GATE_GOLD, 0.45)
+		sb.shadow_size = 10
+	else:
+		sb.shadow_color = Color(0, 0, 0, 0.28)
+		sb.shadow_size = 5
+		sb.shadow_offset = Vector2(2, 3)
+	card.add_theme_stylebox_override("panel", sb)
+	var grain := _gate_paper(GATE_CARD_PAPER)
+	grain.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	grain.offset_left = 4.0
+	grain.offset_top = 4.0
+	grain.offset_right = -4.0
+	grain.offset_bottom = -4.0
+	card.add_child(grain)
+	var inset := Panel.new()
+	inset.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	inset.offset_left = 8.0
+	inset.offset_top = 8.0
+	inset.offset_right = -8.0
+	inset.offset_bottom = -8.0
+	inset.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	inset.add_theme_stylebox_override("panel", _gate_box(Color(0, 0, 0, 0), Color(GATE_INK, 0.45), 1, 4))
+	card.add_child(inset)
+
+	var pad := 14.0 if big else 11.0
+	var top := 28.0 if big else 24.0
+	var rib_h := 28.0 if big else 24.0
+	var tag_h := 26.0 if big else 22.0
+	var art_h := card_size.y - top - (rib_h + tag_h + 26.0)  # badges end inside the inner frame (8 px) with air
+	var sid := GameState.species_key(c)
+	# Art window: dark frame + gold rim, the portrait inside.
+	var art := Panel.new()
+	art.position = Vector2(pad, top)
+	art.size = Vector2(card_size.x - pad * 2.0, art_h)
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	art.add_theme_stylebox_override("panel", _gate_box(GATE_GOLD, GATE_GOLD, 3, 4))
+	art.clip_contents = true  # nothing may spill past the gold rim
+	card.add_child(art)
+	var portrait := TextureRect.new()
+	portrait.name = "Portrait"
+	portrait.texture = _portrait_for_species(sid)
+	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED  # fills the window: no dark bars
+	portrait.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	portrait.offset_left = 3.0
+	portrait.offset_top = 3.0
+	portrait.offset_right = -3.0
+	portrait.offset_bottom = -3.0
+	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	art.add_child(portrait)
+	# Name ribbon.
+	var name_lbl := _gate_ribbon(str(HUB_NAMES.get(sid, c.name.to_upper())), 17 if big else 14)
+	name_lbl.name = "NameLabel"
+	name_lbl.position = Vector2(pad - 4.0, top + art_h + 6.0)
+	name_lbl.size = Vector2(card_size.x - (pad - 4.0) * 2.0, rib_h)
+	card.add_child(name_lbl)
+	# Element ICON badges (D-404/D-413/D-423): one wide badge, or two narrower ones.
+	var tags := HBoxContainer.new()
+	tags.alignment = BoxContainer.ALIGNMENT_CENTER
+	tags.add_theme_constant_override("separation", 4)
+	tags.position = Vector2(pad, top + art_h + 10.0 + rib_h)
+	tags.size = Vector2(card_size.x - pad * 2.0, tag_h)
+	tags.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var elems := c.get_elements()
+	for e in elems:
+		var badge := ElementBadge.new()
+		badge.setup(e, Vector2(52.0 if elems.size() == 1 else 34.0, tag_h))
+		tags.add_child(badge)
+	card.add_child(tags)
+	# Role ribbon, top-left over the art window.
+	if role == "leader" or role == "ally":
+		var banner := _gate_ribbon("LEADER" if role == "leader" else "ALLY", 11, role == "leader")
+		banner.position = Vector2(pad - 2.0, 6.0)
+		card.add_child(banner)
+	# Level: red wax seal stuck on the TOP-RIGHT corner.
+	var seal := Label.new()
+	seal.name = "LevelTag"
+	seal.text = "Lv%d" % c.level
+	var digits_font := SystemFont.new()  # sans bold: unambiguous lining digits on the wax seal
+	digits_font.font_names = PackedStringArray(["Segoe UI", "Arial", "Verdana"])
+	digits_font.font_weight = 800
+	seal.add_theme_font_override("font", digits_font)
+	seal.add_theme_font_size_override("font_size", 15)
+	seal.add_theme_color_override("font_color", GATE_CREAM)
+	seal.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	seal.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	seal.add_theme_stylebox_override("normal", _gate_box(GATE_WAX, GATE_GOLD, 2, 24))
+	seal.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	seal.offset_left = -50.0
+	seal.offset_top = -8.0
+	seal.offset_right = -2.0
+	seal.offset_bottom = 40.0
+	seal.pivot_offset = Vector2(24, 24)
+	seal.rotation = deg_to_rad(8.0)
+	seal.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(seal)
+	return card
+
+
+func _team_drag(_at: Vector2, uid: String, source: Control, c: Combatant, from: String) -> Variant:
+	var preview := Control.new()
+	var ghost := _make_team_card(c, "recruit", _gate_card_recruit)
+	ghost.position = -_gate_card_recruit * 0.5
+	ghost.rotation = deg_to_rad(-4.0)
+	ghost.modulate.a = 0.92
+	preview.add_child(ghost)
+	source.set_drag_preview(preview)
+	return {"kind": "team_badge", "uid": uid, "from": from}
+
+
+func _team_can_drop_slot(_at: Vector2, data: Variant) -> bool:
+	return data is Dictionary and str(data.get("kind", "")) == "team_badge" and str(data.get("from", "")) == "list" \
+		and GameState.party.size() < ExpeditionRoster.MAX_ACTIVE
+
+
+func _team_drop_slot(_at: Vector2, data: Variant) -> void:
+	team_assign(str(data["uid"]))
+
+
+func _team_can_drop_list(_at: Vector2, data: Variant) -> bool:
+	return data is Dictionary and str(data.get("kind", "")) == "team_badge" and str(data.get("from", "")) == "slot"
+
+
+func _team_drop_list(_at: Vector2, data: Variant) -> void:
+	team_unassign(str(data["uid"]))
+
+
+func _gate_lines() -> Array[String]:
+	var lines: Array[String] = []
+	for id in WorldDefs.warp_ids():
+		var world := WorldDefs.get_world(str(id))
+		lines.append("%s — %d FLOORS (AUTHORIZED)" % [str(world.get("name", "")), int(world.get("floors", 0))])
+	return lines
+
+
 func _gate_refresh_rows() -> void:
+	var gate_lines := _gate_lines()
 	for i in _gate_row_buttons.size():
 		var selected := i == _gate_index
-		_gate_row_buttons[i].text = ("▸ " if selected else "  ") + str(GATE_LINES[i])
+		_gate_row_buttons[i].text = ("▸ " if selected else "  ") + str(gate_lines[i])
+		# D-1261 paper look: selected = lit parchment with a gold edge, idle = dim parchment.
 		_gate_row_buttons[i].add_theme_color_override("font_color",
-			Color(0.96, 0.98, 0.88) if selected else Color(0.62, 0.68, 0.72))
+			GATE_INK if selected else Color(GATE_BROWN, 0.70))
 		if i < _gate_row_boxes.size():
 			var sb := _gate_row_boxes[i].get_theme_stylebox("panel").duplicate() as StyleBoxFlat
 			if sb != null:
-				sb.bg_color = Color(0.11, 0.21, 0.28, 0.98) if selected else Color(0.07, 0.12, 0.18, 0.78)
-				sb.border_color = Color(0.84, 0.98, 0.40) if selected else Color(0.28, 0.36, 0.42, 0.65)
+				sb.bg_color = Color(0.96, 0.89, 0.68, 0.98) if selected else Color(0.82, 0.72, 0.52, 0.85)
+				sb.border_color = GATE_GOLD if selected else Color(GATE_INK, 0.5)
 				_gate_row_boxes[i].add_theme_stylebox_override("panel", sb)
 
 
 func _gate_nav(step: int) -> void:
-	_gate_index = posmod(_gate_index + step, GATE_LINES.size())
+	_gate_index = posmod(_gate_index + step, _gate_lines().size())
 	_gate_refresh_rows()
 
 
 func _gate_confirm() -> void:
 	if _gate_row_buttons.is_empty():
 		return
-	if _gate_index == 0:
-		_enter_murky_forest_expedition()  # D-1219: no roulette at the gate; the character keeps its Nature.
+	_gate_world_id = str(WorldDefs.warp_ids()[_gate_index])
+	_begin_warp(_gate_world_id)
+
+
+# --- D-1260: warp (the Expedition Gate portal surges in the colours of the chosen world) ---
+
+const WARP_TUNING := {
+	"bars_in_ms": 320.0,
+	"cam_in_ms": 900.0,
+	"surge_start_ms": 700.0,
+	"surge_ms": 2300.0,
+	"hold_ms": 500.0,
+	"cam_back_ms": 650.0,
+	"bar_h_frac": 0.115,
+	"enter_dist_m": 2.4,
+	"cam_dist_m": 17.0,  # D-1273: the gate is 2x bigger
+	"cam_height_m": 3.6,
+}
+var _warp_active := false
+var _warp_world := ""
+var _warp_ms := 0.0
+var _warp_phase := ""  ## CUT (bars + portal surge) -> WALK (player enters) -> committed (loading owns the screen)
+var _warp_committed := false
+var _warp_cam_from := Transform3D.IDENTITY
+var _warp_walk_ms := 0.0
+var _warp_bars: Control = null
+var _warp_cam_start := Transform3D.IDENTITY
+var _gate_light: OmniLight3D = null
+var _gate: HubGate = null
+var _warp_speed := 1.0  ## debug: fast-forwards the CUT/RETURN timeline (scenarios)
+var _warp_dry := false  ## debug: _warp_commit does not start the loading / scene change
+var _portal_open_world := ""  ## D-1273: world the open portal leads to ("" = dormant)
+var _enter_flood: Control = null
+var _enter_scale0: Dictionary = {}
+const ENTER_TUNING := {
+	"suck_start_ms": 650.0,
+	"suck_ms": 650.0,
+	"flood_start_ms": 1150.0,
+	"flood_ms": 800.0,
+}
+var _warp_shot_dir := ""
+var _warp_shots: Dictionary = {}
+
+
+## The player picked a world at the gate panel: the panel closes and the portal surges
+## under cinematic bars; then the player walks in (D-1260).
+func _begin_warp(world_id: String) -> void:
+	if _warp_active or player == null or not WorldDefs.WORLDS.has(world_id):
 		return
-	var note := _gate_panel.find_child("GateNote", true, false) as Label
-	if note != null:
-		note.text = "BRIEFING UNAVAILABLE IN THIS PROTOTYPE — %s" % str(GATE_LINES[_gate_index])
+	if _gate_open:
+		_close_gate()
+	_warp_active = true
+	_warp_world = world_id
+	_warp_ms = 0.0
+	_warp_phase = "CUT"
+	_warp_committed = false
+	_warp_shot_dir = str(_args.get("nht-shots", ""))
+	_auto_nav_target = Vector3.INF
+	_ui_open = false
+	_warp_cam_start = _camera.global_transform
+	_set_portal_world_colors(world_id)
+	_set_portal_open(0.0)
+	_build_warp_bars()
+	_sync_hud_visibility()
+	print("[HUB] warp begin world=%s" % world_id)
+
+
+func _set_portal_world_colors(world_id: String) -> void:
+	if _portal_quad_mat == null:
+		return
+	var cols: Array = WorldDefs.world_colors(world_id)
+	if cols.size() < 3:
+		return
+	var bright := cols[0] as Color
+	var mid := cols[1] as Color
+	var dark := cols[2] as Color
+	if _gate != null:
+		_gate.set_world_colors(bright, mid, dark)
+
+
+func _set_portal_open(v: float) -> void:
+	if _gate != null:
+		_gate.set_open(v)
+	elif _portal_quad_mat != null:
+		_portal_quad_mat.set_shader_parameter("open", clampf(v, 0.0, 1.0))
+
+
+func _build_warp_bars() -> void:
+	if _warp_bars != null and is_instance_valid(_warp_bars):
+		_warp_bars.queue_free()
+	var layer := CanvasLayer.new()
+	layer.layer = 90
+	layer.name = "WarpBars"
+	var ctl := Control.new()
+	ctl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ctl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	ctl.draw.connect(_draw_warp_bars.bind(ctl))
+	layer.add_child(ctl)
+	add_child(layer)
+	_warp_bars = ctl
+
+
+func _warp_bar_frac() -> float:
+	if _warp_phase == "CUT":
+		return clampf(_warp_ms / float(WARP_TUNING["bars_in_ms"]), 0.0, 1.0)
+	if _warp_phase == "ENTER":
+		return clampf(_warp_ms / float(WARP_TUNING["bars_in_ms"]), 0.0, 1.0)
+	return 1.0 - clampf(_warp_walk_ms / float(WARP_TUNING["bars_in_ms"]), 0.0, 1.0)
+
+
+func _draw_warp_bars(ctl: Control) -> void:
+	var frac := _warp_bar_frac()
+	if frac <= 0.001:
+		return
+	var vp := ctl.size
+	var h := vp.y * float(WARP_TUNING["bar_h_frac"]) * frac
+	ctl.draw_rect(Rect2(0.0, 0.0, vp.x, h), Color.BLACK)
+	ctl.draw_rect(Rect2(0.0, vp.y - h, vp.x, h), Color.BLACK)
+
+
+func _warp_gate_cam() -> Transform3D:
+	var look := GATE_POS + Vector3(0.0, 2.3 * HubGate.SCALE, 0.0)
+	var push := clampf((_warp_ms - float(WARP_TUNING["cam_in_ms"])) / 2600.0, 0.0, 1.0)
+	var pos := GATE_POS + Vector3(0.0, float(WARP_TUNING["cam_height_m"]), float(WARP_TUNING["cam_dist_m"]) - 1.4 * HubGate.SCALE * push)
+	return Transform3D(Basis.IDENTITY, pos).looking_at(look, Vector3.UP)
+
+
+func _warp_step(delta: float) -> void:
+	if _warp_phase == "CUT":
+		_warp_ms += delta * 1000.0 * _warp_speed
+		player.velocity = Vector3.ZERO
+		player.move_and_slide()
+		var k := _ease_smooth(clampf(_warp_ms / float(WARP_TUNING["cam_in_ms"]), 0.0, 1.0))
+		_camera.global_transform = _warp_cam_start.interpolate_with(_warp_gate_cam(), k)
+		var surge := clampf((_warp_ms - float(WARP_TUNING["surge_start_ms"])) / float(WARP_TUNING["surge_ms"]), 0.0, 1.0)
+		_set_portal_open(_ease_smooth(surge))
+		_portal_pulse_val = maxf(_portal_pulse_val, 0.6 * surge)
+		_update_followers(delta)
+		_play_move(player_ap, false)
+		_warp_capture("cut_%d" % int(_warp_ms / 1000.0))
+		if _warp_ms >= float(WARP_TUNING["surge_start_ms"]) + float(WARP_TUNING["surge_ms"]) + float(WARP_TUNING["hold_ms"]):
+			_warp_phase = "RETURN"
+			_warp_walk_ms = 0.0
+			_warp_cam_from = _camera.global_transform
+			_cam_smooth_ready = false
+		_warp_bars.queue_redraw()
+		return
+	if _warp_phase == "RETURN":
+		# D-1273: the portal is open; the camera goes back to the player and the player decides.
+		_warp_walk_ms += delta * 1000.0 * _warp_speed
+		player.velocity = Vector3.ZERO
+		player.move_and_slide()
+		_update_camera(delta)
+		_update_followers(delta)
+		_update_npcs(delta)
+		_play_move(player_ap, false)
+		var b := _ease_smooth(clampf(_warp_walk_ms / float(WARP_TUNING["cam_back_ms"]), 0.0, 1.0))
+		_camera.global_transform = _warp_cam_from.interpolate_with(_camera.global_transform, b)
+		_warp_capture("open_return")
+		_warp_bars.queue_redraw()
+		if _warp_walk_ms >= float(WARP_TUNING["cam_back_ms"]):
+			_warp_release()
+		return
+	if _warp_phase == "ENTER":
+		_warp_enter_step(delta)
+
+
+## Control returns to the player with the portal left open. Nothing moves the player any more.
+func _warp_release() -> void:
+	_portal_open_world = _warp_world
+	_warp_active = false
+	_warp_phase = ""
+	if _warp_bars != null and is_instance_valid(_warp_bars):
+		_warp_bars.get_parent().queue_free()
+	_warp_bars = null
+	_sync_hud_visibility()
+	print("[HUB] portal open world=%s (the player decides when to enter)" % _warp_world)
+	if _args.has("warp-enter"):  # debug: skip the walk and cross the portal right away
+		player.global_position = Vector3(GATE_POS.x, HubGate.DAIS_TOP + 0.05, GATE_POS.z + 0.1 + 3.4)
+		_begin_portal_entry.call_deferred()
+
+
+## True when the player stands in the open portal's mouth (crossing the ring plane inside the opening).
+func _player_in_portal_mouth() -> bool:
+	if _gate == null or player == null:
+		return false
+	var d := player.global_position - _gate.global_position
+	var k := HubGate.SCALE
+	return absf(d.x) < 0.9 * k and d.z < 0.55 * k and d.z > -0.9 * k and d.y < 1.2 * k
+
+
+func _check_portal_entry() -> void:
+	if _portal_open_world == "" or _warp_active or _ui_open or _arrival != null:
+		return
+	if _player_in_portal_mouth():
+		_begin_portal_entry()
+
+
+## The player walked into the open portal: bars, the camera frames the ring, the party is drawn in,
+## then a flood from the portal fills the screen with the loading colour; when it is solid the loading
+## starts (same colour: no cut) - everything driven by one clock.
+func _begin_portal_entry() -> void:
+	if _warp_active or player == null or _portal_open_world == "":
+		return
+	_warp_active = true
+	_warp_world = _portal_open_world
+	_warp_phase = "ENTER"
+	_warp_ms = 0.0
+	_warp_committed = false
+	_warp_shot_dir = str(_args.get("nht-shots", ""))
+	_auto_nav_target = Vector3.INF
+	_ui_open = false
+	_warp_cam_from = _camera.global_transform
+	_enter_scale0.clear()
+	_enter_scale0[player_model] = player_model.scale
+	for f in _followers:
+		if is_instance_valid(f["node"]):
+			_enter_scale0[f["node"]] = (f["node"] as Node3D).scale
+	_build_warp_bars()
+	_build_enter_flood()
+	_sync_hud_visibility()
+	print("[HUB] portal entry world=%s" % _warp_world)
+
+
+func _build_enter_flood() -> void:
+	if _enter_flood != null and is_instance_valid(_enter_flood):
+		_enter_flood.get_parent().queue_free()
+	var layer := CanvasLayer.new()
+	layer.layer = 95
+	layer.name = "PortalFlood"
+	var ctl := Control.new()
+	ctl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ctl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	ctl.draw.connect(_draw_enter_flood.bind(ctl))
+	layer.add_child(ctl)
+	add_child(layer)
+	_enter_flood = ctl
+
+
+func _enter_flood_k() -> float:
+	return _ease_smooth(clampf((_warp_ms - float(ENTER_TUNING["flood_start_ms"])) / float(ENTER_TUNING["flood_ms"]), 0.0, 1.0))
+
+
+func _draw_enter_flood(ctl: Control) -> void:
+	var k := _enter_flood_k()
+	if k <= 0.001 or _gate == null:
+		return
+	var vp := ctl.size
+	var ring_c := _gate.global_position + HubGate.RING_CENTER
+	var c := vp * 0.5 if _camera.is_position_behind(ring_c) else _camera.unproject_position(ring_c)
+	var r := k * vp.length() * 0.8
+	var cols: Array = WorldDefs.world_colors(_warp_world)
+	var bright: Color = (cols[0] as Color) if cols.size() > 0 else Color(1, 0.8, 0.4)
+	var mid: Color = (cols[1] as Color) if cols.size() > 1 else bright
+	# Glow halo first, then the solid fill in the loading colour (#051322), then a bright rim.
+	ctl.draw_circle(c, r + 26.0, Color(bright, 0.22 * (1.0 - k * 0.6)))
+	ctl.draw_circle(c, r + 10.0, Color(mid, 0.55 * (1.0 - k * 0.5)))
+	ctl.draw_circle(c, r, NatureHubTransition.C_BG)
+	ctl.draw_arc(c, r, 0.0, TAU, 96, Color(bright, 0.95 * (1.0 - k)), 4.0, true)
+
+
+func _warp_enter_step(delta: float) -> void:
+	_warp_ms += delta * 1000.0
+	var t := _warp_ms
+	var ring_c := _gate.global_position + HubGate.RING_CENTER
+	# The player keeps walking forward, through the portal (the cutscene owns the body now).
+	var target := Vector3(ring_c.x, player.global_position.y, ring_c.z - 1.4 * HubGate.SCALE)
+	var to := target - player.global_position
+	to.y = 0.0
+	var dir := to.normalized() if to.length() > 0.05 else Vector3.ZERO
+	player.velocity = dir * SPEED * 0.8
+	player.move_and_slide()
+	if dir.length_squared() > 0.001:
+		player_yaw = lerp_angle(player_yaw, atan2(dir.x, dir.z), clampf(delta * TURN_RATE, 0.0, 1.0))
+	player.rotation.y = player_yaw
+	_update_followers(delta)
+	_update_npcs(delta)
+	_play_move(player_ap, dir.length_squared() > 0.01)
+	if dir.length_squared() > 0.01 and _apply_gait(player_ap, player_model, Vector2(player.velocity.x, player.velocity.z).length()) < 0.0:
+		player_ap.speed_scale = 1.0
+	# The party is drawn into the vortex (scale to zero), the leader first, followers a beat later.
+	var idx := 0
+	for node in _enter_scale0.keys():
+		if is_instance_valid(node):
+			var k := _ease_smooth(clampf((t - float(ENTER_TUNING["suck_start_ms"]) - 140.0 * idx) / float(ENTER_TUNING["suck_ms"]), 0.0, 1.0))
+			(node as Node3D).scale = (_enter_scale0[node] as Vector3) * maxf(1.0 - k, 0.02)  # never exactly 0 (singular basis)
+		idx += 1
+	# Camera frames the ring from the player's side and pushes in slowly.
+	var push := clampf((t - 900.0) / 1400.0, 0.0, 1.0)
+	var cam_to := Transform3D(Basis.IDENTITY, ring_c + Vector3(0.0, 0.3 * HubGate.SCALE, (5.4 - 1.6 * push) * HubGate.SCALE)).looking_at(ring_c + Vector3(0.0, -0.05, 0.0), Vector3.UP)
+	_camera.global_transform = _warp_cam_from.interpolate_with(cam_to, _ease_smooth(clampf(t / 900.0, 0.0, 1.0)))
+	# Portal intensifies as the party is drawn in.
+	_portal_pulse_val = maxf(_portal_pulse_val, _ease_smooth(clampf(t / 900.0, 0.0, 1.0)) * 1.3)
+	_warp_capture("enter_%d" % int(t / 500.0))
+	_warp_bars.queue_redraw()
+	if _enter_flood != null:
+		_enter_flood.queue_redraw()
+	if not _warp_committed and _enter_flood_k() >= 0.999:
+		_warp_commit()  # the screen is solid loading colour: the loading takes over without a cut
+
+
+func _ease_smooth(t: float) -> float:
+	return t * t * (3.0 - 2.0 * t)
+
+
+## Starts the loading (waves + plaque) and the real scene change. The nature roll is the
+## same as before (D-1219); only the way in changed.
+func _warp_commit() -> void:
+	_warp_committed = true
+	if _warp_dry:
+		print("[HUB] warp commit (dry run)")
+		return
+	var gs := get_node_or_null("/root/GameState")
+	if gs == null or not gs.has_method("roll_expedition_nature_and_prepare"):
+		return
+	gs.call("roll_expedition_nature_and_prepare", str(_args.get("nature", "")))
+	var def := WorldDefs.get_world(_warp_world)
+	var opts := {
+		"world": _warp_world,
+		"load_min_ms": float(str(_args.get("nht-load-min", "0"))),
+		"shots": str(_args.get("nht-shots", "")),
+		"summary": _args.has("nht-summary"),
+		"quit": _args.has("nht-quit"),
+		"from_world": true,
+	}
+	var party_keys: Array = [str(player_model_id)]
+	for f in _followers:
+		if is_instance_valid(f["node"]):
+			party_keys.append(str(f["model_id"]))
+	opts["party"] = party_keys
+	print("[HUB] warp commit world=%s scene=%s" % [_warp_world, str(def.get("scene", ""))])
+	NatureHubTransition.begin(get_tree(), str(def.get("scene", "")), opts)
+
+
+func _warp_capture(tag: String) -> void:
+	if _warp_shot_dir.is_empty() or _warp_shots.has(tag) or DisplayServer.get_name() == "headless":
+		return
+	_warp_shots[tag] = true
+	await RenderingServer.frame_post_draw
+	var img := get_viewport().get_texture().get_image()
+	if img != null:
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_warp_shot_dir))
+		img.save_png(ProjectSettings.globalize_path(_warp_shot_dir.path_join("warp_%s.png" % tag)))
+
+
 
 
 ## D-1219: the gate has no Nature roulette. The leader keeps the Nature decided after the
@@ -3141,6 +3867,9 @@ func _enter_murky_forest_expedition() -> void:
 	var gs := get_node_or_null("/root/GameState")
 	if gs != null and gs.has_method("roll_expedition_nature_and_prepare"):
 		gs.call("roll_expedition_nature_and_prepare", str(_args.get("nature", "")))
+		# D-1248: fala curta no Hub + marca no cenário. Sem UI nova, sem await,
+		# sem persistência entre expedições e sem tranca.
+		print("HUB_LINE: O arco de pedra ainda está lá. Volte quando quiser reconhecê-la.")
 		_close_gate()
 		get_tree().change_scene_to_file(str(gs.get("MURKY_FOREST_3D")))
 
@@ -3151,7 +3880,10 @@ func _open_gate() -> void:
 	_gate_open = true
 	_ui_open = true
 	_refresh_gate_leader_strip()
+	_gate_rebuild_if_stale()
+	_gate_team_refresh()
 	_gate_panel.visible = true
+	_gate_play_open_anim()
 	if _npc_prompt != null:
 		_npc_prompt.hide_prompt()
 	_sync_hud_visibility()
@@ -3309,13 +4041,24 @@ func _guild_nav(step: int) -> void:
 	_guild_refresh_rows()
 
 
+## D-1261: the Standby Roster lists the REAL recruits (name + level) not on the expedition team.
+func _guild_standby_text() -> String:
+	var rec := GameState.recruited_available()
+	if rec.is_empty():
+		return "STANDBY ROSTER: nobody recruited yet. Talk to travelers in the plaza or use EMPLOY in battle. Teams are set at the Expedition Gate."
+	var parts: Array[String] = []
+	for c in rec:
+		parts.append("%s Lv%d" % [str(HUB_NAMES.get(GameState.species_key(c), c.name.to_upper())), c.level])
+	return "STANDBY ROSTER (%d): %s. Teams are set at the Expedition Gate." % [rec.size(), ", ".join(parts)]
+
+
 func _guild_confirm() -> void:
 	match _guild_index:
 		0:
 			_open_status_from_guild()
 		1:
 			if _guild_detail_lbl != null:
-				_guild_detail_lbl.text = "[DEMO PREVIEW] Standby Roster & Guild Services are reserved for campaign progression in v2. No shop, heal, or save state is altered here."
+				_guild_detail_lbl.text = _guild_standby_text()
 		_:
 			_close_guild()
 
@@ -3384,7 +4127,7 @@ func _open_npc_dialogue(npc: Dictionary) -> void:
 	if sicon != null and is_instance_valid(sicon) and sicon.has_method("set_state"):
 		sicon.set_state(ICON_TALKED, Color(0.55, 0.95, 0.62))
 		icon_entry["pop"] = 1.0
-	_npc_hud.open(str(npc["name"]), str(npc["dialogue"]), "CLOSE")
+	_npc_hud.open(str(npc["name"]), str(npc["dialogue"]), "Z: RECRUIT   X: CLOSE" if _npc_recruitable(npc) else "CLOSE")
 	_npc_hud.set_portrait(_portrait_for(npc))
 	set_dialogue_focus(npc["node"] as Node3D)
 	_sync_hud_visibility()
@@ -3498,6 +4241,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		var key := (event as InputEventKey).keycode
+		if key == KEY_F8 and not _npc_talking:
+			_cycle_team_debug()
+			get_viewport().set_input_as_handled()
+			return
 		if key == KEY_F6 and not _ui_open and not _npc_talking:
 			_cycle_leader()
 			get_viewport().set_input_as_handled()
@@ -3549,6 +4296,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				if _npc_hud != null and _npc_hud.is_typing():
 					_npc_hud.finish_typing()
 				else:
+					var recruited_uid := recruit_npc(_npc_target) if not _npc_target.is_empty() else ""
+					if recruited_uid != "":
+						print("[HUB] recruited: ", _npc_target.get("name", ""))
 					_close_npc_dialogue()
 				get_viewport().set_input_as_handled()
 				return
@@ -3563,6 +4313,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if _warp_active:
+		_warp_step(delta)
+		return
 	if _arrival != null and is_instance_valid(_arrival):
 		_arrival.apply(delta)
 		_play_move(player_ap, false)
@@ -3585,6 +4338,7 @@ func _physics_process(delta: float) -> void:
 		return
 	super(delta)
 	_update_npcs(delta)
+	_check_portal_entry()
 
 
 func _drive_step(delta: float) -> void:
@@ -3612,6 +4366,7 @@ func _drive_step(delta: float) -> void:
 	elif player_ap != null:
 		player_ap.speed_scale = 1.0
 		_apply_ground_lift(player_ap, player_model, "idle")
+	_update_floor_tilt(delta)  # D-1270: after the gait lift, which rewrites model.position.y
 
 
 # --- Debug scenarios (D-1204) ------------------------------------------------
@@ -3652,6 +4407,14 @@ func _run_async() -> void:
 			await _scenario_atmosphere()
 		"HUB_ALLY_CHOICE":
 			await _scenario_ally_choice()
+		"HUB_RECRUIT_TALK":
+			await _scenario_recruit_talk()
+		"HUB_GATE_TEAM":
+			await _scenario_gate_team()
+		"HUB_GATE_DEBUG":
+			await _scenario_gate_debug()
+		"HUB_GATE_PORTAL":
+			await _scenario_gate_portal()
 		_:
 			_check("scenario_known", false, "unknown scenario '%s'" % _scenario)
 	_finish()
@@ -3665,6 +4428,118 @@ func _check(name: String, ok: bool, detail := "") -> void:
 func _frames(n: int) -> void:
 	for i in n:
 		await get_tree().physics_frame
+
+
+## D-1270: an NPC walking by waypoints has no physics body, so it rides the floor by ray: feet on
+## the altar slopes (not through them) and the model leaning with the slope.
+func _npc_ride_floor(body: Node3D, model: Node3D, delta: float) -> void:
+	var p := body.global_position
+	var q := PhysicsRayQueryParameters3D.create(Vector3(p.x, p.y + 1.0, p.z), Vector3(p.x, p.y - 1.5, p.z), 1)
+	var hit := get_world_3d().direct_space_state.intersect_ray(q)
+	if hit.is_empty():
+		return
+	var gy := float((hit["position"] as Vector3).y)
+	body.global_position.y = gy  # the ray follows x/z every frame: no lag, so no sinking on a slope
+	_tilt_model_to_floor(body, model, hit["normal"] as Vector3, 0.0, delta)
+
+
+## D-1270: world floor height under (x, z) from the same layer the characters collide with.
+func _floor_y_at(x: float, z: float) -> float:
+	# Offset by a hair: a ray through an exact triangle edge/vertex of the trimesh (x = 0 here) can leak.
+	var q := PhysicsRayQueryParameters3D.create(Vector3(x + 0.0137, 3.0, z + 0.0091), Vector3(x + 0.0137, -1.0, z + 0.0091), 1)
+	var hit := get_world_3d().direct_space_state.intersect_ray(q)
+	return float((hit["position"] as Vector3).y) if not hit.is_empty() else -99.0
+
+
+## D-1270: ramp walk data (<10 s). Each leader crosses the altar slopes south->north->south;
+## prints foot height minus floor height, stuck/not, camera jitter. NPCs patrol straight across.
+func _view_altar_ramps() -> void:
+	var only := str(_args.get("leader", ""))
+	var ids: Array = PLAYABLE_LEADERS if only == "" else [only]
+	_party_visible_for_ramps(false)
+	# D-1269 keeps models apart; park the crowd in a far corner so the route measures ramps, not crowd.
+	for npc in _npcs:
+		var nb := npc["node"] as Node3D
+		if nb != null:
+			nb.global_position = Vector3(12.5, 0.0, 11.5)
+			npc["waypoints"] = []
+	for id in ids:
+		_set_player_species(str(id))
+		var gap_min := 99.0
+		var gap_max := -99.0
+		var vgap_min := 99.0
+		var vgap_max := -99.0
+		var cam_dy := 0.0
+		var tilt_max := 0.0
+		var reached := true
+		var t0 := Time.get_ticks_msec()
+		for route in [[Vector3(0.0, 0.0, 6.0), Vector3(0.0, 0.0, -4.0)], [Vector3(4.0, 0.0, 6.0), Vector3(-4.0, 0.0, -2.0)]]:
+			await _teleport(route[0], PI)
+			_auto_nav_target = route[1]
+			var last_cam_y := _camera.global_position.y
+			var frames := 0
+			var on_altar_frames := 0
+			while frames < 240:
+				await get_tree().physics_frame
+				frames += 1
+				var p := player.global_position
+				var fy := _floor_y_at(p.x, p.z)
+				var gap := p.y + player_model.position.y - fy
+				if Vector2(p.x - ALTAR_POS.x, p.z - ALTAR_POS.z).length() < 2.6:
+					on_altar_frames += 1
+					gap_min = minf(gap_min, gap)
+					gap_max = maxf(gap_max, gap)
+					var sk := player_model.get_meta("_gait_skel", null) as Skeleton3D
+					var lv: Array = player_model.get_meta("_low_verts", [])
+					if sk != null and not lv.is_empty():
+						var vlow := ModelGait.lowest_point_y(sk, lv)
+						vgap_min = minf(vgap_min, vlow - fy)
+						vgap_max = maxf(vgap_max, vlow - fy)
+					cam_dy = maxf(cam_dy, absf(_camera.global_position.y - last_cam_y))
+					tilt_max = maxf(tilt_max, rad_to_deg(player_model.global_transform.basis.y.angle_to(Vector3.UP)))
+				last_cam_y = _camera.global_position.y
+				if Vector2(p.x - route[1].x, p.z - route[1].z).length() < 0.3:
+					break
+			var end := player.global_position
+			if Vector2(end.x - route[1].x, end.z - route[1].z).length() > 0.6:
+				reached = false
+			_auto_nav_target = Vector3.INF
+		print("RAMP leader=%s h=%.2f gap_min=%.3f gap_max=%.3f cam_dy_max=%.3f model_tilt_deg=%.1f reached=%s ms=%d vgap_min=%.3f vgap_max=%.3f" % [
+			id, player_height, gap_min, gap_max, cam_dy, tilt_max, str(reached), Time.get_ticks_msec() - t0, vgap_min, vgap_max])
+		_check("ramp_" + str(id), reached and gap_min > -0.04 and gap_max < 0.08, "gap %.3f..%.3f" % [gap_min, gap_max])
+	# NPCs patrolling straight through the altar must ride its slopes (feet on the floor).
+	var worst := 99.0
+	var worst_hi := -99.0
+	await _teleport(Vector3(12.0, 0.0, 10.0), PI)  # far, so nobody stops to greet
+	for npc in _npcs.slice(0, 4):
+		var body := npc["node"] as Node3D
+		body.visible = true
+		body.global_position = Vector3(-4.5, 0.0, ALTAR_POS.z)
+		npc["waypoints"] = [Vector3(4.5, 0.0, ALTAR_POS.z), Vector3(-4.5, 0.0, ALTAR_POS.z)]
+		npc["wp_idx"] = 0
+		npc["state"] = "walk"
+		for i in 200:
+			await get_tree().physics_frame
+			var q := body.global_position
+			if Vector2(q.x - ALTAR_POS.x, q.z - ALTAR_POS.z).length() < 2.5:
+				var g := q.y - _floor_y_at(q.x, q.z)
+				worst = minf(worst, g)
+				worst_hi = maxf(worst_hi, g)
+		print("RAMP npc=%s gap_min=%.3f gap_max=%.3f" % [str(npc.get("id", "")), worst, worst_hi])
+	_check("ramp_npcs", worst > -0.03 and worst_hi < 0.06, "gap %.3f..%.3f" % [worst, worst_hi])
+	# Capture: the (single or first) leader mid-slope with the game camera.
+	await _teleport(Vector3(0.0, 0.0, ALTAR_POS.z + 3.2), PI)
+	_cam_yaw = PI
+	_auto_nav_target = Vector3(ALTAR_POS.x, 0.0, ALTAR_POS.z + 1.0)
+	await _frames(22)
+	_auto_nav_target = Vector3.INF
+
+
+func _party_visible_for_ramps(on: bool) -> void:
+	for f in _followers:
+		var n := f.get("node") as Node3D
+		if n != null:
+			n.visible = on
 
 
 func _teleport(pos: Vector3, yaw := PI) -> void:
@@ -3749,32 +4624,219 @@ func _scenario_boot() -> void:
 	_check("lighting_mode_valid", LIGHTING_PRESETS.has(lighting_mode), lighting_mode)
 
 
-## D-1260: new campaign = leader only; 3 distinct candidates (never the leader); choosing one makes a
-## 2-member party and one Hub follower; the offer never reopens. Runs for all 6 leaders (D-235).
+## D-1261: new campaign = leader only and nobody recruited; talking to an NPC recruits it directly
+## (playable species only, never the leader, once); the Gate team takes the leader + 2 allies; an ally on
+## the team is a Hub follower and its NPC hides; removing it brings the NPC back. All 6 leaders (D-235).
 func _scenario_ally_choice() -> void:
 	for leader in PLAYABLE_LEADERS:
 		GameState.start_new_campaign(leader)
 		var tag := str(leader)
-		_check("%s_party_is_leader_only" % tag, GameState.party.size() == 1 and GameState.species_key(GameState.party[0]) == leader,
-			"party=%d" % GameState.party.size())
-		var cands: Array[String] = GameState.ally_choice_candidates
-		var distinct := true
-		for c in cands:
-			if c == leader or cands.count(c) != 1 or not PLAYABLE_LEADERS.has(c):
-				distinct = false
-		_check("%s_three_distinct_candidates" % tag, GameState.ally_choice_pending and cands.size() == 3 and distinct, str(cands))
 		_set_player_species(leader)
 		_sync_followers_to_party()
-		_check("%s_no_follower_before_choice" % tag, _followers.is_empty(), "%d" % _followers.size())
-		_check("%s_reject_not_offered" % tag, not apply_ally_choice(leader), "leader refused")
-		var pick: String = cands[_rng.randi_range(0, cands.size() - 1)]
-		_check("%s_choose_ok" % tag, apply_ally_choice(pick), pick)
+		_check("%s_leader_only_no_recruits" % tag, GameState.party.size() == 1 and GameState.recruited_available().is_empty() and _followers.is_empty(),
+			"party=%d" % GameState.party.size())
+		var others: Array[String] = []
+		for sid in PLAYABLE_LEADERS:
+			if sid != leader:
+				others.append(str(sid))
+		var uids: Array[String] = []
+		for sid in others:
+			var uid := GameState.recruit_character(sid)
+			if uid != "":
+				uids.append(uid)
+		_check("%s_recruit_5_others" % tag, uids.size() == 5 and GameState.recruited_available().size() == 5, "%d" % uids.size())
+		_check("%s_recruit_leader_refused" % tag, GameState.recruit_character(leader) == "")
+		_check("%s_recruit_twice_refused" % tag, GameState.recruit_character(others[0]) == "")
+		_check("%s_recruit_unknown_refused" % tag, GameState.recruit_character("not_a_species") == "")
+		_check("%s_assign_1" % tag, team_assign(uids[0]) and GameState.party.size() == 2)
 		await _frames(1)
-		_check("%s_party_of_two" % tag, GameState.party.size() == 2 and GameState.species_key(GameState.party[1]) == pick)
-		_check("%s_one_hub_follower" % tag, _followers.size() == 1 and str(_followers[0]["model_id"]) == pick and _party_visible)
-		_check("%s_no_reopen" % tag, not GameState.ally_choice_pending and not apply_ally_choice(cands[0]))
-		_sync_followers_to_party()  # re-entering the Hub keeps the ally and does not offer again
-		_check("%s_reentry_keeps_ally" % tag, _followers.size() == 1 and not GameState.ally_choice_pending)
+		_check("%s_follower_ok" % tag, _followers.size() == 1 and str(_followers[0]["model_id"]) == others[0] and _party_visible)
+		_check("%s_assign_2" % tag, team_assign(uids[1]) and GameState.party.size() == 3 and _followers.size() == 2)
+		_check("%s_team_full_refused" % tag, not team_assign(uids[2]) and GameState.party.size() == 3)
+		_check("%s_leader_not_removable" % tag, not GameState.team_unassign(GameState.get_roster().uids(ExpeditionRoster.Place.ACTIVE)[0]))
+		_check("%s_unassign_returns_npc" % tag, team_unassign(uids[0]) and GameState.party.size() == 2 and _followers.size() == 1
+			and GameState.recruited_available().size() == 4)
+		_check("%s_roster_valid" % tag, GameState.get_roster().validate().is_empty(), str(GameState.get_roster().validate()))
+
+
+## D-1261: the real talk flow (Z in the dialogue recruits), recruitment order, the origin NPC staying
+## hidden while on the team and the follower walking to the leader, and an Employ recruit (enemy
+## Combatant in the roster, D-1229) becoming a player-side ally on the team. All 6 leaders (D-235).
+func _scenario_recruit_talk() -> void:
+	for leader in PLAYABLE_LEADERS:
+		GameState.start_new_campaign(leader)
+		var tag := str(leader)
+		_set_player_species(leader)
+		_sync_followers_to_party()
+		await _teleport(PLAYER_START)
+		var talk_npcs: Array[Dictionary] = []
+		for npc in _npcs:
+			if _npc_recruitable(npc) and not talk_npcs.any(func(n): return n["id"] == npc["id"]):
+				talk_npcs.append(npc)
+		_check("%s_talkable_npcs" % tag, talk_npcs.size() >= 2, "%d" % talk_npcs.size())
+		if talk_npcs.size() < 2:
+			continue
+		var order: Array[String] = []
+		for npc in talk_npcs.slice(0, 2):
+			_open_npc_dialogue(npc)
+			var opened := _npc_talking
+			var presses := 0
+			while _npc_talking and presses < 6:
+				var ev := InputEventKey.new()
+				ev.pressed = true
+				ev.keycode = KEY_Z
+				_unhandled_input(ev)
+				presses += 1
+				await _frames(1)
+			order.append(str(npc["id"]))
+			_check("%s_talk_%s" % [tag, npc["id"]], opened and not _npc_talking and not _npc_recruitable(npc), "presses=%d" % presses)
+		var got: Array[String] = []
+		for c in GameState.recruited_available():
+			got.append(GameState.species_key(c))
+		_check("%s_recruit_order" % tag, got == order, "%s vs %s" % [str(got), str(order)])
+		# Z on an already recruited NPC does not recruit again.
+		_open_npc_dialogue(talk_npcs[0])
+		var again := InputEventKey.new()
+		again.pressed = true
+		again.keycode = KEY_Z
+		for i in 3:
+			_unhandled_input(again)
+		_close_npc_dialogue() if _npc_talking else null
+		_check("%s_no_double_recruit" % tag, GameState.recruited_available().size() == 2)
+		# Team: origin NPC hides and stays hidden, the follower walks to the leader.
+		var first_uid: String = GameState.get_roster().uids(ExpeditionRoster.Place.SUBSTITUTE)[0]
+		var origin: Dictionary = talk_npcs[0]
+		_check("%s_assign" % tag, team_assign(first_uid) and _followers.size() == 1)
+		var d0 := (_followers[0]["node"] as Node3D).global_position.distance_to(player.global_position)
+		await _frames(40)
+		var d1 := (_followers[0]["node"] as Node3D).global_position.distance_to(player.global_position)
+		_check("%s_npc_hidden_while_on_team" % tag, not (origin["node"] as Node3D).visible)
+		_check("%s_follower_walks_to_leader" % tag, d1 < d0 - 0.3 or d1 < 3.0, "%.2f -> %.2f" % [d0, d1])
+		_check("%s_unassign_npc_back" % tag, team_unassign(first_uid) and (origin["node"] as Node3D).visible and _followers.is_empty())
+		# Employ recruit: an enemy Combatant registered by Battle, then put on the team.
+		var spec := ""
+		for sid in PLAYABLE_LEADERS:
+			if sid != leader and not GameState._roster_has_species(str(sid)):
+				spec = str(sid)
+				break
+		var foe := CharacterFactory.create(spec, {"is_player": false})
+		var place := ExpeditionRoster.Place.SUBSTITUTE if GameState.get_roster().capacity_left(ExpeditionRoster.Place.SUBSTITUTE) > 0 else ExpeditionRoster.Place.STATIONED
+		var foe_uid := GameState.get_roster().register(foe, place)
+		_check("%s_employ_recruit_listed" % tag, foe_uid != "" and GameState.recruited_available().has(foe))
+		_check("%s_employ_recruit_to_team" % tag, team_assign(foe_uid) and foe.is_player and GameState.party.has(foe) and _followers.size() == 1
+			and str(_followers[0]["model_id"]) == spec)
+		_check("%s_roster_valid" % tag, GameState.get_roster().validate().is_empty(), str(GameState.get_roster().validate()))
+
+
+## D-1261: the Gate team section. Drag and drop is exercised through the same can_drop/drop callables the
+## engine calls (a real mouse drag is NOT simulated). Slots: leader + 2 empty; level tag on each badge.
+func _scenario_gate_team() -> void:
+	for leader in PLAYABLE_LEADERS:
+		var tag := str(leader)
+		GameState.start_new_campaign(leader)
+		_set_player_species(leader)
+		_sync_followers_to_party()
+		var uids: Array[String] = []
+		for sid in PLAYABLE_LEADERS:
+			if sid != leader:
+				uids.append(GameState.recruit_character(str(sid)))
+		await _teleport(BOARD_POS + Vector3(0.0, 0.0, 1.8))
+		_open_gate()
+		await _frames(2)
+		_check("%s_slots_3_list_5" % tag, _gate_team_slots.get_child_count() == 3 and _gate_team_list.get_child_count() == 5,
+			"%d/%d" % [_gate_team_slots.get_child_count(), _gate_team_list.get_child_count()])
+		var lv_ok := true
+		for b in _gate_team_list.get_children():
+			var lbl := b.find_child("LevelTag", true, false) as Label
+			lv_ok = lv_ok and lbl != null and lbl.text.begins_with("Lv") and lbl.anchor_right == 1.0 and lbl.anchor_top == 0.0
+		_check("%s_level_top_right" % tag, lv_ok)
+		var d0 := {"kind": "team_badge", "uid": uids[0], "from": "list"}
+		var d1 := {"kind": "team_badge", "uid": uids[1], "from": "list"}
+		var d2 := {"kind": "team_badge", "uid": uids[2], "from": "list"}
+		_check("%s_drop_accepts_empty_slot" % tag, _team_can_drop_slot(Vector2.ZERO, d0))
+		_team_drop_slot(Vector2.ZERO, d0)
+		_team_drop_slot(Vector2.ZERO, d1)
+		await _frames(2)
+		_check("%s_two_assigned_follow" % tag, GameState.party.size() == 3 and _followers.size() == 2 and _gate_team_list.get_child_count() == 3)
+		_check("%s_drop_refused_when_full" % tag, not _team_can_drop_slot(Vector2.ZERO, d2))
+		_check("%s_list_refuses_list_drag" % tag, not _team_can_drop_list(Vector2.ZERO, d2))
+		var back := {"kind": "team_badge", "uid": uids[0], "from": "slot"}
+		_check("%s_list_accepts_slot_drag" % tag, _team_can_drop_list(Vector2.ZERO, back))
+		_team_drop_list(Vector2.ZERO, back)
+		await _frames(2)
+		_check("%s_removed_back_to_list" % tag, GameState.party.size() == 2 and _followers.size() == 1 and _gate_team_list.get_child_count() == 4)
+		_close_gate()
+
+
+## D-1261 debug entry: the F8 cycle and debug_team_setup. 3 leaders (small, medium, big) keep it under the
+## 10 s budget even with the parallel suite; HUB_ALLY_CHOICE already covers all 6 for the team logic.
+func _scenario_gate_debug() -> void:
+	for leader in ["abra", "gible", "dqt_cyclops"]:
+		var tag := str(leader)
+		_team_debug_step = -1
+		_set_player_species(leader)
+		var expected := [[1, 0], [1, 4], [2, 4], [3, 4]]  # [party size, recruits+... see below]
+		var counts: Array[String] = []
+		var ok := true
+		for step in 4:
+			var key := InputEventKey.new()
+			key.pressed = true
+			key.keycode = KEY_F8
+			_unhandled_input(key)
+			var on_team := GameState.party.size() - 1
+			var avail := GameState.recruited_available().size()
+			counts.append("%d/%d" % [on_team, avail])
+			ok = ok and on_team == [0, 0, 1, 2][step] and (on_team + avail) == [0, 4, 4, 4][step] and str(GameState.species_key(GameState.party[0])) == tag
+		_check("%s_f8_cycle" % tag, ok, str(counts))
+		debug_team_setup(tag, 5, 2)
+		await _frames(1)
+		_check("%s_setup_5_recruits_2_team" % tag, GameState.party.size() == 3 and GameState.recruited_available().size() == 3 and _followers.size() == 2)
+
+
+## D-1273: the ring portal is low (< 4 m), dormant until a world is chosen, opens WITHOUT moving the
+## player, and only the player walking into it starts the entry cutscene (flood -> loading).
+func _scenario_gate_portal() -> void:
+	_check("gate_built", _gate != null and is_instance_valid(_gate))
+	var top := 0.0
+	for mi in _gate.find_children("*", "MeshInstance3D", true, false):
+		var inst := mi as MeshInstance3D
+		if inst.name.begins_with("Shard") or not inst.visible or inst.mesh == null:
+			continue
+		if inst.name == "PortalFilm" or inst.name == "GateBeam":  # light effects, not the structure
+			continue
+		var bb := inst.global_transform * inst.get_aabb()
+		top = maxf(top, bb.end.y)
+	_check("gate_at_least_2x_bigger", top >= 2.0 * 3.67 - 0.05 and top < 8.5, "top=%.2f m (1x was 3.67)" % top)
+	_check("portal_dormant_at_start", _gate.open_amount < 0.01 and _portal_open_world == "")
+	await _teleport(Vector3(0.0, 0.0, -5.0), PI)
+	await _frames(4)
+	var p0 := player.global_position
+	_warp_speed = 8.0
+	_begin_warp("murky_forest")
+	var guard := 0
+	while _warp_active and guard < 600:
+		await get_tree().physics_frame
+		guard += 1
+	_warp_speed = 1.0
+	_check("portal_opens_and_returns_control", not _warp_active and _portal_open_world == "murky_forest" and _gate.open_amount > 0.99, "frames=%d" % guard)
+	_check("player_not_moved_by_the_gate", Vector2(player.global_position.x - p0.x, player.global_position.z - p0.z).length() < 0.05,
+		"moved=%.3f" % Vector2(player.global_position.x - p0.x, player.global_position.z - p0.z).length())
+	await _frames(40)
+	_check("player_not_forced_in", _warp_phase == "" and not _warp_active and not _warp_committed)
+	_warp_dry = true
+	await _teleport(Vector3(0.0, HubGate.DAIS_TOP + 0.05, GATE_POS.z + 0.1 + 2.6), PI)
+	await _frames(2)
+	_check("outside_the_mouth_no_entry", _warp_phase == "")
+	await _teleport(Vector3(0.0, HubGate.DAIS_TOP + 0.05, GATE_POS.z + 0.1 + 0.8), PI)
+	await _frames(3)
+	_check("walking_in_starts_entry", _warp_phase == "ENTER" and _warp_active, "phase=%s" % _warp_phase)
+	guard = 0
+	while not _warp_committed and guard < 400:
+		await get_tree().physics_frame
+		guard += 1
+	_check("flood_hands_off_to_loading", _warp_committed and _enter_flood_k() >= 0.999 and _warp_bars != null, "frames=%d" % guard)
+	_check("party_drawn_in", player_model.scale.length() < 0.2 * _enter_scale0[player_model].length(), "scale=%.2f" % player_model.scale.length())
+	_check("walked_through_the_ring", player.global_position.z < GATE_POS.z + 0.1 - 0.4, "z=%.2f" % player.global_position.z)
 
 
 func _scenario_navigation() -> void:
@@ -3835,19 +4897,16 @@ func _scenario_gate() -> void:
 	var opened := _interact_with_active()
 	await _frames(2)
 	_check("gate_opened", opened and _gate_open and _gate_panel.visible)
-	_check("gate_authorized_line", str(GATE_LINES[0]).contains("AUTHORIZED"))
-	_check("gate_locked_slots", str(GATE_LINES[1]).contains("LOCKED")
-		and str(GATE_LINES[2]).contains("LOCKED"))
+	_check("gate_authorized_line", str(_gate_lines()[0]).contains("AUTHORIZED"))
 	_check("gate_portrait_loaded", _gate_leader_portrait != null and _gate_leader_portrait.texture != null)
 	var before_nature := _gate_nature_lbl.text if _gate_nature_lbl != null else ""
 	_roll_gate_nature_preview()
 	var after_nature := _gate_nature_lbl.text if _gate_nature_lbl != null else ""
 	_check("gate_nature_preview_rolls", before_nature != after_nature)
 	_gate_nav(1)
-	_check("gate_navigation", _gate_index == 1, "index=%d" % _gate_index)
-	_gate_confirm()
-	var note := _gate_panel.find_child("GateNote", true, false) as Label
-	_check("gate_brief", note != null and note.text.contains("BRIEFING"))
+	_check("gate_navigation", _gate_index == 0, "index=%d" % _gate_index)
+	_gate_world_id = str(WorldDefs.warp_ids()[_gate_index])
+	_check("gate_world_selected", _gate_world_id == "murky_forest", _gate_world_id)
 	_close_gate()
 	await _frames(2)
 	_check("gate_closed_movement", not _ui_open and not _gate_panel.visible)
@@ -3892,7 +4951,8 @@ func _scenario_guild() -> void:
 	_guild_nav(1)
 	_guild_confirm()
 	await _frames(1)
-	_check("guild_demo_preview", _guild_detail_lbl != null and _guild_detail_lbl.text.contains("DEMO PREVIEW"))
+	# D-1261: the Standby Roster now shows the real recruits (this run has none recruited).
+	_check("guild_standby_real", _guild_detail_lbl != null and _guild_detail_lbl.text.contains("STANDBY ROSTER"))
 	_guild_nav(-1)
 	_guild_confirm()
 	await _frames(2)
@@ -4160,10 +5220,39 @@ func _run_view(id: String) -> void:
 			await _teleport(Vector3(0.0, 0.0, 6.5), PI)
 			_cam_yaw = PI
 			await _frames(14)
+		"altar":  # D-1266: the summon altar seen from the south, camera raised
+			await _teleport(Vector3(0.0, 0.0, 5.5), PI)
+			_cam_yaw = PI
+			_cam_pitch = 30.0
+			await _frames(16)
+		"altar_top":  # the leader standing on the altar (walkability check)
+			await _teleport(Vector3(0.0, 0.0, 3.2), PI)
+			_cam_yaw = PI
+			_cam_pitch = 24.0
+			_auto_nav_target = ALTAR_POS
+			await _frames(70)
+			_check("altar_walkable", player.global_position.y > 0.2, "y=%.2f z=%.2f" % [player.global_position.y, player.global_position.z])
+		"altar_ramps":  # D-1270: every leader crosses the altar slopes (data) + NPCs cross it; --leader=<id> for a capture
+			await _view_altar_ramps()
 		"gate":
 			await _teleport(Vector3(0.0, 0.0, -4.5), PI)
 			_cam_yaw = PI
 			await _frames(14)
+		"gate_closed", "gate_open", "gate_close":  # D-1273: the ring portal dormant / open (world colours) / close-up
+			if id == "gate_open":
+				_set_portal_world_colors(str(_args.get("world", "murky_forest")))
+				_set_portal_open(1.0)
+			await _teleport(Vector3(0.0, 0.0, -3.0 if id == "gate_close" else 0.0), PI)
+			_cam_yaw = PI
+			_cam_pitch = 8.0 if id == "gate_close" else 14.0
+			await _frames(40)
+		"board", "board_close":  # D-1273: the Expedition Board kiosk, from the plaza / from the interaction spot
+			var yaw := PI - BOARD_YAW
+			var off := Vector3(0.0, 0.0, 1.9 if id == "board_close" else 4.2).rotated(Vector3.UP, BOARD_YAW)
+			await _teleport(BOARD_POS + off, yaw)
+			_cam_yaw = yaw
+			_cam_pitch = 10.0
+			await _frames(40)
 		"guild":
 			await _teleport(Vector3(-7.4, 0.0, -2.0), -PI * 0.5)
 			_cam_yaw = -PI * 0.5
@@ -4177,11 +5266,40 @@ func _run_view(id: String) -> void:
 				_open_npc_dialogue(npc)
 				_npc_hud.finish_typing()
 			await _frames(40)
+		"npc_eyes", "npc_eyes_close":  # eye check: --npc=<id> (default pikachu); game camera / close-up
+			var want := str(_args.get("npc", "pikachu"))
+			for npc in _npcs:
+				if str(npc.get("id", "")) == want:
+					var np := (npc["node"] as Node3D).global_position
+					var close := id == "npc_eyes_close"
+					await _teleport(np + Vector3(1.4, 0.0, 1.6))  # player beside the NPC, game camera behind
+					await _frames(16)
+					if _args.has("blink"):  # --blink: freeze the NPC mid-blink (1.0 = closed)
+						var bl := (npc["node"] as Node3D).find_child("EyeBlink", true, false)
+						if bl != null:
+							bl.set_process(false)
+							bl.call("set_closed", float(str(_args["blink"]).replace("true", "1")))
+					if close:  # own close-up camera at head height, NPC faces +Z
+						var h := float(HUB_HEIGHTS.get(want, 0.7))
+						var cc := Camera3D.new()
+						cc.fov = 30.0
+						add_child(cc)
+						cc.global_position = np + Vector3(0.25, h * 0.78, 1.1)
+						cc.look_at(np + Vector3(0.0, h * 0.74, 0.0), Vector3.UP)
+						cc.current = true
+						await _frames(6)
+					break
 		"gate_panel":
 			await _teleport(BOARD_POS + Vector3(0.0, 0.0, 1.8))
 			await _frames(4)
 			_open_gate()
 			await _frames(8)
+		"gate_team":  # D-1261: new campaign, 4 recruits, 1 already on the team
+			debug_team_setup(str(_args.get("leader", "abra")), 4, 1)
+			await _teleport(BOARD_POS + Vector3(0.0, 0.0, 1.8))
+			await _frames(4)
+			_open_gate()
+			await _frames(45)  # lets the opening animation settle before the capture
 		"guild_panel":
 			await _teleport(GUILD_POS + Vector3(2.6, 0.0, 0.0))
 			await _frames(4)

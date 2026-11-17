@@ -1199,11 +1199,11 @@ func _build_ui() -> void:
 		cb.toggled.connect(func(on: bool) -> void: badges[key] = on)
 		badge_row.add_child(cb)
 		_badge_checks[key] = cb
-	# MAG/SPI.
+	# MAG/WIS.
 	var stats := HBoxContainer.new()
 	box.add_child(stats)
 	_mag_slider = _slider(stats, "MAG", 5, 25, mag)
-	_spi_slider = _slider(stats, "SPI", 0, 10, spi)
+	_spi_slider = _slider(stats, "WIS", 0, 10, spi)
 	_mag_slider.value_changed.connect(func(v: float) -> void: mag = int(v))
 	_spi_slider.value_changed.connect(func(v: float) -> void: spi = int(v))
 	# Qualidade/câmera.

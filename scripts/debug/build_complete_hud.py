@@ -85,7 +85,6 @@ const AFFINITIES_LIST = [
 	{"id": "WIND",     "name": "WND", "bg": Color("#4ff7ba"), "fg": Color.BLACK, "icon": "res://assets/ui/icons/elements/wind.svg"},
 	{"id": "EARTH",    "name": "ERT", "bg": Color("#78350f"), "fg": Color.WHITE, "icon": "res://assets/ui/icons/elements/earth.svg"},
 	{"id": "NATURE",   "name": "NAT", "bg": Color("#22c55e"), "fg": Color.WHITE, "icon": "res://assets/ui/icons/elements/nature.svg"},
-	{"id": "ICE",      "name": "ICE", "bg": Color("#06b6d4"), "fg": Color.BLACK, "icon": "res://assets/ui/icons/elements/water_ice.svg"},
 	{"id": "PSYCHIC",  "name": "PSY", "bg": Color("#ec4899"), "fg": Color.WHITE, "icon": "res://assets/ui/icons/elements/psychic.svg"},
 	{"id": "DARK",     "name": "DRK", "bg": Color("#1e293b"), "fg": Color.WHITE, "icon": "res://assets/ui/icons/elements/dark.svg"},
 	{"id": "LIGHT",    "name": "LGT", "bg": Color("#fbbf24"), "fg": Color.BLACK, "icon": "res://assets/ui/icons/elements/light.svg"},

@@ -285,7 +285,7 @@ static func draw_boost_card(ci: CanvasItem, box: Rect2, variant: int, now: int) 
 
 
 static func element_icon(e: Element.Type) -> Texture2D:
-	var names := {Element.Type.FISICO: "neutral", Element.Type.FOGO: "fire", Element.Type.AGUA_GELO: "water_ice", Element.Type.RAIO: "electric", Element.Type.PSIQUICO: "psychic", Element.Type.VENENO: "nature", Element.Type.SOM: "sound", Element.Type.TERRA: "earth", Element.Type.VENTO: "wind", Element.Type.LUZ: "light", Element.Type.TREVAS: "dark"}
+	var names := {Element.Type.FISICO: "neutral", Element.Type.FOGO: "fire", Element.Type.AGUA_GELO: "water_ice", Element.Type.RAIO: "electric", Element.Type.PSIQUICO: "psychic", Element.Type.VENENO: "nature", Element.Type.SOM: "sound", Element.Type.TERRA: "earth", Element.Type.VENTO: "wind", Element.Type.LUZ: "light", Element.Type.TREVAS: "dark", Element.Type.MYSTIC: "mystic"}
 	var key: String = names.get(e, "neutral")
 	if not _elem_icons.has(key):
 		var path := "res://assets/ui/icons/elements/%s.svg" % key

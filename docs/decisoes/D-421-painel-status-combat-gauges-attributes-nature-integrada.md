@@ -11,7 +11,7 @@
 **Status:** Aprovada e Implementada  
 **Data:** 2026-11-08  
 **Autor:** Criador  
-**Decisões Relacionadas:** D-135 (Design System Flat Neo-Brutalist), D-249 (6 Atributos Canônicos e Natures), D-413 (Regeneração de 4 MP a cada 8s, MP Individual, Inglês Global), D-416 (Paralelogramos Flat `/ /`, Remoção de Bordas de 1px), D-419 (Fichas de Moves e Hierarquia)
+**Decisões Relacionadas:** D-135 (Design System Flat Neo-Brutalist), D-249 (6 Atributos Canônicos e Natures), D-413 / D-1062 (Regeneração de 10 + MAG/5 MP por pulso, MP Individual, Inglês Global), D-416 (Paralelogramos Flat `/ /`, Remoção de Bordas de 1px), D-419 (Fichas de Moves e Hierarquia)
 
 ---
 

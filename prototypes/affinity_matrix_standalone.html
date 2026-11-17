@@ -2599,18 +2599,28 @@
     dqt_cyclops: { STR: 5, MAG: 1, VIT: 3, WIS: 1, AGI: 2, LUK: 3 }
   };
 
-  // D-393: as 8 natures iniciais, com modificadores flat que somam zero.
+  // D-1216/D-1217: as 18 Natures, com modificadores flat que somam zero.
   const NATURES = {
     hardy:   { name: 'Hardy',   mods: { STR: 0, MAG: 0, VIT: 0, WIS: 0, AGI: 0, LUK: 0 } },
     docile:  { name: 'Docile',  mods: { STR: 0, MAG: 0, VIT: 0, WIS: 0, AGI: 0, LUK: 0 } },
-    brave:   { name: 'Brave',   mods: { STR: 2, MAG: 0, VIT: 1, WIS: -1, AGI: -2, LUK: 0 } },
-    timid:   { name: 'Timid',   mods: { STR: -2, MAG: 0, VIT: -1, WIS: 0, AGI: 2, LUK: 1 } },
+    brave:   { name: 'Brave',   mods: { STR: 2, MAG: 0, VIT: 1, WIS: 0, AGI: -3, LUK: 0 } },
+    timid:   { name: 'Timid',   mods: { STR: -3, MAG: 0, VIT: 0, WIS: 0, AGI: 2, LUK: 1 } },
     modest:  { name: 'Modest',  mods: { STR: -2, MAG: 3, VIT: 0, WIS: 0, AGI: -1, LUK: 0 } },
-    calm:    { name: 'Calm',    mods: { STR: -2, MAG: 0, VIT: 1, WIS: 2, AGI: 0, LUK: -1 } },
+    calm:    { name: 'Calm',    mods: { STR: -3, MAG: 0, VIT: 1, WIS: 2, AGI: 0, LUK: 0 } },
     jolly:   { name: 'Jolly',   mods: { STR: 0, MAG: -3, VIT: 0, WIS: 0, AGI: 2, LUK: 1 } },
-    adamant: { name: 'Adamant', mods: { STR: 3, MAG: -3, VIT: 0, WIS: 0, AGI: 0, LUK: 0 } }
+    adamant: { name: 'Adamant', mods: { STR: 3, MAG: -2, VIT: 0, WIS: 0, AGI: 0, LUK: -1 } },
+    bold:    { name: 'Bold',    mods: { STR: -2, MAG: 0, VIT: 3, WIS: 0, AGI: -1, LUK: 0 } },
+    impish:  { name: 'Impish',  mods: { STR: 0, MAG: -3, VIT: 2, WIS: 0, AGI: 0, LUK: 1 } },
+    relaxed: { name: 'Relaxed', mods: { STR: 0, MAG: 0, VIT: 2, WIS: 1, AGI: -3, LUK: 0 } },
+    hasty:   { name: 'Hasty',   mods: { STR: 0, MAG: 0, VIT: -2, WIS: -1, AGI: 3, LUK: 0 } },
+    naive:   { name: 'Naive',   mods: { STR: 1, MAG: 0, VIT: 0, WIS: -3, AGI: 2, LUK: 0 } },
+    rash:    { name: 'Rash',    mods: { STR: 0, MAG: 2, VIT: 0, WIS: -3, AGI: 1, LUK: 0 } },
+    quiet:   { name: 'Quiet',   mods: { STR: 0, MAG: 2, VIT: 0, WIS: 1, AGI: -3, LUK: 0 } },
+    careful: { name: 'Careful', mods: { STR: 0, MAG: -2, VIT: 0, WIS: 3, AGI: 0, LUK: -1 } },
+    lonely:  { name: 'Lonely',  mods: { STR: 3, MAG: 0, VIT: -2, WIS: -1, AGI: 0, LUK: 0 } },
+    quirky:  { name: 'Quirky',  mods: { STR: -1, MAG: 0, VIT: -2, WIS: 0, AGI: 0, LUK: 3 } }
   };
-  const NATURE_ORDER = ['hardy', 'docile', 'brave', 'timid', 'modest', 'calm', 'jolly', 'adamant'];
+  const NATURE_ORDER = ['hardy', 'docile', 'brave', 'timid', 'modest', 'calm', 'jolly', 'adamant', 'bold', 'impish', 'relaxed', 'hasty', 'naive', 'rash', 'quiet', 'careful', 'lonely', 'quirky'];
 
   const MAX_ELEMENTS = 2;
   const MAX_MOVES = 8;

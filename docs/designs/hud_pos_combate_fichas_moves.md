@@ -23,7 +23,7 @@
 *   **D-390**: Orçamento inicial estrito de 15 pontos base no nível 1. Os 6 atributos canônicos são `STR`, `MAG`, `VIT`, `WIS`, `AGI`, `LUK`.
 *   **D-391**: Renomeação de SPI para WIS e fórmula de progressão e escala de MP baseada em WIS.
 *   **D-392**: Escala de HP anti-hitkill baseada em VIT e marcos de atributos (milestones a cada 5 pontos).
-*   **D-393**: Escopo de 8 Natures iniciais e modificadores estáticos de atributos.
+*   **D-1216 / D-393**: Escopo de 18 Natures (as 8 iniciais) e modificadores estáticos de atributos.
 *   **D-394**: Progressão de 1 ponto/nível manual no Líder; proficiências orgânicas e automáticas nos aliados.
 *   **D-395 / D-396 / D-397 / D-398**: Ícones de tipo, alcance, elemento, setas de natureza com fundo branco e 12º elemento Mystic (`#65B5B3`).
 *   **D-399**: Curva de XP e recompensas pós-combate.
@@ -145,8 +145,8 @@ The 1280px horizontal budget is divided to guarantee zero content clipping and z
     2. **`MAG`**: Mágico / Special scaling.
     3. **`VIT`**: Vida / Resistência / HP pools.
     4. **`WIS`**: Sabedoria / MP pools e recuperação.
-    5. **`AGI`**: Agilidade / Velocidade de ATB e iniciativa.
-    6. **`LUK`**: Sorte / Taxa crítica e evasão.
+    5. **`AGI`**: Agility / Velocidade de ATB e iniciativa.
+    6. **`LUK`**: Luck / Taxa crítica e evasão.
 *   The Left Column allocates 180px for the Pip Strip and 240px for the 6 canonical attribute rows, values, and steppers.
 
 ### 4. Real Engine Damage Formulas (D-001, D-003, D-420) [Stage 9 Blocker 1]

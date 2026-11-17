@@ -35,7 +35,7 @@
    - **Psychic (Referência Persona 5 Psy / SMT):** Inspirado no olho hipnótico de P5: **olho místico com espiral hipnótica concêntrica contínua** no núcleo da íris/pupila.
 
 3. **Lista Completa dos 12 Elementos Oficiais (em Inglês):**
-   1. **Neutral** (círculo sólido `●`)
+   1. **Neutral** (Diamond Core; atualizado: D-440)
    2. **Fire** (labareda ardente)
    3. **Water** (gota fluida)
    4. **Electric** (relâmpago chanfrado)

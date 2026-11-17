@@ -26,7 +26,7 @@ Citadas por ID e, quando houver colisão de numeração, com a origem:
 - **D-331/D-333** — Quarks é exceção **apenas do atelier HTML**; no Godot, usar os recursos do jogo.
 - **D-332** — fogo por shader + flipbook (referência de acabamento).
 - **D-337** — fidelidade visual e sincronia com o relógio real; uma entrega por vez, aguardando aprovação.
-- **D-356 (origin/main)** — ficha parcial da Drain Spear: `move_drain_spear`, 2 ATB + 12 MP, Normal, contato mid-range, dano mágico `5 + MAG` mitigado por SPI, wind-up 1,0 s / execução 1,0 s / recovery 1,6 s provisórios.
+- **D-356 (origin/main)** — ficha parcial da Drain Spear: `move_drain_spear`, 2 ATB + 12 MP, Normal, contato mid-range, dano mágico `5 + MAG` mitigado por WIS (atualizado: D-391), wind-up 1,0 s / execução 1,0 s / recovery 1,6 s provisórios.
 - **D-357 (origin/main)** — Normal é elemento neutro, separado da categoria de dano e da execução.
 - **D-358 (origin/main)** — centro 16,3 u, faixa 15,3–17,3 u, recuo base 1,2 s reduzido por AGI, ataque mesmo sem completar o recuo.
 - **D-359 (origin/main)** — Badge Steal rouba só buffs positivos e escudos com badge, antes do dano, apenas em acerto válido; não rouba debuffs.
@@ -42,7 +42,7 @@ Criar **um novo protótipo único, no Godot**, que:
 
 1. use o **Orc já importado** (`assets/modelos/dqt_orc/dqt_orc.glb`) com as animações reais;
 2. use a **câmera do `drain_spear (1).html`** (CINEMA: posição `(3.8, 2.875, 7.0)`, alvo `(-2, 0, -20)`, FOV 80°, Dutch 4°, com câmera livre só para inspeção);
-3. use os **parâmetros de cenário do `crawlmon_prot_tipo...html`** (A–H, distâncias, badges, resultado, MAG/SPI, qualidade, alcance);
+3. use os **parâmetros de cenário do `crawlmon_prot_tipo...html`** (A–H, distâncias, badges, resultado, MAG/WIS, qualidade, alcance);
 4. **misture o melhor dos dois efeitos visuais** em um efeito novo, usando o **Motion Composer quando ele ajudar** e as skills de VFX/shaders/animação; o principal pode ser à mão (D-1030);
 5. seja uma entrega **surpreendente**, mas sem alterar regras de combate, sem implementar a Drain Spear no jogo e sem push.
 
@@ -78,7 +78,7 @@ O laboratório usa a `BattleArena` real (chão, céu, luzes, ruínas) e os model
 | Badge Steal | streaks reversos que viram órbita | siphon reverso + orbs + órbita | M06 + M05: streaks reversos + orbs + coroa de badges roubadas orbitando; 0,30 s de HUD |
 | Dissolução | dissolve do cabo à ponta | fade/dissolve | M18 + shader; brasas e fumaça subindo |
 | HUD | tags limpas, badge rack, BattleLog | painel completo A–H, badges, log | painel do laboratório + tags flutuantes + badge rack + BattleLog opção C |
-| Cenários | A–H simples | A–H completo + distâncias + badges + MAG/SPI + qualidade | A–H completo + todos os parâmetros + reach mode + qualidade |
+| Cenários | A–H simples | A–H completo + distâncias + badges + MAG/WIS + qualidade | A–H completo + todos os parâmetros + reach mode + qualidade |
 | Personagem | substituto | substituto | **Orc real** (`dqt_orc.glb`) + clipes 32 (Ready), 01 (Walk), 11 (SkillA) |
 
 ## 5. Arquitetura do efeito (Motion Composer)
@@ -155,7 +155,7 @@ Parâmetros extras:
 - **Reach mode:** `hybrid` (padrão), `elongate`, `surge` — marcados como **experimentais**, não homologados (D-358).
 - **Resultado:** acerto, evade, interrupção.
 - **Badges:** ATK +1, escudo 18/30, imunidade mágica, DEF −1 (não roubável).
-- **MAG** 5–25, **SPI** 0–10, prévia `5 + MAG` mitigado.
+- **MAG** 5–25, **WIS** 0–10, prévia `5 + MAG` mitigado (D-391).
 - **Qualidade:** baixa/média/alta (afeta contagens de partículas, não os shaders principais).
 - **Câmera:** CINEMA / órbita livre.
 - **Anéis mid-range:** visíveis/ocultos.
@@ -279,7 +279,7 @@ PARÂMETROS FIXOS:
  spray 0,55 s; badges 0,30 s.
 - Cenários A–H + distâncias 22,5/16,3/8,5/2,6/aproximando + reach modes
  hybrid/elongate/surge + badges ATK+1/escudo/imunidade mágica/DEF−1 +
- resultado acerto/evade/interrupção + MAG/SPI + qualidade.
+ resultado acerto/evade/interrupção + MAG/WIS + qualidade.
 - Tamanho do VFX: medido na tela. Nada dependente de
  personagem, time, lado ou câmera (D-235).
 
