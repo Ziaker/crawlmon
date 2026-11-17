@@ -290,3 +290,13 @@ Atalho da sala (`scripts/debug/vfx_room.gd`) que percorre o caminho real do menu
 - **Controles de debug (sala de VFX):** botões da grade de status "Olhos: piscar / fechar / abrir / hit", ou `--status=<PAPEL>:eyes_blink|eyes_close|eyes_open|eyes_hit` (ex. `--status=A1:eyes_close`); `--units=a,b/c,d` escolhe os modelos (antes da `/` aliados A1,A2; depois inimigos E1,E2; espécie fora do catálogo, como pikachu/eevee/charmander/bulbasaur/squirtle, usa o corpo do Gible só para aparecer em combate). `eyes_close` mantém a pálpebra fechada até `eyes_open`.
 - **Cenário do lado inimigo:** `--scenario=olhos_debug_inimigo --units=charmander,squirtle/pikachu,eevee --cam=macro` (a teleobjetiva segue E1). Murky Forest: `godot --path . --script tests/overworld/diag_murky_eyes.gd` conta os `EyeBlink` da cena real. Dados nas duas vistas: `python tests/battle/check_eyes_combat.py`.
 - **Lacuna:** só modelos com `EyeBlink` respondem; os DQT (`DqtEyes`, D-340) não emitem nenhum dos eventos acima.
+
+## Economia dos Cascos: `[ECON]` (D-1285, D-1286)
+
+Escopo atual: **só os componentes puros e os testes headless**; nenhum evento é emitido pelo jogo real ainda, porque drops, carteiras e loja não estão ligados ao combate nem ao Hub (decisões pendentes).
+
+- **Testes** (`tests/economy/*.gd`, `Godot --headless --script res://tests/economy/<arquivo>.gd -- --stdout-trace`, cada um em poucos segundos). Linha por teste `[ECON] {"ev":"test","name":...,"ok":bool,"asserts_failed":n,"fail":[...]}` e resumo `[ECON] {"ev":"summary","ok":bool,"tests":N,"failed":N}`. Saída 0 se `ok`, 1 se não. Sem `--stdout-trace` só o resumo.
+- **`ShellDropMath`** (`shell_drop_math.gd`): `silver_chance_pct`, `gold_chance_pct`, `bronze_chance_pct` e `roll_*` (um `randf()` por sorteio, só no RNG recebido).
+- **`ShellDropResolver.resolve(...)`** devolve `{ok, granted, reason, hits:{bronze,silver,gold}}`. `reason`: `""` (concedido), `ineligible_outcome` (fuga, recrutamento, derrota), `already_resolved`, `invalid_enemy`. Sem drop não consome RNG.
+- **`ShellShop.purchase(...)`** devolve `{ok:true,item_id,quantity,coin,price,balance_after}` ou `{ok:false,reason}` com `reason` em `invalid_offer`, `wrong_currency`, `insufficient_funds`, `inventory_full`. Recusa não altera carteira nem inventário.
+- **Quando o jogo emitir eventos** (tentativa de compra, compra, drop concedido, consolidação, recusa), usar estes mesmos campos e `reason`, e atualizar esta seção antes.

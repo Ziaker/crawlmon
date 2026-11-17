@@ -11,6 +11,8 @@ const HUB_3D := "res://scenes/hub_3d_lab.tscn"
 const MURKY_FOREST_3D := "res://scenes/debug/murky_forest_3d_lab.tscn"
 const DungeonGen = preload("res://scripts/dungeon/dungeon_generator.gd")
 const DebugPartySelectorClass = preload("res://scripts/ui/debug_party_selector.gd")
+const ShellWalletClass = preload("res://scripts/economy/shell_wallet.gd")
+const ShellShopClass = preload("res://scripts/economy/shell_shop.gd")
 ## Preloaded (not the global class name) so the autoload parses even before the class cache knows the new script.
 const ExpeditionRosterClass = preload("res://scripts/progression/expedition_roster.gd")
 const RespectStateClass = preload("res://scripts/progression/respect_state.gd")
@@ -65,6 +67,11 @@ func elements_known(c: Combatant, team: Array = []) -> bool:
 			return true
 	return false
 var inventory: Dictionary = INITIAL_INVENTORY.duplicate()
+## D-1253 item 4: consumables bought in the Hub and not used yet (item id -> quantity).
+## They are restored on top of the baseline kit, so an unused purchase reaches the next expedition.
+var purchased_items: Dictionary = {}
+## D-1285: separate balances, kept in memory only (shell_balance and its save stay untouched).
+var shell_wallet := ShellWalletClass.new()
 
 ## QoL: dialogue typewriter speed (characters per second).
 const TEXT_SPEED_NAMES := ["Lento", "Normal", "Rápido"]
@@ -207,6 +214,8 @@ func start_new_campaign(leader_species: String) -> void:
 	defeated.clear()
 	respect = RespectStateClass.new()  # D-1231: a new campaign starts at 50.
 	respect_log.clear()
+	purchased_items.clear()
+	shell_wallet = ShellWalletClass.new()
 	reset_expedition_inventory()
 
 
@@ -516,6 +525,7 @@ func revive_party() -> void:
 ## stay with their Pokémon (equipped) or in the bag (unequipped). The baseline
 ## consumables are restored for the new attempt.
 func reset_expedition_inventory() -> void:
+	_reconcile_purchased()
 	var held_in_bag: Dictionary = {}
 	for id in inventory:
 		var item := Item.get_item(id)
@@ -539,11 +549,54 @@ func reset_expedition_inventory() -> void:
 			continue
 		if not inventory.has(id) and not equipped.has(id):
 			inventory[id] = int(INITIAL_INVENTORY[id])
+	# D-1253 item 4: unused Hub purchases come back on top of the restored kit. The inventory is
+	# rebuilt from INITIAL_INVENTORY above, so resetting twice never duplicates them.
+	for id in purchased_items:
+		var item := Item.get_item(id)
+		if item == null or item.kind != Item.Kind.CONSUMABLE:
+			continue
+		inventory[id] = int(inventory.get(id, 0)) + int(purchased_items[id])
 
 
 func item_count(id: String) -> int:
 	return inventory.get(id, 0)
 
+
+## D-1253 item 4: reconciles purchased_items with the live inventory. The leader shares this
+## Dictionary with its Combatant (CharacterFactory.create), so Battle.use_item decrements it
+## directly through Combatant.remove_item, bypassing GameState.remove_item. The free kit is
+## spent before the buys, so a purchase only survives as far as the inventory still holds it.
+func _reconcile_purchased() -> void:
+	for id in purchased_items.keys():
+		var remaining := mini(int(purchased_items[id]), int(inventory.get(id, 0)))
+		if remaining <= 0:
+			purchased_items.erase(id)
+		else:
+			purchased_items[id] = remaining
+
+
+## D-1253 item 4: bought units of a consumable that have not been used yet.
+func purchased_count(id: String) -> int:
+	_reconcile_purchased()
+	return int(purchased_items.get(id, 0))
+
+
+## D-1253 item 4 / D-1285: buys through the Hub shop with the in-memory wallet and remembers
+## the bought consumables, so an unused purchase survives the next expedition reset.
+func buy(offer: Dictionary, pay_coin: int) -> Dictionary:
+	var result := ShellShopClass.purchase(shell_wallet, inventory, max_inventory_capacity(), Callable(self, "_is_held_item"), offer, pay_coin)
+	if bool(result.get("ok", false)):
+		var item_id := String(result.get("item_id", ""))
+		var item := Item.get_item(item_id)
+		if item != null and item.kind == Item.Kind.CONSUMABLE:
+			purchased_items[item_id] = purchased_count(item_id) + int(result.get("quantity", 0))
+	return result
+
+
+## Held items are equipped/passive, so they sit outside the inventory capacity (R35-Q3).
+func _is_held_item(item_id: String) -> bool:
+	var item := Item.get_item(item_id)
+	return item != null and item.kind == Item.Kind.HELD
 
 ## Non-held items carried by the active party (R35-Q3). Held items stay in the
 ## same dictionary while unequipped, but they do not count against capacity.
@@ -588,6 +641,13 @@ func remove_item(id: String) -> void:
 		inventory.erase(id)
 	else:
 		inventory[id] -= 1
+	# D-1253 item 4: the free kit is spent before the purchases, so unused buys survive the reset.
+	var bought := purchased_count(id)
+	if bought > 0 and item_count(id) < bought:
+		if item_count(id) <= 0:
+			purchased_items.erase(id)
+		else:
+			purchased_items[id] = item_count(id)
 
 
 ## Inventory entries of the given kind, as Items (count via item_count()).
