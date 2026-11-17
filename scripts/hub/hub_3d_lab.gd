@@ -3604,7 +3604,14 @@ func _drive_step(delta: float) -> void:
 	_update_followers(delta)
 	_update_enemy(delta)
 	_update_npcs(delta)
-	_play_move(player_ap, dir.length_squared() > 0.01)
+	var driving := dir.length_squared() > 0.01
+	_play_move(player_ap, driving)
+	if driving:
+		if _apply_gait(player_ap, player_model, Vector2(player.velocity.x, player.velocity.z).length()) < 0.0:
+			player_ap.speed_scale = 1.0
+	elif player_ap != null:
+		player_ap.speed_scale = 1.0
+		_apply_ground_lift(player_ap, player_model, "idle")
 
 
 # --- Debug scenarios (D-1204) ------------------------------------------------

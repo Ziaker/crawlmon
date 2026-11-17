@@ -10,6 +10,9 @@ extends Node3D
 
 const DQT_PROFILES := preload("res://scripts/combat/dqt_model_profiles.gd")
 const VIGNETTE_SHADER := preload("res://shaders/vignette.gdshader")
+const MODEL_GAIT := preload("res://scripts/overworld/model_gait.gd")
+const GAIT_SCALE_MIN := 0.5
+const GAIT_SCALE_MAX := 3.0
 const WALK_DUST_SCRIPT := preload("res://scripts/overworld/vfx/overworld_walk_dust.gd")
 
 const WALL_HEIGHT := 4.6
@@ -260,7 +263,15 @@ func _physics_process(delta: float) -> void:
 	_update_enemy(delta)
 	_update_door_prompt()
 	if not _is_attack_animation_locked():
-		_play_move(player_ap, dir.length_squared() > 0.01 or attack_locked)
+		var player_moving := dir.length_squared() > 0.01 or attack_locked
+		_play_move(player_ap, player_moving)
+		if player_moving and not attack_locked:
+			var applied := _apply_gait(player_ap, player_model, Vector2(player.velocity.x, player.velocity.z).length())
+			if applied < 0.0:
+				player_ap.speed_scale = 1.0
+		elif player_ap != null:
+			player_ap.speed_scale = 1.0
+			_apply_ground_lift(player_ap, player_model, "idle")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -651,7 +662,10 @@ func _make_model(model_id: String, target_height: float) -> Node3D:
 				ap.get_animation(anim_name).loop_mode = Animation.LOOP_LINEAR
 	if not dqt.is_empty():
 		DQT_PROFILES.start_idle_breath(root)
+	root.set_meta("model_id", model_id)
+	root.set_meta("model_height", target_height)
 	return root
+
 
 
 func _anim_player(root: Node3D) -> AnimationPlayer:
@@ -729,6 +743,55 @@ func _play_move(ap: AnimationPlayer, moving: bool) -> void:
 		_play(ap, "walk")
 	elif not moving and ap.has_animation("idle"):
 		_play(ap, "idle")
+
+
+## D-1264: locomotion sync. Picks walk/run by the real ground speed and scales the clip so
+## the planted foot travels at the body speed (no skating, no slow motion). The clip's ground
+## speed is measured from the rig (ModelGait), never typed per species. Species whose clips
+## have no planted foot (floating Abra) keep the caller's behaviour.
+## Returns the playback scale, or -1.0 when the model has no measurable gait.
+func _apply_gait(ap: AnimationPlayer, model: Node3D, speed: float) -> float:
+	if ap == null or model == null or not ap.is_inside_tree() or not model.has_meta("model_id"):
+		return -1.0
+	var gait := _gait_of(ap, model)
+	var best := ""
+	var best_err := INF
+	var best_ratio := 1.0
+	for clip in ["walk", "run"]:
+		if not gait.has(clip) or not ap.has_animation(clip):
+			continue
+		var gs := float(gait[clip]["ground_speed"])
+		if gs < 0.2:
+			continue
+		var ratio := maxf(speed, 0.01) / gs
+		var err := absf(log(ratio))
+		if err < best_err:
+			best_err = err
+			best = clip
+			best_ratio = ratio
+	if best == "":
+		return -1.0
+	_play(ap, best)
+	_apply_ground_lift(ap, model, best)
+	var scale := clampf(best_ratio, GAIT_SCALE_MIN, GAIT_SCALE_MAX)
+	ap.speed_scale = scale
+	ap.set_meta("gait_clip", best)
+	ap.set_meta("gait_scale", scale)
+	return scale
+
+
+func _gait_of(ap: AnimationPlayer, model: Node3D) -> Dictionary:
+	var h := float(model.get_meta("model_height"))
+	return MODEL_GAIT.analyze(model, ap, h, "%s@%.3f" % [model.get_meta("model_id"), h])
+
+
+## D-1264: lifts the model by how far `clip` pushes the lowest vertex below the rest sole,
+## so no species sinks into the floor while walking/running (measured, not typed).
+func _apply_ground_lift(ap: AnimationPlayer, model: Node3D, clip: String) -> void:
+	if ap == null or model == null or not ap.is_inside_tree() or not model.has_meta("model_id"):
+		return
+	var gait := _gait_of(ap, model)
+	model.position.y = float(gait[clip]["sink"]) if gait.has(clip) else 0.0
 
 
 func _play_idle(ap: AnimationPlayer) -> void:
@@ -1267,7 +1330,12 @@ func _update_followers(delta: float) -> void:
 					body.rotation.y, atan2(face.x, face.z), clampf(delta * 4.0, 0.0, 1.0))
 		_play_move(f["ap"], moving)
 		var ap: AnimationPlayer = f["ap"]
-		ap.speed_scale = clampf(hv.length() / 3.2, 0.75, 1.35) if moving else 1.0
+		if moving:
+			if _apply_gait(ap, f["model"] if f.has("model") else null, hv.length()) < 0.0:
+				ap.speed_scale = clampf(hv.length() / 3.2, 0.75, 1.35)
+		else:
+			ap.speed_scale = 1.0
+			_apply_ground_lift(ap, f["model"], "idle")
 		var dust: CPUParticles3D = f["dust"]
 		dust.emitting = moving and _party_visible
 
