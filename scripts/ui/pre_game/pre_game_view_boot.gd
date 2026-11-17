@@ -69,6 +69,7 @@ func _process(delta: float) -> void:
 		_menu_t += delta
 		queue_redraw()
 	if view_mode == "loading":
+		_t += delta
 		queue_redraw()
 	var target: float = 1.0 if (play_drawer_open and view_mode == "menu") else 0.0
 	if _reduce_motion:
@@ -380,7 +381,9 @@ func _draw() -> void:
 	elif use_v2 and view_mode in ["menu", "quit_modal"]:
 		_draw_menu_v2(sx, sy, s)
 		if view_mode == "quit_modal":
-			_draw_quit_modal(sx, sy, s)
+			TitleV2Draw.draw_quit_modal(self, size, quit_confirm_index, _add_hit)
+	elif use_v2 and view_mode == "loading":
+		TitleV2Draw.draw_loading(self, size, loading_label, loading_progress, _t)
 	elif view_mode == "title":
 		_draw_title(sx, sy, s)
 	elif view_mode == "loading":

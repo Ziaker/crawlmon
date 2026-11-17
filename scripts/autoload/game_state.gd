@@ -99,7 +99,52 @@ var dungeon_explored := PackedByteArray()
 ## Kept so leaving to a battle and coming back does not respawn them (D-033).
 var dungeon_items_collected: Array[String] = []
 
+## D-1253/D-1265: saldo único de Cascos e tempo de jogo, mostrados no cartão de save da abertura.
+## Só estes dois campos têm arquivo (user://progress.json); o resto do estado ainda é só memória.
+## Valores de cada casco seguem em aberto (D-1253): `add_shells` só soma o que o chamador der.
+const PROGRESS_PATH := "user://progress.json"
+var shell_balance: int = 0
+var play_seconds: float = 0.0
+var _progress_autosave := 0.0
+
+
+func add_shells(amount: int) -> void:
+	shell_balance = maxi(0, shell_balance + amount)
+
+
+func save_progress() -> void:
+	var f := FileAccess.open(PROGRESS_PATH, FileAccess.WRITE)
+	if f == null:
+		return
+	f.store_string(JSON.stringify({"shell_balance": shell_balance, "play_seconds": play_seconds}))
+
+
+func load_progress() -> void:
+	if not FileAccess.file_exists(PROGRESS_PATH):
+		return
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(PROGRESS_PATH))
+	if parsed is Dictionary:
+		shell_balance = maxi(0, int((parsed as Dictionary).get("shell_balance", 0)))
+		play_seconds = maxf(0.0, float((parsed as Dictionary).get("play_seconds", 0.0)))
+
+
+func _process(delta: float) -> void:
+	if not active_campaign_started:
+		return  # só conta tempo de partida, não o da abertura
+	play_seconds += delta
+	_progress_autosave += delta
+	if _progress_autosave >= 30.0:
+		_progress_autosave = 0.0
+		save_progress()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST and active_campaign_started:
+		save_progress()
+
+
 func _ready() -> void:
+	load_progress()
 	_register_key("confirm", KEY_Z)
 	_register_key("menu", KEY_X)
 	_register_key("settings", KEY_C)

@@ -129,6 +129,100 @@ static func draw_enter_hint(ci: CanvasItem, size: Vector2, t: float, hover: bool
 	return [hx, psize]
 
 
+## Small CRAWL (white) + MON (red) mark, same flat slanted text as the title. `pos` = top-left.
+static func _mini_logo(ci: CanvasItem, pos: Vector2, fsz: int) -> void:
+	var w := PreGameDraw.title_font().get_string_size("CRAWL", HORIZONTAL_ALIGNMENT_LEFT, -1, fsz).x
+	_word(ci, "CRAWL", pos, fsz, PreGameDraw.PAPER, -13.0, -2.2, 0.0, false)
+	_word(ci, "MON", pos, fsz, PreGameDraw.CORAL, -13.0, -2.2, 0.0, false, w)
+
+
+## Quit modal in the v2 language: cold dimmed scene, one slanted dark plate, same logo mark and
+## the menu's plate buttons (lime on focus, coral for the destructive one). Hits: quit_cancel / quit_confirm.
+static func draw_quit_modal(ci: CanvasItem, size: Vector2, confirm_index: int, add_hit: Callable) -> void:
+	var s := minf(size.x / 1280.0, size.y / 720.0)
+	var mono := PreGameDraw.mono_font()
+	var display := PreGameDraw.title_font()
+	ci.draw_rect(Rect2(Vector2.ZERO, size), Color(0.01, 0.03, 0.06, 0.72))
+	var c := size * 0.5
+	var psize := Vector2(520.0, 250.0) * s
+	var clip := PackedVector2Array([Vector2(0.03, 0.0), Vector2(1.0, 0.0), Vector2(0.97, 1.0), Vector2(0.0, 1.0)])
+	var xf := PreGameDraw.draw_card(ci, c, psize, -1.6, -10.0, Color(0.075, 0.12, 0.175, 0.97), Color.BLACK, 2.0,
+		Vector2(9, 9) * s, Color(0, 0, 0, 0.75), [], clip)
+	PreGameDraw.push_counter_skew(ci, xf, -10.0)
+	_mini_logo_local(ci, Vector2(-psize.x * 0.5 + 30.0 * s, -psize.y * 0.5 + 14.0 * s), _fs(40.0, s))
+	var tsz := _fs(34.0, s)
+	ci.draw_string(display, Vector2(-psize.x * 0.5 + 34.0 * s, -8.0 * s), "QUIT GAME?",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, tsz, PreGameDraw.PAPER)
+	var bsz := _fs(13.0, s)
+	ci.draw_string(mono, Vector2(-psize.x * 0.5 + 34.0 * s, 24.0 * s), "Exit the Crawlmon desktop application?",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, bsz, PreGameDraw.TEXT_SUB)
+	PreGameDraw.pop_xform(ci)
+	var bw := 200.0 * s
+	var bh := 46.0 * s
+	var by := psize.y * 0.5 - 52.0 * s
+	var specs := [
+		["quit_cancel", "[X] CANCEL", -bw * 0.5 - 14.0 * s, confirm_index == 0, PreGameDraw.LIME_FAN],
+		["quit_confirm", "QUIT [ENTER]", bw * 0.5 + 14.0 * s, confirm_index == 1, PreGameDraw.CORAL],
+	]
+	for sp in specs:
+		var focused: bool = sp[3]
+		var fill := Color(0.04, 0.07, 0.11, 0.96)
+		if focused:
+			fill = sp[4]
+		var bs := Vector2(bw, bh)
+		var bx := PreGameDraw.draw_card(ci, xf * Vector2(float(sp[2]), by), bs, -1.6, -10.0, fill, Color.BLACK, 2.0,
+			Vector2(6, 6) * s if focused else Vector2(4, 4) * s, Color(0, 0, 0, 0.7), [], clip)
+		add_hit.call(str(sp[0]), bx, bs)
+		PreGameDraw.push_counter_skew(ci, bx, -10.0)
+		var lsz := _fs(22.0, s)
+		var lb := (display.get_ascent(lsz) - display.get_descent(lsz)) * 0.5
+		ci.draw_string(display, Vector2(-bs.x * 0.5, lb), str(sp[1]), HORIZONTAL_ALIGNMENT_CENTER, bs.x, lsz,
+			PreGameDraw.INK if focused else PreGameDraw.PAPER)
+		PreGameDraw.pop_xform(ci)
+
+
+## Same mark inside an already pushed local transform (no own transform).
+static func _mini_logo_local(ci: CanvasItem, pos: Vector2, fsz: int) -> void:
+	var font := PreGameDraw.title_font()
+	var w := font.get_string_size("CRAWL", HORIZONTAL_ALIGNMENT_LEFT, -1, fsz).x
+	var asc := font.get_ascent(fsz)
+	ci.draw_string(font, pos + Vector2(0, asc), "CRAWL", HORIZONTAL_ALIGNMENT_LEFT, -1, fsz, PreGameDraw.PAPER)
+	ci.draw_string(font, pos + Vector2(w, asc), "MON", HORIZONTAL_ALIGNMENT_LEFT, -1, fsz, PreGameDraw.CORAL)
+
+
+## Loading screen in the v2 language: cold dark backdrop, logo mark, one slanted plate with label,
+## target name and a lime progress bar. `t` = seconds (animates the bar sheen only).
+static func draw_loading(ci: CanvasItem, size: Vector2, label: String, progress: float, t: float) -> void:
+	var s := minf(size.x / 1280.0, size.y / 720.0)
+	var mono := PreGameDraw.mono_font()
+	var display := PreGameDraw.title_font()
+	ci.draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.045, 0.075, 1.0))
+	draw_backdrop_gradient(ci, size)
+	var psize := Vector2(640.0, 170.0) * s
+	var clip := PackedVector2Array([Vector2(0.03, 0.0), Vector2(1.0, 0.0), Vector2(0.97, 1.0), Vector2(0.0, 1.0)])
+	var xf := PreGameDraw.draw_card(ci, size * 0.5, psize, -1.6, -10.0, Color(0.075, 0.12, 0.175, 0.97), Color.BLACK,
+		2.0, Vector2(9, 9) * s, Color(0, 0, 0, 0.75), [], clip)
+	PreGameDraw.push_counter_skew(ci, xf, -10.0)
+	var left := -psize.x * 0.5 + 34.0 * s
+	var top := -psize.y * 0.5 + 18.0 * s
+	_mini_logo_local(ci, Vector2(left, top), _fs(34.0, s))
+	var lsz := _fs(32.0, s)
+	ci.draw_string(display, Vector2(left, top + 62.0 * s + display.get_ascent(lsz)), label.to_upper(),
+		HORIZONTAL_ALIGNMENT_LEFT, -1, lsz, PreGameDraw.PAPER)
+	var bar := Rect2(Vector2(left, top + 120.0 * s), Vector2(psize.x - 150.0 * s, 10.0 * s))
+	ci.draw_rect(bar, PreGameDraw.INK)
+	var p := clampf(progress, 0.0, 1.0)
+	if p > 0.0:
+		ci.draw_rect(Rect2(bar.position, Vector2(bar.size.x * p, bar.size.y)), PreGameDraw.LIME_FAN)
+		var sheen := fposmod(t * 0.8, 1.0) * bar.size.x * p
+		ci.draw_rect(Rect2(bar.position + Vector2(sheen, 0), Vector2(12.0 * s, bar.size.y)).intersection(
+			Rect2(bar.position, Vector2(bar.size.x * p, bar.size.y))), Color(1, 1, 1, 0.35))
+	var psz := _fs(15.0, s)
+	ci.draw_string(mono, Vector2(bar.end.x + 14.0 * s, bar.position.y + 9.0 * s), "%d%%" % int(round(p * 100.0)),
+		HORIZONTAL_ALIGNMENT_LEFT, -1, psz, PreGameDraw.LIME_FAN)
+	PreGameDraw.pop_xform(ci)
+
+
 static var _paper_tex: ImageTexture = null
 
 

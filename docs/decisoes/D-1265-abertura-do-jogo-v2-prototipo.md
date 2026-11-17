@@ -21,14 +21,14 @@
 ## Pendente (recomendações da IA, o criador decide)
 
 - Tipografia, cores novas, animações e textos das placas são recomendação, aprovados em bloco só pela frase acima.
-- Modal de sair e tela de loading não foram redesenhados.
+- (2026-11-17) Modal de sair e loading redesenhados na linguagem v2 (placa inclinada escura, logo CRAWL branco/MON vermelho, botões como as placas do menu). Aguardam o julgamento do criador. Capturas em `tests/title_v2/final/`.
 
 ## Ajustes pedidos depois da aprovação (criador, 2026-11-16/17)
 
 - Logo CRAWLMON junta, 20% menor, texto flat: CRAWL branco, MON vermelho; sem laje coral, sem barras, sem placa kicker.
 - "deixe o fundo no mínimo 45% mais escuro": só o FUNDO (céu, neblina, chão, torres, lajes de luz) em 50%; líder e efeitos intactos. (Difere do ~35–40% da D-1238 para o hub; o pedido é do título.)
 - Menu mais alto e espaçado (passo de 76 px); gaveta PLAY ao lado das placas.
-- Cartão de save (só com save), canto superior direito: papel amarelo claro com grão, ícone do líder estampado, e: nível do líder, respeito, cascos (saldo único, D-1253), duração de gameplay. Cascos (`shell_balance`) e duração (`play_seconds`) ainda não existem no GameState: aparecem 0 / 00:00 até serem criados. Debug: `--fake-save=<espécie>`.
+- Cartão de save (só com save), canto superior direito: papel amarelo claro com grão, ícone do líder estampado, e: nível do líder, respeito, cascos (saldo único, D-1253), duração de gameplay. Cascos (`shell_balance`, int) e duração (`play_seconds`, só conta com a campanha ativa) agora existem no GameState, com `save_progress()`/`load_progress()` em `user://progress.json` (autosave a cada 30 s e ao fechar). `add_shells(n)` só soma; o valor de cada casco segue pendente (D-1253). Os demais estados continuam só em memória. Debug: `--fake-save=<espécie>`.
 - "coloca o altar então": altar de pedra cinza da D-1266 (`HubAltar`) sob o líder, na escala do círculo (estrela do altar = estrela do círculo); o líder e o círculo ficam sobre o topo.
 - No título o círculo do hub (D-1237) foi adaptado: anéis acima do corpo, anel do chão e cometa ocultos, luz e pilar mais fracos. Só no título; o hub não muda.
 
