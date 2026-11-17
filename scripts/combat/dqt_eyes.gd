@@ -38,12 +38,16 @@ static func attach(model_root: Node3D, glb_root: Node, ap: AnimationPlayer, slee
 ## D-1295 (lids by bone): models without a closed-eye decal but with eyelid bones (`*mabuta*`: Orc, Cyclops,
 ## Sabrecub) hold the pose their own Sleep clip gives those bones at t=0 while BLIND / hit.
 var _lids: Array = []  ## [{skeleton, bone, pos, rot, scl}] (null where the clip has no track of that kind)
+var _eye_meshes: Array[MeshInstance3D] = []
+var hide_eye_mesh_on_close := false
 
 
 func _bind_lids(glb_root: Node, ap: AnimationPlayer, sleep_clip: String) -> void:
 	if ap == null or not ap.has_animation(sleep_clip):
 		return
 	var anim := ap.get_animation(sleep_clip)
+	for n in glb_root.find_children("Eye_Model*", "MeshInstance3D", true, false):
+		_eye_meshes.append(n as MeshInstance3D)
 	for s in glb_root.find_children("*", "Skeleton3D", true, false):
 		var sk := s as Skeleton3D
 		for b in sk.get_bone_count():
@@ -153,6 +157,10 @@ func _process(delta: float) -> void:
 		lid_k = 1.0 if (hold_closed or squeeze_left > 0.0) else 0.0
 		if lid_k > 0.0:
 			_hold_lids()
+		if hide_eye_mesh_on_close:  # profile flag (Orc: the Eye_Model_a pupil dot is not covered by the lid pose)
+			for m in _eye_meshes:
+				if is_instance_valid(m):
+					m.visible = lid_k <= 0.0
 		return
 	var closed_by_clip := false
 	for e in _pairs:

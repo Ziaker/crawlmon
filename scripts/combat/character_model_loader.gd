@@ -59,8 +59,10 @@ static func create_character_model(combatant: Combatant, color: Color = Color.WH
 					DqtModelProfiles.apply_anim_aliases(anim_player, dqt_profile)
 					DqtModelProfiles.setup_weapon_follow(pokemon_instance, anim_player, dqt_profile)
 					# D-340: game eye rule (<X>_scale) + own blink.
-					DqtEyes.attach(root, pokemon_instance, anim_player,
+					var dqt_eyes := DqtEyes.attach(root, pokemon_instance, anim_player,
 						str(dqt_profile.get("clip_prefix", "")) + "04")
+					if dqt_eyes != null:
+						dqt_eyes.hide_eye_mesh_on_close = bool(dqt_profile.get("hide_eye_mesh_on_close", false))
 					DqtModelProfiles.setup_run_stride(root, pokemon_instance, anim_player, dqt_profile)  # D-341
 				root.set_meta("anim_player", anim_player)
 				strip_root_motion(anim_player)
