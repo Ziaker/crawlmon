@@ -33,3 +33,7 @@ Diagnóstico: `tests/overworld/diag_eye_materials.gd`, `diag_eye_uv.gd`.
 - Custo de spawn: sem cache a medição da cor de pele custava 8-34 ms por instância (engasgo de quadro); agora há cache por modelo (`EyeBlink._eye_cache`): ~0,1 ms nas instâncias seguintes, 13-21 ms só na primeira de cada espécie (`diag_eye_blink_cost.gd`).
 - `EyeShine` altera o Material compartilhado do GLB em memória (guardado por meta, idempotente); `EyeBlink` usa materiais de override por instância, então cada boneco pisca independente.
 - Caveats conhecidos: o remendo da pálpebra difere levemente da pele em Eevee/Charmander; monstros DQT (D-340) não usam este código; cache de imagens (`_img_cache`) e de olhos fica na memória até o fim do processo.
+
+## Aprovação do criador (2026-11-17)
+
+Frase literal: "aprovo tudo" (resposta ao relatório final com os valores técnicos pendentes: ritmo do piscar 2,4-5,2 s com 0,06/0,05/0,09 s, 0,5 s ao levar dano/impacto, rampas 0,12 s e 0,22 s, posição e tamanho dos brilhos, e a interpretação de "dano" e "impacto" = reação de hit). Os valores deixam de estar pendentes. O visual em si continua sujeito ao julgamento do criador; a recomendação para os monstros DQT (auditoria Tact) NÃO foi decidida por esta frase.

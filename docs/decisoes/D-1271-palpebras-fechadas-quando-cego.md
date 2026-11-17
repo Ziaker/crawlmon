@@ -18,3 +18,7 @@ Enquanto um combatente está BLIND (`Combatant.is_blind()`) e vivo, o modelo del
 - `tests/overworld/diag_blind_eyes_shot.gd`: capturas aberto/fechado de Pancham, Eevee e Pikachu (`docs/capturas_olhos/cego_palpebras_fechadas.png`).
 - Não verificado: aprovação do criador sobre os tempos; cegueira em batalha real com câmera de jogo (o olho tem poucos pixels); modelos DQT.
 - Suíte `run_agent_combat_tests.py`: 126/127. A única falha é "Javelin Throw D-235" (`D235_RESULT: FAIL attacker_a/attacker_b/mirrored_scaled=false`); reproduzida IDÊNTICA com `EyeShine`/`EyeBlink` e `_sync_blind_eyes` desligados, então não vem desta mudança (causa não investigada; o erro `material is null` do renderer dummy também aparece sem ela).
+
+## Aprovação do criador (2026-11-17)
+
+Frase literal: "aprovo tudo" (resposta ao relatório final com os valores técnicos pendentes: ritmo do piscar 2,4-5,2 s com 0,06/0,05/0,09 s, 0,5 s ao levar dano/impacto, rampas 0,12 s e 0,22 s, posição e tamanho dos brilhos, e a interpretação de "dano" e "impacto" = reação de hit). Os valores deixam de estar pendentes. O visual em si continua sujeito ao julgamento do criador; a recomendação para os monstros DQT (auditoria Tact) NÃO foi decidida por esta frase.
