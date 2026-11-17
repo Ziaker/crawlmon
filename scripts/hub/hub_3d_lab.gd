@@ -5232,6 +5232,80 @@ func _run_view(id: String) -> void:
 			_auto_nav_target = ALTAR_POS
 			await _frames(70)
 			_check("altar_walkable", player.global_position.y > 0.2, "y=%.2f z=%.2f" % [player.global_position.y, player.global_position.z])
+		"surfaces":  # D-1274: leader walks onto every raised hub surface; prints reached/y/blocked (<10 s)
+			for npc in _npcs:
+				var nbs := npc["node"] as Node3D
+				if nbs != null:
+					nbs.global_position = Vector3(-12.5, 0.0, 11.5)
+					npc["waypoints"] = []
+			for s in [["plotB", Vector3(8.0, 0.0, 10.0), Vector3(8.0, 0.0, 6.5)], ["plotA", Vector3(14.0, 0.0, -2.0), Vector3(10.5, 0.0, -2.0)],
+					["paver_gate", Vector3(0.0, 0.0, -2.0), Vector3(0.0, 0.0, -9.0)], ["paver_guild", Vector3(-3.5, 0.0, -2.0), Vector3(-8.2, 0.0, -2.0)],
+					["guild_rug", Vector3(-6.0, 0.0, -2.0), Vector3(-8.4, 0.0, -2.0)]]:
+				await _teleport(s[1], PI)
+				_auto_nav_target = s[2]
+				var ymax := -9.0
+				var yvis_gap := 0.0
+				var f := 0
+				while f < 260 and Vector2(player.global_position.x - s[2].x, player.global_position.z - s[2].z).length() > 0.3:
+					await get_tree().physics_frame
+					f += 1
+					ymax = maxf(ymax, player.global_position.y)
+				var pe := player.global_position
+				print("SURF %s reached=%s dist=%.2f y_max=%.3f floor_end=%.3f frames=%d" % [s[0], str(Vector2(pe.x - s[2].x, pe.z - s[2].z).length() <= 0.3), Vector2(pe.x - s[2].x, pe.z - s[2].z).length(), ymax, _floor_y_at(pe.x, pe.z), f])
+				_auto_nav_target = Vector3.INF
+		"gate_dais":  # D-1274: every leader walks up/down the Expedition Gate dais (foot gap, tilt, stuck); --leader=<id>
+			var only_g := str(_args.get("leader", ""))
+			_party_visible_for_ramps(false)
+			for npc in _npcs:
+				var nbg := npc["node"] as Node3D
+				if nbg != null:
+					nbg.global_position = Vector3(12.5, 0.0, 11.5)
+					npc["waypoints"] = []
+			for lid in (PLAYABLE_LEADERS if only_g == "" else [only_g]):
+				_set_player_species(str(lid))
+				var gmin := 99.0
+				var gmax := -99.0
+				var tmax := 0.0
+				var yhi := -9.0
+				var ok_g := true
+				for route in [[Vector3(0.0, 0.0, -2.0), Vector3(0.0, 0.0, -9.6)], [Vector3(0.0, 0.0, -9.6), Vector3(0.0, 0.0, -2.0)], [Vector3(1.2, 0.0, -2.0), Vector3(-1.2, 0.0, -9.0)]]:
+					await _teleport(route[0], PI)
+					player.global_position.y = maxf(0.0, _floor_y_at(route[0].x, route[0].z)) + 0.05  # start on the floor, not inside it
+					_auto_nav_target = route[1]
+					var fr := 0
+					while fr < 300 and Vector2(player.global_position.x - route[1].x, player.global_position.z - route[1].z).length() > 0.3:
+						await get_tree().physics_frame
+						fr += 1
+						var p := player.global_position
+						var fy := _floor_y_at(p.x, p.z)
+						if p.z < -3.0:
+							var gp := p.y + player_model.position.y - fy
+							if gp < -0.1 and gmin > -0.1:
+								print("DAIS_DBG leader=%s pos=%s vy=%.2f on_floor=%s model_y=%.2f floor_y=%.3f frame=%d" % [lid, str(p), player.velocity.y, str(player.is_on_floor()), player_model.position.y, fy, fr])
+							gmin = minf(gmin, gp)
+							gmax = maxf(gmax, gp)
+							yhi = maxf(yhi, fy)
+							tmax = maxf(tmax, rad_to_deg(player_model.global_transform.basis.y.angle_to(Vector3.UP)))
+					if fr >= 300:
+						ok_g = false
+					_auto_nav_target = Vector3.INF
+				print("DAIS leader=%s gap=%.3f..%.3f floor_max=%.3f tilt_max=%.1f reached=%s" % [lid, gmin, gmax, yhi, tmax, str(ok_g)])
+		"altar_npc":  # D-1274: leader on the altar slope with an NPC beside it (--npc=<id>, --leader=<id>)
+			var nid := str(_args.get("npc", "dqt_fungi"))
+			var ang := float(_args.get("ang", "0.0"))
+			for npc in _npcs:
+				var nb0 := npc["node"] as Node3D
+				if nb0 != null:
+					nb0.global_position = Vector3(12.5, 0.0, 11.5)
+					npc["waypoints"] = []
+				if str(npc.get("id", "")) == nid and nb0 != null:
+					nb0.global_position = ALTAR_POS + Vector3(1.7, 0.0, 2.3)
+			await _teleport(ALTAR_POS + Vector3(0.9, 0.0, 3.2), PI)
+			_cam_yaw = PI + ang
+			_auto_nav_target = ALTAR_POS + Vector3(0.9, 0.0, 1.6)
+			await _frames(40)
+			_auto_nav_target = Vector3.INF
+			await _frames(20)
 		"altar_ramps":  # D-1270: every leader crosses the altar slopes (data) + NPCs cross it; --leader=<id> for a capture
 			await _view_altar_ramps()
 		"gate":
