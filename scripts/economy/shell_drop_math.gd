@@ -36,6 +36,17 @@ static func roll_bronze(rng: RandomNumberGenerator, leader_luk: float) -> bool:
 	return rng.randf() * ROLL_SCALE < bronze_chance_pct(leader_luk)
 
 
+## D-1309: quantas moedas caem por sucesso de sorteio = nivel do inimigo derrotado / divisor do tipo
+## (Bronze 2, Silver 3, Golden 4), arredondado para baixo e no minimo 1.
+static func quantity(coin: String, enemy_level: int) -> int:
+	var rates := _load_rates()
+	if not rates.has(coin):
+		push_error("ShellDropMath: moeda '%s' ausente em %s" % [coin, RATES_PATH])
+		return 0
+	var divisor := maxi(int((rates[coin] as Dictionary).get("level_divisor", 1)), 1)
+	return maxi(enemy_level / divisor, 1)
+
+
 static func _chance_pct(coin: String, leader_luk: float) -> float:
 	var rates := _load_rates()
 	if not rates.has(coin):

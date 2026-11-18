@@ -1,5 +1,5 @@
 extends SceneTree
-## D-1300 item 3: testes da migração de GameState.shell_balance para o saldo Bronze da carteira.
+## D-1309 item 3: testes da migração de GameState.shell_balance para o saldo Bronze da carteira.
 ## Nao toca em user://progress.json (nunca chama save_progress).
 ##   Godot_v4.7.2-stable_win64_console.exe --headless \
 ##     --script res://tests/economy/shell_balance_migration_test.gd -- --stdout-trace

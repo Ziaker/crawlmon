@@ -12,8 +12,8 @@ Fonte: `scripts/data/item.gd` (catálogo), `Battle.use_item()` (`scripts/combat/
 
 | ID interno | Nome exibido | Efeito declarado | Efeito implementado | Efeitos independentes | Categoria (regra D-1285) | Preço | Disponibilidade |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `potion` | POTION | Restaura 30 HP | **Sim**: `use_item` e menu do campo aplicam `heal = 30` | 1 | Bronze (HP básico), a confirmar | 10 Bronze (D-1300) | Hub, sempre |
-| `super_potion` | SUPER POTION | Restaura 60 HP | **Sim**: `heal = 60` | 1 | Bronze (HP básico), a confirmar | 25 Bronze (D-1300) | Hub, sempre |
+| `potion` | POTION | Restaura 30 HP | **Sim**: `use_item` e menu do campo aplicam `heal = 30` | 1 | Bronze (HP básico), a confirmar | 10 Bronze (D-1309) | Hub, sempre |
+| `super_potion` | SUPER POTION | Restaura 60 HP | **Sim**: `heal = 60` | 1 | Bronze (HP básico), a confirmar | 25 Bronze (D-1309) | Hub, sempre |
 | `revive` | REVIVE | Revive membro caído com 50% do HP máx. | **Não**: `heal = 0` e `use_item` exige ator vivo; não há lógica de revive | 1 | Bronze (HP), a confirmar | pendente | **bloqueado: sem implementação** |
 | `sitrus_berry` | SITRUS BERRY | Restaura 25% do HP máx. quando crítico | **Não**: sem gatilho "crítico", `heal = 0` | 1 (com gatilho) | Bronze (HP), a confirmar | pendente | **bloqueado: sem implementação** |
 | `lum_berry` | LUM BERRY | Remove todos os status (Stun, Burn, Freeze) | **Não**: nenhum caminho de uso | 1 | Bronze (cura de status), a confirmar | pendente | **bloqueado: sem implementação** |

@@ -1,14 +1,17 @@
 {
   "silver": {
     "base_pct": 7.0,
-    "per_luk_pct": 1.0
+    "per_luk_pct": 1.0,
+    "level_divisor": 3
   },
   "gold": {
     "base_pct": 3.0,
-    "per_luk_pct": 0.5
+    "per_luk_pct": 0.5,
+    "level_divisor": 4
   },
   "bronze": {
     "base_pct": 50.0,
-    "per_luk_pct": 0.0
+    "per_luk_pct": 0.0,
+    "level_divisor": 2
   }
 }

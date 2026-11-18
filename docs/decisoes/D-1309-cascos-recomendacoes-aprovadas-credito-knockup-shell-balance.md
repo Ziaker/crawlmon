@@ -6,7 +6,7 @@
 > Passou de 1 minuto = o debug está incompleto: melhore a ferramenta primeiro. Ver `docs/decisoes/D-1204-*.md` e `docs/TELEMETRIA.md`.
 <!-- /DEBUG-OBRIGATORIO-D1204 -->
 
-# D-1300 — Cascos: recomendações aprovadas (crédito, knock-up, `shell_balance`, kit gratuito)
+# D-1309 — Cascos: recomendações aprovadas (crédito, knock-up, `shell_balance`, kit gratuito)
 
 - **Data** — 2026-11-18
 - **Área** — Economia / drops / combate

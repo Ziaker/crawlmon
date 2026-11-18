@@ -7,6 +7,9 @@ extends Node
 ## (grants +1 ATB block). party[0] is the player-controlled leader; every other
 ## combatant, allies and enemies alike, follows its Tactics (act/react policy).
 
+const ShellDropResolverClass = preload("res://scripts/economy/shell_drop_resolver.gd")
+const ShellDropMathClass = preload("res://scripts/economy/shell_drop_math.gd")
+
 signal log_message(text: String)
 signal battle_ended(player_won: bool)
 signal state_changed
@@ -51,6 +54,9 @@ signal mp_regenerated(actor: Combatant, amount: int)  ## D-1062: a unit recovere
 signal armor_changed(actor: Combatant, state: String)  ## D-1026: "started", "extended", "hit", "expired" or "battle_end".
 signal reward_spawned(reward)
 signal reward_landed(reward)
+## D-1285/D-1286/D-1309: an enemy died and its Shell roll came out (`counts` = {bronze, silver, gold}: coins of each type, D-1309).
+## Only emitted when at least one coin dropped. The credit happens when the victory is confirmed.
+signal shell_drop_rolled(enemy: Combatant, counts: Dictionary)
 ## D-1229 (Phase 5): the Employ attempt changed stage ("picking", "cancelled", "refused", "started",
 ## "ended"); `data` is the telemetry row documented in docs/TELEMETRIA.md.
 signal employ_changed(stage: String, data: Dictionary)
@@ -177,6 +183,11 @@ const AI_HEAL_BELOW := 0.5  ## AI combatants drink a potion at or below this HP 
 var party: Array[Combatant] = []
 var enemies: Array[Combatant] = []
 var protagonist: Combatant = null  ## D-1244: party[0] at start(); pays the Summon and owns the menu while it is on the field.
+## D-1309: Shell drops rolled when an enemy dies (bronze/silver/gold counts), credited only on victory.
+## `shell_rng` is seedable for tests; each roll consumes exactly one randf() per coin type from it.
+var shell_rng := RandomNumberGenerator.new()
+var _shell_resolved: Dictionary = {}
+var _shell_pending := {"bronze": 0, "silver": 0, "gold": 0}
 var incoming: Array[Incoming] = []
 var running := false
 var _reward_queue: BattleRewards
@@ -226,6 +237,15 @@ func start(p_party: Array[Combatant], p_enemies: Array[Combatant]) -> void:
 			c.armor_changed.connect(_on_armor_changed)  # D-1026
 		if not c.mp_regenerated.is_connected(_on_mp_regenerated):
 			c.mp_regenerated.connect(_on_mp_regenerated)  # D-1062
+	shell_rng.randomize()
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--shell-seed="):
+			shell_rng.seed = int(a.get_slice("=", 1))  # D-1309 debug: repeatable drops (--shell-seed=N)
+	_shell_resolved.clear()
+	_shell_pending = {"bronze": 0, "silver": 0, "gold": 0}
+	for e in enemies:
+		if not e.died.is_connected(_on_enemy_died_shells):
+			e.died.connect(_on_enemy_died_shells)  # D-1309
 	_landing.clear()
 	_ai.reset()
 	_status_pause = null
@@ -240,6 +260,35 @@ func start(p_party: Array[Combatant], p_enemies: Array[Combatant]) -> void:
 	roster.begin_battle()  # D-1229: a failed Employ blocks new attempts until the next battle.
 	running = true
 	log_message.emit("Batalha iniciada!")
+
+
+## D-1309: Shells rolled so far in this battle ({bronze, silver, gold}); the scene credits them on victory.
+func shell_drop_totals() -> Dictionary:
+	return _shell_pending.duplicate()
+
+
+## D-1285/D-1286: every defeated enemy rolls once (Bronze 50%, Silver 7+LUK, Golden 3+LUK/2, independent).
+## The leader's LUK is the current leader's (D-1309). Recruited or fled enemies never emit `died`.
+func _on_enemy_died_shells(enemy: Combatant) -> void:
+	var leader_luk := 0.0
+	var leader: Combatant = protagonist if protagonist != null and party.has(protagonist) else (party[0] if not party.is_empty() else null)
+	if leader != null:
+		leader_luk = float(leader.luk)
+	var uid := "e%d" % enemy.get_instance_id()
+	var res := ShellDropResolverClass.resolve(uid, ShellDropResolverClass.OUTCOME_VICTORY, leader_luk, shell_rng, _shell_resolved)
+	if not bool(res.get("granted", false)):
+		return
+	var hits: Dictionary = res["hits"]
+	var counts := {"bronze": 0, "silver": 0, "gold": 0}
+	var any := false
+	for k in ["bronze", "silver", "gold"]:
+		if bool(hits.get(k, false)):
+			# D-1309: quantidade = nivel do inimigo / divisor do tipo (2, 3, 4), para baixo, minimo 1.
+			counts[k] = ShellDropMathClass.quantity(k, enemy.level)
+			_shell_pending[k] = int(_shell_pending[k]) + int(counts[k])
+			any = true
+	if any:
+		shell_drop_rolled.emit(enemy, counts)
 
 
 ## Debug aid: is an attack (pending or still playing out) using this combatant?
@@ -1877,6 +1926,8 @@ func restore_state(state: Dictionary) -> void:
 	incoming.clear()
 	_landing.clear()
 	_returning.clear()
+	if not enemies_dead:
+		_shell_pending = {"bronze": 0, "silver": 0, "gold": 0}  # D-1286: defeat grants no drops.
 	_status_pause = null
 	_employ = {}
 	if roster != null:

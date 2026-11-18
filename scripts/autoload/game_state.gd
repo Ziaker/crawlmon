@@ -71,7 +71,7 @@ var inventory: Dictionary = INITIAL_INVENTORY.duplicate()
 ## D-1253 item 4: consumables bought in the Hub and not used yet (item id -> quantity).
 ## They are restored on top of the baseline kit, so an unused purchase reaches the next expedition.
 var purchased_items: Dictionary = {}
-## D-1285/D-1300: separate balances, in memory only; shell_balance is the Bronze balance.
+## D-1285/D-1309: separate balances, in memory only; shell_balance is the Bronze balance.
 var shell_wallet := ShellWalletClass.new()
 
 ## QoL: dialogue typewriter speed (characters per second).
@@ -109,12 +109,12 @@ var dungeon_items_collected: Array[String] = []
 
 ## D-1253/D-1265: saldo de Cascos e tempo de jogo, mostrados no cartão de save da abertura.
 ## Só estes dois campos têm arquivo (user://progress.json); o resto do estado ainda é só memória.
-## D-1300 item 3: `shell_balance` é o saldo Bronze da carteira (D-1285); a chave do arquivo
+## D-1309 item 3: `shell_balance` é o saldo Bronze da carteira (D-1285); a chave do arquivo
 ## continua "shell_balance", agora gravando o Bronze. `add_shells` só soma o que o chamador der.
 const PROGRESS_PATH := "user://progress.json"
 
 
-## D-1300 item 3: o saldo único migrou para o saldo Bronze da carteira (D-1285). Prata e ouro
+## D-1309 item 3: o saldo único migrou para o saldo Bronze da carteira (D-1285). Prata e ouro
 ## ficam intactos: só a moeda Bronze é lida ou levada ao valor novo (nunca abaixo de 0).
 var shell_balance: int:
 	get:
@@ -614,7 +614,7 @@ func buy(offer: Dictionary, pay_coin: int) -> Dictionary:
 	return result
 
 
-## D-1300: compra pelo item id usando o preço do catálogo (ShellCatalog). Item sem preço cadastrado
+## D-1309: compra pelo item id usando o preço do catálogo (ShellCatalog). Item sem preço cadastrado
 ## não é vendido: devolve {"ok": false, "reason": "no_offer"}.
 func buy_item(item_id: String) -> Dictionary:
 	var offer := ShellCatalogClass.offer_for(item_id)

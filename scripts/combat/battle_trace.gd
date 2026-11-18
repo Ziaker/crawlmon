@@ -124,6 +124,7 @@ func _connect_events() -> void:
 	b.guard_ended.connect(func(a: Combatant, reason: String) -> void: _event("guard_ended", {"actor": a.name, "reason": reason}))
 	b.mp_regenerated.connect(func(a: Combatant, amount: int) -> void: _event("mp_regenerated", {"actor": a.name, "amount": amount, "mp": a.mp, "max_mp": a.max_mp}))
 	b.armor_changed.connect(func(a: Combatant, state: String) -> void: _event("armor_changed", {"actor": a.name, "state": state, "timer": snappedf(a.armor_timer, 0.01)}))
+	b.shell_drop_rolled.connect(func(e: Combatant, c: Dictionary) -> void: _event("shell_drop", {"enemy": e.name, "level": e.level, "bronze": c.get("bronze", 0), "silver": c.get("silver", 0), "gold": c.get("gold", 0), "totals": b.shell_drop_totals()}))
 	b.reward_spawned.connect(func(r) -> void: _event("reward_spawned", {"kind": r.kind, "owner": r.owner.name, "source": r.source.name, "slot": r.slot, "extra": r.extra}))
 	b.reward_landed.connect(func(r) -> void: _event("reward_landed", {"kind": r.kind, "owner": r.owner.name, "slot": r.slot}))
 	b.battle_ended.connect(func(won: bool) -> void: _event("battle_ended", {"player_won": won}))

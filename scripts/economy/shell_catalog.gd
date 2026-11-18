@@ -1,6 +1,6 @@
 class_name ShellCatalog
 extends RefCounted
-## Precos da loja do Hub (D-1300): cada item tem uma moeda e um preco, sem conversao entre
+## Precos da loja do Hub (D-1309): cada item tem uma moeda e um preco, sem conversao entre
 ## moedas (D-1285). Precos em res://data/economy/shell_prices.json, lidos uma vez e guardados
 ## em cache. Entrada com moeda desconhecida, preco ou quantidade invalidos e ignorada.
 

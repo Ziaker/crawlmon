@@ -38,6 +38,8 @@ const EmployMinigame = preload("res://scripts/ui/employ_minigame.gd")
 @onready var ui: CanvasLayer = $UI
 
 var models: Dictionary = {}  ## Combatant -> Node3D
+var _shell_shown := {"bronze": 0, "silver": 0, "gold": 0}  ## D-1309: visual coins per type so far (cap 12 each)
+var _shell_fx: Array[ShellDropFx] = []  ## D-1309: Shell coins on the arena floor until the battle ends.
 var fx: BattleFx
 var director: BattleCamera
 var smt_vfx: SmtBuffController
@@ -190,6 +192,7 @@ func _ready() -> void:
 	battle.state_changed.connect(_refresh)
 	battle.summon_changed.connect(_on_summon_changed)  # D-1244 (Phase 8): the swap of a unit on the field
 	battle.battle_ended.connect(_on_battle_ended)
+	battle.shell_drop_rolled.connect(_on_shell_drop_rolled)  # D-1309
 	battle.attack_telegraphed.connect(fx.telegraph)
 	battle.status_pause_started.connect(fx.on_status_pause_started)
 	battle.status_pause_ended.connect(fx.on_status_pause_ended)
@@ -972,7 +975,38 @@ func _exit_tree() -> void:
 		get_tree().paused = false
 
 
+## D-1286/D-1309: the defeated enemy's Shells fly out and land where it stood; glow tells the type.
+func _on_shell_drop_rolled(enemy: Combatant, counts: Dictionary) -> void:
+	var origin := Vector3(0.0, 1.0, 0.0)
+	var m: Node3D = models.get(enemy)
+	if m != null and is_instance_valid(m):
+		origin = Vector3(m.position.x, 1.0, m.position.z)
+	_shell_fx.append(ShellDropFx.burst(self, origin, 0.0, counts, _shell_shown))
+
+
+## D-1309: the Shells enter the balance when the victory is confirmed; on defeat they vanish with no credit.
+func _settle_shell_drops(player_won: bool) -> void:
+	if player_won:
+		var totals := battle.shell_drop_totals()
+		GameState.shell_wallet.credit(ShellWallet.Coin.BRONZE, int(totals["bronze"]))
+		GameState.shell_wallet.credit(ShellWallet.Coin.SILVER, int(totals["silver"]))
+		GameState.shell_wallet.credit(ShellWallet.Coin.GOLD, int(totals["gold"]))
+		var to := Vector3(0.0, 2.5, 6.0)
+		var lm: Node3D = models.get(leader)
+		if lm != null and is_instance_valid(lm):
+			to = lm.position + Vector3(0.0, 1.5, 0.0)
+		for f in _shell_fx:
+			if is_instance_valid(f):
+				f.collect_to(to)
+	else:
+		for f in _shell_fx:
+			if is_instance_valid(f):
+				f.vanish()
+	_shell_fx.clear()
+
+
 func _on_battle_ended(player_won: bool) -> void:
+	_settle_shell_drops(player_won)
 	_end_fuse("battle_end")  # D-1296
 	_end_decision_slowmo()
 	_end_interruption_slowmo()  # D-1129

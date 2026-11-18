@@ -295,7 +295,9 @@ Atalho da sala (`scripts/debug/vfx_room.gd`) que percorre o caminho real do menu
 
 ## Economia dos Cascos: `[ECON]` (D-1285, D-1286)
 
-Escopo atual: **só os componentes puros e os testes headless**; nenhum evento é emitido pelo jogo real ainda, porque drops, carteiras e loja não estão ligados ao combate nem ao Hub (decisões pendentes).
+Escopo atual: componentes puros, testes headless e o **sorteio de drops no combate** (D-1309). Carteira e loja ainda não têm evento no jogo real.
+
+- **Drops no combate** (`Battle._on_enemy_died_shells`): cada inimigo derrotado (sinal `died`; recrutado e fuga nunca emitem) sorteia uma vez com o LUK do líder (`protagonist`). Evento `shell_drop` `{enemy, bronze, silver, gold, totals}` só quando pelo menos uma moeda cai; `totals` é o acumulado da batalha. O crédito no saldo acontece na vitória (`BattleScene._settle_shell_drops`); derrota zera o pendente. `--shell-seed=N` (depois de `--`) fixa o RNG dos drops. Teste: `tests/economy/battle_shell_drop_test.gd`. Visual: `ShellDropFx` (valores de teste).
 
 - **Testes** (`tests/economy/*.gd`, `Godot --headless --script res://tests/economy/<arquivo>.gd -- --stdout-trace`, cada um em poucos segundos). Linha por teste `[ECON] {"ev":"test","name":...,"ok":bool,"asserts_failed":n,"fail":[...]}` e resumo `[ECON] {"ev":"summary","ok":bool,"tests":N,"failed":N}`. Saída 0 se `ok`, 1 se não. Sem `--stdout-trace` só o resumo.
 - **`ShellDropMath`** (`shell_drop_math.gd`): `silver_chance_pct`, `gold_chance_pct`, `bronze_chance_pct` e `roll_*` (um `randf()` por sorteio, só no RNG recebido).

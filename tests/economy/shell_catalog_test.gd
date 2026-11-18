@@ -1,5 +1,5 @@
 extends SceneTree
-## D-1300: testes puros do ShellCatalog (sem GameState, UI ou combate).
+## D-1309: testes puros do ShellCatalog (sem GameState, UI ou combate).
 ##   Godot_v4.7.2-stable_win64_console.exe --headless \
 ##     --script res://tests/economy/shell_catalog_test.gd -- --stdout-trace
 ## Sem --stdout-trace imprime so o resumo.
