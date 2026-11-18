@@ -25,10 +25,10 @@ O voo dos tokens de recompensa (ATB e Burst: flutuar sobre a fonte, voar ao slot
 
 `Battle._process` chamava `_reward_queue.step(delta)` só no fim, depois dos retornos antecipados de freeze/pausa de status e com `delta` já escalado pelo `time_scale`.
 
-## Conflito (preservo as duas; confirmação pedida ao criador)
+## Resposta do criador sobre o conflito com a D-1040
 
-**D-1040** (item 1) diz que o relógio é do `Battle` e que "pausa e câmera lenta valem para os dois" (lógica e visual). A frase acima abre uma exceção só para o voo dos tokens de ATB/Burst. Implementei a exceção (pedido explícito e estreito) mantendo o relógio dentro do `Battle` (`battle_rewards.gd`), então o visual continua sem temporizador próprio (D-019). **Pergunta: a exceção da D-1297 prevalece sobre o trecho "pausa e câmera lenta valem para os dois" da D-1040, só para estes tokens?**
+A D-1040 dizia que pausa e câmera lenta valem para lógica e visual. O criador respondeu que não quer essas siglas e confirmou o pedido acima: **a exceção vale** para o voo dos tokens (resposta: "EU VOU LÁ SABER OQUE SÃO ESSES Ds"). O relógio continua dentro do `Battle` (`battle_rewards.gd`), sem temporizador próprio no visual.
 
-## Ambiguidades em aberto
+## Em aberto
 
-- **D-1229 (Employ "congela tudo")** diz que nada avança durante a tentativa de Employ. Preservado: o voo continua congelado durante o Employ. Se o criador quiser que também ignore o Employ, é uma pergunta separada.
+- O voo continua congelado só durante a tentativa de Employ (o criador mandou "congela tudo" antes). Se quiser que também ignore o Employ, é só dizer.

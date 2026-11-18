@@ -6,38 +6,40 @@
 > Passou de 1 minuto = o debug está incompleto: melhore a ferramenta primeiro. Ver `docs/decisoes/D-1204-*.md` e `docs/TELEMETRIA.md`.
 <!-- /DEBUG-OBRIGATORIO-D1204 -->
 
-# D-1299 — Passos de posição: sem lock, só fila, sem custo de ATB; e a IA nunca troca de posição
+# D-1299 — Passos de posição: sem trava, sem custo de ATB, em fila; e a IA passa a usar a posição
 
 - **Data:** 2026-11-17
 - **Área:** Combate / IA
-- **Estado:** **registrada; NÃO implementada — conflita com D-018 e tem ambiguidades (abaixo). Aguarda o criador.** A parte da IA é só análise (recomendações abaixo), sem mudança de IA.
-- **Relacionadas:** D-018 (passos: 1 ATB, bloqueado em ataque/engajamento), D-021 (inimigos usam as mesmas Tactics), D-1146 (passo bloqueado na pausa de status), D-161 (fila de 1 vaga), D-168.
+- **Estado:** **implementado e testado por lógica (headless, os dois lados). Visual/feel aguarda o criador.**
+- **Substitui da D-018:** o custo de 1 ATB por passo e todos os bloqueios (preparo/execução do ataque, ataque em curso, engajamento, "andando", pausa de status, Guard, atordoamento). Continuam da D-018: posição de −2 a +2, +10 % de dano causado por passo à frente, −10 % de dano recebido por passo atrás.
 
 ## O que o criador disse (literal)
 
 > "as mudanças de posição não deviam ter lock, só ficarem em queue é ok que nem já acontece com aliados que realizam logo após ficarem ociosos, além de não precisar mais gastar ATB pra trocar a posição. Além disso NUNCA vejo a IA realizando troca de posição e quero suas recomendações críticas sobre"
 
-## Conflito (preservo as duas; pergunta ao criador)
+> "se eu mandei tirar é pq é pra tirar, não é pra ficar preservando coisa que já mudei por vontade própria"
 
-D-018 diz "1 ATB por passo" e "bloqueado durante preparo/execução do próprio ataque, ataque em curso que o envolva e engajamento". A frase acima pede o contrário. Pergunta: **a frase nova substitui esses trechos da D-018?**
+> "não existe mais bloqueios, eles são redundantes, é pro personagem se mover no momento que ficar ocioso, no caso, idle"
 
-## Ambiguidades em aberto (perguntar antes de agir)
+> "faça a IA usar a mecânica de uma forma estratégica"
 
-1. Quais travas somem? Hoje o `can_step` bloqueia por: pausa de status (D-1146), Guard, engajamento (Evade perfeito), "andando" (passo anterior em curso, 0,35 s), windup/ação própria, ataque em curso envolvendo o combatente (atacante ou alvo), atordoamento, ATB < 1.
-2. "Ficar em queue": o passo pedido espera a vaga (como o Move em `queued_skill`) e roda quando o combatente fica livre? Substitui um passo/Move já na fila (vaga única, D-161)? Um passo na fila ocupa a mesma vaga do Move?
-3. Sem ATB: o passo continua "dentro do Tactics" (que pausa) ou passa a ser um comando direto? Continua limitado a −2..+2?
+## Decisão
 
-## Análise: por que a IA nunca troca de posição (dados)
+1. Um passo não custa ATB e não tem trava. Se o combatente está ocupado (preparando/executando Move, retornando, engajado, atordoado, em Guard ou durante a pausa de status), o passo fica na fila e roda assim que ele ficar ocioso. Passos pedidos várias vezes somam na fila, sempre dentro de −2..+2. Só é recusado o passo que passaria de −2..+2.
+2. A IA escolhe sozinha onde ficar (a posição que o jogador definir no Tactics para um aliado continua valendo, e o líder controlado pelo jogador não usa IA). Escolha da IA (critério do assistente, a pedido do criador de "usar de forma estratégica"; ajustável):
+   - lutador saudável com algum golpe de dano vai para **+2**;
+   - com menos de 40 % de vida recua para **−2** e só volta quando passar de 60 %;
+   - quem não tem nenhum golpe de dano (curandeiro/buffer) fica em **−1**.
 
-Diagnóstico headless, IA contra IA, 2×2, 120 s simulados por rodada, comando e script em `side-session-notes` (`ai_step_diag.gd`):
+## Causa de a IA nunca trocar (medido)
 
-- **Padrão (nada configurado): 0 passos em 120 s.** `BattleAI.run` só dá passo se `tactic_pos != pos_step` (`battle_ai.gd:43`). `tactic_pos` vale 0 em todo mundo e só o menu Tactics do **jogador** o altera (`battle_scene.gd:1818`), e só para aliados. **Inimigos nunca recebem `tactic_pos`**, apesar de D-021 ("inimigos usam as mesmas Tactics"). A IA não tem nenhuma decisão própria de posição: não existe pontuação de passo.
-- Com `tactic_pos=+1` em todos: 3 passos (um por quem quis; os demais já estavam parados no alvo). Em 2401 quadros de "quer andar", **1241 (52 %) estavam bloqueados por "ataque em curso"** e 1160 livres: o lock atual atrasa bastante.
+A IA só dava passo quando `tactic_pos` era diferente da posição, e `tactic_pos` só era alterado pelo menu Tactics do jogador, só para aliados. Inimigos nunca tinham `tactic_pos`; 0 passos em 120 s simulados.
 
-## Recomendações (não implementadas; rotuladas "recomendação")
+## Crítica (recomendações, não implementadas)
 
-1. **Recomendação:** dar à IA uma decisão de posição própria (pontuada como os Moves, D-168), em vez de depender de `tactic_pos`. Sem isso, nenhuma mudança de lock/custo altera o que você vê, porque ninguém pede o passo.
-2. **Recomendação:** pontuar o passo por papel e pela regra D-018 (+10 % dano causado por passo à frente do atacante; −10 % dano recebido por passo atrás do alvo): corpo a corpo/alto dano vai à frente; quem está com pouca vida ou é suporte recua; voltar a 0 quando um Move exigir. Os pesos são decisão do criador.
-3. **Recomendação (crítica):** com custo 0 e sem lock, ir à frente no máximo é quase sempre melhor para quem ataca e recuar no máximo para quem defende; a IA otimizaria sempre os extremos e o jogador também. Sem custo, o jogo precisa de outro contrapeso (por exemplo tempo de caminhada de 0,35 s com o combatente exposto, ou o passo ocupar a vaga da fila) para a posição ser escolha e não obrigação. Decisão do criador.
-4. **Recomendação:** dar aos inimigos os mesmos `tactic_pos` iniciais dos aliados (D-021) apenas depois de o criador definir as regras acima; é a menor mudança que acorda a IA inimiga.
-5. **Recomendação:** adicionar `GameTrace`/evento `step` com motivo de bloqueio na fila (`block_reason`) ao `docs/TELEMETRIA.md`, para medir a fila de passos depois de implementada.
+- Sem custo e sem trava, avançar para +2 é quase sempre vantajoso para quem ataca, e recuar para −2 para quem defende. A posição vira uma escolha de papel mais do que uma decisão a cada instante. Se o criador quiser mais tensão, as opções são um tempo de exposição durante a caminhada (0,35 s hoje) ou limitar a quantidade de passos por intervalo. Fica em aberto até ele pedir.
+- Os números da IA (40 %, 60 %, +2, −2, −1) são meus; ver se o criador prefere outros.
+
+## Ambiguidades em aberto
+
+Nenhuma sobre o que foi pedido.

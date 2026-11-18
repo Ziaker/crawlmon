@@ -103,7 +103,9 @@ var pending_atb := 0
 var pending_extra := 0
 var pending_burst := 0
 var counter_ready := false  ## True right after a perfect Evade: the next attack has no wind-up (D-164).
-var queued_skill: Skill = null  ## The one move chosen while it could not start yet; paid when it starts (D-161).
+var queued_step := 0  ## Position step (-1/+1) waiting for the combatant to be idle; free, no ATB (D-1299).
+var tactic_manual := false  ## The player set `tactic_pos` in Tactics: the AI obeys it instead of choosing a position (D-1299).
+var queued_skill: Skill = null ## The one move chosen while it could not start yet; paid when it starts (D-161).
 var queued_target: Combatant = null
 var queued_target2: Combatant = null  ## D-1200: secondary target of a queued DUAL Move.
 ## Position steps (-2 behind .. +2 in front, 0 = middle). `pos_step` is the logic value;
@@ -871,6 +873,7 @@ func clear_pending() -> void:
 	queued_skill = null
 	queued_target = null
 	queued_target2 = null
+	queued_step = 0
 	clear_buffs()
 
 

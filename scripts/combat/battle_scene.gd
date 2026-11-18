@@ -1645,7 +1645,7 @@ func _fill_tactics(keep_index: bool) -> void:
 			_tactic_rows.append({"unit": a, "kind": "act"})
 			entries.append({"text": "%s | Reaction" % a.name, "detail": REACT_NAMES[a.react_policy]})
 			_tactic_rows.append({"unit": a, "kind": "react"})
-		entries.append({"text": "%s | Position  (←/→, 1 ATB)" % a.name, "detail": _pos_text(a, i == 0)})
+		entries.append({"text": "%s | Position  (←/→)" % a.name, "detail": _pos_text(a, i == 0)})
 		_tactic_rows.append({"unit": a, "kind": "pos"})
 	_menu.set_entries(entries, keep_index)
 
@@ -1698,7 +1698,7 @@ func _on_menu_side(direction: int) -> void:
 	if u == leader:
 		battle.step(leader, direction)
 	else:
-		u.tactic_pos = clampi(u.tactic_pos + direction, -Battle.STEP_MAX, Battle.STEP_MAX)
+		u.tactic_pos = clampi(u.tactic_pos + direction, -Battle.STEP_MAX, Battle.STEP_MAX); u.tactic_manual = true  # D-1299: player-chosen, the AI keeps it
 	_fill_tactics(true)
 
 

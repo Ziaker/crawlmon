@@ -10,6 +10,7 @@ func _init() -> void:
 	for ally_side in [true, false]:
 		_test_mp_regen(ally_side)
 		_test_reward_real_time(ally_side)
+		_test_steps(ally_side)
 	print("RESULT: ", "PASS" if _fails == 0 else "FAIL (%d)" % _fails)
 	Engine.time_scale = 1.0
 	quit(1 if _fails > 0 else 0)
@@ -73,3 +74,54 @@ func _test_reward_real_time(actor_is_player: bool) -> void:
 	Engine.time_scale = 1.0
 	_ok(r.landed, "token landed after %.2f real s despite freeze + 0.25x (age %.2f / %.2f)" % [real, r.age(), total])
 	_ok(owner.pending_atb == 0, "pending_atb released")
+
+
+## D-1299: steps are free, never locked, queue while busy; the AI chooses a position by itself.
+func _test_steps(actor_is_player: bool) -> void:
+	print("Steps, actor on ", "party" if actor_is_player else "enemy", " side")
+	var s := _pair(actor_is_player)
+	var b: Battle = s[0]
+	var actor: Combatant = s[1]
+	var foe: Combatant = s[2]
+	actor.atb = 0.0
+	_ok(b.step(actor, 1) and actor.pos_step == 1, "step with 0 ATB works and costs nothing (atb=%.2f)" % actor.atb)
+	# Busy: a Move is winding up, so the step waits in the queue.
+	actor.atb = 5.0
+	_ok(b.use_skill(actor, Skill.basic(), foe), "Tackle started")
+	_ok(b.step(actor, 1) and actor.pos_step == 1 and actor.queued_step == 1, "step while winding up is queued, not refused")
+	var guard := 0
+	while actor.queued_step != 0 and guard < 400:
+		b._process(0.05)
+		guard += 1
+	_ok(actor.pos_step == 2, "queued step ran once idle (pos %d after %d frames)" % [actor.pos_step, guard])
+	_ok(not b.step(actor, 1), "beyond +2 is refused")
+	# AI: nobody set tactic_pos; AI-controlled combatants of BOTH teams must walk by themselves (D-235).
+	var cnt := {"n": 0}
+	var leader := Combatant.new("Lead", 400, 6, 1.0, true)  # party[0] is the player's menu owner, not AI
+	var ally_ai := Combatant.new("AllyAI", 400, 6, 1.0, true)
+	var enemy_ai := Combatant.new("EnemyAI", 400, 6, 1.0, false)
+	var t1: Array[Combatant] = [leader, ally_ai]
+	var t2: Array[Combatant] = [enemy_ai]
+	var b2 := Battle.new()
+	b2.start(t1, t2)
+	b2.stepped.connect(func(_c, _p): cnt["n"] += 1)
+	for c in [leader, ally_ai, enemy_ai]:
+		c.in_battle = true
+	var t := 0.0
+	while t < 20.0:
+		b2._process(0.05)
+		t += 0.05
+	_ok(cnt["n"] > 0 and ally_ai.pos_step == 2 and enemy_ai.pos_step == 2, "AI advanced by itself, both teams (steps=%d, pos %d/%d)" % [cnt["n"], ally_ai.pos_step, enemy_ai.pos_step])
+	# Hurt: retreats and stays back; healed: comes back.
+	enemy_ai.hp = 100
+	t = 0.0
+	while t < 20.0:
+		b2._process(0.05)
+		t += 0.05
+	_ok(enemy_ai.pos_step == -2, "hurt AI (25%% HP) retreated to -2 (pos %d)" % enemy_ai.pos_step)
+	enemy_ai.hp = 400
+	t = 0.0
+	while t < 20.0:
+		b2._process(0.05)
+		t += 0.05
+	_ok(enemy_ai.pos_step == 2, "healed AI advanced again (pos %d)" % enemy_ai.pos_step)

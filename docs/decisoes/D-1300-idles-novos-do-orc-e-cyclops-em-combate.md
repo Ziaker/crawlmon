@@ -30,6 +30,10 @@ Os GLBs têm só os clipes originais (`..._00`, `..._32` etc., últimas alteraç
 
 D-1226 já registra que `idle_full` dos DQT (D-1084) toca uma vez e segura o último quadro; isso vale hoje para o Cyclops em combate.
 
+## Pesquisa ampliada (docs e arquivos)
+
+Revisei `docs/IMPORTACAO_MODELOS_DQT.md`, D-1084, D-1264, `docs/REGRAS_DO_JOGO.md`, o histórico do git (`-S idle_speed`, `--grep idle`), `content/characters/dqt_*/model_profile.tres`, os GLBs (clipes `00`..`50`), `character_model_loader.gd`, os labs (`third_person_3d_lab.gd`, `pre_game_stage_3d.gd`) e as sessões irmãs. O único "idle novo" com histórico é o do Orc: `idle_source 00`, `idle_speed 0,5`, `idle_full false`, entrado no commit de 16/11 (`8b0a90b9`), e está nos dados do combate. Para o Cyclops, o idle é o de 10/11 (clipe `32`, pose segurada, `idle_full`). Nenhum outro arquivo ou clipe de idle existe. Ainda não vi captura do combate com os dois.
+
 ## Ambiguidade (perguntar)
 
 Não consegui identificar qual idle é o "novo" (não há arquivo/commit de idle novo para Orc/Cyclops). Possibilidades: o idle de outra tela (hub/lab, D-1084) que o combate não usa; o Cyclops estar parado por `idle_full` sem loop; ou um clipe que o criador espera e não está nos GLBs. **Pergunta:** qual clipe/aparência é o idle novo e onde você o viu?

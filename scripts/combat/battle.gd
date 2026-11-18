@@ -162,7 +162,6 @@ const BURN_DMG := 2  ## D-238 (D-236 sheet): fixed damage of each Burn tick
 const BURN_INTERVAL := 1.0  ## seconds between ticks; the first comes one interval after the hit
 const WINDUP := 1.5  ## Every attack takes this long to land; the attacker's ATB is locked meanwhile.
 const STEP_MAX := 2  ## Positions go from -STEP_MAX (behind) to +STEP_MAX (in front).
-const STEP_COST := 1.0  ## ATB blocks per step; nothing else.
 const STEP_TIME := 0.35  ## Seconds a step takes to walk.
 const TRAVEL_PER_STEP := 0.10  ## Seconds off an attack's travel per step of attacker + target.
 const TRAVEL_MIN := 0.25
@@ -310,6 +309,7 @@ func _process(delta: float) -> void:
 	_resolve_incoming(delta)
 	_step_attacks(delta)
 	_run_queued()
+	_run_queued_steps()  # D-1299
 	if _status_pause != null:
 		state_changed.emit()
 		return
@@ -616,43 +616,19 @@ static func travel_seconds(base: float, attacker: Combatant, target: Combatant) 
 ## No step while preparing/executing its own attack, while an attack involves it (as
 ## attacker or target), while engaged, while still walking a step, or without 1 ATB.
 func can_step(c: Combatant, dir: int) -> bool:
-	if _status_pause != null:
-		return false  # D-1146: steps are blocked during the status pause.
-	if not running or not c.is_alive() or dir == 0 or c.is_stunned() or (c.is_guarding() and not fast_combat_test):
+	# D-1299: no lock and no ATB cost. A step is only refused when it makes no sense
+	# (out of -2..+2, dead, battle over); a busy combatant queues it (see `step`).
+	if not running or not c.is_alive() or dir == 0:
 		return false
-	var to := c.pos_step + dir
-	if to < -STEP_MAX or to > STEP_MAX or c.blocks() < STEP_COST:
-		return false
-	if c.engaged_with != null or c.step_t < 1.0 or is_winding_up(c) or c.is_stunned():
-		return false
-	for list in [incoming, _landing, _returning]:
-		for inc in list:
-			if inc.attacker == c or inc.target == c:
-				return false
-	return true
+	var target := (c.queued_step if c.queued_step != 0 else 0) + c.pos_step + dir
+	return target >= -STEP_MAX and target <= STEP_MAX
 
 
 ## Short reason a step is not possible right now ("" when it is).
 func step_block_reason(c: Combatant) -> String:
 	if not running or not c.is_alive():
 		return ""
-	if _status_pause != null:
-		return "pausa de status"  # D-1146
-	if c.is_guarding() and not fast_combat_test:
-		return "em Guard"
-	if c.engaged_with != null:
-		return "engajado"
-	if c.step_t < 1.0:
-		return "andando"
-	if is_winding_up(c):
-		return "em ação"
-	for list in [incoming, _landing, _returning]:
-		for inc in list:
-			if inc.attacker == c or inc.target == c:
-				return "ataque em curso"
-	if c.blocks() < STEP_COST:
-		return "falta ATB"
-	return ""
+	return "na fila" if c.queued_step != 0 else ""  # D-1299: nothing blocks a step any more; it only waits
 
 
 func step(c: Combatant, dir: int) -> bool:
@@ -660,8 +636,31 @@ func step(c: Combatant, dir: int) -> bool:
 		return false  # D-1229: the whole battle is frozen.
 	if not can_step(c, dir):
 		return false
+	if not _can_step_now(c):
+		c.queued_step = clampi(c.queued_step + dir, -STEP_MAX, STEP_MAX)  # D-1299: waits until it is idle
+		return true
+	_do_step(c, dir)
+	return true
+
+
+## D-1299: idle = it may start an action right now and is not stunned or engaged.
+func _can_step_now(c: Combatant) -> bool:
+	return can_start_now(c) and not c.is_stunned() and c.engaged_with == null and not is_winding_up(c)
+
+
+## Runs the queued steps of everyone who became idle (one step per call).
+func _run_queued_steps() -> void:
+	for c in party + enemies:
+		if c.queued_step == 0 or not c.is_alive() or not _can_step_now(c):
+			continue
+		var dir := signi(c.queued_step)
+		c.queued_step -= dir
+		if c.pos_step + dir >= -STEP_MAX and c.pos_step + dir <= STEP_MAX:
+			_do_step(c, dir)
+
+
+func _do_step(c: Combatant, dir: int) -> void:
 	_cancel_guard_if_fast(c)
-	c.spend(STEP_COST)
 	c.step_from = c.visual_step()
 	c.pos_step += dir
 	c.step_t = 0.0
