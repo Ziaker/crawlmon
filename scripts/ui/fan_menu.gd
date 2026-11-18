@@ -38,9 +38,16 @@ var index := 0
 var _texts: Array[String] = []
 var _details: Array[String] = []
 var _enabled: Array[bool] = []
+var _ids: Array[String] = []  ## "id" of each entry ("" when it has none): rows are found by id, never by position.
 var _accents: Array[Color] = []  ## Row text color when not highlighted (alpha 0 = default)
+var _hop_t := 0.0
+var _arrow: Array[Color] = []  ## Creator (2026-11-17): a slanted tab OUTSIDE the block, same height as it (alpha 0 = none).
 var _hilite: Array[Color] = []  ## Highlight color of the row (alpha 0 = the default green).
 var _shield: Array[bool] = []  ## The row draws a shield icon instead of the diamond (D-272).
+var _fuse_row: Array[bool] = []  ## D-1296: the FIGHT row while the burst fuse is lit (orange body, flames, fuse on top).
+const FUSE_ORANGE := Color("ff8a2b")  ## D-1296 (creator: "ff8a2b").
+const BurstFuseFx = preload("res://scripts/ui/burst_fuse_fx.gd")
+var _fx: BurstFuseFx
 ## D-1236: side fan. A second stack of slanted blocks born to the right of one row of the main fan
 ## (the alternative tab of TACTICS). While it is open the main fan stays visible, dimmed, and the
 ## side fan takes the input. Navigating and closing it never spends anything.
@@ -96,25 +103,33 @@ func set_entries(entries: Array, keep_index := false) -> void:
 	_texts.clear()
 	_details.clear()
 	_enabled.clear()
+	_ids.clear()
 	_accents.clear()
 	_hilite.clear()
+	_arrow.clear()
 	_shield.clear()
+	_fuse_row.clear()
 	_skills.clear()
 	for e in entries:
+		_fuse_row.append(e is Dictionary and bool(e.get("fuse", false)))
 		if e is Dictionary:
 			_texts.append(e["text"])
 			_details.append(e.get("detail", ""))
 			_enabled.append(e.get("enabled", true))
+			_ids.append(String(e.get("id", "")))
 			_accents.append(e.get("accent", Color(0, 0, 0, 0)))
 			_hilite.append(e.get("hilite", Color(0, 0, 0, 0)))
+			_arrow.append(e.get("arrow", Color(0, 0, 0, 0)))
 			_shield.append(e.get("shield", false))
 			_skills.append(e.get("skill", null))
 		else:
 			_texts.append(str(e))
 			_details.append("")
 			_enabled.append(true)
+			_ids.append("")
 			_accents.append(Color(0, 0, 0, 0))
 			_hilite.append(Color(0, 0, 0, 0))
+			_arrow.append(Color(0, 0, 0, 0))
 			_shield.append(false)
 			_skills.append(null)
 	side_open = false  # D-1236: new entries always start with the side fan closed.
@@ -123,9 +138,19 @@ func set_entries(entries: Array, keep_index := false) -> void:
 	moved.emit(index)
 
 
+## Row of the entry with that "id" (-1 when there is none): callers never depend on the row order.
+func row_of(id: String) -> int:
+	return _ids.find(id)
+
+
+## "id" of a row ("" when the entry has none).
+func id_at(i: int) -> String:
+	return _ids[i] if i >= 0 and i < _ids.size() else ""
+
+
 ## Changes the small text of one row (e.g. the reason a command is unavailable).
 func set_detail(i: int, text: String) -> void:
-	if i < _details.size() and _details[i] != text:
+	if i >= 0 and i < _details.size() and _details[i] != text:
 		_details[i] = text
 		queue_redraw()
 
@@ -140,7 +165,7 @@ func select(i: int) -> void:
 
 
 func set_enabled(i: int, value: bool) -> void:
-	if i < _enabled.size() and _enabled[i] != value:
+	if i >= 0 and i < _enabled.size() and _enabled[i] != value:
 		_enabled[i] = value
 		queue_redraw()
 
@@ -247,11 +272,47 @@ func _slant(r: Rect2, skew: float, color: Color) -> void:
 		Vector2(r.end.x - skew, r.end.y), Vector2(r.position.x, r.end.y)]), color)
 
 
+## D-1296: lights the burst fuse over the row marked "fuse" for `seconds` REAL seconds.
+func fuse_start(seconds: float) -> void:
+	if _fx == null:
+		_fx = BurstFuseFx.new()
+		add_child(_fx)
+	_fx.start(seconds)
+	queue_redraw()
+
+
+## D-1296: the fuse is over. `cut` = the player clicked FIGHT (small explosion over its block). Call it BEFORE
+## set_entries() changes the rows, so the block it plays over is still known.
+func fuse_end(cut: bool) -> void:
+	if _fx == null:
+		return
+	var row := _fuse_row.find(true)
+	_fx.stop(_row_rect(row) if row >= 0 else Rect2(), cut)
+	queue_redraw()
+
+
+func _row_rect(i: int) -> Rect2:
+	var x := i * 8.0 + (9.0 if i == index else 0.0)
+	return Rect2(x, 22 + i * FAN_STEP, FAN_W, FAN_H)
+
+
+func _process(delta: float) -> void:
+	_hop_t += delta  # own clock (not wall time), so a recorded movie is deterministic
+	if _fx != null and _fx.busy():
+		_fx.advance(delta / maxf(Engine.time_scale, 0.01))  # real time: the burst slow-motion must not slow the fuse
+		queue_redraw()
+	if style == Style.FAN and not side_open and visible and index >= 0 and index < _arrow.size() and _arrow[index].a > 0.0:
+		queue_redraw()  # the highlighted row's tab hops
+
+
 func _draw() -> void:
 	if style == Style.FAN:
 		_draw_fan()
 	else:
 		_draw_drawer()
+		if _fx != null:  # D-1296: the click opens the move list (drawer): the explosion still plays over it
+			_fx.draw_over(self, Rect2())
+			_fx.draw_pop(self)
 
 
 func _draw_fan() -> void:
@@ -263,10 +324,16 @@ func _draw_fan() -> void:
 		var x := i * 8.0 + (9.0 if active else 0.0)
 		var r := Rect2(x, 22 + i * FAN_STEP, FAN_W, FAN_H)
 		_slant(Rect2(r.position + Vector2(5, 5), r.size), 8.0, Color(0, 0, 0, 0.45 * dim))
-		var blue: bool = _hilite[i].a > 0.0
-		var body: Color = (_hilite[i] if blue else LIME) if active else Color(INK, 0.92)
+		var row_col: Color = _hilite[i] if _hilite[i].a > 0.0 else LIME  # the main blocks keep their own color; the SIDE fan options take the tab color
+		var blue: bool = row_col.get_luminance() < 0.35  # dark body: white text and glyph
+		var on_fuse: bool = i < _fuse_row.size() and _fuse_row[i] and _fx != null and _fx.active
+		var body: Color = row_col if active else Color(INK, 0.92)
+		if on_fuse:
+			body = FUSE_ORANGE  # D-1296: the FIGHT block is orange for as long as the fuse burns, highlighted or not
 		body.a *= dim
 		_slant(r, 8.0, body)
+		if on_fuse:
+			_fx.draw_flames(self, r)
 		var fg := (Color.WHITE if blue else INK) if active else Color("e4e9e4")
 		var alpha := (1.0 if _enabled[i] else 0.4) * dim
 		var cy := r.position.y + r.size.y * 0.5
@@ -278,10 +345,24 @@ func _draw_fan() -> void:
 		else:
 			draw_colored_polygon(PackedVector2Array([
 				Vector2(r.position.x + 24, cy - 8), Vector2(r.position.x + 32, cy),
-				Vector2(r.position.x + 24, cy + 8), Vector2(r.position.x + 16, cy)]), Color(INK if active else CORAL, alpha))
+				Vector2(r.position.x + 24, cy + 8), Vector2(r.position.x + 16, cy)]), Color((Color.WHITE if blue else INK) if active else CORAL, alpha))
 		draw_string(title_font(), Vector2(r.position.x + 44, cy + 9), _texts[i].to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color(fg, alpha))
 		if _details[i] != "":
 			BattleHud.text_right(self, small, r.end.x - 18, cy + 4, _details[i], 10, Color(fg, 0.75 * alpha))
+		if i < _arrow.size() and _arrow[i].a > 0.0 and not side_open:
+			var hop := 0.0
+			if active:  # Creator (2026-11-17): the tab keeps hopping while its row is highlighted (provisional: 5 px to the left, 2 hops/s)
+				hop = absf(sin(_hop_t * TAU * 1.0)) * 5.0  # to the LEFT (creator), not up
+			var tab := Rect2(r.end.x + 6.0 - hop, r.position.y, 22.0, r.size.y)  # same height and slant as the block, outside it
+			_slant(Rect2(tab.position + Vector2(3, 3), tab.size), 8.0, Color(0, 0, 0, 0.45 * dim))
+			_slant(tab, 8.0, Color(_arrow[i], dim))  # exact arrow color, never faded by the row's enabled state
+	if _fx != null:  # D-1296: the 3D fuse and its sparks on top of the rows; the pop/explosion of the click last
+		var fr := _fuse_row.find(true)
+		if fr >= 0 and _fx.active:
+			_fx.draw_over(self, _row_rect(fr))
+		else:
+			_fx.draw_over(self, Rect2())
+		_fx.draw_pop(self)
 	if side_open:
 		_draw_side()
 
@@ -293,11 +374,12 @@ func _draw_side() -> void:
 	var w := side_width()
 	var ax := _side_anchor * 8.0 + 9.0 + FAN_W + SIDE_GAP
 	var ay := 22.0 + _side_anchor * FAN_STEP - (_side_texts.size() - 1) * FAN_STEP * 0.5
+	var side_col: Color = _arrow[_side_anchor] if _side_anchor >= 0 and _side_anchor < _arrow.size() and _arrow[_side_anchor].a > 0.0 else LIME
 	for i in _side_texts.size():
 		var active := i == side_index
 		var r := Rect2(ax + i * 8.0 + (9.0 if active else 0.0), ay + i * FAN_STEP, w, FAN_H)
 		_slant(Rect2(r.position + Vector2(5, 5), r.size), 8.0, Color(0, 0, 0, 0.45))
-		_slant(r, 8.0, LIME if active else Color(INK, 0.92))
+		_slant(r, 8.0, side_col if active else Color(INK, 0.92))  # creator 2026-11-17: the Summon/Employ options are aqua (the tab color), not lime
 		var fg := INK if active else Color("e4e9e4")
 		var alpha := 1.0 if _side_enabled[i] else 0.4
 		var cy := r.position.y + r.size.y * 0.5

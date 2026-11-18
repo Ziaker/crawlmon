@@ -25,7 +25,8 @@ const DrainSpearMove = preload("res://scripts/data/drain_spear_move.gd")
 ##   --hud=status|victory [--hud-member=N] --shot=arquivo.png (HUD de tela cheia com o grupo da sala, captura e sai)
 ##   --boost=<1|2|3|all> --shot=arquivo.png (PROTÓTIPO do BOOST no cartão do inimigo, D-1229)
 ##   --command-tab=<atb>[:subs][:down] --shot=arquivo.png (D-1236: leque lateral EMPLOY/SUMMON de TACTICS)
-##   --employ=cancel|noatb|fail|success|last|moves[:flight][:burst][:mp][:win]|returning|status|lastblock|chance|roll[:win|:zero]|boost|rhythm[:perfect|:good|:miss|:mix] [--mirror] (D-1229: fluxo do Employ pelo menu real; imprime EMPLOY_JSON)
+##   --employ=cancel|noatb|fail|success|last|moves[:flight][:burst][:mp][:win]|returning|status|lastblock|chance|roll[:win|:zero]|boost|rhythm[:perfect|:good|:near|:miss|:mix] [--mirror] (D-1229: fluxo do Employ pelo menu real; imprime EMPLOY_JSON)
+##   --fuse=cut|expire|swap|action|ko [--mirror] (D-1296: pavio de burst pelo Evade manual perfeito; imprime FUSE_JSON)
 ##   --picker=<move_id> [--mirror] --shot=arquivo.png (D-1200: Fight do líder + menu S.TARGET do Move, imprime os alvos oferecidos)
 ##   --hide=linhas,particulas,shaders,sprites,malhas --record=SEGUNDOS --step=SEGUNDOS --out=pasta
 ##   --log=arquivo.txt --quit
@@ -729,7 +730,12 @@ func _run_command_tab_shot(spec: String) -> void:
 	_bs._show_main()
 	_bs._menu.visible = true
 	_bs._menu.select(_bs.MAIN_TACTICS)
-	_bs._on_menu_side(1)
+	if "guard" in parts:  # shows the Guard block (blue) selected, to check its tab color
+		_bs._guard_mode = true
+		_bs._menu.set_entries(_bs._main_entries(), true)
+		_bs._menu.select(2)
+	if "closed" not in parts and "guard" not in parts:  # ":closed" keeps the side fan shut, so the main menu arrows show
+		_bs._on_menu_side(1)
 	if "down" in parts:
 		_bs._menu.side_index = 1
 	_bs._update_main_enabled()
@@ -738,6 +744,15 @@ func _run_command_tab_shot(spec: String) -> void:
 		await get_tree().process_frame
 	_bs._menu.visible = true
 	var m: FanMenu = _bs._menu
+	if "video" in parts:  # record with --write-movie: highlight Tactics, Evade, swap to Guard (right), swap back (left), Status
+		for step in [[3, 0], [2, 0], [2, 1], [2, -1], [2, 1], [4, 0]]:
+			_bs._menu.select(int(step[0]))
+			if int(step[1]) != 0:
+				_bs._on_menu_side(int(step[1]))
+			_bs._update_main_enabled()
+			await get_tree().create_timer(1.5).timeout
+		_quit(0)
+		return
 	print("[vfx_room] command_tab result=%s atb=%d open=%s index=%d employ=%s:%s summon=%s:%s width=%d view=%s" % [
 		"ok" if m.side_open else "fail", int(blocks), m.side_open, m.side_index,
 		m._side_details[0] if m.side_open else "-", m._side_enabled[0] if m.side_open else false,
@@ -749,6 +764,117 @@ func _run_command_tab_shot(spec: String) -> void:
 		get_window().get_viewport().get_texture().get_image().save_png(path)
 		print("[vfx_room] command_tab shot: ", path)
 	_quit(0 if m.side_open else 1)
+
+
+## --camera=fight [--mirror]: opens the Fight list (TATICA view), uses the first move with the real key "1", and checks that
+## the camera returns to CINEMA and never leaves it afterwards (no re-aim, shake or FOV change from hits). Prints CAMERA_JSON.
+func _run_camera_check(spec := "fight") -> void:
+	if spec == "pick":
+		# Creator 2026-11-17: the TACTICS side fan slows time for 3 s; the Employ/Summon picker pauses the game once per action.
+		_employ_set_atb(_battle.party[0], 5.0)
+		for i in 30:
+			await get_tree().process_frame
+		var r := {}
+		_bs._menu.select(3)
+		_bs._on_menu_side(1)
+		r["slowmo_on_fan"] = Engine.time_scale < 1.0
+		r["slowmo_left"] = snappedf(_bs._decision_slowmo_time_left, 0.1)
+		_bs._begin_employ_pick()
+		await get_tree().process_frame
+		r["paused_first_pick"] = get_tree().paused
+		_bs._on_cancel()
+		await get_tree().process_frame
+		r["resumed_after_cancel"] = not get_tree().paused
+		_bs._menu.select(3)
+		_bs._on_menu_side(1)
+		_bs._begin_employ_pick()
+		await get_tree().process_frame
+		r["not_paused_second_pick"] = not get_tree().paused
+		_bs._on_cancel()
+		_bs._on_player_action_executed()
+		await get_tree().process_frame
+		_bs._menu.select(3)
+		_bs._on_menu_side(1)
+		_bs._begin_employ_pick()
+		await get_tree().process_frame
+		r["paused_again_after_action"] = get_tree().paused
+		_bs._on_cancel()
+		await get_tree().process_frame
+		r["final_resumed"] = not get_tree().paused
+		var ok_pick := true
+		for k in r:
+			if typeof(r[k]) == TYPE_BOOL and not r[k]:
+				ok_pick = false
+		print("[vfx_room] PICK_JSON: ", JSON.stringify(r))
+		print("[vfx_room] camera mode=pick view=%s result=%s" % ["mirror" if _mirror else "normal", "ok" if ok_pick else "fail"])
+		_quit(0 if ok_pick else 1)
+		return
+	if spec == "z":
+		# Real key Z on the main menu: it must open a sub-state (TACTICS side fan / FIGHT) or at least react.
+		_employ_set_atb(_battle.party[0], 5.0)
+		await get_tree().process_frame
+		for i in 30:
+			await get_tree().process_frame
+		var before: int = int(_bs.state)
+		print("[vfx_room] CAMERA_Z focus=", get_viewport().gui_get_focus_owner(), " win_focus=", get_window().has_focus())
+		var results := []
+		for key in [KEY_Z, KEY_Z]:
+			var ev := InputEventKey.new()
+			ev.keycode = key
+			ev.physical_keycode = key
+			ev.pressed = true
+			get_viewport().push_input(ev)
+			for i in 20:
+				await get_tree().process_frame
+			results.append(int(_bs.state))
+		print("[vfx_room] CAMERA_Z: before=%d after_each=%s menu_visible=%s index=%d" % [before, str(results), str(_bs._menu.visible), _bs._menu.index])
+		_quit(0)
+		return
+	var leader: Combatant = _battle.party[0]
+	_employ_set_atb(leader, 5.0)
+	if _immortal != null:
+		_immortal.button_pressed = true
+	var director = _bs.director
+	var cam: Camera3D = _bs.get_node("Camera3D")
+	await get_tree().process_frame
+	_bs._show_fight()
+	for i in 90:
+		await get_tree().process_frame
+	var mode_in_fight: int = int(director.mode)
+	var ev := InputEventKey.new()
+	ev.keycode = KEY_1
+	ev.physical_keycode = KEY_1
+	ev.pressed = true
+	get_viewport().push_input(ev)
+	var modes := {}
+	var attacked_seen := false
+	var fov_min := 999.0
+	var fov_max := 0.0
+	var after_press_frames := 0
+	var t0 := Time.get_ticks_msec()
+	var pos_samples: Array = []
+	while Time.get_ticks_msec() - t0 < 4500:
+		await get_tree().process_frame
+		after_press_frames += 1
+		modes[int(director.mode)] = true
+		if _battle.is_attacking(leader):
+			attacked_seen = true
+		fov_min = minf(fov_min, cam.fov)
+		fov_max = maxf(fov_max, cam.fov)
+		if after_press_frames > 90:
+			pos_samples.append(cam.global_position)
+	var steady := not pos_samples.is_empty()
+	var tail: Array = pos_samples.slice(maxi(0, pos_samples.size() - 40))  # after the glide: the last frames stay put at the base pose
+	for p in tail:
+		if (p as Vector3).distance_to(BattleCamera.CINEMA_POS) > 0.05:
+			steady = false
+	var out := {"mode_in_fight": mode_in_fight, "modes_after": modes.keys(), "final_mode": int(director.mode),
+		"fov_min": snappedf(fov_min, 0.01), "fov_max": snappedf(fov_max, 0.01), "steady_after_1_5s": steady,
+		"leader_attacked": attacked_seen, "state_after": int(_bs.state), "time_scale": Engine.time_scale, "pos_first": pos_samples[0] if not pos_samples.is_empty() else null, "pos_last": pos_samples[-1] if not pos_samples.is_empty() else null, "view": "mirror" if _mirror else "normal"}
+	print("[vfx_room] CAMERA_JSON: ", JSON.stringify(out))
+	var ok: bool = mode_in_fight == 1 and int(director.mode) == 0 and steady
+	print("[vfx_room] camera mode=fight view=%s result=%s" % [out["view"], "ok" if ok else "fail"])
+	_quit(0 if ok else 1)
 
 
 ## D-1229 (Fase 5)/D-1204 --employ=<cancel|noatb|fail|success|last>[:flight] [--mirror]: percorre o
@@ -816,7 +942,7 @@ func _run_employ(spec: String) -> void:
 	elif mode == "rhythm":
 		# D-1257: the real minigame node plays by itself (set_auto) and its bonuses reach the real roll.
 		var plans := {"perfect": ["perfect", "perfect", "perfect"], "good": ["good", "good", "good"],
-			"miss": ["", "", ""], "mix": ["perfect", "good", ""]}
+			"miss": ["", "", ""], "near": ["near", "near", "near"], "mix": ["perfect", "good", ""]}
 		var plan_key := "mix"
 		for k in plans:
 			if k in parts:
@@ -828,11 +954,34 @@ func _run_employ(spec: String) -> void:
 		var mg = _bs._employ_minigame
 		var opened: bool = mg.is_open()
 		var notes: int = mg.note_times().size()
-		mg.set_auto(plans[plan_key])
 		var guard := 0
-		while mg.is_open() and guard < 1000:
-			mg.step(10.0)  # fine steps: the auto GOOD press lands 95 ms after the note
-			guard += 1
+		if "key" in parts:
+			# Real input path: the clock runs on real frames and the "confirm" action is injected as a key press.
+			var pressed := 0
+			var times: Array = mg.note_times()
+			while mg.is_open() and guard < 2000:
+				if pressed < times.size() and mg._t >= float(times[pressed]):
+					var ev := InputEventKey.new()
+					ev.keycode = KEY_Z
+					ev.physical_keycode = KEY_Z
+					ev.pressed = true
+					get_viewport().push_input(ev)
+					pressed += 1
+				await get_tree().process_frame
+				guard += 1
+		else:
+			mg.set_auto(plans[plan_key])
+			if _shot_path != "":  # visual check: stop a moment after the first note and save a frame (needs a window)
+				var times2: Array = mg.note_times()
+				while mg._t < float(times2[0]) + 350.0:
+					mg.step(10.0)
+				await RenderingServer.frame_post_draw
+				var sp := ProjectSettings.globalize_path(_shot_path) if _shot_path.begins_with("res://") else _shot_path
+				get_window().get_viewport().get_texture().get_image().save_png(sp)
+				print("[vfx_room] employ rhythm shot: ", sp)
+			while mg.is_open() and guard < 1000:
+				mg.step(10.0)  # fine steps: the auto GOOD press lands 95 ms after the note
+				guard += 1
 		await get_tree().process_frame
 		var rhythm_row := {}
 		var ended_row := {}
@@ -841,7 +990,7 @@ func _run_employ(spec: String) -> void:
 				rhythm_row = r
 			elif String(r.get("stage", "")) == "ended":
 				ended_row = r
-		var want := {"perfect": 10.0, "good": 5.0, "miss": 0.0}
+		var want := {"perfect": 10.0, "good": 5.0, "near": 2.0, "miss": 0.0}
 		var expect_pp := 0.0
 		for i in mini(notes, 3):
 			var g: String = plans[plan_key][i]
@@ -1220,7 +1369,7 @@ func _run_employ(spec: String) -> void:
 			and bool(a.get("picker", false)) and bool(a.get("frozen", false)) and bool(a.get("resumed", false)) and cancelled.size() == 1 \
 			and int(out["moves_left"]) == 0 and bool(out["recruit_left_field"]) and _battle.running
 	elif mode == "lastblock":
-		# D-1229 "Sim, só teste": no jogo real o último inimigo vivo não pode ser recrutado (nada é gasto).
+		# D-1274: no jogo real o último inimigo vivo PODE ser alvo do Employ.
 		while _battle.enemies.size() > 1:
 			_battle.enemies.pop_back()
 		_employ_set_atb(leader, 5.0)
@@ -1234,8 +1383,8 @@ func _run_employ(spec: String) -> void:
 			"begin_ok": begin_ok, "reason": _employ_last_reason(rows), "blocks_after": leader.blocks(),
 			"burst": leader.burst, "active": _battle.is_employ_active(),
 		}
-		ok = side_open and not entry_enabled and not picker and refusal == "last_enemy" and not begin_ok \
-			and String(out["reason"]) == "last_enemy" and leader.blocks() >= 4.999 and leader.burst == 1 and not bool(out["active"])
+		_battle.finish_employ(false, true)  # D-1274: closes the attempt opened by the check above (nothing else is asserted on it).
+		ok = picker and refusal == "" and begin_ok  # D-1274: the last enemy is allowed
 	elif mode == "chance":
 		# D-1240: a chance (só a conta, sem rolagem) com atributos conhecidos, buff de ATK e um aliado nocauteado.
 		var ally: Combatant = _battle.party[1] if _battle.party.size() > 1 else null
@@ -1515,6 +1664,207 @@ func _employ_attempt(target_index: int, success: bool, real_roll := false) -> Di
 	return out
 
 
+## D-1296 --fuse=cut|expire|swap|action|ko [--mirror]: o líder provoca um Evade manual PERFEITO (tecla real
+## "evade" pelo viewport) com o menu principal aberto e o pavio de burst acende. Mede a troca das linhas
+## Fight/Evade, o pulo do cursor para o Fight e a saída única (cut/expired/action/ko), com a ordem
+## restaurada. Imprime `[vfx_room] fuse mode=<modo> view=<normal|mirror> result=ok|fail` e FUSE_JSON.
+func _run_fuse(spec: String) -> void:
+	var mode := String(spec.split(":")[0])
+	var view := "mirror" if _mirror else "normal"
+	var out := {"mode": mode, "view": view}
+	var ok := false
+	if not (mode in ["cut", "expire", "swap", "action", "ko", "shot"]):
+		print("[vfx_room] fuse mode=%s view=%s result=fail reason=unknown_mode" % [mode, view])
+		_quit(1)
+		return
+	if _immortal != null:
+		_immortal.button_pressed = false  # D-1204: vida real, sem a imortalidade da sala
+	var leader: Combatant = _battle.party[0]
+	var foe: Combatant = null
+	for e in _battle.enemies:
+		if e.is_alive():
+			foe = e
+			break
+	if foe == null:
+		print("[vfx_room] fuse mode=%s view=%s result=fail reason=no_enemy" % [mode, view])
+		_quit(1)
+		return
+	for c in _battle.party + _battle.enemies:  # ninguém age sozinho: só o ataque que o cenário dispara
+		c.act_policy = Combatant.Act.HOLD
+		c.react_policy = Combatant.React.NONE
+	_bs._last_main = "items"  # o cursor começa FORA do Fight: o pulo do pavio é medido, não herdado
+	_bs._show_main()
+	_bs._menu.visible = true
+	_employ_set_atb(leader, 5.0)
+	_employ_set_atb(foe, 5.0)
+	var rows: Array = []
+	_bs.fuse_changed.connect(func(_stage: String, data: Dictionary) -> void: rows.append(data))
+	out["cursor_before"] = _bs._menu.id_at(_bs._menu.index)
+	out["attack_ok"] = _battle.use_skill(foe, Skill.basic_for(foe), leader)
+	# D-1014: espera a janela válida e aperta a tecla REAL "evade" (Space), como o jogador.
+	var deadline := Time.get_ticks_msec() + 6000
+	var keyed := false
+	while Time.get_ticks_msec() < deadline and not _bs.fuse_active:
+		var inc := _battle.find_evadable(leader)
+		if inc != null and inc.can_evade_now():
+			_fuse_press(KEY_SPACE)
+			keyed = true
+			for i in 4:
+				await get_tree().process_frame
+			break
+		await get_tree().process_frame
+	if not _bs.fuse_active:  # a tecla não chegou ao menu: caminho público do Battle, e o JSON diz qual foi
+		var inc2 := _battle.find_evadable(leader)
+		if inc2 != null and inc2.can_evade_now() and _battle.try_evade(leader, inc2):
+			keyed = false
+			for i in 4:
+				await get_tree().process_frame
+	out["evade_key"] = keyed
+	out["fuse_started"] = _bs.fuse_active
+	var start_row: Dictionary = rows[0] if not rows.is_empty() else {}
+	var started := String(start_row.get("stage", "")) == "start"
+	out["start"] = {"stage": String(start_row.get("stage", "")), "reason": String(start_row.get("reason", "")),
+		"swapped": bool(start_row.get("swapped", false)), "left_ms": int(start_row.get("left_ms", -1)),
+		"leader": String(start_row.get("leader", ""))}
+	out["ids"] = [_bs._menu.id_at(0), _bs._menu.id_at(1), _bs._menu.id_at(2)]
+	out["cursor"] = _bs._menu.id_at(_bs._menu.index)
+	out["order"] = _fuse_order(_bs._main_entries())
+	if not (_bs.fuse_active and started):
+		out["events"] = _fuse_events(rows)
+		print("[vfx_room] fuse mode=%s view=%s result=fail reason=no_fuse" % [mode, view])
+		print("[vfx_room] FUSE_JSON: ", JSON.stringify(out))
+		_quit(1)
+		return
+	if mode == "swap":
+		var swapped := String(out["ids"][0]) == "evade" and String(out["ids"][2]) == "fight"
+		out["swapped"] = swapped
+		ok = swapped and String(out["cursor"]) == "fight" and bool(start_row.get("swapped", false)) \
+			and String(start_row.get("reason", "")) == ""
+	elif mode == "shot":
+		# D-1296 VISUAL: quadros do menu em instantes reais do pavio, depois o clique (Z). --shot=base.png -> base_0.png ...
+		var base := _shot_path.get_basename() if _shot_path != "" else "user://fuse_shot"
+		base = ProjectSettings.globalize_path(base) if base.begins_with("res://") or base.begins_with("user://") else base
+		var t0 := Time.get_ticks_msec()
+		var marks := [150, 700, 1300]
+		var n := 0
+		for m in marks:
+			while Time.get_ticks_msec() - t0 < m:
+				await get_tree().process_frame
+			await _fuse_save_menu("%s_%d.png" % [base, n])
+			n += 1
+		_fuse_press(KEY_Z)
+		for stamp in [1, 5]:
+			for i in stamp:
+				await get_tree().process_frame
+			await _fuse_save_menu("%s_%d.png" % [base, n])
+			n += 1
+		out["frames"] = n
+		ok = true
+	elif mode == "cut":
+		_fuse_press(KEY_Z)  # tecla REAL "confirm" com o cursor no Fight
+		for i in 6:
+			await get_tree().process_frame
+		out["state_fight"] = _bs.state == _bs.S.FIGHT
+		out["fuse_active"] = _bs.fuse_active
+		out["time_scale_now"] = Engine.time_scale
+		# o Fight abre com a câmera lenta dele (D-162); a do burst (0,3) não pode ficar para trás
+		var cut_ms := Time.get_ticks_msec() + 4000
+		while Time.get_ticks_msec() < cut_ms and not is_equal_approx(Engine.time_scale, 1.0):
+			await get_tree().process_frame
+		out["time_scale"] = Engine.time_scale
+		out["order"] = _fuse_order(_bs._main_entries())
+		var last_cut := _fuse_last(rows)
+		out["last"] = last_cut
+		ok = bool(out["state_fight"]) and not bool(out["fuse_active"]) \
+			and String(last_cut.get("stage", "")) == "cut" and String(last_cut.get("reason", "")) == "cut" \
+			and out["order"] == ["fight", "evade"] and is_equal_approx(Engine.time_scale, 1.0) \
+			and not is_equal_approx(float(out["time_scale_now"]), float(_bs.SLOWMO_SCALE))
+	elif mode == "expire":
+		var exp_ms := Time.get_ticks_msec() + 6000  # ~SLOWMO_SECONDS (2,0 s) de relógio real
+		while Time.get_ticks_msec() < exp_ms and (_bs.fuse_active or not is_equal_approx(Engine.time_scale, 1.0)):
+			await get_tree().process_frame
+		out["fuse_active"] = _bs.fuse_active
+		out["time_scale"] = Engine.time_scale
+		out["cursor"] = _bs._menu.id_at(_bs._menu.index)
+		out["order"] = _fuse_order(_bs._main_entries())
+		var last_exp := _fuse_last(rows)
+		out["last"] = last_exp
+		ok = not bool(out["fuse_active"]) and String(last_exp.get("stage", "")) == "end" \
+			and String(last_exp.get("reason", "")) == "expired" and out["order"] == ["fight", "evade"] \
+			and String(out["cursor"]) == "fight" and is_equal_approx(Engine.time_scale, 1.0) \
+			and int(last_exp.get("duration_ms", 0)) >= 1900
+	elif mode == "action":
+		var sk := Skill.basic_for(leader)
+		out["skill"] = sk.display_name if sk != null else ""
+		out["used"] = sk != null and _battle.use_skill(leader, sk, foe)
+		for i in 6:
+			await get_tree().process_frame
+		out["fuse_active"] = _bs.fuse_active
+		out["time_scale"] = Engine.time_scale
+		out["order"] = _fuse_order(_bs._main_entries())
+		var last_act := _fuse_last(rows)
+		out["last"] = last_act
+		ok = bool(out["used"]) and not bool(out["fuse_active"]) \
+			and String(last_act.get("stage", "")) == "end" and String(last_act.get("reason", "")) == "action" \
+			and out["order"] == ["fight", "evade"] and is_equal_approx(Engine.time_scale, 1.0)
+	elif mode == "ko":
+		leader.take_damage(leader.hp + 1000, true)  # dano fixo: morre e o sinal `died` sai daqui
+		for i in 6:
+			await get_tree().process_frame
+		out["leader_alive"] = leader.is_alive()
+		out["fuse_active"] = _bs.fuse_active
+		out["order"] = _fuse_order(_bs._main_entries())
+		var last_ko := _fuse_last(rows)
+		out["last"] = last_ko
+		ok = not bool(out["leader_alive"]) and not bool(out["fuse_active"]) \
+			and String(last_ko.get("stage", "")) == "end" and String(last_ko.get("reason", "")) == "ko" \
+			and out["order"] == ["fight", "evade"]
+	out["events"] = _fuse_events(rows)
+	out["view"] = view
+	print("[vfx_room] fuse mode=%s view=%s result=%s" % [mode, view, "ok" if ok else "fail"])
+	print("[vfx_room] FUSE_JSON: ", JSON.stringify(out))
+	_quit(0 if ok else 1)
+
+
+## D-1296: a tecla de verdade pelo viewport, como o jogo a recebe (D-1204/D-1257).
+## Saves the region of the main menu (with margin) of the current frame. For visual review only.
+func _fuse_save_menu(path: String) -> void:
+	await RenderingServer.frame_post_draw
+	var img := get_window().get_viewport().get_texture().get_image()
+	var r: Rect2 = _bs._menu.get_global_rect().grow(40.0)
+	r = r.intersection(Rect2(Vector2.ZERO, Vector2(img.get_size())))
+	if r.size.x > 1 and r.size.y > 1:
+		img = img.get_region(Rect2i(r))
+	img.save_png(path)
+	print("[vfx_room] fuse shot: ", path)
+
+
+func _fuse_press(keycode: Key) -> void:
+	var ev := InputEventKey.new()
+	ev.keycode = keycode
+	ev.physical_keycode = keycode
+	ev.pressed = true
+	get_viewport().push_input(ev)
+
+
+## D-1296: as DUAS linhas que o pavio troca, por id: ["fight", "evade"] é a ordem original.
+func _fuse_order(entries: Array) -> Array:
+	return [String((entries[0] as Dictionary).get("id", "")), String((entries[2] as Dictionary).get("id", ""))]
+
+
+## D-1296: etapas [stage, reason] do evento `fuse`, em ordem.
+func _fuse_events(rows: Array) -> Array:
+	var seen: Array = []
+	for row in rows:
+		seen.append([String((row as Dictionary).get("stage", "")), String((row as Dictionary).get("reason", ""))])
+	return seen
+
+
+## D-1296: o último evento `fuse` recebido ({} quando não houve).
+func _fuse_last(rows: Array) -> Dictionary:
+	return rows[rows.size() - 1] if not rows.is_empty() else {}
+
+
 ## D-1200/D-1204 --picker=<move_id> [--mirror] [--shot=arquivo.png]: o líder da sala passa a ter o Move,
 ## os aliados ficam feridos, o Fight abre e o menu S.TARGET do Move é aberto como o jogador o vê
 ## (aliado único: só aliados vivos; alvo duplo: primário). Imprime `[vfx_room] picker ...` com os alvos
@@ -1612,8 +1962,10 @@ func _build_view() -> void:
 	_svc.stretch = true
 	_svc.mouse_filter = Control.MOUSE_FILTER_IGNORE  # o mouse (órbita da câmera) segue para a sala
 	_svc.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_svc.process_mode = Node.PROCESS_MODE_ALWAYS  # keeps forwarding keys while a pause (Employ, Tactics, Status) is up
 	add_child(_svc)
 	_sv = SubViewport.new()
+	_sv.process_mode = Node.PROCESS_MODE_PAUSABLE  # the battle itself still pauses
 	_sv.handle_input_locally = false
 	_sv.own_world_3d = has_meta("dual_args")  # dois povs: cada sala tem o seu mundo 3D
 	_svc.add_child(_sv)
@@ -1646,6 +1998,8 @@ func _load_battle(mirror: bool) -> void:
 		_bs.set_meta("vfx_room_mirror", true)
 	_sv.add_child(_bs)
 	_battle = _bs.get_node("Battle")
+	if _bs.fx != null:
+		_bs.fx.eyes_lid_trace = _args.has("eyes-trace")  # D-1268: vale para cada batalha recarregada
 	while not _battle.running:
 		await get_tree().process_frame
 	for i in 10:
@@ -1661,8 +2015,6 @@ func _load_battle(mirror: bool) -> void:
 	_apply_distance(_dist.value)
 	_connect_events()
 	var ui := _bs.get_node_or_null("UI") as CanvasLayer
-	if _bs.fx != null:
-		_bs.fx.eyes_lid_trace = _args.has("eyes-trace")  # D-1268: vale para cada batalha recarregada
 	if ui != null and _hud != null:
 		ui.visible = not _hud.button_pressed
 	_status.text = "Pronto (%s). Clique num move ou use 1..9." % ("times espelhados" if mirror else "times normais")
@@ -1819,6 +2171,8 @@ func _run_cli() -> void:
 		_apply_camera()
 	if _args.has("fov-test"):
 		_apply_fov_test(float(_args["fov-test"]))
+	if _args.has("eyes-trace") and _bs != null:
+		_bs.fx.eyes_lid_trace = true  # D-1268: evento `eyes_lid` por quadro (fração de pálpebra)
 	if _args.has("scale-overlay"):
 		_scale_overlay_on = true
 	if _args.has("bone-probe"):
@@ -1834,8 +2188,6 @@ func _run_cli() -> void:
 	if _args.has("vfx-trace"):
 		_envelope_graph_on = true
 		_audit_leaks_on = true
-	if _args.has("eyes-trace") and _bs != null:
-		_bs.fx.eyes_lid_trace = true  # D-1268: evento `eyes_lid` por quadro (fração de pálpebra)
 	if _args.has("bg"):
 		_apply_bg_mode(String(_args["bg"]).to_lower())
 	if _args.has("solo-node"):
@@ -1907,8 +2259,14 @@ func _run_cli() -> void:
 	if _args.has("command-tab"):
 		await _run_command_tab_shot(String(_args["command-tab"]))
 		return
+	if _args.has("camera"):
+		await _run_camera_check(String(_args["camera"]))
+		return
 	if _args.has("employ"):
 		await _run_employ(String(_args["employ"]))
+		return
+	if _args.has("fuse"):
+		await _run_fuse(String(_args["fuse"]))
 		return
 	if _args.has("summon"):
 		await _run_summon(String(_args["summon"]))
@@ -3860,6 +4218,9 @@ func _apply_status(u: Combatant, kind: String) -> void:
 			u.atb = Combatant.BLOCKS
 		"atb_zero":
 			u.atb = 0.0
+		"eyes_close", "eyes_open", "eyes_blink", "eyes_hit":  # D-1268 debug de olhos (piscar/fechar/hit sem esperar o relógio)
+			if not _bs.fx.debug_eyes(u, kind.substr(5)):
+				print("[vfx_room] eyes: %s sem olhos piscáveis (EyeBlink)" % u.name)
 		"clear":
 			u.clear_buffs()
 			u.clear_burn()
@@ -3875,9 +4236,6 @@ func _schedule_manual() -> void:
 	var who := "#%d" % _act_unit.selected
 	var act: Array = []
 	match _act_kind.selected:
-		"eyes_close", "eyes_open", "eyes_blink", "eyes_hit":  # D-1268 debug de olhos (piscar/fechar/hit sem esperar o relógio)
-			if not _bs.fx.debug_eyes(u, kind.substr(5)):
-				print("[vfx_room] eyes: %s sem olhos piscáveis (EyeBlink)" % u.name)
 		0: act = [at, "guard", who]
 		1: act = [at, "evade", who]
 		2: act = [at, "evade_once", who]

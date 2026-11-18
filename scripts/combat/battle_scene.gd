@@ -6,6 +6,9 @@ extends Node3D
 
 enum S { MAIN, FIGHT, ITEMS, TARGET, TACTICS, STATUS, EMPLOY }
 
+## D-1296: the burst fuse of the Fight block (start / cut / end), written to BattleTrace as `fuse`.
+signal fuse_changed(stage: String, data: Dictionary)
+
 const MODEL_SCALE := 2.5
 const TEAM_DISTANCE := 30.0  ## Units between the two lines.
 # The player's character is front-left, close to the camera; the ally stands back on the right.
@@ -53,10 +56,20 @@ const INTERRUPTION_SLOWMO_RETURN := 0.12  ## Real seconds easing back to 1.0x.
 const INTERRUPTION_MULTI_COOLDOWN_MS := 6000  ## Only multi-target interruptions are throttled.
 
 var _slow_token := 0
+## D-1296: the burst fuse lit by a perfect manual Evade of the leader (the same real SLOWMO_SECONDS).
+var _fuse_active := false
+var _fuse_token := 0
+var _fuse_started_ms := 0  ## Time.get_ticks_msec() at the trigger (real clock, never scaled).
+var _trace: BattleTrace  ## Flight recorder, when the run asked for one.
+var fuse_active: bool:  ## The fuse is lit right now (the debug room reads it).
+	get:
+		return _fuse_active
 var _shown_queue: Skill = null  ## The queued move the menu title shows now (D-161).
 var _fight_sig: Array = []  ## See _fight_signature().
 var _decision_slowmo_available := true  ## Reset to true whenever the player performs an action (D-047).
 var _decision_slowmo_active := false
+var _pick_pause_available := true  ## Creator (2026-11-17): the Employ/Summon target picker pauses the game once per performed action.
+var _pick_paused := false
 var _decision_slowmo_time_left := 0.0
 var _decision_slowmo_token := 0
 ## D-1129: interruptions that happen in the same frame are one event.
@@ -72,7 +85,7 @@ var _saved_anim: Dictionary = {}  ## AnimationPlayer -> [name, position]
 var _menu: FanMenu
 var _employ_marker: EmployMarker  ## D-1229 (Phase 5): placeholder shown while an Employ attempt freezes the battle.
 var _employ_minigame: EmployMinigame  ## D-1257: the rhythm minigame of the attempt (provisional look).
-var _last_main := 0  ## Last command picked on the main menu (it reopens there).
+var _last_main := "fight"  ## id of the last command picked on the main menu (it reopens on that row).
 var _fight_target: Combatant  ## The opponent highlighted while the move list is open.
 var _last_skill := ""  ## Last Fight skill and target, by name.
 var _last_target := ""
@@ -192,13 +205,15 @@ func _ready() -> void:
 	battle.action_interrupted.connect(fx.play_damage_reaction)  # D-1105
 	battle.attack_clashed.connect(fx.on_attack_clashed)
 	if BattleTrace.wanted():  # Flight recorder: every frame and event to user://battle_trace.jsonl
-		var trace := BattleTrace.new()
-		add_child(trace)
-		trace.setup(battle, fx, models, party, enemies)
+		_trace = BattleTrace.new()
+		add_child(_trace)
+		_trace.setup(battle, fx, models, party, enemies)
+		fuse_changed.connect(func(_stage: String, data: Dictionary) -> void: _trace.note_event("fuse", data))  # D-1296
 	battle.engage_ended.connect(fx.on_engage_ended)
 	battle.engage_ended.connect(func(actor: Combatant, _o, _g, _s) -> void:
 		if actor == leader:
-			_end_slowmo())
+			_end_slowmo()
+			_end_fuse("action"))  # D-1296: the player acted
 	battle.attack_cancelled.connect(fx.on_attack_cancelled)
 	battle.manual_evaded.connect(fx.manual_evade)
 	battle.evade_whiffed.connect(fx.evade_whiff)
@@ -214,10 +229,12 @@ func _ready() -> void:
 	battle.attack_telegraphed.connect(func(inc) -> void:
 		if inc.attacker == leader:
 			_end_slowmo()
+			_end_fuse("action")  # D-1296: the player acted
 			_on_player_action_executed())
 	battle.healed.connect(func(actor: Combatant, _t: Combatant, _n: int) -> void:
 		if actor == leader:
-			_end_slowmo())
+			_end_slowmo()
+			_end_fuse("action"))  # D-1296: the player acted
 	# The fight only starts once everybody has finished running in, so no attack
 	# can interrupt the entrance.
 	battle.party = party
@@ -702,6 +719,8 @@ func _find_anim_player(node: Node) -> AnimationPlayer:
 
 
 func _on_died(c: Combatant) -> void:
+	if c == leader:
+		_end_fuse("ko")  # D-1296: the fuse belongs to the leader that lit it.
 	_sync_leader.call_deferred()  # D-1244: if the menu owner fell, the menu passes to the first living ally
 	var by_burn: bool = c.has_meta("died_by_burn") and bool(c.get_meta("died_by_burn"))  # D-238
 	if not c.is_player and not by_burn:
@@ -726,6 +745,7 @@ func _on_manual_evaded(actor: Combatant, inc) -> void:
 	_slow_token += 1
 	var token := _slow_token
 	Engine.time_scale = SLOWMO_SCALE
+	_start_fuse()  # D-1296: the same burst, so the fuse lives exactly as long as this slow-motion.
 	await get_tree().create_timer(SLOWMO_SECONDS, true, false, true).timeout
 	if token == _slow_token:
 		_end_slowmo()
@@ -734,6 +754,65 @@ func _on_manual_evaded(actor: Combatant, inc) -> void:
 func _end_slowmo() -> void:
 	_slow_token += 1
 	Engine.time_scale = 1.0
+
+
+## D-1296: a perfect manual Evade by the leader lights the burst fuse, over the main menu only: with
+## Items/Tactics/Status open nothing lights and nothing changes. While it lives, Fight and Evade trade
+## rows and the cursor lands on Fight. Every way out goes through _end_fuse().
+func _start_fuse() -> void:
+	if _fuse_active or state != S.MAIN or _menu == null:
+		return
+	_fuse_active = true
+	_fuse_token += 1
+	var token := _fuse_token
+	_fuse_started_ms = Time.get_ticks_msec()
+	_menu.set_entries(_main_entries(), true)
+	_menu.fuse_start(SLOWMO_SECONDS)  # D-1296: the visual (3D rope, flames, orange) lives exactly as long as the fuse
+	_menu.select(_menu.row_of("fight"))
+	if leader != null:
+		_update_main_enabled()
+	_fuse_event("start", "")
+	_fuse_expire(token)
+
+
+func _fuse_expire(token: int) -> void:
+	await get_tree().create_timer(SLOWMO_SECONDS, true, false, true).timeout
+	if token == _fuse_token and _fuse_active:
+		_end_fuse("expired")
+
+
+## The only exit of the fuse (idempotent): the rows go back to their places with the cursor on the id
+## it was on, and the event is written. `cut` = the player clicked Fight; every other reason is `end`.
+## Reasons: cut, expired, action, ko, battle_end, state.
+func _end_fuse(reason: String) -> void:
+	if not _fuse_active:
+		return
+	var keep_id := _menu.id_at(_menu.index) if _menu != null else "fight"
+	_fuse_active = false
+	_fuse_token += 1
+	if _menu != null:
+		_menu.fuse_end(reason == "cut")  # before the rows change: the explosion plays over the Fight block
+		_menu.set_entries(_main_entries(), true)
+		var row := _menu.row_of(keep_id)
+		if row >= 0:
+			_menu.select(row)
+	if leader != null and _menu != null:
+		_update_main_enabled()
+	_fuse_event("cut" if reason == "cut" else "end", reason)
+
+
+## D-1296 telemetry (`fuse` line of docs/TELEMETRIA.md): real milliseconds, never scaled by time_scale.
+func _fuse_event(stage: String, reason: String) -> void:
+	var elapsed := Time.get_ticks_msec() - _fuse_started_ms
+	fuse_changed.emit(stage, {
+		"stage": stage,
+		"reason": reason,
+		"leader": leader.name if leader != null else "",
+		"duration_ms": elapsed,
+		"left_ms": maxi(0, int(SLOWMO_SECONDS * 1000.0) - elapsed),
+		"swapped": _fuse_active,
+		"view": "mirror" if has_meta("vfx_room_mirror") else "normal",
+	})
 
 
 ## D-1129: one hit interrupted an action. The hit itself already shakes the camera (D-157),
@@ -881,6 +960,7 @@ func _end_decision_slowmo() -> void:
 
 func _on_player_action_executed() -> void:
 	_decision_slowmo_available = true
+	_pick_pause_available = true
 	_end_decision_slowmo()
 
 
@@ -893,6 +973,7 @@ func _exit_tree() -> void:
 
 
 func _on_battle_ended(player_won: bool) -> void:
+	_end_fuse("battle_end")  # D-1296
 	_end_decision_slowmo()
 	_end_interruption_slowmo()  # D-1129
 	_end_slowmo()
@@ -958,10 +1039,16 @@ func _refresh() -> void:
 
 
 func _set_state(s: S) -> void:
+	if s != S.MAIN:
+		_end_fuse("state")  # D-1296: the fuse only lives over the main menu; leaving it puts the rows back.
 	var was_target := state == S.TARGET
 	state = s
 	# Tactics and Status pause the whole game while they are open; so does an Employ attempt (D-1229).
-	get_tree().paused = s == S.TACTICS or s == S.STATUS or s == S.EMPLOY
+	if s != S.TARGET and _pick_paused:
+		_pick_paused = false  # The Employ/Summon picker is over: the game resumes (or the Employ/Status pause takes over).
+		if director != null and s != S.STATUS:
+			director.process_mode = Node.PROCESS_MODE_INHERIT
+	get_tree().paused = s == S.TACTICS or s == S.STATUS or s == S.EMPLOY or (s == S.TARGET and _pick_paused)
 	if s != S.TARGET and s != S.FIGHT:
 		hud.set_target(null)  # The target tag stays lit while the move list is open.
 	if s != S.FIGHT:
@@ -992,24 +1079,31 @@ func _show_main() -> void:
 	_shown_queue = leader.queued_skill
 	hud.set_menu_style(FanMenu.Style.FAN, _main_title())
 	_menu.set_entries(_main_entries())
-	_menu.select(_last_main)
+	_menu.select(_menu.row_of("fight" if _fuse_active else _last_main))  # D-1296: the fuse keeps the cursor on Fight
 	_refresh()
 
 
 func _main_entries() -> Array:
-	var third: Dictionary = {"text": "Evade", "detail": "%d ATB" % int(battle.evade_cost(leader))}
+	var third: Dictionary = {"id": "evade", "text": "Evade", "detail": "%d ATB" % int(battle.evade_cost(leader)), "arrow": FanMenu.GUARD_BLUE}  # arrow: right swaps to Guard
 	if _guard_mode:  # D-272: blue block with a shield.
-		third = {"text": "Guard", "detail": "%d ATB" % int(Battle.GUARD_BLOCKS), "hilite": FanMenu.GUARD_BLUE, "shield": true}
-	return [
-		{"text": "Fight", "detail": "%d ATB" % int(Battle.min_skill_cost(leader))},
-		{"text": "Items", "detail": "%d ATB" % int(Battle.ITEM_BLOCKS)},
-		third,
-		{"text": "Tactics", "detail": "PAUSE"},
-		{"text": "Status", "detail": "PAUSE"},
-	]
+		third = {"id": "evade", "text": "Guard", "detail": "%d ATB" % int(Battle.GUARD_BLOCKS), "hilite": FanMenu.GUARD_BLUE, "shield": true, "arrow": FanMenu.LIME}  # the tab shows the OTHER option: back to Evade (lime)
+	var fight := {"id": "fight", "text": "Fight", "detail": "", "fuse": _fuse_active}  # D-1296: orange block, flames and fuse
+	var items := {"id": "items", "text": "Items", "detail": "%d ATB" % int(Battle.ITEM_BLOCKS)}
+	var tactics := {"id": "tactics", "text": "Tactics", "detail": "PAUSE", "arrow": Color("62d8e7")}  # right opens Summon/Employ (creator: aqua)
+	var status := {"id": "status", "text": "Status", "detail": "PAUSE"}
+	if _fuse_active:  # D-1296: the rows trade places, the ids never do.
+		return [third, items, fight, tactics, status]
+	return [fight, items, third, tactics, status]
 
 
-const MAIN_TACTICS := 3  ## Row of TACTICS in _main_entries().
+## Row of a command of the main menu, by id: the rows may change order, the ids may not.
+func main_row(id: String) -> int:
+	return _menu.row_of(id)
+
+
+var MAIN_TACTICS: int:  ## The TACTICS row, by id (the debug room reopens the side fan there).
+	get:
+		return main_row("tactics")
 
 
 ## D-1229/D-1232: the two commands of the side fan, with their real ATB costs. Burst never pays them,
@@ -1050,6 +1144,7 @@ func _sync_leader() -> void:
 	var owner := battle.menu_owner()
 	if owner == null or owner == leader:
 		return
+	_end_fuse("state")  # D-1296: the menu changed hands (Summon swap); the fuse does not follow it.
 	leader = owner
 	fx.leader = owner
 	_fight_target = null
@@ -1076,6 +1171,7 @@ func _begin_summon_pick() -> void:
 	_summon_leaving = null
 	hud.show_summon_strip([], null)
 	hud.set_summon_picking(true)
+	_pause_for_pick()
 	_pick_target(battle.party.duplicate(), _summon_pick_entering, _cancel_summon, true,
 		"SUMMON: WHO LEAVES? [PLACEHOLDER]", true)
 	hud.set_summon_cursor(_targets[_menu.index] if _menu.index < _targets.size() else null)
@@ -1096,8 +1192,11 @@ func _confirm_summon(entering: Combatant) -> void:
 	var leaving := _summon_leaving
 	_summon_leaving = null
 	hud.set_summon_picking(false)
-	if leaving == null or not battle.summon(leaving, entering):
-		print("[summon] refused: ", battle.summon_refusal(leaving, entering) if leaving != null else "no_leaving")
+	var summoned := leaving != null and battle.summon(leaving, entering)
+	if summoned:
+		_pick_pause_available = true  # the Summon is the action performed
+	else:
+		print("[summon] refused: ", "no_leaving" if leaving == null else "see summon_changed")
 
 
 func _cancel_summon() -> void:
@@ -1233,11 +1332,20 @@ func _process(_delta: float) -> void:
 ## D-1229: any living enemy may be picked (provisional). The picker is always shown, even with a
 ## single enemy, because the 5 ATB are charged when the target is confirmed and cancelling here
 ## must cost nothing. The battle keeps running while the picker is open.
+## Pauses the game for the Employ/Summon target picker, only the first time since the last performed action.
+func _pause_for_pick() -> void:
+	if _pick_pause_available:
+		_pick_pause_available = false
+		_pick_paused = true
+		director.process_mode = Node.PROCESS_MODE_ALWAYS  # The camera keeps gliding to the target while paused.
+
+
 func _begin_employ_pick() -> void:
 	if not _can_employ():
 		return
 	_menu.close_side()
 	battle.note_employ_pick(leader, "picking")
+	_pause_for_pick()
 	_pick_target(battle.opponents_of(leader), _confirm_employ, _cancel_employ, true)
 
 
@@ -1272,10 +1380,12 @@ func _cancel_employ() -> void:
 func _confirm_employ(target: Combatant) -> void:
 	if not battle.begin_employ(leader, target):
 		return
+	_pick_pause_available = true  # the Employ attempt is the action performed
 	_pick_seq += 1  # Keeps _on_chosen from reopening the main menu over the attempt.
 	_set_state(S.EMPLOY)
 	_menu.hide()
-	var notes: int = int(battle.employ_chance(leader, target).get("members", 1))
+	var notes: int = EmployRhythm.NOTES_MAX  # D-1275: always 3 notes, even alone
+	var base_p: float = float(battle.employ_chance(leader, target).get("P", 0.0))
 	var anchor := get_viewport().get_visible_rect().size * 0.5
 	var spread := 220.0
 	var model: Node3D = models.get(target)
@@ -1286,6 +1396,8 @@ func _confirm_employ(target: Combatant) -> void:
 		var top: Vector2 = cam.unproject_position(model.global_position + Vector3(0, h, 0))
 		anchor = (base + top) * 0.5
 		spread = absf(base.y - top.y)
+	_employ_minigame.set_chance(base_p)
+	hud.enemy_tags_hidden = true
 	_employ_minigame.open(anchor, notes, spread)
 
 
@@ -1322,6 +1434,7 @@ func _roll_employ(note_bonuses: Array = []) -> void:
 
 
 func _after_employ(target: Combatant, success: bool) -> void:
+	hud.enemy_tags_hidden = false
 	if success:
 		if _fight_target == target:
 			_fight_target = null  # It left the enemy line: the Fight list must not keep aiming at it.
@@ -1333,16 +1446,19 @@ func _update_main_enabled() -> void:
 	if _menu.side_open:
 		_menu.set_side_enabled(0, _can_employ())
 		_menu.set_side_enabled(1, _can_summon())
+	var row_fight := main_row("fight")
+	var row_items := main_row("items")
+	var row_evade := main_row("evade")
 	var min_cost := Battle.min_skill_cost(leader)
 	var guarding := leader.is_guarding()  # D-1146: Guard cannot hold a queue slot either.
 	var waits := not battle.can_start_windup_now(leader, Skill.basic_for(leader)) and not guarding  # D-1159: an attack may start during the pause
 	var can_fight := not leader.is_stunned() and not guarding and (waits or leader.can_pay(min_cost))
-	_menu.set_enabled(0, can_fight)
-	var fight_detail := "queue" if can_fight and waits else (("FREE" if leader.burst > 0 else "%d ATB" % int(min_cost)) if can_fight else ("GUARD" if guarding else ("stunned" if leader.is_stunned() else "need ATB")))
-	_menu.set_detail(0, fight_detail)
+	_menu.set_enabled(row_fight, can_fight)
+	var fight_detail := "queue" if can_fight and waits else (("FREE" if leader.burst > 0 else "") if can_fight else ("GUARD" if guarding else ("stunned" if leader.is_stunned() else "need ATB")))
+	_menu.set_detail(row_fight, fight_detail)
 	var can_item := not guarding and not battle.is_status_paused() \
 		and leader.can_pay(Battle.ITEM_BLOCKS) and not _consumables().is_empty()
-	_menu.set_enabled(1, can_item)
+	_menu.set_enabled(row_items, can_item)
 	var item_why := "%d ATB" % int(Battle.ITEM_BLOCKS)
 	if guarding:
 		item_why = "GUARD"
@@ -1352,18 +1468,18 @@ func _update_main_enabled() -> void:
 		item_why = "no items"
 	elif not leader.can_pay(Battle.ITEM_BLOCKS):
 		item_why = "need ATB"
-	_menu.set_detail(1, item_why)
+	_menu.set_detail(row_items, item_why)
 	if _guard_mode:
 		var why_not := battle.guard_block_reason(leader)
-		_menu.set_enabled(2, why_not == "")
-		_menu.set_detail(2, "%d ATB" % int(Battle.GUARD_BLOCKS) if why_not == "" else why_not)
+		_menu.set_enabled(row_evade, why_not == "")
+		_menu.set_detail(row_evade, "%d ATB" % int(Battle.GUARD_BLOCKS) if why_not == "" else why_not)
 		return
 	var can_evade := battle.find_evadable(leader) != null
-	_menu.set_enabled(2, can_evade)
+	_menu.set_enabled(row_evade, can_evade)
 	var why := "%d ATB" % int(battle.evade_cost(leader))
 	if not can_evade:
 		why = "engaged" if leader.engaged_with != null else ("acting" if battle.is_attacking(leader) else ("need ATB" if leader.blocks() < battle.evade_cost(leader) else "nothing to dodge"))
-	_menu.set_detail(2, why)
+	_menu.set_detail(row_evade, why)
 
 
 func _show_fight() -> void:
@@ -1398,8 +1514,7 @@ func _focus_fight_target() -> void:
 
 ## Back to the base framing when the move list closes without a starting action.
 func _leave_fight_camera() -> void:
-	if not battle.is_attacking(leader):
-		director.cinema()
+	director.cinema()  # Always: the attack no longer re-aims the camera (cinematic_breaks off), so nothing else would bring TATICA back.
 
 
 func _build_fight_skills() -> void:
@@ -1664,15 +1779,19 @@ func _pos_text(c: Combatant, is_leader: bool) -> String:
 ## where to stand and walks there by itself.
 func _on_menu_side(direction: int) -> void:
 	if state == S.MAIN:
-		# D-272: on the Evade block, right swaps it for the Guard block and left swaps it back.
-		if _menu.index == 2 and (direction > 0) != _guard_mode:
-			_guard_mode = direction > 0
+		# D-272 + creator (2026-11-17): on the Evade/Guard block, EITHER direction swaps it for the other one.
+		var row := _menu.id_at(_menu.index)
+		if row == "evade":
+			_guard_mode = not _guard_mode
 			_menu.set_entries(_main_entries(), true)
+			_menu.select(_menu.row_of("evade"))
 			_refresh()
-		elif _menu.index == MAIN_TACTICS and direction > 0:
+		elif row == "tactics" and direction > 0:
 			# D-1229/D-1236: right on TACTICS opens the side fan with EMPLOY and SUMMON. Opening,
 			# moving and closing it cost nothing and do not pause the battle.
 			_menu.open_side(_command_entries())
+			if _decision_slowmo_available:
+				_start_decision_slowmo()  # 3 s, same rule as Items/Fight: not again until an action is performed.
 		return
 	if state == S.FIGHT:
 		# Left/right changes the target without leaving the move list.
@@ -1790,17 +1909,19 @@ func _target_brief(t: Combatant) -> String:
 func _on_chosen(i: int) -> void:
 	match state:
 		S.MAIN:
-			_last_main = i
-			match i:
-				0: _show_fight()
-				1: _show_items()
-				2:
+			_last_main = _menu.id_at(i)
+			if _last_main == "fight" and _fuse_active:  # D-1296: the click cuts the fuse only; the slow-motion rules stay as they were.
+				_end_fuse("cut")
+			match _last_main:
+				"fight": _show_fight()
+				"items": _show_items()
+				"evade":
 					if _guard_mode:
 						battle.use_guard(leader)
 					else:
 						battle.try_evade(leader, battle.find_evadable(leader))
-				3: _show_tactics()
-				4: _show_status()
+				"tactics": _show_tactics()
+				"status": _show_status()
 		S.FIGHT:
 			var idx := _fight_page * FIGHT_SLOTS + i
 			if idx < 0 or idx >= _fight_skills.size():

@@ -89,6 +89,7 @@ Eventos de combate:
 | `status_pause_started/ended` | pausa D-031/D-1150 | `inc` + `queued` de todos |
 | `employ` | **D-1229 (Fase 5):** a tentativa de Employ mudou de etapa | `stage`, `actor`, `target`, `atb`, `extra`, `blocks`, `burst` + campos da etapa (ver "Employ" abaixo) |
 | `summon` | **D-1232/D-1244 (Fase 8):** a troca por Summon foi recusada (`refused`) ou feita (`done`) | `stage`, `payer`, `leaving`, `entering`, `slot`, `cost`, `blocks_before`, `blocks_after`, `burst_after`, `cancelled`, `queue_cleared` + `reason` (só em `refused`) |
+| `fuse` | **D-1296:** o pavio de burst (Fight laranja trocado com o Evade) acendeu (`start`), foi cortado por clique (`cut`) ou acabou (`end`). Só após Evade manual perfeito do líder | `stage`, `reason` (`cut` \| `expired` \| `action` \| `ko` \| `battle_end` \| `state`), `leader`, `duration_ms` (real, sem escala), `left_ms` (em `cut`/`end`), `swapped` (Fight e Evade trocados nesse instante), `view` |
 | `battle_ended` | fim | `player_won` |
 | `ANOMALY` | invariante quebrada | `kind`, `who`, `detail` |
 
@@ -126,7 +127,7 @@ Um evento `employ` por mudança de etapa. Campos comuns: `stage`, `actor`, `targ
 | `cancelled` | o seletor fechou sem confirmar (nada foi pago) | — |
 | `refused` | `Battle.begin_employ()` recusou; nada foi pago | `reason`: `not_running`, `busy` (já há tentativa), `actor_down`, `blocked` (fracasso anterior nesta batalha), `need_atb`, `no_target`, `last_enemy` (só resta um inimigo vivo: no jogo real não pode ser recrutado), `target_invalid` |
 | `started` | alvo confirmado: 5 ATB pagos com `spend()` (Burst nunca paga) e a batalha congela **inteira**, inclusive wind-ups, ataques em voo e a fila (D-1239 revista: nada é cancelado aqui) | `cost`, `blocks_before`, `burst_before` |
-| `rhythm` | D-1257: a sequência do minigame rítmico terminou; nada é pago aqui | `grades` (por nota: `perfect`/`good`/`miss`), `bonuses` (10/5/0 por nota, na ordem) e `total_pp` (soma = B, o bônus de ritmo da D-1230) |
+| `rhythm` | D-1257: a sequência do minigame rítmico terminou; nada é pago aqui | `grades` (por nota: `perfect`/`good`/`near`/`miss`), `bonuses` (10/5/0 por nota, na ordem) e `total_pp` (soma = B, o bônus de ritmo da D-1230) |
 | `ended` | a tentativa terminou e a batalha retoma de onde parou. **D-1239:** só no sucesso são cancelados, com o custo devolvido, os Moves que envolvem o recrutado (atacante ou alvo) e as filas dele ou apontadas a ele; o resto retoma | `result` (`success`/`failure`), `cancelled` (lista `{actor, move, phase, atb, mp, mp_timer, burst}`: o que voltou; `mp_timer` = timer de regeneração de MP restaurado), `queue_cleared` (lista `{actor, move}`), `forced` (`true` = resultado forçado por debug; na Fase 5 é sempre), `blocked` (Employ bloqueado no resto da batalha), `enemies_left` (inimigos vivos em campo); no sucesso também `uid`, `place` (`SUBSTITUTE`/`STATIONED`) e `in_field` (sempre `false`: só entra por Convocação) |
 
 - `reason` são códigos internos de telemetria, **não** textos de menu (os textos de motivo continuam pendentes).
@@ -263,6 +264,7 @@ Atalho da sala (`scripts/debug/vfx_room.gd`) que percorre o caminho real do menu
 
 | Modo | O que prova |
 |---|---|
+| `rhythm[:perfect\|good\|miss\|mix][:key]` | D-1257/D-1275: o minigame real (3 notas) joga sozinho (`set_auto`) ou, com `:key`, recebe a tecla Z de verdade no viewport da cena de combate; confere `grades`, `total_pp` e que a rolagem real termina e a batalha retoma. Com `--shot=<png>` (janela, sem headless) salva um quadro logo após a 1ª nota para auditar o visual. |
 | `cancel` | abrir o seletor e cancelar não gasta ATB nem Burst (`stages = ["picking","cancelled"]`) |
 | `noatb` | com 4 ATB a entrada EMPLOY fica desabilitada, o seletor não abre e `begin_employ` recusa com `need_atb` |
 | `fail` | confirmar gasta exatamente 5 ATB e 0 Burst; batalha congelada (`frozen`, Guard/Evade/Move recusados, `step_ticks(30)` sem efeito); fracasso forçado retoma, bloqueia novo Employ (`blocked`) e deixa o SUMMON disponível |
