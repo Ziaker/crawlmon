@@ -23,24 +23,27 @@ const MIN_TARGET_HP_TO_DEBUFF := 0.3  ## A nearly dead target is finished, not w
 var b: Battle
 var _think_left: Dictionary = {}  ## Combatant -> seconds until its next decision.
 var _last_used: Dictionary = {}  ## Combatant -> display name of its last move.
+var positioning: BattlePositioning
 var _plans: Dictionary = {}  ## Combatant -> the move it is saving ATB for ({skill or item, target, value}).
 
 
 func _init(p_battle: Battle) -> void:
 	b = p_battle
+	positioning = BattlePositioning.new(p_battle, self)
 
 
 func reset() -> void:
 	_think_left.clear()
 	_last_used.clear()
 	_plans.clear()
+	positioning.reset()
 
 
 func run(delta: float) -> void:
 	for c in b.party + b.enemies:
 		if c == b.menu_owner() or not c.is_alive():  # D-1244: the menu owner plays by the menu, not by AI.
 			continue
-		_position(c)  # D-1299: free, queued steps: the AI picks where to stand (or obeys the player's Tactics)
+		_position(c, delta)  # D-1299: free, queued steps: the AI picks where to stand (or obeys the player's Tactics)
 		if c.is_stunned() or not b.can_start_now(c):
 			continue
 		_think_left[c] = float(_think_left.get(c, 0.0)) - delta
@@ -53,27 +56,13 @@ func run(delta: float) -> void:
 			_decide(c)
 
 
-## D-1299. Steps cost nothing and never lock, so where to stand is a pure choice (D-018: +10% damage dealt per
-## step forward, -10% damage taken per step back). The player's Tactics position wins; otherwise:
-## healthy fighters advance to +2, hurt ones (< 40% HP) retreat to -2 and stay back until healed (> 60%),
-## and combatants with no damaging move (healers/buffers) hold at -1.
-func _position(c: Combatant) -> void:
+## D-1299: where to stand. The player's Tactics position wins; otherwise `BattlePositioning` scores every
+## position by what it earns on offense and costs on defense (see that file). Steps are free and queued.
+func _position(c: Combatant, delta: float) -> void:
 	var now := c.pos_step + c.queued_step
-	var want := c.tactic_pos if c.tactic_manual else _desired_pos(c, now)
+	var want := c.tactic_pos if c.tactic_manual else positioning.desired(c, delta)
 	if want != now:
 		b.step(c, signi(want - now))
-
-
-func _desired_pos(c: Combatant, now: int) -> int:
-	var hp_share := float(c.hp) / float(maxi(c.max_hp, 1))
-	if hp_share < 0.4:
-		return -Battle.STEP_MAX
-	if hp_share < 0.6 and now < 0:
-		return now  # still recovering: it does not charge back in yet
-	for skill in _moves_of(c):
-		if skill.kind != Skill.Kind.STATUS and not skill.is_friendly:
-			return Battle.STEP_MAX
-	return -1
 
 
 ## "Segurar" never attacks, but still drinks when badly hurt.

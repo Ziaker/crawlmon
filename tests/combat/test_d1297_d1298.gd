@@ -96,32 +96,20 @@ func _test_steps(actor_is_player: bool) -> void:
 	_ok(actor.pos_step == 2, "queued step ran once idle (pos %d after %d frames)" % [actor.pos_step, guard])
 	_ok(not b.step(actor, 1), "beyond +2 is refused")
 	# AI: nobody set tactic_pos; AI-controlled combatants of BOTH teams must walk by themselves (D-235).
-	var cnt := {"n": 0}
+	# (What position they pick and why is covered by test_d1299_positioning.gd.)
+	var seen := {}
 	var leader := Combatant.new("Lead", 400, 6, 1.0, true)  # party[0] is the player's menu owner, not AI
-	var ally_ai := Combatant.new("AllyAI", 400, 6, 1.0, true)
-	var enemy_ai := Combatant.new("EnemyAI", 400, 6, 1.0, false)
+	var ally_ai := Combatant.new("AllyAI", 400, 20, 1.0, true)
+	var enemy_ai := Combatant.new("EnemyAI", 400, 20, 1.0, false)
 	var t1: Array[Combatant] = [leader, ally_ai]
 	var t2: Array[Combatant] = [enemy_ai]
 	var b2 := Battle.new()
 	b2.start(t1, t2)
-	b2.stepped.connect(func(_c, _p): cnt["n"] += 1)
+	b2.stepped.connect(func(c, _p): seen[c.name] = int(seen.get(c.name, 0)) + 1)
 	for c in [leader, ally_ai, enemy_ai]:
 		c.in_battle = true
 	var t := 0.0
-	while t < 20.0:
+	while t < 60.0:
 		b2._process(0.05)
 		t += 0.05
-	_ok(cnt["n"] > 0 and ally_ai.pos_step == 2 and enemy_ai.pos_step == 2, "AI advanced by itself, both teams (steps=%d, pos %d/%d)" % [cnt["n"], ally_ai.pos_step, enemy_ai.pos_step])
-	# Hurt: retreats and stays back; healed: comes back.
-	enemy_ai.hp = 100
-	t = 0.0
-	while t < 20.0:
-		b2._process(0.05)
-		t += 0.05
-	_ok(enemy_ai.pos_step == -2, "hurt AI (25%% HP) retreated to -2 (pos %d)" % enemy_ai.pos_step)
-	enemy_ai.hp = 400
-	t = 0.0
-	while t < 20.0:
-		b2._process(0.05)
-		t += 0.05
-	_ok(enemy_ai.pos_step == 2, "healed AI advanced again (pos %d)" % enemy_ai.pos_step)
+	_ok(seen.has("EnemyAI") and b2._ai.positioning.scores.has(ally_ai) and b2._ai.positioning.scores.has(enemy_ai), "AI of both teams evaluates positions and the threatened one walked by itself: %s" % [seen])

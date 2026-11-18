@@ -26,10 +26,13 @@
 ## Decisão
 
 1. Um passo não custa ATB e não tem trava. Se o combatente está ocupado (preparando/executando Move, retornando, engajado, atordoado, em Guard ou durante a pausa de status), o passo fica na fila e roda assim que ele ficar ocioso. Passos pedidos várias vezes somam na fila, sempre dentro de −2..+2. Só é recusado o passo que passaria de −2..+2.
-2. A IA escolhe sozinha onde ficar (a posição que o jogador definir no Tactics para um aliado continua valendo, e o líder controlado pelo jogador não usa IA). Escolha da IA (critério do assistente, a pedido do criador de "usar de forma estratégica"; ajustável):
-   - lutador saudável com algum golpe de dano vai para **+2**;
-   - com menos de 40 % de vida recua para **−2** e só volta quando passar de 60 %;
-   - quem não tem nenhum golpe de dano (curandeiro/buffer) fica em **−1**.
+2. A IA escolhe sozinha onde ficar (`scripts/combat/battle_positioning.gd`); a posição que o jogador define no Tactics para um aliado continua valendo, e o líder controlado pelo jogador não usa IA. Cada posição de −2 a +2 recebe uma nota, na mesma escala dos Moves: o que meu próximo golpe vale ali (com bônus de nocaute) menos o que os golpes que espero levar custam ali (com risco de morrer) menos um pequeno preço por passo andado. Como a posição vale no instante do golpe e ninguém anda durante o próprio ataque, isso produz sem regra por papel:
+   - **bate-e-corre:** logo depois de atacar não há ganho à frente e a IA recua; quando o ATB está para encher, avança para o golpe;
+   - **desvio por passo:** um ataque já em voo contra ela é dano certo; se está ociosa e dá tempo de o passo terminar antes do impacto, recua;
+   - **empurrão de nocaute:** se o +10% por passo é o que faz o golpe matar, ela avança;
+   - **sobrevivência:** quando um golpe a mataria na posição atual e o recuo a salva, ela recua mesmo com golpe pronto;
+   - **papéis:** quem não tem golpe de dano (curandeiro/buffer) só tem o lado da defesa e fica atrás sempre que há ameaça; quem bate muito mais forte do que apanha avança, e quem apanha muito mais forte do que bate recua.
+   Valores que são escolha minha, ajustáveis: horizonte de 4 s, preço de 1,5 por passo, reavaliar a cada 0,3 s, nocaute = 40 pontos (o mesmo da IA de Moves).
 
 ## Causa de a IA nunca trocar (medido)
 
@@ -38,7 +41,7 @@ A IA só dava passo quando `tactic_pos` era diferente da posição, e `tactic_po
 ## Crítica (recomendações, não implementadas)
 
 - Sem custo e sem trava, avançar para +2 é quase sempre vantajoso para quem ataca, e recuar para −2 para quem defende. A posição vira uma escolha de papel mais do que uma decisão a cada instante. Se o criador quiser mais tensão, as opções são um tempo de exposição durante a caminhada (0,35 s hoje) ou limitar a quantidade de passos por intervalo. Fica em aberto até ele pedir.
-- Os números da IA (40 %, 60 %, +2, −2, −1) são meus; ver se o criador prefere outros.
+- Os números da IA (horizonte, preço do passo, bônus de nocaute) são meus; ver se o criador prefere outros.
 
 ## Ambiguidades em aberto
 
