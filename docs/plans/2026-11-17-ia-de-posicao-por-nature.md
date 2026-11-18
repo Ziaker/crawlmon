@@ -1,4 +1,4 @@
-# Conceito: posição estratégica da IA guiada pela Nature (proposta, nada implementado)
+# Conceito: posição estratégica da IA guiada pela Nature (aprovado pelo criador: "sigo suas recomendações"; implementado, ver D-1301)
 
 Pedido do criador (2026-11-17): "um planejamento mt melhor na questão destas estratégias, um conceito que leva em conta principalmente a própria nature mas também o contexto do combate atual".
 

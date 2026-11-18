@@ -300,3 +300,9 @@ Escopo atual: **só os componentes puros e os testes headless**; nenhum evento �
 - **`ShellDropResolver.resolve(...)`** devolve `{ok, granted, reason, hits:{bronze,silver,gold}}`. `reason`: `""` (concedido), `ineligible_outcome` (fuga, recrutamento, derrota), `already_resolved`, `invalid_enemy`. Sem drop não consome RNG.
 - **`ShellShop.purchase(...)`** devolve `{ok:true,item_id,quantity,coin,price,balance_after}` ou `{ok:false,reason}` com `reason` em `invalid_offer`, `wrong_currency`, `insufficient_funds`, `inventory_full`. Recusa não altera carteira nem inventário.
 - **Quando o jogo emitir eventos** (tentativa de compra, compra, drop concedido, consolidação, recusa), usar estes mesmos campos e `reason`, e atualizar esta seção antes.
+
+## Posição da IA: `pos_decision` e passos livres (D-1299, D-1301)
+
+- `step` (já existia) agora é emitido também quando o passo sai da fila; passos **não custam ATB** e não há bloqueio: um combatente ocupado guarda o passo em `queued_step` e ele roda quando ficar ocioso.
+- `pos_decision` (novo, só IA; o líder controlado pelo jogador e quem tem posição manual no Tactics não emitem): `actor`, `nature`, `from`, `to`, `mood` (`even`/`ahead`/`behind`, rumo da luta), `hp_lead` (parcela de vida do meu time menos a do adversário), `scores` (nota de cada posição −2..+2), `profile` (eixos da Nature: `audacity`, `caution`, `step_price`, `preferred`, `horizon`, `foresight`). Só é emitido quando a posição escolhida muda.
+- Leitura: a posição de maior nota vence; o preço do passo e o puxão da Nature já estão nas notas. Quem não tem golpe de dano só tem o termo de defesa.

@@ -13,6 +13,10 @@ func _init() -> void:
 		_dodge_by_step(me_is_player)
 		_healer_stays_back(me_is_player)
 		_survival(me_is_player)
+		_nature_axes_and_choice(me_is_player)
+		_context_signals(me_is_player)
+		_target_choice(me_is_player)
+		_telemetry_signal(me_is_player)
 	print("RESULT: ", "PASS" if _fails == 0 else "FAIL (%d)" % _fails)
 	quit(1 if _fails > 0 else 0)
 
@@ -136,3 +140,133 @@ func _survival(side: bool) -> void:
 	me.pos_step = 0
 	var w := _want(b, me)
 	_ok(w < 0, "about to be killed: retreats even with a strike ready (want %d)" % w)
+
+
+func _want_quiet(b: Battle, me: Combatant) -> int:
+	return b._ai.positioning.desired(me, 10.0)
+
+
+## Same situation, different Nature: the bold brawler stands further forward than the shy caster.
+func _nature_axes_and_choice(side: bool) -> void:
+	print("Nature (D-1301)")
+	var adamant := BattlePositioning.profile(_with_nature(side, "adamant"))
+	var modest := BattlePositioning.profile(_with_nature(side, "modest"))
+	var timid := BattlePositioning.profile(_with_nature(side, "timid"))
+	var jolly := BattlePositioning.profile(_with_nature(side, "jolly"))
+	var brave := BattlePositioning.profile(_with_nature(side, "brave"))
+	_ok(float(adamant["preferred"]) > float(modest["preferred"]) and float(adamant["audacity"]) > float(timid["audacity"]), "brawler prefers the front, caster/timid the back (%.2f vs %.2f)" % [adamant["preferred"], modest["preferred"]])
+	_ok(float(jolly["step_price"]) < float(brave["step_price"]), "agile Nature pays less per step (%.2f < %.2f)" % [jolly["step_price"], brave["step_price"]])
+	var wants := {}
+	for nat in ["adamant", "timid", "modest"]:
+		var s := _setup(side, 100, 20, 100, 20)
+		var b: Battle = s[0]
+		var me: Combatant = s[1]
+		var foe: Combatant = s[2]
+		me.nature_id = nat
+		foe.atb = 2.0
+		me.atb = 5.0
+		wants[nat] = _want_quiet(b, me)
+	print("     wants ", wants)
+	_ok(int(wants["adamant"]) >= int(wants["timid"]) and int(wants["adamant"]) > int(wants["modest"]), "same fight: Adamant stands further forward than Timid and Modest")
+
+
+func _with_nature(side: bool, nat: String) -> Combatant:
+	var c := Combatant.new("N", 100, 10, 1.0, side)
+	c.nature_id = nat
+	return c
+
+
+func _context_signals(side: bool) -> void:
+	print("context")
+	# A stunned foe cannot hit me: more room to be forward than against the same foe awake.
+	var s := _setup(side, 100, 20, 100, 40)
+	var b: Battle = s[0]
+	var me: Combatant = s[1]
+	var foe: Combatant = s[2]
+	foe.atb = 5.0
+	me.atb = 2.0
+	var awake := _want_quiet(b, me)
+	s = _setup(side, 100, 20, 100, 40)
+	b = s[0]
+	me = s[1]
+	foe = s[2]
+	foe.atb = 5.0
+	foe.stun_timer = 6.0
+	me.atb = 2.0
+	var stunned := _want_quiet(b, me)
+	_ok(stunned >= awake, "stunned foe: it stands at least as far forward as against an awake one (%d vs %d)" % [stunned, awake])
+	# Taunt: a foe forced onto somebody else cannot hit me.
+	s = _setup(side, 100, 20, 100, 40)
+	b = s[0]
+	me = s[1]
+	foe = s[2]
+	foe.atb = 5.0
+	me.atb = 2.0
+	foe.taunted_by = b.team_of(foe)[0] if b.opponents_of(foe).size() > 0 and b.opponents_of(foe)[0] != me else b.opponents_of(foe)[0]
+	var other: Combatant = null
+	for a in b.team_of(me):
+		if a != me:
+			other = a
+	if other == null:
+		other = Combatant.new("Other", 400, 1, 1.0, side)
+		b.team_of(me).append(other)
+		other.in_battle = true
+	foe.taunted_by = other
+	var taunted := _want_quiet(b, me)
+	_ok(taunted >= awake, "foe taunted onto an ally: it can go forward (%d vs %d)" % [taunted, awake])
+	# Mood: my team nearly dead against a healthy foe is "behind".
+	s = _setup(side, 100, 20, 100, 20)
+	b = s[0]
+	me = s[1]
+	foe = s[2]
+	for a in b.team_of(me):
+		a.hp = 10
+	_want_quiet(b, me)
+	_ok(String(b._ai.positioning.info[me]["mood"]) == "behind", "team far behind in HP is read as 'behind'")
+
+
+func _target_choice(side: bool) -> void:
+	print("target choice")
+	var me := Combatant.new("Me", 100, 30, 1.0, side)
+	var near := Combatant.new("Near", 100, 10, 1.0, not side)
+	var back := Combatant.new("Back", 100, 10, 1.0, not side)
+	var lead := Combatant.new("Lead", 400, 1, 1.0, true)
+	var mine: Array[Combatant] = []
+	var theirs: Array[Combatant] = []
+	if side:
+		mine = [lead, me]
+		theirs = [near, back]
+	else:
+		near.is_player = true
+		back.is_player = true
+		mine = [lead, near, back]
+		theirs = [me]
+		# `me` is the enemy: its foes are the party members, one standing back
+	var b := Battle.new()
+	b.start(mine, theirs)
+	for c in [me, near, back, lead]:
+		c.in_battle = true
+	back.pos_step = -2  # takes 20% less from me
+	var counts := {"near": 0, "back": 0}
+	for i in 600:
+		var t: Combatant = b._ai._pick_target(me)
+		if t == near:
+			counts["near"] += 1
+		elif t == back:
+			counts["back"] += 1
+	print("     picks ", counts)
+	_ok(float(counts["near"]) > 1.2 * float(counts["back"]) and counts["back"] > 0, "leans to the foe that is not backing away, but never deterministic")
+
+
+func _telemetry_signal(side: bool) -> void:
+	print("telemetry")
+	var s := _setup(side, 100, 40, 100, 10)
+	var b: Battle = s[0]
+	var me: Combatant = s[1]
+	var foe: Combatant = s[2]
+	foe.atb = 5.0
+	me.atb = 5.0
+	var seen := {"n": 0, "keys": []}
+	b.ai_positioned.connect(func(_c, why: Dictionary): seen["n"] += 1; seen["keys"] = why.keys())
+	_want_quiet(b, me)
+	_ok(int(seen["n"]) == 1 and seen["keys"].has("table") and seen["keys"].has("profile"), "pos_decision signal carries the score table and the profile")

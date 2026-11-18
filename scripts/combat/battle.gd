@@ -27,6 +27,7 @@ signal evade_teleported(actor: Combatant, opponent: Combatant, from: Vector3)
 ## A non-perfect Evade during its own run: the run was cancelled and `actor` is back home.
 signal evade_returned(actor: Combatant, from: Vector3)
 signal stepped(actor: Combatant, to_pos: int)  ## `actor` started a position step.
+signal ai_positioned(actor: Combatant, why: Dictionary)  ## D-1301: the AI chose a new position (scores and reasons, for telemetry).
 ## `actor` dodged `opponent`'s attack on its way in: the attack is interrupted and `actor`
 ## is now next to it. BattleFx draws the arrival.
 signal engaged(actor: Combatant, opponent: Combatant, inc)

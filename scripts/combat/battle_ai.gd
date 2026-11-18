@@ -149,7 +149,44 @@ func _pick_target(c: Combatant) -> Combatant:
 	if c.engaged_with != null and c.engaged_with.is_alive():
 		return c.engaged_with
 	var foes := b.opponents_of(c).filter(func(f: Combatant) -> bool: return f.is_alive())
-	return foes.pick_random() if not foes.is_empty() else null
+	if foes.is_empty():
+		return null
+	return _weighted_target(c, foes)
+
+
+## D-1301 (the creator approved changing the old random pick): still a random draw, never deterministic, but
+## each foe weighs more the more my best Move would do to it as things stand NOW (so the position it
+## stands in counts: a foe at -2 takes 20% less) and, for cautious Natures, when it is winding up (interrupt).
+## The more audacious the Nature, the more it leans toward the best opening.
+func _weighted_target(c: Combatant, foes: Array) -> Combatant:
+	var prof := BattlePositioning.profile(c)
+	var power := 1.0 + 2.0 * float(prof["audacity"])  # the bolder, the more it leans toward the best opening
+	var shares: Array[float] = []
+	var top := 0.0
+	for f in foes:
+		var share := 0.0
+		for skill in _moves_of(c):
+			if skill.kind == Skill.Kind.STATUS or skill.is_friendly or skill.target_mode == MoveData.TargetMode.DUAL:
+				continue
+			var damage := float(_damage_to(c, skill, f))
+			share = maxf(share, 1.0 if damage >= float(f.hp) else damage / maxf(float(f.hp), 1.0))
+		shares.append(share)
+		top = maxf(top, share)
+	var weights: Array[float] = []
+	var total := 0.0
+	for i in foes.size():
+		var rel := shares[i] / top if top > 0.0 else 1.0
+		var w := pow(0.5 + rel, power)
+		if float(prof["caution"]) > 0.0 and b.is_winding_up(foes[i]):
+			w *= 1.0 + 0.5 * float(prof["caution"])
+		weights.append(w)
+		total += w
+	var roll := randf() * total
+	for i in foes.size():
+		roll -= weights[i]
+		if roll <= 0.0:
+			return foes[i]
+	return foes.back()
 
 
 ## D-1200: the ally a single-ally Move is aimed at, by the Move's focus. "hp": the lowest HP share among

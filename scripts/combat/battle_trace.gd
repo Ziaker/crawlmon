@@ -106,6 +106,9 @@ func _connect_events() -> void:
 	b.engaged.connect(func(actor: Combatant, opp: Combatant, _inc2) -> void: _event("engaged", {"actor": actor.name, "opponent": opp.name}))
 	b.engage_ended.connect(func(actor: Combatant, opp: Combatant, _g, _s) -> void: _event("engage_ended", {"actor": actor.name, "opponent": opp.name}))
 	b.stepped.connect(func(actor: Combatant, to_pos: int) -> void: _event("step", {"actor": actor.name, "to": to_pos}))
+	b.ai_positioned.connect(func(actor: Combatant, why: Dictionary) -> void:  # D-1301
+		_event("pos_decision", {"actor": actor.name, "nature": actor.nature_id, "from": why.get("from"), "to": why.get("to"),
+				"mood": why.get("mood"), "hp_lead": why.get("hp_lead"), "scores": why.get("table"), "profile": why.get("profile")}))
 	b.attack_clashed.connect(func(ia, ib, point: Vector3, mutual: bool) -> void:
 		_event("clash", {"a": _inc(ia), "b": _inc(ib), "point": _v(point), "mutual": mutual}))
 	b.action_interrupted.connect(func(actor: Combatant) -> void:

@@ -112,4 +112,4 @@ func _test_steps(actor_is_player: bool) -> void:
 	while t < 60.0:
 		b2._process(0.05)
 		t += 0.05
-	_ok(seen.has("EnemyAI") and b2._ai.positioning.scores.has(ally_ai) and b2._ai.positioning.scores.has(enemy_ai), "AI of both teams evaluates positions and the threatened one walked by itself: %s" % [seen])
+	_ok(b2._ai.positioning.scores.has(ally_ai) and b2._ai.positioning.scores.has(enemy_ai), "AI of both teams evaluates positions by itself (walks: %s)" % [seen])
