@@ -10,7 +10,7 @@
 
 - **Data** — 2026-11-17
 - **Área** — Economia / moedas / drops / loja do Hub
-- **Estado** — Regras aprovadas pelo criador em mensagem de chat. Implementação parcial; preços, bronze, elegibilidade e destino dos ganhos seguem pendentes.
+- **Estado** — Regras aprovadas pelo criador em mensagem de chat. Implementação parcial; Bronze e elegibilidade negativa foram respondidos na D-1286; preços, instante do crédito e destino dos ganhos seguem pendentes.
 - **Relacionadas** — [D-1250](D-1250-hub-loja-e-economia-de-expedicao.md), [D-1251](D-1251-moedas-exploracao-e-economia-inicial.md), [D-1252](D-1252-cascos-de-bronze-prata-e-ouro.md), [D-1253](D-1253-saldo-comum-e-balanceamento-dos-cascos.md), [D-1259](D-1259-cascos-fisica-brilho-e-coleta-para-teste.md).
 
 ## Frase literal do criador
