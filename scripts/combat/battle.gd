@@ -272,6 +272,8 @@ func _process(delta: float) -> void:
 	battle_time += delta
 	if not _employ.is_empty():
 		return  # D-1229 ("congela tudo"): nothing advances while an Employ attempt is open.
+	# D-1297: reward tokens fly on real time: no hit-stop, status pause or slow-motion holds them.
+	_reward_queue.step(delta / maxf(Engine.time_scale, 0.05))
 	if _freeze_left > 0.0:
 		_freeze_left -= delta
 		return
@@ -292,6 +294,8 @@ func _process(delta: float) -> void:
 		c.tick_boost(delta)  # D-1242: same clock as the other durations (every pause stops it)
 		if not is_winding_up(c):  # ATB stays locked until the action finishes.
 			c.tick(delta)
+		elif c.is_alive() and c.in_battle and not _acting_spends_mp(c):
+			c.tick_mp_regen(delta * c.mp_regen_rate())  # D-1298: a Move that costs no MP never pauses the MP pulse
 		_tick_burn(c, delta)  # D-238: burns on, also while it winds up
 	for c in party + enemies:
 		if c.step_t < 1.0:
@@ -309,7 +313,6 @@ func _process(delta: float) -> void:
 	if _status_pause != null:
 		state_changed.emit()
 		return
-	_reward_queue.step(delta)
 	_evade.step_engage(delta)
 	_finish_war_cry_if_done()
 	state_changed.emit()
@@ -720,6 +723,14 @@ func active_attacks() -> Array[Incoming]:
 	list.append_array(incoming)
 	list.append_array(_landing)
 	return list
+
+
+## D-1298: does the Move `c` is performing cost MP? (It resets the MP timer when paid, D-413.)
+func _acting_spends_mp(c: Combatant) -> bool:
+	for inc in incoming + _landing + _returning:
+		if inc.attacker == c and inc.skill != null and inc.skill.mp_cost > 0:
+			return true
+	return false
 
 
 func is_winding_up(c: Combatant) -> bool:
