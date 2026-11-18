@@ -92,8 +92,69 @@ def check(view, extra, names):
     return not fails
 
 
+# D-1295: um modelo por vez no papel E1 (cenário olhos_debug_dqt: pisca 0,3 s; fecha 0,6-2,0 s; hit 2,5 s; BLIND 4,0 s).
+CATALOG = ["pikachu", "eevee", "charmander", "bulbasaur", "gible", "squirtle", "pancham",
+           "dqt_slime", "dqt_dracky", "dqt_healslime", "dqt_orc", "dqt_cyclops", "dqt_sabrecub", "dqt_platypunk"]
+NO_OWN_BLINK = {"dqt_orc", "dqt_cyclops", "dqt_sabrecub", "dqt_platypunk"}  # só fecham por BLIND/hit/forçado
+
+
+def run_model(extra, model):
+    cmd = [GODOT, "--headless", "--path", ROOT, "scenes/debug/vfx_room.tscn", "--", "--scenario=olhos_debug_dqt",
+           "--eyes-trace", "--stdout-trace", "--quit"] + extra
+    out = subprocess.run(cmd, capture_output=True, text=True, timeout=120).stdout
+    return [json.loads(ln[len("[TRACE_JSONL] "):]) for ln in out.splitlines() if ln.startswith("[TRACE_JSONL] ")]
+
+
+def check_model(model, mirror):
+    """Afirma, para um modelo em E1: fechar forçado (lid 1.0), hit ~0,5 s, BLIND fechado até reabrir."""
+    extra = ["--units=gible/%s,gible" % model] if not mirror else ["--mirror", "--units=gible/%s,gible" % model]
+    evs = run_model(extra, model)
+    eyes = [e for e in evs if e["ev"] == "eyes"]
+    lid = [e for e in evs if e["ev"] == "eyes_lid"]
+    actor = None
+    for e in eyes:
+        if e["data"]["actor"].lower() in (model.replace("_", " "), model.replace("dqt_", "")) and e["data"]["closed"]:
+            actor = e["data"]["actor"]
+            break
+    fails = []
+    if actor is None:
+        return ["%s: nenhum evento eyes" % model]
+    mine = [e for e in eyes if e["data"]["actor"] == actor]
+    forced = [e for e in mine if e["data"]["closed"] and not e["data"]["blind"] and not e["data"]["hit"]]
+    hits = [e for e in mine if e["data"]["closed"] and e["data"]["hit"]]
+    blinds = [e for e in mine if e["data"]["closed"] and e["data"]["blind"]]
+    if not forced:
+        fails.append("%s: fechar forçado não emitiu eyes" % model)
+    if not hits:
+        fails.append("%s: hit não fechou" % model)
+    else:
+        later = [e for e in mine if not e["data"]["closed"] and e["t"] > hits[0]["t"]]
+        dur = later[0]["t"] - hits[0]["t"] if later else -1
+        if not (0.40 <= dur <= 0.70):
+            fails.append("%s: hit fechado %.2f s" % (model, dur))
+    if not blinds:
+        fails.append("%s: BLIND não fechou" % model)
+    lids = [e["data"]["k"] for e in lid if e["data"]["actor"] == actor]
+    if not lids or max(lids) < 0.99:
+        fails.append("%s: pálpebra nunca chegou a 1.0 (%s)" % (model, lids[:4]))
+    if model not in NO_OWN_BLINK:
+        if not [e for e in evs if e["ev"] == "eyes_blink" and e["data"]["actor"] == actor]:
+            fails.append("%s: nunca piscou" % model)
+    return fails
+
+
 def main():
     ok = True
+    if "--models" in sys.argv:
+        only = [a[7:] for a in sys.argv if a.startswith("--only=")]
+        for model in (only[0].split(",") if only else CATALOG):
+            for mirror in (False, True):
+                f = check_model(model, mirror)
+                print("[%s%s] %s" % (model, " espelhada" if mirror else "", "FALHA" if f else "OK"))
+                for x in f:
+                    print("   -", x)
+                ok = ok and not f
+        sys.exit(0 if ok else 1)
     for view, (extra, names) in VIEWS.items():
         ok = check(view, extra, names) and ok
     sys.exit(0 if ok else 1)

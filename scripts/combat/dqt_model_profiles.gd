@@ -65,7 +65,7 @@ const PROFILES := {
 		"native_height": 1.772,
 		"target_height": 2.1,
 		"clip_prefix": "cm_00_0020_",
-		"hide_eye_mesh_on_close": true,  # D-1295: the Orc's Eye_Model_a is the pupil dot; the lid pose does not cover it
+		"paint_closed_eye": true,  # D-1295: the Orc's Eye_Model_a is the pupil dot; the lid pose does not cover it
 		"rotation_y": 180.0,
 		# Ready (32) is the battle stance. Idle (00) is an appear/idle/end clip.
 		"idle_source": "00",

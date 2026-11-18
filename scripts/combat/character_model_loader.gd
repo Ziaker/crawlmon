@@ -62,7 +62,7 @@ static func create_character_model(combatant: Combatant, color: Color = Color.WH
 					var dqt_eyes := DqtEyes.attach(root, pokemon_instance, anim_player,
 						str(dqt_profile.get("clip_prefix", "")) + "04")
 					if dqt_eyes != null:
-						dqt_eyes.hide_eye_mesh_on_close = bool(dqt_profile.get("hide_eye_mesh_on_close", false))
+						dqt_eyes.paint_closed_eye = bool(dqt_profile.get("paint_closed_eye", false))
 						var cc: Array = dqt_profile.get("eye_cover_color", [])
 						if cc.size() == 3:
 							dqt_eyes.cover_color = Color(float(cc[0]), float(cc[1]), float(cc[2]))

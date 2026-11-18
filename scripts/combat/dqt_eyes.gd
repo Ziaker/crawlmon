@@ -39,7 +39,7 @@ static func attach(model_root: Node3D, glb_root: Node, ap: AnimationPlayer, slee
 ## Sabrecub) hold the pose their own Sleep clip gives those bones at t=0 while BLIND / hit.
 var _lids: Array = []  ## [{skeleton, bone, pos, rot, scl}] (null where the clip has no track of that kind)
 var _eye_meshes: Array[MeshInstance3D] = []
-var hide_eye_mesh_on_close := false  ## profile flag: paint the closed eye in the head texture while closed (Orc)
+var paint_closed_eye := false  ## profile flag: paint the closed eye in the head texture while closed (Orc)
 var cover_color := Color(0.62, 0.51, 0.39)  ## fallback skin tone when none can be measured around the eye
 var _glb: Node
 var _paint_ready := false
@@ -188,6 +188,13 @@ func _cover(on: bool) -> void:
 		_head_mi.set_surface_override_material(_head_surface, _closed_mat if on else null)
 
 
+## Bones whose Sleep pose closes the eye: eyelids (`*mabuta*`) or the open/close eye bones (`OpenEye`/`CloseEye`,
+## whose position the clips toggle to show one eye or the other).
+static func is_lid_bone_name(bone_name: String) -> bool:
+	var l := bone_name.to_lower()
+	return l.contains("mabuta") or l == "openeye" or l == "closeeye"
+
+
 func _bind_lids(glb_root: Node, ap: AnimationPlayer, sleep_clip: String) -> void:
 	if ap == null or not ap.has_animation(sleep_clip):
 		return
@@ -198,7 +205,7 @@ func _bind_lids(glb_root: Node, ap: AnimationPlayer, sleep_clip: String) -> void
 	for s in glb_root.find_children("*", "Skeleton3D", true, false):
 		var sk := s as Skeleton3D
 		for b in sk.get_bone_count():
-			if not sk.get_bone_name(b).to_lower().contains("mabuta"):
+			if not is_lid_bone_name(sk.get_bone_name(b)):
 				continue
 			var e := {"skeleton": sk, "bone": b, "pos": null, "rot": null, "scl": null}
 			for i in anim.get_track_count():
@@ -304,7 +311,7 @@ func _process(delta: float) -> void:
 		lid_k = 1.0 if (hold_closed or squeeze_left > 0.0) else 0.0
 		if lid_k > 0.0:
 			_hold_lids()
-		if hide_eye_mesh_on_close:  # profile flag (Orc: the lid pose does not cover the eye)
+		if paint_closed_eye:  # profile flag (Orc: the lid pose does not cover the eye)
 			_cover(lid_k > 0.0)
 		return
 	var closed_by_clip := false

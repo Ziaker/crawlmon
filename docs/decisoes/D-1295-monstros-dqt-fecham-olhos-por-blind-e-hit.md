@@ -18,7 +18,7 @@
 
 Frase literal do criador: "o ponto do olho do orc não tá sumindo quando ele fecha os olhos".
 
-O ponto é a malha `Eye_Model_a` (pupila). Perfil do Orc (`content/characters/dqt_orc/model_profile.tres`, chave `hide_eye_mesh_on_close`) esconde essa malha enquanto BLIND/hit; o Sabrecub e o Cyclops não (lá a pálpebra já cobre; esconder deixou o olho branco). **Limite do dado:** o clipe Sleep do Orc quase não mexe nos ossos de pálpebra (só variações pequenas); sem a pupila, o olho fica como um branco liso, que não é um olho fechado. Fechar de verdade pediria um adesivo/pálpebra que o modelo não tem (decisão do criador).
+O ponto é a malha `Eye_Model_a` (pupila). Perfil do Orc (`content/characters/dqt_orc/model_profile.tres`, chave `paint_closed_eye`, antes `hide_eye_mesh_on_close`) esconde essa malha enquanto BLIND/hit; o Sabrecub e o Cyclops não (lá a pálpebra já cobre; esconder deixou o olho branco). **Limite do dado:** o clipe Sleep do Orc quase não mexe nos ossos de pálpebra (só variações pequenas); sem a pupila, o olho fica como um branco liso, que não é um olho fechado. Fechar de verdade pediria um adesivo/pálpebra que o modelo não tem (decisão do criador).
 
 ### Orc: pálpebra desenhada (2026-11-17)
 
@@ -31,6 +31,10 @@ Implementado como cor: enquanto BLIND/hit, a malha `Eye_Model_a` do Orc recebe u
 Frases literais do criador: "volta atrás e desenha a palpebra como shader"; depois "tá grande demais".
 
 Substitui o disco liso: enquanto BLIND/hit o Orc troca a malha do adesivo de olho por uma cópia com cada olho ampliado 1,2x em torno do próprio centro, desenhada por shader (`DqtEyes.LID_SHADER`: amêndoa de cor de pele, linha de cílios curva e leve sombra acima; fora da amêndoa é descartado). Valores técnicos meus e pendentes: 1,2x (1,5x e 2,4x ficaram grandes demais), cor `eye_cover_color`, forma da amêndoa e da linha. Aberto, a malha e o material originais voltam intactos.
+
+### Acabamento e modelos novos (2026-11-17, técnico, sem regra nova)
+
+Pedido do criador: "quero que faça o prompt pra um melhor acabamento pra mecanica e feature e adaptação pra novos modelos" (`docs/plans/PROMPT_OLHOS_ACABAMENTO_E_NOVOS_MODELOS.md`). Feito: `EyeStrategy.detect` (`scripts/common/eye_strategy.gd`) escolhe a estratégia só por dado (`shader_lid`, `decal`, `open_close_bones`, `bone_lids`, `none`; `paint_candidate` reportado à parte); Platypunk fecha pela pose Sleep dos ossos `OpenEye`/`CloseEye` (eram ossos, não nós; o clipe troca a posição z deles); flag do Orc renomeada `paint_closed_eye`. **Limite honesto:** não há critério de dado confiável para dizer se a pálpebra já cobre o branco do olho, então a escolha entre `bone_lids` e pintura na textura continua sendo flag no perfil; a ferramenta `diag_eye_strategy.gd` só aponta candidatos. Fungi segue sem dado (decisão do criador pendente). Valores do Orc (arco 0,2, espessura 3 px, limiar de branco) e do resto (0,5 s, ritmo do piscar) seguem pendentes de aprovação.
 
 ### Orc: pálpebra pintada na textura da cabeça (2026-11-17)
 
