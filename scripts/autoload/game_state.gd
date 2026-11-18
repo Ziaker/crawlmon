@@ -13,6 +13,7 @@ const DungeonGen = preload("res://scripts/dungeon/dungeon_generator.gd")
 const DebugPartySelectorClass = preload("res://scripts/ui/debug_party_selector.gd")
 const ShellWalletClass = preload("res://scripts/economy/shell_wallet.gd")
 const ShellShopClass = preload("res://scripts/economy/shell_shop.gd")
+const ShellCatalogClass = preload("res://scripts/economy/shell_catalog.gd")
 ## Preloaded (not the global class name) so the autoload parses even before the class cache knows the new script.
 const ExpeditionRosterClass = preload("res://scripts/progression/expedition_roster.gd")
 const RespectStateClass = preload("res://scripts/progression/respect_state.gd")
@@ -70,7 +71,7 @@ var inventory: Dictionary = INITIAL_INVENTORY.duplicate()
 ## D-1253 item 4: consumables bought in the Hub and not used yet (item id -> quantity).
 ## They are restored on top of the baseline kit, so an unused purchase reaches the next expedition.
 var purchased_items: Dictionary = {}
-## D-1285: separate balances, kept in memory only (shell_balance and its save stay untouched).
+## D-1285/D-1300: separate balances, in memory only; shell_balance is the Bronze balance.
 var shell_wallet := ShellWalletClass.new()
 
 ## QoL: dialogue typewriter speed (characters per second).
@@ -106,13 +107,33 @@ var dungeon_explored := PackedByteArray()
 ## Kept so leaving to a battle and coming back does not respawn them (D-033).
 var dungeon_items_collected: Array[String] = []
 
-## D-1253/D-1265: saldo único de Cascos e tempo de jogo, mostrados no cartão de save da abertura.
+## D-1253/D-1265: saldo de Cascos e tempo de jogo, mostrados no cartão de save da abertura.
 ## Só estes dois campos têm arquivo (user://progress.json); o resto do estado ainda é só memória.
-## Valores de cada casco seguem em aberto (D-1253): `add_shells` só soma o que o chamador der.
+## D-1300 item 3: `shell_balance` é o saldo Bronze da carteira (D-1285); a chave do arquivo
+## continua "shell_balance", agora gravando o Bronze. `add_shells` só soma o que o chamador der.
 const PROGRESS_PATH := "user://progress.json"
-var shell_balance: int = 0
+
+
+## D-1300 item 3: o saldo único migrou para o saldo Bronze da carteira (D-1285). Prata e ouro
+## ficam intactos: só a moeda Bronze é lida ou levada ao valor novo (nunca abaixo de 0).
+var shell_balance: int:
+	get:
+		return shell_wallet.balance(ShellWalletClass.Coin.BRONZE)
+	set(value):
+		_set_bronze_balance(value)
+
+
 var play_seconds: float = 0.0
 var _progress_autosave := 0.0
+
+
+func _set_bronze_balance(value: int) -> void:
+	var target := maxi(0, value)
+	var current := shell_wallet.balance(ShellWalletClass.Coin.BRONZE)
+	if target > current:
+		shell_wallet.credit(ShellWalletClass.Coin.BRONZE, target - current)
+	elif target < current:
+		shell_wallet.debit(ShellWalletClass.Coin.BRONZE, current - target)
 
 
 func add_shells(amount: int) -> void:
@@ -591,6 +612,15 @@ func buy(offer: Dictionary, pay_coin: int) -> Dictionary:
 		if item != null and item.kind == Item.Kind.CONSUMABLE:
 			purchased_items[item_id] = purchased_count(item_id) + int(result.get("quantity", 0))
 	return result
+
+
+## D-1300: compra pelo item id usando o preço do catálogo (ShellCatalog). Item sem preço cadastrado
+## não é vendido: devolve {"ok": false, "reason": "no_offer"}.
+func buy_item(item_id: String) -> Dictionary:
+	var offer := ShellCatalogClass.offer_for(item_id)
+	if offer.is_empty():
+		return {"ok": false, "reason": "no_offer"}
+	return buy(offer, int(offer["coin"]))
 
 
 ## Held items are equipped/passive, so they sit outside the inventory capacity (R35-Q3).

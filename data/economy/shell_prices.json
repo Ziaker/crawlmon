@@ -1,0 +1,12 @@
+{
+  "potion": {
+    "coin": "bronze",
+    "price": 10,
+    "quantity": 1
+  },
+  "super_potion": {
+    "coin": "bronze",
+    "price": 25,
+    "quantity": 1
+  }
+}
